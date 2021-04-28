@@ -60,6 +60,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                 }
             }
         ).then {
+            setPageTitle("Profile - ${it.data.name}")
             setState {
                 userDetail = it.data
                 loading = false
@@ -101,7 +102,31 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                         state.userDetail?.stats?.let {
                             +"Maps: ${it.totalMaps}, Upvotes: ${it.totalUpvotes}, Downvotes: ${it.totalDownvotes}"
                             br {  }
-                            +"Average BPM: ${it.avgBpm}"
+                            +"Average BPM: ${it.avgBpm}, Average Score: ${it.avgScore}%, "
+                            +"Average Duration: ${(it.avgDuration / 60).toInt()}:${(it.avgDuration % 60).toString().padStart(2, '0')}"
+                            it.diffStats?.let { ds ->
+                                br { }
+                                b {
+                                    +"Easy: "
+                                }
+                                +"${ds.easy}"
+                                b {
+                                    +", Normal: "
+                                }
+                                +"${ds.normal}"
+                                b {
+                                    +", Hard: "
+                                }
+                                +"${ds.hard}"
+                                b {
+                                    +", Expert: "
+                                }
+                                +"${ds.expert}"
+                                b {
+                                    +", Expert+: "
+                                }
+                                +"${ds.expertPlus}"
+                            }
                         }
                         /*img("100 Maps", "https://cdn.discordapp.com/avatars/98334361564246016/01ade7513a63215bb7937d217b766da3.png", classes = "rounded-circle mx-2") {
                             attrs.width = "75"

@@ -4,14 +4,13 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
+import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.beatsaver.BeatsaverList
 import io.beatmaps.common.client
-import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.User
-import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.db.updateReturning
-import io.beatmaps.common.dbo.BeatmapDao
+import io.beatmaps.common.dbo.*
 import io.beatmaps.common.jackson
+import io.beatmaps.zip.DiffStats
 import io.ktor.application.call
 import io.ktor.client.features.timeout
 import io.ktor.client.request.get
@@ -158,16 +157,38 @@ fun Route.userRoute() {
         }
 
         val stats = transaction {
-            Beatmap.slice(Beatmap.id.count(), Beatmap.upVotesInt.sum(), Beatmap.downVotesInt.sum(), Beatmap.bpm.avg()).select {
+            val statTmp = Beatmap.slice(Beatmap.id.count(), Beatmap.upVotesInt.sum(), Beatmap.downVotesInt.sum(), Beatmap.bpm.avg(), Beatmap.score.avg(3), Beatmap.duration.avg(0)).select {
                 (Beatmap.uploader eq it.id) and (Beatmap.deletedAt.isNull())
             }.first().let {
-                UserStats(it[Beatmap.upVotesInt.sum()] ?: 0, it[Beatmap.downVotesInt.sum()] ?: 0, it[Beatmap.id.count()].toInt(), it[Beatmap.bpm.avg()]?.toFloat() ?: 0f)
+                UserStats(it[Beatmap.upVotesInt.sum()] ?: 0, it[Beatmap.downVotesInt.sum()] ?: 0, it[Beatmap.id.count()].toInt(), it[Beatmap.bpm.avg()]?.toFloat() ?: 0f, it[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f, it[Beatmap.duration.avg(0)]?.toFloat() ?: 0f)
             }
+
+            val cases = EDifficulty.values().associate { it to diffCase(it) }
+            val diffStats = Difficulty
+                .join(Beatmap, JoinType.INNER, Beatmap.id, Difficulty.mapId)
+                .slice(Difficulty.id.count(), *cases.values.toTypedArray())
+                .select {
+                    (Beatmap.uploader eq it.id) and (Beatmap.deletedAt.isNull())
+                }.first().let {
+                    fun safeGetCount(diff: EDifficulty) = cases[diff]?.let { c -> it.getOrNull(c) } ?: 0
+                    UserDiffStats(
+                        it[Difficulty.id.count()].toInt(),
+                        safeGetCount(EDifficulty.Easy),
+                        safeGetCount(EDifficulty.Normal),
+                        safeGetCount(EDifficulty.Hard),
+                        safeGetCount(EDifficulty.Expert),
+                        safeGetCount(EDifficulty.ExpertPlus)
+                    )
+                }
+
+            statTmp.copy(diffStats = diffStats)
         }
 
         call.respond(UserDetail.from(user, stats = stats))
     }
 }
+
+fun diffCase(diff: EDifficulty) = Sum(Expression.build { case().When(Difficulty.difficulty eq diff, intLiteral(1)).Else(intLiteral(0)) }, IntegerColumnType())
 
 fun getBSLinkHash(userId: Int) = MessageDigest.getInstance("MD5").let {
     it.update(ubyteArrayOf(0x1fu, 0x22u, 0x1fu, 0x5fu, 0x84u, 0xb0u).toByteArray() + userId.toString().toByteArray())
