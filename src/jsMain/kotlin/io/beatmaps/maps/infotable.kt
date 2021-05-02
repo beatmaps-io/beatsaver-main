@@ -44,6 +44,24 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
                         +props.map.metadata.levelAuthorName
                     }
                 }
+
+                props.map.curator?.let { curator ->
+                    div("list-group-item d-flex justify-content-between") {
+                        +"Curated by"
+                        span("text-truncate ml-4") {
+                            +curator
+                        }
+                    }
+                }
+
+                props.map.stats.let { stats ->
+                    div("list-group-item d-flex justify-content-between") {
+                        +"Rating"
+                        span("text-truncate ml-4") {
+                            +"${stats.upvotes} / ${stats.downvotes} (${(stats.score * 1000).toInt() / 10f}%)"
+                        }
+                    }
+                }
             }
 
             div("list-group mapstats") {
@@ -73,11 +91,17 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
             +diff.difficulty.human()
 
             div("stats") {
-                mapItem("error", "Parity errors", diff.paritySummary.errors)
+                diff.stars?.let {
+                    span("diff-stars") {
+                        i("fas fa-star") {}
+                        +it.toString()
+                    }
+                } ?: mapItem("error", "Parity errors", diff.paritySummary.errors)
+
                 mapItem("notes", "Notes", diff.notes)
                 mapItem("bombs", "Bombs", diff.bombs)
                 mapItem("walls", "Walls", diff.obstacles)
-                mapItem("warn", "Parity warnings", diff.paritySummary.warns)
+                diff.stars ?: mapItem("warn", "Parity warnings", diff.paritySummary.warns)
                 mapItem("njs", "Note jump speed", diff.njs.toString())
                 mapItem("nps", "Notes per second", diff.nps.toString())
                 mapItem("lights", "Lights", diff.events)

@@ -181,7 +181,7 @@ fun Route.uploadController() {
                 } ?: Beatmap.insertAndGetId {
                     it[name] = dataMap["title"] ?: ""
                     it[description] = dataMap["description"] ?: ""
-                    it[uploader] = EntityID(session.userId, Versions)
+                    it[uploader] = EntityID(session.userId, User)
                     it[bpm] = extractedInfo.mapInfo._beatsPerMinute
                     it[duration] = extractedInfo.duration.roundToInt()
                     it[songName] = extractedInfo.mapInfo._songName

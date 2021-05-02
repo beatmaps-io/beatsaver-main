@@ -2,6 +2,7 @@ package io.beatmaps.maps.testplay
 
 import Axios
 import external.ReCAPTCHA
+import generateConfig
 import io.beatmaps.api.FeedbackUpdate
 import kotlinx.datetime.internal.JSJoda.Instant
 import kotlinx.html.TEXTAREA
@@ -60,7 +61,7 @@ class NewFeedback : RComponent<NewFeedbackProps, NewFeedbackState>() {
                                 }
 
                                 props.captcha.current?.executeAsync()?.then {
-                                    Axios.post<String>("/api/testplay/feedback", FeedbackUpdate(props.hash, newText, it)).then({
+                                    Axios.post<String>("/api/testplay/feedback", FeedbackUpdate(props.hash, newText, it), generateConfig<FeedbackUpdate, String>()).then({
                                         setState {
                                             done = true
                                             time = Instant.now().toString()

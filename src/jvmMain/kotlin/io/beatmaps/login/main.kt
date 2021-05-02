@@ -33,9 +33,11 @@ import java.lang.Long.parseLong
 fun localAvatarFolder() = File(System.getenv("AVATAR_DIR") ?: "K:\\BMAvatar")
 
 data class Session(val userId: Int, val hash: String? = null, val userEmail: String, val userName: String, val testplay: Boolean = false,
-                   val steamId: Long? = null, val oculusId: Long? = null) {
+                   val steamId: Long? = null, val oculusId: Long? = null, val admin: Boolean = false) {
+    constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?) :
+            this(userId, hash, userEmail, userName, testplay, steamId, oculusId, false)
     constructor(userId: Int, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?) :
-            this(userId, null, userEmail, userName, testplay, steamId, oculusId)
+            this(userId, null, userEmail, userName, testplay, steamId, oculusId, false)
 }
 
 fun Route.authRoute() {
@@ -77,7 +79,7 @@ fun Route.authRoute() {
                 UserDao[userId]
             }
 
-            call.sessions.set(Session(user.id.value, user.hash, discordEmail, discordName, user.testplay, user.steamId, user.oculusId))
+            call.sessions.set(Session(user.id.value, user.hash, discordEmail, discordName, user.testplay, user.steamId, user.oculusId, user.admin))
             call.respondRedirect("/")
         }
     }

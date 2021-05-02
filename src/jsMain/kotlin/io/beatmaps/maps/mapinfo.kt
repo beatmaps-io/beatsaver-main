@@ -1,19 +1,20 @@
 package io.beatmaps.maps
 
 import Axios
-import io.beatmaps.common.Config
-import io.beatmaps.common.api.EMapState
+import generateConfig
+import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.StateUpdate
+import io.beatmaps.common.Config
+import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.oneclick
 import io.beatmaps.maps.testplay.JsonRequestConfig
-import kotlinx.html.INPUT
+import kotlinx.browser.window
 import kotlinx.html.InputType
-import kotlinx.html.TEXTAREA
 import kotlinx.html.Tag
 import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
@@ -22,15 +23,9 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
-import react.RBuilder
-import react.RComponent
-import react.RProps
-import react.RReadableRef
-import react.RState
-import react.ReactElement
-import react.createRef
+import org.w3c.dom.get
+import react.*
 import react.dom.*
-import react.setState
 import kotlin.collections.set
 
 external interface MapInfoProps : RProps {
@@ -60,7 +55,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
 
     private fun recall() {
         props.mapInfo.publishedVersion()?.hash?.let { hash ->
-            Axios.post<String>("/api/testplay/state", StateUpdate(hash, EMapState.Uploaded), JsonRequestConfig<StateUpdate> { Json.encodeToString(it) })
+            Axios.post<String>("/api/testplay/state", StateUpdate(hash, EMapState.Uploaded), generateConfig<StateUpdate, String>())
                 .then({
                     props.reloadMap()
 
@@ -76,8 +71,18 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     }
 
     private fun delete() {
-        Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.id, deleted = true)).then({
+        Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.id, deleted = true), generateConfig<MapInfoUpdate, String>()).then({
             props.deleteMap()
+        }) {
+            setState {
+                loading = false
+            }
+        }
+    }
+
+    private fun curate(curated: Boolean = true) {
+        Axios.post<String>("/api/maps/curate", CurateMap(props.mapInfo.id, curated), generateConfig<CurateMap, String>()).then({
+            props.reloadMap()
         }) {
             setState {
                 loading = false
@@ -121,6 +126,33 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                         oneclick {
                             mapId = props.mapInfo.id
                             modal = props.modal
+                        }
+
+                        val adminLocal = window["admin"] as Boolean?
+
+                        if (adminLocal == true) {
+                            a("#") {
+                                attrs.title = "Curate"
+                                attrs.attributes["aria-label"] = "Curate"
+                                attrs.onClickFunction = {
+                                    it.preventDefault()
+                                    curate(props.mapInfo.curator == null)
+                                }
+                                i("fas fa-award " + if (props.mapInfo.curator != null) "text-danger" else "text-success") { }
+                            }
+                            a("#") {
+                                attrs.title = "Delete"
+                                attrs.attributes["aria-label"] = "Delete"
+                                attrs.onClickFunction = {
+                                    it.preventDefault()
+                                    props.modal.current?.showDialog(ModalData(
+                                        "Delete map",
+                                        "Delete completely so that no more versions can be added or just unpublish the current version?",
+                                        listOf(ModalButton("DELETE", "danger", ::delete), ModalButton("Unpublish", "primary", ::recall), ModalButton("Cancel"))
+                                    ))
+                                }
+                                i("fas fa-trash text-danger") { }
+                            }
                         }
                     }
                     /*a("#") {
@@ -185,7 +217,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                     loading = true
                                 }
 
-                                Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.id, newTitle, newDescription)).then({
+                                Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.id, newTitle, newDescription), generateConfig<MapInfoUpdate, String>()).then({
                                     setState {
                                         loading = false
                                     }

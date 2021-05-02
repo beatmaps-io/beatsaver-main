@@ -13,10 +13,10 @@ class GenericPageTemplate(private val s: Session?) : Template<BODY> {
         main("container") {
             id = "root"
         }
-        s?.userId.let {
+        s?.let { snn ->
             script {
                 unsafe {
-                    +"window.userId = $it;"
+                    +"window.userId = ${snn.userId}; window.admin = ${snn.admin}"
                 }
             }
         }

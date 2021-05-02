@@ -2,6 +2,7 @@ package io.beatmaps.maps.testplay
 
 import Axios
 import external.TimeAgo
+import generateConfig
 import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.maps.textToContent
 import kotlinx.datetime.internal.JSJoda.Instant
@@ -58,7 +59,7 @@ class Feedback : RComponent<FeedbackProps, FeedbackState>() {
                                         loading = true
                                     }
 
-                                    Axios.post<String>("/api/testplay/feedback", FeedbackUpdate(props.hash, newText)).then({
+                                    Axios.post<String>("/api/testplay/feedback", FeedbackUpdate(props.hash, newText), generateConfig<FeedbackUpdate, String>()).then({
                                         setState {
                                             text = newText
                                             time = Instant.now().toString()

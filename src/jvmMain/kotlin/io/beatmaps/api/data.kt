@@ -18,7 +18,7 @@ fun MapDetail.Companion.from(other: BeatmapDao) = MapDetail(other.id.value, othe
         } else {
             it.second
         }
-    })
+    }, other.curator?.name)
 fun MapDetail.Companion.from(row: ResultRow) = from(BeatmapDao.wrapRow(row))
 
 fun MapVersion.Companion.from(other: VersionsDao) = MapVersion(other.hash, other.key64, other.state, other.uploaded.toKotlinInstant(), other.sageScore,
@@ -27,7 +27,8 @@ fun MapVersion.Companion.from(other: VersionsDao) = MapVersion(other.hash, other
 fun MapVersion.Companion.from(row: ResultRow) = from(VersionsDao.wrapRow(row))
 
 fun MapDifficulty.Companion.from(other: DifficultyDao) = MapDifficulty(other.njs, other.offset, other.notes, other.bombs, other.obstacles, other.nps.toDouble(),
-    other.length.toDouble(), other.characteristic, other.difficulty, other.events, other.chroma, other.me, other.ne, other.seconds.toDouble(), MapParitySummary.from(other))
+    other.length.toDouble(), other.characteristic, other.difficulty, other.events, other.chroma, other.me, other.ne, other.seconds.toDouble(), MapParitySummary.from(other),
+    other.stars?.toFloat())
 
 fun MapParitySummary.Companion.from(other: DifficultyDao) = MapParitySummary(other.pError, other.pWarn, other.pReset)
 

@@ -6,7 +6,9 @@ import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
+import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.inlineJackson
@@ -20,6 +22,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
+import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import pl.jutupe.ktor_rabbitmq.RabbitMQ
@@ -30,6 +33,7 @@ import pl.jutupe.ktor_rabbitmq.publish
         @Group("Maps") @Location("/maps/latest") data class New(val after: Instant? = null, val automapper: Boolean = false, @Ignore val api: Stream)
     }
     @Location("/maps/update") data class Update(val api: MapsApi)
+    @Location("/maps/curate") data class Curate(val api: MapsApi)
     @Location("/maps/wip/{page?}") data class WIP(val page: Long? = 0, val api: MapsApi)
     @Group("Maps") @Location("/maps/beatsaver/{key}") data class Beatsaver(val key: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/id/{key}") data class Detail(val key: Int, @Ignore val api: MapsApi)
@@ -67,6 +71,7 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
             Beatmap
                 .joinVersions(true, null) // Allow returning non-published versions
                 .joinUploader()
+                .joinCurator()
                 .select {
                     Beatmap.id eq mapId and (Beatmap.deletedAt.isNull())
                 }
@@ -107,6 +112,34 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
         }
     }
 
+    post<MapsApi.Curate> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        requireAuthorization { user ->
+            if (!user.admin) {
+                call.respond(HttpStatusCode.BadRequest)
+            } else {
+                val mapUpdate = call.receive<CurateMap>()
+
+                val result = transaction {
+                    Beatmap.update({
+                        (Beatmap.id eq mapUpdate.id)
+                    }) {
+                        if (mapUpdate.curated) {
+                            it[curatedAt] = NowExpression(deletedAt.columnType)
+                            it[curator] = EntityID(user.userId, User)
+                        } else {
+                            it[curatedAt] = null
+                            it[curator] = null
+                        }
+                    } > 0
+                }
+
+                if (result) call.publish("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
+                call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+            }
+        }
+    }
+
     post<MapsApi.Update> {
         call.response.header("Access-Control-Allow-Origin", "*")
         requireAuthorization { user ->
@@ -114,7 +147,13 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
 
             val result = transaction {
                 Beatmap.update({
-                    Beatmap.uploader eq user.userId and (Beatmap.id eq mapUpdate.id)
+                    (Beatmap.id eq mapUpdate.id).let { q ->
+                        if (user.admin) {
+                            q // If current user is admin don't check the user
+                        } else {
+                            q and (Beatmap.uploader eq user.userId)
+                        }
+                    }
                 }) {
                     if (mapUpdate.deleted) {
                         it[deletedAt] = NowExpression(deletedAt.columnType)
@@ -136,6 +175,7 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
             Beatmap
                 .joinVersions(true, null) // Allow returning non-published versions
                 .joinUploader()
+                .joinCurator()
                 .select {
                     Beatmap.id eq it.key and (Beatmap.deletedAt.isNull())
                 }
@@ -160,6 +200,7 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
             Beatmap
                 .joinVersions(true)
                 .joinUploader()
+                .joinCurator()
                 .select {
                     Beatmap.id.inSubQuery(
                         Versions
@@ -190,6 +231,7 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
             Beatmap
                 .joinVersions(true)
                 .joinUploader()
+                .joinCurator()
                 .select {
                     Versions.hash.eq(it.hash) and (Beatmap.deletedAt.isNull())
                 }
@@ -213,6 +255,7 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
                 Beatmap
                     .joinVersions(true) { Versions.state neq EMapState.Published }
                     .joinUploader()
+                    .joinCurator()
                     .select {
                         Beatmap.id.inSubQuery(
                             Beatmap
@@ -241,6 +284,7 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
             Beatmap
                 .joinVersions(true)
                 .joinUploader()
+                .joinCurator()
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
@@ -268,6 +312,7 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
             Beatmap
                 .joinVersions(true)
                 .joinUploader()
+                .joinCurator()
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
@@ -299,6 +344,7 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
             Beatmap
                 .joinVersions(true)
                 .joinUploader()
+                .joinCurator()
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap

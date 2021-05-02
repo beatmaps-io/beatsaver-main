@@ -6,6 +6,7 @@ import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.User
@@ -82,6 +83,7 @@ fun Route.searchRoute() {
             val beatmaps = Beatmap
                 .joinVersions(true)
                 .joinUploader()
+                .joinCurator()
                 .slice((if (sortByRank) listOf(similarRank) else listOf()) + Beatmap.columns + Versions.columns + Difficulty.columns + User.columns)
                 .select {
                     Beatmap.id.inSubQuery(

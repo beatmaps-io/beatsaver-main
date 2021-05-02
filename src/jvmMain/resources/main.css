@@ -101,7 +101,7 @@ button.filter-dropdown {
     line-height: 23px;
 }
 
-.dropdown-menu {
+.form-group .dropdown-menu {
     padding: 1rem 1rem 0.8rem 1rem !important;
     left: 50% !important;
     transform: translate(-50%, 0);
@@ -394,7 +394,7 @@ div.mapstats {
     padding: 3px 0 0;
 }
 
-.mapstats img {
+.mapstats img, .mapstats .diff-stars i {
     margin-right: 3px;
 }
 
@@ -474,4 +474,7 @@ div.mapstats {
 }
 li.KeyboardShortcutRow {
     margin-bottom: 4px;
+}
+.mapstats .diff-stars {
+    padding-top: 14px;
 }

@@ -269,7 +269,13 @@ fun Route.testplayRoute() {
                     }
                 } else {
                     Versions.join(Beatmap, JoinType.INNER, onColumn = Versions.mapId, otherColumn = Beatmap.id).update({
-                        (Versions.hash eq newState.hash) and (Beatmap.uploader eq sess.userId)
+                        (Versions.hash eq newState.hash).let { q ->
+                            if (sess.admin) {
+                                q // If current user is admin don't check the user
+                            } else {
+                                q and (Beatmap.uploader eq sess.userId)
+                            }
+                        }
                     }) {
                         it[Versions.state] = newState.state
                         if (newState.state == EMapState.Testplay) {

@@ -2,7 +2,9 @@ package io.beatmaps.user
 
 import Axios
 import AxiosRequestConfig
+import generateConfig
 import io.beatmaps.api.BeatsaverLink
+import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.setPageTitle
 import kotlinx.browser.window
 import kotlinx.html.ButtonType
@@ -30,6 +32,10 @@ data class BeatsaverPageState(var failed: Boolean = false, var loading: Boolean 
 @JsExport
 class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
     private val inputRef = createRef<HTMLInputElement>()
+
+    init {
+        state = BeatsaverPageState()
+    }
 
     override fun componentDidMount() {
         setPageTitle("Link Beatsaver")
@@ -110,11 +116,8 @@ class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
 
                             Axios.post<BeatsaverLink>(
                                 "/api/users/beatsaver/$usr",
-                                object : AxiosRequestConfig {
-                                    override var transformResponse: (String) -> BeatsaverLink = {
-                                        Json.decodeFromString(it)
-                                    }
-                                }
+                                "",
+                                generateConfig<String, BeatsaverLink>()
                             ).then {
                                 val link = it.data
 

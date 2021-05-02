@@ -23,7 +23,7 @@ object InstantAsStringSerializer : KSerializer<Instant> {
 
 @Serializable
 data class MapDetail(val id: Int, val name: String, val description: String, val uploader: UserDetail, val metadata: MapDetailMetadata, val stats: MapStats,
-                     val uploaded: Instant? = null, val automapper: Boolean, val versions: List<MapVersion> = listOf()) {
+                     val uploaded: Instant? = null, val automapper: Boolean, val versions: List<MapVersion> = listOf(), val curator: String? = null) {
     fun latestVersion() = versions.maxByOrNull { it.createdAt }
     fun publishedVersion() = versions.firstOrNull { it.state == EMapState.Published }
     companion object
@@ -36,7 +36,7 @@ data class MapVersion(val hash: String, val key: String? = null, val state: EMap
 @Serializable
 data class MapDifficulty(val njs: Float, val offset: Float, val notes: Int, val bombs: Int, val obstacles: Int, val nps: Double, val length: Double,
                          val characteristic: ECharacteristic, val difficulty: EDifficulty, val events: Int, val chroma: Boolean, val me: Boolean, val ne: Boolean,
-                         val seconds: Double, val paritySummary: MapParitySummary) { companion object }
+                         val seconds: Double, val paritySummary: MapParitySummary, val stars: Float? = null) { companion object }
 
 @Serializable
 data class MapParitySummary(val errors: Int, val warns: Int, val resets: Int) { companion object }
