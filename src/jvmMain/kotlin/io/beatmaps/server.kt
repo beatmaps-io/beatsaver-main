@@ -3,7 +3,6 @@ package io.beatmaps
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.readValue
 import de.nielsfalk.ktor.swagger.SwaggerSupport
 import de.nielsfalk.ktor.swagger.version.shared.Contact
 import de.nielsfalk.ktor.swagger.version.shared.Information
@@ -15,9 +14,10 @@ import io.beatmaps.api.searchRoute
 import io.beatmaps.api.testplayRoute
 import io.beatmaps.api.userRoute
 import io.beatmaps.api.voteRoute
-import io.beatmaps.common.*
-import io.beatmaps.common.beatsaber.BSDifficulty
+import io.beatmaps.common.KotlinTimeModule
 import io.beatmaps.common.db.setupDB
+import io.beatmaps.common.setupAMQP
+import io.beatmaps.common.setupLogging
 import io.beatmaps.controllers.UploadException
 import io.beatmaps.controllers.cdnRoute
 import io.beatmaps.controllers.mapController
@@ -32,7 +32,11 @@ import io.beatmaps.pages.templates.MainTemplate
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
-import io.ktor.features.*
+import io.ktor.features.ConditionalHeaders
+import io.ktor.features.ContentNegotiation
+import io.ktor.features.DataConversion
+import io.ktor.features.StatusPages
+import io.ktor.features.XForwardedHeaderSupport
 import io.ktor.html.respondHtmlTemplate
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -48,16 +52,18 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
-import io.ktor.util.*
+import io.ktor.util.DataConversionException
 import io.ktor.util.pipeline.PipelineContext
-import kotlinx.datetime.*
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.html.HEAD
 import org.valiktor.ConstraintViolationException
 import org.valiktor.i18n.mapToMessage
 import pl.jutupe.ktor_rabbitmq.RabbitMQ
 import java.math.BigInteger
 import java.security.MessageDigest
-import java.time.format.DateTimeParseException
 
 suspend fun PipelineContext<*, io.ktor.application.ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) {
     val sess = call.sessions.get<Session>()

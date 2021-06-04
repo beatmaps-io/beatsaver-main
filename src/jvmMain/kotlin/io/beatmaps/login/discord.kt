@@ -14,8 +14,8 @@ val discordProvider = OAuthServerSettings.OAuth2ServerSettings(
     name = "discord",
     authorizeUrl = "https://discord.com/api/oauth2/authorize",
     accessTokenUrl = "https://discord.com/api/oauth2/token",
-    clientId = "***REMOVED***",
-    clientSecret = "***REMOVED***",
+    clientId = System.getenv("DISCORD_CLIENTID") ?: "",
+    clientSecret = System.getenv("DISCORD_CLIENTSECRET") ?: "",
     requestMethod = HttpMethod.Post,
     defaultScopes = listOf("identify", "email")
 )

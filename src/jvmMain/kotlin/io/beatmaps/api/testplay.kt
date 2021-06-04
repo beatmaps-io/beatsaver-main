@@ -7,12 +7,12 @@ import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.client
 import io.beatmaps.controllers.reCaptchaVerify
-import io.beatmaps.controllers.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Beatmap.joinUploader
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.DifficultyDao
 import io.beatmaps.common.db.NowExpression
+import io.beatmaps.common.db.isFalse
 import io.beatmaps.common.dbo.Testplay
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
@@ -20,6 +20,7 @@ import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
+import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.jackson
 import io.beatmaps.login.Session
 import io.jsonwebtoken.Jwts
@@ -41,20 +42,10 @@ import io.ktor.sessions.sessions
 import io.ktor.util.pipeline.PipelineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jetbrains.exposed.sql.Expression
-import org.jetbrains.exposed.sql.Index
-import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.Op
-import org.jetbrains.exposed.sql.QueryBuilder
-import org.jetbrains.exposed.sql.QueryParameter
-import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insertIgnore
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.publish
 import java.math.BigDecimal
 import java.time.Instant
@@ -104,7 +95,8 @@ data class SteamAPIResponseParams(val result: String, val steamid: Long, val own
 
 data class OculusAuthResponse(val success: Boolean, val error: String? = null)
 
-const val privateKey = "***REMOVED***"
+const val beatsaberAppid = 620980
+val privateKey = System.getenv("JWT_KEY") ?: ""
 val key: SecretKey = Keys.hmacShaKeyFor(privateKey.toByteArray())
 
 suspend fun PipelineContext<*, ApplicationCall>.validateJWT(jwt: String, block: suspend PipelineContext<*, ApplicationCall>.(Int) -> Unit) =
@@ -167,24 +159,16 @@ fun getTestplayRecent(userId: Int, page: Long?) = transaction {
         }
 }
 
-fun <T:Any> isFalse(query: Op<T>) = object : Expression<T>() {
-    override fun toQueryBuilder(queryBuilder: QueryBuilder) = queryBuilder {
-        append("(")
-        append(query)
-        append(") IS FALSE")
-    }
-}
-
 suspend fun validateSteamToken(steamId: String, proof: String): Boolean {
-    val clientId = "***REMOVED***"
-    val beatsaberAppid = 620980
+    val clientId = System.getenv("STEAM_APIKEY") ?: ""
     val json = client.get<String>("https://api.steampowered.com/ISteamUserAuth/AuthenticateUserTicket/v1?key=$clientId&appid=$beatsaberAppid&ticket=${proof}")
     val data = jackson.readValue<SteamAPIResponse>(json)
     return !(data.response.params == null || data.response.params.result != "OK" || data.response.params.steamid.toString() != steamId)
 }
 
+val authHost = System.getenv("AUTH_HOST") ?: "http://localhost:3030"
 suspend fun validateOculusToken(oculusId: String, proof: String) = try {
-    val json = client.post<String>("***REMOVED***/auth/oculus") {
+    val json = client.post<String>("${authHost}/auth/oculus") {
         contentType(ContentType.Application.Json)
         body = AuthRequest(oculusId = oculusId, proof = proof)
     }
@@ -309,20 +293,23 @@ fun Route.testplayRoute() {
         val auth = call.receive<AuthRequest>()
 
         val builder = Jwts.builder().setExpiration(Date.from(Instant.now().plus(3L, ChronoUnit.DAYS)))
+
+        fun validateUser(where: SqlExpressionBuilder.()->Op<Boolean>) = transaction {
+            val userIdQuery = User
+                .select(where).limit(1).toList()
+
+            if (userIdQuery.isEmpty()) error("Could not find registered user")
+
+            UserDetail.from(userIdQuery[0], true)
+        }
+
         auth.steamId?.let { steamId ->
             if (!validateSteamToken(steamId, auth.proof)) {
                 error("Could not validate steam token")
             }
 
-            val user = transaction {
-                val userIdQuery = User
-                    .select {
-                        User.steamId eq steamId.toLong()
-                    }.limit(1).toList()
-
-                if (userIdQuery.isEmpty()) error("Could not find registered user")
-
-                UserDetail.from(userIdQuery[0], true)
+            val user = validateUser {
+                User.steamId eq steamId.toLong()
             }
 
             val jwt = builder.setSubject(user.id.toString()).signWith(key).compact()
@@ -332,15 +319,8 @@ fun Route.testplayRoute() {
                 error("Could not validate oculus token")
             }
 
-            val user = transaction {
-                val userIdQuery = User
-                    .select {
-                        User.oculusId eq oculusId.toLong()
-                    }.limit(1).toList()
-
-                if (userIdQuery.isEmpty()) error("Could not find registered user")
-
-                UserDetail.from(userIdQuery[0], true)
+            val user = validateUser {
+                User.oculusId eq oculusId.toLong()
             }
 
             val jwt = builder.setSubject(user.id.toString()).signWith(key).compact()

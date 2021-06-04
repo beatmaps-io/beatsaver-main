@@ -1,9 +1,7 @@
 package external
 
-import react.Component
 import react.RClass
 import react.RProps
-import react.RState
 import kotlin.js.Promise
 
 external interface IGoogleReCaptchaProps: RProps {

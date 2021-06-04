@@ -5,6 +5,9 @@ import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
+import io.beatmaps.common.db.PgConcat
+import io.beatmaps.common.db.ilike
+import io.beatmaps.common.db.similar
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
@@ -12,26 +15,16 @@ import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
-import io.ktor.application.call
-import io.ktor.locations.Location
-import io.ktor.locations.options
-import io.ktor.response.header
-import io.ktor.response.respond
-import io.ktor.routing.Route
+import io.ktor.application.*
+import io.ktor.locations.*
+import io.ktor.response.*
+import io.ktor.routing.*
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
-import org.jetbrains.exposed.sql.ComparisonOp
 import org.jetbrains.exposed.sql.CustomFunction
 import org.jetbrains.exposed.sql.Expression
-import org.jetbrains.exposed.sql.ExpressionWithColumnType
-import org.jetbrains.exposed.sql.Function
-import org.jetbrains.exposed.sql.IsNullOp
 import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.Op
-import org.jetbrains.exposed.sql.QueryBuilder
-import org.jetbrains.exposed.sql.QueryParameter
 import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.VarCharColumnType
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.stringLiteral
@@ -130,32 +123,3 @@ fun Route.searchRoute() {
         }
     }
 }
-
-class SimilarOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, "<%")
-
-infix fun ExpressionWithColumnType<String>.similar(t: String?): Op<Boolean> {
-    return if (t == null) {
-        IsNullOp(this)
-    } else {
-        SimilarOp(QueryParameter(t, columnType), this)
-    }
-}
-
-class PgConcat(
-    /** Returns the delimiter. */
-    val separator: String,
-    /** Returns the expressions being concatenated. */
-    vararg val expr: Expression<*>
-) : Function<String>(VarCharColumnType()) {
-    override fun toQueryBuilder(queryBuilder: QueryBuilder): Unit = queryBuilder {
-        append("(")
-        expr.forEachIndexed { idx, it ->
-            if (idx >  0) append(" || '$separator' || ")
-            append(it)
-        }
-        append(")")
-    }
-}
-
-class InsensitiveLikeOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, "ILIKE")
-infix fun<T:String?> ExpressionWithColumnType<T>.ilike(pattern: String): Op<Boolean> = InsensitiveLikeOp(this, QueryParameter(pattern, columnType))

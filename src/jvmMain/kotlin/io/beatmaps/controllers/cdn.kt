@@ -18,9 +18,6 @@ import io.ktor.response.respond
 import io.ktor.response.respondFile
 import io.ktor.routing.Route
 import io.ktor.util.pipeline.PipelineContext
-import org.jetbrains.exposed.sql.Expression
-import org.jetbrains.exposed.sql.Query
-import org.jetbrains.exposed.sql.QueryBuilder
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -93,13 +90,5 @@ fun Route.cdnRoute() {
 
     get<CDN.Avatar> {
         returnFile(File(localAvatarFolder(), "${it.user}.png"))
-    }
-}
-
-fun <T:Any> wrapAsExpressionNotNull(query: Query) = object : Expression<T>() {
-    override fun toQueryBuilder(queryBuilder: QueryBuilder) = queryBuilder {
-        append("(")
-        query.prepareSQL(this)
-        append(")")
     }
 }

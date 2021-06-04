@@ -1,20 +1,13 @@
 package io.beatmaps
 
+import io.beatmaps.common.db.incrementBy
+import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Downloads
 import io.beatmaps.common.dbo.Versions
-import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.es
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.Expression
-import org.jetbrains.exposed.sql.QueryBuilder
+import kotlinx.coroutines.*
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import kotlin.coroutines.coroutineContext
@@ -47,12 +40,6 @@ fun downloadsThread() {
                 }
             }
         }
-    }
-}
-
-fun incrementBy(column: Column<Int>, num: Int = 1) = object: Expression<Int>() {
-    override fun toQueryBuilder(queryBuilder: QueryBuilder) {
-        queryBuilder.append("${TransactionManager.current().identity(column)} + $num")
     }
 }
 

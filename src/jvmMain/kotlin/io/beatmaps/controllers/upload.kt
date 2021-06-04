@@ -66,7 +66,7 @@ val jsonWriter: ObjectWriter = jackson.writer(BSPrettyPrinter())
 
 val uploadDir = File(System.getenv("UPLOAD_DIR") ?: "S:\\A")
 val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
-val reCaptchaVerify = ReCaptchaVerify("***REMOVED***")
+val reCaptchaVerify = ReCaptchaVerify(System.getenv("RECAPTCHA_SECRET") ?: "")
 
 @Location("/upload") class DMCA
 
@@ -140,8 +140,6 @@ fun Route.uploadController() {
             // Process upload
             val fx = "%0" + md.digestLength * 2 + "x"
             val digest = String.format(fx, BigInteger(1, md.digest()))
-            //val newFile = File(uploadDir, "${digest}.zip")
-            //val newImageFile = File(uploadDir, "${digest}.jpg")
             val newFile = File(localFolder(digest), "${digest}.zip")
             val newImageFile = File(localCoverFolder(digest), "${digest}.jpg")
 
