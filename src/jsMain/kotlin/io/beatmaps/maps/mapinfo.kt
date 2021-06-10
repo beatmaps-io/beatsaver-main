@@ -33,7 +33,7 @@ external interface MapInfoProps : RProps {
     var deleteMap: () -> Unit
 }
 
-data class MapInfoState(var loading: Boolean = false) : RState
+data class MapInfoState(var loading: Boolean = false, var editing: Boolean = false) : RState
 
 @JsExport
 class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
@@ -42,12 +42,6 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
 
     init {
         state = MapInfoState()
-    }
-
-    override fun componentDidMount() {
-        if (props.isOwner) {
-            inputRef.current?.value = props.mapInfo.name
-        }
     }
 
     private fun recall() {
@@ -90,7 +84,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     override fun RBuilder.render() {
         div("card") {
             div("card-header d-flex") {
-                if (props.isOwner) {
+                if (state.editing) {
                     +"Edit map"
                 } else {
                     +props.mapInfo.name
@@ -126,6 +120,23 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                         }
 
                         val adminLocal = window["admin"] as Boolean?
+
+                        if (adminLocal == true || props.isOwner) {
+                            a("#") {
+                                attrs.title = "Edit"
+                                attrs.attributes["aria-label"] = "Edit"
+                                attrs.onClickFunction = {
+                                    it.preventDefault()
+                                    setState {
+                                        editing = !state.editing
+                                    }
+                                    window.setTimeout({
+                                        inputRef.current?.value = props.mapInfo.name
+                                    }, 1)
+                                }
+                                i("fas fa-pen text-warning") { }
+                            }
+                        }
 
                         if (adminLocal == true) {
                             a("#") {
@@ -163,7 +174,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                     attrs.height = "200"
                 }
                 div("card-text clearfix") {
-                    if (props.isOwner) {
+                    if (state.editing) {
                         input(InputType.text, classes ="form-control m-2") {
                             attrs.id = "name"
                             attrs.disabled = state.loading
@@ -180,29 +191,35 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                     }
                 }
 
-                if (props.isOwner) {
+                if (state.editing) {
                     div("text-right") {
-                        if (props.mapInfo.publishedVersion() != null) {
-                            a(classes = "btn btn-danger m-1") {
-                                attrs.onClickFunction = {
-                                    props.modal.current?.showDialog(ModalData(
-                                        "Are you sure?",
-                                        "This will hide your map from other players until you publish a new version",
-                                        listOf(ModalButton("OK", "primary", ::recall), ModalButton("Cancel"))
-                                    ))
+                        if (props.isOwner) {
+                            if (props.mapInfo.publishedVersion() != null) {
+                                a(classes = "btn btn-danger m-1") {
+                                    attrs.onClickFunction = {
+                                        props.modal.current?.showDialog(
+                                            ModalData(
+                                                "Are you sure?",
+                                                "This will hide your map from other players until you publish a new version",
+                                                listOf(ModalButton("OK", "primary", ::recall), ModalButton("Cancel"))
+                                            )
+                                        )
+                                    }
+                                    +"Recall"
                                 }
-                                +"Recall"
-                            }
-                        } else {
-                            a(classes = "btn btn-danger m-1") {
-                                attrs.onClickFunction = {
-                                    props.modal.current?.showDialog(ModalData(
-                                        "Are you sure?",
-                                        "You won't be able to recover this map after you delete it",
-                                        listOf(ModalButton("DELETE", "primary", ::delete), ModalButton("Cancel"))
-                                    ))
+                            } else {
+                                a(classes = "btn btn-danger m-1") {
+                                    attrs.onClickFunction = {
+                                        props.modal.current?.showDialog(
+                                            ModalData(
+                                                "Are you sure?",
+                                                "You won't be able to recover this map after you delete it",
+                                                listOf(ModalButton("DELETE", "primary", ::delete), ModalButton("Cancel"))
+                                            )
+                                        )
+                                    }
+                                    +"Delete"
                                 }
-                                +"Delete"
                             }
                         }
                         a(classes = "btn btn-primary m-1") {
@@ -215,8 +232,10 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                 }
 
                                 Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.id, newTitle, newDescription), generateConfig<MapInfoUpdate, String>()).then({
+                                    props.mapInfo = props.mapInfo.copy(name = newTitle, description = newDescription)
                                     setState {
                                         loading = false
+                                        editing = false
                                     }
                                 }) {
                                     setState {

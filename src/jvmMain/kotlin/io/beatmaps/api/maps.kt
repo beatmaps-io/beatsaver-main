@@ -6,12 +6,18 @@ import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.Beatmap.joinCurator
-import io.beatmaps.common.dbo.Beatmap.joinUploader
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.Beatmap.joinCurator
+import io.beatmaps.common.dbo.Beatmap.joinUploader
+import io.beatmaps.common.dbo.BeatmapDao
+import io.beatmaps.common.dbo.EmptyData
+import io.beatmaps.common.dbo.InfoEditData
+import io.beatmaps.common.dbo.ModLog
+import io.beatmaps.common.dbo.ModLogOpType
 import io.beatmaps.common.inlineJackson
+import io.beatmaps.common.jackson
 import io.ktor.application.*
 import io.ktor.http.*
 import io.ktor.locations.*
@@ -146,7 +152,13 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
             val mapUpdate = call.receive<MapInfoUpdate>()
 
             val result = transaction {
-                Beatmap.update({
+                val oldData = if (user.admin) {
+                    BeatmapDao.wrapRow(Beatmap.select { Beatmap.id eq mapUpdate.id }.single())
+                } else {
+                    null
+                }
+
+                (Beatmap.update({
                     (Beatmap.id eq mapUpdate.id).let { q ->
                         if (user.admin) {
                             q // If current user is admin don't check the user
@@ -161,7 +173,20 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
                         mapUpdate.name?.let { n -> it[name] = n }
                         mapUpdate.description?.let { d -> it[description] = d }
                     }
-                } > 0 
+                } > 0).also { rTemp ->
+                    if (rTemp && oldData != null && oldData.uploaderId.value != user.userId) {
+                        ModLog.insert(
+                            user.userId,
+                            mapUpdate.id,
+                            if (mapUpdate.deleted) ModLogOpType.Delete else ModLogOpType.InfoEdit,
+                            if (mapUpdate.deleted) {
+                                EmptyData()
+                            } else {
+                                InfoEditData(oldData.name, oldData.description, mapUpdate.name ?: "", mapUpdate.description ?: "")
+                            }
+                        )
+                    }
+                }
             }
 
             if (result) call.publish("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
