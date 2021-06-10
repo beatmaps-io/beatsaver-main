@@ -1,7 +1,7 @@
 package io.beatmaps.index
 
+import external.DateRangePicker
 import external.Moment
-import external.ReactDates
 import external.ReactSlider
 import io.beatmaps.api.SearchOrder
 import kotlinx.browser.document
@@ -214,7 +214,7 @@ class Search : RComponent<SearchProps, SearchState>() {
                     }
                 }
                 div("form-group col-sm-3") {
-                    ReactDates.DateRangePicker {
+                    DateRangePicker.default {
                         attrs.startDate = state.startDate
                         attrs.endDate = state.endDate
                         attrs.startDateId = "startobj"

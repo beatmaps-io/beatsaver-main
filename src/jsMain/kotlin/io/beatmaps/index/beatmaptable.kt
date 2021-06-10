@@ -1,14 +1,14 @@
 package io.beatmaps.index
 import Axios
-import AxiosRequestConfig
-import CancelToken
 import CancelTokenSource
-import io.beatmaps.api.*
+import generateConfig
+import io.beatmaps.api.MapDetail
+import io.beatmaps.api.SearchOrder
+import io.beatmaps.api.SearchResponse
+import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import org.w3c.dom.events.Event
 import react.RBuilder
 import react.RComponent
@@ -16,7 +16,9 @@ import react.RProps
 import react.RReadableRef
 import react.RState
 import react.ReactElement
-import react.dom.*
+import react.dom.p
+import react.dom.table
+import react.dom.tbody
 import react.router.dom.RouteResultHistory
 import react.router.dom.routeLink
 import react.setState
@@ -100,12 +102,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
 
         Axios.get<SearchResponse>(
             getUrl(),
-            object : AxiosRequestConfig {
-                override var cancelToken: CancelToken? = state.token.token
-                override var transformResponse: (String) -> SearchResponse = {
-                    Json.decodeFromString(it)
-                }
-            }
+            generateConfig<String, SearchResponse>(state.token.token)
         ).then {
             if (it.data.redirect != null) {
                 val dyn: dynamic = props.history

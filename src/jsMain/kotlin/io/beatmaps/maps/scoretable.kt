@@ -4,6 +4,7 @@ import Axios
 import AxiosRequestConfig
 import CancelToken
 import CancelTokenSource
+import generateConfig
 import io.beatmaps.common.Config
 import io.beatmaps.api.LeaderboardData
 import io.beatmaps.api.LeaderboardScore
@@ -91,12 +92,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
 
         Axios.get<LeaderboardData>(
             "${Config.apibase}/scores/${props.mapKey}/${state.page}?difficulty=${props.selected?.difficulty?.idx ?: 9}&gameMode=${props.selected?.characteristic?.ordinal ?: 0}",
-            object : AxiosRequestConfig {
-                override var cancelToken: CancelToken? = state.token.token
-                override var transformResponse: (String) -> LeaderboardData = {
-                    Json.decodeFromString(it)
-                }
-            }
+            generateConfig<String, LeaderboardData>(state.token.token)
         ).then {
             val newScores = it.data
 

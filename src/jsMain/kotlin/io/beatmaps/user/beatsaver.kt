@@ -50,11 +50,7 @@ class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
 
         Axios.get<BeatsaverLink>(
             "/api/users/beatsaver",
-            object : AxiosRequestConfig {
-                override var transformResponse: (String) -> BeatsaverLink = {
-                    Json.decodeFromString(it)
-                }
-            }
+            generateConfig<String, BeatsaverLink>()
         ).then {
             val link = it.data
 

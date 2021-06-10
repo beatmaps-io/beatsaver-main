@@ -12,12 +12,10 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
-import kotlin.time.hours
-import kotlin.time.minutes
 
 fun downloadsThread() {
     GlobalScope.launch(es.asCoroutineDispatcher()) {
-        scheduleRepeating(1.hours) {
+        scheduleRepeating(Duration.hours(1)) {
             transaction {
                 Downloads.updateReturning({
                         Downloads.processed eq false
@@ -45,7 +43,7 @@ fun downloadsThread() {
 
 suspend inline fun scheduleRepeating(
     interval: Duration,
-    startInterval: Duration = 5.minutes,
+    startInterval: Duration = Duration.minutes(5),
     crossinline action: () -> Unit
 ) {
     delay(startInterval)

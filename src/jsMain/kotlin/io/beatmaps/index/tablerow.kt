@@ -80,6 +80,7 @@ class TableRow : RComponent<TableRowProps, RState>() {
             }
             td("links") {
                 a("${Config.cdnbase}/${props.version?.hash}.zip", target = "_blank") {
+                    attrs.rel = "noopener"
                     attrs.title = "Download zip"
                     attrs.attributes["aria-label"] = "Download zip"
                     i("fas fa-download text-info") {
@@ -88,6 +89,7 @@ class TableRow : RComponent<TableRowProps, RState>() {
                 }
                 if (Config.oneClick && props.version?.key != null) {
                     a("https://beatsaver.com/beatmap/${props.version?.key}", target = "_blank") {
+                        attrs.rel = "noopener"
                         attrs.title = props.version?.key ?: ""
                         attrs.attributes["aria-label"] = props.version?.key ?: ""
                         i("fas fa-share-alt text-info") { }

@@ -1,6 +1,5 @@
 package external
 
-import kotlinext.js.Context
 import react.RClass
 import react.RContext
 import react.RProps
@@ -30,10 +29,10 @@ external class DateRange {
 @JsNonModule
 external object ReactDatesInit
 
-@JsModule("react-dates")
+@JsModule("react-dates/lib/components/DateRangePicker")
 @JsNonModule
-external object ReactDates {
-    val DateRangePicker: RClass<DateRangePickerProps>
+external object DateRangePicker {
+    val default: RClass<DateRangePickerProps>
 }
 
 @JsModule("react-dates/lib/theme/DefaultTheme")

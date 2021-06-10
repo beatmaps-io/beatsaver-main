@@ -4,7 +4,6 @@ import Axios
 import generateConfig
 import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.api.MapDetail
-import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.MapVersion
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.beatmapTableRow

@@ -1,8 +1,9 @@
 package io.beatmaps
 
-import io.ktor.application.Application
-import io.ktor.application.install
+import io.ktor.application.*
 import io.ktor.metrics.micrometer.MicrometerMetrics
+import io.ktor.response.*
+import io.ktor.util.*
 import io.micrometer.core.instrument.Clock
 import io.micrometer.influx.InfluxConfig
 import io.micrometer.influx.InfluxMeterRegistry
@@ -36,4 +37,41 @@ fun Application.installMetrics() {
     install(MicrometerMetrics) {
         registry = appMicrometerRegistry
     }
+
+    // Request timing header
+    intercept(ApplicationCallPipeline.Monitoring) {
+        val t = Timings()
+        t.begin("req")
+        call.attributes.put(reqTime, t)
+    }
+    sendPipeline.intercept(ApplicationSendPipeline.Before) {
+        val mk = call.attributes[reqTime]
+        mk.end("req")
+        context.response.headers.append("Server-Timing", mk.getHeader())
+    }
+}
+
+private val reqTime = AttributeKey<Timings>("serverTiming")
+fun <T> ApplicationCall.timeIt(name: String, block: () -> T) = attributes[reqTime].timeIt(name, block)
+
+class Timings {
+    private val metrics = mutableMapOf<String, Float>()
+    private val begins = mutableMapOf<String, Long>()
+
+    fun getHeader() = metrics.map { "${it.key};dur=${it.value}" }.joinToString(", ")
+
+    fun begin(name: String) {
+        begins[name] = System.nanoTime()
+    }
+
+    fun end(name: String) {
+        metrics[name] = ((System.nanoTime() - (begins[name] ?: 0)) / 1000) / 1000f
+    }
+
+    fun <T> timeIt(name: String, block: () -> T) =
+        begin(name).let {
+            block().also {
+                end(name)
+            }
+        }
 }

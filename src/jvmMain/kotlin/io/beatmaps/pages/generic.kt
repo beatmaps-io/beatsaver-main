@@ -20,6 +20,7 @@ class GenericPageTemplate(private val s: Session?) : Template<BODY> {
                 }
             }
         }
+        script(src = "/static/modules.js") {}
         script(src = "/static/output.js") {}
     }
 }

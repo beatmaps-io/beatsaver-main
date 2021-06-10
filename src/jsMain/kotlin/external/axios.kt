@@ -131,14 +131,17 @@ external interface AxiosStatic : AxiosInstance {
 //@JsName("default")
 external val Axios: AxiosStatic = definedExternally
 
-inline fun <reified T, reified U> generateConfig() = object : AxiosRequestConfig {
+inline fun <reified T, reified U> generateConfig(ct: CancelToken? = null) = object : AxiosRequestConfig {
+    override var cancelToken = ct
     override var transformRequest: Array<(T, dynamic) -> String> = arrayOf(
         { data, headers ->
-            if (data is String) {
-                data
-            } else {
-                headers["Content-Type"] = "application/json"
-                Json.encodeToString(data)
+            when {
+                data === undefined -> ""
+                data is String -> data
+                else -> {
+                    headers["Content-Type"] = "application/json"
+                    Json.encodeToString(data)
+                }
             }
         }
     )

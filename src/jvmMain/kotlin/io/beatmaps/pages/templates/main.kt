@@ -29,9 +29,11 @@ class MainTemplate(private val s: Session?, private val body: Template<BODY>) : 
             title { +pageTitle }
             script(src = "https://kit.fontawesome.com/0d3e310ec2.js") {
                 attributes["crossorigin"] = "anonymous"
+                defer = true
             }
             styleLink("/static/main.css")
             styleLink("/static/bootstrap.css")
+            meta("theme-color", "#375a7f")
             meta("viewport", "width=575, initial-scale=0.86")
             meta("Description", "Beat saber custom maps")
             link("/static/favicon/apple-touch-icon.png", "apple-touch-icon") {

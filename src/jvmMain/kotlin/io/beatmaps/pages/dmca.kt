@@ -80,6 +80,7 @@ class DMCAPageTemplate() : Template<BODY> {
         div {
             id = "root"
         }
+        script(src = "/static/modules.js") {}
         script(src = "/static/output.js") {}
     }
 }

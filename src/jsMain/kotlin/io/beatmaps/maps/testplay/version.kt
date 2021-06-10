@@ -16,8 +16,6 @@ import io.beatmaps.maps.textToContent
 import kotlinx.datetime.internal.JSJoda.Instant
 import kotlinx.html.TEXTAREA
 import kotlinx.html.js.onClickFunction
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -42,15 +40,6 @@ external interface VersionProps : RProps {
 }
 
 data class VersionState(var state: EMapState? = null, var loading: Boolean = false, var loadingState: Boolean = false, var text: String = "", var time: String = "") : RState
-
-class JsonRequestConfig<T>(block: (T) -> String) : AxiosRequestConfig {
-    override var transformRequest: Array<(T, dynamic) -> String> = arrayOf(
-        { data, headers ->
-            headers["Content-Type"] = "application/json"
-            block(data)
-        }
-    )
-}
 
 @JsExport
 class VersionComponent : RComponent<VersionProps, VersionState>() {

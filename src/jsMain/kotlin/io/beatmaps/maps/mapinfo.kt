@@ -12,15 +12,12 @@ import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.oneclick
-import io.beatmaps.maps.testplay.JsonRequestConfig
 import kotlinx.browser.window
 import kotlinx.html.InputType
 import kotlinx.html.Tag
 import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.get

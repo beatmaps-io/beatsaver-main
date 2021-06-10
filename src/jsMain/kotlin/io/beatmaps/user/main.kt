@@ -2,6 +2,7 @@ package io.beatmaps.user
 
 import Axios
 import AxiosRequestConfig
+import generateConfig
 import io.beatmaps.common.Config
 import io.beatmaps.api.UserDetail
 import io.beatmaps.index.ModalComponent
@@ -54,11 +55,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
         Axios.get<UserDetail>(
             url,
-            object : AxiosRequestConfig {
-                override var transformResponse: (String) -> UserDetail = {
-                    Json.decodeFromString(it)
-                }
-            }
+            generateConfig<String, UserDetail>()
         ).then {
             setPageTitle("Profile - ${it.data.name}")
             setState {
