@@ -12,12 +12,10 @@ import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
 import io.beatmaps.common.dbo.BeatmapDao
-import io.beatmaps.common.dbo.EmptyData
+import io.beatmaps.common.dbo.DeletedData
 import io.beatmaps.common.dbo.InfoEditData
 import io.beatmaps.common.dbo.ModLog
-import io.beatmaps.common.dbo.ModLogOpType
 import io.beatmaps.common.inlineJackson
-import io.beatmaps.common.jackson
 import io.ktor.application.*
 import io.ktor.http.*
 import io.ktor.locations.*
@@ -178,9 +176,8 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
                         ModLog.insert(
                             user.userId,
                             mapUpdate.id,
-                            if (mapUpdate.deleted) ModLogOpType.Delete else ModLogOpType.InfoEdit,
                             if (mapUpdate.deleted) {
-                                EmptyData()
+                                DeletedData()
                             } else {
                                 InfoEditData(oldData.name, oldData.description, mapUpdate.name ?: "", mapUpdate.description ?: "")
                             }

@@ -7,6 +7,7 @@ import io.beatmaps.maps.MapPageProps
 import io.beatmaps.maps.UploadPage
 import io.beatmaps.maps.recent.recentTestplays
 import io.beatmaps.nav.manageNav
+import io.beatmaps.nav.viewportMinWidthPolyfill
 import io.beatmaps.user.BeatsaverPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ProfilePageProps
@@ -50,6 +51,10 @@ class App : RComponent<RProps, RState>() {
         }
 
         manageNav()
+    }
+
+    override fun componentWillMount() {
+        viewportMinWidthPolyfill()
     }
 
     override fun RBuilder.render() {

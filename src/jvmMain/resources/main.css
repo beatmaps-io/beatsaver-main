@@ -36,16 +36,6 @@ body {
     padding: 3px 0 3px 4px
 }
 
-@media (min-width: 992px) {
-    .search-results .diffs {
-        width: 300px;
-        font-size: initial;
-    }
-    .search-results .diffs span {
-        padding: 0.25em 0.6em;
-    }
-}
-
 .search-results small, .search-results a {
     word-break: break-word;
 }
@@ -178,12 +168,6 @@ th a img {
     overflow-y: scroll;
     table-layout: fixed;
     height: 500px;
-}
-
-@media (min-width: 768px) {
-    .scores th:nth-child(4), .scores td:nth-child(4) {
-        display: table-cell;
-    }
 }
 
 .dropzone {
@@ -477,4 +461,64 @@ li.KeyboardShortcutRow {
 }
 .mapstats .diff-stars {
     padding-top: 14px;
+}
+
+@media (min-width: 576px) {
+    button.filter-dropdown {
+        width: 100%;
+    }
+    .DateInput_input__small {
+        padding: 7px 4px 5px !important;
+        font-size: 11px !important;
+    }
+    .DateInput__small {
+        width: 48px !important;
+    }
+}
+
+@media (min-width: 768px) {
+    .scores th:nth-child(4), .scores td:nth-child(4) {
+        display: table-cell;
+    }
+    .DateInput__small {
+        width: 70px !important;
+    }
+}
+
+@media (min-width: 992px) {
+    .search-results .diffs {
+        width: 300px;
+        font-size: initial;
+    }
+    .search-results .diffs span {
+        padding: 0.25em 0.6em;
+    }
+    button.filter-dropdown {
+        width: 200px;
+    }
+    .DateInput_input__small {
+        padding: 7px 7px 5px !important;
+        font-size: 15px !important;
+    }
+    .DateInput__small {
+        width: 97px !important;
+    }
+
+    .mapstats .stats {
+        width: 188px;
+    }
+    .mapstats span {
+        font-size: 7px;
+        width: 44px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .mapstats .stats {
+        width: 239px;
+    }
+    .mapstats span {
+        font-size: 10px;
+        width: 59px;
+    }
 }

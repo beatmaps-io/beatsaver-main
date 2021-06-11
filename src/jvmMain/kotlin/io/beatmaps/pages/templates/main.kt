@@ -34,7 +34,7 @@ class MainTemplate(private val s: Session?, private val body: Template<BODY>) : 
             styleLink("/static/main.css")
             styleLink("/static/bootstrap.css")
             meta("theme-color", "#375a7f")
-            meta("viewport", "width=575, initial-scale=0.86")
+            meta("viewport", "width=device-width, min-width=575")
             meta("Description", "Beat saber custom maps")
             link("/static/favicon/apple-touch-icon.png", "apple-touch-icon") {
                 sizes = "180x180"
