@@ -33,7 +33,7 @@ external interface BeatmapTableProps : RProps {
 
 data class SearchParams(val search: String, val automapper: Boolean, val minNps: Float?, val maxNps: Float?,
                         val chroma: Boolean, val sortOrder: SearchOrder, val from: String?, val to: String?,
-                        val noodle: Boolean, val ranked: Boolean)
+                        val noodle: Boolean, val ranked: Boolean, val fullSpread: Boolean)
 
 external interface BeatmapTableState : RState {
     var page: Int
@@ -84,7 +84,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
             "${Config.apibase}/maps/uploader/${props.user}/${state.page}"
         } else {
             "${Config.apibase}/search/text/${state.page}?automapper=${props.search.automapper}&chroma=${props.search.chroma}" +
-                    "&noodle=${props.search.noodle}&ranked=${props.search.ranked}&sortOrder=${props.search.sortOrder}" +
+                    "&noodle=${props.search.noodle}&ranked=${props.search.ranked}&fullSpread=${props.search.fullSpread}&sortOrder=${props.search.sortOrder}" +
                     (if (props.search.search.isNotBlank()) "&q=${props.search.search}" else "") +
                     (if (props.search.maxNps != null) "&maxNps=${props.search.maxNps}" else "") +
                     (if (props.search.minNps != null) "&minNps=${props.search.minNps}" else "") +

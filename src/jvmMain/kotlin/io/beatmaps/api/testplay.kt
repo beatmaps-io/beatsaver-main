@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
+import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.client
 import io.beatmaps.controllers.reCaptchaVerify
@@ -236,6 +237,9 @@ fun Route.testplayRoute() {
                                 it[noodle] = stats.any { s -> s.ne }
                                 it[minNps] = stats.minByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
                                 it[maxNps] = stats.maxByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
+                                it[fullSpread] = stats.filter { diff -> diff.characteristic == ECharacteristic.Standard }
+                                    .map { diff -> diff.difficulty }
+                                    .distinct().count() == 5
                             }, Beatmap.uploaded)
 
                             urResult?.firstOrNull()?.get(Beatmap.uploaded)?.let { uploadTimeLocal ->

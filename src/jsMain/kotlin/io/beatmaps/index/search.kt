@@ -26,7 +26,8 @@ external interface SearchProps: RProps {
 
 data class SearchState(var automapper: Boolean = false, var minNps: Float = 0f, var maxNps: Float = 16f, var chroma: Boolean = false,
                        var order: SearchOrder = SearchOrder.Relevance, var focusedInput: String? = null, var startDate: Moment? = null,
-                       var endDate: Moment? = null, var filtersOpen: Boolean = false, var noodle: Boolean = false, var ranked: Boolean = false) : RState
+                       var endDate: Moment? = null, var filtersOpen: Boolean = false, var noodle: Boolean = false, var ranked: Boolean = false,
+                       var fullSpread: Boolean = false) : RState
 data class PresetDateRange(val startDate: Moment?, val endDate: Moment?)
 
 val presets = mapOf(
@@ -42,6 +43,7 @@ val dateFormat = "YYYY-MM-DD"
 class Search : RComponent<SearchProps, SearchState>() {
     private val inputRef = createRef<HTMLInputElement>()
     private val autoRef = createRef<HTMLInputElement>()
+    private val spreadRef = createRef<HTMLInputElement>()
     private val chromaRef = createRef<HTMLInputElement>()
     private val rankedRef = createRef<HTMLInputElement>()
     private val noodleRef = createRef<HTMLInputElement>()
@@ -120,9 +122,12 @@ class Search : RComponent<SearchProps, SearchState>() {
 
     fun updateUI(fromParams: SearchParams) {
         inputRef.current?.value = fromParams.search
+        sortRef.current?.selectedIndex = fromParams.sortOrder.idx
         autoRef.current?.checked = fromParams.automapper
         chromaRef.current?.checked = fromParams.chroma
-        sortRef.current?.selectedIndex = fromParams.sortOrder.idx
+        spreadRef.current?.checked = fromParams.fullSpread
+        rankedRef.current?.checked = fromParams.ranked
+        noodleRef.current?.checked = fromParams.noodle
         setState {
             automapper = fromParams.automapper
             chroma = fromParams.chroma
@@ -133,6 +138,7 @@ class Search : RComponent<SearchProps, SearchState>() {
             endDate = fromParams.to?.let { Moment(it) }
             noodle = fromParams.noodle
             ranked = fromParams.noodle
+            fullSpread = fromParams.fullSpread
         }
     }
 
@@ -152,7 +158,7 @@ class Search : RComponent<SearchProps, SearchState>() {
                             it.preventDefault()
                             props.updateSearchParams(SearchParams(inputRef.current?.value ?: "", state.automapper, if (state.minNps > 0) state.minNps else null,
                                 if (state.maxNps < props.maxNps) state.maxNps else null, state.chroma, state.order, state.startDate?.format(dateFormat),
-                                state.endDate?.format(dateFormat), state.noodle, state.ranked))
+                                state.endDate?.format(dateFormat), state.noodle, state.ranked, state.fullSpread))
                         }
                         +"Search"
                     }
@@ -173,7 +179,8 @@ class Search : RComponent<SearchProps, SearchState>() {
                                 if (state.ranked) "ranked" else null,
                                 if (state.chroma) "chroma" else null,
                                 if (state.noodle) "noodle" else null,
-                                if (state.automapper) "ai" else null
+                                if (state.automapper) "ai" else null,
+                                if (state.fullSpread) "spread" else null
                             )
                             if (filters.isEmpty()) {
                                 +"Filters"
@@ -203,6 +210,11 @@ class Search : RComponent<SearchProps, SearchState>() {
                         toggle("bot", "AI", autoRef) {
                             setState {
                                 automapper = it
+                            }
+                        }
+                        toggle("fs", "Full Spread", spreadRef) {
+                            setState {
+                                fullSpread = it
                             }
                         }
                     }

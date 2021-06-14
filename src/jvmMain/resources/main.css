@@ -86,6 +86,13 @@ button.filter-dropdown {
     border-bottom: 2px solid #3498db;
 }
 
+.filter-dropdown span {
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    width: 176px;
+}
+
 .filter-dropdown i {
     float: right;
     line-height: 23px;
@@ -467,6 +474,9 @@ li.KeyboardShortcutRow {
     button.filter-dropdown {
         width: 100%;
     }
+    .filter-dropdown span {
+        width: 81px;
+    }
     .DateInput_input__small {
         padding: 7px 4px 5px !important;
         font-size: 11px !important;
@@ -477,6 +487,9 @@ li.KeyboardShortcutRow {
 }
 
 @media (min-width: 768px) {
+    .filter-dropdown span {
+        width: 127px;
+    }
     .scores th:nth-child(4), .scores td:nth-child(4) {
         display: table-cell;
     }
@@ -495,6 +508,9 @@ li.KeyboardShortcutRow {
     }
     button.filter-dropdown {
         width: 200px;
+    }
+    .filter-dropdown span {
+        width: 176px;
     }
     .DateInput_input__small {
         padding: 7px 7px 5px !important;

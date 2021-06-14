@@ -31,9 +31,10 @@ import org.jetbrains.exposed.sql.stringLiteral
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 @Location("/api") class SearchApi {
-    @Group("Search") @Location("/search/text/{page?}") data class Text(val q: String = "", val automapper: Boolean = false, val minNps: Float? = null, val maxNps: Float? = null,
-                                                                       val chroma: Boolean = false, val page: Long = 0, val sortOrder: SearchOrder = SearchOrder.Relevance, val from: Instant? = null,
-                                                                       val to: Instant? = null, @Ignore val api: SearchApi, val noodle: Boolean = false, val ranked: Boolean = false)
+    @Group("Search") @Location("/search/text/{page?}")
+    data class Text(val q: String = "", val automapper: Boolean = false, val minNps: Float? = null, val maxNps: Float? = null, val chroma: Boolean = false, val page: Long = 0,
+                    val sortOrder: SearchOrder = SearchOrder.Relevance, val from: Instant? = null, val to: Instant? = null, @Ignore val api: SearchApi, val noodle: Boolean = false,
+                    val ranked: Boolean = false, val fullSpread: Boolean = false)
 }
 
 val beatsaverRegex = Regex("^[0-9a-f]{1,5}$")
@@ -93,6 +94,8 @@ fun Route.searchRoute() {
                                     if (!it.noodle) q else q.and(Beatmap.noodle eq true)
                                 }.let { q ->
                                     if (!it.ranked) q else q.and(Beatmap.ranked eq true)
+                                }.let { q ->
+                                    if (!it.fullSpread) q else q.and(Beatmap.fullSpread eq true)
                                 }.let { q ->
                                     if (it.minNps == null) q else q.and(Beatmap.maxNps greaterEq it.minNps)
                                 }.let { q ->
