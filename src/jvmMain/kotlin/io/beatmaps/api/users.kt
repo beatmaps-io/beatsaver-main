@@ -65,13 +65,13 @@ fun Route.userRoute() {
 
     get<UsersApi.LinkBeatsaver> {
         requireAuthorization {
-            call.respond(BeatsaverLink(getBSLinkHash(it.userId), it.hash != null))
+            call.respond(BeatsaverLink(userVerifyService.getHash(it.userId), it.hash != null))
         }
     }
 
     post<UsersApi.LinkBeatsaver> { r ->
         requireAuthorization { s ->
-            val userHash = getBSLinkHash(s.userId)
+            val userHash = userVerifyService.getHash(s.userId)
 
             val toCheck = transaction {
                 r.hash?.let { rHash ->
@@ -187,8 +187,3 @@ fun Route.userRoute() {
 }
 
 fun diffCase(diff: EDifficulty) = Sum(Expression.build { case().When(Difficulty.difficulty eq diff, intLiteral(1)).Else(intLiteral(0)) }, IntegerColumnType())
-
-fun getBSLinkHash(userId: Int) = MessageDigest.getInstance("MD5").let {
-    it.update(ubyteArrayOf(0x1fu, 0x22u, 0x1fu, 0x5fu, 0x84u, 0xb0u).toByteArray() + userId.toString().toByteArray())
-    String.format("%08x", BigInteger(1, it.digest().take(8).toByteArray()))
-}
