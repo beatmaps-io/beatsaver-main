@@ -49,6 +49,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
     private val captchaRef = createRef<ReCAPTCHA>()
     private val titleRef = createRef<HTMLInputElement>()
     private val descrRef = createRef<HTMLInputElement>()
+    private val beatsageRef = createRef<HTMLInputElement>()
     private val progressBarInnerRef = createRef<HTMLElement>()
 
     init {
@@ -92,7 +93,6 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                         div("form-group") {
                             input(InputType.radio, name = "beatsage", classes = "btn-check") {
                                 attrs.id = "beatsage-no"
-                                attrs.value = ""
                                 attrs.autoComplete = false
                                 attrs.checked = false
                                 attrs.onChangeFunction = {
@@ -108,7 +108,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
 
                             input(InputType.radio, name = "beatsage", classes = "btn-check") {
                                 attrs.id = "beatsage-yes"
-                                attrs.value = "true"
+                                ref = beatsageRef
                                 attrs.autoComplete = false
                                 attrs.checked = false
                                 attrs.onChangeFunction = {
@@ -132,9 +132,11 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                         }
                                         val titleInput = titleRef.current
                                         val descrInput = descrRef.current
+                                        val beatsageInput = beatsageRef.current
 
                                         it.append("title", titleInput?.value ?: "")
                                         it.append("description", descrInput?.value ?: "")
+                                        it.append("beatsage", if (beatsageInput?.checked == true) "true" else "")
                                     }, {
                                         setState {
                                             errors = it
