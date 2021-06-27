@@ -24,6 +24,7 @@ import io.ktor.routing.Route
 import io.ktor.routing.application
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Count
 import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.select
@@ -41,7 +42,9 @@ import kotlin.math.pow
     @Group("Vote") @Location("/vote") data class Since(val since: Instant, @Ignore val api: VoteApi)
 }
 
+@Serializable
 data class VoteRequest(val auth: AuthRequest, val hash: String, val direction: Boolean)
+@Serializable
 data class VoteResponse(val success: Boolean, val error: String? = null)
 data class QueuedVote(val userId: Long, val steam: Boolean, val mapId: Int, val direction: Boolean)
 

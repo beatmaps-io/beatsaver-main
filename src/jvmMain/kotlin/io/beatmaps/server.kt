@@ -27,9 +27,11 @@ import io.beatmaps.login.installSessions
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
 import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.ConditionalHeaders
+import io.ktor.features.ContentConverter
 import io.ktor.features.ContentNegotiation
 import io.ktor.features.DataConversion
 import io.ktor.features.StatusPages
@@ -40,10 +42,13 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.EntityTagVersion
 import io.ktor.http.content.resources
 import io.ktor.http.content.static
+import io.ktor.jackson.jackson
 import io.ktor.locations.Locations
+import io.ktor.request.ApplicationReceiveRequest
 import io.ktor.response.respond
 import io.ktor.routing.get
 import io.ktor.routing.routing
+import io.ktor.serialization.SerializationConverter
 import io.ktor.serialization.json
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -56,11 +61,15 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.html.HEAD
+import kotlinx.serialization.StringFormat
 import org.valiktor.ConstraintViolationException
 import org.valiktor.i18n.mapToMessage
 import pl.jutupe.ktor_rabbitmq.RabbitMQ
 import java.math.BigInteger
 import java.security.MessageDigest
+import io.beatmaps.common.jackson
+import io.ktor.jackson.JacksonConverter
+import kotlinx.serialization.ExperimentalSerializationApi
 
 suspend fun PipelineContext<*, io.ktor.application.ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) {
     val sess = call.sessions.get<Session>()
@@ -80,11 +89,32 @@ fun main() {
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::beatmapsio).start(wait = true)
 }
 
+@ExperimentalSerializationApi
 fun Application.beatmapsio() {
     installMetrics()
 
     install(ContentNegotiation) {
-        json(json)
+        val kotlinx = SerializationConverter(json as StringFormat)
+        val jsConv = JacksonConverter(jackson)
+
+        register(
+            ContentType.Application.Json,
+            object : ContentConverter {
+                override suspend fun convertForReceive(context: PipelineContext<ApplicationReceiveRequest, ApplicationCall>) =
+                    try {
+                        kotlinx.convertForReceive(context)
+                    } catch (e: Exception) {
+                        null
+                    } ?: jsConv.convertForReceive(context)
+
+                override suspend fun convertForSend(context: PipelineContext<Any, ApplicationCall>, contentType: ContentType, value: Any) =
+                    try {
+                        kotlinx.convertForSend(context, contentType, value)
+                    } catch (e: Exception) {
+                        null
+                    } ?: jsConv.convertForSend(context, contentType, value)
+            }
+        )
     }
 
     install(SwaggerSupport) {

@@ -46,6 +46,7 @@ import io.ktor.sessions.sessions
 import io.ktor.util.pipeline.PipelineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -87,6 +88,7 @@ suspend fun <T> PipelineContext<*, ApplicationCall>.captchaIfPresent(captcha: St
         block()
     }
 
+@Serializable
 data class AuthRequest(val steamId: String? = null, val oculusId: String? = null, val proof: String)
 data class CheckRequest(val jwt: String)
 data class AuthResponse(val jwt: String, val user: UserDetail)
