@@ -473,11 +473,11 @@ li.KeyboardShortcutRow {
 .mapstats .diff-stars {
     padding-top: 14px;
 }
-.card a {
+.card .card-text > a {
     color: #fff;
     text-decoration: underline;
 }
-.card a:hover {
+.card .card-text > a:hover {
     color: #000;
 }
 .btn-check {

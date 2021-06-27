@@ -90,9 +90,14 @@ suspend fun <T> PipelineContext<*, ApplicationCall>.captchaIfPresent(captcha: St
 
 @Serializable
 data class AuthRequest(val steamId: String? = null, val oculusId: String? = null, val proof: String)
+@Serializable
 data class CheckRequest(val jwt: String)
+@Serializable
 data class AuthResponse(val jwt: String, val user: UserDetail)
+@Serializable
 data class MarkRequest(val jwt: String, val hash: String, val markPlayed: Boolean = true, val removeFromQueue: Boolean = false, val addToQueue: Boolean = false)
+@Serializable
+data class VerifyResponse(val success: Boolean, val error: String? = null)
 
 data class SteamAPIResponse(val response: SteamAPIResponseObject)
 data class SteamAPIResponseObject(val params: SteamAPIResponseParams? = null, val error: SteamAPIResponseError? = null)
@@ -353,7 +358,6 @@ fun Route.testplayRoute() {
         } ?: error("No user identifier provided")
     }
 
-    data class VerifyResponse(val success: Boolean, val error: String? = null)
     post<MapsApi.Verify, AuthRequest>("Verify user tokens".responds(ok<VerifyResponse>())) { _, auth ->
         call.respond(auth.steamId?.let { steamId ->
             if (!validateSteamToken(steamId, auth.proof)) {

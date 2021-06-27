@@ -8,12 +8,12 @@ import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.consumeAck
-import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.db.NowExpression
+import io.beatmaps.common.db.upsert
+import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.Votes
 import io.beatmaps.common.dbo.complexToBeatmap
-import io.beatmaps.common.db.upsert
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location
@@ -33,7 +33,6 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.publish
 import pl.jutupe.ktor_rabbitmq.rabbitConsumer
-import java.math.BigDecimal
 import kotlin.math.log10
 import kotlin.math.pow
 
@@ -48,7 +47,8 @@ data class VoteRequest(val auth: AuthRequest, val hash: String, val direction: B
 data class VoteResponse(val success: Boolean, val error: String? = null)
 data class QueuedVote(val userId: Long, val steam: Boolean, val mapId: Int, val direction: Boolean)
 
-data class VoteSummary(val hash: String?, val mapId: Int, val key64: String?, val upvotes: Int, val downvotes: Int, val oldUpvotes: Int, val oldDownvotes: Int, val score: BigDecimal)
+@Serializable
+data class VoteSummary(val hash: String?, val mapId: Int, val key64: String?, val upvotes: Int, val downvotes: Int, val oldUpvotes: Int, val oldDownvotes: Int, val score: Double)
 
 fun Route.voteRoute() {
     options<VoteApi.Vote> {
@@ -108,7 +108,7 @@ fun Route.voteRoute() {
                     it.downVotesInt,
                     it.upVotes,
                     it.downVotes,
-                    it.score
+                    it.score.toDouble()
                 )
             }
         }
