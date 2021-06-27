@@ -1,7 +1,7 @@
 @file:Suppress("INTERFACE_WITH_SUPERCLASS", "OVERRIDING_FINAL_MEMBER", "RETURN_TYPE_MISMATCH_ON_OVERRIDE", "CONFLICTING_OVERLOADS", "EXTERNAL_DELEGATION", "NESTED_CLASS_IN_EXTERNAL_INTERFACE")
+import io.beatmaps.common.json
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import kotlin.js.Promise
 
 external interface AxiosTransformer {
@@ -140,7 +140,7 @@ inline fun <reified T, reified U> generateConfig(ct: CancelToken? = null) = obje
                 data is String -> data
                 else -> {
                     headers["Content-Type"] = "application/json"
-                    Json.encodeToString(data)
+                    json.encodeToString(data)
                 }
             }
         }
@@ -149,7 +149,7 @@ inline fun <reified T, reified U> generateConfig(ct: CancelToken? = null) = obje
         if (it is U) {
             it
         } else {
-            Json.decodeFromString(it)
+            json.decodeFromString(it)
         }
     }
 }

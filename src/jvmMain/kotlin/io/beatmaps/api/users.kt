@@ -3,33 +3,50 @@ package io.beatmaps.api
 import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
+import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.api.EDifficulty
-import io.beatmaps.common.beatsaber.BSDifficulty
-import io.beatmaps.common.beatsaber.MapInfo
 import io.beatmaps.common.beatsaver.IUserVerifyProvider
 import io.beatmaps.common.beatsaver.UserNotVerified
 import io.beatmaps.common.db.updateReturning
-import io.beatmaps.common.dbo.*
-import io.beatmaps.common.zip.IMapScorerProvider
-import io.ktor.application.*
-import io.ktor.client.features.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.locations.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import io.ktor.sessions.*
-import org.jetbrains.exposed.sql.*
+import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Difficulty
+import io.beatmaps.common.dbo.ModLog
+import io.beatmaps.common.dbo.ModLogDao
+import io.beatmaps.common.dbo.User
+import io.beatmaps.common.dbo.UserDao
+import io.ktor.application.call
+import io.ktor.locations.Location
+import io.ktor.locations.get
+import io.ktor.locations.options
+import io.ktor.locations.post
+import io.ktor.response.header
+import io.ktor.response.respond
+import io.ktor.routing.Route
+import io.ktor.sessions.sessions
+import io.ktor.sessions.set
+import kotlinx.datetime.toKotlinInstant
+import org.jetbrains.exposed.sql.Expression
+import org.jetbrains.exposed.sql.IntegerColumnType
+import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.Sum
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.avg
+import org.jetbrains.exposed.sql.count
+import org.jetbrains.exposed.sql.intLiteral
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.io.File
-import java.math.BigInteger
-import java.security.MessageDigest
-import java.util.*
+import org.jetbrains.exposed.sql.update
+import java.util.ServiceLoader
 
 fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null) =
     UserDetail(other.id.value, other.name, other.hash, if (roles) other.testplay else null, other.avatar ?: "https://www.gravatar.com/avatar/${other.hash}?d=retro", stats)
 
 fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false) = from(UserDao.wrapRow(row), roles)
+fun Alert.Companion.from(other: ModLogDao, map: MapDetail) = Alert(map, other.opAt.toKotlinInstant(), other.realAction())
+fun Alert.Companion.from(row: ResultRow) = from(ModLogDao.wrapRow(row), MapDetail.from(row))
 
 @Location("/api/users")
 class UsersApi {
@@ -44,6 +61,9 @@ class UsersApi {
 
     @Location("/beatsaver/{hash?}")
     data class LinkBeatsaver(val hash: String? = null, val api: UsersApi)
+
+    @Location("/alerts")
+    data class Alerts(val api: UsersApi)
 }
 
 fun Route.userRoute() {
@@ -133,6 +153,19 @@ fun Route.userRoute() {
         }
 
         call.respond(UserDetail.from(user))
+    }
+
+    get<UsersApi.Alerts> {
+        requireAuthorization { user ->
+            val alerts = transaction {
+                ModLog.join(Beatmap, JoinType.INNER, Beatmap.id, ModLog.opOn).select {
+                    (Beatmap.uploader eq user.userId) and
+                    (ModLog.type inList listOf(ModLogOpType.Unpublish, ModLogOpType.Delete).map { it.ordinal })
+                }.orderBy(ModLog.opAt, SortOrder.DESC).limit(30).map { Alert.from(it) }
+            }
+
+            call.respond(alerts)
+        }
     }
 
     options<MapsApi.UserId> {

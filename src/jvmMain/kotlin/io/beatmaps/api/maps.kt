@@ -2,6 +2,8 @@ package io.beatmaps.api
 
 import de.nielsfalk.ktor.swagger.*
 import de.nielsfalk.ktor.swagger.version.shared.Group
+import io.beatmaps.common.DeletedData
+import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.NowExpression
@@ -12,8 +14,6 @@ import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
 import io.beatmaps.common.dbo.BeatmapDao
-import io.beatmaps.common.dbo.DeletedData
-import io.beatmaps.common.dbo.InfoEditData
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.inlineJackson
 import io.ktor.application.*
@@ -177,7 +177,7 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
                             user.userId,
                             mapUpdate.id,
                             if (mapUpdate.deleted) {
-                                DeletedData()
+                                DeletedData(mapUpdate.reason ?: "")
                             } else {
                                 InfoEditData(oldData.name, oldData.description, mapUpdate.name ?: "", mapUpdate.description ?: "")
                             }

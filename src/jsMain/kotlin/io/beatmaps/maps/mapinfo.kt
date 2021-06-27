@@ -39,6 +39,7 @@ data class MapInfoState(var loading: Boolean = false, var editing: Boolean = fal
 class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     private val inputRef = createRef<HTMLInputElement>()
     private val textareaRef = createRef<HTMLTextAreaElement>()
+    private val reasonRef = createRef<HTMLTextAreaElement>()
 
     init {
         state = MapInfoState()
@@ -46,7 +47,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
 
     private fun recall() {
         props.mapInfo.publishedVersion()?.hash?.let { hash ->
-            Axios.post<String>("/api/testplay/state", StateUpdate(hash, EMapState.Uploaded), generateConfig<StateUpdate, String>())
+            Axios.post<String>("/api/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.id, reasonRef.current?.asDynamic().value as? String), generateConfig<StateUpdate, String>())
                 .then({
                     props.reloadMap()
 
@@ -62,7 +63,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     }
 
     private fun delete() {
-        Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.id, deleted = true), generateConfig<MapInfoUpdate, String>()).then({
+        Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.id, deleted = true, reason = reasonRef.current?.asDynamic().value as? String), generateConfig<MapInfoUpdate, String>()).then({
             props.deleteMap()
         }) {
             setState {
@@ -155,8 +156,18 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                     it.preventDefault()
                                     props.modal.current?.showDialog(ModalData(
                                         "Delete map",
-                                        "Delete completely so that no more versions can be added or just unpublish the current version?",
-                                        listOf(ModalButton("DELETE", "danger", ::delete), ModalButton("Unpublish", "primary", ::recall), ModalButton("Cancel"))
+                                        bodyCallback = {
+                                            p {
+                                                +"Delete completely so that no more versions can be added or just unpublish the current version?"
+                                            }
+                                            p {
+                                                +"Reason for action:"
+                                            }
+                                            textArea(classes = "form-control") {
+                                                ref = reasonRef
+                                            }
+                                        },
+                                        buttons = listOf(ModalButton("DELETE", "danger", ::delete), ModalButton("Unpublish", "primary", ::recall), ModalButton("Cancel"))
                                     ))
                                 }
                                 i("fas fa-trash text-danger") { }
@@ -175,12 +186,12 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                 }
                 div("card-text clearfix") {
                     if (state.editing) {
-                        input(InputType.text, classes ="form-control m-2") {
+                        input(InputType.text, classes = "form-control m-2") {
                             attrs.id = "name"
                             attrs.disabled = state.loading
                             ref = inputRef
                         }
-                        textArea("10", classes ="form-control m-2") {
+                        textArea("10", classes = "form-control m-2") {
                             attrs.id = "description"
                             attrs.disabled = state.loading
                             +props.mapInfo.description

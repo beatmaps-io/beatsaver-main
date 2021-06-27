@@ -11,6 +11,8 @@ import io.beatmaps.common.beatsaver.localCoverFolder
 import io.beatmaps.common.beatsaver.localFolder
 import io.beatmaps.common.checkParity
 import io.beatmaps.common.copyToSuspend
+import io.beatmaps.common.db.UpdateReturningStatement
+import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.*
 import io.beatmaps.common.jackson
 import io.beatmaps.genericPage
@@ -29,9 +31,13 @@ import io.ktor.sessions.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.statements.Statement
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.publish
 import java.io.File
 import java.io.OutputStream
@@ -159,30 +165,35 @@ fun Route.uploadController() {
                 throw UploadException("Your map is fine but we're not accepting uploads yet")
             }
 
+            fun setBasicMapInfo(setFloat: (column: Column<Float>, value: Float) -> Unit,
+                                setInt: (column: Column<Int>, value: Int) -> Unit,
+                                setString: (column: Column<String>, value: String) -> Unit) {
+                setFloat(Beatmap.bpm, extractedInfo.mapInfo._beatsPerMinute)
+                setInt(Beatmap.duration, extractedInfo.duration.roundToInt())
+                setString(Beatmap.songName, extractedInfo.mapInfo._songName)
+                setString(Beatmap.songSubName, extractedInfo.mapInfo._songSubName)
+                setString(Beatmap.levelAuthorName, extractedInfo.mapInfo._levelAuthorName)
+                setString(Beatmap.songAuthorName, extractedInfo.mapInfo._songAuthorName)
+            }
+
             val newMap = try {
                 (dataMap["mapId"]?.toInt()?.let { mapId ->
-                    val beatmap = BeatmapDao.wrapRows(Beatmap.slice(Beatmap.id, Beatmap.uploader).select {
-                        Beatmap.id eq mapId
-                    }.limit(1)).firstOrNull()
-
-                    if (beatmap == null) {
-                        throw UploadException("Map doesn't exist to add version")
-                    } else if (beatmap.uploaderId.value != session.userId) {
-                        throw UploadException("Can't upload to someone else's map")
-                    }
-
-                    beatmap.id
+                    Beatmap.updateReturning({
+                        (Beatmap.id eq mapId) and (Beatmap.uploader eq session.userId)
+                    }, {
+                        setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
+                    }, Beatmap.id)?.firstOrNull()?.let { it[Beatmap.id] } ?: throw UploadException("Map doesn't exist to add version")
                 } ?: Beatmap.insertAndGetId {
                     it[name] = dataMap["title"] ?: ""
                     it[description] = dataMap["description"] ?: ""
                     it[uploader] = EntityID(session.userId, User)
-                    it[bpm] = extractedInfo.mapInfo._beatsPerMinute
-                    it[duration] = extractedInfo.duration.roundToInt()
-                    it[songName] = extractedInfo.mapInfo._songName
-                    it[songSubName] = extractedInfo.mapInfo._songSubName
-                    it[levelAuthorName] = extractedInfo.mapInfo._levelAuthorName
-                    it[songAuthorName] = extractedInfo.mapInfo._songAuthorName
-                    it[automapper] = extractedInfo.score < 0
+
+                    setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
+
+                    val declaredAsAI = (dataMap["beatsage"] ?: "").isNotEmpty()
+                    it[automapper] = declaredAsAI || extractedInfo.score < 0
+                    it[ai] = declaredAsAI
+
                     it[plays] = 0
                 }).also {
                     // How is a file here if it hasn't be uploaded before?
@@ -246,6 +257,11 @@ fun Route.uploadController() {
                             it[chroma] = diffInfo._customData?._requirements?.contains("Chroma") ?: false || diffInfo._customData?._suggestions?.contains("Chroma") ?: false
                             it[ne] = diffInfo._customData?._requirements?.contains("Noodle Extensions") ?: false
                             it[me] = diffInfo._customData?._requirements?.contains("Mapping Extensions") ?: false
+
+                            it[requirements] = diffInfo._customData?._requirements?.toTypedArray()
+                            it[suggestions] = diffInfo._customData?._suggestions?.toTypedArray()
+                            it[information] = diffInfo._customData?._information?.toTypedArray()
+                            it[warnings] = diffInfo._customData?._warnings?.toTypedArray()
                         }
                     }
                 }

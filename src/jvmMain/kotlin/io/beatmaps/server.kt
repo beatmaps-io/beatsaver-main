@@ -1,8 +1,5 @@
 package io.beatmaps
 
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import de.nielsfalk.ktor.swagger.SwaggerSupport
 import de.nielsfalk.ktor.swagger.version.shared.Contact
 import de.nielsfalk.ktor.swagger.version.shared.Information
@@ -14,8 +11,8 @@ import io.beatmaps.api.searchRoute
 import io.beatmaps.api.testplayRoute
 import io.beatmaps.api.userRoute
 import io.beatmaps.api.voteRoute
-import io.beatmaps.common.KotlinTimeModule
 import io.beatmaps.common.db.setupDB
+import io.beatmaps.common.json
 import io.beatmaps.common.setupAMQP
 import io.beatmaps.common.setupLogging
 import io.beatmaps.controllers.UploadException
@@ -43,11 +40,11 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.EntityTagVersion
 import io.ktor.http.content.resources
 import io.ktor.http.content.static
-import io.ktor.jackson.jackson
 import io.ktor.locations.Locations
 import io.ktor.response.respond
 import io.ktor.routing.get
 import io.ktor.routing.routing
+import io.ktor.serialization.json
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.sessions.get
@@ -87,13 +84,7 @@ fun Application.beatmapsio() {
     installMetrics()
 
     install(ContentNegotiation) {
-        jackson {
-            enable(SerializationFeature.INDENT_OUTPUT)
-            registerModule(JavaTimeModule())
-            registerModule(KotlinTimeModule())
-            disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-            setSerializationInclusion(JsonInclude.Include.NON_NULL)
-        }
+        json(json)
     }
 
     install(SwaggerSupport) {

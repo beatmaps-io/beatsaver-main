@@ -82,6 +82,9 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                     a("/profile", classes="dropdown-item") {
                                         +"Profile"
                                     }
+                                    a("/alerts", classes="dropdown-item") {
+                                        +"Alerts"
+                                    }
                                     if (s.steamId == null) {
                                         a("/steam", classes = "dropdown-item") {
                                             +"Link steam account"

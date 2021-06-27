@@ -108,6 +108,7 @@ kotlin {
                 // Serialization
                 implementation("io.ktor:ktor-jackson:$ktorVersion")
                 implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.6.1")
+                implementation("io.ktor:ktor-serialization:$ktorVersion")
 
                 // Cloud storage
                 implementation("com.backblaze.b2:b2-sdk-core:4.0.0")

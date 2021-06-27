@@ -4,6 +4,8 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
+import io.beatmaps.common.DeletedData
+import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.client
@@ -22,6 +24,7 @@ import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.db.wrapAsExpressionNotNull
+import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.jackson
 import io.beatmaps.login.Session
 import io.jsonwebtoken.Jwts
@@ -211,53 +214,61 @@ fun Route.testplayRoute() {
 
             val valid = transaction {
                 if (newState.state == EMapState.Published) {
-                    newState.mapId?.let { mapId ->
-                        val valid = Versions.join(Beatmap, JoinType.INNER, onColumn = Versions.mapId, otherColumn = Beatmap.id).update({
-                            (Versions.mapId eq mapId) and (Beatmap.uploader eq sess.userId)
-                        }) {
-                            val exp = Expression.build {
-                                case()
-                                    .When(Versions.hash eq newState.hash, QueryParameter(EMapState.Published, Versions.state.columnType))
-                                    .Else(QueryParameter(EMapState.Uploaded, Versions.state.columnType))
-                            }
+                    val originalState = MapVersion.from(Versions.select {
+                        Versions.hash eq newState.hash
+                    }.single())
 
-                            it[Versions.state] = exp
-                        } > 0
-
-                        if (valid) {
-                            val stats = DifficultyDao.wrapRows(Difficulty.select {
-                                Difficulty.mapId eq mapId
-                            })
-
-                            // Set published time for sorting, but don't allow gaming the system
-                            val urResult = Beatmap.updateReturning({ Beatmap.id eq mapId }, {
-                                it[uploaded] = coalesce(uploaded, NowExpression<Instant?>(uploaded.columnType))
-
-                                it[chroma] = stats.any { s -> s.chroma }
-                                it[noodle] = stats.any { s -> s.ne }
-                                it[minNps] = stats.minByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
-                                it[maxNps] = stats.maxByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
-                                it[fullSpread] = stats.filter { diff -> diff.characteristic == ECharacteristic.Standard }
-                                    .map { diff -> diff.difficulty }
-                                    .distinct().count() == 5
-                            }, Beatmap.uploaded)
-
-                            urResult?.firstOrNull()?.get(Beatmap.uploaded)?.let { uploadTimeLocal ->
-                                Difficulty.join(Versions, JoinType.INNER, onColumn = Difficulty.versionId, otherColumn = Versions.id).update({
-                                    (Versions.mapId eq mapId)
-                                }) {
-                                    it[Difficulty.createdAt] = uploadTimeLocal
-                                } > 0
-                            }
-
-                            call.publish("beatmaps", "maps.$mapId.updated", null, mapId)
+                    (Versions.join(Beatmap, JoinType.INNER, onColumn = Versions.mapId, otherColumn = Beatmap.id).update({
+                        (Versions.mapId eq newState.mapId) and (Beatmap.uploader eq sess.userId)
+                    }) {
+                        val exp = Expression.build {
+                            case()
+                                .When(Versions.hash eq newState.hash, QueryParameter(EMapState.Published, Versions.state.columnType))
+                                .Else(QueryParameter(EMapState.Uploaded, Versions.state.columnType))
                         }
 
-                        valid
+                        it[Versions.state] = exp
+                    } > 0).also { valid ->
+                        if (!valid) return@also
+
+                        val stats = DifficultyDao.wrapRows(Difficulty.select {
+                            Difficulty.mapId eq newState.mapId
+                        })
+
+                        // Set published time for sorting, but don't allow gaming the system
+                        val urResult = Beatmap.updateReturning({ Beatmap.id eq newState.mapId }, {
+                            it[uploaded] = coalesce(uploaded, NowExpression<Instant?>(uploaded.columnType))
+
+                            it[chroma] = stats.any { s -> s.chroma }
+                            it[noodle] = stats.any { s -> s.ne }
+                            it[minNps] = stats.minByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
+                            it[maxNps] = stats.maxByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
+                            it[fullSpread] = stats.filter { diff -> diff.characteristic == ECharacteristic.Standard }
+                                .map { diff -> diff.difficulty }
+                                .distinct().count() == 5
+
+                            // Because of magical typing reasons this can't be one line
+                            // They actually call completely different setting functions
+                            if (originalState.sageScore != null && originalState.sageScore < 0) {
+                                it[automapper] = true
+                            } else {
+                                it[automapper] = ai
+                            }
+                        }, Beatmap.uploaded)
+
+                        urResult?.firstOrNull()?.get(Beatmap.uploaded)?.let { uploadTimeLocal ->
+                            Difficulty.join(Versions, JoinType.INNER, onColumn = Difficulty.versionId, otherColumn = Versions.id).update({
+                                (Versions.mapId eq newState.mapId)
+                            }) {
+                                it[Difficulty.createdAt] = uploadTimeLocal
+                            } > 0
+                        }
+
+                        call.publish("beatmaps", "maps.${newState.mapId}.updated", null, newState.mapId)
                     }
                 } else {
-                    Versions.join(Beatmap, JoinType.INNER, onColumn = Versions.mapId, otherColumn = Beatmap.id).update({
-                        (Versions.hash eq newState.hash).let { q ->
+                    (Versions.join(Beatmap, JoinType.INNER, onColumn = Versions.mapId, otherColumn = Beatmap.id).update({
+                        (Versions.hash eq newState.hash) and (Versions.mapId eq newState.mapId).let { q ->
                             if (sess.admin) {
                                 q // If current user is admin don't check the user
                             } else {
@@ -269,11 +280,19 @@ fun Route.testplayRoute() {
                         if (newState.state == EMapState.Testplay) {
                             it[Versions.testplayAt] = Instant.now()
                         }
-                    } > 0
+                    } > 0).also { rTemp ->
+                        if (rTemp && sess.admin && newState.reason?.isEmpty() == false) {
+                            ModLog.insert(
+                                sess.userId,
+                                newState.mapId,
+                                UnpublishData(newState.reason)
+                            )
+                        }
+                    }
                 }
             }
 
-            call.respond(if (valid == true) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+            call.respond(if (valid) HttpStatusCode.OK else HttpStatusCode.BadRequest)
         }
     }
 

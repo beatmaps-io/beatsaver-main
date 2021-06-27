@@ -8,6 +8,7 @@ import io.beatmaps.maps.UploadPage
 import io.beatmaps.maps.recent.recentTestplays
 import io.beatmaps.nav.manageNav
 import io.beatmaps.nav.viewportMinWidthPolyfill
+import io.beatmaps.user.AlertsPage
 import io.beatmaps.user.BeatsaverPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ProfilePageProps
@@ -98,6 +99,12 @@ class App : RComponent<RProps, RState>() {
                 route<RProps>("/test", exact = true) {
                     initWithHistory(it.history)
                     recentTestplays {
+
+                    }
+                }
+                route<RProps>("/alerts", exact = true) {
+                    initWithHistory(it.history)
+                    child(AlertsPage::class) {
 
                     }
                 }

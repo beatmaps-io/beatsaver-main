@@ -68,75 +68,73 @@ class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
     }
 
     override fun RBuilder.render() {
-        main("container") {
-            div("jumbotron") {
-                h1 {
-                    +"Link beatsaver account"
+        div("jumbotron") {
+            h1 {
+                +"Link beatsaver account"
+            }
+            p("mb-5") {
+                +"To link your account edit the title or description of one your recent songs to include "
+                span("badge badge-light m-1") {
+                    +state.hash
                 }
-                p("mb-5") {
-                    +"To link your account edit the title or description of one your recent songs to include "
-                    span("badge badge-light m-1") {
-                        +state.hash
+            }
+            if (state.failed) {
+                div("alert alert-danger col-7") {
+                    h5 {
+                        +"Failed to link accounts!"
+                    }
+                    p {
+                        +"Accounts will only link if you have uploaded maps"
+                    }
+                    p {
+                        +"If this continues try using your beatsaver id e.g. '5ffdaabc6046050006231ed1' instead of your username"
                     }
                 }
-                if (state.failed) {
-                    div("alert alert-danger col-7") {
-                        h5 {
-                            +"Failed to link accounts!"
-                        }
-                        p {
-                            +"Accounts will only link if you have uploaded maps"
-                        }
-                        p {
-                            +"If this continues try using your beatsaver id e.g. '5ffdaabc6046050006231ed1' instead of your username"
-                        }
+            }
+            fieldSet("col-5") {
+                div("form-group") {
+                    label {
+                        attrs.htmlFor = "name"
+                        +"Beatsaver Account name or id"
+                    }
+                    input(InputType.text, classes = "form-control") {
+                        ref = inputRef
                     }
                 }
-                fieldSet("col-5") {
-                    div("form-group") {
-                        label {
-                            attrs.htmlFor = "name"
-                            +"Beatsaver Account name or id"
+                button(type = ButtonType.submit, classes = "btn btn-primary") {
+                    attrs.onClickFunction = {
+                        val usr = inputRef.current?.value
+
+                        setState {
+                            loading = true
                         }
-                        input(InputType.text, classes = "form-control") {
-                            ref = inputRef
-                        }
-                    }
-                    button(type = ButtonType.submit, classes = "btn btn-primary") {
-                        attrs.onClickFunction = {
-                            val usr = inputRef.current?.value
 
-                            setState {
-                                loading = true
-                            }
+                        Axios.post<BeatsaverLink>(
+                            "/api/users/beatsaver/$usr",
+                            "",
+                            generateConfig<String, BeatsaverLink>()
+                        ).then {
+                            val link = it.data
 
-                            Axios.post<BeatsaverLink>(
-                                "/api/users/beatsaver/$usr",
-                                "",
-                                generateConfig<String, BeatsaverLink>()
-                            ).then {
-                                val link = it.data
-
-                                if (link.linked) {
-                                    // Force a refresh as session has probably changed and needs to update nav
-                                    window.location.href = "/profile"
-                                } else {
-                                    setState {
-                                        failed = true
-                                        loading = false
-                                    }
-                                }
-                            }.catch {
-                                // Cancelled request
+                            if (link.linked) {
+                                // Force a refresh as session has probably changed and needs to update nav
+                                window.location.href = "/profile"
+                            } else {
                                 setState {
                                     failed = true
                                     loading = false
                                 }
                             }
+                        }.catch {
+                            // Cancelled request
+                            setState {
+                                failed = true
+                                loading = false
+                            }
                         }
-                        attrs.disabled = state.loading
-                        +"Link"
                     }
+                    attrs.disabled = state.loading
+                    +"Link"
                 }
             }
         }

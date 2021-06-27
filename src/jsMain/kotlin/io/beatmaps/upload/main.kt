@@ -8,6 +8,9 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.upload.simple
 import kotlinx.html.INPUT
 import kotlinx.html.InputType
+import kotlinx.html.id
+import kotlinx.html.js.onChangeFunction
+import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import react.RBuilder
@@ -39,7 +42,7 @@ external interface UploadPageProps : RProps {
     var history: RouteResultHistory
 }
 
-data class UploadPageState(var errors: List<String> = listOf(), var loading: Boolean = false) : RState
+data class UploadPageState(var errors: List<String> = listOf(), var loading: Boolean = false, var beatsage: Boolean? = null) : RState
 
 @JsExport
 class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
@@ -58,7 +61,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
 
     override fun RBuilder.render() {
         div("row") {
-            div("col-7 m-auto") {
+            div("col-7") {
                 h2 {
                     +"Upload Map"
                 }
@@ -86,23 +89,59 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                             }
                         }
 
-                        Dropzone.default {
-                            simple(props.history, state.loading, state.errors.isNotEmpty(), progressBarInnerRef,
-                                "Drag and drop some files here, or click to select files", captchaRef, {
-                                setState {
-                                    loading = true
+                        div("form-group") {
+                            input(InputType.radio, name = "beatsage", classes = "btn-check") {
+                                attrs.id = "beatsage-no"
+                                attrs.value = ""
+                                attrs.autoComplete = false
+                                attrs.checked = false
+                                attrs.onChangeFunction = {
+                                    setState {
+                                        beatsage = false
+                                    }
                                 }
-                                val titleInput = titleRef.current
-                                val descrInput = descrRef.current
+                            }
+                            label("btn btn-outline-light") {
+                                attrs.htmlFor = "beatsage-no"
+                                +"I made this map myself with no AI assistance"
+                            }
 
-                                it.append("title", titleInput?.value ?: "")
-                                it.append("description", descrInput?.value ?: "")
-                            }, {
-                                setState {
-                                    errors = it
-                                    loading = false
+                            input(InputType.radio, name = "beatsage", classes = "btn-check") {
+                                attrs.id = "beatsage-yes"
+                                attrs.value = "true"
+                                attrs.autoComplete = false
+                                attrs.checked = false
+                                attrs.onChangeFunction = {
+                                    setState {
+                                        beatsage = true
+                                    }
                                 }
-                            })
+                            }
+                            label("btn btn-outline-light") {
+                                attrs.htmlFor = "beatsage-yes"
+                                +"BeatSage or another AI mapping tool was used to create this map"
+                            }
+                        }
+
+                        if (state.beatsage != null) {
+                            Dropzone.default {
+                                simple(props.history, state.loading, state.errors.isNotEmpty(), progressBarInnerRef,
+                                    "Drag and drop some files here, or click to select files", captchaRef, {
+                                        setState {
+                                            loading = true
+                                        }
+                                        val titleInput = titleRef.current
+                                        val descrInput = descrRef.current
+
+                                        it.append("title", titleInput?.value ?: "")
+                                        it.append("description", descrInput?.value ?: "")
+                                    }, {
+                                        setState {
+                                            errors = it
+                                            loading = false
+                                        }
+                                    })
+                            }
                         }
 
                         if (!state.loading) {
@@ -118,12 +157,60 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                             attrs.size = "invisible"
                             ref = captchaRef
                         }
-
-                        /*child(ReCAPTCHA.default::class) {
-                            attrs.sitekey = "6LdMpxUaAAAAAA6a3Fb2BOLQk9KO8wCSZ-a_YIaH"
-                            attrs.size = "invisible"
-                            ref = captchaRef
-                        }*/
+                    }
+                }
+            }
+            div("col-5") {
+                div("card bg-danger mb-3") {
+                    div("card-body") {
+                        h4("card-title") {
+                            +"Map Testing"
+                        }
+                        p("card-text") {
+                            +"You do "
+                            strong {
+                                +"NOT"
+                            }
+                            +" need to upload your map to test it in game."
+                        }
+                        p("card-text") {
+                            +"On PC you can access WIPs directly if you have songcore."
+                            br {}
+                            +"On Quest you can follow "
+                            a("https://bsmg.wiki/mapping/#testing-on-a-quest") {
+                                +"the guide on the BSMG wiki"
+                            }
+                            +"."
+                            br {}
+                            +"If you need help head over to the "
+                            a("https://discord.com/channels/441805394323439646/443569023951568906") {
+                                +"BSMG discord"
+                            }
+                            +"."
+                        }
+                        p("card-text") {
+                            +"WIP maps will be removed."
+                        }
+                    }
+                }
+                div("card bg-info mb-3") {
+                    div("card-body") {
+                        h4("card-title") {
+                            +"AI Mapping"
+                        }
+                        p("card-text") {
+                            +"While uploading AI maps is allowed we ask that you identify them as such and set the correct metadata in your zip."
+                        }
+                        p("card-text") {
+                            +"If you want to play an AI map yourself you do "
+                            strong {
+                                +"NOT"
+                            }
+                            +" need to upload it, follow the steps in the WIP section above."
+                        }
+                        p("card-text") {
+                            +"BeastSaber will only sync human made maps. Please don't try and circumvent the filter to get your map to sync."
+                        }
                     }
                 }
             }

@@ -198,7 +198,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                         if (error) {
                                             i("fas fa-exclamation-circle mr-1") {}
                                         }
-                                        +"${it.characteristic} - ${it.difficulty}"
+                                        +"${it.characteristic.human()} - ${it.difficulty.human()}"
                                     }
                                     p {
                                         textToContent("Notes: ${it.notes}\nBombs: ${it.bombs}\nObstacles: ${it.obstacles}\nEvents: ${it.events}\n" +

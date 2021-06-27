@@ -10,6 +10,10 @@ body {
     margin: auto;
 }
 
+.mapinfo-list td {
+    width: 50%;
+}
+
 .search-results td:nth-child(1) {
     width: 124px;
 }
@@ -36,18 +40,18 @@ body {
     padding: 3px 0 3px 4px
 }
 
-.search-results small, .search-results a {
+.search-results small, .search-results a, .mapinfo-list a, .mapinfo-list small {
     word-break: break-word;
 }
 
-.search-results small {
+.search-results small, .mapinfo-list small {
     display: block;
     max-height: 146px;
     overflow: hidden;
     margin-top: 8px;
 }
 
-.search-results p {
+.search-results p, .mapinfo-list p {
     margin-bottom: 0;
 }
 
@@ -71,7 +75,7 @@ body {
     background: #222;
 }
 
-.search-results time {
+.search-results time, .mapinfo-list time {
     font-size: 10px;
 }
 
@@ -468,6 +472,44 @@ li.KeyboardShortcutRow {
 }
 .mapstats .diff-stars {
     padding-top: 14px;
+}
+.card a {
+    color: #fff;
+    text-decoration: underline;
+}
+.card a:hover {
+    color: #000;
+}
+.btn-check {
+    position: absolute;
+    clip: rect(0, 0, 0, 0);
+    pointer-events: none;
+}
+.btn-check[disabled] + .btn, .btn-check:disabled + .btn {
+    pointer-events: none;
+    -webkit-filter: none;
+    filter: none;
+    opacity: 0.65;
+}
+.btn-check:focus + .btn-outline-light, .btn-outline-light:focus {
+    box-shadow: 0 0 0 0.25rem rgba(173, 181, 189, 0.5);
+}
+.btn-check:checked + .btn-outline-light,
+.btn-check:active + .btn-outline-light, .btn-outline-light:active, .btn-outline-light.active, .btn-outline-light.dropdown-toggle.show {
+    color: #000;
+    background-color: #adb5bd;
+    border-color: #adb5bd;
+}
+.btn-check:checked + .btn-outline-light:focus,
+.btn-check:active + .btn-outline-light:focus, .btn-outline-light:active:focus, .btn-outline-light.active:focus, .btn-outline-light.dropdown-toggle.show:focus {
+    box-shadow: 0 0 0 0.25rem rgba(173, 181, 189, 0.5);
+}
+#beatsage-no + label {
+    width: 45%;
+}
+#beatsage-yes + label {
+    width: 54%;
+    margin-left: 1%;
 }
 
 @media (min-width: 576px) {

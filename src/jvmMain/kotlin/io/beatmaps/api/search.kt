@@ -34,7 +34,8 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
     @Group("Search") @Location("/search/text/{page?}")
     data class Text(val q: String = "", val automapper: Boolean = false, val minNps: Float? = null, val maxNps: Float? = null, val chroma: Boolean = false, val page: Long = 0,
                     val sortOrder: SearchOrder = SearchOrder.Relevance, val from: Instant? = null, val to: Instant? = null, @Ignore val api: SearchApi, val noodle: Boolean = false,
-                    val ranked: Boolean = false, val fullSpread: Boolean = false)
+                    val ranked: Boolean = false, val fullSpread: Boolean = false, val minDuration: Int? = null, val maxDuration: Int? = null, val minRating: Float? = null,
+                    val maxRating: Float? = null, val minBpm: Float? = null, val maxBpm: Float? = null)
 }
 
 val beatsaverRegex = Regex("^[0-9a-f]{1,5}$")
@@ -100,6 +101,18 @@ fun Route.searchRoute() {
                                     if (it.minNps == null) q else q.and(Beatmap.maxNps greaterEq it.minNps)
                                 }.let { q ->
                                     if (it.maxNps == null) q else q.and(Beatmap.minNps lessEq it.maxNps)
+                                }.let { q ->
+                                    if (it.minDuration == null) q else q.and(Beatmap.duration greaterEq it.minDuration)
+                                }.let { q ->
+                                    if (it.maxDuration == null) q else q.and(Beatmap.duration lessEq it.maxDuration)
+                                }.let { q ->
+                                    if (it.minRating == null) q else q.and(Beatmap.score greaterEq it.minRating)
+                                }.let { q ->
+                                    if (it.maxRating == null) q else q.and(Beatmap.score lessEq it.maxRating)
+                                }.let { q ->
+                                    if (it.minBpm == null) q else q.and(Beatmap.bpm greaterEq it.minBpm)
+                                }.let { q ->
+                                    if (it.maxBpm == null) q else q.and(Beatmap.bpm lessEq it.maxBpm)
                                 }.let { q ->
                                     if (it.from == null) q else q.and(Beatmap.uploaded greaterEq it.from.toJavaInstant())
                                 }.let { q ->
