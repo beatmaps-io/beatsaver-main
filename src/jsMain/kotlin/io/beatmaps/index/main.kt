@@ -40,16 +40,16 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
     private fun fromURL() = URLSearchParams(window.location.search).let { params ->
         SearchParams(
             params.get("q") ?: "",
-            params.get("auto").toBoolean(),
+            params.get("auto")?.toBoolean(),
             params.get("minNps")?.toFloatOrNull(),
             params.get("maxNps")?.toFloatOrNull(),
-            params.get("chroma").toBoolean(),
+            params.get("chroma")?.toBoolean(),
             SearchOrder.fromString(params.get("order")) ?: SearchOrder.Relevance,
             params.get("from"),
             params.get("to"),
-            params.get("noodle").toBoolean(),
-            params.get("ranked").toBoolean(),
-            params.get("fullSpread").toBoolean()
+            params.get("noodle")?.toBoolean(),
+            params.get("ranked")?.toBoolean(),
+            params.get("fullSpread")?.toBoolean()
         )
     }
 
@@ -66,11 +66,11 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
     private fun updateSearchParams(searchParamsLocal: SearchParams) {
         val newQuery = listOfNotNull(
             (if (searchParamsLocal.search.isNotBlank()) "q=${searchParamsLocal.search}" else null),
-            (if (searchParamsLocal.chroma) "chroma=true" else null),
-            (if (searchParamsLocal.ranked) "ranked=true" else null),
-            (if (searchParamsLocal.noodle) "noodle=true" else null),
-            (if (searchParamsLocal.automapper) "auto=true" else null),
-            (if (searchParamsLocal.fullSpread) "fullSpread=true" else null),
+            (if (searchParamsLocal.chroma == true) "chroma=true" else null),
+            (if (searchParamsLocal.ranked == true) "ranked=true" else null),
+            (if (searchParamsLocal.noodle == true) "noodle=true" else null),
+            (if (searchParamsLocal.automapper == true) "auto=true" else null),
+            (if (searchParamsLocal.fullSpread == true) "fullSpread=true" else null),
             (if (searchParamsLocal.maxNps != null) "maxNps=${searchParamsLocal.maxNps}" else null),
             (if (searchParamsLocal.minNps != null) "minNps=${searchParamsLocal.minNps}" else null),
             (if (searchParamsLocal.sortOrder != SearchOrder.Relevance) "order=${searchParamsLocal.sortOrder}" else null),

@@ -31,9 +31,9 @@ external interface BeatmapTableProps : RProps {
     var history: RouteResultHistory
 }
 
-data class SearchParams(val search: String, val automapper: Boolean, val minNps: Float?, val maxNps: Float?,
-                        val chroma: Boolean, val sortOrder: SearchOrder, val from: String?, val to: String?,
-                        val noodle: Boolean, val ranked: Boolean, val fullSpread: Boolean)
+data class SearchParams(val search: String, val automapper: Boolean?, val minNps: Float?, val maxNps: Float?,
+                        val chroma: Boolean?, val sortOrder: SearchOrder, val from: String?, val to: String?,
+                        val noodle: Boolean?, val ranked: Boolean?, val fullSpread: Boolean?)
 
 external interface BeatmapTableState : RState {
     var page: Int
@@ -83,8 +83,12 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         } else if (props.user != null) {
             "${Config.apibase}/maps/uploader/${props.user}/${state.page}"
         } else {
-            "${Config.apibase}/search/text/${state.page}?automapper=${props.search.automapper}&chroma=${props.search.chroma}" +
-                    "&noodle=${props.search.noodle}&ranked=${props.search.ranked}&fullSpread=${props.search.fullSpread}&sortOrder=${props.search.sortOrder}" +
+            "${Config.apibase}/search/text/${state.page}?sortOrder=${props.search.sortOrder}" +
+                    (if (props.search.automapper != null) "&automapper=${props.search.automapper}" else "") +
+                    (if (props.search.chroma != null) "&chroma=${props.search.chroma}" else "") +
+                    (if (props.search.noodle != null) "&noodle=${props.search.noodle}" else "") +
+                    (if (props.search.ranked != null) "&ranked=${props.search.ranked}" else "") +
+                    (if (props.search.fullSpread != null) "&fullSpread=${props.search.fullSpread}" else "") +
                     (if (props.search.search.isNotBlank()) "&q=${props.search.search}" else "") +
                     (if (props.search.maxNps != null) "&maxNps=${props.search.maxNps}" else "") +
                     (if (props.search.minNps != null) "&minNps=${props.search.minNps}" else "") +

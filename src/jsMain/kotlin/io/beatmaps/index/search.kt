@@ -123,22 +123,22 @@ class Search : RComponent<SearchProps, SearchState>() {
     fun updateUI(fromParams: SearchParams) {
         inputRef.current?.value = fromParams.search
         sortRef.current?.selectedIndex = fromParams.sortOrder.idx
-        autoRef.current?.checked = fromParams.automapper
-        chromaRef.current?.checked = fromParams.chroma
-        spreadRef.current?.checked = fromParams.fullSpread
-        rankedRef.current?.checked = fromParams.ranked
-        noodleRef.current?.checked = fromParams.noodle
+        autoRef.current?.checked = fromParams.automapper == true
+        chromaRef.current?.checked = fromParams.chroma == true
+        spreadRef.current?.checked = fromParams.fullSpread == true
+        rankedRef.current?.checked = fromParams.ranked == true
+        noodleRef.current?.checked = fromParams.noodle == true
         setState {
-            automapper = fromParams.automapper
-            chroma = fromParams.chroma
+            automapper = fromParams.automapper == true
+            chroma = fromParams.chroma == true
             minNps = fromParams.minNps ?: 0f
             maxNps = fromParams.maxNps ?: props.maxNps.toFloat()
             order = fromParams.sortOrder
             startDate = fromParams.from?.let { Moment(it) }
             endDate = fromParams.to?.let { Moment(it) }
-            noodle = fromParams.noodle
-            ranked = fromParams.noodle
-            fullSpread = fromParams.fullSpread
+            noodle = fromParams.noodle == true
+            ranked = fromParams.noodle == true
+            fullSpread = fromParams.fullSpread == true
         }
     }
 
@@ -156,9 +156,9 @@ class Search : RComponent<SearchProps, SearchState>() {
                     button(type = ButtonType.submit, classes = "btn btn-block btn-primary") {
                         attrs.onClickFunction = {
                             it.preventDefault()
-                            props.updateSearchParams(SearchParams(inputRef.current?.value ?: "", state.automapper, if (state.minNps > 0) state.minNps else null,
-                                if (state.maxNps < props.maxNps) state.maxNps else null, state.chroma, state.order, state.startDate?.format(dateFormat),
-                                state.endDate?.format(dateFormat), state.noodle, state.ranked, state.fullSpread))
+                            props.updateSearchParams(SearchParams(inputRef.current?.value ?: "", if (state.automapper) true else null, if (state.minNps > 0) state.minNps else null,
+                                if (state.maxNps < props.maxNps) state.maxNps else null, if (state.chroma) true else null, state.order, state.startDate?.format(dateFormat),
+                                state.endDate?.format(dateFormat), if (state.noodle) true else null, if (state.ranked) true else null, if (state.fullSpread) true else null))
                         }
                         +"Search"
                     }

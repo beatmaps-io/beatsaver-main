@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+import de.nielsfalk.ktor.swagger.DefaultValue
 import de.nielsfalk.ktor.swagger.Ignore
 import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.ok
@@ -24,6 +25,7 @@ import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.sql.CustomFunction
 import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
@@ -31,14 +33,15 @@ import org.jetbrains.exposed.sql.stringLiteral
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 @Location("/api") class SearchApi {
-    @Group("Search") @Location("/search/text/{page?}")
-    data class Text(val q: String = "", val automapper: Boolean = false, val minNps: Float? = null, val maxNps: Float? = null, val chroma: Boolean = false, val page: Long = 0,
-                    val sortOrder: SearchOrder = SearchOrder.Relevance, val from: Instant? = null, val to: Instant? = null, @Ignore val api: SearchApi, val noodle: Boolean = false,
-                    val ranked: Boolean = false, val fullSpread: Boolean = false, val minDuration: Int? = null, val maxDuration: Int? = null, val minRating: Float? = null,
+    @Group("Search") @Location("/search/text/{page}")
+    data class Text(val q: String? = "", val automapper: Boolean? = null, val minNps: Float? = null, val maxNps: Float? = null, val chroma: Boolean? = null, @DefaultValue("0") val page: Long = 0,
+                    val sortOrder: SearchOrder = SearchOrder.Relevance, val from: Instant? = null, val to: Instant? = null, @Ignore val api: SearchApi, val noodle: Boolean? = null,
+                    val ranked: Boolean? = null, val fullSpread: Boolean? = null, val minDuration: Int? = null, val maxDuration: Int? = null, val minRating: Float? = null,
                     val maxRating: Float? = null, val minBpm: Float? = null, val maxBpm: Float? = null)
 }
 
 val beatsaverRegex = Regex("^[0-9a-f]{1,5}$")
+fun <T> Op<Boolean>.notNull(b: T?, block: (T) -> Op<Boolean>) = if (b == null) this else this.and(block(b))
 
 fun Route.searchRoute() {
     options<SearchApi.Text> {
@@ -50,11 +53,11 @@ fun Route.searchRoute() {
 
         val searchIndex = PgConcat(" ", Beatmap.name, Beatmap.description)
 
-        val similarRank = CustomFunction<String>("substring_similarity", searchIndex.columnType, stringLiteral(it.q), searchIndex)
-        val sortByRank = it.q.isNotBlank() && it.sortOrder == SearchOrder.Relevance
+        val similarRank = CustomFunction<String>("substring_similarity", searchIndex.columnType, stringLiteral(it.q ?: ""), searchIndex)
+        val sortByRank = !it.q.isNullOrBlank() && it.sortOrder == SearchOrder.Relevance
 
         newSuspendedTransaction {
-            if (beatsaverRegex.matches(it.q)) {
+            if (it.q != null && beatsaverRegex.matches(it.q)) {
                 Versions
                     .join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id)
                     .slice(Versions.mapId)
@@ -67,9 +70,9 @@ fun Route.searchRoute() {
                     }
             }
 
-            val user = if (it.q.isNotBlank()) {
+            val user = if (!it.q.isNullOrBlank()) {
                 val userQuery = User.select {
-                    User.name ilike it.q
+                    User.name ilike (it.q)
                 }.orderBy(Expression.build { User.email.isNull() }).limit(1).toList()
 
                 userQuery.firstOrNull()?.let { u -> UserDetail.from(u) }
@@ -86,38 +89,29 @@ fun Route.searchRoute() {
                             .slice(Beatmap.id)
                             .select {
                                 Beatmap.deletedAt.isNull().let { q ->
-                                    if (it.q.isBlank()) q else q.and(PgConcat(" ", Beatmap.name, Beatmap.description) similar it.q)
+                                    if (it.q.isNullOrBlank()) q else q.and(PgConcat(" ", Beatmap.name, Beatmap.description) similar it.q)
                                 }.let { q ->
-                                    if (it.automapper) q else q.and(Beatmap.automapper eq false)
-                                }.let { q ->
-                                    if (!it.chroma) q else q.and(Beatmap.chroma eq true)
-                                }.let { q ->
-                                    if (!it.noodle) q else q.and(Beatmap.noodle eq true)
-                                }.let { q ->
-                                    if (!it.ranked) q else q.and(Beatmap.ranked eq true)
-                                }.let { q ->
-                                    if (!it.fullSpread) q else q.and(Beatmap.fullSpread eq true)
-                                }.let { q ->
-                                    if (it.minNps == null) q else q.and(Beatmap.maxNps greaterEq it.minNps)
-                                }.let { q ->
-                                    if (it.maxNps == null) q else q.and(Beatmap.minNps lessEq it.maxNps)
-                                }.let { q ->
-                                    if (it.minDuration == null) q else q.and(Beatmap.duration greaterEq it.minDuration)
-                                }.let { q ->
-                                    if (it.maxDuration == null) q else q.and(Beatmap.duration lessEq it.maxDuration)
-                                }.let { q ->
-                                    if (it.minRating == null) q else q.and(Beatmap.score greaterEq it.minRating)
-                                }.let { q ->
-                                    if (it.maxRating == null) q else q.and(Beatmap.score lessEq it.maxRating)
-                                }.let { q ->
-                                    if (it.minBpm == null) q else q.and(Beatmap.bpm greaterEq it.minBpm)
-                                }.let { q ->
-                                    if (it.maxBpm == null) q else q.and(Beatmap.bpm lessEq it.maxBpm)
-                                }.let { q ->
-                                    if (it.from == null) q else q.and(Beatmap.uploaded greaterEq it.from.toJavaInstant())
-                                }.let { q ->
-                                    if (it.to == null) q else q.and(Beatmap.uploaded lessEq it.to.toJavaInstant())
+                                    // Doesn't quite make sense but we want to exclude beat sage by default
+                                    when (it.automapper) {
+                                        true -> q
+                                        false -> q.and(Beatmap.automapper eq true)
+                                        null -> q.and(Beatmap.automapper eq false)
+                                    }
                                 }
+                                .notNull(it.chroma) { o -> Beatmap.chroma eq o }
+                                .notNull(it.noodle) { o -> Beatmap.noodle eq o }
+                                .notNull(it.ranked) { o -> Beatmap.ranked eq o }
+                                .notNull(it.fullSpread) { o -> Beatmap.fullSpread eq o }
+                                .notNull(it.minNps) { o -> Beatmap.maxNps greaterEq o }
+                                .notNull(it.maxNps) { o -> Beatmap.minNps lessEq o }
+                                .notNull(it.minDuration) { o -> Beatmap.duration greaterEq o }
+                                .notNull(it.maxDuration) { o -> Beatmap.duration lessEq o }
+                                .notNull(it.minRating) { o -> Beatmap.score greaterEq o }
+                                .notNull(it.maxRating) { o -> Beatmap.score lessEq o }
+                                .notNull(it.minBpm) { o -> Beatmap.bpm greaterEq o }
+                                .notNull(it.maxBpm) { o -> Beatmap.bpm lessEq o }
+                                .notNull(it.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }
+                                .notNull(it.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
                             }
                             .orderBy(if (sortByRank) similarRank else if (it.sortOrder == SearchOrder.Rating) Beatmap.score else Beatmap.uploaded, SortOrder.DESC)
                             .limit(it.page)

@@ -41,7 +41,7 @@ data class SSLeaderboardScore(val playerId: Long, val name: String, val rank: In
 }
 
 @Location("/api/scores") class ScoresApi {
-    @Location("/{key}/{page?}") data class Leaderboard(val key: String, val page: Int = 1, val difficulty: Int = -1, val gameMode: Int = -1, val api: ScoresApi)
+    @Location("/{key}/{page}") data class Leaderboard(val key: String, val page: Int = 1, val difficulty: Int = -1, val gameMode: Int = -1, val api: ScoresApi)
 }
 
 fun Route.scoresRoute() {

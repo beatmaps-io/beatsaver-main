@@ -179,13 +179,15 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                             +"On PC you can access WIPs directly if you have songcore."
                             br {}
                             +"On Quest you can follow "
-                            a("https://bsmg.wiki/mapping/#testing-on-a-quest") {
+                            a("https://bsmg.wiki/mapping/#testing-on-a-quest", target = "_blank") {
+                                attrs.rel = "noopener"
                                 +"the guide on the BSMG wiki"
                             }
                             +"."
                             br {}
                             +"If you need help head over to the "
-                            a("https://discord.com/channels/441805394323439646/443569023951568906") {
+                            a("https://discord.com/channels/441805394323439646/443569023951568906", target = "_blank") {
+                                attrs.rel = "noopener"
                                 +"BSMG discord"
                             }
                             +"."

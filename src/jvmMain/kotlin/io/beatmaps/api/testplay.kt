@@ -59,8 +59,8 @@ import java.util.Date
 import javax.crypto.SecretKey
 
 @Location("/api/testplay") class TestplayApi {
-    @Location("/queue/{page?}") data class Queue(val page: Long? = 0, val includePlayed: Boolean = true, val api: TestplayApi)
-    @Location("/recent/{page?}") data class Recent(val page: Long? = 0, val api: TestplayApi)
+    @Location("/queue/{page}") data class Queue(val page: Long = 0, val includePlayed: Boolean = true, val api: TestplayApi)
+    @Location("/recent/{page}") data class Recent(val page: Long = 0, val api: TestplayApi)
     @Location("/feedback") data class Feedback(val api: TestplayApi)
     @Location("/state") data class State(val api: TestplayApi)
     @Location("/version") data class Version(val api: TestplayApi)

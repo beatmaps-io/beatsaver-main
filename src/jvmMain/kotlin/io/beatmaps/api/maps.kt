@@ -38,13 +38,13 @@ import pl.jutupe.ktor_rabbitmq.publish
     }
     @Location("/maps/update") data class Update(val api: MapsApi)
     @Location("/maps/curate") data class Curate(val api: MapsApi)
-    @Location("/maps/wip/{page?}") data class WIP(val page: Long? = 0, val api: MapsApi)
+    @Location("/maps/wip/{page}") data class WIP(val page: Long = 0, val api: MapsApi)
     @Group("Maps") @Location("/maps/beatsaver/{key}") data class Beatsaver(val key: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/id/{key}") data class Detail(val key: Int, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/hash/{hash}") data class ByHash(val hash: String, @Ignore val api: MapsApi)
-    @Group("Maps") @Location("/maps/uploader/{id}/{page?}") data class ByUploader(val id: Int, val page: Long? = 0, @Ignore  val api: MapsApi)
+    @Group("Maps") @Location("/maps/uploader/{id}/{page}") data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore  val api: MapsApi)
     @Group("Maps") @Location("/maps/latest") data class ByUploadDate(val after: Instant? = null, val automapper: Boolean = false, @Ignore  val api: MapsApi)
-    @Group("Maps") @Location("/maps/plays/{page?}") data class ByPlayCount(val page: Long? = 0, @Ignore val api: MapsApi)
+    @Group("Maps") @Location("/maps/plays/{page}") data class ByPlayCount(@DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
     @Group("Users") @Location("/users/id/{id}") data class UserId(val id: Int, @Ignore val api: MapsApi)
     @Group("Users") @Location("/users/verify") data class Verify(@Ignore val api: MapsApi)
 }
