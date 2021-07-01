@@ -65,11 +65,13 @@ kotlin {
         val jvmMain by getting {
             languageSettings.useExperimentalAnnotation("kotlin.io.path.ExperimentalPathApi")
             languageSettings.useExperimentalAnnotation("io.ktor.locations.KtorExperimentalLocationsAPI")
-            languageSettings.useExperimentalAnnotation("kotlinx.coroutines.flow.FlowPreview")
             languageSettings.useExperimentalAnnotation("kotlin.time.ExperimentalTime")
             languageSettings.useExperimentalAnnotation("io.ktor.util.KtorExperimentalAPI")
             languageSettings.useExperimentalAnnotation("kotlin.ExperimentalUnsignedTypes")
+            languageSettings.useExperimentalAnnotation("kotlinx.serialization.ExperimentalSerializationApi")
             dependencies {
+                api(kotlin("reflect", "1.5.10"))
+
                 // Core
                 implementation("io.ktor:ktor-server-netty:$ktorVersion")
                 implementation("io.ktor:ktor-html-builder:$ktorVersion")

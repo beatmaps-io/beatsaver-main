@@ -37,7 +37,7 @@ data class Session(val userId: Int, val hash: String? = null, val userEmail: Str
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?) :
             this(userId, hash, userEmail, userName, testplay, steamId, oculusId, false)
     constructor(userId: Int, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?) :
-            this(userId, null, userEmail, userName, testplay, steamId, oculusId, false)
+            this(userId, null, userEmail, userName, testplay, steamId, oculusId)
 }
 
 fun Route.authRoute() {

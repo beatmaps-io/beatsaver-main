@@ -248,6 +248,9 @@ fun Route.testplayRoute() {
 
                             it[chroma] = stats.any { s -> s.chroma }
                             it[noodle] = stats.any { s -> s.ne }
+                            it[me] = stats.any { s -> s.me }
+                            it[cinema] = stats.any { s -> s.cinema }
+
                             it[minNps] = stats.minByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
                             it[maxNps] = stats.maxByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
                             it[fullSpread] = stats.filter { diff -> diff.characteristic == ECharacteristic.Standard }

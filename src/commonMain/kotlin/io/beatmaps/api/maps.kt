@@ -35,7 +35,7 @@ data class MapVersion(val hash: String, val key: String? = null, val state: EMap
 
 @Serializable
 data class MapDifficulty(val njs: Float, val offset: Float, val notes: Int, val bombs: Int, val obstacles: Int, val nps: Double, val length: Double,
-                         val characteristic: ECharacteristic, val difficulty: EDifficulty, val events: Int, val chroma: Boolean, val me: Boolean, val ne: Boolean,
+                         val characteristic: ECharacteristic, val difficulty: EDifficulty, val events: Int, val chroma: Boolean, val me: Boolean, val ne: Boolean, val cinema: Boolean,
                          val seconds: Double, val paritySummary: MapParitySummary, val stars: Float? = null) { companion object }
 
 @Serializable

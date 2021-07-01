@@ -9,10 +9,9 @@ import io.beatmaps.common.BSPrettyPrinter
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.beatsaver.localCoverFolder
 import io.beatmaps.common.beatsaver.localFolder
-import io.beatmaps.common.checkParity
 import io.beatmaps.common.copyToSuspend
-import io.beatmaps.common.db.UpdateReturningStatement
 import io.beatmaps.common.db.updateReturning
+import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.*
 import io.beatmaps.common.jackson
 import io.beatmaps.genericPage
@@ -20,6 +19,7 @@ import io.beatmaps.login.Session
 import io.beatmaps.common.zip.ExtractedInfo
 import io.beatmaps.common.zip.ZipHelper
 import io.beatmaps.common.zip.ZipHelper.Companion.openZip
+import io.beatmaps.common.zip.sharedInsert
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.content.*
@@ -35,25 +35,19 @@ import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.statements.Statement
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.publish
 import java.io.File
 import java.io.OutputStream
-import java.math.BigDecimal
 import java.math.BigInteger
 import java.nio.file.Files
 import java.security.DigestOutputStream
 import java.security.MessageDigest
 import java.util.zip.ZipException
 import kotlin.collections.filter
-import kotlin.collections.first
 import kotlin.collections.firstOrNull
 import kotlin.collections.flatMap
 import kotlin.collections.forEach
-import kotlin.collections.isNotEmpty
-import kotlin.collections.last
 import kotlin.collections.listOf
 import kotlin.collections.map
 import kotlin.collections.mapNotNull
@@ -87,6 +81,9 @@ fun Route.uploadController() {
 
     post<DMCA> {
         val session = call.sessions.get<Session>() ?: throw UploadException("Not logged in")
+        val currentLimit = transaction {
+            UserDao[session.userId].uploadLimit
+        }
 
         val file = File(
             uploadDir,
@@ -105,7 +102,7 @@ fun Route.uploadController() {
                 extractedInfoTmp = part.streamProvider().use { its ->
                     try {
                         file.outputStream().buffered().use {
-                            its.copyToSuspend(it, sizeLimit = 15 * 1024 * 1024)
+                            its.copyToSuspend(it, sizeLimit = currentLimit * 1024 * 1024)
                         }.run {
                             DigestOutputStream(OutputStream.nullOutputStream(), md).use { dos ->
                                 openZip(file) {
@@ -225,43 +222,14 @@ fun Route.uploadController() {
                     cLoop.value.forEach { dLoop ->
                         val diffInfo = dLoop.key
                         val bsdiff = dLoop.value
-                        val parityResults = checkParity(bsdiff)
 
                         Difficulty.insertAndGetId {
                             it[mapId] = newMap
                             it[versionId] = newVersion
 
-                            it[njs] = diffInfo._noteJumpMovementSpeed
-                            it[offset] = diffInfo._noteJumpStartBeatOffset
+                            sharedInsert(it, diffInfo, bsdiff, extractedInfo.mapInfo)
                             it[characteristic] = cLoop.key.enumValue()
                             it[difficulty] = dLoop.key.enumValue()
-
-                            it[pReset] = parityResults.info
-                            it[pError] = parityResults.errors
-                            it[pWarn] = parityResults.warnings
-
-                            val sorted = bsdiff._notes.sortedBy { note -> note._time }
-                            val partitioned = bsdiff._notes.partition { note -> note._type != 3 }
-                            val len = if (sorted.isNotEmpty()) {
-                                sorted.last()._time - sorted.first()._time
-                            } else 0f
-
-                            it[notes] = partitioned.first.size
-                            it[bombs] = partitioned.second.size
-                            it[obstacles] = bsdiff._obstacles.size
-                            it[events] = bsdiff._events.size
-                            it[length] = len.toBigDecimal()
-                            it[seconds] = (if (extractedInfo.mapInfo._beatsPerMinute == 0f) 0 else (60 / extractedInfo.mapInfo._beatsPerMinute) * len).toDouble().toBigDecimal()
-
-                            it[nps] = BigDecimal.valueOf(if (len == 0f) 0.0 else ((partitioned.first.size / len) * (extractedInfo.mapInfo._beatsPerMinute / 60)).toDouble()).min(maxAllowedNps)
-                            it[chroma] = diffInfo._customData?._requirements?.contains("Chroma") ?: false || diffInfo._customData?._suggestions?.contains("Chroma") ?: false
-                            it[ne] = diffInfo._customData?._requirements?.contains("Noodle Extensions") ?: false
-                            it[me] = diffInfo._customData?._requirements?.contains("Mapping Extensions") ?: false
-
-                            it[requirements] = diffInfo._customData?._requirements?.toTypedArray()
-                            it[suggestions] = diffInfo._customData?._suggestions?.toTypedArray()
-                            it[information] = diffInfo._customData?._information?.toTypedArray()
-                            it[warnings] = diffInfo._customData?._warnings?.toTypedArray()
                         }
                     }
                 }

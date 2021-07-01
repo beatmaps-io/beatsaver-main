@@ -37,7 +37,7 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
     data class Text(val q: String? = "", val automapper: Boolean? = null, val minNps: Float? = null, val maxNps: Float? = null, val chroma: Boolean? = null, @DefaultValue("0") val page: Long = 0,
                     val sortOrder: SearchOrder = SearchOrder.Relevance, val from: Instant? = null, val to: Instant? = null, @Ignore val api: SearchApi, val noodle: Boolean? = null,
                     val ranked: Boolean? = null, val fullSpread: Boolean? = null, val minDuration: Int? = null, val maxDuration: Int? = null, val minRating: Float? = null,
-                    val maxRating: Float? = null, val minBpm: Float? = null, val maxBpm: Float? = null)
+                    val maxRating: Float? = null, val minBpm: Float? = null, val maxBpm: Float? = null, val me: Boolean? = null, val cinema: Boolean? = null)
 }
 
 val beatsaverRegex = Regex("^[0-9a-f]{1,5}$")
@@ -112,6 +112,8 @@ fun Route.searchRoute() {
                                 .notNull(it.maxBpm) { o -> Beatmap.bpm lessEq o }
                                 .notNull(it.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }
                                 .notNull(it.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
+                                .notNull(it.me) { o -> Beatmap.me eq o }
+                                .notNull(it.cinema) { o -> Beatmap.cinema eq o }
                             }
                             .orderBy(if (sortByRank) similarRank else if (it.sortOrder == SearchOrder.Rating) Beatmap.score else Beatmap.uploaded, SortOrder.DESC)
                             .limit(it.page)

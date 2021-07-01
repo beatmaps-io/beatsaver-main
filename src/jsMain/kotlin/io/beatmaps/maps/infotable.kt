@@ -82,7 +82,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
                 props.changeSelectedDiff(diff)
             }
 
-            img(diff.characteristic.human(), "/static/icons/${diff.characteristic.human().toLowerCase()}.png", classes = "mode") {
+            img(diff.characteristic.human(), "/static/icons/${diff.characteristic.human().lowercase()}.png", classes = "mode") {
                 attrs.title = diff.characteristic.human()
                 attrs.width = "16"
                 attrs.height = "16"

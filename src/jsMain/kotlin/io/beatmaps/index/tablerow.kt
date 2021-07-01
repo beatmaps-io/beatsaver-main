@@ -69,7 +69,7 @@ class TableRow : RComponent<TableRowProps, RState>() {
             td("diffs") {
                 props.version?.diffs?.forEach { d ->
                     span("badge badge-pill badge-${d.difficulty.color} mr-2 mb-1") {
-                        img(d.characteristic.human(), "/static/icons/${d.characteristic.human().toLowerCase()}.png", classes = "mode") {
+                        img(d.characteristic.human(), "/static/icons/${d.characteristic.human().lowercase()}.png", classes = "mode") {
                             attrs.title = d.characteristic.human()
                             attrs.width = "16"
                             attrs.height = "16"
