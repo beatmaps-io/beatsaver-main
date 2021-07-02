@@ -1,41 +1,45 @@
 package io.beatmaps.api
 
-import de.nielsfalk.ktor.swagger.*
+import de.nielsfalk.ktor.swagger.DefaultValue
+import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.get
+import de.nielsfalk.ktor.swagger.notFound
+import de.nielsfalk.ktor.swagger.ok
+import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.api.EMapState
-import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.User
-import io.beatmaps.common.dbo.Versions
-import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.ModLog
-import io.beatmaps.common.inlineJackson
-import io.ktor.application.*
-import io.ktor.http.*
-import io.ktor.locations.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
+import io.beatmaps.common.dbo.User
+import io.beatmaps.common.dbo.Versions
+import io.beatmaps.common.dbo.complexToBeatmap
+import io.ktor.application.call
+import io.ktor.http.HttpStatusCode
+import io.ktor.locations.Location
+import io.ktor.locations.get
+import io.ktor.locations.options
+import io.ktor.locations.post
+import io.ktor.request.receive
+import io.ktor.response.header
+import io.ktor.response.respond
+import io.ktor.routing.Route
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
-import pl.jutupe.ktor_rabbitmq.RabbitMQ
+import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.publish
 
 @Location("/api") class MapsApi {
-    @Location("/stream") class Stream {
-        @Group("Maps") @Location("/maps/latest") data class New(val after: Instant? = null, val automapper: Boolean = false, @Ignore val api: Stream)
-    }
     @Location("/maps/update") data class Update(val api: MapsApi)
     @Location("/maps/curate") data class Curate(val api: MapsApi)
     @Location("/maps/wip/{page}") data class WIP(val page: Long = 0, val api: MapsApi)
@@ -49,7 +53,7 @@ import pl.jutupe.ktor_rabbitmq.publish
     @Group("Users") @Location("/users/verify") data class Verify(@Ignore val api: MapsApi)
 }
 
-fun Route.mapDetailRoute(mq: RabbitMQ) {
+fun Route.mapDetailRoute() {
     options<MapsApi.Beatsaver> {
         call.response.header("Access-Control-Allow-Origin", "*")
     }
@@ -67,53 +71,6 @@ fun Route.mapDetailRoute(mq: RabbitMQ) {
     }
     options<MapsApi.ByPlayCount> {
         call.response.header("Access-Control-Allow-Origin", "*")
-    }
-
-    val activeChannels = mutableListOf<Channel<String>>()
-    mq.consumeAck("bm.updateStream", Int::class) { _, mapId ->
-        transaction {
-            Beatmap
-                .joinVersions(true, null) // Allow returning non-published versions
-                .joinUploader()
-                .joinCurator()
-                .select {
-                    Beatmap.id eq mapId and (Beatmap.deletedAt.isNull())
-                }
-                .complexToBeatmap()
-                .firstOrNull()
-                ?.enrichTestplays()
-                ?.run {
-                    MapDetail.from(this)
-                }
-        }?.let { map ->
-            activeChannels.forEach { it.send(inlineJackson.writeValueAsString(map)) }
-        }
-    }
-
-    get<MapsApi.Stream.New> {
-        val channel = Channel<String>(10)
-        channel.send("")
-        activeChannels.add(channel)
-
-        try {
-            call.respondTextWriter {
-                while (true) {
-                    // Send every 30 seconds to keep the connection alive
-                    val map = withTimeoutOrNull(30 * 1000) {
-                        channel.receive()
-                    } ?: ""
-                    withContext(Dispatchers.IO) {
-                        write(map + "\n")
-                        flush()
-                    }
-                }
-            }
-        } catch (e: CancellationException) {
-            // Client closed connection
-        } finally {
-            activeChannels.remove(channel)
-            channel.close()
-        }
     }
 
     post<MapsApi.Curate> {

@@ -68,7 +68,9 @@ import pl.jutupe.ktor_rabbitmq.RabbitMQ
 import java.math.BigInteger
 import java.security.MessageDigest
 import io.beatmaps.common.jackson
+import io.beatmaps.websockets.mapsWebsocket
 import io.ktor.jackson.JacksonConverter
+import io.ktor.websocket.WebSockets
 import kotlinx.serialization.ExperimentalSerializationApi
 
 suspend fun PipelineContext<*, io.ktor.application.ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) {
@@ -204,6 +206,8 @@ fun Application.beatmapsio() {
         }
     }
 
+    install(WebSockets)
+
     installSessions()
     installDiscordOauth()
     val mq = install(RabbitMQ) {
@@ -218,7 +222,7 @@ fun Application.beatmapsio() {
         cdnRoute()
 
         authRoute()
-        mapDetailRoute(mq)
+        mapDetailRoute()
         userRoute()
         searchRoute()
         scoresRoute()
@@ -228,6 +232,8 @@ fun Application.beatmapsio() {
         mapController()
         uploadController()
         policyController()
+
+        mapsWebsocket(mq)
 
         static("/static") {
             resources()
