@@ -24,7 +24,8 @@ fun Route.mapsWebsocket(mq: RabbitMQ) {
     mq.consumeAck("bm.updateStream", Int::class) { _, mapId ->
         transaction {
             Beatmap
-                .joinVersions(true, null) // Allow returning non-published versions
+                //.joinVersions(true, null) // Allow returning non-published versions
+                .joinVersions(true)
                 .joinUploader()
                 .joinCurator()
                 .select {
@@ -32,7 +33,7 @@ fun Route.mapsWebsocket(mq: RabbitMQ) {
                 }
                 .complexToBeatmap()
                 .firstOrNull()
-                ?.enrichTestplays()
+                //?.enrichTestplays()
                 ?.run {
                     MapDetail.from(this)
                 }
