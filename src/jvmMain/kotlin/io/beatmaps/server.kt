@@ -69,9 +69,11 @@ import java.math.BigInteger
 import java.security.MessageDigest
 import io.beatmaps.common.jackson
 import io.beatmaps.websockets.mapsWebsocket
+import io.ktor.http.cio.websocket.pingPeriod
 import io.ktor.jackson.JacksonConverter
 import io.ktor.websocket.WebSockets
 import kotlinx.serialization.ExperimentalSerializationApi
+import java.time.Duration
 
 suspend fun PipelineContext<*, io.ktor.application.ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) {
     val sess = call.sessions.get<Session>()
@@ -206,7 +208,9 @@ fun Application.beatmapsio() {
         }
     }
 
-    install(WebSockets)
+    install(WebSockets) {
+        pingPeriod = Duration.ofSeconds(60)
+    }
 
     installSessions()
     installDiscordOauth()

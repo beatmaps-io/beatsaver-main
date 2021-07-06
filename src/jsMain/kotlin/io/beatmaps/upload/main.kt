@@ -203,17 +203,23 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                             +"AI Mapping"
                         }
                         p("card-text") {
-                            +"While uploading AI maps is allowed we ask that you identify them as such and set the correct metadata in your zip."
+                            +"Auto-generated (AI) maps are allowed following these guidelines:"
                         }
-                        p("card-text") {
-                            +"If you want to play an AI map yourself you do "
-                            strong {
-                                +"NOT"
+                        ul {
+                            li {
+                                +"Identify the map as auto-generated on upload."
                             }
-                            +" need to upload it, follow the steps in the WIP section above."
-                        }
-                        p("card-text") {
-                            +"BeastSaber will only sync human made maps. Please don't try and circumvent the filter to get your map to sync."
+                            li {
+                                +"Set the correct level author in your zip file."
+                            }
+                            li {
+                                +"AI maps will not sync to the BeastSaber site."
+                            }
+                            li {
+                                +"Personal maps do not need to be uploaded to play."
+                                br {}
+                                +"See Map Testing section."
+                            }
                         }
                     }
                 }
