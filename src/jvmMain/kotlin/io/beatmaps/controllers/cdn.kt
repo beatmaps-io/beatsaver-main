@@ -1,10 +1,12 @@
 package io.beatmaps.controllers
 
+import io.beatmaps.common.beatsaver.localAudioFolder
 import io.beatmaps.common.beatsaver.localCoverFolder
 import io.beatmaps.common.beatsaver.localFolder
 import io.beatmaps.common.dbo.Downloads
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
+import io.beatmaps.common.zip.ZipHelper.Companion.openZip
 import io.beatmaps.login.localAvatarFolder
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -28,6 +30,8 @@ import java.io.File
     @Location("/{file}.jpg") data class Cover(val file: String, val api: CDN)
     @Location("/avatar/{user}.png") data class Avatar(val user: Long, val api: CDN)
     @Location("/beatsaver/{file}.zip") data class BeatSaver(val file: String, val api: CDN)
+    @Location("/{file}.mp3") data class Audio(val file: String, val api: CDN)
+    @Location("/beatsaver/{file}.mp3") data class BSAudio(val file: String, val api: CDN)
 }
 
 suspend fun PipelineContext<*, ApplicationCall>.returnFile(file: File?) {
@@ -49,8 +53,8 @@ fun Route.cdnRoute() {
 
     get<CDN.Zip> {
         val file = File(localFolder(it.file), "${it.file}.zip")
-        transaction {
-            if (file.exists()) {
+        if (file.exists()) {
+            transaction {
                 Downloads.insert { dl ->
                     dl[hash] = it.file
                     dl[remote] = call.request.origin.remoteHost
@@ -84,6 +88,20 @@ fun Route.cdnRoute() {
         returnFile(file)
     }
 
+    get<CDN.Audio> {
+        getAudio(it.file)
+    }
+
+    get<CDN.BSAudio> {
+        transaction {
+            VersionsDao.wrapRows(Versions.select {
+                Versions.key64 eq it.file
+            }.limit(1)).firstOrNull()?.hash
+        }?.let {
+            getAudio(it)
+        } ?: error("Key not found")
+    }
+
     get<CDN.Cover> {
         returnFile(File(localCoverFolder(it.file), "${it.file}.jpg"))
     }
@@ -91,4 +109,25 @@ fun Route.cdnRoute() {
     get<CDN.Avatar> {
         returnFile(File(localAvatarFolder(), "${it.user}.png"))
     }
+}
+
+suspend fun PipelineContext<Unit, ApplicationCall>.getAudio(hash: String) {
+    val audio = File(localAudioFolder(hash), "${hash}.mp3")
+
+    if (!audio.exists()) {
+        synchronized(this) {
+            if (!audio.exists()) {
+                val file = File(localFolder(hash), "${hash}.zip")
+                if (!file.exists()) {
+                    error("Hash not found")
+                }
+
+                openZip(file) {
+                    audio.writeBytes(generatePreview())
+                }
+            }
+        }
+    }
+
+    returnFile(audio)
 }

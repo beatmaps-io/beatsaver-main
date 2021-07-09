@@ -4,30 +4,40 @@ import ch.compile.recaptcha.ReCaptchaVerify
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.ObjectWriter
 import io.beatmaps.api.FailedUploadResponse
-import io.beatmaps.common.beatsaber.MapInfo
 import io.beatmaps.common.BSPrettyPrinter
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.beatsaber.MapInfo
+import io.beatmaps.common.beatsaver.localAudioFolder
 import io.beatmaps.common.beatsaver.localCoverFolder
 import io.beatmaps.common.beatsaver.localFolder
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.updateReturning
-import io.beatmaps.common.db.upsert
-import io.beatmaps.common.dbo.*
+import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Difficulty
+import io.beatmaps.common.dbo.User
+import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.jackson
-import io.beatmaps.genericPage
-import io.beatmaps.login.Session
 import io.beatmaps.common.zip.ExtractedInfo
 import io.beatmaps.common.zip.ZipHelper
 import io.beatmaps.common.zip.ZipHelper.Companion.openZip
 import io.beatmaps.common.zip.sharedInsert
-import io.ktor.application.*
-import io.ktor.features.*
-import io.ktor.http.content.*
-import io.ktor.locations.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import io.ktor.sessions.*
+import io.beatmaps.genericPage
+import io.beatmaps.login.Session
+import io.ktor.application.call
+import io.ktor.features.origin
+import io.ktor.http.content.PartData
+import io.ktor.http.content.forEachPart
+import io.ktor.http.content.streamProvider
+import io.ktor.locations.Location
+import io.ktor.locations.get
+import io.ktor.locations.post
+import io.ktor.request.receiveMultipart
+import io.ktor.response.respond
+import io.ktor.response.respondRedirect
+import io.ktor.routing.Route
+import io.ktor.sessions.get
+import io.ktor.sessions.sessions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.dao.id.EntityID
@@ -37,6 +47,7 @@ import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import pl.jutupe.ktor_rabbitmq.publish
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.OutputStream
 import java.math.BigInteger
@@ -44,19 +55,7 @@ import java.nio.file.Files
 import java.security.DigestOutputStream
 import java.security.MessageDigest
 import java.util.zip.ZipException
-import kotlin.collections.filter
-import kotlin.collections.firstOrNull
-import kotlin.collections.flatMap
-import kotlin.collections.forEach
-import kotlin.collections.listOf
-import kotlin.collections.map
-import kotlin.collections.mapNotNull
-import kotlin.collections.mutableMapOf
-import kotlin.collections.partition
-import kotlin.collections.plus
 import kotlin.collections.set
-import kotlin.collections.sortedBy
-import kotlin.collections.toSet
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.moveTo
 import kotlin.io.path.outputStream
@@ -145,6 +144,7 @@ fun Route.uploadController() {
             val digest = String.format(fx, BigInteger(1, md.digest()))
             val newFile = File(localFolder(digest), "${digest}.zip")
             val newImageFile = File(localCoverFolder(digest), "${digest}.jpg")
+            val newAudioFile = File(localAudioFolder(digest), "${digest}.mp3")
 
             val existsAlready = Versions.select {
                 Versions.hash eq digest
@@ -210,6 +210,10 @@ fun Route.uploadController() {
                     newImageFile.writeBytes(it.toByteArray())
                 } ?: throw UploadException("Internal error 2")
 
+                extractedInfo.preview?.let {
+                    newAudioFile.writeBytes(it.toByteArray())
+                } ?: throw UploadException("Internal error 3")
+
                 val newVersion = Versions.insertAndGetId {
                     it[mapId] = newMap
                     it[key64] = null
@@ -236,7 +240,9 @@ fun Route.uploadController() {
 
                 newMap.value
             } catch (e: Exception) {
-                newFile.delete()
+                if (newFile.exists()) newFile.delete()
+                if (newImageFile.exists()) newImageFile.delete()
+                if (newAudioFile.exists()) newAudioFile.delete()
                 throw e
             }
         }
@@ -260,6 +266,11 @@ fun ZipHelper.validateFiles(dos: DigestOutputStream) =
 
         // Validate info.dat
         p.mapInfo.validate(withoutPrefix, p, audioFile, ::fromInfo)
+
+        // Generate 10 second preview
+        p.preview = ByteArrayOutputStream().also {
+            it.writeBytes(generatePreview())
+        }
 
         // Rename audio file if it ends in .ogg
         oggToEgg(p)

@@ -18,6 +18,15 @@ repositories {
     maven { url = uri("https://dl.bintray.com/kotlin/kotlinx") }
     maven { url = uri("https://dl.bintray.com/kotlin/ktor") }
     maven { url = uri("https://jitpack.io") }
+    ivy {
+        url = uri("https://github.com")
+
+        patternLayout {
+            artifact("/[organisation]/releases/download/v[revision]/[module]-[revision].[ext]")
+        }
+
+        metadataSources { artifact() }
+    }
 }
 
 kotlin {
