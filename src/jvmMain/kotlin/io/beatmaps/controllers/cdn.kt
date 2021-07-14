@@ -6,7 +6,6 @@ import io.beatmaps.common.beatsaver.localFolder
 import io.beatmaps.common.dbo.Downloads
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
-import io.beatmaps.common.zip.ZipHelper.Companion.openZip
 import io.beatmaps.login.localAvatarFolder
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -111,23 +110,7 @@ fun Route.cdnRoute() {
     }
 }
 
-suspend fun PipelineContext<Unit, ApplicationCall>.getAudio(hash: String) {
-    val audio = File(localAudioFolder(hash), "${hash}.mp3")
-
-    if (!audio.exists()) {
-        synchronized(this) {
-            if (!audio.exists()) {
-                val file = File(localFolder(hash), "${hash}.zip")
-                if (!file.exists()) {
-                    error("Hash not found")
-                }
-
-                openZip(file) {
-                    audio.writeBytes(generatePreview())
-                }
-            }
-        }
-    }
-
-    returnFile(audio)
-}
+suspend fun PipelineContext<Unit, ApplicationCall>.getAudio(hash: String) =
+    returnFile(
+        File(localAudioFolder(hash), "${hash}.mp3")
+    )
