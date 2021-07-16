@@ -36,6 +36,11 @@ fun Application.installMetrics() {
 
     install(MicrometerMetrics) {
         registry = appMicrometerRegistry
+        timers { call, _ ->
+            call.attributes[extraTags].forEach {
+                tag(it.key, it.value)
+            }
+        }
     }
 
     // Request timing header
@@ -43,6 +48,7 @@ fun Application.installMetrics() {
         val t = Timings()
         t.begin("req")
         call.attributes.put(reqTime, t)
+        call.attributes.put(extraTags, mutableMapOf())
     }
     sendPipeline.intercept(ApplicationSendPipeline.Before) {
         val mk = call.attributes[reqTime]
@@ -51,8 +57,10 @@ fun Application.installMetrics() {
     }
 }
 
+private val extraTags = AttributeKey<MutableMap<String, String>>("extraTags")
 private val reqTime = AttributeKey<Timings>("serverTiming")
 fun <T> ApplicationCall.timeIt(name: String, block: () -> T) = attributes[reqTime].timeIt(name, block)
+fun ApplicationCall.tag(name: String, value: String) = attributes[extraTags].put(name, value)
 
 class Timings {
     private val metrics = mutableMapOf<String, Float>()

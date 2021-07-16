@@ -6,11 +6,9 @@ import external.Dropzone
 import external.ReCAPTCHA
 import io.beatmaps.setPageTitle
 import io.beatmaps.upload.simple
-import kotlinx.html.INPUT
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import react.RBuilder

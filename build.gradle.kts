@@ -147,6 +147,7 @@ kotlin {
         }
         val jsMain by getting {
             languageSettings.useExperimentalAnnotation("kotlin.js.ExperimentalJsExport")
+            languageSettings.useExperimentalAnnotation("kotlin.time.ExperimentalTime")
             dependencies {
                 implementation("org.jetbrains:kotlin-react:16.13.1-pre.113-kotlin-1.4.0")
                 implementation("org.jetbrains:kotlin-react-dom:16.13.1-pre.113-kotlin-1.4.0")

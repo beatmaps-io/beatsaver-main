@@ -9,11 +9,15 @@ import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.NowExpression
+import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
+import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.Votes
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.tag
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location
@@ -27,7 +31,10 @@ import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Count
 import org.jetbrains.exposed.sql.Index
+import org.jetbrains.exposed.sql.alias
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -76,13 +83,34 @@ fun Route.voteRoute() {
                 val rawScore = upVotes / totalVotes
                 val scoreWeighted = rawScore - (rawScore - 0.5) * 2.0.pow(-log10(totalVotes + 1))
 
-                Beatmap.update({
+                var uploader: Int? = null
+                Beatmap.updateReturning({
                     Beatmap.id eq body.mapId
-                }) {
+                }, {
                     it[score] = scoreWeighted.toBigDecimal()
                     it[upVotesInt] = upVotes.toInt()
                     it[downVotesInt] = downVotes.toInt()
                     it[lastVoteAt] = NowExpression(lastVoteAt.columnType)
+                }, Beatmap.uploader)?.firstOrNull()?.let {
+                    uploader = it[Beatmap.uploader].value
+                }
+
+                uploader
+            }?.let { uploader ->
+                publish("beatmaps", "user.stats.$uploader", null, uploader)
+            }
+        }
+
+        consumeAck("uvstats", Int::class) { _, body ->
+            transaction {
+                val subQuery = Beatmap.slice(Beatmap.upVotesInt.sum().alias("votes")).select {
+                    Beatmap.uploader eq body and Beatmap.deletedAt.isNull()
+                }
+
+                User.update({
+                    User.id eq body
+                }) {
+                    it[upvotes] = wrapAsExpressionNotNull(subQuery)
                 }
             }
         }
@@ -118,6 +146,7 @@ fun Route.voteRoute() {
 
     post<VoteApi.Vote, VoteRequest>("Vote on a map".responds(ok<VoteResponse>())) { _, req ->
         call.response.header("Access-Control-Allow-Origin", "*")
+        call.tag("platform", if (req.auth.steamId != null) "steam" else if (req.auth.oculusId != null) "oculus" else "unknown")
 
         newSuspendedTransaction {
             try {

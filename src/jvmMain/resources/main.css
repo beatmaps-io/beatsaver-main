@@ -79,6 +79,40 @@ body {
     font-size: 10px;
 }
 
+.table.mappers td, .table.mappers th {
+    text-align: center;
+}
+.table.mappers th {
+    border: 0;
+}
+.table.mappers thead {
+    position: sticky;
+    top: 53px;
+    background: #303030;
+}
+.table.mappers thead::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border-top: 1px solid #434343;
+}
+.table.mappers td {
+    padding: 0.4rem;
+    vertical-align: middle;
+}
+.table.mappers td:nth-child(3) {
+    text-align: left;
+    width: 175px;
+}
+.table.mappers td:nth-child(3) a {
+    width: 162px;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 button.filter-dropdown {
     background: none;
     color: #FFF;
@@ -407,6 +441,12 @@ div.mapstats {
 
 .user-badges {
     margin-bottom: 50px;
+}
+.user-badges a {
+    float: right;
+}
+.user-badges a i {
+    margin-right: 5px;
 }
 
 .DayPickerKeyboardShortcuts_panel {

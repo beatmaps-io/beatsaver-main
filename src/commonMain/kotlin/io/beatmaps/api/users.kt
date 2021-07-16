@@ -9,7 +9,8 @@ import kotlinx.serialization.UseSerializers
 @Serializable
 data class UserDetail(val id: Int, val name: String, val hash: String? = null, val testplay: Boolean? = null, val avatar: String, val stats: UserStats? = null) { companion object }
 @Serializable
-data class UserStats(val totalUpvotes: Int, val totalDownvotes: Int, val totalMaps: Int, val avgBpm: Float, val avgScore: Float, val avgDuration: Float, val diffStats: UserDiffStats? = null)
+data class UserStats(val totalUpvotes: Int, val totalDownvotes: Int, val totalMaps: Int, val rankedMaps: Int, val avgBpm: Float, val avgScore: Float, val avgDuration: Float,
+                     val firstUpload: Instant?, val lastUpload: Instant?, val diffStats: UserDiffStats? = null)
 @Serializable
 data class UserDiffStats(val total: Int, val easy: Int, val normal: Int, val hard: Int, val expert: Int, val expertPlus: Int)
 @Serializable

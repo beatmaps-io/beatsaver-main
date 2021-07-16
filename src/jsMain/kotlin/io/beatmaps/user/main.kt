@@ -5,11 +5,13 @@ import AxiosRequestConfig
 import generateConfig
 import io.beatmaps.common.Config
 import io.beatmaps.api.UserDetail
+import io.beatmaps.common.formatTime
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
 import io.beatmaps.setPageTitle
 import kotlinx.browser.window
+import kotlinx.html.ButtonType
 import kotlinx.html.js.onClickFunction
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -97,10 +99,16 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                 div ("card user-badges") {
                     div("card-body") {
                         state.userDetail?.stats?.let {
+                            a("${Config.apibase}/users/id/${state.userDetail?.id ?: 0}/playlist", "_blank", "btn btn-secondary") {
+                                attrs.attributes["download"] = ""
+                                i("fas fa-list") { }
+                                +"Playlist"
+                            }
+
                             +"Maps: ${it.totalMaps}, Upvotes: ${it.totalUpvotes}, Downvotes: ${it.totalDownvotes}"
                             br {  }
                             +"Average BPM: ${it.avgBpm}, Average Score: ${it.avgScore}%, "
-                            +"Average Duration: ${(it.avgDuration / 60).toInt()}:${(it.avgDuration % 60).toString().padStart(2, '0')}"
+                            +"Average Duration: ${it.avgDuration.formatTime()}"
                             it.diffStats?.let { ds ->
                                 br { }
                                 b {

@@ -1,5 +1,4 @@
 package io.beatmaps
-import external.Moment
 import io.beatmaps.index.HomePage
 import io.beatmaps.index.HomePageProps
 import io.beatmaps.maps.MapPage
@@ -12,6 +11,7 @@ import io.beatmaps.user.AlertsPage
 import io.beatmaps.user.BeatsaverPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ProfilePageProps
+import io.beatmaps.user.userList
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLAnchorElement
@@ -117,6 +117,12 @@ class App : RComponent<RProps, RState>() {
                 route<RProps>("/policy/dmca", exact = true) {
                     initWithHistory(it.history, false)
                     div {}
+                }
+                route<RProps>("/mappers", exact = true) {
+                    initWithHistory(it.history)
+                    userList {
+
+                    }
                 }
                 route<RProps>("*") {
                     initWithHistory(it.history)

@@ -12,6 +12,7 @@ import io.beatmaps.api.testplayRoute
 import io.beatmaps.api.userRoute
 import io.beatmaps.api.voteRoute
 import io.beatmaps.common.db.setupDB
+import io.beatmaps.common.jackson
 import io.beatmaps.common.json
 import io.beatmaps.common.setupAMQP
 import io.beatmaps.common.setupLogging
@@ -26,6 +27,7 @@ import io.beatmaps.login.installDiscordOauth
 import io.beatmaps.login.installSessions
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
+import io.beatmaps.websockets.mapsWebsocket
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -39,43 +41,39 @@ import io.ktor.features.XForwardedHeaderSupport
 import io.ktor.html.respondHtmlTemplate
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.cio.websocket.pingPeriod
 import io.ktor.http.content.EntityTagVersion
 import io.ktor.http.content.resources
 import io.ktor.http.content.static
-import io.ktor.jackson.jackson
+import io.ktor.jackson.JacksonConverter
 import io.ktor.locations.Locations
 import io.ktor.request.ApplicationReceiveRequest
 import io.ktor.response.respond
 import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.serialization.SerializationConverter
-import io.ktor.serialization.json
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.util.DataConversionException
 import io.ktor.util.pipeline.PipelineContext
+import io.ktor.websocket.WebSockets
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.html.HEAD
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.StringFormat
 import org.valiktor.ConstraintViolationException
 import org.valiktor.i18n.mapToMessage
 import pl.jutupe.ktor_rabbitmq.RabbitMQ
 import java.math.BigInteger
 import java.security.MessageDigest
-import io.beatmaps.common.jackson
-import io.beatmaps.websockets.mapsWebsocket
-import io.ktor.http.cio.websocket.pingPeriod
-import io.ktor.jackson.JacksonConverter
-import io.ktor.websocket.WebSockets
-import kotlinx.serialization.ExperimentalSerializationApi
 import java.time.Duration
 
-suspend fun PipelineContext<*, io.ktor.application.ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) {
+suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) {
     val sess = call.sessions.get<Session>()
     call.respondHtmlTemplate(MainTemplate(sess, GenericPageTemplate(sess)), statusCode) {
         headElements {

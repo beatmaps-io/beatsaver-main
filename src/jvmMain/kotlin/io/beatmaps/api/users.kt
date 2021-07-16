@@ -5,8 +5,11 @@ import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.api.EDifficulty
+import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.beatsaver.IUserVerifyProvider
 import io.beatmaps.common.beatsaver.UserNotVerified
+import io.beatmaps.common.client
+import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
@@ -14,7 +17,11 @@ import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.ModLogDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.dbo.complexToBeatmap
 import io.ktor.application.call
+import io.ktor.client.features.timeout
+import io.ktor.client.request.get
+import io.ktor.http.HttpHeaders
 import io.ktor.locations.Location
 import io.ktor.locations.get
 import io.ktor.locations.options
@@ -31,14 +38,21 @@ import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.Sum
+import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.intLiteral
+import org.jetbrains.exposed.sql.max
+import org.jetbrains.exposed.sql.min
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Base64
 import java.util.ServiceLoader
 
 fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null) =
@@ -56,6 +70,9 @@ class UsersApi {
     @Location("/id/{id}/stats")
     data class UserStats(val id: Int, val api: UsersApi)
 
+    @Location("/id/{id}/playlist")
+    data class UserPlaylist(val id: Int, val api: UsersApi)
+
     @Location("/find/{id}")
     data class Find(val id: String, val api: UsersApi)
 
@@ -64,6 +81,9 @@ class UsersApi {
 
     @Location("/alerts")
     data class Alerts(val api: UsersApi)
+
+    @Location("/list/{page}")
+    data class List(val page: Long = 0, val api: UsersApi)
 }
 
 fun Route.userRoute() {
@@ -168,6 +188,97 @@ fun Route.userRoute() {
         }
     }
 
+    get<UsersApi.List> {
+        val us = transaction {
+            val userAlias = User.slice(User.upvotes, User.id, User.name, User.avatar, User.hash).selectAll().orderBy(User.upvotes, SortOrder.DESC).limit(it.page).alias("u")
+            val query = userAlias
+                .join(Beatmap, JoinType.INNER, userAlias[User.id], Beatmap.uploader) {
+                    Beatmap.deletedAt.isNull()
+                }
+                .slice(
+                    Beatmap.uploader,
+                    Beatmap.id.count(),
+                    userAlias[User.upvotes],
+                    userAlias[User.name],
+                    userAlias[User.avatar],
+                    userAlias[User.hash],
+                    Beatmap.downVotesInt.sum(),
+                    Beatmap.bpm.avg(),
+                    Beatmap.score.avg(3),
+                    Beatmap.duration.avg(0),
+                    countWithFilter(Beatmap.ranked),
+                    Beatmap.uploaded.min(),
+                    Beatmap.uploaded.max()
+                )
+                .selectAll()
+                .groupBy(Beatmap.uploader, userAlias[User.upvotes], userAlias[User.name], userAlias[User.avatar], userAlias[User.hash])
+                .orderBy(userAlias[User.upvotes], SortOrder.DESC)
+
+            query.toList().map {
+                UserDetail(
+                    it[Beatmap.uploader].value,
+                    it[userAlias[User.name]],
+                    avatar = it[userAlias[User.avatar]] ?: "https://www.gravatar.com/avatar/${it[userAlias[User.hash]]}?d=retro",
+                    stats = UserStats(
+                        it[userAlias[User.upvotes]],
+                        it[Beatmap.downVotesInt.sum()] ?: 0,
+                        it[Beatmap.id.count()].toInt(),
+                        it[countWithFilter(Beatmap.ranked)],
+                        it[Beatmap.bpm.avg()]?.toFloat() ?: 0f,
+                        it[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f,
+                        it[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
+                        it[Beatmap.uploaded.min()]?.toKotlinInstant(),
+                        it[Beatmap.uploaded.max()]?.toKotlinInstant()
+                    )
+                )
+            }
+        }
+
+        call.respond(us)
+    }
+
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    get<UsersApi.UserPlaylist> {
+        val (maps, user) = transaction {
+            Beatmap.joinVersions().select {
+                Beatmap.uploader eq it.id and Beatmap.deletedAt.isNull()
+            }.complexToBeatmap().sortedByDescending { b -> b.uploaded } to UserDetail.from(User.select { User.id eq it.id }.first())
+        }
+
+        val playlistSongs = maps.mapNotNull { map ->
+            map.versions.values.firstOrNull { v -> v.state == EMapState.Published }?.let { v ->
+                PlaylistSong(
+                    v.key64,
+                    v.hash,
+                    map.name
+                )
+            }
+        }
+
+        val imageStr = Base64.getEncoder().encodeToString(
+            client.get<ByteArray>(user.avatar) {
+                timeout {
+                    socketTimeoutMillis = 30000
+                    requestTimeoutMillis = 60000
+                }
+            }
+        )
+
+        val dateStr = formatter.format(LocalDateTime.now())
+
+        call.response.headers.append(HttpHeaders.ContentDisposition, "filename=\"${user.name}-$dateStr.bplist\"")
+        call.respond(
+            Playlist(
+                "Maps by ${user.name} (${playlistSongs.size} Total)",
+                user.name,
+                "All maps by ${user.name} ($dateStr)",
+                imageStr,
+                PlaylistCustomData("https://api.beatmaps.io/users/id/${it.id}/playlist"),
+                playlistSongs
+            )
+        )
+    }
+
     options<MapsApi.UserId> {
         call.response.header("Access-Control-Allow-Origin", "*")
     }
@@ -181,16 +292,29 @@ fun Route.userRoute() {
 
         val stats = transaction {
             val statTmp =
-                Beatmap.slice(Beatmap.id.count(), Beatmap.upVotesInt.sum(), Beatmap.downVotesInt.sum(), Beatmap.bpm.avg(), Beatmap.score.avg(3), Beatmap.duration.avg(0)).select {
+                Beatmap.slice(
+                    Beatmap.id.count(),
+                    Beatmap.upVotesInt.sum(),
+                    Beatmap.downVotesInt.sum(),
+                    Beatmap.bpm.avg(),
+                    Beatmap.score.avg(3),
+                    Beatmap.duration.avg(0),
+                    countWithFilter(Beatmap.ranked),
+                    Beatmap.uploaded.min(),
+                    Beatmap.uploaded.max()
+                ).select {
                     (Beatmap.uploader eq it.id) and (Beatmap.deletedAt.isNull())
                 }.first().let {
                     UserStats(
                         it[Beatmap.upVotesInt.sum()] ?: 0,
                         it[Beatmap.downVotesInt.sum()] ?: 0,
                         it[Beatmap.id.count()].toInt(),
+                        it[countWithFilter(Beatmap.ranked)],
                         it[Beatmap.bpm.avg()]?.toFloat() ?: 0f,
                         it[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f,
-                        it[Beatmap.duration.avg(0)]?.toFloat() ?: 0f
+                        it[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
+                        it[Beatmap.uploaded.min()]?.toKotlinInstant(),
+                        it[Beatmap.uploaded.max()]?.toKotlinInstant()
                     )
                 }
 

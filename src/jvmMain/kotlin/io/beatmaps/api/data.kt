@@ -13,9 +13,7 @@ fun MapDetail.Companion.from(other: BeatmapDao) = MapDetail(other.id.value, othe
     UserDetail.from(other.uploader), MapDetailMetadata.from(other), MapStats.from(other), other.uploaded?.toKotlinInstant(), other.automapper,
     other.versions.values.map { MapVersion.from(it) }.partition { it.state == EMapState.Published }.let {
         // Once a map is published hide previous versions
-        if (it.first.isNotEmpty()) {
-            it.first
-        } else {
+        it.first.ifEmpty {
             it.second
         }
     }, other.curator?.name)

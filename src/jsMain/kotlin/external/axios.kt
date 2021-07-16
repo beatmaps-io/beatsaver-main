@@ -153,3 +153,5 @@ inline fun <reified T, reified U> generateConfig(ct: CancelToken? = null) = obje
         }
     }
 }
+
+inline fun <reified T> axiosGet(url: String) = Axios.get<T>(url, generateConfig<String, T>())
