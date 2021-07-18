@@ -3,6 +3,7 @@ package io.beatmaps.api
 import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
+import io.beatmaps.common.Config
 import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
@@ -273,7 +274,7 @@ fun Route.userRoute() {
                 user.name,
                 "All maps by ${user.name} ($dateStr)",
                 imageStr,
-                PlaylistCustomData("https://api.beatmaps.io/users/id/${it.id}/playlist"),
+                PlaylistCustomData("${Config.apiremotebase}/users/id/${it.id}/playlist"),
                 playlistSongs
             )
         )

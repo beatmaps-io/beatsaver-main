@@ -2,6 +2,7 @@ package io.beatmaps.api
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.beatmaps.common.Config
 import io.beatmaps.common.SSGameMode
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EDifficulty
@@ -46,7 +47,7 @@ data class SSLeaderboardScore(val playerId: Long, val name: String, val rank: In
 
 fun Route.scoresRoute() {
     options<ScoresApi.Leaderboard> {
-        call.response.header("Access-Control-Allow-Origin", "https://beatmaps.io")
+        call.response.header("Access-Control-Allow-Origin", Config.basename)
     }
 
     get<ScoresApi.Leaderboard> {

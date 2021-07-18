@@ -1,6 +1,7 @@
 package io.beatmaps.login
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.beatmaps.common.Config
 import io.beatmaps.common.client
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
@@ -65,7 +66,7 @@ fun Route.authRoute() {
                 val localFile = File(localAvatarFolder(), "${discordIdLocal}.png")
                 localFile.writeBytes(bytes)
 
-                "https://cdn.beatmaps.io/avatar/${discordIdLocal}.png"
+                "${Config.cdnbase}/avatar/${discordIdLocal}.png"
             }
 
             val user = transaction {
@@ -102,8 +103,8 @@ fun Route.authRoute() {
             val params = ParametersBuilder().apply {
                 append("openid.ns", "http://specs.openid.net/auth/2.0")
                 append("openid.mode", "checkid_setup")
-                append("openid.return_to", "https://beatmaps.io/steam")
-                append("openid.realm", "https://beatmaps.io")
+                append("openid.return_to", "${Config.basename}/steam")
+                append("openid.realm", Config.basename)
                 append("openid.identity", "http://specs.openid.net/auth/2.0/identifier_select")
                 append("openid.claimed_id", "http://specs.openid.net/auth/2.0/identifier_select")
             }
