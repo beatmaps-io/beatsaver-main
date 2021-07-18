@@ -49,7 +49,9 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             params.get("to"),
             params.get("noodle")?.toBoolean(),
             params.get("ranked")?.toBoolean(),
-            params.get("fullSpread")?.toBoolean()
+            params.get("fullSpread")?.toBoolean(),
+            params.get("me")?.toBoolean(),
+            params.get("cinema")?.toBoolean()
         )
     }
 
@@ -69,6 +71,8 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             (if (searchParamsLocal.chroma == true) "chroma=true" else null),
             (if (searchParamsLocal.ranked == true) "ranked=true" else null),
             (if (searchParamsLocal.noodle == true) "noodle=true" else null),
+            (if (searchParamsLocal.me == true) "me=true" else null),
+            (if (searchParamsLocal.cinema == true) "cinema=true" else null),
             (if (searchParamsLocal.automapper == true) "auto=true" else null),
             (if (searchParamsLocal.fullSpread == true) "fullSpread=true" else null),
             (if (searchParamsLocal.maxNps != null) "maxNps=${searchParamsLocal.maxNps}" else null),

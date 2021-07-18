@@ -40,6 +40,8 @@ fun main() {
     }
 }
 
+const val dateFormat = "YYYY-MM-DD"
+
 @JsExport
 class App : RComponent<RProps, RState>() {
     private fun initWithHistory(history: RouteResultHistory, replaceHomelink: Boolean = true) {

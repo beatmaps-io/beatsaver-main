@@ -140,6 +140,7 @@ button.filter-dropdown {
     padding: 1rem 1rem 0.8rem 1rem !important;
     left: 50% !important;
     transform: translate(-50%, 0);
+    white-space: nowrap;
 }
 
 .custom-control.custom-switch {
@@ -148,6 +149,11 @@ button.filter-dropdown {
 
 .dropdown-menu .custom-control-label {
     display: block;
+}
+
+.dropdown-menu h4 {
+    text-transform: uppercase;
+    font-size: 12px;
 }
 
 .mapinfo img {

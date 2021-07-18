@@ -4,6 +4,7 @@ import external.DateRangePicker
 import external.Moment
 import external.ReactSlider
 import io.beatmaps.api.SearchOrder
+import io.beatmaps.dateFormat
 import kotlinx.browser.document
 import kotlinx.html.ButtonType
 import kotlinx.html.DIV
@@ -24,10 +25,9 @@ external interface SearchProps: RProps {
     var updateSearchParams: (SearchParams) -> Unit
 }
 
-data class SearchState(var automapper: Boolean = false, var minNps: Float = 0f, var maxNps: Float = 16f, var chroma: Boolean = false,
+data class SearchState(var minNps: Float = 0f, var maxNps: Float = 16f, val filterMap: MutableMap<FilterInfo, Boolean> = mutableMapOf(),
                        var order: SearchOrder = SearchOrder.Relevance, var focusedInput: String? = null, var startDate: Moment? = null,
-                       var endDate: Moment? = null, var filtersOpen: Boolean = false, var noodle: Boolean = false, var ranked: Boolean = false,
-                       var fullSpread: Boolean = false) : RState
+                       var endDate: Moment? = null, var filtersOpen: Boolean = false) : RState
 data class PresetDateRange(val startDate: Moment?, val endDate: Moment?)
 
 val presets = mapOf(
@@ -37,16 +37,27 @@ val presets = mapOf(
     "Last 3 months" to PresetDateRange(Moment().subtract(3, "month"), null),
     "All" to PresetDateRange(null, null),
 )
-val dateFormat = "YYYY-MM-DD"
+
+enum class FilterCategory {
+    NONE, GENERAL, REQUIREMENTS
+}
+data class FilterInfo(val key: String, val name: String, val cat: FilterCategory, val fromParams: (SearchParams) -> Boolean)
+val filters = listOf(
+    FilterInfo("bot", "AI", FilterCategory.GENERAL) { it.automapper == true },
+    FilterInfo("ranked", "Ranked", FilterCategory.GENERAL) { it.ranked == true },
+    FilterInfo("fs", "Full Spread", FilterCategory.GENERAL) { it.fullSpread == true },
+
+    FilterInfo("chroma", "Chroma", FilterCategory.REQUIREMENTS) { it.chroma == true },
+    FilterInfo("noodle", "Noodle", FilterCategory.REQUIREMENTS) { it.noodle == true },
+    FilterInfo("me", "Mapping Extensions", FilterCategory.REQUIREMENTS) { it.me == true },
+    FilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true },
+)
 
 @JsExport
 class Search : RComponent<SearchProps, SearchState>() {
+    private val filterRefs = filters.associateWith { createRef<HTMLInputElement>() }
+
     private val inputRef = createRef<HTMLInputElement>()
-    private val autoRef = createRef<HTMLInputElement>()
-    private val spreadRef = createRef<HTMLInputElement>()
-    private val chromaRef = createRef<HTMLInputElement>()
-    private val rankedRef = createRef<HTMLInputElement>()
-    private val noodleRef = createRef<HTMLInputElement>()
     private val sortRef = createRef<HTMLSelectElement>()
     private val dropdownRef = createRef<HTMLButtonElement>()
     private val dropdownDivRef = createRef<HTMLDivElement>()
@@ -123,24 +134,25 @@ class Search : RComponent<SearchProps, SearchState>() {
     fun updateUI(fromParams: SearchParams) {
         inputRef.current?.value = fromParams.search
         sortRef.current?.selectedIndex = fromParams.sortOrder.idx
-        autoRef.current?.checked = fromParams.automapper == true
-        chromaRef.current?.checked = fromParams.chroma == true
-        spreadRef.current?.checked = fromParams.fullSpread == true
-        rankedRef.current?.checked = fromParams.ranked == true
-        noodleRef.current?.checked = fromParams.noodle == true
         setState {
-            automapper = fromParams.automapper == true
-            chroma = fromParams.chroma == true
+            filterRefs.forEach {
+                val newState = it.key.fromParams(fromParams)
+                it.value.current?.checked = newState
+                filterMap[it.key] = newState
+            }
+
             minNps = fromParams.minNps ?: 0f
             maxNps = fromParams.maxNps ?: props.maxNps.toFloat()
             order = fromParams.sortOrder
             startDate = fromParams.from?.let { Moment(it) }
             endDate = fromParams.to?.let { Moment(it) }
-            noodle = fromParams.noodle == true
-            ranked = fromParams.noodle == true
-            fullSpread = fromParams.fullSpread == true
         }
     }
+
+    private fun isFiltered(s: String) =
+        filters.first { it.key == s }.let { filter ->
+            state.filterMap.getOrElse(filter) { false }
+        }
 
     override fun RBuilder.render() {
         form("") {
@@ -156,9 +168,23 @@ class Search : RComponent<SearchProps, SearchState>() {
                     button(type = ButtonType.submit, classes = "btn btn-block btn-primary") {
                         attrs.onClickFunction = {
                             it.preventDefault()
-                            props.updateSearchParams(SearchParams(inputRef.current?.value ?: "", if (state.automapper) true else null, if (state.minNps > 0) state.minNps else null,
-                                if (state.maxNps < props.maxNps) state.maxNps else null, if (state.chroma) true else null, state.order, state.startDate?.format(dateFormat),
-                                state.endDate?.format(dateFormat), if (state.noodle) true else null, if (state.ranked) true else null, if (state.fullSpread) true else null))
+                            props.updateSearchParams(
+                                SearchParams(
+                                    inputRef.current?.value ?: "",
+                                    if (isFiltered("bot")) true else null,
+                                    if (state.minNps > 0) state.minNps else null,
+                                    if (state.maxNps < props.maxNps) state.maxNps else null,
+                                    if (isFiltered("chroma")) true else null,
+                                    state.order,
+                                    state.startDate?.format(dateFormat),
+                                    state.endDate?.format(dateFormat),
+                                    if (isFiltered("noodle")) true else null,
+                                    if (isFiltered("ranked")) true else null,
+                                    if (isFiltered("fs")) true else null,
+                                    if (isFiltered("me")) true else null,
+                                    if (isFiltered("cinema")) true else null
+                                )
+                            )
                         }
                         +"Search"
                     }
@@ -175,13 +201,8 @@ class Search : RComponent<SearchProps, SearchState>() {
                         }
                         ref = dropdownRef
                         span {
-                            val filters = listOfNotNull(
-                                if (state.ranked) "ranked" else null,
-                                if (state.chroma) "chroma" else null,
-                                if (state.noodle) "noodle" else null,
-                                if (state.automapper) "ai" else null,
-                                if (state.fullSpread) "spread" else null
-                            )
+                            val filters = filterRefs.filter { state.filterMap.getOrElse(it.key) { false } }.map { it.key.key }
+
                             if (filters.isEmpty()) {
                                 +"Filters"
                             } else {
@@ -192,30 +213,21 @@ class Search : RComponent<SearchProps, SearchState>() {
                     }
                     div("dropdown-menu" + if (state.filtersOpen) " show" else "") {
                         ref = dropdownDivRef
-                        toggle("ranked", "Ranked", rankedRef) {
-                            setState {
-                                ranked = it
+
+                        filterRefs.entries.fold(FilterCategory.NONE) { cat, filter ->
+                            if (cat != filter.key.cat) {
+                                h4(if (cat == FilterCategory.NONE) "" else "mt-4") {
+                                    +filter.key.cat.toString()
+                                }
                             }
-                        }
-                        toggle("chroma", "Chroma", chromaRef) {
-                            setState {
-                                chroma = it
+
+                            toggle(filter.key.key, filter.key.name, filter.value) {
+                                setState {
+                                    state.filterMap[filter.key] = it
+                                }
                             }
-                        }
-                        toggle("noodle", "Noodle", noodleRef) {
-                            setState {
-                                noodle = it
-                            }
-                        }
-                        toggle("bot", "AI", autoRef) {
-                            setState {
-                                automapper = it
-                            }
-                        }
-                        toggle("fs", "Full Spread", spreadRef) {
-                            setState {
-                                fullSpread = it
-                            }
+
+                            filter.key.cat
                         }
                     }
                 }

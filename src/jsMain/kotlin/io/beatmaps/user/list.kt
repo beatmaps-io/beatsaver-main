@@ -6,6 +6,7 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
 import io.beatmaps.common.formatTime
 import io.beatmaps.common.toFixed
+import io.beatmaps.dateFormat
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.datetime.Clock
@@ -134,10 +135,10 @@ class UserList : RComponent<RProps, UserListState>() {
                             +"${u.stats.rankedMaps}"
                         }
                         td {
-                            +Moment(u.stats.firstUpload.toString()).format("YYYY-MM-DD")
+                            +Moment(u.stats.firstUpload.toString()).format(dateFormat)
                         }
                         td {
-                            +Moment(u.stats.lastUpload.toString()).format("YYYY-MM-DD")
+                            +Moment(u.stats.lastUpload.toString()).format(dateFormat)
                         }
                         td {
                             u.stats.lastUpload?.let {
