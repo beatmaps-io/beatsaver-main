@@ -40,6 +40,7 @@ external interface VersionProps : RProps {
 }
 
 data class VersionState(var state: EMapState? = null, var loading: Boolean = false, var loadingState: Boolean = false, var text: String = "", var time: String = "") : RState
+private const val testplayEnabled = false
 
 @JsExport
 class VersionComponent : RComponent<VersionProps, VersionState>() {
@@ -86,7 +87,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
             div("card-header") {
                 if (props.isOwner) {
                     div("float-right") {
-                        if (props.firstVersion) {
+                        if (props.firstVersion && textareaRef.current != null) {
                             button(classes = "btn btn-success m-1") {
                                 attrs.onClickFunction = {
                                     val newText = textareaRef.current?.asDynamic().value as String
@@ -119,7 +120,8 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                         "Are you sure?",
                                         "This will make your map visible to everyone\n\nYou should only publish maps that are completed, " +
                                                 "if you just want to test your map check out the guides here:\nhttps://bsmg.wiki/mapping/#playtesting\n\n" +
-                                                "You should also consider placing your map into the playtest queue for feedback first\n\n" +
+                                                //"You should also consider placing your map into the playtest queue for feedback first\n\n" +
+                                                "You should also consider getting your map playtested by other mappers for feedback first\n\n" +
                                                 "Uploading new versions later will cause leaderboards for your map to be reset",
                                         listOf(ModalButton("Publish", "primary") { mapState(EMapState.Published) }, ModalButton("Cancel")),
                                         true
@@ -128,12 +130,14 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                 attrs.disabled = state.loading || state.loadingState
                                 +"Publish"
                             }
-                            button(classes = "btn btn-info m-1") {
-                                attrs.onClickFunction = {
-                                    mapState(EMapState.Testplay)
+                            if (testplayEnabled) {
+                                button(classes = "btn btn-info m-1") {
+                                    attrs.onClickFunction = {
+                                        mapState(EMapState.Testplay)
+                                    }
+                                    attrs.disabled = state.loading || state.loadingState
+                                    +"Add to testplay queue"
                                 }
-                                attrs.disabled = state.loading || state.loadingState
-                                +"Add to testplay queue"
                             }
                         } else if (state.state == EMapState.Testplay) {
                             button(classes = "btn btn-danger m-1") {
@@ -173,7 +177,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                     }
                 }
 
-                if (props.isOwner && props.firstVersion) {
+                if (props.isOwner && props.firstVersion && (state.state != EMapState.Uploaded || testplayEnabled)) {
                     p {
                         +"Tell testplayers what kind of feedback you're looking for:"
                     }

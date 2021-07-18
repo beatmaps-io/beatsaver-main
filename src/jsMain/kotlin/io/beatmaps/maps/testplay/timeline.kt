@@ -72,7 +72,7 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
             div("line text-muted") {}
 
             val latestVersion = props.mapInfo.latestVersion()
-            val givenFeedback = latestVersion?.testplays?.any { it.user.id == props.loggedInId && it.feedbackAt != null } == true
+            val givenFeedback = latestVersion?.testplays?.any { it.user.id == props.loggedInId && it.feedbackAt != null } == true || props.loggedInId == null
             if (props.isOwner) {
                 article("card") {
                     div("card-header icon bg-success") {
@@ -170,12 +170,6 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                 attrs.size = "invisible"
                 ref = captchaRef
             }
-
-            /*child(ReCAPTCHA.default::class) {
-                attrs.sitekey = "6LdMpxUaAAAAAA6a3Fb2BOLQk9KO8wCSZ-a_YIaH"
-                attrs.size = "invisible"
-                ref = captchaRef
-            }*/
         }
     }
 }
