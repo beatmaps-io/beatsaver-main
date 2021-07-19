@@ -153,7 +153,7 @@ kotlin {
 }
 
 application {
-    mainClassName = "io.beatmaps.ServerKt"
+    mainClass.set("io.beatmaps.ServerKt")
 }
 
 tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
@@ -161,6 +161,10 @@ tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
     sourceMaps = true
     report = true
     args = mutableListOf("--config", "..\\..\\..\\..\\webpack.config.extra.js", "--merge")
+}
+
+tasks.withType<AbstractCopyTask> {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 tasks.getByName<Jar>("jvmJar") {
