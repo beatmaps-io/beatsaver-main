@@ -163,7 +163,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                             p {
                                                 +"Reason for action:"
                                             }
-                                            textArea(classes = "form-control") {
+                                            textarea(classes = "form-control") {
                                                 ref = reasonRef
                                             }
                                         },
@@ -191,7 +191,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                             attrs.disabled = state.loading
                             ref = inputRef
                         }
-                        textArea("10", classes = "form-control m-2") {
+                        textarea("10", classes = "form-control m-2") {
                             attrs.id = "description"
                             attrs.disabled = state.loading
                             +props.mapInfo.description

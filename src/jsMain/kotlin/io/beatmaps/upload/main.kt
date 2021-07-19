@@ -65,7 +65,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                     +"Upload Map"
                 }
                 form("") {
-                    fieldSet {
+                    fieldset {
                         div("form-group") {
                             label {
                                 attrs.htmlFor = "name"
@@ -82,7 +82,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                 attrs.htmlFor = "description"
                                 +"Description"
                             }
-                            textArea("10", classes ="form-control") {
+                            textarea("10", classes ="form-control") {
                                 attrs.disabled = state.loading
                                 ref = descrRef
                             }

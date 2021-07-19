@@ -197,7 +197,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
 }
 
 fun RBuilder.scoreTable(handler: ScoreTableProps.() -> Unit): ReactElement {
-    return child<ScoreTableProps, ScoreTable> {
+    return child(ScoreTable::class) {
         this.attrs(handler)
     }
 }

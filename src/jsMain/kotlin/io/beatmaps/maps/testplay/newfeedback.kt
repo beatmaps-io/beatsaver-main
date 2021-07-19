@@ -47,7 +47,7 @@ class NewFeedback : RComponent<NewFeedbackProps, NewFeedbackState>() {
                     i("fas fa-plus") {}
                 }
                 div("card-body") {
-                    textArea("10", classes = "form-control") {
+                    textarea("10", classes = "form-control") {
                         attrs.disabled = state.loading
                         ref = textareaRef
                     }

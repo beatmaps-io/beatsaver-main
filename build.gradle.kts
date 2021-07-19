@@ -1,8 +1,8 @@
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 
 plugins {
-    kotlin("multiplatform") version "1.5.10"
-    kotlin("plugin.serialization") version "1.5.10"
+    kotlin("multiplatform") version "1.5.21"
+    kotlin("plugin.serialization") version "1.5.21"
     application
 }
 
@@ -12,28 +12,15 @@ group = "io.beatmaps"
 version = "1.0-SNAPSHOT"
 
 repositories {
-    jcenter()
     mavenCentral()
-    maven { url = uri("https://dl.bintray.com/kotlin/kotlin-js-wrappers") }
-    maven { url = uri("https://dl.bintray.com/kotlin/kotlinx") }
-    maven { url = uri("https://dl.bintray.com/kotlin/ktor") }
     maven { url = uri("https://jitpack.io") }
-    ivy {
-        url = uri("https://github.com")
-
-        patternLayout {
-            artifact("/[organisation]/releases/download/v[revision]/[module]-[revision].[ext]")
-        }
-
-        metadataSources { artifact() }
-    }
+    maven { url = uri("https://artifactory.kirkstall.top-cat.me") }
 }
 
 kotlin {
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "15"
-            kotlinOptions.jdkHome = "C:\\Users\\micro\\.jdks\\openjdk-15.0.2"
         }
         testRuns["test"].executionTask.configure {
             useJUnit()
@@ -62,7 +49,7 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.1.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
-                implementation("io.beatmaps:CommonMP")
+                implementation("io.beatmaps:BeatMaps-CommonMP:1.0-SNAPSHOT")
             }
         }
         val commonTest by getting {
@@ -79,7 +66,7 @@ kotlin {
             languageSettings.useExperimentalAnnotation("kotlin.ExperimentalUnsignedTypes")
             languageSettings.useExperimentalAnnotation("kotlinx.serialization.ExperimentalSerializationApi")
             dependencies {
-                api(kotlin("reflect", "1.5.10"))
+                api(kotlin("reflect", "1.5.21"))
 
                 // Core
                 implementation("io.ktor:ktor-server-netty:$ktorVersion")
@@ -88,7 +75,7 @@ kotlin {
                 implementation("io.ktor:ktor-locations:$ktorVersion")
                 implementation("io.ktor:ktor-client-apache:$ktorVersion")
                 implementation("io.ktor:ktor-websockets:$ktorVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3")
                 implementation("ch.qos.logback:logback-classic:1.2.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.5.0")
@@ -98,7 +85,7 @@ kotlin {
                 // Helpful
                 implementation("org.valiktor:valiktor-core:0.12.0")
                 implementation("io.github.keetraxx:recaptcha:0.5")
-                implementation("com.github.nielsfalk:ktor-swagger:0.7.0")
+                implementation("de.nielsfalk.ktor:ktor-swagger:0.7.1")
                 implementation("org.bouncycastle:bcprov-jdk15:1.46")
 
                 // Metrics
@@ -122,10 +109,6 @@ kotlin {
                 implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.6.1")
                 implementation("io.ktor:ktor-serialization:$ktorVersion")
 
-                // Cloud storage
-                implementation("com.backblaze.b2:b2-sdk-core:4.0.0")
-                implementation("com.backblaze.b2:b2-sdk-httpclient:4.0.0")
-
                 // Multimedia
                 implementation("org.jaudiotagger:jaudiotagger:2.0.1")
                 implementation("net.coobird:thumbnailator:0.4.13")
@@ -135,7 +118,7 @@ kotlin {
                 implementation("com.tagtraum:ffsampledsp-complete:0.9.32")
 
                 implementation("io.beatmaps:Common")
-                implementation("io.beatmaps:CommonMP")
+                implementation("io.beatmaps:BeatMaps-CommonMP")
 
                 runtimeOnly(files("BeatMaps-BeatSage-1.0-SNAPSHOT.jar"))
             }
@@ -149,9 +132,10 @@ kotlin {
             languageSettings.useExperimentalAnnotation("kotlin.js.ExperimentalJsExport")
             languageSettings.useExperimentalAnnotation("kotlin.time.ExperimentalTime")
             dependencies {
-                implementation("org.jetbrains:kotlin-react:16.13.1-pre.113-kotlin-1.4.0")
-                implementation("org.jetbrains:kotlin-react-dom:16.13.1-pre.113-kotlin-1.4.0")
-                implementation("org.jetbrains:kotlin-react-router-dom:5.1.2-pre.113-kotlin-1.4.0")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-extensions:1.0.1-pre.218-kotlin-1.5.21")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react:17.0.2-pre.218-kotlin-1.5.21")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom:17.0.2-pre.218-kotlin-1.5.21")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:5.2.0-pre.218-kotlin-1.5.21")
                 implementation(npm("react-timeago", "5.2.0"))
                 implementation(npm("react-dropzone", "11.2.4"))
                 implementation(npm("react-dates", "21.8.0"))
@@ -191,7 +175,6 @@ tasks.getByName<Jar>("jvmJar") {
 tasks.getByName<JavaExec>("run") {
     dependsOn(tasks.getByName<Jar>("jvmJar"))
     classpath(tasks.getByName<Jar>("jvmJar"))
-    setExecutable("C:\\Users\\micro\\.jdks\\openjdk-15.0.2\\bin\\java")
 }
 
 distributions {

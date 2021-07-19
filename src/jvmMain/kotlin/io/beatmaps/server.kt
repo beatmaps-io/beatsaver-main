@@ -14,6 +14,7 @@ import io.beatmaps.api.voteRoute
 import io.beatmaps.common.db.setupDB
 import io.beatmaps.common.jackson
 import io.beatmaps.common.json
+import io.beatmaps.common.rabbitHost
 import io.beatmaps.common.setupAMQP
 import io.beatmaps.common.setupLogging
 import io.beatmaps.controllers.UploadException
@@ -212,8 +213,10 @@ fun Application.beatmapsio() {
 
     installSessions()
     installDiscordOauth()
-    val mq = install(RabbitMQ) {
-        setupAMQP()
+    if (rabbitHost.isNotEmpty()) {
+        install(RabbitMQ) {
+            setupAMQP()
+        }
     }
 
     routing {
@@ -235,7 +238,7 @@ fun Application.beatmapsio() {
         uploadController()
         policyController()
 
-        mapsWebsocket(mq)
+        mapsWebsocket()
 
         static("/static") {
             resources()

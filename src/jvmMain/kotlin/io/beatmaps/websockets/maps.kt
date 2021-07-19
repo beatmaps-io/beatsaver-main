@@ -8,8 +8,10 @@ import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.inlineJackson
+import io.beatmaps.common.rabbitOptional
 import io.ktor.http.cio.websocket.Frame
 import io.ktor.routing.Route
+import io.ktor.routing.application
 import io.ktor.websocket.webSocket
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
@@ -17,28 +19,30 @@ import kotlinx.coroutines.launch
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
-import pl.jutupe.ktor_rabbitmq.RabbitMQ
 
-fun Route.mapsWebsocket(mq: RabbitMQ) {
+fun Route.mapsWebsocket() {
     val activeChannels = mutableListOf<Channel<String>>()
-    mq.consumeAck("bm.updateStream", Int::class) { _, mapId ->
-        transaction {
-            Beatmap
-                //.joinVersions(true, null) // Allow returning non-published versions
-                .joinVersions(true)
-                .joinUploader()
-                .joinCurator()
-                .select {
-                    Beatmap.id eq mapId and (Beatmap.deletedAt.isNull())
-                }
-                .complexToBeatmap()
-                .firstOrNull()
-                //?.enrichTestplays()
-                ?.run {
-                    MapDetail.from(this)
-                }
-        }?.let { map ->
-            activeChannels.forEach { it.send(inlineJackson.writeValueAsString(map)) }
+
+    application.rabbitOptional {
+        consumeAck("bm.updateStream", Int::class) { _, mapId ->
+            transaction {
+                Beatmap
+                    //.joinVersions(true, null) // Allow returning non-published versions
+                    .joinVersions(true)
+                    .joinUploader()
+                    .joinCurator()
+                    .select {
+                        Beatmap.id eq mapId and (Beatmap.deletedAt.isNull())
+                    }
+                    .complexToBeatmap()
+                    .firstOrNull()
+                    //?.enrichTestplays()
+                    ?.run {
+                        MapDetail.from(this)
+                    }
+            }?.let { map ->
+                activeChannels.forEach { it.send(inlineJackson.writeValueAsString(map)) }
+            }
         }
     }
 

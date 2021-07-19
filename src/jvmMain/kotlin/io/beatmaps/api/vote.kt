@@ -17,6 +17,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.Votes
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.rabbitOptional
 import io.beatmaps.tag
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
@@ -62,7 +63,7 @@ fun Route.voteRoute() {
         call.response.header("Access-Control-Allow-Origin", "*")
     }
 
-    application.rabbitConsumer {
+    application.rabbitOptional {
         consumeAck("vote", QueuedVote::class) { _, body ->
             transaction {
                 Votes.upsert(conflictIndex = Index(listOf(Votes.mapId, Votes.userId, Votes.steam), true, "vote_unique")) {

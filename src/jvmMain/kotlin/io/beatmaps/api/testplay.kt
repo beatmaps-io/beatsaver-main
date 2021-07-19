@@ -4,7 +4,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
-import io.beatmaps.common.DeletedData
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EMapState
@@ -57,6 +56,7 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Date
 import javax.crypto.SecretKey
+import kotlin.random.Random
 
 @Location("/api/testplay") class TestplayApi {
     @Location("/queue/{page}") data class Queue(val page: Long = 0, val includePlayed: Boolean = true, val api: TestplayApi)
@@ -107,7 +107,7 @@ data class SteamAPIResponseParams(val result: String, val steamid: Long, val own
 data class OculusAuthResponse(val success: Boolean, val error: String? = null)
 
 const val beatsaberAppid = 620980
-val privateKey = System.getenv("JWT_KEY") ?: ""
+val privateKey = System.getenv("JWT_KEY") ?: String(Random.nextBytes(32))
 val key: SecretKey = Keys.hmacShaKeyFor(privateKey.toByteArray())
 
 suspend fun PipelineContext<*, ApplicationCall>.validateJWT(jwt: String, block: suspend PipelineContext<*, ApplicationCall>.(Int) -> Unit) =

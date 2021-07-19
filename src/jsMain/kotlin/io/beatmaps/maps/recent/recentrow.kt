@@ -61,7 +61,7 @@ class RecentTestplayRow : RComponent<RecentTestplayRowProps, RecentTestplayRowSt
                 attrs.colSpan = "4"
                 div {
                     if (state.editing) {
-                        textArea("10", classes = "form-control") {
+                        textarea("10", classes = "form-control") {
                             ref = textareaRef
                             attrs.disabled = state.loading
                             +state.text

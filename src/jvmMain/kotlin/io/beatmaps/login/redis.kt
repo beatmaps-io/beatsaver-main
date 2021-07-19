@@ -2,6 +2,7 @@
 
 package io.beatmaps.login
 
+import io.ktor.sessions.SessionStorageMemory
 import io.ktor.application.Application
 import io.ktor.application.install
 import io.ktor.sessions.SessionStorage
@@ -17,17 +18,25 @@ import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import java.io.ByteArrayOutputStream
+import java.util.logging.Logger
 import kotlin.coroutines.coroutineContext
 
-val redisHost: String = System.getenv("REDIS_HOST") ?: "localhost"
+val redisHost: String = System.getenv("REDIS_HOST") ?: ""
 val redisPort: String = System.getenv("REDIS_PORT") ?: "6379"
-
-val redisClient: RedisClient = RedisClient.create("redis://$redisHost:$redisPort")
-val connection = redisClient.connect().coroutines()
+private val logger = Logger.getLogger("bmio.Redis")
 
 fun Application.installSessions() {
+    val sessionStorage = if (redisHost.isNotEmpty()) {
+        val redisClient: RedisClient = RedisClient.create("redis://$redisHost:$redisPort")
+        val connection = redisClient.connect().coroutines()
+        RedisSessionStorage(connection)
+    } else {
+        logger.warning("Using in memory session storage")
+        SessionStorageMemory()
+    }
+
     install(Sessions) {
-        cookie<Session>("BMSESSIONID", RedisSessionStorage(connection))
+        cookie<Session>("BMSESSIONID", sessionStorage)
     }
 }
 

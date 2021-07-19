@@ -91,7 +91,7 @@ class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
                     }
                 }
             }
-            fieldSet("col-5") {
+            fieldset("col-5") {
                 div("form-group") {
                     label {
                         attrs.htmlFor = "name"

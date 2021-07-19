@@ -181,7 +181,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                     p {
                         +"Tell testplayers what kind of feedback you're looking for:"
                     }
-                    textArea("10", classes ="form-control mb-4") {
+                    textarea("10", classes ="form-control mb-4") {
                         ref = textareaRef
                         +state.text
                     }
