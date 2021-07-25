@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 plugins {
     kotlin("multiplatform") version "1.5.21"
     kotlin("plugin.serialization") version "1.5.21"
+    id("org.kravemir.gradle.sass") version "1.2.4"
     application
 }
 
@@ -85,7 +86,7 @@ kotlin {
                 // Helpful
                 implementation("org.valiktor:valiktor-core:0.12.0")
                 implementation("io.github.keetraxx:recaptcha:0.5")
-                implementation("de.nielsfalk.ktor:ktor-swagger:0.7.1")
+                implementation("de.nielsfalk.ktor:ktor-swagger:0.7.5")
                 implementation("org.bouncycastle:bcprov-jdk15:1.46")
 
                 // Metrics
@@ -156,6 +157,14 @@ application {
     mainClass.set("io.beatmaps.ServerKt")
 }
 
+sass {
+    create("main") {
+        srcDir = file("$projectDir/src/jvmMain/sass")
+        outDir = file("$buildDir/processedResources/jvm/main")
+        minify = true
+    }
+}
+
 tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
     outputFileName = "output.js"
     sourceMaps = true
@@ -168,7 +177,7 @@ tasks.withType<AbstractCopyTask> {
 }
 
 tasks.getByName<Jar>("jvmJar") {
-    dependsOn(tasks.getByName("jsBrowserProductionWebpack"))
+    dependsOn(tasks.getByName("jsBrowserProductionWebpack"), tasks.getByName("mainSass"))
     val jsBrowserProductionWebpack = tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack")
 
     listOf(jsBrowserProductionWebpack.outputFileName, jsBrowserProductionWebpack.outputFileName + ".map", "modules.js", "modules.js.map").forEach {

@@ -275,13 +275,13 @@ fun RBuilder.mapInfo(handler: MapInfoProps.() -> Unit): ReactElement {
 }
 
 // Kotlin IR be adding underscores everywhere
-data class DangerousHtml(val _html: String)
+class DangerousHtml(override var __html: String) : InnerHTML
 
 fun <T: Tag> RDOMBuilder<T>.textToContent(text: String) {
-    setProp("dangerouslySetInnerHTML", DangerousHtml(
+    domProps.dangerouslySetInnerHTML = DangerousHtml(
         text
             .replace(Regex("<[^>]+>"), "")
             .transformURLIntoLinks()
             .replace("\n", "<br />")
-    ))
+    )
 }

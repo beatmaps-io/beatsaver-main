@@ -1,6 +1,7 @@
 package io.beatmaps.index
 import external.TimeAgo
 import io.beatmaps.api.MapDetail
+import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.MapVersion
 import io.beatmaps.common.Config
 import kotlinx.html.js.onClickFunction
@@ -32,6 +33,55 @@ fun RDOMBuilder<*>.botInfo(version: MapVersion?, marginLeft: Boolean = true) {
             attrs.title = "Could be a bot"
             +"Unsure"
         }
+    }
+}
+
+fun RDOMBuilder<*>.diffIcons(diffs: List<MapDifficulty>?) {
+    diffs?.forEach { d ->
+        span("badge badge-pill badge-${d.difficulty.color} mr-2 mb-1") {
+            img(d.characteristic.human(), "/static/icons/${d.characteristic.human().lowercase()}.png", classes = "mode") {
+                attrs.title = d.characteristic.human()
+                attrs.width = "16"
+                attrs.height = "16"
+            }
+            +d.difficulty.human()
+        }
+    }
+}
+
+fun RDOMBuilder<*>.links(map: MapDetail, version: MapVersion?, modal: RReadableRef<ModalComponent>) {
+    a("${Config.cdnbase}/${version?.hash}.zip", target = "_blank") {
+        attrs.rel = "noopener"
+        attrs.title = "Download zip"
+        attrs.attributes["aria-label"] = "Download zip"
+        i("fas fa-download text-info") {
+            attrs.attributes["aria-hidden"] = "true"
+        }
+    }
+    if (Config.oneClick && version?.key != null) {
+        a("https://beatsaver.com/beatmap/${version?.key}", target = "_blank") {
+            attrs.rel = "noopener"
+            attrs.title = version?.key ?: ""
+            attrs.attributes["aria-label"] = version?.key ?: ""
+            i("fas fa-share-alt text-info") { }
+        }
+    }
+    a("#") {
+        attrs.title = "Preview"
+        attrs.attributes["aria-label"] = "Preview"
+        attrs.onClickFunction = {
+            it.preventDefault()
+            version?.hash?.let { hash ->
+                modal.current?.show(hash)
+            }
+        }
+        i("fas fa-play text-info") {
+            attrs.attributes["aria-hidden"] = "true"
+        }
+    }
+    oneclick {
+        mapId = map.id
+        this.modal = modal
     }
 }
 
@@ -67,51 +117,10 @@ class TableRow : RComponent<TableRowProps, RState>() {
                 }
             }
             td("diffs") {
-                props.version?.diffs?.forEach { d ->
-                    span("badge badge-pill badge-${d.difficulty.color} mr-2 mb-1") {
-                        img(d.characteristic.human(), "/static/icons/${d.characteristic.human().lowercase()}.png", classes = "mode") {
-                            attrs.title = d.characteristic.human()
-                            attrs.width = "16"
-                            attrs.height = "16"
-                        }
-                        +d.difficulty.human()
-                    }
-                }
+                diffIcons(props.version?.diffs)
             }
             td("links") {
-                a("${Config.cdnbase}/${props.version?.hash}.zip", target = "_blank") {
-                    attrs.rel = "noopener"
-                    attrs.title = "Download zip"
-                    attrs.attributes["aria-label"] = "Download zip"
-                    i("fas fa-download text-info") {
-                        attrs.attributes["aria-hidden"] = "true"
-                    }
-                }
-                if (Config.oneClick && props.version?.key != null) {
-                    a("https://beatsaver.com/beatmap/${props.version?.key}", target = "_blank") {
-                        attrs.rel = "noopener"
-                        attrs.title = props.version?.key ?: ""
-                        attrs.attributes["aria-label"] = props.version?.key ?: ""
-                        i("fas fa-share-alt text-info") { }
-                    }
-                }
-                a("#") {
-                    attrs.title = "Preview"
-                    attrs.attributes["aria-label"] = "Preview"
-                    attrs.onClickFunction = {
-                        it.preventDefault()
-                        props.version?.hash?.let { hash ->
-                            props.modal.current?.show(hash)
-                        }
-                    }
-                    i("fas fa-play text-info") {
-                        attrs.attributes["aria-hidden"] = "true"
-                    }
-                }
-                oneclick {
-                    mapId = props.map.id
-                    modal = props.modal
-                }
+                links(props.map, props.version, props.modal)
             }
         }
     }

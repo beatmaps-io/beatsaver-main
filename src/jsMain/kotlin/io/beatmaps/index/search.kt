@@ -286,9 +286,9 @@ class Search : RComponent<SearchProps, SearchState>() {
                                 order = SearchOrder.fromInt(sortRef.current?.selectedIndex ?: 0) ?: SearchOrder.Relevance
                             }
                         }
+                        attrs.value = state.order.toString()
                         SearchOrder.values().forEach {
                             option {
-                                attrs.selected = state.order == it
                                 +it.toString()
                             }
                         }

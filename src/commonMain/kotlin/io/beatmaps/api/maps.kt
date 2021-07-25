@@ -23,7 +23,8 @@ object InstantAsStringSerializer : KSerializer<Instant> {
 
 @Serializable
 data class MapDetail(val id: Int, val name: String, val description: String, val uploader: UserDetail, val metadata: MapDetailMetadata, val stats: MapStats,
-                     val uploaded: Instant? = null, val automapper: Boolean, val versions: List<MapVersion> = listOf(), val curator: String? = null) {
+                     val uploaded: Instant? = null, val automapper: Boolean, val ranked: Boolean, val qualified: Boolean, val versions: List<MapVersion> = listOf(),
+                     val curator: String? = null) {
     fun latestVersion() = versions.maxByOrNull { it.createdAt }
     fun publishedVersion() = versions.firstOrNull { it.state == EMapState.Published }
     companion object

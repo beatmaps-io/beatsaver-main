@@ -16,6 +16,7 @@ import react.RProps
 import react.RReadableRef
 import react.RState
 import react.ReactElement
+import react.dom.div
 import react.dom.p
 import react.dom.table
 import react.dom.tbody
@@ -145,7 +146,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         val windowSize = window.innerHeight
         val bodyHeight = document.body?.offsetHeight ?: 0
         val headerSize = 55
-        val trigger = 300
+        val trigger = 500
 
         if (bodyHeight - (scrollPosition + windowSize) + headerSize < trigger) {
             loadNextPage()
@@ -162,15 +163,13 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                 +"?"
             }
         }
-        table("table table-dark search-results") {
-            tbody {
-                state.songs.forEach {
-                    beatmapTableRow {
-                        key = it.id.toString()
-                        map = it
-                        version = if (props.wip) it.latestVersion() else it.publishedVersion()
-                        modal = props.modal
-                    }
+        div("search-results") {
+            state.songs.forEach {
+                beatmapInfo {
+                    key = it.id.toString()
+                    map = it
+                    version = if (props.wip) it.latestVersion() else it.publishedVersion()
+                    modal = props.modal
                 }
             }
         }
