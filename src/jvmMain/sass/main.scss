@@ -57,13 +57,13 @@ body {
         height: 15px;
       }
       .u {
-        background: #00BC8C;
+        background: $green;
       }
       .d {
-        background: #E74C3C;
+        background: $red;
       }
       .o {
-        background: #444444;
+        background: $gray-700;
       }
     }
 
@@ -187,7 +187,7 @@ button.filter-dropdown {
   padding: 5px;
   width: 200px;
   text-align: left;
-  border-bottom: 2px solid #3498db;
+  border-bottom: 2px solid $cyan;
 }
 
 .filter-dropdown {
@@ -238,7 +238,7 @@ button.filter-dropdown {
 }
 
 .card-header a:hover {
-  color: #00bc8c;
+  color: $green;
   background: #333;
 }
 th a {
@@ -408,13 +408,13 @@ th a img {
   .thumb {
     height: 14px;
     width: 14px;
-    background: #375a7f;
+    background: $blue;
     border-radius: 50%;
     cursor: grab;
     margin-top: 5px;
   }
   .track-1 {
-    background: #3498db;
+    background: $cyan;
   }
 }
 
@@ -424,19 +424,19 @@ a.list-group-item {
 }
 
 li.list-group-item:hover, a.list-group-item:hover {
-  background: rgba(55, 90, 127, 0.5);
+  background: rgba($blue, 0.5);
   text-decoration: none;
   color: #fff;
 }
 
 .badge-purple {
   color: #fff;
-  background-color: #6610f2;
+  background-color: $indigo;
 }
 
 .badge-pink {
   color: #fff;
-  background-color: #e83e8c;
+  background-color: $pink;
 }
 
 .badge-orange {
@@ -498,11 +498,11 @@ div.mapstats {
   margin-right: 3px;
 }
 
-.list-group-item.stat-orange { background: rgba(253, 126, 20, 0.1); }
-.list-group-item.stat-danger { background: rgba(231, 76, 60, 0.1); }
-.list-group-item.stat-info { background: rgba(52, 152, 219, 0.1); }
-.list-group-item.stat-success { background: rgba(0, 188, 140, 0.1); }
-.list-group-item.stat-purple { background: rgba(111, 66, 193, 0.1); }
+.list-group-item.stat-orange { background: rgba($orange, 0.1); }
+.list-group-item.stat-danger { background: rgba($red, 0.1); }
+.list-group-item.stat-info { background: rgba($cyan, 0.1); }
+.list-group-item.stat-success { background: rgba($green, 0.1); }
+.list-group-item.stat-purple { background: rgba($purple, 0.1); }
 
 .nav-tabs {
   position: absolute;
@@ -603,17 +603,17 @@ li.KeyboardShortcutRow {
   opacity: 0.65;
 }
 .btn-check:focus + .btn-outline-light, .btn-outline-light:focus {
-  box-shadow: 0 0 0 0.25rem rgba(173, 181, 189, 0.5);
+  box-shadow: 0 0 0 0.25rem rgba($light, 0.5);
 }
 .btn-check:checked + .btn-outline-light,
 .btn-check:active + .btn-outline-light, .btn-outline-light:active, .btn-outline-light.active, .btn-outline-light.dropdown-toggle.show {
-  color: #000;
-  background-color: #adb5bd;
-  border-color: #adb5bd;
+  color: $black;
+  background-color: $light;
+  border-color: $light;
 }
 .btn-check:checked + .btn-outline-light:focus,
 .btn-check:active + .btn-outline-light:focus, .btn-outline-light:active:focus, .btn-outline-light.active:focus, .btn-outline-light.dropdown-toggle.show:focus {
-  box-shadow: 0 0 0 0.25rem rgba(173, 181, 189, 0.5);
+  box-shadow: 0 0 0 0.25rem rgba($light, 0.5);
 }
 #beatsage-no + label {
   width: 45%;

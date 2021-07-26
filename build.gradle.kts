@@ -160,10 +160,6 @@ application {
     mainClass.set("io.beatmaps.ServerKt")
 }
 
-sass {
-    version = "1.35.1"
-}
-
 tasks.getByName<CompileSass>("compileSass") {
     outputDir = file("$buildDir/processedResources/jvm/main")
     setSourceDir(file("$projectDir/src/jvmMain/sass"))
