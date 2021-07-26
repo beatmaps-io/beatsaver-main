@@ -32,7 +32,6 @@ class MainTemplate(private val s: Session?, private val body: Template<BODY>) : 
                 defer = true
             }
             styleLink("/static/main.css")
-            styleLink("/static/bootstrap.css")
             meta("theme-color", "#375a7f")
             meta("viewport", "width=device-width, min-width=575")
             meta("Description", "Beat saber custom maps")

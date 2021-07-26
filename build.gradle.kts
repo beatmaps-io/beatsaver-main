@@ -1,9 +1,10 @@
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
+import io.miret.etienne.gradle.sass.CompileSass
 
 plugins {
     kotlin("multiplatform") version "1.5.21"
     kotlin("plugin.serialization") version "1.5.21"
-    id("org.kravemir.gradle.sass") version "1.2.4"
+    id("io.miret.etienne.sass") version "1.1.2"
     application
 }
 
@@ -143,6 +144,8 @@ kotlin {
                 implementation(npm("react-google-recaptcha", "2.1.0"))
                 implementation(npm("axios", "0.21.1"))
                 implementation(npm("react-slider", "1.1.2"))
+                implementation(npm("bootswatch", "4.5.3"))
+                implementation(npm("bootstrap", "4.5.3"))
             }
         }
         val jsTest by getting {
@@ -158,11 +161,15 @@ application {
 }
 
 sass {
-    create("main") {
-        srcDir = file("$projectDir/src/jvmMain/sass")
-        outDir = file("$buildDir/processedResources/jvm/main")
-        minify = true
-    }
+    version = "1.35.1"
+}
+
+tasks.getByName<CompileSass>("compileSass") {
+    outputDir = file("$buildDir/processedResources/jvm/main")
+    setSourceDir(file("$projectDir/src/jvmMain/sass"))
+    loadPath(file("$buildDir/js/node_modules"))
+
+    style = compressed
 }
 
 tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
@@ -177,7 +184,7 @@ tasks.withType<AbstractCopyTask> {
 }
 
 tasks.getByName<Jar>("jvmJar") {
-    dependsOn(tasks.getByName("jsBrowserProductionWebpack"), tasks.getByName("mainSass"))
+    dependsOn(tasks.getByName("jsBrowserProductionWebpack"), tasks.getByName("compileSass"))
     val jsBrowserProductionWebpack = tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack")
 
     listOf(jsBrowserProductionWebpack.outputFileName, jsBrowserProductionWebpack.outputFileName + ".map", "modules.js", "modules.js.map").forEach {
