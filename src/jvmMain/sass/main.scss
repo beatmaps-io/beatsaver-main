@@ -41,8 +41,8 @@ body {
     float: left;
     width: 100%;
     display: flex;
-    background: #333;
-    border: 5px solid #222;
+    background: $dark;
+    border: 5px solid $body-bg;
     padding: 10px;
     border-radius: 10px;
 
@@ -150,7 +150,7 @@ body {
   thead {
     position: sticky;
     top: 53px;
-    background: #303030;
+    background: $dark;
 
     &::after {
       content: '';
@@ -158,7 +158,7 @@ body {
       bottom: 0;
       left: 0;
       width: 100%;
-      border-top: 1px solid #434343;
+      border-top: 1px solid $table-dark-border-color;
     }
   }
   td {
@@ -181,7 +181,7 @@ body {
 
 button.filter-dropdown {
   background: none;
-  color: #FFF;
+  color: $body-color;
   border: 0;
   margin: 7px;
   padding: 5px;
@@ -399,7 +399,7 @@ th a img {
   height: 25px;
 
   .track {
-    background: rgb(221, 221, 221);
+    background: $gray-300;
     border-radius: 35px;
     height: 6px;
     top: 50%;
@@ -420,27 +420,27 @@ th a img {
 
 a.list-group-item {
   text-decoration: none;
-  color: #fff;
+  color: $body-color;
 }
 
 li.list-group-item:hover, a.list-group-item:hover {
   background: rgba($blue, 0.5);
   text-decoration: none;
-  color: #fff;
+  color: $body-color;
 }
 
 .badge-purple {
-  color: #fff;
+  color: $body-color;
   background-color: $indigo;
 }
 
 .badge-pink {
-  color: #fff;
+  color: $body-color;
   background-color: $pink;
 }
 
 .badge-orange {
-  color: #fff;
+  color: $body-color;
   background-color: #da6300;
 }
 
@@ -585,7 +585,7 @@ li.KeyboardShortcutRow {
   padding-top: 14px;
 }
 .card.bg-danger .card-text > a {
-  color: #fff;
+  color: $body-color;
   text-decoration: underline;
 }
 .card.bg-danger .card-text > a:hover {
@@ -623,7 +623,7 @@ li.KeyboardShortcutRow {
   margin-left: 1%;
 }
 
-@media (min-width: 576px) {
+@include media-breakpoint-up(sm) {
   button.filter-dropdown {
     width: 100%;
   }
@@ -639,7 +639,7 @@ li.KeyboardShortcutRow {
   }
 }
 
-@media (min-width: 768px) {
+@include media-breakpoint-up(md) {
   .filter-dropdown span {
     width: 127px;
   }
@@ -651,7 +651,7 @@ li.KeyboardShortcutRow {
   }
 }
 
-@media (min-width: 992px) {
+@include media-breakpoint-up(lg) {
   .search-results .beatmap {
     width: 50%;
   }
@@ -668,7 +668,6 @@ li.KeyboardShortcutRow {
   .DateInput__small {
     width: 97px !important;
   }
-
   .mapstats .stats {
     width: 188px;
   }
@@ -678,7 +677,7 @@ li.KeyboardShortcutRow {
   }
 }
 
-@media (min-width: 1200px) {
+@include media-breakpoint-up(xl) {
   .mapstats .stats {
     width: 239px;
   }
