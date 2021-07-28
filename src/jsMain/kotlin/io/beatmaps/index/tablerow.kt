@@ -94,9 +94,6 @@ class TableRow : RComponent<TableRowProps, RState>() {
                     attrs.width = "100"
                     attrs.height = "100"
                 }
-                small("text-center") {
-                    +"${props.map.stats.upvotes} / ${props.map.stats.downvotes} (${(props.map.stats.score * 1000).toInt() / 10f}%)"
-                }
             }
             td {
                 routeLink("/maps/${props.map.id}") {

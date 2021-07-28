@@ -1,13 +1,12 @@
+$navbar-padding-y: .5rem;
+$navbar-padding-x: .5rem;
+
 @import "bootswatch/dist/darkly/variables.scss";
 @import "bootstrap/scss/bootstrap.scss";
 @import "bootswatch/dist/darkly/bootswatch.scss";
 
 body {
   padding-top: 70px;
-}
-
-.navbar {
-  padding: 0.5rem 0.5rem !important;
 }
 
 #root {
@@ -18,15 +17,24 @@ body {
   width: 50%;
 }
 
-.fas {
-  width: 12px;
-  height: 12px;
-}
-
-.search-results {
+div.search-results {
   display: flex;
   flex-wrap: wrap;
 
+  img.cover {
+    margin-right: 10px;
+  }
+}
+table.search-results {
+  .diffs {
+    width: 300px;
+  }
+  .links {
+    padding-right: 5px;
+    width: 43px;
+  }
+}
+.search-results {
   .ranked {
     box-shadow: inset 0 0 10px rgba(255, 212, 0, 0.4);
   }
@@ -48,6 +56,11 @@ body {
 
     .info {
       flex: 1;
+
+      > a {
+        font-weight: bold;
+        font-size: inherit;
+      }
     }
 
     small.vote {
@@ -82,7 +95,6 @@ body {
   img.cover {
     width: 100px;
     height: 100px;
-    margin-right: 10px;
   }
   img.mode {
     width: 16px;
@@ -117,29 +129,27 @@ body {
     }
   }
 }
-
-.search-results small, .search-results a, .mapinfo-list a, .mapinfo-list small {
-  word-break: break-word;
+.search-results, .mapinfo-list {
+  a {
+    word-break: break-word;
+    font-size: 14px;
+  }
+  small {
+    display: flex;
+    max-height: 146px;
+    overflow: hidden;
+    margin-top: 8px;
+    margin-right: 10px;
+    border-radius: 3px;
+    margin-bottom: -19px;
+  }
+  p {
+    margin-bottom: 0;
+  }
+  time {
+    font-size: 10px;
+  }
 }
-
-.search-results small, .mapinfo-list small {
-  display: flex;
-  max-height: 146px;
-  overflow: hidden;
-  margin-top: 8px;
-  margin-right: 10px;
-  border-radius: 3px;
-  margin-bottom: -19px;
-}
-
-.search-results p, .mapinfo-list p {
-  margin-bottom: 0;
-}
-
-.search-results time, .mapinfo-list time {
-  font-size: 10px;
-}
-
 .table.mappers {
   td, th {
     text-align: center;
@@ -178,8 +188,7 @@ body {
     }
   }
 }
-
-button.filter-dropdown {
+.filter-dropdown {
   background: none;
   color: $body-color;
   border: 0;
@@ -188,9 +197,7 @@ button.filter-dropdown {
   width: 200px;
   text-align: left;
   border-bottom: 2px solid $cyan;
-}
 
-.filter-dropdown {
   span {
     display: inline-block;
     text-overflow: ellipsis;
@@ -202,27 +209,24 @@ button.filter-dropdown {
     line-height: 23px;
   }
 }
-
 .form-group .dropdown-menu {
   padding: 1rem 1rem 0.8rem 1rem !important;
   left: 50% !important;
   transform: translate(-50%, 0);
   white-space: nowrap;
 }
-
-.custom-control.custom-switch {
-  padding-bottom: 0.2rem;
+.dropdown-menu {
+  .custom-control.custom-switch {
+    padding-bottom: 0.2rem;
+  }
+  .custom-control-label {
+    display: block;
+  }
+  h4 {
+    text-transform: uppercase;
+    font-size: 12px;
+  }
 }
-
-.dropdown-menu .custom-control-label {
-  display: block;
-}
-
-.dropdown-menu h4 {
-  text-transform: uppercase;
-  font-size: 12px;
-}
-
 .mapinfo {
   img {
     width: 200px;
@@ -232,25 +236,25 @@ button.filter-dropdown {
     margin-left: 230px;
   }
 }
-
-.card-header a, th a {
+.card-header a {
   padding: 14px 10px;
-}
 
-.card-header a:hover {
-  color: $green;
-  background: #333;
+  &:hover {
+    background: #333;
+  }
 }
 th a {
   margin-left: -20px;
-}
-th a:hover {
-  background: #444;
-}
-th a img {
-  vertical-align: text-bottom;
-}
+  padding: 14px 10px;
 
+  &:hover {
+    background: #444;
+  }
+
+  img {
+    vertical-align: text-bottom;
+  }
+}
 .scores {
   table {
     width: 100%;
@@ -587,33 +591,37 @@ li.KeyboardShortcutRow {
 .card.bg-danger .card-text > a {
   color: $body-color;
   text-decoration: underline;
-}
-.card.bg-danger .card-text > a:hover {
-  color: #000;
+
+  &:hover {
+    color: #000;
+  }
 }
 .btn-check {
   position: absolute;
   clip: rect(0, 0, 0, 0);
   pointer-events: none;
+
+  &[disabled], &:disabled {
+    + .btn {
+      pointer-events: none;
+      filter: none;
+      opacity: 0.65;
+    }
+  }
 }
-.btn-check[disabled] + .btn, .btn-check:disabled + .btn {
-  pointer-events: none;
-  -webkit-filter: none;
-  filter: none;
-  opacity: 0.65;
-}
-.btn-check:focus + .btn-outline-light, .btn-outline-light:focus {
-  box-shadow: 0 0 0 0.25rem rgba($light, 0.5);
-}
-.btn-check:checked + .btn-outline-light,
-.btn-check:active + .btn-outline-light, .btn-outline-light:active, .btn-outline-light.active, .btn-outline-light.dropdown-toggle.show {
-  color: $black;
-  background-color: $light;
-  border-color: $light;
-}
-.btn-check:checked + .btn-outline-light:focus,
-.btn-check:active + .btn-outline-light:focus, .btn-outline-light:active:focus, .btn-outline-light.active:focus, .btn-outline-light.dropdown-toggle.show:focus {
-  box-shadow: 0 0 0 0.25rem rgba($light, 0.5);
+.btn-outline-light {
+  .btn-check:checked + &, .btn-check:active + &, &:active, &.active, &.dropdown-toggle.show {
+    color: $black;
+    background-color: $light;
+    border-color: $light;
+
+    &:focus {
+      box-shadow: 0 0 0 0.25rem rgba($light, 0.5);
+    }
+  }
+  .btn-check:focus + &, &:focus {
+    box-shadow: 0 0 0 0.25rem rgba($light, 0.5);
+  }
 }
 #beatsage-no + label {
   width: 45%;
@@ -624,11 +632,11 @@ li.KeyboardShortcutRow {
 }
 
 @include media-breakpoint-up(sm) {
-  button.filter-dropdown {
+  .filter-dropdown {
     width: 100%;
-  }
-  .filter-dropdown span {
-    width: 81px;
+    span {
+      width: 81px;
+    }
   }
   .DateInput_input__small {
     padding: 7px 4px 5px !important;
@@ -643,8 +651,10 @@ li.KeyboardShortcutRow {
   .filter-dropdown span {
     width: 127px;
   }
-  .scores th:nth-child(4), .scores td:nth-child(4) {
-    display: table-cell;
+  .scores th, .scores td {
+    &:nth-child(4) {
+      display: table-cell;
+    }
   }
   .DateInput__small {
     width: 70px !important;
@@ -655,11 +665,11 @@ li.KeyboardShortcutRow {
   .search-results .beatmap {
     width: 50%;
   }
-  button.filter-dropdown {
+  .filter-dropdown {
     width: 200px;
-  }
-  .filter-dropdown span {
-    width: 176px;
+    span {
+      width: 176px;
+    }
   }
   .DateInput_input__small {
     padding: 7px 7px 5px !important;
@@ -668,21 +678,25 @@ li.KeyboardShortcutRow {
   .DateInput__small {
     width: 97px !important;
   }
-  .mapstats .stats {
-    width: 188px;
-  }
-  .mapstats span {
-    font-size: 7px;
-    width: 44px;
+  .mapstats {
+    .stats {
+      width: 188px;
+    }
+    span {
+      font-size: 7px;
+      width: 44px;
+    }
   }
 }
 
 @include media-breakpoint-up(xl) {
-  .mapstats .stats {
-    width: 239px;
-  }
-  .mapstats span {
-    font-size: 10px;
-    width: 59px;
+  .mapstats {
+    .stats {
+      width: 239px;
+    }
+    span {
+      font-size: 10px;
+      width: 59px;
+    }
   }
 }

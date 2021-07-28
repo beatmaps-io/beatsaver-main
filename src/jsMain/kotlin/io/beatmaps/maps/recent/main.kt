@@ -41,7 +41,7 @@ class RecentTestplays : RComponent<RProps, RecentTestplaysState>() {
             loading = true
         }
 
-        window.fetch("/api/testplay/recent").then {
+        window.fetch("/api/testplay/recent/0").then {
             it.text()
         }.then({
             val response = Json.decodeFromString<Array<MapDetail>>(it)
