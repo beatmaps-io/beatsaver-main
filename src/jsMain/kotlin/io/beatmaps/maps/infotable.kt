@@ -22,6 +22,16 @@ external interface InfoTableProps : RProps {
     var changeSelectedDiff: (MapDifficulty) -> Unit
 }
 
+fun RDOMBuilder<*>.diffImg(diff: MapDifficulty) {
+    val humanText = diff.characteristic.human()
+
+    img(humanText, "/static/icons/${humanText.lowercase()}.svg", classes = "mode") {
+        attrs.title = diff.characteristic.human()
+        attrs.width = "16"
+        attrs.height = "16"
+    }
+}
+
 @JsExport
 class InfoTable : RComponent<InfoTableProps, RState>() {
     override fun RBuilder.render() {
@@ -82,11 +92,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
                 props.changeSelectedDiff(diff)
             }
 
-            img(diff.characteristic.human(), "/static/icons/${diff.characteristic.human().lowercase()}.png", classes = "mode") {
-                attrs.title = diff.characteristic.human()
-                attrs.width = "16"
-                attrs.height = "16"
-            }
+            diffImg(diff)
 
             +diff.difficulty.human()
 

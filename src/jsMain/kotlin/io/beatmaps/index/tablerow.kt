@@ -4,6 +4,7 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.MapVersion
 import io.beatmaps.common.Config
+import io.beatmaps.maps.diffImg
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import react.RBuilder
@@ -39,11 +40,7 @@ fun RDOMBuilder<*>.botInfo(version: MapVersion?, marginLeft: Boolean = true) {
 fun RDOMBuilder<*>.diffIcons(diffs: List<MapDifficulty>?) {
     diffs?.forEach { d ->
         span("badge badge-pill badge-${d.difficulty.color} mr-2 mb-1") {
-            img(d.characteristic.human(), "/static/icons/${d.characteristic.human().lowercase()}.png", classes = "mode") {
-                attrs.title = d.characteristic.human()
-                attrs.width = "16"
-                attrs.height = "16"
-            }
+            diffImg(d)
             +d.difficulty.human()
         }
     }
