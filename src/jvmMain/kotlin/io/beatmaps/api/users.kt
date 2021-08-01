@@ -191,7 +191,10 @@ fun Route.userRoute() {
 
     get<UsersApi.List> {
         val us = transaction {
-            val userAlias = User.slice(User.upvotes, User.id, User.name, User.avatar, User.hash).selectAll().orderBy(User.upvotes, SortOrder.DESC).limit(it.page).alias("u")
+            val userAlias = User.slice(User.upvotes, User.id, User.name, User.avatar, User.hash).select {
+                User.hash.isNotNull()
+            }.orderBy(User.upvotes, SortOrder.DESC).limit(it.page).alias("u")
+
             val query = userAlias
                 .join(Beatmap, JoinType.INNER, userAlias[User.id], Beatmap.uploader) {
                     Beatmap.deletedAt.isNull()

@@ -1,20 +1,16 @@
 package io.beatmaps.user
 
 import Axios
-import AxiosRequestConfig
 import generateConfig
-import io.beatmaps.common.Config
 import io.beatmaps.api.UserDetail
+import io.beatmaps.common.Config
 import io.beatmaps.common.formatTime
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
 import io.beatmaps.setPageTitle
 import kotlinx.browser.window
-import kotlinx.html.ButtonType
 import kotlinx.html.js.onClickFunction
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import org.w3c.dom.get
 import react.RBuilder
 import react.RComponent

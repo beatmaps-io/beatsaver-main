@@ -123,7 +123,7 @@ class App : RComponent<RProps, RState>() {
                 route<RProps>("/mappers", exact = true) {
                     initWithHistory(it.history)
                     userList {
-
+                        history = it.history
                     }
                 }
                 route<RProps>("*") {

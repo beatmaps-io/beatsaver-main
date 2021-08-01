@@ -153,6 +153,10 @@ table.search-results {
 .table.mappers {
   td, th {
     text-align: center;
+
+    &:nth-child(n+11), &:nth-child(4), &:nth-child(5) {
+      display: none;
+    }
   }
   th {
     border: 0;
@@ -648,6 +652,13 @@ li.KeyboardShortcutRow {
 }
 
 @include media-breakpoint-up(md) {
+  .table.mappers {
+    td, th {
+      &:nth-child(4), &:nth-child(5) {
+        display: table-cell;
+      }
+    }
+  }
   .filter-dropdown span {
     width: 127px;
   }
@@ -662,6 +673,13 @@ li.KeyboardShortcutRow {
 }
 
 @include media-breakpoint-up(lg) {
+  .table.mappers {
+    td, th {
+      &:nth-child(n+13) {
+        display: table-cell;
+      }
+    }
+  }
   .search-results .beatmap {
     width: 50%;
   }
@@ -690,6 +708,13 @@ li.KeyboardShortcutRow {
 }
 
 @include media-breakpoint-up(xl) {
+  .table.mappers {
+    td, th {
+      &:nth-child(n+11) {
+        display: table-cell;
+      }
+    }
+  }
   .mapstats {
     .stats {
       width: 239px;
