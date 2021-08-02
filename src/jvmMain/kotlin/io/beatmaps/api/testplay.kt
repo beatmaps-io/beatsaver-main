@@ -30,6 +30,7 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
+import io.ktor.client.features.ClientRequestException
 import io.ktor.client.request.*
 import io.ktor.client.request.get
 import io.ktor.features.*
@@ -186,6 +187,8 @@ suspend fun validateOculusToken(oculusId: String, proof: String) = try {
     val data = jackson.readValue<OculusAuthResponse>(json)
     data.success
 } catch (e: BadRequestException) {
+    false
+} catch (e: ClientRequestException) {
     false
 }
 

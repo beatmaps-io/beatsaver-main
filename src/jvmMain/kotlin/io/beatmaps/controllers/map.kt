@@ -4,10 +4,13 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
 import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.genericPage
+import io.ktor.application.call
 import io.ktor.locations.Location
 import io.ktor.locations.get
+import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import kotlinx.html.meta
 import org.jetbrains.exposed.sql.select
@@ -19,6 +22,10 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 @Location("/beatsaver") class BeatsaverController {
     @Location("/{key}") data class Detail(val key: String, val api: BeatsaverController)
+}
+
+@Location("/beatmap") class BeatmapController {
+    @Location("/{key}") data class RedirectOld(val key: String, val api: BeatmapController)
 }
 
 @Location("/profile") class UserController {
@@ -56,6 +63,18 @@ fun Route.mapController() {
                 // key isn't an int
             }
         })
+    }
+
+    get<BeatmapController.RedirectOld> {
+        transaction {
+            Beatmap.joinVersions().select {
+                Versions.key64 eq it.key
+            }.limit(1).complexToBeatmap().map { MapDetail.from(it) }.firstOrNull()
+        }?.let {
+            call.respondRedirect("/maps/${it.id}")
+        } ?: run {
+            call.respondRedirect("/")
+        }
     }
 
     get<BeatsaverController.Detail> {

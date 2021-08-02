@@ -212,7 +212,7 @@ fun Route.mapDetailRoute() {
                 .joinUploader()
                 .joinCurator()
                 .select {
-                    Versions.hash.eq(it.hash) and (Beatmap.deletedAt.isNull())
+                    Versions.hash.eq(it.hash.lowercase()) and (Beatmap.deletedAt.isNull())
                 }
                 .complexToBeatmap()
                 .firstOrNull()
