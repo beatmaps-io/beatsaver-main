@@ -1,18 +1,15 @@
 package io.beatmaps.user
 
 import Axios
-import AxiosRequestConfig
 import generateConfig
 import io.beatmaps.api.BeatsaverLink
-import io.beatmaps.api.FeedbackUpdate
+import io.beatmaps.api.BeatsaverLinkReq
 import io.beatmaps.setPageTitle
 import kotlinx.browser.window
 import kotlinx.html.ButtonType
-import kotlinx.html.INPUT
 import kotlinx.html.InputType
+import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import org.w3c.dom.HTMLInputElement
 import react.RBuilder
 import react.RComponent
@@ -27,11 +24,12 @@ external interface BeatsaverPageProps : RProps {
     var history: RouteResultHistory
 }
 
-data class BeatsaverPageState(var failed: Boolean = false, var loading: Boolean = false, var hash: String = "") : RState
+data class BeatsaverPageState(var failed: Boolean = false, var loading: Boolean = false) : RState
 
 @JsExport
 class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
     private val inputRef = createRef<HTMLInputElement>()
+    private val passwordRef = createRef<HTMLInputElement>()
 
     init {
         state = BeatsaverPageState()
@@ -58,7 +56,6 @@ class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
                 props.history.push("/profile")
             } else {
                 setState {
-                    hash = link.md
                     loading = false
                 }
             }
@@ -73,21 +70,12 @@ class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
                 +"Link beatsaver account"
             }
             p("mb-5") {
-                +"To link your account edit the title or description of one your recent songs to include "
-                span("badge badge-light m-1") {
-                    +state.hash
-                }
+                +"To link your account enter your old login details:"
             }
             if (state.failed) {
                 div("alert alert-danger col-7") {
                     h5 {
                         +"Failed to link accounts!"
-                    }
-                    p {
-                        +"Accounts will only link if you have uploaded maps"
-                    }
-                    p {
-                        +"If this continues try using your beatsaver id e.g. '5ffdaabc6046050006231ed1' instead of your username"
                     }
                 }
             }
@@ -98,21 +86,33 @@ class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
                         +"Beatsaver Account name or id"
                     }
                     input(InputType.text, classes = "form-control") {
+                        attrs.id = "name"
                         ref = inputRef
+                    }
+                }
+                div("form-group") {
+                    label {
+                        attrs.htmlFor = "pwd"
+                        +"Old Beatsaver Password"
+                    }
+                    input(InputType.password, classes = "form-control") {
+                        attrs.id = "pwd"
+                        ref = passwordRef
                     }
                 }
                 button(type = ButtonType.submit, classes = "btn btn-primary") {
                     attrs.onClickFunction = {
-                        val usr = inputRef.current?.value
+                        val usr = inputRef.current?.value ?: ""
+                        val pwd = passwordRef.current?.value ?: ""
 
                         setState {
                             loading = true
                         }
 
                         Axios.post<BeatsaverLink>(
-                            "/api/users/beatsaver/$usr",
-                            "",
-                            generateConfig<String, BeatsaverLink>()
+                            "/api/users/beatsaver",
+                            BeatsaverLinkReq(usr, pwd),
+                            generateConfig<BeatsaverLinkReq, BeatsaverLink>()
                         ).then {
                             val link = it.data
 

@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+import com.toxicbakery.bcrypt.Bcrypt
 import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
@@ -27,6 +28,7 @@ import io.ktor.locations.Location
 import io.ktor.locations.get
 import io.ktor.locations.options
 import io.ktor.locations.post
+import io.ktor.request.receive
 import io.ktor.response.header
 import io.ktor.response.respond
 import io.ktor.routing.Route
@@ -36,12 +38,14 @@ import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.IntegerColumnType
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.OrOp
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.Sum
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
+import org.jetbrains.exposed.sql.booleanLiteral
 import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.max
@@ -77,8 +81,8 @@ class UsersApi {
     @Location("/find/{id}")
     data class Find(val id: String, val api: UsersApi)
 
-    @Location("/beatsaver/{hash?}")
-    data class LinkBeatsaver(val hash: String? = null, val api: UsersApi)
+    @Location("/beatsaver")
+    data class LinkBeatsaver(val api: UsersApi)
 
     @Location("/alerts")
     data class Alerts(val api: UsersApi)
@@ -88,10 +92,6 @@ class UsersApi {
 }
 
 fun Route.userRoute() {
-    val userVerifyService = ServiceLoader.load(IUserVerifyProvider::class.java).findFirst().orElse(object : IUserVerifyProvider {
-        override fun create() = UserNotVerified
-    }).create()
-
     get<UsersApi.Me> {
         requireAuthorization {
             val user = transaction {
@@ -106,28 +106,21 @@ fun Route.userRoute() {
 
     get<UsersApi.LinkBeatsaver> {
         requireAuthorization {
-            call.respond(BeatsaverLink(userVerifyService.getHash(it.userId), it.hash != null))
+            call.respond(BeatsaverLink(it.hash != null))
         }
     }
 
-    post<UsersApi.LinkBeatsaver> { r ->
+    post<UsersApi.LinkBeatsaver> { _ ->
         requireAuthorization { s ->
-            val userHash = userVerifyService.getHash(s.userId)
+            val r = call.receive<BeatsaverLinkReq>()
 
-            val toCheck = transaction {
-                r.hash?.let { rHash ->
-                    if (rHash.length != 24 || !rHash.startsWith("5")) {
-                        // Is a username?
-                        UserDao.wrapRows(User.select {
-                            User.name eq rHash and User.hash.isNotNull()
-                        }).toList().mapNotNull { it.hash }
-                    } else {
-                        null
-                    }
-                } ?: listOfNotNull(r.hash)
+            val userToCheck = transaction {
+                UserDao.wrapRows(User.select {
+                    User.name eq r.user and User.hash.isNotNull()
+                }).firstOrNull()
             }
 
-            val valid = userVerifyService.validateUser(toCheck, userHash)
+            val valid = userToCheck != null && Bcrypt.verify(r.password, userToCheck.password.toByteArray())
             val result = transaction {
                 val isUnlinked = UserDao.wrapRows(User.select {
                     User.id eq s.userId
@@ -138,8 +131,8 @@ fun Route.userRoute() {
                     return@transaction true
                 }
 
-                if (valid != null) {
-                    User.updateReturning({ User.hash eq valid and User.email.isNull() }, { u ->
+                if (valid && userToCheck != null) {
+                    User.updateReturning({ User.hash eq userToCheck.hash and User.email.isNull() }, { u ->
                         u[hash] = null
                     }, User.id)?.let { r ->
                         if (r.isEmpty()) return@let
@@ -153,16 +146,17 @@ fun Route.userRoute() {
                     }
 
                     User.update({ User.id eq s.userId }) {
-                        it[hash] = valid
+                        it[hash] = userToCheck.hash
+                        it[admin] = OrOp(listOf(admin, booleanLiteral(userToCheck.admin)))
                     }
-                    call.sessions.set(s.copy(hash = valid))
+                    call.sessions.set(s.copy(hash = userToCheck.hash))
 
                     true
                 } else {
                     false
                 }
             }
-            call.respond(BeatsaverLink(userHash, result))
+            call.respond(BeatsaverLink(result))
         }
     }
 

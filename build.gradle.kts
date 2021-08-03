@@ -83,6 +83,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.5.0")
                 implementation("io.jsonwebtoken:jjwt-impl:0.11.2")
                 implementation("io.jsonwebtoken:jjwt-jackson:0.11.2")
+                implementation("com.ToxicBakery.library.bcrypt:bcrypt:+")
 
                 // Helpful
                 implementation("org.valiktor:valiktor-core:0.12.0")

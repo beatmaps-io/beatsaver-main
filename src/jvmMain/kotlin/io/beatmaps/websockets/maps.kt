@@ -20,6 +20,11 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
+enum class WebsocketMessageType {
+    MAP_UPDATE, MAP_DELETE
+}
+data class WebsocketMessage(val type: WebsocketMessageType, val msg: Any)
+
 fun Route.mapsWebsocket() {
     val activeChannels = mutableListOf<Channel<String>>()
 
@@ -27,21 +32,20 @@ fun Route.mapsWebsocket() {
         consumeAck("bm.updateStream", Int::class) { _, mapId ->
             transaction {
                 Beatmap
-                    //.joinVersions(true, null) // Allow returning non-published versions
                     .joinVersions(true)
                     .joinUploader()
                     .joinCurator()
                     .select {
-                        Beatmap.id eq mapId and (Beatmap.deletedAt.isNull())
+                        Beatmap.id eq mapId
                     }
                     .complexToBeatmap()
                     .firstOrNull()
-                    //?.enrichTestplays()
-                    ?.run {
-                        MapDetail.from(this)
-                    }
             }?.let { map ->
-                activeChannels.forEach { it.send(inlineJackson.writeValueAsString(map)) }
+                if (map.deletedAt == null) {
+                    activeChannels.forEach { it.send(inlineJackson.writeValueAsString(WebsocketMessage(WebsocketMessageType.MAP_UPDATE, MapDetail.from(map)))) }
+                } else {
+                    activeChannels.forEach { it.send(inlineJackson.writeValueAsString(WebsocketMessage(WebsocketMessageType.MAP_DELETE, mapId))) }
+                }
             }
         }
     }

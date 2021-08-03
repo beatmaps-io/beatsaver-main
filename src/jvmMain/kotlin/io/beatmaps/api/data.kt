@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+import io.beatmaps.common.Config
 import io.beatmaps.common.api.*
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.DifficultyDao
@@ -21,7 +22,8 @@ fun MapDetail.Companion.from(row: ResultRow) = from(BeatmapDao.wrapRow(row))
 
 fun MapVersion.Companion.from(other: VersionsDao) = MapVersion(other.hash, other.key64, other.state, other.uploaded.toKotlinInstant(), other.sageScore,
     other.difficulties.values.map { MapDifficulty.from(it) }.sortedWith(compareBy(MapDifficulty::characteristic, MapDifficulty::difficulty)), other.feedback,
-    other.testplayAt?.toKotlinInstant(), if (other.testplays.isEmpty()) null else other.testplays.values.map { MapTestplay.from(it) })
+    other.testplayAt?.toKotlinInstant(), if (other.testplays.isEmpty()) null else other.testplays.values.map { MapTestplay.from(it) },
+    "${Config.cdnbase}/${other.hash}.zip", "${Config.cdnbase}/${other.hash}.jpg", "${Config.cdnbase}/${other.hash}.mp3")
 fun MapVersion.Companion.from(row: ResultRow) = from(VersionsDao.wrapRow(row))
 
 fun MapDifficulty.Companion.from(other: DifficultyDao) = MapDifficulty(other.njs, other.offset, other.notes, other.bombs, other.obstacles, other.nps.toDouble(),

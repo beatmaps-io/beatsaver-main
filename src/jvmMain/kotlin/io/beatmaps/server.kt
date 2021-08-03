@@ -1,5 +1,6 @@
 package io.beatmaps
 
+import com.toxicbakery.bcrypt.Bcrypt
 import de.nielsfalk.ktor.swagger.SwaggerSupport
 import de.nielsfalk.ktor.swagger.version.shared.Contact
 import de.nielsfalk.ktor.swagger.version.shared.Information
@@ -126,7 +127,14 @@ fun Application.beatmapsio() {
             info = Information(
                 version = "0.1",
                 title = "BeatMaps.io API",
-                description = "WIP",
+                description = """
+                    WIP
+                    
+                    If you want to keep any kind of mirror instead of making 100s of requests instead consider subscribing to the websocket api.
+                    wss://ws.beatmaps.io/maps
+                    
+                    Messages will be in the style {"type": "MAP_UPDATE", "msg": __MAP_DATA_HERE__}
+                """.trimIndent(),
                 contact = Contact(
                     name = "Top_Cat"
                 )

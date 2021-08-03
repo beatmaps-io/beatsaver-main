@@ -14,6 +14,8 @@ data class UserStats(val totalUpvotes: Int, val totalDownvotes: Int, val totalMa
 @Serializable
 data class UserDiffStats(val total: Int, val easy: Int, val normal: Int, val hard: Int, val expert: Int, val expertPlus: Int)
 @Serializable
-data class BeatsaverLink(val md: String, val linked: Boolean) { companion object }
+data class BeatsaverLink(val linked: Boolean) { companion object }
+@Serializable
+data class BeatsaverLinkReq(val user: String, val password: String)
 @Serializable
 data class Alert(val map: MapDetail, val time: Instant, val action: IModLogOpAction) { companion object }

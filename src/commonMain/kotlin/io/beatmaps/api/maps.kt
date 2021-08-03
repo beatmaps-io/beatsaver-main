@@ -1,6 +1,7 @@
 @file:UseSerializers(InstantAsStringSerializer::class, ECharacteristicSerializer::class)
 package io.beatmaps.api
 
+import io.beatmaps.common.Config
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.ECharacteristicSerializer
 import io.beatmaps.common.api.EDifficulty
@@ -32,7 +33,8 @@ data class MapDetail(val id: Int, val name: String, val description: String, val
 
 @Serializable
 data class MapVersion(val hash: String, val key: String? = null, val state: EMapState, val createdAt: Instant, val sageScore: Short? = 0, val diffs: List<MapDifficulty> = listOf(),
-                      val feedback: String? = null, val testplayAt: Instant? = null, val testplays: List<MapTestplay>? = null) { companion object }
+                      val feedback: String? = null, val testplayAt: Instant? = null, val testplays: List<MapTestplay>? = null,
+                      val downloadURL: String, val coverURL: String, val previewURL: String) { companion object }
 
 @Serializable
 data class MapDifficulty(val njs: Float, val offset: Float, val notes: Int, val bombs: Int, val obstacles: Int, val nps: Double, val length: Double,
