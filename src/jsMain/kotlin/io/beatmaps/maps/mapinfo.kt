@@ -47,7 +47,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
 
     private fun recall() {
         props.mapInfo.publishedVersion()?.hash?.let { hash ->
-            Axios.post<String>("/api/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.intId(), reasonRef.current?.asDynamic().value as? String), generateConfig<StateUpdate, String>())
+            Axios.post<String>("/api/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.intId(), reasonRef.current?.asDynamic()?.value as? String), generateConfig<StateUpdate, String>())
                 .then({
                     props.reloadMap()
 
@@ -63,7 +63,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     }
 
     private fun delete() {
-        Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.asDynamic().value as? String), generateConfig<MapInfoUpdate, String>()).then({
+        Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.asDynamic()?.value as? String), generateConfig<MapInfoUpdate, String>()).then({
             props.deleteMap()
         }) {
             setState {

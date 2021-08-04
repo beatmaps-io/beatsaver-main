@@ -9,9 +9,11 @@ import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
 import io.beatmaps.setPageTitle
+import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.get
+import org.w3c.dom.set
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -37,7 +39,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         setPageTitle("Profile")
 
         setState {
-            wip = props.userId == null
+            wip = props.userId == null && localStorage["profile.showwip"] == "true"
             startup = true
         }
 
@@ -149,6 +151,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                             a("#", classes = "nav-link" + if (!state.wip) " active" else "") {
                                 attrs.onClickFunction = {
                                     it.preventDefault()
+                                    localStorage["profile.showwip"] = "false"
                                     setState {
                                         wip = false
                                     }
@@ -160,6 +163,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                             a("#", classes = "nav-link" + if (state.wip) " active" else "") {
                                 attrs.onClickFunction = {
                                     it.preventDefault()
+                                    localStorage["profile.showwip"] = "true"
                                     setState {
                                         wip = true
                                     }

@@ -17,7 +17,7 @@ val discordProvider = OAuthServerSettings.OAuth2ServerSettings(
     clientId = System.getenv("DISCORD_CLIENTID") ?: "",
     clientSecret = System.getenv("DISCORD_CLIENTSECRET") ?: "",
     requestMethod = HttpMethod.Post,
-    defaultScopes = listOf("identify", "email")
+    defaultScopes = listOf("identify")
 )
 
 fun Application.installDiscordOauth() {

@@ -55,7 +55,6 @@ fun Route.authRoute() {
 
             val data = jackson.readValue<Map<String, Any?>>(json)
 
-            val discordEmail = data["email"] as String
             val discordName = data["username"] as String
             val discordAvatar = data["avatar"] as String?
             val discordIdLocal = parseLong(data["id"] as String)
@@ -82,7 +81,7 @@ fun Route.authRoute() {
                 UserDao[userId]
             }
 
-            call.sessions.set(Session(user.id.value, user.hash, discordEmail, discordName, user.testplay, user.steamId, user.oculusId, user.admin))
+            call.sessions.set(Session(user.id.value, user.hash, "", discordName, user.testplay, user.steamId, user.oculusId, user.admin))
             call.respondRedirect("/")
         }
     }

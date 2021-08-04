@@ -50,7 +50,7 @@ import pl.jutupe.ktor_rabbitmq.publish
     @Group("Maps") @Location("/maps/id/{id}") data class Detail(val id: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/hash/{hash}") data class ByHash(val hash: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/uploader/{id}/{page}") data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore  val api: MapsApi)
-    @Group("Maps") @Location("/maps/latest") data class ByUploadDate(val after: Instant? = null, val automapper: Boolean = false, @Ignore  val api: MapsApi)
+    @Group("Maps") @Location("/maps/latest") data class ByUploadDate(@Ignore val after: Instant? = null, val before: Instant? = null, val automapper: Boolean = false, @Ignore  val api: MapsApi)
     @Group("Maps") @Location("/maps/plays/{page}") data class ByPlayCount(@DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
     @Group("Users") @Location("/users/id/{id}") data class UserId(val id: Int, @Ignore val api: MapsApi)
     @Group("Users") @Location("/users/verify") data class Verify(@Ignore val api: MapsApi)
@@ -332,7 +332,9 @@ fun Route.mapDetailRoute() {
                                 Beatmap.deletedAt.isNull().let { q ->
                                     if (!it.automapper) q.and(Beatmap.automapper eq false) else q
                                 }.let { q ->
-                                    if (it.after != null) q.and(Beatmap.uploaded less it.after.toJavaInstant()) else q
+                                    (it.before ?: it.after).let { p ->
+                                        if (p != null) q.and(Beatmap.uploaded less p.toJavaInstant()) else q
+                                    }
                                 }
                             }
                             .orderBy(Beatmap.uploaded to SortOrder.DESC)
