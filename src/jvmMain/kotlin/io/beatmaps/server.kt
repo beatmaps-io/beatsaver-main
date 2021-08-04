@@ -50,6 +50,7 @@ import io.ktor.http.content.static
 import io.ktor.jackson.JacksonConverter
 import io.ktor.locations.Locations
 import io.ktor.request.ApplicationReceiveRequest
+import io.ktor.request.path
 import io.ktor.response.respond
 import io.ktor.routing.get
 import io.ktor.routing.routing
@@ -188,7 +189,12 @@ fun Application.beatmapsio() {
             /*(call.attributes.allKeys.find { it.name == "SessionKey" } as? AttributeKey<Any>)?.let {
                 call.attributes.remove(it)
             }*/
-            genericPage(HttpStatusCode.NotFound)
+            val apiRoute = call.request.path().startsWith("/api")
+            if (apiRoute) {
+                call.respond(HttpStatusCode.NotFound, "Not Found")
+            } else {
+                genericPage(HttpStatusCode.NotFound)
+            }
         }
 
         exception<ConstraintViolationException> { e ->
