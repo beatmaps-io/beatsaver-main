@@ -26,13 +26,13 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.sql.CustomFunction
 import org.jetbrains.exposed.sql.Expression
-import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.stringLiteral
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import java.lang.Integer.toHexString
 
 @Location("/api") class SearchApi {
     @Group("Search") @Location("/search/text/{page}")
@@ -59,15 +59,14 @@ fun Route.searchRoute() {
         val sortByRank = !it.q.isNullOrBlank() && it.sortOrder == SearchOrder.Relevance
 
         newSuspendedTransaction {
-            if (it.q != null && beatsaverRegex.matches(it.q)) {
-                Versions
-                    .join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id)
-                    .slice(Versions.mapId)
+            if (it.q != null && it.q.startsWith("key:")) {
+                Beatmap
+                    .slice(Beatmap.id)
                     .select {
-                        Versions.key64 eq it.q and Beatmap.deletedAt.isNull()
+                        Beatmap.id eq it.q.substring(4).toInt(16) and (Beatmap.deletedAt.isNull())
                     }
                     .limit(1).firstOrNull()?.let { r ->
-                        call.respond(SearchResponse(redirect = r[Versions.mapId].value))
+                        call.respond(SearchResponse(redirect = toHexString(r[Beatmap.id].value)))
                         return@newSuspendedTransaction
                     }
             }

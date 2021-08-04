@@ -67,10 +67,10 @@ val uploadDir = File(System.getenv("UPLOAD_DIR") ?: "S:\\A")
 val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
 val reCaptchaVerify = ReCaptchaVerify(System.getenv("RECAPTCHA_SECRET") ?: "")
 
-@Location("/upload") class DMCA
+@Location("/upload") class UploadMap
 
 fun Route.uploadController() {
-    get<DMCA> {
+    get<UploadMap> {
         if (call.sessions.get<Session>() == null) {
             call.respondRedirect("/")
         } else {
@@ -78,7 +78,7 @@ fun Route.uploadController() {
         }
     }
 
-    post<DMCA> {
+    post<UploadMap> {
         val session = call.sessions.get<Session>() ?: throw UploadException("Not logged in")
         val currentLimit = transaction {
             UserDao[session.userId].uploadLimit

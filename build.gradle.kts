@@ -3,7 +3,7 @@ import io.miret.etienne.gradle.sass.CompileSass
 
 plugins {
     kotlin("multiplatform") version "1.5.30-M1"
-    kotlin("plugin.serialization") version "1.5.21"
+    kotlin("plugin.serialization") version "1.5.30-M1"
     id("io.miret.etienne.sass") version "1.1.2"
     application
 }
@@ -68,7 +68,7 @@ kotlin {
             languageSettings.useExperimentalAnnotation("kotlin.ExperimentalUnsignedTypes")
             languageSettings.useExperimentalAnnotation("kotlinx.serialization.ExperimentalSerializationApi")
             dependencies {
-                api(kotlin("reflect", "1.5.21"))
+                api(kotlin("reflect", "1.5.30-M1"))
 
                 // Core
                 implementation("io.ktor:ktor-server-netty:$ktorVersion")

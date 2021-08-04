@@ -47,7 +47,7 @@ import pl.jutupe.ktor_rabbitmq.publish
     @Location("/maps/wip/{page}") data class WIP(val page: Long = 0, val api: MapsApi)
     @Location("/download/key/{key}") data class BeatsaverDownload(val key: String, val api: MapsApi)
     @Group("Maps") @Location("/maps/beatsaver/{key}") data class Beatsaver(val key: String, @Ignore val api: MapsApi)
-    @Group("Maps") @Location("/maps/id/{key}") data class Detail(val key: String, @Ignore val api: MapsApi)
+    @Group("Maps") @Location("/maps/id/{id}") data class Detail(val id: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/hash/{hash}") data class ByHash(val hash: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/uploader/{id}/{page}") data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore  val api: MapsApi)
     @Group("Maps") @Location("/maps/latest") data class ByUploadDate(val after: Instant? = null, val automapper: Boolean = false, @Ignore  val api: MapsApi)
@@ -160,7 +160,7 @@ fun Route.mapDetailRoute() {
                     .joinUploader()
                     .joinCurator()
                     .select {
-                        Beatmap.id eq it.key.toInt(16) and (Beatmap.deletedAt.isNull())
+                        Beatmap.id eq it.id.toInt(16) and (Beatmap.deletedAt.isNull())
                     }
                     .complexToBeatmap()
                     .firstOrNull()
@@ -212,18 +212,22 @@ fun Route.mapDetailRoute() {
     }
 
     get<MapsApi.BeatsaverDownload> { k ->
-        val r = transaction {
-            Beatmap
-                .joinVersions(true)
-                .select {
-                    Beatmap.id eq k.key.toInt(16) and (Beatmap.deletedAt.isNull())
-                }
-                .complexToBeatmap()
-                .firstOrNull()
-                ?.run {
-                    MapDetail.from(this)
-                }
-        }?.publishedVersion()
+        val r = try {
+            transaction {
+                Beatmap
+                    .joinVersions(true)
+                    .select {
+                        Beatmap.id eq k.key.toInt(16) and (Beatmap.deletedAt.isNull())
+                    }
+                    .complexToBeatmap()
+                    .firstOrNull()
+                    ?.run {
+                        MapDetail.from(this)
+                    }
+            }?.publishedVersion()
+        } catch (_: NumberFormatException) {
+            null
+        }
 
         if (r == null) {
             call.respond(HttpStatusCode.NotFound)

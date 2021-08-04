@@ -113,7 +113,7 @@ fun Route.authRoute() {
             )
 
             //val url = URLBuilder(protocol = URLProtocol.HTTPS, host = "steamcommunity.com", encodedPath = "/openid/login", parameters = params).buildString()
-            val url = Url(URLProtocol.HTTPS, "steamcommunity.com", 0, "/openid/login", parametersOf(), "", null, null, false).toString()
+            val url = Url(URLProtocol.HTTPS, "steamcommunity.com", 0, "/openid/login", params, "", null, null, false).toString()
             call.respondRedirect(url)
         } else {
             val xml = client.submitForm<String>("https://steamcommunity.com/openid/login", formParameters = parametersOf(

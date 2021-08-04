@@ -56,4 +56,4 @@ data class MapStats(val plays: Int, val downloads: Int, val upvotes: Int, val do
 data class MapTestplay(val feedback: String? = null, val video: String? = null, val user: UserDetail, val createdAt: Instant, val feedbackAt: Instant? = null) { companion object }
 
 @Serializable
-data class SearchResponse(val docs: List<MapDetail>? = null, val redirect: Int? = null, val user: UserDetail? = null)
+data class SearchResponse(val docs: List<MapDetail>? = null, val redirect: String? = null, val user: UserDetail? = null)

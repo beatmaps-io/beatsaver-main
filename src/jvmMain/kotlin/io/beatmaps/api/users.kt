@@ -25,6 +25,7 @@ import io.ktor.application.call
 import io.ktor.client.features.timeout
 import io.ktor.client.request.get
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location
 import io.ktor.locations.get
 import io.ktor.locations.options
@@ -166,10 +167,14 @@ fun Route.userRoute() {
         val user = transaction {
             UserDao.wrapRows(User.select {
                 User.hash.eq(it.id)
-            }).first()
+            }).firstOrNull()
         }
 
-        call.respond(UserDetail.from(user))
+        if (user == null) {
+            call.respond(HttpStatusCode.NotFound)
+        } else {
+            call.respond(UserDetail.from(user))
+        }
     }
 
     get<UsersApi.Alerts> {
