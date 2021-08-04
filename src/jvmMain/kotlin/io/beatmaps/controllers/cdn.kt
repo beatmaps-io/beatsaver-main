@@ -52,7 +52,7 @@ fun Route.cdnRoute() {
 
     get<CDN.Zip> {
         val file = File(localFolder(it.file), "${it.file}.zip")
-        if (file.exists()) {
+        if (file.exists() && call.request.origin.remoteHost.length <= 15) {
             transaction {
                 Downloads.insert { dl ->
                     dl[hash] = it.file
@@ -72,7 +72,7 @@ fun Route.cdnRoute() {
             }.limit(1)).firstOrNull()?.let { version ->
                 val file = File(localFolder(version.hash), "${version.hash}.zip")
 
-                if (file.exists()) {
+                if (file.exists() && call.request.origin.remoteHost.length <= 15) {
                     Downloads.insert { dl ->
                         dl[hash] = it.file
                         dl[remote] = call.request.origin.remoteHost
