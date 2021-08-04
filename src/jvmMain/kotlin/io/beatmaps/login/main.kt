@@ -75,7 +75,6 @@ fun Route.authRoute() {
             val user = transaction {
                 val userId = User.upsert(User.discordId) {
                     it[name] = discordName
-                    it[email] = discordEmail
                     it[discordId] = discordIdLocal
                     it[avatar] = avatarLocal
                 }.value

@@ -135,7 +135,7 @@ fun Route.userRoute() {
                 }
 
                 if (valid && userToCheck != null) {
-                    User.updateReturning({ User.hash eq userToCheck.hash and User.email.isNull() }, { u ->
+                    User.updateReturning({ User.hash eq userToCheck.hash and User.discordId.isNull() }, { u ->
                         u[hash] = null
                     }, User.id)?.let { r ->
                         if (r.isEmpty()) return@let

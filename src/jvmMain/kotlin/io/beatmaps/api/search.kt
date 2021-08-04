@@ -74,7 +74,7 @@ fun Route.searchRoute() {
             val user = if (!it.q.isNullOrBlank()) {
                 val userQuery = User.select {
                     User.name ilike (it.q)
-                }.orderBy(Expression.build { User.email.isNull() }).limit(1).toList()
+                }.orderBy(Expression.build { User.discordId.isNull() }).limit(1).toList()
 
                 userQuery.firstOrNull()?.let { u -> UserDetail.from(u) }
             } else null
