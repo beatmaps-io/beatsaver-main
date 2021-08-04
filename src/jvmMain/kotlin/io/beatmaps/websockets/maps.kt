@@ -39,10 +39,12 @@ fun Route.mapsWebsocket() {
                         Beatmap.id eq mapId
                     }
                     .complexToBeatmap()
-                    .firstOrNull()
+                    .firstOrNull()?.let {
+                        it.deletedAt to MapDetail.from(it)
+                    }
             }?.let { map ->
-                if (map.deletedAt == null) {
-                    activeChannels.forEach { it.send(inlineJackson.writeValueAsString(WebsocketMessage(WebsocketMessageType.MAP_UPDATE, MapDetail.from(map)))) }
+                if (map.first == null) {
+                    activeChannels.forEach { it.send(inlineJackson.writeValueAsString(WebsocketMessage(WebsocketMessageType.MAP_UPDATE, map.second))) }
                 } else {
                     activeChannels.forEach { it.send(inlineJackson.writeValueAsString(WebsocketMessage(WebsocketMessageType.MAP_DELETE, mapId))) }
                 }
