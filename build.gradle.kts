@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 import io.miret.etienne.gradle.sass.CompileSass
 
 plugins {
-    kotlin("multiplatform") version "1.5.21"
+    kotlin("multiplatform") version "1.5.30-M1"
     kotlin("plugin.serialization") version "1.5.21"
     id("io.miret.etienne.sass") version "1.1.2"
     application
