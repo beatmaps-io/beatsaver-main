@@ -63,12 +63,12 @@ fun Route.scoresRoute() {
 
 val ssPHPSESSID = System.getenv("SSPHPSESSID") ?: ""
 suspend fun getScores(levelId: String, diff: EDifficulty = EDifficulty.ExpertPlus, mode: SSGameMode = SSGameMode.SoloStandard, page: Int = 1, retry: Boolean = true): LeaderboardData =
-    scoresClient.submitForm<String>("https://scoresaber.com/game/scores-pc.php", Parameters.build {
-        append("levelId", levelId)
-        append("difficulty", diff.idx.toString())
-        append("gameMode", mode.toString())
-        append("page", page.toString())
-    }, true)
+    scoresClient.submitForm<String>("https://scoresaber.com/game/scores-pc.php", parametersOf(
+        "levelId" to listOf(levelId),
+        "difficulty" to listOf(diff.idx.toString()),
+        "gameMode" to listOf(mode.toString()),
+        "page" to listOf(page.toString())
+    ), true)
         .run { jackson.readValue<SSLeaderboardScoreData>(this) }
         .run {
             if (!isValid() && retry) {

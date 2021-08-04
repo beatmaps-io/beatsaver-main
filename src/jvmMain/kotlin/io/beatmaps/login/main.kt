@@ -19,6 +19,9 @@ import io.ktor.http.Parameters
 import io.ktor.http.ParametersBuilder
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
+import io.ktor.http.Url
+import io.ktor.http.UrlEncodingOption
+import io.ktor.http.parametersOf
 import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import io.ktor.routing.get
@@ -100,26 +103,27 @@ fun Route.authRoute() {
         val claimedId = call.request.queryParameters["openid.claimed_id"]
 
         if (claimedId == null) {
-            val params = ParametersBuilder().apply {
-                append("openid.ns", "http://specs.openid.net/auth/2.0")
-                append("openid.mode", "checkid_setup")
-                append("openid.return_to", "${Config.basename}/steam")
-                append("openid.realm", Config.basename)
-                append("openid.identity", "http://specs.openid.net/auth/2.0/identifier_select")
-                append("openid.claimed_id", "http://specs.openid.net/auth/2.0/identifier_select")
-            }
+            val params = parametersOf(
+                "openid.ns" to listOf("http://specs.openid.net/auth/2.0"),
+                "openid.mode" to listOf("checkid_setup"),
+                "openid.return_to" to listOf("${Config.basename}/steam"),
+                "openid.realm" to listOf(Config.basename),
+                "openid.identity" to listOf("http://specs.openid.net/auth/2.0/identifier_select"),
+                "openid.claimed_id" to listOf("http://specs.openid.net/auth/2.0/identifier_select")
+            )
 
-            val url = URLBuilder(protocol = URLProtocol.HTTPS, host = "steamcommunity.com", encodedPath = "/openid/login", parameters = params).buildString()
+            //val url = URLBuilder(protocol = URLProtocol.HTTPS, host = "steamcommunity.com", encodedPath = "/openid/login", parameters = params).buildString()
+            val url = Url(URLProtocol.HTTPS, "steamcommunity.com", 0, "/openid/login", parametersOf(), "", null, null, false).toString()
             call.respondRedirect(url)
         } else {
-            val xml = client.submitForm<String>("https://steamcommunity.com/openid/login", formParameters = Parameters.build {
-                append("openid.ns", "http://specs.openid.net/auth/2.0")
-                append("openid.mode", "check_authentication")
-                append("openid.sig", call.request.queryParameters["openid.sig"] ?: "")
-                (call.request.queryParameters["openid.signed"])?.split(",")?.forEach {
-                    append("openid.$it", call.request.queryParameters["openid.$it"] ?: "")
-                }
-            })
+            val xml = client.submitForm<String>("https://steamcommunity.com/openid/login", formParameters = parametersOf(
+                "openid.ns" to listOf("http://specs.openid.net/auth/2.0"),
+                "openid.mode" to listOf("check_authentication"),
+                "openid.sig" to listOf(call.request.queryParameters["openid.sig"] ?: ""),
+                *(call.request.queryParameters["openid.signed"])?.split(",")?.map {
+                    "openid.$it" to listOf(call.request.queryParameters["openid.$it"] ?: "")
+                }?.toTypedArray() ?: arrayOf()
+            ))
             val valid = Regex("is_valid\\s*:\\s*true", RegexOption.IGNORE_CASE).containsMatchIn(xml)
             if (!valid) {
                 throw RuntimeException("Invalid openid response 1")
