@@ -50,6 +50,7 @@ import pl.jutupe.ktor_rabbitmq.publish
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.OutputStream
+import java.lang.Integer.toHexString
 import java.math.BigInteger
 import java.nio.file.Files
 import java.security.DigestOutputStream
@@ -248,7 +249,7 @@ fun Route.uploadController() {
         }
 
         call.publish("beatmaps", "maps.$newMapId.updated", null, newMapId)
-        call.respond(newMapId)
+        call.respond(toHexString(newMapId))
     }
 }
 

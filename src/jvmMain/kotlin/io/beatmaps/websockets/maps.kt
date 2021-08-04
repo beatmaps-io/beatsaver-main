@@ -16,9 +16,9 @@ import io.ktor.websocket.webSocket
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
-import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.lang.Integer.toHexString
 
 enum class WebsocketMessageType {
     MAP_UPDATE, MAP_DELETE
@@ -46,7 +46,7 @@ fun Route.mapsWebsocket() {
                 if (map.first == null) {
                     activeChannels.forEach { it.send(inlineJackson.writeValueAsString(WebsocketMessage(WebsocketMessageType.MAP_UPDATE, map.second))) }
                 } else {
-                    activeChannels.forEach { it.send(inlineJackson.writeValueAsString(WebsocketMessage(WebsocketMessageType.MAP_DELETE, mapId))) }
+                    activeChannels.forEach { it.send(inlineJackson.writeValueAsString(WebsocketMessage(WebsocketMessageType.MAP_DELETE, toHexString(mapId)))) }
                 }
             }
         }
