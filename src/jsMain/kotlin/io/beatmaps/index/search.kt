@@ -12,6 +12,7 @@ import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
+import kotlinx.html.js.onMouseDownFunction
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
@@ -286,9 +287,9 @@ class Search : RComponent<SearchProps, SearchState>() {
                                 order = SearchOrder.fromInt(sortRef.current?.selectedIndex ?: 0) ?: SearchOrder.Relevance
                             }
                         }
-                        attrs.value = state.order.toString()
                         SearchOrder.values().forEach {
                             option {
+                                attrs.selected = state.order == it
                                 +it.toString()
                             }
                         }
