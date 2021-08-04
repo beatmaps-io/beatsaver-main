@@ -49,11 +49,11 @@ fun Route.mapController() {
             try {
                 transaction {
                     Beatmap.joinVersions().select {
-                        Beatmap.id eq it.key.toInt()
+                        Beatmap.id eq it.key.toInt(16)
                     }.limit(1).complexToBeatmap().map { MapDetail.from(it) }.firstOrNull()
                 }?.let {
                     meta("og:type", "website")
-                    meta("og:site_name", "BeatMaps.io")
+                    meta("og:site_name", "BeatSaver")
                     meta("og:title", it.name)
                     meta("og:url", "${Config.basename}/maps/${it.id}")
                     meta("og:description", it.description.take(400))

@@ -129,7 +129,7 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                             time = it.time.toString()
                             state = it.state
                             reloadMap = props.reloadMap
-                            mapId = props.mapInfo.id
+                            mapId = props.mapInfo.intId()
                             modal = props.modal
                         }
                         first = false

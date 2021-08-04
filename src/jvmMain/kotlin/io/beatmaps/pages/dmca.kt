@@ -11,7 +11,7 @@ class DMCAPageTemplate() : Template<BODY> {
                     +"DMCA policy"
                 }
                 p {
-                    +"This Digital Millennium Copyright Act policy (\"Policy\") applies to the beatmaps.io website (\"Website\" or \"Service\") and any of its related products and services (collectively, \"Services\") and outlines how this Website operator (\"Operator\", \"we\", \"us\" or \"our\") addresses copyright infringement notifications and how you (\"you\" or \"your\") may submit a copyright infringement complaint."
+                    +"This Digital Millennium Copyright Act policy (\"Policy\") applies to the beatsaver.com website (\"Website\" or \"Service\") and any of its related products and services (collectively, \"Services\") and outlines how this Website operator (\"Operator\", \"we\", \"us\" or \"our\") addresses copyright infringement notifications and how you (\"you\" or \"your\") may submit a copyright infringement complaint."
                 }
                 p {
                     +"Protection of intellectual property is of utmost importance to us and we ask our users and their authorized agents to do the same. It is our policy to expeditiously respond to clear notifications of alleged copyright infringement that comply with the United States Digital Millennium Copyright Act (\"DMCA\") of 1998, the text of which can be found at the U.S. Copyright Office "
@@ -68,7 +68,7 @@ class DMCAPageTemplate() : Template<BODY> {
                 p {
                     +"If you would like to notify us of the infringing material or activity, you may send an email to "
                     span("text-info") {
-                        +"dmca@beatmaps.io"
+                        +"dmca@beatsaver.com"
                     }
                 }
                 hr("my-4") {}

@@ -47,7 +47,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
 
     private fun recall() {
         props.mapInfo.publishedVersion()?.hash?.let { hash ->
-            Axios.post<String>("/api/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.id, reasonRef.current?.asDynamic().value as? String), generateConfig<StateUpdate, String>())
+            Axios.post<String>("/api/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.intId(), reasonRef.current?.asDynamic().value as? String), generateConfig<StateUpdate, String>())
                 .then({
                     props.reloadMap()
 
@@ -63,7 +63,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     }
 
     private fun delete() {
-        Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.id, deleted = true, reason = reasonRef.current?.asDynamic().value as? String), generateConfig<MapInfoUpdate, String>()).then({
+        Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.asDynamic().value as? String), generateConfig<MapInfoUpdate, String>()).then({
             props.deleteMap()
         }) {
             setState {
@@ -73,7 +73,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     }
 
     private fun curate(curated: Boolean = true) {
-        Axios.post<String>("/api/maps/curate", CurateMap(props.mapInfo.id, curated), generateConfig<CurateMap, String>()).then({
+        Axios.post<String>("/api/maps/curate", CurateMap(props.mapInfo.intId(), curated), generateConfig<CurateMap, String>()).then({
             props.reloadMap()
         }) {
             setState {
@@ -96,15 +96,6 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                             attrs.title = "Download zip"
                             attrs.attributes["aria-label"] = "Download zip"
                             i("fas fa-download text-info") { }
-                        }
-                        if (Config.oneClick) {
-                            version.key?.let { key64 ->
-                                a("https://beatsaver.com/beatmap/$key64", target = "_blank") {
-                                    attrs.title = key64
-                                    attrs.attributes["aria-label"] = key64
-                                    i("fas fa-share-alt text-info") { }
-                                }
-                            }
                         }
                         a("#") {
                             attrs.title = "Preview"
@@ -242,7 +233,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                     loading = true
                                 }
 
-                                Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.id, newTitle, newDescription), generateConfig<MapInfoUpdate, String>()).then({
+                                Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.intId(), newTitle, newDescription), generateConfig<MapInfoUpdate, String>()).then({
                                     props.mapInfo = props.mapInfo.copy(name = newTitle, description = newDescription)
                                     setState {
                                         loading = false

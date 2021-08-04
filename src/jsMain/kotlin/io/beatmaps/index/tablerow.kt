@@ -55,14 +55,6 @@ fun RDOMBuilder<*>.links(map: MapDetail, version: MapVersion?, modal: RReadableR
             attrs.attributes["aria-hidden"] = "true"
         }
     }
-    if (Config.oneClick && version?.key != null) {
-        a("https://beatsaver.com/beatmap/${version?.key}", target = "_blank") {
-            attrs.rel = "noopener"
-            attrs.title = version?.key ?: ""
-            attrs.attributes["aria-label"] = version?.key ?: ""
-            i("fas fa-share-alt text-info") { }
-        }
-    }
     a("#") {
         attrs.title = "Preview"
         attrs.attributes["aria-label"] = "Preview"

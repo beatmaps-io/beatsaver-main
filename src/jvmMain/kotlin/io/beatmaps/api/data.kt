@@ -9,8 +9,9 @@ import io.beatmaps.common.dbo.VersionsDao
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.Query
 import org.jetbrains.exposed.sql.ResultRow
+import java.lang.Integer.toHexString
 
-fun MapDetail.Companion.from(other: BeatmapDao) = MapDetail(other.id.value, other.name, other.description,
+fun MapDetail.Companion.from(other: BeatmapDao) = MapDetail(toHexString(other.id.value), other.name, other.description,
     UserDetail.from(other.uploader), MapDetailMetadata.from(other), MapStats.from(other), other.uploaded?.toKotlinInstant(), other.automapper, other.ranked, other.qualified,
     other.versions.values.map { MapVersion.from(it) }.partition { it.state == EMapState.Published }.let {
         // Once a map is published hide previous versions

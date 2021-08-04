@@ -1,14 +1,14 @@
 {
-    "name": "BeatMaps.io",
-    "short_name": "BeatMaps.io",
+    "name": "BeatSaver",
+    "short_name": "BeatSaver",
     "icons": [
         {
-            "src": "https://cdn.beatmaps.io/favicon/android-chrome-192x192.png",
+            "src": "https://cdn.beatsaver.com/favicon/android-chrome-192x192.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "https://cdn.beatmaps.io/favicon/android-chrome-512x512.png",
+            "src": "https://cdn.beatsaver.com/favicon/android-chrome-512x512.png",
             "sizes": "512x512",
             "type": "image/png"
         }

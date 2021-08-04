@@ -20,7 +20,7 @@ fun Route.policyController() {
     get<PolicyController.DMCA> {
         val sess = call.sessions.get<Session>()
         call.respondHtmlTemplate(MainTemplate(sess, DMCAPageTemplate()), HttpStatusCode.OK) {
-            pageTitle = "BeatMaps.io - DMCA Policy"
+            pageTitle = "BeatSaver - DMCA Policy"
         }
     }
 }

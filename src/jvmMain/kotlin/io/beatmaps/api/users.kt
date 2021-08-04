@@ -2,6 +2,7 @@ package io.beatmaps.api
 
 import com.toxicbakery.bcrypt.Bcrypt
 import de.nielsfalk.ktor.swagger.get
+import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.common.Config
@@ -148,6 +149,7 @@ fun Route.userRoute() {
                     User.update({ User.id eq s.userId }) {
                         it[hash] = userToCheck.hash
                         it[admin] = OrOp(listOf(admin, booleanLiteral(userToCheck.admin)))
+                        it[upvotes] = userToCheck.upvotes
                     }
                     call.sessions.set(s.copy(hash = userToCheck.hash))
 
@@ -280,7 +282,7 @@ fun Route.userRoute() {
     options<MapsApi.UserId> {
         call.response.header("Access-Control-Allow-Origin", "*")
     }
-    get<MapsApi.UserId>("Get user info".responds(ok<UserDetail>())) {
+    get<MapsApi.UserId>("Get user info".responds(ok<UserDetail>()).responds(notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
         val user = transaction {
             UserDao.wrapRows(User.select {

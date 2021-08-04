@@ -81,7 +81,7 @@ suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStat
         headElements {
             headerTemplate?.invoke(this)
         }
-        pageTitle = "BeatMaps.io"
+        pageTitle = "BeatSaver.com"
     }
 }
 
@@ -126,12 +126,12 @@ fun Application.beatmapsio() {
         swagger = Swagger().apply {
             info = Information(
                 version = "0.1",
-                title = "BeatMaps.io API",
+                title = "BeatSaver API",
                 description = """
                     WIP
                     
                     If you want to keep any kind of mirror instead of making 100s of requests instead consider subscribing to the websocket api.
-                    wss://ws.beatmaps.io/maps
+                    wss://ws.beatsaver.com/maps
                     
                     Messages will be in the style {"type": "MAP_UPDATE", "msg": __MAP_DATA_HERE__}
                 """.trimIndent(),

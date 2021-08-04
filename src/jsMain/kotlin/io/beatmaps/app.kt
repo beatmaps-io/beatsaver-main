@@ -27,7 +27,7 @@ import react.router.dom.switch
 import kotlinext.js.require
 
 fun setPageTitle(page: String) {
-    document.title = "BeatMaps.io - $page"
+    document.title = "BeatSaver - $page"
 }
 
 fun main() {

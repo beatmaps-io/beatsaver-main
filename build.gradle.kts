@@ -51,7 +51,7 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.1.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
-                implementation("io.beatmaps:BeatMaps-CommonMP:1.0-SNAPSHOT")
+                implementation("io.beatmaps:BeatMaps-CommonMP:1.0.5")
             }
         }
         val commonTest by getting {
@@ -121,7 +121,7 @@ kotlin {
                 implementation("com.tagtraum:ffsampledsp-complete:0.9.32")
 
                 implementation("io.beatmaps:Common")
-                implementation("io.beatmaps:BeatMaps-CommonMP")
+                implementation("io.beatmaps:BeatMaps-CommonMP:1.0.5")
 
                 runtimeOnly(files("BeatMaps-BeatSage-1.0-SNAPSHOT.jar"))
             }

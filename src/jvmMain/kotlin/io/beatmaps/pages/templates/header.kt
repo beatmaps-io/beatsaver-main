@@ -19,7 +19,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
             div("container") {
                 a("/", classes = "navbar-brand") {
                     id = "home-link"
-                    +"BeatMaps.io"
+                    +"BeatSaver"
                 }
                 button(classes = "navbar-toggler", type = ButtonType.button) {
                     id = "navbar-button"

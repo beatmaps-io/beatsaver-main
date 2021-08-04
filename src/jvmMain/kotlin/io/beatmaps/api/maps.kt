@@ -44,7 +44,7 @@ import pl.jutupe.ktor_rabbitmq.publish
     @Location("/maps/curate") data class Curate(val api: MapsApi)
     @Location("/maps/wip/{page}") data class WIP(val page: Long = 0, val api: MapsApi)
     @Group("Maps") @Location("/maps/beatsaver/{key}") data class Beatsaver(val key: String, @Ignore val api: MapsApi)
-    @Group("Maps") @Location("/maps/id/{key}") data class Detail(val key: Int, @Ignore val api: MapsApi)
+    @Group("Maps") @Location("/maps/id/{key}") data class Detail(val key: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/hash/{hash}") data class ByHash(val hash: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/uploader/{id}/{page}") data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore  val api: MapsApi)
     @Group("Maps") @Location("/maps/latest") data class ByUploadDate(val after: Instant? = null, val automapper: Boolean = false, @Ignore  val api: MapsApi)
@@ -150,20 +150,24 @@ fun Route.mapDetailRoute() {
 
     get<MapsApi.Detail>("Get map information".responds(ok<MapDetail>()).responds(notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
-        val r = transaction {
-            Beatmap
-                .joinVersions(true, null) // Allow returning non-published versions
-                .joinUploader()
-                .joinCurator()
-                .select {
-                    Beatmap.id eq it.key and (Beatmap.deletedAt.isNull())
-                }
-                .complexToBeatmap()
-                .firstOrNull()
-                ?.enrichTestplays()
-                ?.run {
-                    MapDetail.from(this)
-                }
+        val r = try {
+            transaction {
+                Beatmap
+                    .joinVersions(true, null) // Allow returning non-published versions
+                    .joinUploader()
+                    .joinCurator()
+                    .select {
+                        Beatmap.id eq it.key.toInt(16) and (Beatmap.deletedAt.isNull())
+                    }
+                    .complexToBeatmap()
+                    .firstOrNull()
+                    ?.enrichTestplays()
+                    ?.run {
+                        MapDetail.from(this)
+                    }
+            }
+        } catch (_: NumberFormatException) {
+            null
         }
 
         if (r == null) {
