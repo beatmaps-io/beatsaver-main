@@ -7,6 +7,7 @@ import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
+import io.beatmaps.common.Config
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.api.EMapState
@@ -28,6 +29,7 @@ import io.ktor.locations.post
 import io.ktor.request.receive
 import io.ktor.response.header
 import io.ktor.response.respond
+import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
@@ -43,6 +45,7 @@ import pl.jutupe.ktor_rabbitmq.publish
     @Location("/maps/update") data class Update(val api: MapsApi)
     @Location("/maps/curate") data class Curate(val api: MapsApi)
     @Location("/maps/wip/{page}") data class WIP(val page: Long = 0, val api: MapsApi)
+    @Location("/download/key/{key}") data class BeatsaverDownload(val key: String, val api: MapsApi)
     @Group("Maps") @Location("/maps/beatsaver/{key}") data class Beatsaver(val key: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/id/{key}") data class Detail(val key: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/hash/{hash}") data class ByHash(val hash: String, @Ignore val api: MapsApi)
@@ -205,6 +208,27 @@ fun Route.mapDetailRoute() {
             call.respond(HttpStatusCode.NotFound)
         } else {
             call.respond(r)
+        }
+    }
+
+    get<MapsApi.BeatsaverDownload> { k ->
+        val r = transaction {
+            Beatmap
+                .joinVersions(true)
+                .select {
+                    Beatmap.id eq k.key.toInt(16) and (Beatmap.deletedAt.isNull())
+                }
+                .complexToBeatmap()
+                .firstOrNull()
+                ?.run {
+                    MapDetail.from(this)
+                }
+        }?.publishedVersion()
+
+        if (r == null) {
+            call.respond(HttpStatusCode.NotFound)
+        } else {
+            call.respondRedirect("${Config.cdnbase}/${r.hash}.zip")
         }
     }
 
