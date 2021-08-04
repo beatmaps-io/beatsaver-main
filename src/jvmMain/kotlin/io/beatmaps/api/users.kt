@@ -52,6 +52,7 @@ import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.min
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
@@ -118,7 +119,7 @@ fun Route.userRoute() {
 
             val userToCheck = transaction {
                 UserDao.wrapRows(User.select {
-                    User.name eq r.user and User.hash.isNotNull()
+                    (User.name eq r.user.lowercase() and User.hash.isNotNull()) or (User.hash eq r.user.lowercase() and User.discordId.isNull())
                 }).firstOrNull()
             }
 

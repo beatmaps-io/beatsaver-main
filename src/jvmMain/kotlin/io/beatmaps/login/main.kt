@@ -138,6 +138,7 @@ fun Route.authRoute() {
                     it[steamId] = steamid
                 }
             }
+            call.sessions.set(sess.copy(steamId = steamid))
             call.respondRedirect("/profile")
         }
     }

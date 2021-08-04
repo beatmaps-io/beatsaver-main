@@ -158,7 +158,7 @@ fun Route.uploadController() {
                 throw UploadException("Map already uploaded")
             }
 
-            if (!session.testplay || !allowUploads) {
+            if (!session.testplay && !allowUploads) {
                 file.delete()
                 throw UploadException("Your map is fine but we're not accepting uploads yet")
             }

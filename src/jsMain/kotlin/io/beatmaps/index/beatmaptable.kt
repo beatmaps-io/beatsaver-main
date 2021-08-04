@@ -166,7 +166,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         div("search-results") {
             state.songs.forEach {
                 beatmapInfo {
-                    key = it.id.toString()
+                    key = it.id
                     map = it
                     version = if (props.wip) it.latestVersion() else it.publishedVersion()
                     modal = props.modal

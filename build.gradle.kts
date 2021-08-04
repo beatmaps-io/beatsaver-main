@@ -51,7 +51,7 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.1.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
-                implementation("io.beatmaps:BeatMaps-CommonMP:1.0.5")
+                implementation("io.beatmaps:BeatMaps-CommonMP:1.0.6")
             }
         }
         val commonTest by getting {
@@ -79,8 +79,8 @@ kotlin {
                 implementation("io.ktor:ktor-websockets:$ktorVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3")
                 implementation("ch.qos.logback:logback-classic:1.2.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.5.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.5.1")
                 implementation("io.jsonwebtoken:jjwt-impl:0.11.2")
                 implementation("io.jsonwebtoken:jjwt-jackson:0.11.2")
                 implementation("com.ToxicBakery.library.bcrypt:bcrypt:+")
@@ -121,7 +121,7 @@ kotlin {
                 implementation("com.tagtraum:ffsampledsp-complete:0.9.32")
 
                 implementation("io.beatmaps:Common")
-                implementation("io.beatmaps:BeatMaps-CommonMP:1.0.5")
+                implementation("io.beatmaps:BeatMaps-CommonMP:1.0.6")
 
                 runtimeOnly(files("BeatMaps-BeatSage-1.0-SNAPSHOT.jar"))
             }
