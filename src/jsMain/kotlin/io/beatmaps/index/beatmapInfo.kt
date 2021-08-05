@@ -58,7 +58,11 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, RState>() {
             }
             div("info") {
                 routeLink("/maps/${props.map.id}") {
-                    +props.map.name
+                    if (props.map.name.isNotBlank()) {
+                        +props.map.name
+                    } else {
+                        +"<NO NAME>"
+                    }
                 }
                 p {
                     routeLink("/profile/${props.map.uploader.id}") {
