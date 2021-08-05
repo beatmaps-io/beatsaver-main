@@ -5,6 +5,8 @@ import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.MapVersion
 import io.beatmaps.common.Config
 import io.beatmaps.maps.diffImg
+import kotlinx.browser.document
+import kotlinx.browser.window
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import react.RBuilder
@@ -46,6 +48,20 @@ fun RDOMBuilder<*>.diffIcons(diffs: List<MapDifficulty>?) {
     }
 }
 
+fun setClipboard(str: String) {
+    val tempElement = document.createElement("span");
+    tempElement.textContent = str
+    document.body?.appendChild(tempElement)
+    val selection = window.asDynamic().getSelection()
+    val range = window.document.createRange()
+    selection.removeAllRanges()
+    range.selectNode(tempElement)
+    selection.addRange(range)
+    window.document.execCommand("copy")
+    selection.removeAllRanges()
+    window.document.body?.removeChild(tempElement)
+}
+
 fun RDOMBuilder<*>.links(map: MapDetail, version: MapVersion?, modal: RReadableRef<ModalComponent>) {
     a("${Config.cdnbase}/${version?.hash}.zip", target = "_blank") {
         attrs.rel = "noopener"
@@ -71,6 +87,17 @@ fun RDOMBuilder<*>.links(map: MapDetail, version: MapVersion?, modal: RReadableR
     oneclick {
         mapId = map.id
         this.modal = modal
+    }
+    a("#") {
+        attrs.title = "Copy BSR"
+        attrs.attributes["aria-label"] = "Copy BSR"
+        attrs.onClickFunction = {
+            it.preventDefault()
+            setClipboard("!bsr ${map.id}")
+        }
+        i("fab fa-twitch text-info") {
+            attrs.attributes["aria-hidden"] = "true"
+        }
     }
 }
 

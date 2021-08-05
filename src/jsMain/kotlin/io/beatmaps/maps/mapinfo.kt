@@ -12,6 +12,7 @@ import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.oneclick
+import io.beatmaps.index.setClipboard
 import kotlinx.browser.window
 import kotlinx.html.InputType
 import kotlinx.html.Tag
@@ -109,6 +110,17 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                         oneclick {
                             mapId = props.mapInfo.id
                             modal = props.modal
+                        }
+                        a("#") {
+                            attrs.title = "Copy BSR"
+                            attrs.attributes["aria-label"] = "Copy BSR"
+                            attrs.onClickFunction = {
+                                it.preventDefault()
+                                setClipboard("!bsr ${props.mapInfo.id}")
+                            }
+                            i("fab fa-twitch text-info") {
+                                attrs.attributes["aria-hidden"] = "true"
+                            }
                         }
 
                         val adminLocal = window["admin"] as Boolean?
