@@ -20,6 +20,7 @@ import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.pub
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location
@@ -98,7 +99,7 @@ fun Route.mapDetailRoute() {
                     } > 0
                 }
 
-                if (result) call.publish("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
+                if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
                 call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
             }
         }
@@ -146,7 +147,7 @@ fun Route.mapDetailRoute() {
                 }
             }
 
-            if (result) call.publish("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
+            if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
             call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
         }
     }

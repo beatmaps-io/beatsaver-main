@@ -25,6 +25,7 @@ import io.beatmaps.common.db.upsert
 import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.jackson
+import io.beatmaps.common.pub
 import io.beatmaps.login.Session
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
@@ -276,8 +277,6 @@ fun Route.testplayRoute() {
                                 it[Difficulty.createdAt] = uploadTimeLocal
                             } > 0
                         }
-
-                        call.publish("beatmaps", "maps.${newState.mapId}.updated", null, newState.mapId)
                     }
                 } else {
                     (Versions.join(Beatmap, JoinType.INNER, onColumn = Versions.mapId, otherColumn = Beatmap.id).update({
@@ -305,7 +304,7 @@ fun Route.testplayRoute() {
                 }
             }
 
-            if (valid) call.publish("beatmaps", "maps.${newState.mapId}.updated", null, newState.mapId)
+            if (valid) call.pub("beatmaps", "maps.${newState.mapId}.updated", null, newState.mapId)
             call.respond(if (valid) HttpStatusCode.OK else HttpStatusCode.BadRequest)
         }
     }

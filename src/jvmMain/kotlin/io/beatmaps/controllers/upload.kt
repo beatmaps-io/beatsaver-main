@@ -18,6 +18,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.jackson
+import io.beatmaps.common.pub
 import io.beatmaps.common.zip.ExtractedInfo
 import io.beatmaps.common.zip.ZipHelper
 import io.beatmaps.common.zip.ZipHelper.Companion.openZip
@@ -250,7 +251,7 @@ fun Route.uploadController() {
             }
         }
 
-        call.publish("beatmaps", "maps.$newMapId.updated", null, newMapId)
+        call.pub("beatmaps", "maps.$newMapId.updated", null, newMapId)
         call.respond(toHexString(newMapId))
     }
 }

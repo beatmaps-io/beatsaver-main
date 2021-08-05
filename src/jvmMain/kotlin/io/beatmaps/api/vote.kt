@@ -17,6 +17,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.Votes
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.pub
 import io.beatmaps.common.rabbitOptional
 import io.beatmaps.tag
 import io.ktor.application.call
@@ -177,7 +178,7 @@ fun Route.voteRoute() {
                 } ?: error("No user identifier provided")
 
                 val mapId = mapIdArr.first()[Versions.mapId]
-                call.publish("beatmaps", "vote.$mapId", null, QueuedVote(userId, steam, mapId.value, req.direction))
+                call.pub("beatmaps", "vote.$mapId", null, QueuedVote(userId, steam, mapId.value, req.direction))
 
                 call.respond(VoteResponse(true))
             } catch (e: IllegalStateException) {
