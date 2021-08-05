@@ -257,16 +257,18 @@ fun Route.uploadController() {
 }
 
 fun ZipHelper.validateFiles(dos: DigestOutputStream) =
-    info.also { it ->
-        // Add info.dat to hash
-        jsonWriter.writeValue(dos, it)
-    }.let { it ->
+    info.let {
         // Add files referenced in info.dat to whitelist
         ExtractedInfo(findAllowedFiles(it), dos, it, scoreMap())
     }.also { p ->
         // Ensure it ends in a slash
         val prefix = infoPrefix()
         val withoutPrefix = files.map { its -> its.removePrefix(prefix.lowercase()) }.toSet()
+
+        // Rename audio file if it ends in .ogg
+        oggToEgg(p)
+
+        jsonWriter.writeValue(dos, p.mapInfo)
 
         // Validate info.dat
         p.mapInfo.validate(withoutPrefix, p, audioFile, ::fromInfo)
@@ -275,9 +277,6 @@ fun ZipHelper.validateFiles(dos: DigestOutputStream) =
         p.preview = ByteArrayOutputStream().also {
             it.writeBytes(generatePreview())
         }
-
-        // Rename audio file if it ends in .ogg
-        oggToEgg(p)
 
         // Write updated info.dat back to zip
         infoPath.deleteIfExists()
