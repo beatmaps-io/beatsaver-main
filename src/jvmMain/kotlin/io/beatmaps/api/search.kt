@@ -87,6 +87,7 @@ fun Route.searchRoute() {
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
+                            .joinVersions()
                             .slice(Beatmap.id)
                             .select {
                                 Beatmap.deletedAt.isNull().let { q ->
