@@ -95,18 +95,6 @@ class UsersApi {
 }
 
 fun Route.userRoute() {
-    get<UsersApi.Me> {
-        requireAuthorization {
-            val user = transaction {
-                UserDao.wrapRows(User.select {
-                    User.id.eq(it.userId)
-                }).first()
-            }
-
-            call.respond(UserDetail.from(user))
-        }
-    }
-
     get<UsersApi.LinkBeatsaver> {
         requireAuthorization {
             call.respond(BeatsaverLink(it.hash != null))
@@ -285,6 +273,67 @@ fun Route.userRoute() {
         )
     }
 
+    fun statsForUser(user: UserDao) = transaction {
+        val statTmp =
+            Beatmap.slice(
+                Beatmap.id.count(),
+                Beatmap.upVotesInt.sum(),
+                Beatmap.downVotesInt.sum(),
+                Beatmap.bpm.avg(),
+                Beatmap.score.avg(3),
+                Beatmap.duration.avg(0),
+                countWithFilter(Beatmap.ranked),
+                Beatmap.uploaded.min(),
+                Beatmap.uploaded.max()
+            ).select {
+                (Beatmap.uploader eq user.id) and (Beatmap.deletedAt.isNull())
+            }.first().let {
+                UserStats(
+                    it[Beatmap.upVotesInt.sum()] ?: 0,
+                    it[Beatmap.downVotesInt.sum()] ?: 0,
+                    it[Beatmap.id.count()].toInt(),
+                    it[countWithFilter(Beatmap.ranked)],
+                    it[Beatmap.bpm.avg()]?.toFloat() ?: 0f,
+                    it[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f,
+                    it[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
+                    it[Beatmap.uploaded.min()]?.toKotlinInstant(),
+                    it[Beatmap.uploaded.max()]?.toKotlinInstant()
+                )
+            }
+
+        val cases = EDifficulty.values().associate { it to diffCase(it) }
+        val diffStats = Difficulty
+            .join(Beatmap, JoinType.INNER, Beatmap.id, Difficulty.mapId)
+            .slice(Difficulty.id.count(), *cases.values.toTypedArray())
+            .select {
+                (Beatmap.uploader eq user.id) and (Beatmap.deletedAt.isNull())
+            }.first().let {
+                fun safeGetCount(diff: EDifficulty) = cases[diff]?.let { c -> it.getOrNull(c) } ?: 0
+                UserDiffStats(
+                    it[Difficulty.id.count()].toInt(),
+                    safeGetCount(EDifficulty.Easy),
+                    safeGetCount(EDifficulty.Normal),
+                    safeGetCount(EDifficulty.Hard),
+                    safeGetCount(EDifficulty.Expert),
+                    safeGetCount(EDifficulty.ExpertPlus)
+                )
+            }
+
+        statTmp.copy(diffStats = diffStats)
+    }
+
+    get<UsersApi.Me> {
+        requireAuthorization {
+            val user = transaction {
+                UserDao.wrapRows(User.select {
+                    User.id.eq(it.userId)
+                }).first()
+            }
+
+            call.respond(UserDetail.from(user, stats = statsForUser(user)))
+        }
+    }
+
     options<MapsApi.UserId> {
         call.response.header("Access-Control-Allow-Origin", "*")
     }
@@ -296,56 +345,7 @@ fun Route.userRoute() {
             }).first()
         }
 
-        val stats = transaction {
-            val statTmp =
-                Beatmap.slice(
-                    Beatmap.id.count(),
-                    Beatmap.upVotesInt.sum(),
-                    Beatmap.downVotesInt.sum(),
-                    Beatmap.bpm.avg(),
-                    Beatmap.score.avg(3),
-                    Beatmap.duration.avg(0),
-                    countWithFilter(Beatmap.ranked),
-                    Beatmap.uploaded.min(),
-                    Beatmap.uploaded.max()
-                ).select {
-                    (Beatmap.uploader eq it.id) and (Beatmap.deletedAt.isNull())
-                }.first().let {
-                    UserStats(
-                        it[Beatmap.upVotesInt.sum()] ?: 0,
-                        it[Beatmap.downVotesInt.sum()] ?: 0,
-                        it[Beatmap.id.count()].toInt(),
-                        it[countWithFilter(Beatmap.ranked)],
-                        it[Beatmap.bpm.avg()]?.toFloat() ?: 0f,
-                        it[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f,
-                        it[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
-                        it[Beatmap.uploaded.min()]?.toKotlinInstant(),
-                        it[Beatmap.uploaded.max()]?.toKotlinInstant()
-                    )
-                }
-
-            val cases = EDifficulty.values().associate { it to diffCase(it) }
-            val diffStats = Difficulty
-                .join(Beatmap, JoinType.INNER, Beatmap.id, Difficulty.mapId)
-                .slice(Difficulty.id.count(), *cases.values.toTypedArray())
-                .select {
-                    (Beatmap.uploader eq it.id) and (Beatmap.deletedAt.isNull())
-                }.first().let {
-                    fun safeGetCount(diff: EDifficulty) = cases[diff]?.let { c -> it.getOrNull(c) } ?: 0
-                    UserDiffStats(
-                        it[Difficulty.id.count()].toInt(),
-                        safeGetCount(EDifficulty.Easy),
-                        safeGetCount(EDifficulty.Normal),
-                        safeGetCount(EDifficulty.Hard),
-                        safeGetCount(EDifficulty.Expert),
-                        safeGetCount(EDifficulty.ExpertPlus)
-                    )
-                }
-
-            statTmp.copy(diffStats = diffStats)
-        }
-
-        call.respond(UserDetail.from(user, stats = stats))
+        call.respond(UserDetail.from(user, stats = statsForUser(user)))
     }
 }
 
