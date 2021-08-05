@@ -5,6 +5,7 @@ plugins {
     kotlin("multiplatform") version "1.5.30-M1"
     kotlin("plugin.serialization") version "1.5.30-M1"
     id("io.miret.etienne.sass") version "1.1.2"
+    id("org.flywaydb.flyway") version "7.12.0"
     application
 }
 
@@ -159,6 +160,13 @@ kotlin {
 
 application {
     mainClass.set("io.beatmaps.ServerKt")
+}
+
+flyway {
+    url = "jdbc:postgresql://localhost:5432/beatmaps"
+    user = "beatmaps"
+    password = "insecure-password"
+    locations = arrayOf("filesystem:$projectDir/src/commonMain/resources/db/migration")
 }
 
 tasks.getByName<CompileSass>("compileSass") {
