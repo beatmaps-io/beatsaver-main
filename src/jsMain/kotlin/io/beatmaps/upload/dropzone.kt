@@ -47,7 +47,7 @@ fun RElementBuilder<DropzoneProps>.simple(history: RouteResultHistory, loading: 
                     if (successBlock != null) {
                         successBlock(r)
                     } else {
-                        history.push("/maps/" + (r.data as String))
+                        history.push("/maps/${r.data}")
                     }
                 } else {
                     val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)
