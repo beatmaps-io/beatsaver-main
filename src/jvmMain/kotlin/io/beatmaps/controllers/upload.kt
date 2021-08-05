@@ -135,9 +135,11 @@ fun Route.uploadController() {
         }
 
         // Check the recaptcha result
-        withContext(Dispatchers.IO) {
+        val verifyResponse = withContext(Dispatchers.IO) {
             reCaptchaVerify.verify(dataMap["recaptcha"], call.request.origin.remoteHost)
-        }.isSuccess || throw UploadException("Could not verify user")
+        }
+
+        verifyResponse.isSuccess || throw UploadException("Could not verify user [${verifyResponse.errorCodes.joinToString(", ")}]")
 
         val newMapId = transaction {
             // Process upload

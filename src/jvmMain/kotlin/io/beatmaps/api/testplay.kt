@@ -305,6 +305,7 @@ fun Route.testplayRoute() {
                 }
             }
 
+            if (valid) call.publish("beatmaps", "maps.${newState.mapId}.updated", null, newState.mapId)
             call.respond(if (valid) HttpStatusCode.OK else HttpStatusCode.BadRequest)
         }
     }

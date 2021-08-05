@@ -85,7 +85,7 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                                 setState {
                                     loading = true
                                 }
-                                it.append("mapId", props.mapInfo.id.toString())
+                                it.append("mapId", props.mapInfo.intId().toString())
                             }, {
                                 setState {
                                     errors = it
