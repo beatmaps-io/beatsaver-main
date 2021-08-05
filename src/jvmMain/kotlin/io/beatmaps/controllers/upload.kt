@@ -261,12 +261,12 @@ fun ZipHelper.validateFiles(dos: DigestOutputStream) =
         // Add files referenced in info.dat to whitelist
         ExtractedInfo(findAllowedFiles(it), dos, it, scoreMap())
     }.also { p ->
+        // Rename audio file if it ends in .ogg
+        val newFiles = oggToEgg(p)
+
         // Ensure it ends in a slash
         val prefix = infoPrefix()
-        val withoutPrefix = files.map { its -> its.removePrefix(prefix.lowercase()) }.toSet()
-
-        // Rename audio file if it ends in .ogg
-        oggToEgg(p)
+        val withoutPrefix = newFiles.map { its -> its.removePrefix(prefix.lowercase()) }.toSet()
 
         jsonWriter.writeValue(dos, p.mapInfo)
 
@@ -313,10 +313,14 @@ fun findAllowedFiles(info: MapInfo) = (listOf("info.dat", "cinema-video.json", i
 fun ZipHelper.oggToEgg(info: ExtractedInfo) =
     getPath("/${info.mapInfo._songFilename.lowercase()}")?.let { path ->
         if (info.mapInfo._songFilename.endsWith(".ogg")) {
-            info.mapInfo = info.mapInfo.copy(_songFilename = info.mapInfo._songFilename.replace(Regex("\\.ogg$"), ".egg"))
+            val originalAudioName = info.mapInfo._songFilename
+            info.mapInfo = info.mapInfo.copy(_songFilename = originalAudioName.replace(Regex("\\.ogg$"), ".egg"))
             Files.move(path, newPath("/${info.mapInfo._songFilename}"))
+            files.minus(originalAudioName).plus(info.mapInfo._songFilename)
+        } else {
+            null
         }
-    }
+    } ?: files
 
 class UploadException(private val msg: String) : RuntimeException() {
     fun toResponse() = FailedUploadResponse(listOf(msg))
