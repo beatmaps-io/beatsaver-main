@@ -18,6 +18,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.ktor.application.call
+import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location
 import io.ktor.locations.options
 import io.ktor.response.header
@@ -48,6 +49,7 @@ fun <T> Op<Boolean>.notNull(b: T?, block: (T) -> Op<Boolean>) = if (b == null) t
 fun Route.searchRoute() {
     options<SearchApi.Text> {
         call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
     }
 
     get<SearchApi.Text>("Search for maps".responds(ok<SearchResponse>())) {

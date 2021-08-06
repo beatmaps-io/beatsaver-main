@@ -62,6 +62,7 @@ data class VoteSummary(val hash: String?, val mapId: Int, val key64: String?, va
 fun Route.voteRoute() {
     options<VoteApi.Vote> {
         call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
     }
 
     application.rabbitOptional {

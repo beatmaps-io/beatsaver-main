@@ -66,21 +66,27 @@ import pl.jutupe.ktor_rabbitmq.publish
 fun Route.mapDetailRoute() {
     options<MapsApi.Beatsaver> {
         call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
     }
     options<MapsApi.Detail> {
         call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
     }
     options<MapsApi.ByHash> {
         call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
     }
     options<MapsApi.ByUploader> {
         call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
     }
     options<MapsApi.ByUploadDate> {
         call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
     }
     options<MapsApi.ByPlayCount> {
         call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
     }
 
     post<MapsApi.Curate> {

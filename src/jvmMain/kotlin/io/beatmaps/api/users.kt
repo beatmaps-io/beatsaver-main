@@ -336,6 +336,7 @@ fun Route.userRoute() {
 
     options<MapsApi.UserId> {
         call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
     }
     get<MapsApi.UserId>("Get user info".responds(ok<UserDetail>()).responds(notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")

@@ -48,6 +48,7 @@ data class SSLeaderboardScore(val playerId: Long, val name: String, val rank: In
 fun Route.scoresRoute() {
     options<ScoresApi.Leaderboard> {
         call.response.header("Access-Control-Allow-Origin", Config.basename)
+        call.respond(HttpStatusCode.OK)
     }
 
     get<ScoresApi.Leaderboard> {
