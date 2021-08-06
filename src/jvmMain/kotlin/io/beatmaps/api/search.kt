@@ -1,6 +1,7 @@
 package io.beatmaps.api
 
 import de.nielsfalk.ktor.swagger.DefaultValue
+import de.nielsfalk.ktor.swagger.Description
 import de.nielsfalk.ktor.swagger.Ignore
 import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.ok
@@ -36,13 +37,12 @@ import java.lang.Integer.toHexString
 
 @Location("/api") class SearchApi {
     @Group("Search") @Location("/search/text/{page}")
-    data class Text(val q: String? = "", val automapper: Boolean? = null, val minNps: Float? = null, val maxNps: Float? = null, val chroma: Boolean? = null, @DefaultValue("0") val page: Long = 0,
+    data class Text(val q: String? = "", @Description("Options are a little weird, I may add another enum field in future to make this clearer.\ntrue = both, false = only ai, null = no ai") val automapper: Boolean? = null, val minNps: Float? = null, val maxNps: Float? = null, val chroma: Boolean? = null, @DefaultValue("0") val page: Long = 0,
                     val sortOrder: SearchOrder = SearchOrder.Relevance, val from: Instant? = null, val to: Instant? = null, @Ignore val api: SearchApi, val noodle: Boolean? = null,
                     val ranked: Boolean? = null, val fullSpread: Boolean? = null, val minDuration: Int? = null, val maxDuration: Int? = null, val minRating: Float? = null,
                     val maxRating: Float? = null, val minBpm: Float? = null, val maxBpm: Float? = null, val me: Boolean? = null, val cinema: Boolean? = null)
 }
 
-val beatsaverRegex = Regex("^[0-9a-f]{1,5}$")
 fun <T> Op<Boolean>.notNull(b: T?, block: (T) -> Op<Boolean>) = if (b == null) this else this.and(block(b))
 
 fun Route.searchRoute() {

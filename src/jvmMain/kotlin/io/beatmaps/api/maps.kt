@@ -1,6 +1,7 @@
 package io.beatmaps.api
 
 import de.nielsfalk.ktor.swagger.DefaultValue
+import de.nielsfalk.ktor.swagger.Description
 import de.nielsfalk.ktor.swagger.Ignore
 import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.notFound
@@ -47,11 +48,16 @@ import pl.jutupe.ktor_rabbitmq.publish
     @Location("/maps/curate") data class Curate(val api: MapsApi)
     @Location("/maps/wip/{page}") data class WIP(val page: Long = 0, val api: MapsApi)
     @Location("/download/key/{key}") data class BeatsaverDownload(val key: String, val api: MapsApi)
-    @Group("Maps") @Location("/maps/beatsaver/{key}") data class Beatsaver(val key: String, @Ignore val api: MapsApi)
+    @Location("/maps/beatsaver/{key}") data class Beatsaver(val key: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/id/{id}") data class Detail(val id: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/hash/{hash}") data class ByHash(val hash: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/uploader/{id}/{page}") data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore  val api: MapsApi)
-    @Group("Maps") @Location("/maps/latest") data class ByUploadDate(@Ignore val after: Instant? = null, val before: Instant? = null, val automapper: Boolean = false, @Ignore  val api: MapsApi)
+    @Group("Maps") @Location("/maps/latest") data class ByUploadDate(
+        @Ignore val after: Instant? = null,
+        @Description("YYYY-MM-DDTHH:MM:SS+00:00") val before: Instant? = null,
+        @Description("true = both, false = no ai") val automapper: Boolean = false,
+        @Ignore val api: MapsApi
+    )
     @Group("Maps") @Location("/maps/plays/{page}") data class ByPlayCount(@DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
     @Group("Users") @Location("/users/id/{id}") data class UserId(val id: Int, @Ignore val api: MapsApi)
     @Group("Users") @Location("/users/verify") data class Verify(@Ignore val api: MapsApi)
@@ -181,7 +187,7 @@ fun Route.mapDetailRoute() {
         }
     }
 
-    get<MapsApi.Beatsaver>("Get map for a beatsaver key".responds(ok<MapDetail>()).responds(notFound())) {
+    get<MapsApi.Beatsaver> {
         call.response.header("Access-Control-Allow-Origin", "*")
         val r = transaction {
             Beatmap
@@ -245,7 +251,14 @@ fun Route.mapDetailRoute() {
                 .joinUploader()
                 .joinCurator()
                 .select {
-                    Versions.hash.eq(it.hash.lowercase()) and (Beatmap.deletedAt.isNull())
+                    Beatmap.id.inSubQuery(
+                        Versions
+                            .slice(Versions.mapId)
+                            .select {
+                                Versions.hash.eq(it.hash.lowercase())
+                            }
+                            .limit(1)
+                    ) and (Beatmap.deletedAt.isNull())
                 }
                 .complexToBeatmap()
                 .firstOrNull()

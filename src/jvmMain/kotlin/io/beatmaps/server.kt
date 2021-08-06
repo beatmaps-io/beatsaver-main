@@ -38,6 +38,7 @@ import io.ktor.features.ConditionalHeaders
 import io.ktor.features.ContentConverter
 import io.ktor.features.ContentNegotiation
 import io.ktor.features.DataConversion
+import io.ktor.features.ParameterConversionException
 import io.ktor.features.StatusPages
 import io.ktor.features.XForwardedHeaderSupport
 import io.ktor.html.respondHtmlTemplate
@@ -62,6 +63,7 @@ import io.ktor.sessions.sessions
 import io.ktor.util.DataConversionException
 import io.ktor.util.pipeline.PipelineContext
 import io.ktor.websocket.WebSockets
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -75,6 +77,7 @@ import pl.jutupe.ktor_rabbitmq.RabbitMQ
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.time.Duration
+import kotlin.time.Duration.Companion.nanoseconds
 
 suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) {
     val sess = call.sessions.get<Session>()
@@ -93,6 +96,8 @@ fun main() {
 
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::beatmapsio).start(wait = true)
 }
+
+data class ErrorResponse(val error: String)
 
 @ExperimentalSerializationApi
 fun Application.beatmapsio() {
@@ -212,7 +217,19 @@ fun Application.beatmapsio() {
         }
 
         exception<DataConversionException> { cause ->
-            call.respond(HttpStatusCode.InternalServerError, cause.message ?: "")
+            call.respond(HttpStatusCode.InternalServerError, ErrorResponse(cause.message ?: ""))
+        }
+
+        exception<ParameterConversionException> { cause ->
+            if (cause.type == Instant::class.toString()) {
+                val now = Clock.System.now().let {
+                    it.minus(nanoseconds(it.nanosecondsOfSecond))
+                }
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("${cause.message}. Most likely you're missing a timezone. Example: $now"))
+            } else {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse(cause.message ?: ""))
+                throw cause
+            }
         }
 
         exception<Throwable> { cause ->
