@@ -44,6 +44,8 @@ external interface BeatmapTableState : RState {
     var token: CancelTokenSource
 }
 
+external fun encodeURIComponent(uri: String): String
+
 @JsExport
 class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
 
@@ -91,7 +93,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                     (if (props.search.cinema != null) "&cinema=${props.search.cinema}" else "") +
                     (if (props.search.ranked != null) "&ranked=${props.search.ranked}" else "") +
                     (if (props.search.fullSpread != null) "&fullSpread=${props.search.fullSpread}" else "") +
-                    (if (props.search.search.isNotBlank()) "&q=${props.search.search}" else "") +
+                    (if (props.search.search.isNotBlank()) "&q=${encodeURIComponent(props.search.search)}" else "") +
                     (if (props.search.maxNps != null) "&maxNps=${props.search.maxNps}" else "") +
                     (if (props.search.minNps != null) "&minNps=${props.search.minNps}" else "") +
                     (if (props.search.from != null) "&from=${props.search.from}" else "") +

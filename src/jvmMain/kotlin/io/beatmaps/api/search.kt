@@ -71,7 +71,7 @@ fun Route.searchRoute() {
                     }
             }
 
-            val user = if (!it.q.isNullOrBlank()) {
+            val user = if (!it.q.isNullOrBlank() && !it.q.contains('\\')) {
                 val userQuery = User.select {
                     User.name ilike (it.q)
                 }.orderBy(Expression.build { User.discordId.isNull() }).limit(1).toList()

@@ -38,6 +38,7 @@ import io.ktor.features.ConditionalHeaders
 import io.ktor.features.ContentConverter
 import io.ktor.features.ContentNegotiation
 import io.ktor.features.DataConversion
+import io.ktor.features.NotFoundException
 import io.ktor.features.ParameterConversionException
 import io.ktor.features.StatusPages
 import io.ktor.features.XForwardedHeaderSupport
@@ -196,7 +197,7 @@ fun Application.beatmapsio() {
             }*/
             val apiRoute = call.request.path().startsWith("/api")
             if (apiRoute) {
-                call.respond(HttpStatusCode.NotFound, "Not Found")
+                call.respond(HttpStatusCode.NotFound, ErrorResponse("Not Found"))
             } else {
                 genericPage(HttpStatusCode.NotFound)
             }
@@ -230,6 +231,10 @@ fun Application.beatmapsio() {
                 call.respond(HttpStatusCode.BadRequest, ErrorResponse(cause.message ?: ""))
                 throw cause
             }
+        }
+
+        exception<NotFoundException> {
+            call.respond(HttpStatusCode.NotFound, ErrorResponse("Not Found"))
         }
 
         exception<Throwable> { cause ->

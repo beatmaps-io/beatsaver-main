@@ -9,6 +9,7 @@ import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.login.localAvatarFolder
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
+import io.ktor.features.NotFoundException
 import io.ktor.features.origin
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location
@@ -37,7 +38,7 @@ suspend fun PipelineContext<*, ApplicationCall>.returnFile(file: File?) {
     if (file != null && file.exists()) {
         call.respondFile(file)
     } else {
-        call.respond(HttpStatusCode.NotFound)
+        throw NotFoundException()
     }
 }
 
@@ -51,6 +52,10 @@ fun Route.cdnRoute() {
     }
 
     get<CDN.Zip> {
+        if (it.file.isBlank()) {
+            throw NotFoundException()
+        }
+
         val file = File(localFolder(it.file), "${it.file}.zip")
         if (file.exists() && call.request.origin.remoteHost.length <= 15) {
             transaction {
@@ -88,6 +93,10 @@ fun Route.cdnRoute() {
     }
 
     get<CDN.Audio> {
+        if (it.file.isBlank()) {
+            throw NotFoundException()
+        }
+
         getAudio(it.file)
     }
 
@@ -98,10 +107,14 @@ fun Route.cdnRoute() {
             }.limit(1)).firstOrNull()?.hash
         }?.let {
             getAudio(it)
-        } ?: error("Key not found")
+        } ?: throw NotFoundException()
     }
 
     get<CDN.Cover> {
+        if (it.file.isBlank()) {
+            throw NotFoundException()
+        }
+
         returnFile(File(localCoverFolder(it.file), "${it.file}.jpg"))
     }
 
