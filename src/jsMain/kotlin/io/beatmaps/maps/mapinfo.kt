@@ -122,7 +122,21 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                 attrs.attributes["aria-hidden"] = "true"
                             }
                         }
-
+                        a("#") {
+                            attrs.title = "Play Audio"
+                            attrs.attributes["aria-label"] = "Start Audio Preview"
+                            attrs.onClickFunction = {
+                                it.preventDefault()
+                                
+                            }
+                            i("fa fa-music"){
+                                attrs.attributes["aria-hidden"] = true;
+                            }
+                        }
+                        i("fa fa-spinner fa-spin"){
+                            attrs.attributes["aria-hidden"] = true;
+                            attrs.attributes["hidden"] = true;
+                        }
                         val adminLocal = window["admin"] as Boolean?
 
                         if (adminLocal == true || props.isOwner) {
