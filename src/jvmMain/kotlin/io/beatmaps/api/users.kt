@@ -9,8 +9,6 @@ import io.beatmaps.common.Config
 import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
-import io.beatmaps.common.beatsaver.IUserVerifyProvider
-import io.beatmaps.common.beatsaver.UserNotVerified
 import io.beatmaps.common.client
 import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.db.updateReturning
@@ -61,7 +59,6 @@ import org.jetbrains.exposed.sql.update
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Base64
-import java.util.ServiceLoader
 
 fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null) =
     UserDetail(other.id.value, other.name, other.hash, if (roles) other.testplay else null, other.avatar ?: "https://www.gravatar.com/avatar/${other.hash}?d=retro", stats)

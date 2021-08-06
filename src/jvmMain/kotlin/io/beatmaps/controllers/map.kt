@@ -4,6 +4,8 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
 import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.User
+import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.genericPage
@@ -25,6 +27,10 @@ import org.jetbrains.exposed.sql.transactions.transaction
 }
 
 @Location("/beatmap") class BeatmapController {
+    @Location("/{key}") data class RedirectOld(val key: String, val api: BeatmapController)
+}
+
+@Location("/uploader") class UploaderController {
     @Location("/{key}") data class RedirectOld(val key: String, val api: BeatmapController)
 }
 
@@ -72,6 +78,19 @@ fun Route.mapController() {
             }.limit(1).complexToBeatmap().map { MapDetail.from(it) }.firstOrNull()
         }?.let {
             call.respondRedirect("/maps/${it.id}")
+        } ?: run {
+            call.respondRedirect("/")
+        }
+    }
+
+    get<UploaderController.RedirectOld> {
+        transaction {
+            User.select {
+                User.hash eq it.key
+            }.firstOrNull()
+        }?.let {
+            val user = UserDao.wrapRow(it)
+            call.respondRedirect("/profile/${user.id}")
         } ?: run {
             call.respondRedirect("/")
         }
