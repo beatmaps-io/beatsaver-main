@@ -316,7 +316,7 @@ fun ZipHelper.oggToEgg(info: ExtractedInfo) =
             val originalAudioName = info.mapInfo._songFilename
             info.mapInfo = info.mapInfo.copy(_songFilename = originalAudioName.replace(Regex("\\.ogg$"), ".egg"))
             Files.move(path, newPath("/${info.mapInfo._songFilename}"))
-            files.minus(originalAudioName).plus(info.mapInfo._songFilename)
+            files.minus("/${originalAudioName.lowercase()}").plus("/${info.mapInfo._songFilename.lowercase()}")
         } else {
             null
         }
