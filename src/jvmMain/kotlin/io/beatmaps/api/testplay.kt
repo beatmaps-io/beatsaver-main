@@ -52,7 +52,6 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
-import pl.jutupe.ktor_rabbitmq.publish
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.temporal.ChronoUnit

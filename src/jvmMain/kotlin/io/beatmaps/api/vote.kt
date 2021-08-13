@@ -33,15 +33,17 @@ import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Count
 import org.jetbrains.exposed.sql.Index
+import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.publish
-import pl.jutupe.ktor_rabbitmq.rabbitConsumer
 import kotlin.math.log10
 import kotlin.math.pow
 
@@ -106,7 +108,7 @@ fun Route.voteRoute() {
 
         consumeAck("uvstats", Int::class) { _, body ->
             transaction {
-                val subQuery = Beatmap.slice(Beatmap.upVotesInt.sum().alias("votes")).select {
+                val subQuery = Beatmap.slice(coalesce(Beatmap.upVotesInt.sum(), intLiteral(0)).alias("votes")).select {
                     Beatmap.uploader eq body and Beatmap.deletedAt.isNull()
                 }
 
