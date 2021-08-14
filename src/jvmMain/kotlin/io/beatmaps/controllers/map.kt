@@ -31,7 +31,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 }
 
 @Location("/uploader") class UploaderController {
-    @Location("/{key}") data class RedirectOld(val key: String, val api: BeatmapController)
+    @Location("/{key}") data class RedirectOld(val key: String, val api: UploaderController)
 }
 
 @Location("/profile") class UserController {
@@ -87,10 +87,9 @@ fun Route.mapController() {
         transaction {
             User.select {
                 User.hash eq it.key
-            }.firstOrNull()
+            }.firstOrNull()?.let { UserDao.wrapRow(it) }
         }?.let {
-            val user = UserDao.wrapRow(it)
-            call.respondRedirect("/profile/${user.id}")
+            call.respondRedirect("/profile/${it.id}")
         } ?: run {
             call.respondRedirect("/")
         }

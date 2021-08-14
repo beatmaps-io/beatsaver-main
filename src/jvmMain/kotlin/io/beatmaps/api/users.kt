@@ -19,6 +19,7 @@ import io.beatmaps.common.dbo.ModLogDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.pub
 import io.ktor.application.call
 import io.ktor.client.features.timeout
 import io.ktor.client.request.get
@@ -116,21 +117,28 @@ fun Route.userRoute() {
 
                 if (isUnlinked != null) {
                     call.sessions.set(s.copy(hash = isUnlinked))
-                    return@transaction true
+                    return@transaction true to listOf()
                 }
 
                 if (valid && userToCheck != null) {
-                    User.updateReturning({ User.hash eq userToCheck.hash and User.discordId.isNull() }, { u ->
+                    val oldmapIds = User.updateReturning({ User.hash eq userToCheck.hash and User.discordId.isNull() }, { u ->
                         u[hash] = null
                     }, User.id)?.let { r ->
-                        if (r.isEmpty()) return@let
+                        if (r.isEmpty()) return@let listOf()
 
                         // If we returned a row
                         val oldId = r.first()[User.id]
 
-                        Beatmap.update({ Beatmap.uploader eq oldId }) {
-                            it[uploader] = s.userId
-                        }
+                        Beatmap
+                            .slice(Beatmap.id)
+                            .select {
+                                Beatmap.uploader eq oldId
+                            }.map { it[Beatmap.id].value }
+                            .also {
+                                Beatmap.update({ Beatmap.uploader eq oldId }) {
+                                    it[uploader] = s.userId
+                                }
+                            }
                     }
 
                     User.update({ User.id eq s.userId }) {
@@ -140,12 +148,17 @@ fun Route.userRoute() {
                     }
                     call.sessions.set(s.copy(hash = userToCheck.hash))
 
-                    true
+                    true to oldmapIds
                 } else {
-                    false
+                    false to listOf()
                 }
             }
-            call.respond(BeatsaverLink(result))
+
+            result.second?.forEach { updatedMapId ->
+                call.pub("beatmaps", "maps.$updatedMapId.updated", null, updatedMapId)
+            }
+
+            call.respond(BeatsaverLink(result.first))
         }
     }
 

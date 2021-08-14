@@ -1,51 +1,53 @@
 package io.beatmaps.websockets
 
 import io.beatmaps.api.MapDetail
+import io.beatmaps.api.VoteSummaryHex
 import io.beatmaps.api.from
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.Beatmap.joinCurator
-import io.beatmaps.common.dbo.Beatmap.joinUploader
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.inlineJackson
 import io.beatmaps.common.rabbitOptional
 import io.ktor.routing.Route
 import io.ktor.routing.application
 import io.ktor.websocket.webSocket
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.lang.Integer.toHexString
 
-fun Route.mapsWebsocket() {
+fun Route.votesWebsocket() {
     val holder = ChannelHolder()
 
     application.rabbitOptional {
-        consumeAck("bm.updateStream", Int::class) { _, mapId ->
+        consumeAck("bm.voteStream", Int::class) { _, mapId ->
             transaction {
                 Beatmap
-                    .joinVersions(true, null)
-                    .joinUploader()
-                    .joinCurator()
+                    .joinVersions(false)
                     .select {
-                        Beatmap.id eq mapId
+                        (Beatmap.id eq mapId) and Beatmap.deletedAt.isNull()
                     }
                     .complexToBeatmap()
                     .firstOrNull()?.let {
-                        it.deletedAt to MapDetail.from(it)
+                        val mapDetail = MapDetail.from(it)
+
+                        VoteSummaryHex(
+                            mapDetail.publishedVersion()?.hash,
+                            toHexString(it.id.value),
+                            it.upVotesInt,
+                            it.downVotesInt,
+                            it.score.toDouble()
+                        )
                     }
-            }?.let { map ->
+            }?.let { summary ->
                 loopAndTerminateOnError(holder) {
-                    if (map.first == null) {
-                        it.send(inlineJackson.writeValueAsString(WebsocketMessage(WebsocketMessageType.MAP_UPDATE, map.second)))
-                    } else {
-                        it.send(inlineJackson.writeValueAsString(WebsocketMessage(WebsocketMessageType.MAP_DELETE, toHexString(mapId))))
-                    }
+                    it.send(inlineJackson.writeValueAsString(WebsocketMessage(WebsocketMessageType.VOTE, summary)))
                 }
             }
         }
     }
 
-    webSocket("/ws/maps") {
+    webSocket("/ws/votes") {
         websocketConnection(holder)
     }
 }

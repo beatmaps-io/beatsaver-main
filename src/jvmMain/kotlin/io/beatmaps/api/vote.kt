@@ -44,6 +44,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.publish
+import java.lang.Integer.toHexString
 import kotlin.math.log10
 import kotlin.math.pow
 
@@ -59,7 +60,9 @@ data class VoteResponse(val success: Boolean, val error: String? = null)
 data class QueuedVote(val userId: Long, val steam: Boolean, val mapId: Int, val direction: Boolean)
 
 @Serializable
-data class VoteSummary(val hash: String?, val mapId: Int, val key64: String?, val upvotes: Int, val downvotes: Int, val oldUpvotes: Int, val oldDownvotes: Int, val score: Double)
+data class VoteSummary(val hash: String?, val mapId: Int, val key64: String?, val upvotes: Int, val downvotes: Int, val score: Double)
+@Serializable
+data class VoteSummaryHex(val hash: String?, val mapId: String, val upvotes: Int, val downvotes: Int, val score: Double)
 
 fun Route.voteRoute() {
     options<VoteApi.Vote> {
@@ -103,6 +106,7 @@ fun Route.voteRoute() {
                 uploader
             }?.let { uploader ->
                 publish("beatmaps", "user.stats.$uploader", null, uploader)
+                publish("beatmaps", "voteupdate.${body.mapId}", null, body.mapId)
             }
         }
 
@@ -136,11 +140,9 @@ fun Route.voteRoute() {
                 VoteSummary(
                     mapDetail.publishedVersion()?.hash,
                     it.id.value,
-                    mapDetail.publishedVersion()?.key,
+                    toHexString(it.id.value),
                     it.upVotesInt,
                     it.downVotesInt,
-                    it.upVotes,
-                    it.downVotes,
                     it.score.toDouble()
                 )
             }

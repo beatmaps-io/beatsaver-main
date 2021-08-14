@@ -30,6 +30,7 @@ import io.beatmaps.login.installSessions
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
 import io.beatmaps.websockets.mapsWebsocket
+import io.beatmaps.websockets.websockets
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -274,7 +275,7 @@ fun Application.beatmapsio() {
         uploadController()
         policyController()
 
-        mapsWebsocket()
+        websockets()
 
         static("/static") {
             resources()
