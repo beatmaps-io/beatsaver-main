@@ -13,7 +13,6 @@ import org.jetbrains.exposed.sql.update
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 
-@DelicateCoroutinesApi
 fun downloadsThread() {
     GlobalScope.launch(es.asCoroutineDispatcher()) {
         scheduleRepeating(Duration.hours(1)) {

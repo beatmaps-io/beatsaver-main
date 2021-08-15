@@ -68,6 +68,7 @@ kotlin {
             languageSettings.optIn("io.ktor.util.KtorExperimentalAPI")
             languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
             languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
+            languageSettings.optIn("kotlinx.coroutines.DelicateCoroutinesApi")
             dependencies {
                 api(kotlin("reflect", "1.5.30-RC"))
 
