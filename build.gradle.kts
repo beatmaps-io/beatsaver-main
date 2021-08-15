@@ -167,7 +167,12 @@ flyway {
     url = "jdbc:postgresql://localhost:5432/beatmaps"
     user = "beatmaps"
     password = "insecure-password"
-    locations = arrayOf("filesystem:$projectDir/src/commonMain/resources/db/migration")
+    val locs = mutableListOf("filesystem:$projectDir/src/commonMain/resources/db/migration")
+    if (System.getenv("BUILD_NUMBER") == null) {
+        // If running locally add test data
+        locs.add("filesystem:$projectDir/src/commonMain/resources/db/test")
+    }
+    locations = locs.toTypedArray()
 }
 
 tasks.getByName<CompileSass>("compileSass") {
