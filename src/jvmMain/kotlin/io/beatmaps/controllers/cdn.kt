@@ -7,7 +7,6 @@ import io.beatmaps.common.beatsaver.localCoverFolder
 import io.beatmaps.common.beatsaver.localFolder
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Downloads
-import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.login.localAvatarFolder
@@ -16,12 +15,10 @@ import io.ktor.application.call
 import io.ktor.features.NotFoundException
 import io.ktor.features.origin
 import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location
 import io.ktor.locations.get
 import io.ktor.locations.options
 import io.ktor.response.header
-import io.ktor.response.respond
 import io.ktor.response.respondFile
 import io.ktor.routing.Route
 import io.ktor.util.pipeline.PipelineContext
@@ -39,13 +36,28 @@ import java.io.File
     @Location("/beatsaver/{file}.mp3") data class BSAudio(val file: String, val api: CDN)
 }
 
-suspend fun PipelineContext<*, ApplicationCall>.returnFile(file: File?) {
+suspend fun PipelineContext<*, ApplicationCall>.returnFile(file: File?, filename: String? = null) {
     if (file != null && file.exists()) {
+        filename?.let {
+            call.response.header(
+                HttpHeaders.ContentDisposition,
+                "attachment; filename=\"$it\""
+            )
+        }
+
         call.respondFile(file)
     } else {
         throw NotFoundException()
     }
 }
+
+val illegalCharacters = arrayOf(
+    '<', '>', ':', '/', '\\', '|', '?', '*', '"',
+    '\u0000', '\u0001', '\u0002', '\u0003', '\u0004', '\u0005', '\u0006', '\u0007',
+    '\u0008', '\u0009', '\u000a', '\u000b', '\u000c', '\u000d', '\u000e', '\u000d',
+    '\u000f', '\u0010', '\u0011', '\u0012', '\u0013', '\u0014', '\u0015', '\u0016',
+    '\u0017', '\u0018', '\u0019', '\u001a', '\u001b', '\u001c', '\u001d', '\u001f',
+).toCharArray()
 
 fun Route.cdnRoute() {
     options<CDN.Zip> {
@@ -76,7 +88,7 @@ fun Route.cdnRoute() {
     }
 
     get<CDN.BeatSaver> {
-        val file = try {
+        val res = try {
             transaction {
                 Beatmap.joinVersions(false)
                     .select {
@@ -95,12 +107,9 @@ fun Route.cdnRoute() {
                                 }
                             }
 
-                            call.response.header(
-                                HttpHeaders.ContentDisposition,
-                                "attachment; filename=\"${map.id} (${map.metadata.songName} - ${map.metadata.levelAuthorName}).zip\""
-                            )
+                            val filename = "${map.id} (${map.metadata.songName} - ${map.metadata.levelAuthorName}).zip".split(*illegalCharacters).joinToString()
 
-                            file
+                            file to filename
                         }
                     }
             }
@@ -109,7 +118,7 @@ fun Route.cdnRoute() {
         }
 
         call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
-        returnFile(file)
+        returnFile(res?.first, res?.second)
     }
 
     get<CDN.Audio> {
