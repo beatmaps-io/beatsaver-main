@@ -2,8 +2,8 @@ import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 import io.miret.etienne.gradle.sass.CompileSass
 
 plugins {
-    kotlin("multiplatform") version "1.5.30-M1"
-    kotlin("plugin.serialization") version "1.5.30-M1"
+    kotlin("multiplatform") version "1.5.30-RC"
+    kotlin("plugin.serialization") version "1.5.30-RC"
     id("io.miret.etienne.sass") version "1.1.2"
     id("org.flywaydb.flyway") version "7.12.0"
     application
@@ -52,7 +52,7 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.2.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
-                implementation("io.beatmaps:BeatMaps-CommonMP:1.0.6")
+                implementation("io.beatmaps:BeatMaps-CommonMP:1.0.+")
             }
         }
         val commonTest by getting {
@@ -62,14 +62,14 @@ kotlin {
             }
         }
         val jvmMain by getting {
-            languageSettings.useExperimentalAnnotation("kotlin.io.path.ExperimentalPathApi")
-            languageSettings.useExperimentalAnnotation("io.ktor.locations.KtorExperimentalLocationsAPI")
-            languageSettings.useExperimentalAnnotation("kotlin.time.ExperimentalTime")
-            languageSettings.useExperimentalAnnotation("io.ktor.util.KtorExperimentalAPI")
-            languageSettings.useExperimentalAnnotation("kotlin.ExperimentalUnsignedTypes")
-            languageSettings.useExperimentalAnnotation("kotlinx.serialization.ExperimentalSerializationApi")
+            languageSettings.optIn("kotlin.io.path.ExperimentalPathApi")
+            languageSettings.optIn("io.ktor.locations.KtorExperimentalLocationsAPI")
+            languageSettings.optIn("kotlin.time.ExperimentalTime")
+            languageSettings.optIn("io.ktor.util.KtorExperimentalAPI")
+            languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
+            languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
             dependencies {
-                api(kotlin("reflect", "1.5.30-M1"))
+                api(kotlin("reflect", "1.5.30-RC"))
 
                 // Core
                 implementation("io.ktor:ktor-server-netty:$ktorVersion")
@@ -121,8 +121,8 @@ kotlin {
                 //implementation("com.googlecode.soundlibs:vorbisspi:1.0.3.3")
                 implementation("com.tagtraum:ffsampledsp-complete:0.9.32")
 
-                implementation("io.beatmaps:Common")
-                implementation("io.beatmaps:BeatMaps-CommonMP:1.0.6")
+                implementation("io.beatmaps:BeatMaps-Common:1.0.+")
+                implementation("io.beatmaps:BeatMaps-CommonMP:1.0.+")
 
                 runtimeOnly(files("BeatMaps-BeatSage-1.0-SNAPSHOT.jar"))
             }
@@ -133,8 +133,8 @@ kotlin {
             }
         }
         val jsMain by getting {
-            languageSettings.useExperimentalAnnotation("kotlin.js.ExperimentalJsExport")
-            languageSettings.useExperimentalAnnotation("kotlin.time.ExperimentalTime")
+            languageSettings.optIn("kotlin.js.ExperimentalJsExport")
+            languageSettings.optIn("kotlin.time.ExperimentalTime")
             dependencies {
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-extensions:1.0.1-pre.218-kotlin-1.5.21")
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-react:17.0.2-pre.218-kotlin-1.5.21")
