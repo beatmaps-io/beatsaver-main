@@ -1,16 +1,21 @@
 package io.beatmaps.controllers
 
+import io.beatmaps.api.MapDetail
+import io.beatmaps.api.from
 import io.beatmaps.common.beatsaver.localAudioFolder
 import io.beatmaps.common.beatsaver.localCoverFolder
 import io.beatmaps.common.beatsaver.localFolder
+import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Downloads
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
+import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.login.localAvatarFolder
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.features.NotFoundException
 import io.ktor.features.origin
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location
 import io.ktor.locations.get
@@ -71,24 +76,39 @@ fun Route.cdnRoute() {
     }
 
     get<CDN.BeatSaver> {
-        val file = transaction {
-            VersionsDao.wrapRows(Versions.select {
-                Versions.key64 eq it.file
-            }.limit(1)).firstOrNull()?.let { version ->
-                val file = File(localFolder(version.hash), "${version.hash}.zip")
+        val file = try {
+            transaction {
+                Beatmap.joinVersions(false)
+                    .select {
+                        Beatmap.id eq it.file.toInt(16)
+                    }.limit(1)
+                    .complexToBeatmap()
+                    .map { MapDetail.from(it) }
+                    .firstOrNull()?.let { map ->
+                        map.publishedVersion()?.let { version ->
+                            val file = File(localFolder(version.hash), "${version.hash}.zip")
 
-                if (file.exists() && call.request.origin.remoteHost.length <= 15) {
-                    Downloads.insert { dl ->
-                        dl[hash] = it.file
-                        dl[remote] = call.request.origin.remoteHost
+                            if (file.exists() && call.request.origin.remoteHost.length <= 15) {
+                                Downloads.insert { dl ->
+                                    dl[hash] = it.file
+                                    dl[remote] = call.request.origin.remoteHost
+                                }
+                            }
+
+                            call.response.header(
+                                HttpHeaders.ContentDisposition,
+                                "attachment; filename=\"${map.id} (${map.metadata.songName} - ${map.metadata.levelAuthorName}).zip\""
+                            )
+
+                            file
+                        }
                     }
-                }
-
-                file
             }
+        } catch (_: NumberFormatException) {
+            null
         }
 
-        call.response.header("Access-Control-Allow-Origin", "*")
+        call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
         returnFile(file)
     }
 
@@ -101,10 +121,17 @@ fun Route.cdnRoute() {
     }
 
     get<CDN.BSAudio> {
-        transaction {
-            VersionsDao.wrapRows(Versions.select {
-                Versions.key64 eq it.file
-            }.limit(1)).firstOrNull()?.hash
+        try {
+            transaction {
+                VersionsDao.wrapRows(
+                    Beatmap.joinVersions(false)
+                        .select {
+                            Beatmap.id eq it.file.toInt(16)
+                        }.limit(1)
+                ).firstOrNull()?.hash
+            }
+        } catch (_: NumberFormatException) {
+            null
         }?.let {
             getAudio(it)
         } ?: throw NotFoundException()
