@@ -47,7 +47,6 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
-import pl.jutupe.ktor_rabbitmq.publish
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.OutputStream
@@ -56,6 +55,7 @@ import java.math.BigInteger
 import java.nio.file.Files
 import java.security.DigestOutputStream
 import java.security.MessageDigest
+import java.util.logging.Logger
 import java.util.zip.ZipException
 import kotlin.collections.set
 import kotlin.io.path.deleteIfExists
@@ -67,9 +67,11 @@ val jsonWriter: ObjectWriter = jackson.writer(BSPrettyPrinter())
 
 val uploadDir = File(System.getenv("UPLOAD_DIR") ?: "S:\\A")
 val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
-val reCaptchaVerify = ReCaptchaVerify(System.getenv("RECAPTCHA_SECRET") ?: "")
+val reCaptchaVerify = System.getenv("RECAPTCHA_SECRET")?.let { ReCaptchaVerify( it) }
 
 @Location("/upload") class UploadMap
+
+private val uploadLogger = Logger.getLogger("bmio.Upload")
 
 fun Route.uploadController() {
     get<UploadMap> {
@@ -136,11 +138,15 @@ fun Route.uploadController() {
         }
 
         // Check the recaptcha result
-        val verifyResponse = withContext(Dispatchers.IO) {
-            reCaptchaVerify.verify(dataMap["recaptcha"], call.request.origin.remoteHost)
-        }
+        if (reCaptchaVerify == null) {
+            uploadLogger.warning("ReCAPTCHA not setup. Allowing request anyway")
+        } else {
+            val verifyResponse = withContext(Dispatchers.IO) {
+                reCaptchaVerify.verify(dataMap["recaptcha"], call.request.origin.remoteHost)
+            }
 
-        verifyResponse.isSuccess || throw UploadException("Could not verify user [${verifyResponse.errorCodes.joinToString(", ")}]")
+            verifyResponse.isSuccess || throw UploadException("Could not verify user [${verifyResponse.errorCodes.joinToString(", ")}]")
+        }
 
         val newMapId = transaction {
             // Process upload

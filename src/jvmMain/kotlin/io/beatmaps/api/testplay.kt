@@ -56,6 +56,7 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Date
+import java.util.logging.Logger
 import javax.crypto.SecretKey
 import kotlin.random.Random
 
@@ -70,17 +71,24 @@ import kotlin.random.Random
     @Location("/mark") data class Mark(val api: TestplayApi)
 }
 
+private val pipelineLogger = Logger.getLogger("bmio.Pipeline")
+
 suspend fun <T> PipelineContext<*, ApplicationCall>.requireAuthorization(block: suspend PipelineContext<*, ApplicationCall>.(Session) -> T) =
     call.sessions.get<Session>()?.let {
         block(it)
     } ?: run { call.respond(HttpStatusCode.Unauthorized); null }
 
 suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(captcha: String, block: suspend PipelineContext<*, ApplicationCall>.() -> T) =
-    withContext(Dispatchers.IO) {
-        reCaptchaVerify.verify(captcha, call.request.origin.remoteHost)
-    }.isSuccess.let {
+    if (reCaptchaVerify == null) {
+        pipelineLogger.warning("ReCAPTCHA not setup. Allowing request anyway")
         block()
-    } ?: run { call.respond(HttpStatusCode.BadRequest); null }
+    } else {
+        withContext(Dispatchers.IO) {
+            reCaptchaVerify.verify(captcha, call.request.origin.remoteHost)
+        }.isSuccess.let {
+            block()
+        } ?: run { call.respond(HttpStatusCode.BadRequest); null }
+    }
 
 suspend fun <T> PipelineContext<*, ApplicationCall>.captchaIfPresent(captcha: String?, block: suspend PipelineContext<*, ApplicationCall>.() -> T) =
     if (captcha != null) {
