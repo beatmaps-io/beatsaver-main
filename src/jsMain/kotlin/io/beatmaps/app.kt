@@ -11,6 +11,7 @@ import io.beatmaps.user.AlertsPage
 import io.beatmaps.user.BeatsaverPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ProfilePageProps
+import io.beatmaps.user.loginPage
 import io.beatmaps.user.userList
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -124,6 +125,12 @@ class App : RComponent<RProps, RState>() {
                     initWithHistory(it.history)
                     userList {
                         history = it.history
+                    }
+                }
+                route<RProps>("/auth", exact = true) {
+                    initWithHistory(it.history)
+                    loginPage {
+
                     }
                 }
                 route<RProps>("*") {

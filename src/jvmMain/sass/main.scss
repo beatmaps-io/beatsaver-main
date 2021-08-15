@@ -635,6 +635,21 @@ li.KeyboardShortcutRow {
   margin-left: 1%;
 }
 
+.login-form {
+  width: 420px;
+  background: $dark;
+  margin: 30px auto 0;
+  text-align: center;
+
+  .discord-btn {
+    font-weight: 100;
+    color: $white;
+    width: 190px;
+    font-size: 0.9rem;
+    background: #7289da;
+  }
+}
+
 @include media-breakpoint-up(sm) {
   .filter-dropdown {
     width: 100%;
