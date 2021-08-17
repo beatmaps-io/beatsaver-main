@@ -176,6 +176,8 @@ flyway {
 }
 
 tasks.getByName<CompileSass>("compileSass") {
+    dependsOn(tasks.getByName("kotlinNpmInstall"))
+
     outputDir = file("$buildDir/processedResources/jvm/main")
     setSourceDir(file("$projectDir/src/jvmMain/sass"))
     loadPath(file("$buildDir/js/node_modules"))

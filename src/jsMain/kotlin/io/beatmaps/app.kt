@@ -11,7 +11,12 @@ import io.beatmaps.user.AlertsPage
 import io.beatmaps.user.BeatsaverPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ProfilePageProps
+import io.beatmaps.user.ResetPageProps
+import io.beatmaps.user.forgotPage
 import io.beatmaps.user.loginPage
+import io.beatmaps.user.pickUsernamePage
+import io.beatmaps.user.resetPage
+import io.beatmaps.user.signupPage
 import io.beatmaps.user.userList
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -127,10 +132,35 @@ class App : RComponent<RProps, RState>() {
                         history = it.history
                     }
                 }
-                route<RProps>("/auth", exact = true) {
+                route<RProps>("/login", exact = true) {
                     initWithHistory(it.history)
                     loginPage {
 
+                    }
+                }
+                route<RProps>("/register", exact = true) {
+                    initWithHistory(it.history)
+                    signupPage {
+
+                    }
+                }
+                route<RProps>("/forgot", exact = true) {
+                    initWithHistory(it.history)
+                    forgotPage {
+
+                    }
+                }
+                route<ResetPageProps>("/reset/:jwt", exact = true) {
+                    initWithHistory(it.history)
+                    resetPage {
+                        jwt = it.match.params.jwt
+                        history = it.history
+                    }
+                }
+                route<RProps>("/username", exact = true) {
+                    initWithHistory(it.history)
+                    pickUsernamePage {
+                        history = it.history
                     }
                 }
                 route<RProps>("*") {

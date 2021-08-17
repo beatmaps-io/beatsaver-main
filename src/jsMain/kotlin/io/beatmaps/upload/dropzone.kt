@@ -50,6 +50,7 @@ fun RElementBuilder<DropzoneProps>.simple(history: RouteResultHistory, loading: 
                         history.push("/maps/${r.data}")
                     }
                 } else {
+                    captchaRef.current?.reset()
                     val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)
                     errorsBlock(failedResponse.errors)
                 }

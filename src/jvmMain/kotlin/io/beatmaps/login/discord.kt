@@ -1,14 +1,22 @@
 package io.beatmaps.login
 
+import com.toxicbakery.bcrypt.Bcrypt
 import io.beatmaps.common.Config
+import io.beatmaps.common.dbo.User
+import io.beatmaps.common.dbo.UserDao
 import io.ktor.application.Application
 import io.ktor.application.install
 import io.ktor.auth.Authentication
 import io.ktor.auth.OAuthServerSettings
+import io.ktor.auth.Principal
+import io.ktor.auth.form
 import io.ktor.auth.oauth
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.http.HttpMethod
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.transaction
 
 val discordProvider = OAuthServerSettings.OAuth2ServerSettings(
     name = "discord",
@@ -20,13 +28,37 @@ val discordProvider = OAuthServerSettings.OAuth2ServerSettings(
     defaultScopes = listOf("identify")
 )
 
+class SimpleUserPrincipal(val user: UserDao): Principal
+
 fun Application.installDiscordOauth() {
     val baseName = System.getenv("BASE_URL") ?: Config.basename
     install(Authentication) {
         oauth("discord") {
             client = HttpClient(Apache)
             providerLookup = { discordProvider }
-            urlProvider = { "$baseName/login" }
+            urlProvider = { "$baseName/discord" }
+        }
+        form("auth-form") {
+            userParamName = "username"
+            passwordParamName = "password"
+            challenge("/login?failed")
+            validate { credentials ->
+                transaction {
+                    User.select {
+                        if (credentials.name.contains('@')) {
+                            User.email eq credentials.name
+                        } else {
+                            User.uniqueName eq credentials.name
+                        } and User.discordId.isNull() and User.active
+                    }.firstOrNull()?.let {
+                        if (Bcrypt.verify(credentials.password, it[User.password].toByteArray())) {
+                            SimpleUserPrincipal(UserDao.wrapRow(it))
+                        } else {
+                            null
+                        }
+                    }
+                }
+            }
         }
     }
 }

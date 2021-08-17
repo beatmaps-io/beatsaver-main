@@ -29,11 +29,27 @@ external interface ProfilePageProps : RProps {
     var userId: Int?
 }
 
-data class ProfilePageState(var loading: Boolean = false, var startup: Boolean = false, var userDetail: UserDetail? = null, var wip: Boolean = false) : RState
+external interface ProfilePageState : RState {
+    var loading: Boolean
+    var startup: Boolean
+    var userDetail: UserDetail?
+    var wip: Boolean
+    var edit: Boolean
+}
 
 @JsExport
 class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
     private val modalRef = createRef<ModalComponent>()
+
+    override fun componentWillMount() {
+        setState {
+            loading = false
+            startup = false
+            userDetail = null
+            wip = false
+            edit = false
+        }
+    }
 
     override fun componentDidMount() {
         setPageTitle("Profile")
@@ -148,12 +164,13 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                 if (props.userId == null) {
                     ul("nav nav-tabs") {
                         li("nav-item") {
-                            a("#", classes = "nav-link" + if (!state.wip) " active" else "") {
+                            a("#", classes = "nav-link" + if (!state.wip && !state.edit) " active" else "") {
                                 attrs.onClickFunction = {
                                     it.preventDefault()
                                     localStorage["profile.showwip"] = "false"
                                     setState {
                                         wip = false
+                                        edit = false
                                     }
                                 }
                                 +"Published"
@@ -166,16 +183,34 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                     localStorage["profile.showwip"] = "true"
                                     setState {
                                         wip = true
+                                        edit = false
                                     }
                                 }
                                 +"WIP"
+                            }
+                        }
+                        li("nav-item") {
+                            a("#", classes = "nav-link" + if (state.edit) " active" else "") {
+                                attrs.onClickFunction = {
+                                    it.preventDefault()
+                                    setState {
+                                        wip = false
+                                        edit = true
+                                    }
+                                }
+                                +"Account"
                             }
                         }
                     }
                 }
             }
         }
-        if (state.startup) {
+        val detail = state.userDetail
+        if (state.edit && detail != null) {
+            account {
+                userDetail = detail
+            }
+        } else if (state.startup) {
             beatmapTable {
                 user = props.userId ?: loggedInLocal ?: 0
                 modal = modalRef

@@ -72,6 +72,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                 +"Title"
                             }
                             input(InputType.text, classes ="form-control") {
+                                attrs.id = "name"
                                 attrs.disabled = state.loading
                                 ref = titleRef
                             }
@@ -83,6 +84,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                 +"Description"
                             }
                             textarea("10", classes ="form-control") {
+                                attrs.id = "description"
                                 attrs.disabled = state.loading
                                 ref = descrRef
                             }

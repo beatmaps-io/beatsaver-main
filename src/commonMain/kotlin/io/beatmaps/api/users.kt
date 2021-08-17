@@ -6,8 +6,13 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 
+enum class AccountType {
+    DISCORD, SIMPLE
+}
+
 @Serializable
-data class UserDetail(val id: Int, val name: String, val hash: String? = null, val testplay: Boolean? = null, val avatar: String, val stats: UserStats? = null) { companion object }
+data class UserDetail(val id: Int, val name: String, val uniqueSet: Boolean, val hash: String? = null, val testplay: Boolean? = null,
+                      val avatar: String, val stats: UserStats? = null, val type: AccountType) { companion object }
 @Serializable
 data class UserStats(val totalUpvotes: Int, val totalDownvotes: Int, val totalMaps: Int, val rankedMaps: Int, val avgBpm: Float, val avgScore: Float, val avgDuration: Float,
                      val firstUpload: Instant?, val lastUpload: Instant?, val diffStats: UserDiffStats? = null)
@@ -16,6 +21,18 @@ data class UserDiffStats(val total: Int, val easy: Int, val normal: Int, val har
 @Serializable
 data class BeatsaverLink(val linked: Boolean) { companion object }
 @Serializable
-data class BeatsaverLinkReq(val user: String, val password: String)
+data class BeatsaverLinkReq(val user: String, val password: String, val useOldName: Boolean = true)
 @Serializable
 data class Alert(val map: MapDetail, val time: Instant, val action: IModLogOpAction) { companion object }
+@Serializable
+data class UsernameReq(val username: String)
+@Serializable
+data class RegisterRequest(val captcha: String, val username: String, val email: String, val password: String, val password2: String)
+@Serializable
+data class ActionResponse(val success: Boolean, val errors: List<String> = listOf())
+@Serializable
+data class ForgotRequest(val captcha: String, val email: String)
+@Serializable
+data class ResetRequest(val jwt: String, val password: String, val password2: String)
+@Serializable
+data class AccountRequest(val currentPassword: String? = null, val password: String? = null, val password2: String? = null)

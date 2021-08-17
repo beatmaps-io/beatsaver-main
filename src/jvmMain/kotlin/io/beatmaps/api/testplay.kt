@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+import ch.compile.recaptcha.model.SiteVerifyResponse
 import com.fasterxml.jackson.module.kotlin.readValue
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
@@ -78,16 +79,20 @@ suspend fun <T> PipelineContext<*, ApplicationCall>.requireAuthorization(block: 
         block(it)
     } ?: run { call.respond(HttpStatusCode.Unauthorized); null }
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(captcha: String, block: suspend PipelineContext<*, ApplicationCall>.() -> T) =
+suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(captcha: String, block: suspend PipelineContext<*, ApplicationCall>.() -> T, error: (suspend PipelineContext<*, ApplicationCall>.(SiteVerifyResponse) -> T)? = null) =
     if (reCaptchaVerify == null) {
         pipelineLogger.warning("ReCAPTCHA not setup. Allowing request anyway")
         block()
     } else {
         withContext(Dispatchers.IO) {
             reCaptchaVerify.verify(captcha, call.request.origin.remoteHost)
-        }.isSuccess.let {
-            block()
-        } ?: run { call.respond(HttpStatusCode.BadRequest); null }
+        }.let { result ->
+            if (result.isSuccess) {
+                block()
+            } else {
+                error?.let { it(result) } ?: run { call.respond(HttpStatusCode.BadRequest); null }
+            }
+        }
     }
 
 suspend fun <T> PipelineContext<*, ApplicationCall>.captchaIfPresent(captcha: String?, block: suspend PipelineContext<*, ApplicationCall>.() -> T) =

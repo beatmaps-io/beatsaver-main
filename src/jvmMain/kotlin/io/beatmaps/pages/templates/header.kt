@@ -81,7 +81,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                             }
                             li("nav-item dropdown") {
                                 a("/profile", classes = "nav-link dropdown-toggle") {
-                                    +s.userName
+                                    +(s.uniqueName ?: s.userName)
                                 }
                                 div("dropdown-menu") {
                                     a("/profile", classes="dropdown-item") {
@@ -95,7 +95,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                             +"Link steam account"
                                         }
                                     }
-                                    if (s.hash == null) {
+                                    if (s.canLink) {
                                         a("/beatsaver", classes = "dropdown-item") {
                                             +"Link beatsaver account"
                                         }

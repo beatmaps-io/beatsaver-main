@@ -75,7 +75,7 @@ fun Route.searchRoute() {
 
             val user = if (!it.q.isNullOrBlank() && !it.q.contains('\\')) {
                 val userQuery = User.select {
-                    User.name ilike (it.q)
+                    User.uniqueName ilike (it.q) and User.active
                 }.orderBy(Expression.build { User.discordId.isNull() }).limit(1).toList()
 
                 userQuery.firstOrNull()?.let { u -> UserDetail.from(u) }

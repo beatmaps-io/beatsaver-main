@@ -4,14 +4,18 @@ import ch.compile.recaptcha.ReCaptchaVerify
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.ObjectWriter
 import io.beatmaps.api.FailedUploadResponse
+import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.BSPrettyPrinter
+import io.beatmaps.common.Config
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.beatsaber.MapInfo
 import io.beatmaps.common.beatsaver.localAudioFolder
 import io.beatmaps.common.beatsaver.localCoverFolder
 import io.beatmaps.common.beatsaver.localFolder
+import io.beatmaps.common.client
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.updateReturning
+import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.User
@@ -25,8 +29,12 @@ import io.beatmaps.common.zip.ZipHelper.Companion.openZip
 import io.beatmaps.common.zip.sharedInsert
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session
+import io.beatmaps.login.localAvatarFolder
 import io.ktor.application.call
+import io.ktor.client.features.timeout
+import io.ktor.client.request.get
 import io.ktor.features.origin
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
 import io.ktor.http.content.streamProvider
@@ -41,12 +49,15 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import net.coobird.thumbnailator.Thumbnails
+import net.coobird.thumbnailator.tasks.UnsupportedFormatException
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.OutputStream
@@ -70,6 +81,7 @@ val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
 val reCaptchaVerify = System.getenv("RECAPTCHA_SECRET")?.let { ReCaptchaVerify( it) }
 
 @Location("/upload") class UploadMap
+@Location("/avatar") class UploadAvatar
 
 private val uploadLogger = Logger.getLogger("bmio.Upload")
 
@@ -79,6 +91,43 @@ fun Route.uploadController() {
             call.respondRedirect("/")
         } else {
             genericPage()
+        }
+    }
+
+    post<UploadAvatar> {
+        requireAuthorization { sess ->
+            try {
+                val multipart = call.receiveMultipart()
+                val dataMap = mutableMapOf<String, String>()
+
+                val filename = "upload-${sess.userId}.jpg"
+                val localFile = File(localAvatarFolder(), filename)
+
+                multipart.forEachPart { part ->
+                    if (part is PartData.FormItem) {
+                        dataMap[part.name.toString()] = part.value
+                    } else if (part is PartData.FileItem) {
+                        part.streamProvider().use { its ->
+                            Thumbnails
+                                .of(its)
+                                .size(128, 128)
+                                .outputFormat("JPEG")
+                                .outputQuality(0.8)
+                                .toFile(localFile)
+
+                            transaction {
+                                User.update({ User.id eq sess.userId }) {
+                                    it[avatar] = "${Config.cdnbase}/avatar/$filename"
+                                }
+                            }
+                        }
+                    }
+                }
+
+                call.respond(HttpStatusCode.OK)
+            } catch (e: UnsupportedFormatException) {
+                throw UploadException("Bad or unknown image format")
+            }
         }
     }
 

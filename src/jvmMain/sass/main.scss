@@ -635,18 +635,43 @@ li.KeyboardShortcutRow {
   margin-left: 1%;
 }
 
+.user-form {
+  width: 600px;
+}
+
+.user-form, .login-form {
+  margin: auto;
+
+  hr {
+    border-color: $gray-600;
+  }
+
+  button[type="submit"], #forgot_pwd, #login_back {
+    display: block;
+    margin-top: 10px;
+  }
+}
+
 .login-form {
   width: 420px;
-  background: $dark;
-  margin: 30px auto 0;
+  margin-top: 80px;
   text-align: center;
 
+  #login_back {
+    text-align: left;
+  }
+
   .discord-btn {
+    margin-bottom: 14px;
     font-weight: 100;
     color: $white;
     width: 190px;
     font-size: 0.9rem;
     background: #7289da;
+
+    &:hover {
+      background: #4752c4;
+    }
   }
 }
 

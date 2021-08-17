@@ -30,6 +30,7 @@ data class BeatsaverPageState(var failed: Boolean = false, var loading: Boolean 
 class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
     private val inputRef = createRef<HTMLInputElement>()
     private val passwordRef = createRef<HTMLInputElement>()
+    private val oldNameRef = createRef<HTMLInputElement>()
 
     init {
         state = BeatsaverPageState()
@@ -100,10 +101,24 @@ class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
                         ref = passwordRef
                     }
                 }
+                div("form-group") {
+                    div("form-check") {
+                        input(InputType.checkBox, classes = "form-check-input") {
+                            attrs.id = "oldName"
+                            ref = oldNameRef
+                            attrs.checked = true
+                        }
+                        label("form-check-label") {
+                            attrs.htmlFor = "oldName"
+                            +"Use old beatsaver name as username"
+                        }
+                    }
+                }
                 button(type = ButtonType.submit, classes = "btn btn-primary") {
                     attrs.onClickFunction = {
                         val usr = inputRef.current?.value ?: ""
                         val pwd = passwordRef.current?.value ?: ""
+                        val useOldName = oldNameRef.current?.checked ?: true
 
                         setState {
                             loading = true
@@ -111,7 +126,7 @@ class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
 
                         Axios.post<BeatsaverLink>(
                             "/api/users/beatsaver",
-                            BeatsaverLinkReq(usr, pwd),
+                            BeatsaverLinkReq(usr, pwd, useOldName),
                             generateConfig<BeatsaverLinkReq, BeatsaverLink>()
                         ).then {
                             val link = it.data

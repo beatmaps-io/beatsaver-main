@@ -41,7 +41,6 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
-import pl.jutupe.ktor_rabbitmq.publish
 
 @Location("/api") class MapsApi {
     @Location("/maps/update") data class Update(val api: MapsApi)
@@ -53,10 +52,14 @@ import pl.jutupe.ktor_rabbitmq.publish
     @Group("Maps") @Location("/maps/hash/{hash}") data class ByHash(val hash: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/uploader/{id}/{page}") data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore  val api: MapsApi)
     @Group("Maps") @Location("/maps/latest") data class ByUploadDate(
-        @Ignore val after: Instant? = null,
-        @Description("YYYY-MM-DDTHH:MM:SS+00:00") val before: Instant? = null,
-        @Description("true = both, false = no ai") val automapper: Boolean = false,
-        @Ignore val api: MapsApi
+        @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
+        val before: Instant? = null,
+        @Description("Like `before` but will get you maps more recent than the time supplied.\nYYYY-MM-DDTHH:MM:SS+00:00")
+        val after: Instant? = null,
+        @Description("true = both, false = no ai")
+        val automapper: Boolean = false,
+        @Ignore
+        val api: MapsApi
     )
     @Group("Maps") @Location("/maps/plays/{page}") data class ByPlayCount(@DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
     @Group("Users") @Location("/users/id/{id}") data class UserId(val id: Int, @Ignore val api: MapsApi)
@@ -352,13 +355,13 @@ fun Route.mapDetailRoute() {
                             .select {
                                 Beatmap.deletedAt.isNull().let { q ->
                                     if (!it.automapper) q.and(Beatmap.automapper eq false) else q
-                                }.let { q ->
-                                    (it.before ?: it.after).let { p ->
-                                        if (p != null) q.and(Beatmap.uploaded less p.toJavaInstant()) else q
-                                    }
+                                }.notNull(it.before ?: it.after) {
+                                    Beatmap.uploaded less it.toJavaInstant()
+                                }.notNull(it.after) {
+                                    Beatmap.uploaded greater it.toJavaInstant()
                                 }
                             }
-                            .orderBy(Beatmap.uploaded to SortOrder.DESC)
+                            .orderBy(Beatmap.uploaded to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
                             .limit(20)
                     )
                 }

@@ -20,6 +20,13 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.pub
+import io.beatmaps.common.sendEmail
+import io.jsonwebtoken.ExpiredJwtException
+import io.jsonwebtoken.JwtException
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.MalformedJwtException
+import io.jsonwebtoken.security.Keys
+import io.jsonwebtoken.security.SignatureException
 import io.ktor.application.call
 import io.ktor.client.features.timeout
 import io.ktor.client.request.get
@@ -36,9 +43,11 @@ import io.ktor.routing.Route
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
 import kotlinx.datetime.toKotlinInstant
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.IntegerColumnType
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.OrOp
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
@@ -48,6 +57,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.booleanLiteral
 import org.jetbrains.exposed.sql.count
+import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.min
@@ -57,12 +67,18 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import java.math.BigInteger
+import java.security.MessageDigest
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Base64
+import java.util.Date
 
 fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null) =
-    UserDetail(other.id.value, other.name, other.hash, if (roles) other.testplay else null, other.avatar ?: "https://www.gravatar.com/avatar/${other.hash}?d=retro", stats)
+    UserDetail(other.id.value, other.uniqueName ?: other.name, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
+        other.avatar ?: "https://www.gravatar.com/avatar/${other.hash}?d=retro", stats, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE)
 
 fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false) = from(UserDao.wrapRow(row), roles)
 fun Alert.Companion.from(other: ModLogDao, map: MapDetail) = Alert(map, other.opAt.toKotlinInstant(), other.realAction())
@@ -72,6 +88,18 @@ fun Alert.Companion.from(row: ResultRow) = from(ModLogDao.wrapRow(row), MapDetai
 class UsersApi {
     @Location("/me")
     data class Me(val api: UsersApi)
+
+    @Location("/username")
+    data class Username(val api: UsersApi)
+
+    @Location("/register")
+    data class Register(val api: UsersApi)
+
+    @Location("/forgot")
+    data class Forgot(val api: UsersApi)
+
+    @Location("/reset")
+    data class Reset(val api: UsersApi)
 
     @Location("/id/{id}/stats")
     data class UserStats(val id: Int, val api: UsersApi)
@@ -95,7 +123,7 @@ class UsersApi {
 fun Route.userRoute() {
     get<UsersApi.LinkBeatsaver> {
         requireAuthorization {
-            call.respond(BeatsaverLink(it.hash != null))
+            call.respond(BeatsaverLink(!it.canLink))
         }
     }
 
@@ -111,18 +139,24 @@ fun Route.userRoute() {
 
             val valid = userToCheck != null && Bcrypt.verify(r.password, userToCheck.password.toByteArray())
             val result = transaction {
-                val isUnlinked = UserDao.wrapRows(User.select {
+                val user = UserDao.wrapRows(User.select {
                     User.id eq s.userId
-                }).toList().firstOrNull()?.hash
+                }).toList().firstOrNull()
 
-                if (isUnlinked != null) {
-                    call.sessions.set(s.copy(hash = isUnlinked))
+                val canLink = (user?.discordId != null) && (user.hash == null)
+
+                if (!canLink) {
+                    call.sessions.set(user?.hash?.let {
+                        s.copy(hash = it, canLink = false)
+                    } ?: s.copy(canLink = false))
                     return@transaction true to listOf()
                 }
 
                 if (valid && userToCheck != null) {
                     val oldmapIds = User.updateReturning({ User.hash eq userToCheck.hash and User.discordId.isNull() }, { u ->
                         u[hash] = null
+                        u[uniqueName] = null
+                        u[active] = false
                     }, User.id)?.let { r ->
                         if (r.isEmpty()) return@let listOf()
 
@@ -145,6 +179,9 @@ fun Route.userRoute() {
                         it[hash] = userToCheck.hash
                         it[admin] = OrOp(listOf(admin, booleanLiteral(userToCheck.admin)))
                         it[upvotes] = userToCheck.upvotes
+                        if (r.useOldName) {
+                            it[uniqueName] = userToCheck.uniqueName
+                        }
                     }
                     call.sessions.set(s.copy(hash = userToCheck.hash))
 
@@ -159,6 +196,234 @@ fun Route.userRoute() {
             }
 
             call.respond(BeatsaverLink(result.first))
+        }
+    }
+
+    val usernameRegex = Regex("^[._\\-A-Za-z0-9]{3,}$")
+    post<UsersApi.Username> {
+        requireAuthorization { sess ->
+            val req = call.receive<UsernameReq>()
+
+            if (!usernameRegex.matches(req.username)) {
+                call.respond(ActionResponse(false, listOf("Username not valid")))
+            } else {
+                val success = transaction {
+                    try {
+                        User.update({ User.id eq sess.userId and User.uniqueName.isNull() }) { u ->
+                            u[uniqueName] = req.username
+                        }
+                        true
+                    } catch (e: ExposedSQLException) {
+                        false
+                    }
+                }
+
+                if (success) {
+                    // Success
+                    call.sessions.set(sess.copy(uniqueName = req.username))
+                    call.respond(ActionResponse(true, listOf()))
+                } else {
+                    call.respond(ActionResponse(false, listOf("Username already taken")))
+                }
+            }
+        }
+    }
+
+    val secret = System.getenv("BSHASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: byteArrayOf()
+    fun getHash(userId: String) = MessageDigest.getInstance("SHA1").let {
+        it.update(secret + userId.toByteArray())
+        String.format("%40x", BigInteger(1, it.digest()))
+    }
+    fun keyForUser(user: UserDao) = Keys.hmacShaKeyFor(secret + "${user.password}-${user.createdAt}".toByteArray())
+
+    post<UsersApi.Register> {
+        val req = call.receive<RegisterRequest>()
+
+        val response = requireCaptcha(req.captcha, {
+            if (req.password != req.password2) {
+                ActionResponse(false, listOf("Passwords don't match"))
+            } else if (req.password.length < 8) {
+                ActionResponse(false, listOf("Password too short"))
+            } else {
+                val bcrypt = String(Bcrypt.hash(req.password, 12))
+                val token = getHash(req.email)
+
+                val newUserId = transaction {
+                    try {
+                        User.insertAndGetId {
+                            it[name] = req.username
+                            it[email] = req.email
+                            it[password] = bcrypt
+                            it[verifyToken] = token
+                            it[uniqueName] = req.username
+                            it[active] = false
+                        } to null
+                    } catch (e: ExposedSQLException) {
+                        if (e.message?.contains("simple_username") == true) {
+                            // Username constraint -> show conflict error
+                            null to ActionResponse(false, listOf("Username taken"))
+                        } else {
+                            // Email constraint -> show success message / check your email
+                            null to null
+                        }
+                    }
+                }
+
+                // Complicated series of fallbacks. If the id is set we created a news user, send them an email. If a response is set send it.
+                // Otherwise the email was a duplicate, tell the user via email so we don't reveal which emails have been registered already.
+                newUserId.first?.let {
+                    sendEmail(
+                        req.email,
+                        "BeatSaver Account Verification",
+                        "To verify your account, please click the link below:\n${Config.basename}/verify?user=${newUserId}&token=${token}"
+                    )
+
+                    ActionResponse(true)
+                } ?: newUserId.second ?: run {
+                    sendEmail(
+                        req.email,
+                        "BeatSaver Account",
+                        "Someone just tried to create a new account at ${Config.basename} with this email address but an account using this email already exists.\n\n" +
+                                "If this wasn't you then you can safely ignore this email otherwise please use a different email"
+                    )
+
+                    ActionResponse(true)
+                }
+            }
+        }) {
+            ActionResponse(false, listOf("Could not verify user [${it.errorCodes.joinToString(", ")}]"))
+        }
+
+        response?.let {
+            call.respond(it)
+        }
+    }
+
+    post<UsersApi.Forgot> {
+        val req = call.receive<ForgotRequest>()
+
+        val response = requireCaptcha(req.captcha, {
+            transaction {
+                User.select {
+                    (User.email eq req.email) and User.discordId.isNull() and User.password.isNotNull()
+                }.firstOrNull()?.let { UserDao.wrapRow(it) }
+            }?.let { user ->
+                val builder = Jwts.builder().setExpiration(Date.from(Instant.now().plus(20L, ChronoUnit.MINUTES)))
+                builder.setSubject(user.id.toString())
+                builder.signWith(keyForUser(user))
+                val jwt = builder.compact()
+
+                sendEmail(
+                    req.email,
+                    "BeatSaver Password Reset",
+                    "You can reset your password by clicking here: ${Config.basename}/reset/$jwt\n\n" +
+                            "If this wasn't you then you can safely ignore this email."
+                )
+            }
+
+            ActionResponse(true)
+        }) {
+            ActionResponse(false, listOf("Could not verify user [${it.errorCodes.joinToString(", ")}]"))
+        }
+
+        response?.let {
+            call.respond(it)
+        }
+    }
+
+    post<UsersApi.Reset> {
+        val req = call.receive<ResetRequest>()
+
+        val response = if (req.password != req.password2) {
+            ActionResponse(false, listOf("Passwords don't match"))
+        } else if (req.password.length < 8) {
+            ActionResponse(false, listOf("Password too short"))
+        } else {
+            val bcrypt = String(Bcrypt.hash(req.password, 12))
+
+            try {
+                val i = req.jwt.lastIndexOf('.')
+                val withoutSignature = req.jwt.substring(0, i + 1)
+                val untrusted = Jwts.parserBuilder().build().parseClaimsJwt(withoutSignature)
+
+                untrusted.body.subject.toInt().let { userId ->
+                    transaction {
+                        User.select {
+                            User.id eq userId
+                        }.firstOrNull()?.let { UserDao.wrapRow(it) }?.let { user ->
+                            // If the jwt is valid we can reset the user's password :D
+                            try {
+                                Jwts.parserBuilder().setSigningKey(keyForUser(user)).build().parseClaimsJws(req.jwt)
+
+                                val success = User.update({
+                                    User.id eq userId
+                                }) {
+                                    it[password] = bcrypt
+
+                                    // The user must have received an email to reset their password so
+                                    // we can also activate their account
+                                    it[verifyToken] = null
+                                    it[active] = true
+                                } > 0
+
+                                if (success) {
+                                    ActionResponse(true)
+                                } else {
+                                    ActionResponse(false, listOf("Failed to update password"))
+                                }
+                            } catch (e: SignatureException) {
+                                // As previous password is included in key the signature will fail if the password
+                                // has changed since we sent the link
+                                ActionResponse(false, listOf("Reset token no longer valid"))
+                            } catch (e: JwtException) {
+                                ActionResponse(false, listOf("Reset token is malformed"))
+                            }
+                        } ?: ActionResponse(false, listOf("User not found"))
+                    }
+                }
+            } catch (e: ExpiredJwtException) {
+                ActionResponse(false, listOf("Password reset link has expired"))
+            } catch (e: JwtException) {
+                ActionResponse(false, listOf("Reset token is malformed"))
+            }
+        }
+
+        call.respond(response)
+    }
+
+    post<UsersApi.Me> {
+        requireAuthorization { sess ->
+            val req = call.receive<AccountRequest>()
+
+            val response = if (req.password == null || req.currentPassword == null) {
+                // Not a password reset request
+                ActionResponse(true)
+            } else if (req.password != req.password2) {
+                ActionResponse(false, listOf("Passwords don't match"))
+            } else if (req.password.length < 8) {
+                ActionResponse(false, listOf("Password too short"))
+            } else {
+                val bcrypt = String(Bcrypt.hash(req.password, 12))
+
+                transaction {
+                    User.select {
+                        User.id eq sess.userId
+                    }.firstOrNull()?.let { r ->
+                        if (Bcrypt.verify(req.currentPassword, r[User.password].toByteArray())) {
+                            User.update({
+                                User.id eq sess.userId
+                            }) {
+                                it[password] = bcrypt
+                            }
+                            ActionResponse(true)
+                        } else {
+                            ActionResponse(false, listOf("Current password incorrect"))
+                        }
+                    } ?: ActionResponse(false, listOf("Account not found")) // Shouldn't ever happen
+                }
+            }
+
+            call.respond(response)
         }
     }
 
@@ -191,8 +456,8 @@ fun Route.userRoute() {
 
     get<UsersApi.List> {
         val us = transaction {
-            val userAlias = User.slice(User.upvotes, User.id, User.name, User.avatar, User.hash).select {
-                User.hash.isNotNull()
+            val userAlias = User.slice(User.upvotes, User.id, User.name, User.uniqueName, User.avatar, User.hash, User.discordId).select {
+                Op.TRUE and User.active
             }.orderBy(User.upvotes, SortOrder.DESC).limit(it.page).alias("u")
 
             val query = userAlias
@@ -204,8 +469,10 @@ fun Route.userRoute() {
                     Beatmap.id.count(),
                     userAlias[User.upvotes],
                     userAlias[User.name],
+                    userAlias[User.uniqueName],
                     userAlias[User.avatar],
                     userAlias[User.hash],
+                    userAlias[User.discordId],
                     Beatmap.downVotesInt.sum(),
                     Beatmap.bpm.avg(),
                     Beatmap.score.avg(3),
@@ -215,13 +482,15 @@ fun Route.userRoute() {
                     Beatmap.uploaded.max()
                 )
                 .selectAll()
-                .groupBy(Beatmap.uploader, userAlias[User.upvotes], userAlias[User.name], userAlias[User.avatar], userAlias[User.hash])
+                .groupBy(Beatmap.uploader, userAlias[User.upvotes], userAlias[User.name], userAlias[User.uniqueName], userAlias[User.avatar], userAlias[User.hash], userAlias[User.discordId])
                 .orderBy(userAlias[User.upvotes], SortOrder.DESC)
 
             query.toList().map {
+                val uniqueName = it[userAlias[User.uniqueName]]
                 UserDetail(
                     it[Beatmap.uploader].value,
-                    it[userAlias[User.name]],
+                    uniqueName ?: it[userAlias[User.name]],
+                    uniqueName != null,
                     avatar = it[userAlias[User.avatar]] ?: "https://www.gravatar.com/avatar/${it[userAlias[User.hash]]}?d=retro",
                     stats = UserStats(
                         it[userAlias[User.upvotes]],
@@ -233,7 +502,8 @@ fun Route.userRoute() {
                         it[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
                         it[Beatmap.uploaded.min()]?.toKotlinInstant(),
                         it[Beatmap.uploaded.max()]?.toKotlinInstant()
-                    )
+                    ),
+                    type = if (it[userAlias[User.discordId]] != null) AccountType.DISCORD else AccountType.SIMPLE
                 )
             }
         }
@@ -338,6 +608,10 @@ fun Route.userRoute() {
                 UserDao.wrapRows(User.select {
                     User.id.eq(it.userId)
                 }).first()
+            }
+
+            if (user.uniqueName != null && it.uniqueName == null) {
+                call.sessions.set(it.copy(uniqueName = user.uniqueName))
             }
 
             call.respond(UserDetail.from(user, stats = statsForUser(user)))

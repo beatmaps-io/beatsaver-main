@@ -25,4 +25,5 @@ external object ReCAPTCHA {
 
     fun execute(): String
     fun executeAsync(): Promise<String>
+    fun reset()
 }

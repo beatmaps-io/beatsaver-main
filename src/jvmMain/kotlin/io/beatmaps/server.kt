@@ -55,6 +55,7 @@ import io.ktor.locations.Locations
 import io.ktor.request.ApplicationReceiveRequest
 import io.ktor.request.path
 import io.ktor.response.respond
+import io.ktor.response.respondRedirect
 import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.serialization.SerializationConverter
@@ -83,11 +84,15 @@ import kotlin.time.Duration.Companion.nanoseconds
 
 suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) {
     val sess = call.sessions.get<Session>()
-    call.respondHtmlTemplate(MainTemplate(sess, GenericPageTemplate(sess)), statusCode) {
-        headElements {
-            headerTemplate?.invoke(this)
+    if (sess != null  && sess.uniqueName == null && call.request.path() != "/username") {
+        call.respondRedirect("/username")
+    } else {
+        call.respondHtmlTemplate(MainTemplate(sess, GenericPageTemplate(sess)), statusCode) {
+            headElements {
+                headerTemplate?.invoke(this)
+            }
+            pageTitle = "BeatSaver.com"
         }
-        pageTitle = "BeatSaver.com"
     }
 }
 
