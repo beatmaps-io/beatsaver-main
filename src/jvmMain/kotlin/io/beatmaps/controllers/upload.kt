@@ -26,6 +26,7 @@ import io.beatmaps.common.pub
 import io.beatmaps.common.zip.ExtractedInfo
 import io.beatmaps.common.zip.ZipHelper
 import io.beatmaps.common.zip.ZipHelper.Companion.openZip
+import io.beatmaps.common.zip.ZipHelperException
 import io.beatmaps.common.zip.sharedInsert
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session
@@ -100,7 +101,7 @@ fun Route.uploadController() {
                 val multipart = call.receiveMultipart()
                 val dataMap = mutableMapOf<String, String>()
 
-                val filename = "upload-${sess.userId}.jpg"
+                val filename = "${sess.userId}.jpg"
                 val localFile = File(localAvatarFolder(), filename)
 
                 multipart.forEachPart { part ->
@@ -151,6 +152,7 @@ fun Route.uploadController() {
             if (part is PartData.FormItem) {
                 dataMap[part.name.toString()] = part.value
             } else if (part is PartData.FileItem) {
+                uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
                 extractedInfoTmp = part.streamProvider().use { its ->
                     try {
                         file.outputStream().buffered().use {
@@ -178,6 +180,9 @@ fun Route.uploadController() {
                     } catch (e: JsonMappingException) {
                         file.delete()
                         throw UploadException("Could not parse json")
+                    } catch (e: ZipHelperException) {
+                        file.delete()
+                        throw UploadException(e.msg)
                     } catch (e: Exception) {
                         file.delete()
                         throw e

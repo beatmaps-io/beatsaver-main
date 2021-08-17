@@ -17,6 +17,7 @@ import io.ktor.client.features.timeout
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.features.NotFoundException
 import io.ktor.http.URLProtocol
 import io.ktor.http.Url
 import io.ktor.http.parametersOf
@@ -106,7 +107,7 @@ fun Route.authRoute() {
 
     get<Verify> {
         val query = call.request.queryParameters
-        val userId = (query["user"] ?: error("User not specified")).toInt()
+        val userId = (query["user"] ?: throw NotFoundException("User not specified")).toInt()
         val token = query["token"] ?: ""
 
         val valid = transaction {

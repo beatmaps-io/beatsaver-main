@@ -133,7 +133,7 @@ fun Route.userRoute() {
 
             val userToCheck = transaction {
                 UserDao.wrapRows(User.select {
-                    (User.name eq r.user.lowercase() and User.hash.isNotNull()) or (User.hash eq r.user.lowercase() and User.discordId.isNull())
+                    User.active and User.password.isNotNull() and ((User.uniqueName eq r.user and User.hash.isNotNull()) or (User.hash eq r.user.lowercase() and User.discordId.isNull()))
                 }).firstOrNull()
             }
 

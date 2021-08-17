@@ -355,7 +355,7 @@ fun Route.mapDetailRoute() {
                             .select {
                                 Beatmap.deletedAt.isNull().let { q ->
                                     if (!it.automapper) q.and(Beatmap.automapper eq false) else q
-                                }.notNull(it.before ?: it.after) {
+                                }.notNull(it.before) {
                                     Beatmap.uploaded less it.toJavaInstant()
                                 }.notNull(it.after) {
                                     Beatmap.uploaded greater it.toJavaInstant()
