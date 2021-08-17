@@ -232,7 +232,7 @@ fun Route.userRoute() {
     val secret = System.getenv("BSHASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: byteArrayOf()
     fun getHash(userId: String) = MessageDigest.getInstance("SHA1").let {
         it.update(secret + userId.toByteArray())
-        String.format("%40x", BigInteger(1, it.digest()))
+        String.format("%040x", BigInteger(1, it.digest()))
     }
     fun keyForUser(user: UserDao) = Keys.hmacShaKeyFor(secret + "${user.password}-${user.createdAt}".toByteArray())
 
