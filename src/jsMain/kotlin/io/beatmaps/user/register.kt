@@ -5,6 +5,7 @@ import external.ReCAPTCHA
 import generateConfig
 import io.beatmaps.api.RegisterRequest
 import io.beatmaps.api.ActionResponse
+import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
@@ -40,6 +41,10 @@ class SignupPage : RComponent<RProps, SignupPageState>() {
             loading = false
             complete = false
         }
+    }
+
+    override fun componentDidMount() {
+        setPageTitle("Register")
     }
 
     override fun RBuilder.render() {
@@ -121,12 +126,14 @@ class SignupPage : RComponent<RProps, SignupPageState>() {
                         ref = passwordRef
                         attrs.placeholder = "Password"
                         attrs.required = true
+                        attrs.attributes["autocomplete"] = "new-password"
                     }
                     input(type = InputType.password, classes = "form-control") {
                         key = "password2"
                         ref = password2Ref
                         attrs.placeholder = "Repeat Password"
                         attrs.required = true
+                        attrs.attributes["autocomplete"] = "new-password"
                     }
                     button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
                         attrs.disabled = state.loading

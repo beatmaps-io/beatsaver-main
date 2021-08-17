@@ -1,5 +1,6 @@
 package io.beatmaps.user
 
+import io.beatmaps.setPageTitle
 import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
@@ -15,6 +16,10 @@ import react.dom.*
 
 @JsExport
 class LoginPage : RComponent<RProps, RState>() {
+    override fun componentDidMount() {
+        setPageTitle("Login")
+    }
+
     override fun RBuilder.render() {
         div("login-form card border-dark") {
             div("card-header") {

@@ -7,6 +7,7 @@ import io.beatmaps.common.Config
 import io.beatmaps.common.formatTime
 import io.beatmaps.common.toFixed
 import io.beatmaps.dateFormat
+import io.beatmaps.setPageTitle
 import kotlinx.browser.window
 import kotlinx.datetime.Clock
 import kotlinx.html.title
@@ -76,6 +77,7 @@ class UserList : RComponent<UserListProps, UserListState>() {
     }
 
     override fun componentDidMount() {
+        setPageTitle("Mappers")
         updateFromHash(null)
 
         window.onhashchange = ::updateFromHash

@@ -4,6 +4,7 @@ import Axios
 import generateConfig
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ResetRequest
+import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
@@ -38,6 +39,10 @@ class ResetPage : RComponent<ResetPageProps, ResetPageState>() {
             errors = listOf()
             loading = false
         }
+    }
+
+    override fun componentDidMount() {
+        setPageTitle("Reset password")
     }
 
     override fun RBuilder.render() {

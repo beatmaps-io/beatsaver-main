@@ -6,6 +6,7 @@ import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UsernameReq
 import io.beatmaps.common.json
+import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
@@ -44,6 +45,8 @@ class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
     }
 
     override fun componentDidMount() {
+        setPageTitle("Set username")
+
         loadState()
     }
 

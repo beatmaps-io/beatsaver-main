@@ -5,6 +5,7 @@ import external.ReCAPTCHA
 import generateConfig
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ForgotRequest
+import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
@@ -36,6 +37,10 @@ class ForgotPage : RComponent<RProps, ForgotPageState>() {
             loading = false
             complete = false
         }
+    }
+
+    override fun componentDidMount() {
+        setPageTitle("Forgot password")
     }
 
     override fun RBuilder.render() {
