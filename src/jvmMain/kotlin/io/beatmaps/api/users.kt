@@ -275,7 +275,7 @@ fun Route.userRoute() {
                     sendEmail(
                         req.email,
                         "BeatSaver Account Verification",
-                        "To verify your account, please click the link below:\n${Config.basename}/verify?user=${newUserId}&token=${token}"
+                        "${req.username}\n\nTo verify your account, please click the link below:\n${Config.basename}/verify?user=${it}&token=${token}"
                     )
 
                     ActionResponse(true)
@@ -316,7 +316,7 @@ fun Route.userRoute() {
                 sendEmail(
                     req.email,
                     "BeatSaver Password Reset",
-                    "You can reset your password by clicking here: ${Config.basename}/reset/$jwt\n\n" +
+                    "You can reset your password for the account `${user.uniqueName}` by clicking here: ${Config.basename}/reset/$jwt\n\n" +
                             "If this wasn't you then you can safely ignore this email."
                 )
             }
