@@ -34,6 +34,10 @@ import org.jetbrains.exposed.sql.transactions.transaction
     @Location("/{key}") data class RedirectOld(val key: String, val api: UploaderController)
 }
 
+@Location("/browse") class OldBrowseController {
+    @Location("/hot") data class Hot(val api: OldBrowseController)
+}
+
 @Location("/profile") class UserController {
     @Location("/{id?}") data class Detail(val id: Int? = null, val api: UserController)
 }
@@ -48,6 +52,10 @@ fun Route.mapController() {
 
     get<Testplays> {
         genericPage()
+    }
+
+    get<OldBrowseController.Hot> {
+        call.respondRedirect("/")
     }
 
     get<MapController.Detail> {
