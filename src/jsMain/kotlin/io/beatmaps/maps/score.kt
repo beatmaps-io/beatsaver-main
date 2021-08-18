@@ -6,7 +6,9 @@ import react.RComponent
 import react.RProps
 import react.RState
 import react.ReactElement
-import react.dom.*
+import react.dom.td
+import react.dom.th
+import react.dom.tr
 
 data class ScoreProps(var position: Int, var playerId: Long, var name: String, var pp: Double, var score: Int, var scoreColor: String, var percentage: String, var mods: List<String>) : RProps
 

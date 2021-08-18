@@ -13,7 +13,12 @@ import react.RComponent
 import react.RProps
 import react.RState
 import react.ReactElement
-import react.dom.*
+import react.dom.RDOMBuilder
+import react.dom.a
+import react.dom.div
+import react.dom.i
+import react.dom.img
+import react.dom.span
 import react.router.dom.routeLink
 
 external interface InfoTableProps : RProps {

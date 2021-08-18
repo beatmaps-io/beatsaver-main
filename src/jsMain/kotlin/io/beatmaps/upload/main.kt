@@ -17,7 +17,20 @@ import react.RProps
 import react.RState
 import react.buildElement
 import react.createRef
-import react.dom.*
+import react.dom.a
+import react.dom.br
+import react.dom.div
+import react.dom.fieldset
+import react.dom.form
+import react.dom.h2
+import react.dom.h4
+import react.dom.input
+import react.dom.label
+import react.dom.li
+import react.dom.p
+import react.dom.strong
+import react.dom.textarea
+import react.dom.ul
 import react.router.dom.RouteResultHistory
 import react.setState
 

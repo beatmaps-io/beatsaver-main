@@ -1,7 +1,7 @@
 package io.beatmaps.api
 
 import io.beatmaps.common.Config
-import io.beatmaps.common.api.*
+import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.DifficultyDao
 import io.beatmaps.common.dbo.TestplayDao

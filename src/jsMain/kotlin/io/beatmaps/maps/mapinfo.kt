@@ -22,8 +22,23 @@ import kotlinx.html.title
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.get
-import react.*
-import react.dom.*
+import react.RBuilder
+import react.RComponent
+import react.RProps
+import react.RReadableRef
+import react.RState
+import react.ReactElement
+import react.createRef
+import react.dom.InnerHTML
+import react.dom.RDOMBuilder
+import react.dom.a
+import react.dom.div
+import react.dom.i
+import react.dom.img
+import react.dom.input
+import react.dom.p
+import react.dom.textarea
+import react.setState
 import kotlin.collections.set
 
 external interface MapInfoProps : RProps {

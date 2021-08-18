@@ -17,7 +17,13 @@ import react.RProps
 import react.RState
 import react.ReactElement
 import react.createRef
-import react.dom.*
+import react.dom.a
+import react.dom.button
+import react.dom.div
+import react.dom.form
+import react.dom.input
+import react.dom.jsStyle
+import react.dom.p
 import react.setState
 
 external interface ForgotPageState : RState {

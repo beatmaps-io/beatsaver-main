@@ -18,7 +18,16 @@ import react.RComponent
 import react.RProps
 import react.RState
 import react.ReactElement
-import react.dom.*
+import react.dom.a
+import react.dom.i
+import react.dom.img
+import react.dom.jsStyle
+import react.dom.table
+import react.dom.tbody
+import react.dom.td
+import react.dom.th
+import react.dom.thead
+import react.dom.tr
 import react.router.dom.RouteResultHistory
 import react.setState
 import kotlin.math.ceil

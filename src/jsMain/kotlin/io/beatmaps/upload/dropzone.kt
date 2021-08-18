@@ -28,7 +28,13 @@ import org.w3c.dom.events.Event
 import org.w3c.xhr.FormData
 import react.RElementBuilder
 import react.RReadableRef
-import react.dom.*
+import react.dom.attrs
+import react.dom.div
+import react.dom.findDOMNode
+import react.dom.i
+import react.dom.input
+import react.dom.p
+import react.dom.small
 import react.router.dom.RouteResultHistory
 
 fun RElementBuilder<DropzoneProps>.simple(

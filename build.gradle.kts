@@ -1,5 +1,5 @@
-import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 import io.miret.etienne.gradle.sass.CompileSass
+import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 
 plugins {
     kotlin("multiplatform") version "1.5.30-RC"
@@ -120,7 +120,7 @@ kotlin {
                 implementation("net.coobird:thumbnailator:0.4.13")
                 implementation("com.twelvemonkeys.imageio:imageio-jpeg:3.6.1")
                 implementation("org.sejda.imageio:webp-imageio:0.1.6")
-                //implementation("com.googlecode.soundlibs:vorbisspi:1.0.3.3")
+                // implementation("com.googlecode.soundlibs:vorbisspi:1.0.3.3")
                 implementation("com.tagtraum:ffsampledsp-complete:0.9.32")
 
                 implementation("io.beatmaps:BeatMaps-Common:1.0.+")

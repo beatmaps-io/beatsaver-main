@@ -12,7 +12,16 @@ import react.RComponent
 import react.RProps
 import react.RState
 import react.ReactElement
-import react.dom.*
+import react.dom.a
+import react.dom.button
+import react.dom.div
+import react.dom.form
+import react.dom.hr
+import react.dom.i
+import react.dom.input
+import react.dom.jsStyle
+import react.dom.p
+import react.dom.span
 
 @JsExport
 class LoginPage : RComponent<RProps, RState>() {

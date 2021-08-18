@@ -16,7 +16,7 @@ import react.RComponent
 import react.RProps
 import react.RState
 import react.createRef
-import react.dom.*
+import react.dom.div
 import react.ref
 import react.router.dom.RouteResultHistory
 import react.setState

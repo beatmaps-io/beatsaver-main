@@ -17,8 +17,26 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.events.Event
-import react.*
-import react.dom.*
+import react.RBuilder
+import react.RComponent
+import react.RProps
+import react.RReadableRef
+import react.RState
+import react.ReactElement
+import react.createRef
+import react.dom.RDOMBuilder
+import react.dom.button
+import react.dom.div
+import react.dom.form
+import react.dom.h4
+import react.dom.i
+import react.dom.input
+import react.dom.label
+import react.dom.option
+import react.dom.p
+import react.dom.select
+import react.dom.span
+import react.setState
 
 external interface SearchProps : RProps {
     var maxNps: Int

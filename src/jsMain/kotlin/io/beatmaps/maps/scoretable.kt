@@ -19,7 +19,14 @@ import react.RProps
 import react.RState
 import react.ReactElement
 import react.createRef
-import react.dom.*
+import react.dom.a
+import react.dom.div
+import react.dom.img
+import react.dom.table
+import react.dom.tbody
+import react.dom.th
+import react.dom.thead
+import react.dom.tr
 import react.setState
 
 external interface ScoreTableProps : RProps {

@@ -1,7 +1,17 @@
 package io.beatmaps.pages
 
 import io.ktor.html.Template
-import kotlinx.html.*
+import kotlinx.html.BODY
+import kotlinx.html.a
+import kotlinx.html.div
+import kotlinx.html.h1
+import kotlinx.html.h2
+import kotlinx.html.hr
+import kotlinx.html.id
+import kotlinx.html.main
+import kotlinx.html.p
+import kotlinx.html.script
+import kotlinx.html.span
 
 class DMCAPageTemplate : Template<BODY> {
     override fun BODY.apply() {

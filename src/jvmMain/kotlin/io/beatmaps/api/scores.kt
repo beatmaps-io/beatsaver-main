@@ -11,7 +11,10 @@ import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.cookies.AcceptAllCookiesStorage
 import io.ktor.client.features.cookies.HttpCookies
 import io.ktor.client.request.forms.submitForm
-import io.ktor.http.*
+import io.ktor.http.Cookie
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.Url
+import io.ktor.http.parametersOf
 import io.ktor.locations.Location
 import io.ktor.locations.get
 import io.ktor.locations.options

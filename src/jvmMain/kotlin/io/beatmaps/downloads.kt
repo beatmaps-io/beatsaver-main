@@ -6,7 +6,12 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Downloads
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.es
-import kotlinx.coroutines.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -49,9 +54,13 @@ suspend inline fun scheduleRepeating(
     startInterval: Duration = Duration.minutes(5),
     crossinline action: () -> Unit
 ) {
-    delay(startInterval)
-    while (coroutineContext.isActive) {
+    // TODO: Revert changes here when upgrading kotlinx.coroutines
+    val startIntervalMs = startInterval.inWholeMilliseconds
+    val intervalMs = interval.inWholeMilliseconds
+
+    delay(startIntervalMs)
+    while (coroutineContext[Job]?.isActive == true) {
         action()
-        delay(interval)
+        delay(intervalMs)
     }
 }

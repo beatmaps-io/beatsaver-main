@@ -19,7 +19,15 @@ import react.RComponent
 import react.RProps
 import react.RState
 import react.createRef
-import react.dom.*
+import react.dom.a
+import react.dom.b
+import react.dom.br
+import react.dom.div
+import react.dom.h4
+import react.dom.i
+import react.dom.img
+import react.dom.li
+import react.dom.ul
 import react.ref
 import react.router.dom.RouteResultHistory
 import react.setState

@@ -16,7 +16,14 @@ import react.RComponent
 import react.RProps
 import react.RState
 import react.createRef
-import react.dom.*
+import react.dom.button
+import react.dom.div
+import react.dom.fieldset
+import react.dom.h1
+import react.dom.h5
+import react.dom.input
+import react.dom.label
+import react.dom.p
 import react.router.dom.RouteResultHistory
 import react.setState
 

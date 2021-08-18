@@ -18,7 +18,11 @@ import react.RReadableRef
 import react.RState
 import react.ReactElement
 import react.createRef
-import react.dom.*
+import react.dom.button
+import react.dom.div
+import react.dom.td
+import react.dom.textarea
+import react.dom.tr
 import react.key
 import react.setState
 

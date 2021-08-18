@@ -1,9 +1,13 @@
 package io.beatmaps
 
-import io.ktor.application.*
+import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.application.ApplicationCallPipeline
+import io.ktor.application.call
+import io.ktor.application.install
 import io.ktor.metrics.micrometer.MicrometerMetrics
-import io.ktor.response.*
-import io.ktor.util.*
+import io.ktor.response.ApplicationSendPipeline
+import io.ktor.util.AttributeKey
 import io.micrometer.core.instrument.Clock
 import io.micrometer.influx.InfluxConfig
 import io.micrometer.influx.InfluxMeterRegistry

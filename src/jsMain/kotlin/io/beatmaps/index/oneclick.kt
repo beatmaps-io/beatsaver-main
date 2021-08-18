@@ -6,7 +6,8 @@ import react.RProps
 import react.RReadableRef
 import react.RState
 import react.ReactElement
-import react.dom.*
+import react.dom.a
+import react.dom.i
 import kotlin.collections.set
 
 external interface OneClickProps : RProps {

@@ -14,7 +14,8 @@ import react.RProps
 import react.RState
 import react.ReactElement
 import react.createRef
-import react.dom.*
+import react.dom.table
+import react.dom.tbody
 import react.ref
 import react.setState
 

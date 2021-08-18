@@ -10,7 +10,11 @@ import react.RProps
 import react.RReadableRef
 import react.RState
 import react.ReactElement
-import react.dom.*
+import react.dom.div
+import react.dom.img
+import react.dom.jsStyle
+import react.dom.p
+import react.dom.small
 import react.router.dom.routeLink
 import kotlin.math.abs
 import kotlin.math.log10

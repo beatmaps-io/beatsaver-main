@@ -15,7 +15,11 @@ import react.RProps
 import react.RState
 import react.ReactElement
 import react.createRef
-import react.dom.*
+import react.dom.button
+import react.dom.div
+import react.dom.form
+import react.dom.input
+import react.dom.jsStyle
 import react.router.dom.RouteResultHistory
 import react.setState
 

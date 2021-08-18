@@ -26,7 +26,15 @@ import react.RProps
 import react.RState
 import react.ReactElement
 import react.createRef
-import react.dom.*
+import react.dom.button
+import react.dom.div
+import react.dom.form
+import react.dom.h5
+import react.dom.hr
+import react.dom.input
+import react.dom.jsStyle
+import react.dom.label
+import react.dom.small
 import react.setState
 import kotlin.collections.set
 

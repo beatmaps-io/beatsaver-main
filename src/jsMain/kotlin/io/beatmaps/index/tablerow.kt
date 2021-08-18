@@ -15,7 +15,15 @@ import react.RProps
 import react.RReadableRef
 import react.RState
 import react.ReactElement
-import react.dom.*
+import react.dom.RDOMBuilder
+import react.dom.a
+import react.dom.i
+import react.dom.img
+import react.dom.p
+import react.dom.small
+import react.dom.span
+import react.dom.td
+import react.dom.tr
 import react.router.dom.routeLink
 import kotlin.collections.set
 

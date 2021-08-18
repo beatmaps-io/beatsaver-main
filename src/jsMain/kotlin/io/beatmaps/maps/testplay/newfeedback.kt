@@ -14,7 +14,11 @@ import react.RReadableRef
 import react.RState
 import react.ReactElement
 import react.createRef
-import react.dom.*
+import react.dom.article
+import react.dom.button
+import react.dom.div
+import react.dom.i
+import react.dom.textarea
 import react.setState
 
 external interface NewFeedbackProps : RProps {

@@ -14,7 +14,13 @@ import react.RProps
 import react.RState
 import react.ReactElement
 import react.createRef
-import react.dom.*
+import react.dom.article
+import react.dom.button
+import react.dom.div
+import react.dom.h3
+import react.dom.i
+import react.dom.small
+import react.dom.textarea
 import react.setState
 
 external interface FeedbackProps : RProps {

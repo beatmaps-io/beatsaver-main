@@ -16,7 +16,12 @@ import react.RReadableRef
 import react.RState
 import react.ReactElement
 import react.createRef
-import react.dom.*
+import react.dom.article
+import react.dom.br
+import react.dom.div
+import react.dom.i
+import react.dom.small
+import react.dom.strong
 import react.router.dom.RouteResultHistory
 import react.setState
 
