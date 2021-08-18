@@ -56,16 +56,24 @@ fun Route.searchRoute() {
         call.response.header("Access-Control-Allow-Origin", "*")
 
         val searchIndex = PgConcat(" ", Beatmap.name, Beatmap.description)
+        val query = it.q?.replace("%", "\\%")
 
-        val similarRank = CustomFunction<String>("substring_similarity", searchIndex.columnType, stringLiteral(it.q ?: ""), searchIndex)
-        val sortByRank = !it.q.isNullOrBlank() && it.sortOrder == SearchOrder.Relevance
+        val similarRank = CustomFunction<String>("substring_similarity", searchIndex.columnType, stringLiteral(query ?: ""), searchIndex)
+        val actualSortOrder = when {
+            query != null && query.length > 3 && it.sortOrder == SearchOrder.Relevance ->
+                SearchOrder.Relevance
+            it.sortOrder == SearchOrder.Rating ->
+                SearchOrder.Rating
+            else ->
+                SearchOrder.Latest
+        }
 
         newSuspendedTransaction {
-            if (it.q != null && it.q.startsWith("key:")) {
+            if (query != null && query.startsWith("key:")) {
                 Beatmap
                     .slice(Beatmap.id)
                     .select {
-                        Beatmap.id eq it.q.substring(4).toInt(16) and (Beatmap.deletedAt.isNull())
+                        Beatmap.id eq query.substring(4).toInt(16) and (Beatmap.deletedAt.isNull())
                     }
                     .limit(1).firstOrNull()?.let { r ->
                         call.respond(SearchResponse(redirect = toHexString(r[Beatmap.id].value)))
@@ -73,9 +81,9 @@ fun Route.searchRoute() {
                     }
             }
 
-            val user = if (!it.q.isNullOrBlank() && !it.q.contains('\\')) {
+            val user = if (!query.isNullOrBlank() && !query.contains('\\')) {
                 val userQuery = User.select {
-                    User.uniqueName ilike (it.q) and User.active
+                    (User.uniqueName ilike query) and User.active
                 }.orderBy(Expression.build { User.discordId.isNull() }).limit(1).toList()
 
                 userQuery.firstOrNull()?.let { u -> UserDetail.from(u) }
@@ -85,7 +93,7 @@ fun Route.searchRoute() {
                 .joinVersions(true)
                 .joinUploader()
                 .joinCurator()
-                .slice((if (sortByRank) listOf(similarRank) else listOf()) + Beatmap.columns + Versions.columns + Difficulty.columns + User.columns)
+                .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(similarRank) else listOf()) + Beatmap.columns + Versions.columns + Difficulty.columns + User.columns)
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
@@ -93,7 +101,13 @@ fun Route.searchRoute() {
                             .slice(Beatmap.id)
                             .select {
                                 Beatmap.deletedAt.isNull().let { q ->
-                                    if (it.q.isNullOrBlank()) q else q.and(PgConcat(" ", Beatmap.name, Beatmap.description) similar it.q)
+                                    if (query.isNullOrBlank()) {
+                                        q
+                                    } else if (query.length > 3) {
+                                        q.and(searchIndex similar query)
+                                    } else {
+                                        q.and(searchIndex ilike "%${query}%")
+                                    }
                                 }.let { q ->
                                     // Doesn't quite make sense but we want to exclude beat sage by default
                                     when (it.automapper) {
@@ -119,16 +133,19 @@ fun Route.searchRoute() {
                                 .notNull(it.me) { o -> Beatmap.me eq o }
                                 .notNull(it.cinema) { o -> Beatmap.cinema eq o }
                             }
-                            .orderBy(if (sortByRank) similarRank else if (it.sortOrder == SearchOrder.Rating) Beatmap.score else Beatmap.uploaded, SortOrder.DESC)
+                            .orderBy(
+                                when (actualSortOrder) {
+                                    SearchOrder.Relevance -> similarRank
+                                    SearchOrder.Rating -> Beatmap.score
+                                    SearchOrder.Latest -> Beatmap.uploaded
+                                }, SortOrder.DESC)
                             .limit(it.page)
                     )
                 }.let { q ->
-                    if (sortByRank) {
-                        q.orderBy(similarRank, SortOrder.DESC)
-                    } else if (it.sortOrder == SearchOrder.Rating) {
-                        q.orderBy(Beatmap.score, SortOrder.DESC)
-                    } else {
-                        q
+                    when (actualSortOrder) {
+                        SearchOrder.Relevance -> q.orderBy(similarRank, SortOrder.DESC)
+                        SearchOrder.Rating -> q.orderBy(Beatmap.score, SortOrder.DESC)
+                        SearchOrder.Latest -> q
                     }
                 }
                 .orderBy(Beatmap.uploaded, SortOrder.DESC)

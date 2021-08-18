@@ -1,6 +1,5 @@
 package io.beatmaps
 
-import com.toxicbakery.bcrypt.Bcrypt
 import de.nielsfalk.ktor.swagger.SwaggerSupport
 import de.nielsfalk.ktor.swagger.version.shared.Contact
 import de.nielsfalk.ktor.swagger.version.shared.Information
@@ -29,7 +28,6 @@ import io.beatmaps.login.installDiscordOauth
 import io.beatmaps.login.installSessions
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
-import io.beatmaps.websockets.mapsWebsocket
 import io.beatmaps.websockets.websockets
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
