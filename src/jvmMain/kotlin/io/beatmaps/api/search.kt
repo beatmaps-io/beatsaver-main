@@ -10,6 +10,7 @@ import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.ilike
 import io.beatmaps.common.db.similar
+import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
@@ -74,12 +75,12 @@ fun Route.searchRoute() {
     get<SearchApi.Text>("Search for maps".responds(ok<SearchResponse>())) {
         call.response.header("Access-Control-Allow-Origin", "*")
 
-        val searchIndex = PgConcat(" ", Beatmap.name, Beatmap.description)
-        val query = it.q?.replace("%", "\\%")
+        val searchIndex = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
+        val originalQuery = it.q?.replace("%", "\\%")
 
-        val similarRank = CustomFunction<String>("substring_similarity", searchIndex.columnType, stringLiteral(query ?: ""), searchIndex)
+        val similarRank = CustomFunction<String>("substring_similarity", searchIndex.columnType, stringLiteral(originalQuery ?: ""), searchIndex)
         val actualSortOrder = when {
-            query != null && query.length > 3 && it.sortOrder == SearchOrder.Relevance ->
+            originalQuery != null && originalQuery.length > 3 && it.sortOrder == SearchOrder.Relevance ->
                 SearchOrder.Relevance
             it.sortOrder == SearchOrder.Rating ->
                 SearchOrder.Rating
@@ -88,11 +89,11 @@ fun Route.searchRoute() {
         }
 
         newSuspendedTransaction {
-            if (query != null && query.startsWith("key:")) {
+            if (originalQuery != null && originalQuery.startsWith("key:")) {
                 Beatmap
                     .slice(Beatmap.id)
                     .select {
-                        Beatmap.id eq query.substring(4).toInt(16) and (Beatmap.deletedAt.isNull())
+                        Beatmap.id eq originalQuery.substring(4).toInt(16) and (Beatmap.deletedAt.isNull())
                     }
                     .limit(1).firstOrNull()?.let { r ->
                         call.respond(SearchResponse(redirect = toHexString(r[Beatmap.id].value)))
@@ -100,7 +101,19 @@ fun Route.searchRoute() {
                     }
             }
 
-            val user = if (!query.isNullOrBlank() && !query.contains('\\')) {
+            val (mappers, nonmappers) = (originalQuery ?: "").split(' ').partition { s -> s.startsWith("mapper:") }
+            val userSubQuery = if (mappers.isNotEmpty()) {
+                User
+                    .slice(User.id)
+                    .select {
+                        User.uniqueName inList mappers.map { m -> m.substring(7) }
+                    }
+            } else {
+                null
+            }
+            val query = nonmappers.joinToString(" ")
+
+            val user = if (query.isNotBlank() && !query.contains('\\')) {
                 val userQuery = User.select {
                     (User.uniqueName ilike query) and User.active
                 }.orderBy(Expression.build { User.discordId.isNull() }).limit(1).toList()
@@ -121,7 +134,7 @@ fun Route.searchRoute() {
                             .select {
                                 Beatmap.deletedAt.isNull()
                                     .let { q ->
-                                        if (query.isNullOrBlank()) {
+                                        if (query.isBlank()) {
                                             q
                                         } else if (query.length > 3) {
                                             q.and(searchIndex similar query)
@@ -137,6 +150,7 @@ fun Route.searchRoute() {
                                             null -> q.and(Beatmap.automapper eq false)
                                         }
                                     }
+                                    .notNull(userSubQuery) { o -> Beatmap.uploader inSubQuery o }
                                     .notNull(it.chroma) { o -> Beatmap.chroma eq o }
                                     .notNull(it.noodle) { o -> Beatmap.noodle eq o }
                                     .notNull(it.ranked) { o -> Beatmap.ranked eq o }
