@@ -106,10 +106,13 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                                 val data = FormData()
                                 data.asDynamic().append("file", file)
 
-                                Axios.post<dynamic>("/avatar", data, UploadRequestConfig { progress ->
-                                    val v = ((progress.loaded * 100f) / progress.total).toInt()
-                                    progressBarInnerRef.current?.style?.width = "$v%"
-                                }).then { r ->
+                                Axios.post<dynamic>(
+                                    "/avatar", data,
+                                    UploadRequestConfig { progress ->
+                                        val v = ((progress.loaded * 100f) / progress.total).toInt()
+                                        progressBarInnerRef.current?.style?.width = "$v%"
+                                    }
+                                ).then { r ->
                                     if (r.status == 200) {
                                         window.location.reload()
                                     } else {

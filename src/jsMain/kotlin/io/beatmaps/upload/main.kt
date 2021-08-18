@@ -71,7 +71,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                 attrs.htmlFor = "name"
                                 +"Title"
                             }
-                            input(InputType.text, classes ="form-control") {
+                            input(InputType.text, classes = "form-control") {
                                 attrs.id = "name"
                                 attrs.disabled = state.loading
                                 ref = titleRef
@@ -83,7 +83,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                 attrs.htmlFor = "description"
                                 +"Description"
                             }
-                            textarea("10", classes ="form-control") {
+                            textarea("10", classes = "form-control") {
                                 attrs.id = "description"
                                 attrs.disabled = state.loading
                                 ref = descrRef
@@ -125,8 +125,10 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
 
                         if (state.beatsage != null) {
                             Dropzone.default {
-                                simple(props.history, state.loading, state.errors.isNotEmpty(), progressBarInnerRef,
-                                    "Drag and drop some files here, or click to select files", captchaRef, {
+                                simple(
+                                    props.history, state.loading, state.errors.isNotEmpty(), progressBarInnerRef,
+                                    "Drag and drop some files here, or click to select files", captchaRef,
+                                    {
                                         setState {
                                             loading = true
                                         }
@@ -137,12 +139,14 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                         it.append("title", titleInput?.value ?: "")
                                         it.append("description", descrInput?.value ?: "")
                                         it.append("beatsage", if (beatsageInput?.checked == true) "true" else "")
-                                    }, {
+                                    },
+                                    {
                                         setState {
                                             errors = it
                                             loading = false
                                         }
-                                    })
+                                    }
+                                )
                             }
                         }
 

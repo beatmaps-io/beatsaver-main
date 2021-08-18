@@ -1,20 +1,17 @@
 package io.beatmaps.maps
 
 import Axios
-import AxiosRequestConfig
 import CancelToken
 import CancelTokenSource
 import generateConfig
-import io.beatmaps.common.Config
 import io.beatmaps.api.LeaderboardData
 import io.beatmaps.api.LeaderboardScore
 import io.beatmaps.api.MapDifficulty
+import io.beatmaps.common.Config
 import kotlinx.browser.window
 import kotlinx.html.TBODY
 import kotlinx.html.ThScope
 import kotlinx.html.js.onScrollFunction
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import org.w3c.dom.events.Event
 import react.RBuilder
 import react.RComponent
@@ -61,7 +58,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
         setState {
             maxScore = maxScore(props.selected?.notes ?: 0)
         }
-        window.addEventListener ("scroll", ::handleScroll)
+        window.addEventListener("scroll", ::handleScroll)
 
         loadNextPage()
     }
@@ -117,9 +114,9 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
 
     private fun maxScore(n: Int, maxScorePerBlock: Int = 115) =
         (if (n > 13) maxScorePerBlock * 8 * (n - 13) else 0) +
-                (if (n >= 7) maxScorePerBlock * 4 * (n.coerceAtMost(13) - 5) else 0) +
-                (if (n >= 3) maxScorePerBlock * 2 * (n.coerceAtMost(5) - 1) else 0) +
-                n.coerceAtMost(1) * maxScorePerBlock
+            (if (n >= 7) maxScorePerBlock * 4 * (n.coerceAtMost(13) - 5) else 0) +
+            (if (n >= 3) maxScorePerBlock * 2 * (n.coerceAtMost(5) - 1) else 0) +
+            n.coerceAtMost(1) * maxScorePerBlock
 
     override fun RBuilder.render() {
         div("scores col-lg-8") {
@@ -143,7 +140,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
                 }
                 tbody {
                     ref = myRef
-                    attrs .onScrollFunction = ::handleScroll
+                    attrs.onScrollFunction = ::handleScroll
                     state.scores.forEachIndexed { idx, it ->
                         score {
                             key = idx.toString()

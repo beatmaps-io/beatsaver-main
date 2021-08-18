@@ -125,7 +125,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
 
     private fun RDOMBuilder<*>.mapItem(icon: String, info: String, value: String) =
         span {
-            img(info, "/static/icons/${icon}.png", classes = "mode") {
+            img(info, "/static/icons/$icon.png", classes = "mode") {
                 attrs.title = info
                 attrs.width = "16"
                 attrs.height = "16"

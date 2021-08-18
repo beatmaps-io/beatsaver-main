@@ -24,7 +24,7 @@ const val previewBaseUrl = "https://skystudioapps.com/bs-viewer/"
 
 data class ModalState(var modal: ModalData? = null) : RState
 data class ModalData(val titleText: String, val bodyText: String = "", val buttons: List<ModalButton>, val large: Boolean = false, val bodyCallback: (RDOMBuilder<DIV>.() -> Unit)? = null)
-data class ModalButton(val text: String, val color: String = "secondary",  val callback: () -> Unit = {})
+data class ModalButton(val text: String, val color: String = "secondary", val callback: () -> Unit = {})
 
 @JsExport
 class ModalComponent : RComponent<RProps, ModalState>() {
@@ -37,7 +37,7 @@ class ModalComponent : RComponent<RProps, ModalState>() {
             modal = null
         }
 
-        iframe.current?.src = "$previewBaseUrl?noProxy=true&url=${Config.cdnbase}/${hash}.zip"
+        iframe.current?.src = "$previewBaseUrl?noProxy=true&url=${Config.cdnbase}/$hash.zip"
         show()
     }
 
@@ -53,10 +53,13 @@ class ModalComponent : RComponent<RProps, ModalState>() {
             backdrop.current?.let { bd ->
                 bd.hidden = false
                 md.hidden = false
-                window.setTimeout({
-                    bd.addClass("show")
-                    md.addClass("show")
-                }, 10)
+                window.setTimeout(
+                    {
+                        bd.addClass("show")
+                        md.addClass("show")
+                    },
+                    10
+                )
             }
         }
     }
@@ -67,10 +70,13 @@ class ModalComponent : RComponent<RProps, ModalState>() {
             backdrop.current?.let { bd ->
                 md.removeClass("show")
                 bd.removeClass("show")
-                window.setTimeout({
-                    md.hidden = true
-                    bd.hidden = true
-                }, 200)
+                window.setTimeout(
+                    {
+                        md.hidden = true
+                        bd.hidden = true
+                    },
+                    200
+                )
             }
         }
     }

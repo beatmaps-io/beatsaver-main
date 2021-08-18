@@ -4,7 +4,7 @@ import react.RClass
 import react.RProps
 import kotlin.js.Promise
 
-external interface IGoogleReCaptchaProps: RProps {
+external interface IGoogleReCaptchaProps : RProps {
     var sitekey: String
     var onChange: (Any) -> Unit
     var theme: String?

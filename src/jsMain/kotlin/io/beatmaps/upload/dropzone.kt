@@ -31,18 +31,30 @@ import react.RReadableRef
 import react.dom.*
 import react.router.dom.RouteResultHistory
 
-fun RElementBuilder<DropzoneProps>.simple(history: RouteResultHistory, loading: Boolean, errors: Boolean, progressBarInnerRef: RReadableRef<HTMLElement>, dropText: String,
-                                          captchaRef: RReadableRef<ReCAPTCHA>, block: (FormData) -> Unit, errorsBlock: (List<String>) -> Unit, successBlock: ((AxiosResponse<dynamic>) -> Unit)? = null) {
+fun RElementBuilder<DropzoneProps>.simple(
+    history: RouteResultHistory,
+    loading: Boolean,
+    errors: Boolean,
+    progressBarInnerRef: RReadableRef<HTMLElement>,
+    dropText: String,
+    captchaRef: RReadableRef<ReCAPTCHA>,
+    block: (FormData) -> Unit,
+    errorsBlock: (List<String>) -> Unit,
+    successBlock: ((AxiosResponse<dynamic>) -> Unit)? = null
+) {
     attrs.onDrop = { file ->
         captchaRef.current?.executeAsync()?.then {
             val data = FormData().also(block)
             data.asDynamic().append("file", file[0]) // Kotlin doesn't have an equivalent method to this js
             data.append("recaptcha", it)
 
-            Axios.post<dynamic>("/upload", data, UploadRequestConfig { progress ->
-                val v = ((progress.loaded * 100f) / progress.total).toInt()
-                progressBarInnerRef.current?.style?.width = "$v%"
-            }).then { r ->
+            Axios.post<dynamic>(
+                "/upload", data,
+                UploadRequestConfig { progress ->
+                    val v = ((progress.loaded * 100f) / progress.total).toInt()
+                    progressBarInnerRef.current?.style?.width = "$v%"
+                }
+            ).then { r ->
                 if (r.status == 200) {
                     if (successBlock != null) {
                         successBlock(r)

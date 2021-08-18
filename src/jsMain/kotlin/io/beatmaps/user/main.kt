@@ -88,9 +88,9 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         modal {
             ref = modalRef
         }
-        div ("row") {
-            div ("col-md-4 mb-3") {
-                div ("card") {
+        div("row") {
+            div("col-md-4 mb-3") {
+                div("card") {
                     div("card-body") {
                         div("d-flex flex-column align-items-center text-center") {
                             img("Profile Image", state.userDetail?.avatar, classes = "rounded-circle") {
@@ -109,8 +109,8 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                     }
                 }
             }
-            div ("col-md-8 mb-3") {
-                div ("card user-badges") {
+            div("col-md-8 mb-3") {
+                div("card user-badges") {
                     div("card-body") {
                         state.userDetail?.stats?.let {
                             a("${Config.apibase}/users/id/${state.userDetail?.id ?: 0}/playlist", "_blank", "btn btn-secondary") {
@@ -120,7 +120,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                             }
 
                             +"Maps: ${it.totalMaps}, Upvotes: ${it.totalUpvotes}, Downvotes: ${it.totalDownvotes}"
-                            br {  }
+                            br { }
                             +"Average BPM: ${it.avgBpm}, Average Score: ${it.avgScore}%, "
                             +"Average Duration: ${it.avgDuration.formatTime()}"
                             it.diffStats?.let { ds ->

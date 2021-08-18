@@ -20,14 +20,21 @@ import org.w3c.dom.events.Event
 import react.*
 import react.dom.*
 
-external interface SearchProps: RProps {
+external interface SearchProps : RProps {
     var maxNps: Int
     var updateSearchParams: (SearchParams) -> Unit
 }
 
-data class SearchState(var minNps: Float = 0f, var maxNps: Float = 16f, val filterMap: MutableMap<FilterInfo, Boolean> = mutableMapOf(),
-                       var order: SearchOrder = SearchOrder.Relevance, var focusedInput: String? = null, var startDate: Moment? = null,
-                       var endDate: Moment? = null, var filtersOpen: Boolean = false) : RState
+data class SearchState(
+    var minNps: Float = 0f,
+    var maxNps: Float = 16f,
+    val filterMap: MutableMap<FilterInfo, Boolean> = mutableMapOf(),
+    var order: SearchOrder = SearchOrder.Relevance,
+    var focusedInput: String? = null,
+    var startDate: Moment? = null,
+    var endDate: Moment? = null,
+    var filtersOpen: Boolean = false
+) : RState
 data class PresetDateRange(val startDate: Moment?, val endDate: Moment?)
 
 val presets = mapOf(

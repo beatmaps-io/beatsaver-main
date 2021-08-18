@@ -1,4 +1,5 @@
 package io.beatmaps
+
 import io.beatmaps.index.HomePage
 import io.beatmaps.index.HomePageProps
 import io.beatmaps.maps.MapPage
@@ -18,6 +19,7 @@ import io.beatmaps.user.pickUsernamePage
 import io.beatmaps.user.resetPage
 import io.beatmaps.user.signupPage
 import io.beatmaps.user.userList
+import kotlinext.js.require
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLAnchorElement
@@ -30,7 +32,6 @@ import react.router.dom.RouteResultHistory
 import react.router.dom.browserRouter
 import react.router.dom.route
 import react.router.dom.switch
-import kotlinext.js.require
 
 fun setPageTitle(page: String) {
     document.title = "BeatSaver - $page"
@@ -93,7 +94,7 @@ class App : RComponent<RProps, RState>() {
                 }
                 route<RProps>("/upload", exact = true) {
                     initWithHistory(it.history)
-                    child (UploadPage::class) {
+                    child(UploadPage::class) {
                         attrs.history = it.history
                     }
                 }
@@ -106,15 +107,11 @@ class App : RComponent<RProps, RState>() {
                 }
                 route<RProps>("/test", exact = true) {
                     initWithHistory(it.history)
-                    recentTestplays {
-
-                    }
+                    recentTestplays { }
                 }
                 route<RProps>("/alerts", exact = true) {
                     initWithHistory(it.history)
-                    child(AlertsPage::class) {
-
-                    }
+                    child(AlertsPage::class) { }
                 }
                 route<RProps>("/beatsaver", exact = true) {
                     initWithHistory(it.history)
@@ -134,21 +131,15 @@ class App : RComponent<RProps, RState>() {
                 }
                 route<RProps>("/login", exact = true) {
                     initWithHistory(it.history)
-                    loginPage {
-
-                    }
+                    loginPage { }
                 }
                 route<RProps>("/register", exact = true) {
                     initWithHistory(it.history)
-                    signupPage {
-
-                    }
+                    signupPage { }
                 }
                 route<RProps>("/forgot", exact = true) {
                     initWithHistory(it.history)
-                    forgotPage {
-
-                    }
+                    forgotPage { }
                 }
                 route<ResetPageProps>("/reset/:jwt", exact = true) {
                     initWithHistory(it.history)
@@ -165,9 +156,7 @@ class App : RComponent<RProps, RState>() {
                 }
                 route<RProps>("*") {
                     initWithHistory(it.history)
-                    child(NotFound::class) {
-
-                    }
+                    child(NotFound::class) { }
                 }
             }
         }

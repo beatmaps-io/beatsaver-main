@@ -100,7 +100,7 @@ class Feedback : RComponent<FeedbackProps, FeedbackState>() {
             }
             div("card-body") {
                 if (state.editing) {
-                    textarea("10", classes ="form-control") {
+                    textarea("10", classes = "form-control") {
                         ref = textareaRef
                         attrs.disabled = state.loading
                         +state.text

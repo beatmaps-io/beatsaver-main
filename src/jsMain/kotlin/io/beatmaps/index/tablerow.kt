@@ -49,7 +49,7 @@ fun RDOMBuilder<*>.diffIcons(diffs: List<MapDifficulty>?) {
 }
 
 fun setClipboard(str: String) {
-    val tempElement = document.createElement("span");
+    val tempElement = document.createElement("span")
     tempElement.textContent = str
     document.body?.appendChild(tempElement)
     val selection = window.asDynamic().getSelection()

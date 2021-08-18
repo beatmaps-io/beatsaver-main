@@ -29,8 +29,21 @@ external interface BeatmapTableProps : RProps {
     var history: RouteResultHistory
 }
 
-data class SearchParams(val search: String, val automapper: Boolean?, val minNps: Float?, val maxNps: Float?, val chroma: Boolean?, val sortOrder: SearchOrder,
-                        val from: String?, val to: String?, val noodle: Boolean?, val ranked: Boolean?, val fullSpread: Boolean?, val me: Boolean?, val cinema: Boolean?)
+data class SearchParams(
+    val search: String,
+    val automapper: Boolean?,
+    val minNps: Float?,
+    val maxNps: Float?,
+    val chroma: Boolean?,
+    val sortOrder: SearchOrder,
+    val from: String?,
+    val to: String?,
+    val noodle: Boolean?,
+    val ranked: Boolean?,
+    val fullSpread: Boolean?,
+    val me: Boolean?,
+    val cinema: Boolean?
+)
 
 external interface BeatmapTableState : RState {
     var page: Int
@@ -77,24 +90,25 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         }
     }
 
-    private fun getUrl() = if (props.wip) {
+    private fun getUrl() =
+        if (props.wip) {
             "/api/maps/wip/${state.page}"
         } else if (props.user != null) {
             "${Config.apibase}/maps/uploader/${props.user}/${state.page}"
         } else {
             "${Config.apibase}/search/text/${state.page}?sortOrder=${props.search.sortOrder}" +
-                    (if (props.search.automapper != null) "&automapper=${props.search.automapper}" else "") +
-                    (if (props.search.chroma != null) "&chroma=${props.search.chroma}" else "") +
-                    (if (props.search.noodle != null) "&noodle=${props.search.noodle}" else "") +
-                    (if (props.search.me != null) "&me=${props.search.me}" else "") +
-                    (if (props.search.cinema != null) "&cinema=${props.search.cinema}" else "") +
-                    (if (props.search.ranked != null) "&ranked=${props.search.ranked}" else "") +
-                    (if (props.search.fullSpread != null) "&fullSpread=${props.search.fullSpread}" else "") +
-                    (if (props.search.search.isNotBlank()) "&q=${encodeURIComponent(props.search.search)}" else "") +
-                    (if (props.search.maxNps != null) "&maxNps=${props.search.maxNps}" else "") +
-                    (if (props.search.minNps != null) "&minNps=${props.search.minNps}" else "") +
-                    (if (props.search.from != null) "&from=${props.search.from}" else "") +
-                    (if (props.search.to != null) "&to=${props.search.to}" else "")
+                (if (props.search.automapper != null) "&automapper=${props.search.automapper}" else "") +
+                (if (props.search.chroma != null) "&chroma=${props.search.chroma}" else "") +
+                (if (props.search.noodle != null) "&noodle=${props.search.noodle}" else "") +
+                (if (props.search.me != null) "&me=${props.search.me}" else "") +
+                (if (props.search.cinema != null) "&cinema=${props.search.cinema}" else "") +
+                (if (props.search.ranked != null) "&ranked=${props.search.ranked}" else "") +
+                (if (props.search.fullSpread != null) "&fullSpread=${props.search.fullSpread}" else "") +
+                (if (props.search.search.isNotBlank()) "&q=${encodeURIComponent(props.search.search)}" else "") +
+                (if (props.search.maxNps != null) "&maxNps=${props.search.maxNps}" else "") +
+                (if (props.search.minNps != null) "&minNps=${props.search.minNps}" else "") +
+                (if (props.search.from != null) "&from=${props.search.from}" else "") +
+                (if (props.search.to != null) "&to=${props.search.to}" else "")
         }
 
     private fun loadNextPage() {

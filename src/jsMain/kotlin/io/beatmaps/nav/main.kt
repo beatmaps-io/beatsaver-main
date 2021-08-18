@@ -28,22 +28,28 @@ fun manageNav() {
         // Set old height -> change classes -> set new height -> change classes
 
         navMenu.style.height = "${oldHeight}px"
-        window.setTimeout({
-            navMenu.addClass("collapsing")
-            navMenu.removeClass("collapse", "show")
+        window.setTimeout(
+            {
+                navMenu.addClass("collapsing")
+                navMenu.removeClass("collapse", "show")
 
-            val newHeight = if (expanding) navMenu.scrollHeight else 0
-            navMenu.style.height = "${newHeight}px"
+                val newHeight = if (expanding) navMenu.scrollHeight else 0
+                navMenu.style.height = "${newHeight}px"
 
-            window.setTimeout({
-                navMenu.addClass("collapse")
-                navMenu.removeClass("collapsing")
-                navMenu.style.height = ""
-                if (expanding) {
-                    navMenu.addClass("show")
-                }
-            }, 500)
-        }, 1)
+                window.setTimeout(
+                    {
+                        navMenu.addClass("collapse")
+                        navMenu.removeClass("collapsing")
+                        navMenu.style.height = ""
+                        if (expanding) {
+                            navMenu.addClass("show")
+                        }
+                    },
+                    500
+                )
+            },
+            1
+        )
 
         true
     }
@@ -83,5 +89,4 @@ fun manageNav() {
             }
         }
     }
-
 }

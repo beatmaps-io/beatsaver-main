@@ -3,7 +3,7 @@ package external
 import react.RClass
 import react.RProps
 
-external interface ReactSliderProps: RProps {
+external interface ReactSliderProps : RProps {
     var min: Int
     var max: Int
     var step: Int

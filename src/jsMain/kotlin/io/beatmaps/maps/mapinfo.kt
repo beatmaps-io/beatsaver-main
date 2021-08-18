@@ -134,9 +134,12 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                     setState {
                                         editing = !state.editing
                                     }
-                                    window.setTimeout({
-                                        inputRef.current?.value = props.mapInfo.name
-                                    }, 1)
+                                    window.setTimeout(
+                                        {
+                                            inputRef.current?.value = props.mapInfo.name
+                                        },
+                                        1
+                                    )
                                 }
                                 i("fas fa-pen text-warning") { }
                             }
@@ -157,21 +160,23 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                 attrs.attributes["aria-label"] = "Delete"
                                 attrs.onClickFunction = {
                                     it.preventDefault()
-                                    props.modal.current?.showDialog(ModalData(
-                                        "Delete map",
-                                        bodyCallback = {
-                                            p {
-                                                +"Delete completely so that no more versions can be added or just unpublish the current version?"
-                                            }
-                                            p {
-                                                +"Reason for action:"
-                                            }
-                                            textarea(classes = "form-control") {
-                                                ref = reasonRef
-                                            }
-                                        },
-                                        buttons = listOf(ModalButton("DELETE", "danger", ::delete), ModalButton("Unpublish", "primary", ::recall), ModalButton("Cancel"))
-                                    ))
+                                    props.modal.current?.showDialog(
+                                        ModalData(
+                                            "Delete map",
+                                            bodyCallback = {
+                                                p {
+                                                    +"Delete completely so that no more versions can be added or just unpublish the current version?"
+                                                }
+                                                p {
+                                                    +"Reason for action:"
+                                                }
+                                                textarea(classes = "form-control") {
+                                                    ref = reasonRef
+                                                }
+                                            },
+                                            buttons = listOf(ModalButton("DELETE", "danger", ::delete), ModalButton("Unpublish", "primary", ::recall), ModalButton("Cancel"))
+                                        )
+                                    )
                                 }
                                 i("fas fa-trash text-danger") { }
                             }
@@ -280,7 +285,7 @@ fun RBuilder.mapInfo(handler: MapInfoProps.() -> Unit): ReactElement {
 // Kotlin IR be adding underscores everywhere
 class DangerousHtml(override var __html: String) : InnerHTML
 
-fun <T: Tag> RDOMBuilder<T>.textToContent(text: String) {
+fun <T : Tag> RDOMBuilder<T>.textToContent(text: String) {
     domProps.dangerouslySetInnerHTML = DangerousHtml(
         text
             .replace(Regex("<[^>]+>"), "")

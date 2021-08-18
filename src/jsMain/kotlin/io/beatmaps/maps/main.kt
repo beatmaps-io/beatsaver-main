@@ -1,8 +1,8 @@
 package io.beatmaps.maps
 
-import io.beatmaps.common.Config
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
+import io.beatmaps.common.Config
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
 import io.beatmaps.maps.testplay.testplay

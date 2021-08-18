@@ -61,7 +61,7 @@ class UserList : RComponent<UserListProps, UserListState>() {
         setState {
             visItem = (hashPos ?: 1) - 1
             visPage = visItem / usersPerPage
-            visablePages = visPage.rangeTo(visPage+totalVisiblePages)
+            visablePages = visPage.rangeTo(visPage + totalVisiblePages)
             scroll = hashPos != null
 
             if (pages.containsKey(visPage)) {
@@ -125,9 +125,9 @@ class UserList : RComponent<UserListProps, UserListState>() {
             setState {
                 visItem = item
                 visPage = item / usersPerPage
-                visablePages = visPage.rangeTo(visPage+totalVisiblePages)
+                visablePages = visPage.rangeTo(visPage + totalVisiblePages)
             }
-            props.history.replace("/mappers#${item+1}")
+            props.history.replace("/mappers#${item + 1}")
         }
 
         loadNextPage()
@@ -159,7 +159,7 @@ class UserList : RComponent<UserListProps, UserListState>() {
             tbody {
                 for (pIdx in 0..lastPage()) {
                     state.pages[pIdx]?.let {
-                        it.forEachIndexed userLoop@ { uIdx, u ->
+                        it.forEachIndexed userLoop@{ uIdx, u ->
                             val idx = (pIdx * 20) + uIdx
 
                             if (u.stats == null) return@userLoop

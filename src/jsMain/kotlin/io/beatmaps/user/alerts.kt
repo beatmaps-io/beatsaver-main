@@ -7,7 +7,6 @@ import io.beatmaps.api.Alert
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.setPageTitle
-import kotlinx.html.style
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -17,11 +16,8 @@ import react.dom.br
 import react.dom.div
 import react.dom.h1
 import react.dom.i
-import react.dom.li
-import react.dom.main
 import react.dom.p
 import react.dom.small
-import react.dom.span
 import react.dom.table
 import react.dom.tbody
 import react.dom.td

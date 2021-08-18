@@ -4,8 +4,8 @@ import org.w3c.files.File
 import react.RClass
 import react.RProps
 
-external interface DropzoneProps: RProps {
-    var onDrop : (Array<File>) -> Unit
+external interface DropzoneProps : RProps {
+    var onDrop: (Array<File>) -> Unit
     var multiple: Boolean
 }
 

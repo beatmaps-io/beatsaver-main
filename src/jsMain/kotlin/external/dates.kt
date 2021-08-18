@@ -5,7 +5,7 @@ import react.RContext
 import react.RProps
 import react.ReactElement
 
-external interface DateRangePickerProps: RProps {
+external interface DateRangePickerProps : RProps {
     var startDate: Moment?
     var startDateId: String
     var endDate: Moment?

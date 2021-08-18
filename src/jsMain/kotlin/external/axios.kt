@@ -128,7 +128,6 @@ external interface AxiosStatic : AxiosInstance {
 
 @JsModule("axios")
 @JsNonModule
-//@JsName("default")
 external val Axios: AxiosStatic = definedExternally
 
 inline fun <reified T, reified U> generateConfig(ct: CancelToken? = null) = object : AxiosRequestConfig {

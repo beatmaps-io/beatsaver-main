@@ -3,8 +3,8 @@ package io.beatmaps.maps.testplay
 import external.Dropzone
 import external.ReCAPTCHA
 import external.TimeAgo
-import io.beatmaps.common.api.EMapState
 import io.beatmaps.api.MapDetail
+import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.upload.simple
 import kotlinx.datetime.Instant
@@ -52,19 +52,18 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
     }
 
     override fun RBuilder.render() {
-        val versionTimes = props.mapInfo.versions.map { it.hash to it.createdAt }.toMap()
+        val versionTimes = props.mapInfo.versions.associate { it.hash to it.createdAt }
         val events = props.mapInfo.versions.flatMap { v ->
-            (v.testplays?.let {
+            v.testplays?.let {
                 it.flatMap { t ->
                     listOf(
                         Event(EventType.Play, null, t.user.name, " played the map", t.createdAt, v.hash),
                         t.feedbackAt?.let { at -> Event(EventType.Feedback, null, t.user.name, t.feedback ?: "", at, v.hash, t.user.id) }
                     )
                 }
-            } ?: listOf()) + listOf(
+            }.let { it ?: listOf() } + listOf(
                 Event(EventType.Version, v.state, "New version uploaded", v.feedback ?: "", v.createdAt, v.hash)
             )
-            //.sortedWith(compareBy<MapDifficulty> { d -> d.characteristic }.thenByDescending { d -> d.difficulty })?.first()
         }.filterNotNull().sortedWith(compareByDescending<Event> { versionTimes[it.hash] }.thenByDescending { it.time })
 
         div("timeline") {
@@ -80,18 +79,22 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                     }
                     div("card-body") {
                         Dropzone.default {
-                            simple(props.history, state.loading, state.errors.isNotEmpty(), progressBarInnerRef,
-                                "Drag and drop some files here, or click to upload a new version", captchaRef, {
-                                setState {
-                                    loading = true
+                            simple(
+                                props.history, state.loading, state.errors.isNotEmpty(), progressBarInnerRef,
+                                "Drag and drop some files here, or click to upload a new version", captchaRef,
+                                {
+                                    setState {
+                                        loading = true
+                                    }
+                                    it.append("mapId", props.mapInfo.intId().toString())
+                                },
+                                {
+                                    setState {
+                                        errors = it
+                                        loading = false
+                                    }
                                 }
-                                it.append("mapId", props.mapInfo.intId().toString())
-                            }, {
-                                setState {
-                                    errors = it
-                                    loading = false
-                                }
-                            }) {
+                            ) {
                                 setState {
                                     errors = listOf()
                                     loading = false
@@ -143,7 +146,7 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                             time = it.time.toString()
                         }
                     EventType.Play -> {
-                        article ("card card-outline") {
+                        article("card card-outline") {
                             div("card-header icon bg-warning") {
                                 i("fas fa-vial") {}
                             }

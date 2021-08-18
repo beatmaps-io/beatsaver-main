@@ -6,6 +6,7 @@ plugins {
     kotlin("plugin.serialization") version "1.5.30-RC"
     id("io.miret.etienne.sass") version "1.1.2"
     id("org.flywaydb.flyway") version "7.12.0"
+    id("org.jlleitschuh.gradle.ktlint") version "10.1.0"
     application
 }
 
