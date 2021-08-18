@@ -89,7 +89,7 @@ fun Route.searchRoute() {
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
-                            .joinVersions()
+                            .joinVersions(it.minNps != null || it.maxNps != null)
                             .slice(Beatmap.id)
                             .select {
                                 Beatmap.deletedAt.isNull().let { q ->
@@ -106,8 +106,8 @@ fun Route.searchRoute() {
                                 .notNull(it.noodle) { o -> Beatmap.noodle eq o }
                                 .notNull(it.ranked) { o -> Beatmap.ranked eq o }
                                 .notNull(it.fullSpread) { o -> Beatmap.fullSpread eq o }
-                                .notNull(it.minNps) { o -> Beatmap.maxNps greaterEq o }
-                                .notNull(it.maxNps) { o -> Beatmap.minNps lessEq o }
+                                .notNull(it.minNps) { o -> (Beatmap.maxNps greaterEq o) and (Difficulty.nps greaterEq o) }
+                                .notNull(it.maxNps) { o -> (Beatmap.minNps lessEq o) and (Difficulty.nps lessEq o) }
                                 .notNull(it.minDuration) { o -> Beatmap.duration greaterEq o }
                                 .notNull(it.maxDuration) { o -> Beatmap.duration lessEq o }
                                 .notNull(it.minRating) { o -> Beatmap.score greaterEq o }
