@@ -17,11 +17,14 @@ fun downloadsThread() {
     GlobalScope.launch(es.asCoroutineDispatcher()) {
         scheduleRepeating(Duration.hours(1)) {
             transaction {
-                Downloads.updateReturning({
+                Downloads.updateReturning(
+                    {
                         Downloads.processed eq false
-                    }, {
+                    },
+                    {
                         it[processed] = true
-                    }, Downloads.hash
+                    },
+                    Downloads.hash
                 )?.let { result ->
                     val downloads = result.groupingBy { it[Downloads.hash] }.eachCount()
                     val maps = Versions.select {
@@ -47,7 +50,7 @@ suspend inline fun scheduleRepeating(
     crossinline action: () -> Unit
 ) {
     delay(startInterval)
-    while(coroutineContext.isActive) {
+    while (coroutineContext.isActive) {
         action()
         delay(interval)
     }

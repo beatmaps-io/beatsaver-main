@@ -1,10 +1,8 @@
 package io.beatmaps.api
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.beatmaps.common.Config
 import io.beatmaps.common.SSGameMode
-import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.jackson
 import io.ktor.application.call
@@ -20,7 +18,6 @@ import io.ktor.locations.options
 import io.ktor.response.header
 import io.ktor.response.respond
 import io.ktor.routing.Route
-import kotlinx.datetime.Instant
 
 val tagsRegex = Regex("(<([^>]+)>)")
 val scoresCookies = AcceptAllCookiesStorage()
@@ -32,12 +29,29 @@ val scoresClient = HttpClient(Apache) {
 
 data class SSLeaderboardScoreData(val ranked: String?, val uid: Int, val scores: List<SSLeaderboardScore>, val playerScore: Int) {
     fun isValid() = ranked == null || uid > 0
-    fun toLeaderboardData() = LeaderboardData(ranked != null && ranked.startsWith("Ranked"), uid,
+    fun toLeaderboardData() = LeaderboardData(
+        ranked != null && ranked.startsWith("Ranked"), uid,
         scores.map(SSLeaderboardScore::toLeaderboardScore).filter { it.playerId > 9000 },
-        ranked != null && !ranked.contains("modifiers disabled"), isValid())
+        ranked != null && !ranked.contains("modifiers disabled"), isValid()
+    )
 }
-data class SSLeaderboardScore(val playerId: Long, val name: String, val rank: Int, val score: Int, val pp: Double, val weight: Double, val mods: String, val badCuts: Int,
-                              val missedNotes: Int, val maxCombo: Int, val fullCombo: Int, val hmd: Int, val timeset: String, val country: String, val replay: Boolean) {
+data class SSLeaderboardScore(
+    val playerId: Long,
+    val name: String,
+    val rank: Int,
+    val score: Int,
+    val pp: Double,
+    val weight: Double,
+    val mods: String,
+    val badCuts: Int,
+    val missedNotes: Int,
+    val maxCombo: Int,
+    val fullCombo: Int,
+    val hmd: Int,
+    val timeset: String,
+    val country: String,
+    val replay: Boolean
+) {
     fun toLeaderboardScore() = LeaderboardScore(playerId, name.replace(tagsRegex, ""), rank, score, pp, mods.split(',').filter { it.isNotEmpty() })
 }
 
@@ -53,23 +67,29 @@ fun Route.scoresRoute() {
 
     get<ScoresApi.Leaderboard> {
         call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(getScores(
-            it.key,
-            EDifficulty.fromInt(it.difficulty) ?: EDifficulty.ExpertPlus,
-            SSGameMode.fromInt(it.gameMode) ?: SSGameMode.SoloStandard,
-            it.page
-        ))
+        call.respond(
+            getScores(
+                it.key,
+                EDifficulty.fromInt(it.difficulty) ?: EDifficulty.ExpertPlus,
+                SSGameMode.fromInt(it.gameMode) ?: SSGameMode.SoloStandard,
+                it.page
+            )
+        )
     }
 }
 
 val ssPHPSESSID = System.getenv("SSPHPSESSID") ?: ""
 suspend fun getScores(levelId: String, diff: EDifficulty = EDifficulty.ExpertPlus, mode: SSGameMode = SSGameMode.SoloStandard, page: Int = 1, retry: Boolean = true): LeaderboardData =
-    scoresClient.submitForm<String>("https://scoresaber.com/game/scores-pc.php", parametersOf(
-        "levelId" to listOf(levelId),
-        "difficulty" to listOf(diff.idx.toString()),
-        "gameMode" to listOf(mode.toString()),
-        "page" to listOf(page.toString())
-    ), true)
+    scoresClient.submitForm<String>(
+        "https://scoresaber.com/game/scores-pc.php",
+        parametersOf(
+            "levelId" to listOf(levelId),
+            "difficulty" to listOf(diff.idx.toString()),
+            "gameMode" to listOf(mode.toString()),
+            "page" to listOf(page.toString())
+        ),
+        true
+    )
         .run { jackson.readValue<SSLeaderboardScoreData>(this) }
         .run {
             if (!isValid() && retry) {

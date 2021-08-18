@@ -50,7 +50,7 @@ import org.jetbrains.exposed.sql.update
     @Location("/maps/beatsaver/{key}") data class Beatsaver(val key: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/id/{id}") data class Detail(val id: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/hash/{hash}") data class ByHash(val hash: String, @Ignore val api: MapsApi)
-    @Group("Maps") @Location("/maps/uploader/{id}/{page}") data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore  val api: MapsApi)
+    @Group("Maps") @Location("/maps/uploader/{id}/{page}") data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/latest") data class ByUploadDate(
         @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
         val before: Instant? = null,
@@ -132,22 +132,25 @@ fun Route.mapDetailRoute() {
                     null
                 }
 
-                (Beatmap.update({
-                    (Beatmap.id eq mapUpdate.id).let { q ->
-                        if (user.admin) {
-                            q // If current user is admin don't check the user
+                fun updateMap() =
+                    Beatmap.update({
+                        (Beatmap.id eq mapUpdate.id).let { q ->
+                            if (user.admin) {
+                                q // If current user is admin don't check the user
+                            } else {
+                                q and (Beatmap.uploader eq user.userId)
+                            }
+                        }
+                    }) {
+                        if (mapUpdate.deleted) {
+                            it[deletedAt] = NowExpression(deletedAt.columnType)
                         } else {
-                            q and (Beatmap.uploader eq user.userId)
+                            mapUpdate.name?.let { n -> it[name] = n }
+                            mapUpdate.description?.let { d -> it[description] = d }
                         }
                     }
-                }) {
-                    if (mapUpdate.deleted) {
-                        it[deletedAt] = NowExpression(deletedAt.columnType)
-                    } else {
-                        mapUpdate.name?.let { n -> it[name] = n }
-                        mapUpdate.description?.let { d -> it[description] = d }
-                    }
-                } > 0).also { rTemp ->
+
+                (updateMap() > 0).also { rTemp ->
                     if (rTemp && oldData != null && oldData.uploaderId.value != user.userId) {
                         ModLog.insert(
                             user.userId,

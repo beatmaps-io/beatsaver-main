@@ -9,24 +9,24 @@ import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.client
-import io.beatmaps.controllers.reCaptchaVerify
+import io.beatmaps.common.db.NowExpression
+import io.beatmaps.common.db.isFalse
+import io.beatmaps.common.db.updateReturning
+import io.beatmaps.common.db.upsert
+import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Beatmap.joinUploader
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.DifficultyDao
-import io.beatmaps.common.db.NowExpression
-import io.beatmaps.common.db.isFalse
+import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Testplay
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
-import io.beatmaps.common.db.updateReturning
-import io.beatmaps.common.db.upsert
-import io.beatmaps.common.db.wrapAsExpressionNotNull
-import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.jackson
 import io.beatmaps.common.pub
+import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.login.Session
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
@@ -144,8 +144,10 @@ fun getTestplayQueue(userId: Int?, includePlayed: Boolean, page: Long?) = transa
                             }
                     } else {
                         it
-                            .join(Testplay, JoinType.LEFT, onColumn = Versions.id, otherColumn = Testplay.versionId,
-                                additionalConstraint = { Testplay.userId eq userId })
+                            .join(
+                                Testplay, JoinType.LEFT, onColumn = Versions.id, otherColumn = Testplay.versionId,
+                                additionalConstraint = { Testplay.userId eq userId }
+                            )
                             .slice(Versions.mapId)
                             .select {
                                 Testplay.id.isNull() and (Versions.state eq EMapState.Testplay)
@@ -186,14 +188,14 @@ fun getTestplayRecent(userId: Int, page: Long?) = transaction {
 
 suspend fun validateSteamToken(steamId: String, proof: String): Boolean {
     val clientId = System.getenv("STEAM_APIKEY") ?: ""
-    val json = client.get<String>("https://api.steampowered.com/ISteamUserAuth/AuthenticateUserTicket/v1?key=$clientId&appid=$beatsaberAppid&ticket=${proof}")
+    val json = client.get<String>("https://api.steampowered.com/ISteamUserAuth/AuthenticateUserTicket/v1?key=$clientId&appid=$beatsaberAppid&ticket=$proof")
     val data = jackson.readValue<SteamAPIResponse>(json)
     return !(data.response.params == null || data.response.params.result != "OK" || data.response.params.steamid.toString() != steamId)
 }
 
 val authHost = System.getenv("AUTH_HOST") ?: "http://localhost:3030"
 suspend fun validateOculusToken(oculusId: String, proof: String) = try {
-    val json = client.post<String>("${authHost}/auth/oculus") {
+    val json = client.post<String>("$authHost/auth/oculus") {
         contentType(ContentType.Application.Json)
         body = AuthRequest(oculusId = oculusId, proof = proof)
     }
@@ -237,50 +239,61 @@ fun Route.testplayRoute() {
 
             val valid = transaction {
                 if (newState.state == EMapState.Published) {
-                    val originalState = MapVersion.from(Versions.select {
-                        Versions.hash eq newState.hash
-                    }.single())
+                    val originalState = MapVersion.from(
+                        Versions.select {
+                            Versions.hash eq newState.hash
+                        }.single()
+                    )
 
-                    (Versions.join(Beatmap, JoinType.INNER, onColumn = Versions.mapId, otherColumn = Beatmap.id).update({
-                        (Versions.mapId eq newState.mapId) and (Beatmap.uploader eq sess.userId)
-                    }) {
-                        val exp = Expression.build {
-                            case()
-                                .When(Versions.hash eq newState.hash, QueryParameter(EMapState.Published, Versions.state.columnType))
-                                .Else(QueryParameter(EMapState.Uploaded, Versions.state.columnType))
+                    fun updateState() =
+                        Versions.join(Beatmap, JoinType.INNER, onColumn = Versions.mapId, otherColumn = Beatmap.id).update({
+                            (Versions.mapId eq newState.mapId) and (Beatmap.uploader eq sess.userId)
+                        }) {
+                            val exp = Expression.build {
+                                case()
+                                    .When(Versions.hash eq newState.hash, QueryParameter(EMapState.Published, Versions.state.columnType))
+                                    .Else(QueryParameter(EMapState.Uploaded, Versions.state.columnType))
+                            }
+
+                            it[Versions.state] = exp
                         }
 
-                        it[Versions.state] = exp
-                    } > 0).also { valid ->
+                    (updateState() > 0).also { valid ->
                         if (!valid) return@also
 
-                        val stats = DifficultyDao.wrapRows(Difficulty.select {
-                            Difficulty.mapId eq newState.mapId
-                        })
+                        val stats = DifficultyDao.wrapRows(
+                            Difficulty.select {
+                                Difficulty.mapId eq newState.mapId
+                            }
+                        )
 
                         // Set published time for sorting, but don't allow gaming the system
-                        val urResult = Beatmap.updateReturning({ Beatmap.id eq newState.mapId }, {
-                            it[uploaded] = coalesce(uploaded, NowExpression<Instant?>(uploaded.columnType))
+                        val urResult = Beatmap.updateReturning(
+                            { Beatmap.id eq newState.mapId },
+                            {
+                                it[uploaded] = coalesce(uploaded, NowExpression<Instant?>(uploaded.columnType))
 
-                            it[chroma] = stats.any { s -> s.chroma }
-                            it[noodle] = stats.any { s -> s.ne }
-                            it[me] = stats.any { s -> s.me }
-                            it[cinema] = stats.any { s -> s.cinema }
+                                it[chroma] = stats.any { s -> s.chroma }
+                                it[noodle] = stats.any { s -> s.ne }
+                                it[me] = stats.any { s -> s.me }
+                                it[cinema] = stats.any { s -> s.cinema }
 
-                            it[minNps] = stats.minByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
-                            it[maxNps] = stats.maxByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
-                            it[fullSpread] = stats.filter { diff -> diff.characteristic == ECharacteristic.Standard }
-                                .map { diff -> diff.difficulty }
-                                .distinct().count() == 5
+                                it[minNps] = stats.minByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
+                                it[maxNps] = stats.maxByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
+                                it[fullSpread] = stats.filter { diff -> diff.characteristic == ECharacteristic.Standard }
+                                    .map { diff -> diff.difficulty }
+                                    .distinct().count() == 5
 
-                            // Because of magical typing reasons this can't be one line
-                            // They actually call completely different setting functions
-                            if (originalState.sageScore != null && originalState.sageScore < 0) {
-                                it[automapper] = true
-                            } else {
-                                it[automapper] = ai
-                            }
-                        }, Beatmap.uploaded)
+                                // Because of magical typing reasons this can't be one line
+                                // They actually call completely different setting functions
+                                if (originalState.sageScore != null && originalState.sageScore < 0) {
+                                    it[automapper] = true
+                                } else {
+                                    it[automapper] = ai
+                                }
+                            },
+                            Beatmap.uploaded
+                        )
 
                         urResult?.firstOrNull()?.get(Beatmap.uploaded)?.let { uploadTimeLocal ->
                             Difficulty.join(Versions, JoinType.INNER, onColumn = Difficulty.versionId, otherColumn = Versions.id).update({
@@ -291,20 +304,23 @@ fun Route.testplayRoute() {
                         }
                     }
                 } else {
-                    (Versions.join(Beatmap, JoinType.INNER, onColumn = Versions.mapId, otherColumn = Beatmap.id).update({
-                        (Versions.hash eq newState.hash) and (Versions.mapId eq newState.mapId).let { q ->
-                            if (sess.admin) {
-                                q // If current user is admin don't check the user
-                            } else {
-                                q and (Beatmap.uploader eq sess.userId)
+                    fun updateState() =
+                        Versions.join(Beatmap, JoinType.INNER, onColumn = Versions.mapId, otherColumn = Beatmap.id).update({
+                            (Versions.hash eq newState.hash) and (Versions.mapId eq newState.mapId).let { q ->
+                                if (sess.admin) {
+                                    q // If current user is admin don't check the user
+                                } else {
+                                    q and (Beatmap.uploader eq sess.userId)
+                                }
+                            }
+                        }) {
+                            it[Versions.state] = newState.state
+                            if (newState.state == EMapState.Testplay) {
+                                it[Versions.testplayAt] = Instant.now()
                             }
                         }
-                    }) {
-                        it[Versions.state] = newState.state
-                        if (newState.state == EMapState.Testplay) {
-                            it[Versions.testplayAt] = Instant.now()
-                        }
-                    } > 0).also { rTemp ->
+
+                    (updateState() > 0).also { rTemp ->
                         if (rTemp && sess.admin && newState.reason?.isEmpty() == false) {
                             ModLog.insert(
                                 sess.userId,
@@ -342,7 +358,7 @@ fun Route.testplayRoute() {
 
         val builder = Jwts.builder().setExpiration(Date.from(Instant.now().plus(3L, ChronoUnit.DAYS)))
 
-        fun validateUser(where: SqlExpressionBuilder.()->Op<Boolean>) = transaction {
+        fun validateUser(where: SqlExpressionBuilder.() -> Op<Boolean>) = transaction {
             val userIdQuery = User
                 .select(where).limit(1).toList()
 
@@ -377,19 +393,21 @@ fun Route.testplayRoute() {
     }
 
     post<MapsApi.Verify, AuthRequest>("Verify user tokens".responds(ok<VerifyResponse>())) { _, auth ->
-        call.respond(auth.steamId?.let { steamId ->
-            if (!validateSteamToken(steamId, auth.proof)) {
-                VerifyResponse(false, "Could not validate steam token")
-            } else {
-                VerifyResponse(true)
-            }
-        } ?: auth.oculusId?.let { oculusId ->
-            if (!validateOculusToken(oculusId, auth.proof)) {
-                VerifyResponse(false, "Could not validate oculus token")
-            } else {
-                VerifyResponse(true)
-            }
-        } ?: VerifyResponse(false, "No user identifier provided"))
+        call.respond(
+            auth.steamId?.let { steamId ->
+                if (!validateSteamToken(steamId, auth.proof)) {
+                    VerifyResponse(false, "Could not validate steam token")
+                } else {
+                    VerifyResponse(true)
+                }
+            } ?: auth.oculusId?.let { oculusId ->
+                if (!validateOculusToken(oculusId, auth.proof)) {
+                    VerifyResponse(false, "Could not validate oculus token")
+                } else {
+                    VerifyResponse(true)
+                }
+            } ?: VerifyResponse(false, "No user identifier provided")
+        )
     }
 
     post<TestplayApi.Check> {
@@ -397,9 +415,11 @@ fun Route.testplayRoute() {
         validateJWT(check.jwt) { userId ->
             // If we made it here the jwt is valid
             val user = transaction {
-                UserDao.wrapRows(User.select {
-                    User.id eq userId
-                }.limit(1)).firstOrNull()
+                UserDao.wrapRows(
+                    User.select {
+                        User.id eq userId
+                    }.limit(1)
+                ).firstOrNull()
             }
 
             if (user == null) {
@@ -415,9 +435,11 @@ fun Route.testplayRoute() {
         validateJWT(mark.jwt) { jwtUserId ->
             transaction {
                 // Lazily perform this request
-                fun canTestPlay() = UserDao.wrapRows(User.select {
-                    User.id eq jwtUserId
-                }.limit(1)).firstOrNull()?.testplay == true
+                fun canTestPlay() = UserDao.wrapRows(
+                    User.select {
+                        User.id eq jwtUserId
+                    }.limit(1)
+                ).firstOrNull()?.testplay == true
 
                 val versionIdVal = if ((mark.removeFromQueue || mark.addToQueue) && canTestPlay()) {
                     val urResult = Versions.updateReturning(

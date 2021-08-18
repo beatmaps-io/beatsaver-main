@@ -39,16 +39,26 @@ import java.lang.Long.parseLong
 
 fun localAvatarFolder() = File(System.getenv("AVATAR_DIR") ?: "K:\\BMAvatar")
 
-data class Session(val userId: Int, val hash: String? = null, val userEmail: String?, val userName: String, val testplay: Boolean = false,
-                   val steamId: Long? = null, val oculusId: Long? = null, val admin: Boolean = false, val uniqueName: String? = null, val canLink: Boolean = false) {
+data class Session(
+    val userId: Int,
+    val hash: String? = null,
+    val userEmail: String?,
+    val userName: String,
+    val testplay: Boolean = false,
+    val steamId: Long? = null,
+    val oculusId: Long? = null,
+    val admin: Boolean = false,
+    val uniqueName: String? = null,
+    val canLink: Boolean = false
+) {
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?) :
-            this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, true)
+        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, true)
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean) :
-            this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, null)
+        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, null)
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?) :
-            this(userId, hash, userEmail, userName, testplay, steamId, oculusId, false)
+        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, false)
     constructor(userId: Int, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?) :
-            this(userId, null, userEmail, userName, testplay, steamId, oculusId)
+        this(userId, null, userEmail, userName, testplay, steamId, oculusId)
 }
 
 @Location("/login") class Login
@@ -60,7 +70,7 @@ data class Session(val userId: Int, val hash: String? = null, val userEmail: Str
 
 fun Route.authRoute() {
     authenticate("discord") {
-        get ("/discord") {
+        get("/discord") {
             val principal = call.authentication.principal<OAuthAccessTokenResponse.OAuth2>() ?: error("No principal")
 
             val json = client.get<String>("https://discord.com/api/users/@me") {
@@ -79,10 +89,10 @@ fun Route.authRoute() {
                         requestTimeoutMillis = 60000
                     }
                 }
-                val localFile = File(localAvatarFolder(), "${discordIdLocal}.png")
+                val localFile = File(localAvatarFolder(), "$discordIdLocal.png")
                 localFile.writeBytes(bytes)
 
-                "${Config.cdnbase}/avatar/${discordIdLocal}.png"
+                "${Config.cdnbase}/avatar/$discordIdLocal.png"
             }
 
             val user = transaction {
@@ -134,7 +144,6 @@ fun Route.authRoute() {
 
     get<Login> {
         genericPage()
-        //call.respondRedirect("/discord")
     }
 
     get<Username> {
@@ -165,18 +174,21 @@ fun Route.authRoute() {
                 "openid.claimed_id" to listOf("http://specs.openid.net/auth/2.0/identifier_select")
             )
 
-            //val url = URLBuilder(protocol = URLProtocol.HTTPS, host = "steamcommunity.com", encodedPath = "/openid/login", parameters = params).buildString()
+            // val url = URLBuilder(protocol = URLProtocol.HTTPS, host = "steamcommunity.com", encodedPath = "/openid/login", parameters = params).buildString()
             val url = Url(URLProtocol.HTTPS, "steamcommunity.com", 0, "/openid/login", params, "", null, null, false).toString()
             call.respondRedirect(url)
         } else {
-            val xml = client.submitForm<String>("https://steamcommunity.com/openid/login", formParameters = parametersOf(
-                "openid.ns" to listOf("http://specs.openid.net/auth/2.0"),
-                "openid.mode" to listOf("check_authentication"),
-                "openid.sig" to listOf(call.request.queryParameters["openid.sig"] ?: ""),
-                *(call.request.queryParameters["openid.signed"])?.split(",")?.map {
-                    "openid.$it" to listOf(call.request.queryParameters["openid.$it"] ?: "")
-                }?.toTypedArray() ?: arrayOf()
-            ))
+            val xml = client.submitForm<String>(
+                "https://steamcommunity.com/openid/login",
+                formParameters = parametersOf(
+                    "openid.ns" to listOf("http://specs.openid.net/auth/2.0"),
+                    "openid.mode" to listOf("check_authentication"),
+                    "openid.sig" to listOf(call.request.queryParameters["openid.sig"] ?: ""),
+                    *(call.request.queryParameters["openid.signed"])?.split(",")?.map {
+                        "openid.$it" to listOf(call.request.queryParameters["openid.$it"] ?: "")
+                    }?.toTypedArray() ?: arrayOf()
+                )
+            )
             val valid = Regex("is_valid\\s*:\\s*true", RegexOption.IGNORE_CASE).containsMatchIn(xml)
             if (!valid) {
                 throw RuntimeException("Invalid openid response 1")

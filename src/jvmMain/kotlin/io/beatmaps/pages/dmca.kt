@@ -3,7 +3,7 @@ package io.beatmaps.pages
 import io.ktor.html.Template
 import kotlinx.html.*
 
-class DMCAPageTemplate() : Template<BODY> {
+class DMCAPageTemplate : Template<BODY> {
     override fun BODY.apply() {
         main("container") {
             div("jumbotron") {

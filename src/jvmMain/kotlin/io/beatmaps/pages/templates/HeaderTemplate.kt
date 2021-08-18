@@ -52,10 +52,10 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 +"Help"
                             }
                             div("dropdown-menu") {
-                                a("https://bsmg.wiki", classes="dropdown-item") {
+                                a("https://bsmg.wiki", classes = "dropdown-item") {
                                     +"BSMG Wiki"
                                 }
-                                a("https://discord.gg/beatsabermods", classes="dropdown-item") {
+                                a("https://discord.gg/beatsabermods", classes = "dropdown-item") {
                                     +"BSMG Discord"
                                 }
                                 div("dropdown-divider") {}
@@ -84,10 +84,10 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                     +(s.uniqueName ?: s.userName)
                                 }
                                 div("dropdown-menu") {
-                                    a("/profile", classes="dropdown-item") {
+                                    a("/profile", classes = "dropdown-item") {
                                         +"Profile"
                                     }
-                                    a("/alerts", classes="dropdown-item") {
+                                    a("/alerts", classes = "dropdown-item") {
                                         +"Alerts"
                                     }
                                     if (s.steamId == null) {
@@ -101,7 +101,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                         }
                                     }
                                     div("dropdown-divider") {}
-                                    a("/logout", classes="dropdown-item") {
+                                    a("/logout", classes = "dropdown-item") {
                                         +"Logout"
                                     }
                                 }

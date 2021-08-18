@@ -59,24 +59,26 @@ fun Route.mapController() {
     }
 
     get<MapController.Detail> {
-        genericPage(headerTemplate = {
-            try {
-                transaction {
-                    Beatmap.joinVersions().select {
-                        Beatmap.id eq it.key.toInt(16)
-                    }.limit(1).complexToBeatmap().map { MapDetail.from(it) }.firstOrNull()
-                }?.let {
-                    meta("og:type", "website")
-                    meta("og:site_name", "BeatSaver")
-                    meta("og:title", it.name)
-                    meta("og:url", "${Config.basename}/maps/${it.id}")
-                    meta("og:description", it.description.take(400))
-                    meta("og:image", "${Config.cdnbase}/${it.publishedVersion()?.hash}.jpg")
+        genericPage(
+            headerTemplate = {
+                try {
+                    transaction {
+                        Beatmap.joinVersions().select {
+                            Beatmap.id eq it.key.toInt(16)
+                        }.limit(1).complexToBeatmap().map { MapDetail.from(it) }.firstOrNull()
+                    }?.let {
+                        meta("og:type", "website")
+                        meta("og:site_name", "BeatSaver")
+                        meta("og:title", it.name)
+                        meta("og:url", "${Config.basename}/maps/${it.id}")
+                        meta("og:description", it.description.take(400))
+                        meta("og:image", "${Config.cdnbase}/${it.publishedVersion()?.hash}.jpg")
+                    }
+                } catch (_: NumberFormatException) {
+                    // key isn't an int
                 }
-            } catch (_: NumberFormatException) {
-                // key isn't an int
             }
-        })
+        )
     }
 
     get<BeatmapController.RedirectOld> {

@@ -166,5 +166,5 @@ fun Route.cdnRoute() {
 
 suspend fun PipelineContext<Unit, ApplicationCall>.getAudio(hash: String) =
     returnFile(
-        File(localAudioFolder(hash), "${hash}.mp3")
+        File(localAudioFolder(hash), "$hash.mp3")
     )

@@ -38,10 +38,29 @@ import java.lang.Integer.toHexString
 
 @Location("/api") class SearchApi {
     @Group("Search") @Location("/search/text/{page}")
-    data class Text(val q: String? = "", @Description("Options are a little weird, I may add another enum field in future to make this clearer.\ntrue = both, false = only ai, null = no ai") val automapper: Boolean? = null, val minNps: Float? = null, val maxNps: Float? = null, val chroma: Boolean? = null, @DefaultValue("0") val page: Long = 0,
-                    val sortOrder: SearchOrder = SearchOrder.Relevance, val from: Instant? = null, val to: Instant? = null, @Ignore val api: SearchApi, val noodle: Boolean? = null,
-                    val ranked: Boolean? = null, val fullSpread: Boolean? = null, val minDuration: Int? = null, val maxDuration: Int? = null, val minRating: Float? = null,
-                    val maxRating: Float? = null, val minBpm: Float? = null, val maxBpm: Float? = null, val me: Boolean? = null, val cinema: Boolean? = null)
+    data class Text(
+        val q: String? = "",
+        @Description("Options are a little weird, I may add another enum field in future to make this clearer.\ntrue = both, false = only ai, null = no ai") val automapper: Boolean? = null,
+        val minNps: Float? = null,
+        val maxNps: Float? = null,
+        val chroma: Boolean? = null,
+        @DefaultValue("0") val page: Long = 0,
+        val sortOrder: SearchOrder = SearchOrder.Relevance,
+        val from: Instant? = null,
+        val to: Instant? = null,
+        @Ignore val api: SearchApi,
+        val noodle: Boolean? = null,
+        val ranked: Boolean? = null,
+        val fullSpread: Boolean? = null,
+        val minDuration: Int? = null,
+        val maxDuration: Int? = null,
+        val minRating: Float? = null,
+        val maxRating: Float? = null,
+        val minBpm: Float? = null,
+        val maxBpm: Float? = null,
+        val me: Boolean? = null,
+        val cinema: Boolean? = null
+    )
 }
 
 fun <T> Op<Boolean>.notNull(b: T?, block: (T) -> Op<Boolean>) = if (b == null) this else this.and(block(b))
@@ -100,45 +119,49 @@ fun Route.searchRoute() {
                             .joinVersions(it.minNps != null || it.maxNps != null)
                             .slice(Beatmap.id)
                             .select {
-                                Beatmap.deletedAt.isNull().let { q ->
-                                    if (query.isNullOrBlank()) {
-                                        q
-                                    } else if (query.length > 3) {
-                                        q.and(searchIndex similar query)
-                                    } else {
-                                        q.and(searchIndex ilike "%${query}%")
+                                Beatmap.deletedAt.isNull()
+                                    .let { q ->
+                                        if (query.isNullOrBlank()) {
+                                            q
+                                        } else if (query.length > 3) {
+                                            q.and(searchIndex similar query)
+                                        } else {
+                                            q.and(searchIndex ilike "%$query%")
+                                        }
                                     }
-                                }.let { q ->
-                                    // Doesn't quite make sense but we want to exclude beat sage by default
-                                    when (it.automapper) {
-                                        true -> q
-                                        false -> q.and(Beatmap.automapper eq true)
-                                        null -> q.and(Beatmap.automapper eq false)
+                                    .let { q ->
+                                        // Doesn't quite make sense but we want to exclude beat sage by default
+                                        when (it.automapper) {
+                                            true -> q
+                                            false -> q.and(Beatmap.automapper eq true)
+                                            null -> q.and(Beatmap.automapper eq false)
+                                        }
                                     }
-                                }
-                                .notNull(it.chroma) { o -> Beatmap.chroma eq o }
-                                .notNull(it.noodle) { o -> Beatmap.noodle eq o }
-                                .notNull(it.ranked) { o -> Beatmap.ranked eq o }
-                                .notNull(it.fullSpread) { o -> Beatmap.fullSpread eq o }
-                                .notNull(it.minNps) { o -> (Beatmap.maxNps greaterEq o) and (Difficulty.nps greaterEq o) }
-                                .notNull(it.maxNps) { o -> (Beatmap.minNps lessEq o) and (Difficulty.nps lessEq o) }
-                                .notNull(it.minDuration) { o -> Beatmap.duration greaterEq o }
-                                .notNull(it.maxDuration) { o -> Beatmap.duration lessEq o }
-                                .notNull(it.minRating) { o -> Beatmap.score greaterEq o }
-                                .notNull(it.maxRating) { o -> Beatmap.score lessEq o }
-                                .notNull(it.minBpm) { o -> Beatmap.bpm greaterEq o }
-                                .notNull(it.maxBpm) { o -> Beatmap.bpm lessEq o }
-                                .notNull(it.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }
-                                .notNull(it.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
-                                .notNull(it.me) { o -> Beatmap.me eq o }
-                                .notNull(it.cinema) { o -> Beatmap.cinema eq o }
+                                    .notNull(it.chroma) { o -> Beatmap.chroma eq o }
+                                    .notNull(it.noodle) { o -> Beatmap.noodle eq o }
+                                    .notNull(it.ranked) { o -> Beatmap.ranked eq o }
+                                    .notNull(it.fullSpread) { o -> Beatmap.fullSpread eq o }
+                                    .notNull(it.minNps) { o -> (Beatmap.maxNps greaterEq o) and (Difficulty.nps greaterEq o) }
+                                    .notNull(it.maxNps) { o -> (Beatmap.minNps lessEq o) and (Difficulty.nps lessEq o) }
+                                    .notNull(it.minDuration) { o -> Beatmap.duration greaterEq o }
+                                    .notNull(it.maxDuration) { o -> Beatmap.duration lessEq o }
+                                    .notNull(it.minRating) { o -> Beatmap.score greaterEq o }
+                                    .notNull(it.maxRating) { o -> Beatmap.score lessEq o }
+                                    .notNull(it.minBpm) { o -> Beatmap.bpm greaterEq o }
+                                    .notNull(it.maxBpm) { o -> Beatmap.bpm lessEq o }
+                                    .notNull(it.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }
+                                    .notNull(it.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
+                                    .notNull(it.me) { o -> Beatmap.me eq o }
+                                    .notNull(it.cinema) { o -> Beatmap.cinema eq o }
                             }
                             .orderBy(
                                 when (actualSortOrder) {
                                     SearchOrder.Relevance -> similarRank
                                     SearchOrder.Rating -> Beatmap.score
                                     SearchOrder.Latest -> Beatmap.uploaded
-                                }, SortOrder.DESC)
+                                },
+                                SortOrder.DESC
+                            )
                             .limit(it.page)
                     )
                 }.let { q ->

@@ -39,7 +39,7 @@ suspend fun DefaultWebSocketServerSession.websocketConnection(holder: ChannelHol
             incoming.consumeEach {
                 // This will block while the socket is open
                 // When closed the finally automatically shuts everything down
-                //println("Received: $it")
+                // println("Received: $it")
             }
         } finally {
             holder.channels = holder.channels.minus(channel)

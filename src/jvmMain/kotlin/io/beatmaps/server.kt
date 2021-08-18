@@ -82,7 +82,7 @@ import kotlin.time.Duration.Companion.nanoseconds
 
 suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) {
     val sess = call.sessions.get<Session>()
-    if (sess != null  && sess.uniqueName == null && call.request.path() != "/username") {
+    if (sess != null && sess.uniqueName == null && call.request.path() != "/username") {
         call.respondRedirect("/username")
     } else {
         call.respondHtmlTemplate(MainTemplate(sess, GenericPageTemplate(sess)), statusCode) {
@@ -208,7 +208,8 @@ fun Application.beatmapsio() {
         }
 
         exception<ConstraintViolationException> { e ->
-            call.respond(HttpStatusCode.BadRequest,
+            call.respond(
+                HttpStatusCode.BadRequest,
                 FailedUploadResponse(
                     e.constraintViolations
                         .mapToMessage("messages")

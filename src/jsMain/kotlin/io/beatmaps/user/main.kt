@@ -186,7 +186,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                         edit = false
                                     }
                                 }
-                                +"WIP"
+                                +"Unpublished"
                             }
                         }
                         li("nav-item") {

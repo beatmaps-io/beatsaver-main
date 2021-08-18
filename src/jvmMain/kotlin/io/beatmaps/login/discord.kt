@@ -28,7 +28,7 @@ val discordProvider = OAuthServerSettings.OAuth2ServerSettings(
     defaultScopes = listOf("identify")
 )
 
-class SimpleUserPrincipal(val user: UserDao): Principal
+class SimpleUserPrincipal(val user: UserDao) : Principal
 
 fun Application.installDiscordOauth() {
     val baseName = System.getenv("BASE_URL") ?: Config.basename

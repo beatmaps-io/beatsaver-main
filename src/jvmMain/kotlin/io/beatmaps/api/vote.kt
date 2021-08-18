@@ -33,7 +33,7 @@ import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Count
 import org.jetbrains.exposed.sql.Index
-import org.jetbrains.exposed.sql.SqlExpressionBuilder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.intLiteral
@@ -41,7 +41,6 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.publish
 import java.lang.Integer.toHexString
@@ -92,14 +91,18 @@ fun Route.voteRoute() {
                 val scoreWeighted = rawScore - (rawScore - 0.5) * 2.0.pow(-log10(totalVotes + 1))
 
                 var uploader: Int? = null
-                Beatmap.updateReturning({
-                    Beatmap.id eq body.mapId
-                }, {
-                    it[score] = scoreWeighted.toBigDecimal()
-                    it[upVotesInt] = upVotes.toInt()
-                    it[downVotesInt] = downVotes.toInt()
-                    it[lastVoteAt] = NowExpression(lastVoteAt.columnType)
-                }, Beatmap.uploader)?.firstOrNull()?.let {
+                Beatmap.updateReturning(
+                    {
+                        Beatmap.id eq body.mapId
+                    },
+                    {
+                        it[score] = scoreWeighted.toBigDecimal()
+                        it[upVotesInt] = upVotes.toInt()
+                        it[downVotesInt] = downVotes.toInt()
+                        it[lastVoteAt] = NowExpression(lastVoteAt.columnType)
+                    },
+                    Beatmap.uploader
+                )?.firstOrNull()?.let {
                     uploader = it[Beatmap.uploader].value
                 }
 

@@ -2,10 +2,10 @@
 
 package io.beatmaps.login
 
-import io.ktor.sessions.SessionStorageMemory
 import io.ktor.application.Application
 import io.ktor.application.install
 import io.ktor.sessions.SessionStorage
+import io.ktor.sessions.SessionStorageMemory
 import io.ktor.sessions.Sessions
 import io.ktor.sessions.cookie
 import io.ktor.utils.io.ByteReadChannel
@@ -69,9 +69,11 @@ abstract class SimplifiedSessionStorage : SessionStorage {
     }
 
     override suspend fun write(id: String, provider: suspend (ByteWriteChannel) -> Unit) {
-        return provider(CoroutineScope(Dispatchers.IO).reader(coroutineContext, autoFlush = true) {
-            write(id, channel.readAvailable())
-        }.channel)
+        return provider(
+            CoroutineScope(Dispatchers.IO).reader(coroutineContext, autoFlush = true) {
+                write(id, channel.readAvailable())
+            }.channel
+        )
     }
 }
 

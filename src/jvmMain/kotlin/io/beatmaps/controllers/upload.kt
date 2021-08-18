@@ -13,10 +13,8 @@ import io.beatmaps.common.beatsaber.MapInfo
 import io.beatmaps.common.beatsaver.localAudioFolder
 import io.beatmaps.common.beatsaver.localCoverFolder
 import io.beatmaps.common.beatsaver.localFolder
-import io.beatmaps.common.client
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.updateReturning
-import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.User
@@ -33,7 +31,6 @@ import io.beatmaps.genericPage
 import io.beatmaps.login.Session
 import io.beatmaps.login.localAvatarFolder
 import io.ktor.application.call
-import io.ktor.client.features.timeout
 import io.ktor.client.request.get
 import io.ktor.features.origin
 import io.ktor.http.HttpStatusCode
@@ -80,7 +77,7 @@ val jsonWriter: ObjectWriter = jackson.writer(BSPrettyPrinter())
 
 val uploadDir = File(System.getenv("UPLOAD_DIR") ?: "S:\\A")
 val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
-val reCaptchaVerify = System.getenv("RECAPTCHA_SECRET")?.let { ReCaptchaVerify( it) }
+val reCaptchaVerify = System.getenv("RECAPTCHA_SECRET")?.let { ReCaptchaVerify(it) }
 
 @Location("/upload") class UploadMap
 @Location("/avatar") class UploadAvatar
@@ -210,9 +207,9 @@ fun Route.uploadController() {
             // Process upload
             val fx = "%0" + md.digestLength * 2 + "x"
             val digest = String.format(fx, BigInteger(1, md.digest()))
-            val newFile = File(localFolder(digest), "${digest}.zip")
-            val newImageFile = File(localCoverFolder(digest), "${digest}.jpg")
-            val newAudioFile = File(localAudioFolder(digest), "${digest}.mp3")
+            val newFile = File(localFolder(digest), "$digest.zip")
+            val newImageFile = File(localCoverFolder(digest), "$digest.jpg")
+            val newAudioFile = File(localAudioFolder(digest), "$digest.mp3")
 
             val existsAlready = Versions.select {
                 Versions.hash eq digest
@@ -230,9 +227,11 @@ fun Route.uploadController() {
                 throw UploadException("Your map is fine but we're not accepting uploads yet")
             }
 
-            fun setBasicMapInfo(setFloat: (column: Column<Float>, value: Float) -> Unit,
-                                setInt: (column: Column<Int>, value: Int) -> Unit,
-                                setString: (column: Column<String>, value: String) -> Unit) {
+            fun setBasicMapInfo(
+                setFloat: (column: Column<Float>, value: Float) -> Unit,
+                setInt: (column: Column<Int>, value: Int) -> Unit,
+                setString: (column: Column<String>, value: String) -> Unit
+            ) {
                 setFloat(Beatmap.bpm, extractedInfo.mapInfo._beatsPerMinute)
                 setInt(Beatmap.duration, extractedInfo.duration.roundToInt())
                 setString(Beatmap.songName, extractedInfo.mapInfo._songName)
@@ -242,25 +241,32 @@ fun Route.uploadController() {
             }
 
             val newMap = try {
-                (dataMap["mapId"]?.toInt()?.let { mapId ->
-                    Beatmap.updateReturning({
-                        (Beatmap.id eq mapId) and (Beatmap.uploader eq session.userId)
-                    }, {
+                fun insertOrUpdate() =
+                    dataMap["mapId"]?.toInt()?.let { mapId ->
+                        Beatmap.updateReturning(
+                            {
+                                (Beatmap.id eq mapId) and (Beatmap.uploader eq session.userId)
+                            },
+                            {
+                                setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
+                            },
+                            Beatmap.id
+                        )?.firstOrNull()?.let { it[Beatmap.id] } ?: throw UploadException("Map doesn't exist to add version")
+                    } ?: Beatmap.insertAndGetId {
+                        it[name] = dataMap["title"] ?: ""
+                        it[description] = dataMap["description"] ?: ""
+                        it[uploader] = EntityID(session.userId, User)
+
                         setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
-                    }, Beatmap.id)?.firstOrNull()?.let { it[Beatmap.id] } ?: throw UploadException("Map doesn't exist to add version")
-                } ?: Beatmap.insertAndGetId {
-                    it[name] = dataMap["title"] ?: ""
-                    it[description] = dataMap["description"] ?: ""
-                    it[uploader] = EntityID(session.userId, User)
 
-                    setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
+                        val declaredAsAI = (dataMap["beatsage"] ?: "").isNotEmpty()
+                        it[automapper] = declaredAsAI || extractedInfo.score < -4
+                        it[ai] = declaredAsAI
 
-                    val declaredAsAI = (dataMap["beatsage"] ?: "").isNotEmpty()
-                    it[automapper] = declaredAsAI || extractedInfo.score < -4
-                    it[ai] = declaredAsAI
+                        it[plays] = 0
+                    }
 
-                    it[plays] = 0
-                }).also {
+                insertOrUpdate().also {
                     // How is a file here if it hasn't be uploaded before?
                     if (newFile.exists()) {
                         newFile.delete()
@@ -370,9 +376,11 @@ fun ZipHelper.validateFiles(dos: DigestOutputStream) =
         }
     }
 
-fun findAllowedFiles(info: MapInfo) = (listOf("info.dat", "cinema-video.json", info._coverImageFilename, info._songFilename) +
+fun findAllowedFiles(info: MapInfo) = (
+    listOf("info.dat", "cinema-video.json", info._coverImageFilename, info._songFilename) +
         (info._customData?._contributors?.mapNotNull { it._iconPath } ?: listOf()) +
-        info._difficultyBeatmapSets.flatMap { set -> set._difficultyBeatmaps.map { it._beatmapFilename } }).map { it.lowercase() }
+        info._difficultyBeatmapSets.flatMap { set -> set._difficultyBeatmaps.map { it._beatmapFilename } }
+    ).map { it.lowercase() }
 
 fun ZipHelper.oggToEgg(info: ExtractedInfo) =
     getPath("/${info.mapInfo._songFilename.lowercase()}")?.let { path ->
