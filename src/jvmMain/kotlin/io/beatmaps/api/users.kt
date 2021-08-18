@@ -244,6 +244,8 @@ fun Route.userRoute() {
                 ActionResponse(false, listOf("Passwords don't match"))
             } else if (req.password.length < 8) {
                 ActionResponse(false, listOf("Password too short"))
+            } else if (!usernameRegex.matches(req.username)) {
+                ActionResponse(false, listOf("Username not valid"))
             } else {
                 val bcrypt = String(Bcrypt.hash(req.password, 12))
                 val token = getHash(req.email)
