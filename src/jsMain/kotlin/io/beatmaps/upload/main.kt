@@ -1,7 +1,7 @@
 package io.beatmaps.maps
 
-import AxiosProgress
-import AxiosRequestConfig
+import external.AxiosProgress
+import external.AxiosRequestConfig
 import external.Dropzone
 import external.ReCAPTCHA
 import io.beatmaps.setPageTitle

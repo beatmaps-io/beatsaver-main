@@ -1,17 +1,17 @@
-@file:Suppress("INTERFACE_WITH_SUPERCLASS", "OVERRIDING_FINAL_MEMBER", "RETURN_TYPE_MISMATCH_ON_OVERRIDE", "CONFLICTING_OVERLOADS", "EXTERNAL_DELEGATION", "NESTED_CLASS_IN_EXTERNAL_INTERFACE")
+@file:Suppress("INTERFACE_WITH_SUPERCLASS")
+package external
+
 import io.beatmaps.common.json
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlin.js.Promise
 
-external interface AxiosTransformer {
-    @nativeInvoke
-    operator fun invoke(data: Any, headers: Any? = definedExternally /* null */): Any
-}
-external interface AxiosAdapter {
-    @nativeInvoke
-    operator fun invoke(config: AxiosRequestConfig): AxiosPromise<Any>
-}
+external interface AxiosTransformer
+inline operator fun AxiosTransformer.invoke(data: Any, headers: Any? = null) = asDynamic()(data, headers).unsafeCast<Any>()
+
+external interface AxiosAdapter
+inline operator fun AxiosAdapter.invoke(config: AxiosRequestConfig) = asDynamic()(config).unsafeCast<AxiosPromise<Any>>()
+
 external interface AxiosBasicCredentials {
     var username: String
     var password: String
@@ -29,8 +29,8 @@ external interface AxiosRequestConfig {
     var url: String? get() = definedExternally; set(value) = definedExternally
     var method: String? get() = definedExternally; set(value) = definedExternally
     var baseURL: String? get() = definedExternally; set(value) = definedExternally
-    var transformRequest: dynamic /* AxiosTransformer | Array<AxiosTransformer> */ get() = definedExternally; set(value) = definedExternally
-    var transformResponse: dynamic /* AxiosTransformer | Array<AxiosTransformer> */ get() = definedExternally; set(value) = definedExternally
+    var transformRequest: dynamic /* external.AxiosTransformer | Array<external.AxiosTransformer> */ get() = definedExternally; set(value) = definedExternally
+    var transformResponse: dynamic /* external.AxiosTransformer | Array<external.AxiosTransformer> */ get() = definedExternally; set(value) = definedExternally
     var headers: Any? get() = definedExternally; set(value) = definedExternally
     var params: Any? get() = definedExternally; set(value) = definedExternally
     var paramsSerializer: ((params: Any) -> String)? get() = definedExternally; set(value) = definedExternally
@@ -49,7 +49,7 @@ external interface AxiosRequestConfig {
     var maxRedirects: Number? get() = definedExternally; set(value) = definedExternally
     var httpAgent: Any? get() = definedExternally; set(value) = definedExternally
     var httpsAgent: Any? get() = definedExternally; set(value) = definedExternally
-    var proxy: dynamic /* Boolean | AxiosProxyConfig */ get() = definedExternally; set(value) = definedExternally
+    var proxy: dynamic /* Boolean | external.AxiosProxyConfig */ get() = definedExternally; set(value) = definedExternally
     var cancelToken: CancelToken? get() = definedExternally; set(value) = definedExternally
 }
 external interface AxiosProgress {
@@ -78,10 +78,9 @@ external interface CancelStatic
 external interface Cancel {
     var message: String
 }
-external interface Canceler {
-    @nativeInvoke
-    operator fun invoke(message: String? = definedExternally /* null */)
-}
+external interface Canceler
+inline operator fun Canceler.invoke(message: String?) = asDynamic()(message).unsafeCast<Unit>()
+
 external interface CancelTokenStatic {
     fun source(): CancelTokenSource
 }
@@ -103,10 +102,6 @@ external interface `T$1` {
     var response: AxiosInterceptorManager<AxiosResponse<Any>>
 }
 external interface AxiosInstance {
-    @nativeInvoke
-    operator fun invoke(config: AxiosRequestConfig): AxiosPromise<Any>
-    @nativeInvoke
-    operator fun invoke(url: String, config: AxiosRequestConfig? = definedExternally /* null */): AxiosPromise<Any>
     var defaults: AxiosRequestConfig
     var interceptors: `T$1`
     fun <T> request(config: AxiosRequestConfig): AxiosPromise<T>
@@ -117,6 +112,9 @@ external interface AxiosInstance {
     fun <T> put(url: String, data: Any? = definedExternally /* null */, config: AxiosRequestConfig? = definedExternally /* null */): AxiosPromise<T>
     fun <T> patch(url: String, data: Any? = definedExternally /* null */, config: AxiosRequestConfig? = definedExternally /* null */): AxiosPromise<T>
 }
+inline operator fun AxiosInstance.invoke(config: AxiosRequestConfig) = asDynamic()(config).unsafeCast<AxiosPromise<Any>>()
+inline operator fun AxiosInstance.invoke(url: String, config: AxiosRequestConfig?) = asDynamic()(url, config).unsafeCast<AxiosPromise<Any>>()
+
 external interface AxiosStatic : AxiosInstance {
     fun create(config: AxiosRequestConfig? = definedExternally /* null */): AxiosInstance
     var Cancel: CancelStatic

@@ -1,8 +1,8 @@
 package io.beatmaps.maps.testplay
 
-import Axios
+import external.Axios
 import external.ReCAPTCHA
-import generateConfig
+import external.generateConfig
 import io.beatmaps.api.FeedbackUpdate
 import kotlinx.datetime.internal.JSJoda.Instant
 import kotlinx.html.TEXTAREA

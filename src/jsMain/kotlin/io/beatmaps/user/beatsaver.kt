@@ -1,7 +1,8 @@
 package io.beatmaps.user
 
-import Axios
-import generateConfig
+import external.Axios
+import external.axiosGet
+import external.generateConfig
 import io.beatmaps.api.BeatsaverLink
 import io.beatmaps.api.BeatsaverLinkReq
 import io.beatmaps.setPageTitle
@@ -54,9 +55,8 @@ class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
             loading = true
         }
 
-        Axios.get<BeatsaverLink>(
-            "/api/users/beatsaver",
-            generateConfig<String, BeatsaverLink>()
+        axiosGet<BeatsaverLink>(
+            "/api/users/beatsaver"
         ).then {
             val link = it.data
 

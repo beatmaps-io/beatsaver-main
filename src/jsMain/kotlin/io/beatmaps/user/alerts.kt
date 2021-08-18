@@ -1,8 +1,7 @@
 package io.beatmaps.user
 
-import Axios
 import external.TimeAgo
-import generateConfig
+import external.axiosGet
 import io.beatmaps.api.Alert
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.UnpublishData
@@ -44,9 +43,8 @@ class AlertsPage : RComponent<RProps, AlertsPageState>() {
             loading = true
         }
 
-        Axios.get<List<Alert>>(
+        axiosGet<List<Alert>>(
             "/api/users/alerts",
-            generateConfig<String, List<Alert>>()
         ).then {
             setState {
                 alerts = it.data

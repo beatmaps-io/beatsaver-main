@@ -1,7 +1,7 @@
 package io.beatmaps.user
 
-import axiosGet
 import external.Moment
+import external.axiosGet
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
 import io.beatmaps.common.formatTime

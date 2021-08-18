@@ -1,13 +1,11 @@
 package io.beatmaps.maps.recent
 
+import external.axiosGet
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapTestplay
 import io.beatmaps.api.MapVersion
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
-import kotlinx.browser.window
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -42,12 +40,10 @@ class RecentTestplays : RComponent<RProps, RecentTestplaysState>() {
             loading = true
         }
 
-        window.fetch("/api/testplay/recent/0").then {
-            it.text()
-        }.then({
-            val response = Json.decodeFromString<Array<MapDetail>>(it)
-
-            val testplaysLocal = response.flatMap { m ->
+        axiosGet<Array<MapDetail>>(
+            "/api/testplay/recent/0"
+        ).then({
+            val testplaysLocal = it.data.flatMap { m ->
                 m.versions.flatMap { v ->
                     v.testplays?.map { tp ->
                         RecentTestplay(m, v, tp)

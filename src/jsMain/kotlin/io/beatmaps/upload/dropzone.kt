@@ -1,7 +1,7 @@
 package io.beatmaps.upload
 
-import Axios
-import AxiosResponse
+import external.Axios
+import external.AxiosResponse
 import external.DropzoneProps
 import external.ReCAPTCHA
 import io.beatmaps.api.FailedUploadResponse

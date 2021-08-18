@@ -1,9 +1,9 @@
 package io.beatmaps.maps
 
-import Axios
-import CancelToken
-import CancelTokenSource
-import generateConfig
+import external.Axios
+import external.CancelTokenSource
+import external.generateConfig
+import external.invoke
 import io.beatmaps.api.LeaderboardData
 import io.beatmaps.api.LeaderboardScore
 import io.beatmaps.api.MapDifficulty
@@ -72,7 +72,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
 
     override fun componentWillUpdate(nextProps: ScoreTableProps, nextState: ScoreTableState) {
         if (nextProps.selected != props.selected) {
-            state.token.cancel("Another request started")
+            state.token.cancel.invoke("Another request started")
 
             nextState.scores = listOf()
             nextState.page = 1

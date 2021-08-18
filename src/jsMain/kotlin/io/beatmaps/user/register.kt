@@ -1,8 +1,8 @@
 package io.beatmaps.user
 
-import Axios
+import external.Axios
 import external.ReCAPTCHA
-import generateConfig
+import external.generateConfig
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.RegisterRequest
 import io.beatmaps.setPageTitle

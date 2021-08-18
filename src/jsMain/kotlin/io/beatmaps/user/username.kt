@@ -1,7 +1,8 @@
 package io.beatmaps.user
 
-import Axios
-import generateConfig
+import external.Axios
+import external.axiosGet
+import external.generateConfig
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UsernameReq
@@ -62,9 +63,8 @@ class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
             loading = true
         }
 
-        Axios.get<String>(
-            "/api/users/me",
-            generateConfig<String, String>()
+        axiosGet<String>(
+            "/api/users/me"
         ).then {
             // Decode is here so that 401 actually passes to error handler
             val data = json.decodeFromString<UserDetail>(it.data)

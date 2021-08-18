@@ -1,7 +1,7 @@
 package io.beatmaps.user
 
-import Axios
-import generateConfig
+import external.Axios
+import external.generateConfig
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ResetRequest
 import io.beatmaps.setPageTitle

@@ -1,7 +1,7 @@
 package external
 
+import react.Context
 import react.RClass
-import react.RContext
 import react.RProps
 import react.ReactElement
 
@@ -51,7 +51,7 @@ external object ReactDatesConstants {
 @JsModule("react-with-styles/lib/WithStylesContext")
 @JsNonModule
 external object WithStylesContext {
-    val default: RContext<*>
+    val default: Context<*>
 }
 
 @JsModule("react-with-styles/lib/ThemedStyleSheet")

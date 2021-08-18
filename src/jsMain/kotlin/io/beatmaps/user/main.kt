@@ -1,7 +1,6 @@
 package io.beatmaps.user
 
-import Axios
-import generateConfig
+import external.axiosGet
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
 import io.beatmaps.common.formatTime
@@ -77,9 +76,8 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
         val url = props.userId?.let { "${Config.apibase}/users/id/$it" } ?: "/api/users/me"
 
-        Axios.get<UserDetail>(
-            url,
-            generateConfig<String, UserDetail>()
+        axiosGet<UserDetail>(
+            url
         ).then {
             setPageTitle("Profile - ${it.data.name}")
             setState {

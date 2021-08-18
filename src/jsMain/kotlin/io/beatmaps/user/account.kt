@@ -1,7 +1,7 @@
 package io.beatmaps.user
 
-import Axios
-import generateConfig
+import external.Axios
+import external.generateConfig
 import io.beatmaps.api.AccountRequest
 import io.beatmaps.api.AccountType
 import io.beatmaps.api.ActionResponse

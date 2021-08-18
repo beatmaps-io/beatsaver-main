@@ -1,8 +1,8 @@
 package io.beatmaps.maps.testplay
 
-import Axios
+import external.Axios
 import external.TimeAgo
-import generateConfig
+import external.generateConfig
 import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.maps.textToContent
 import kotlinx.datetime.internal.JSJoda.Instant

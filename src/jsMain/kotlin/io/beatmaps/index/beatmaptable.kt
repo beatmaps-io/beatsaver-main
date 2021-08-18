@@ -1,7 +1,9 @@
 package io.beatmaps.index
-import Axios
-import CancelTokenSource
-import generateConfig
+
+import external.Axios
+import external.CancelTokenSource
+import external.generateConfig
+import external.invoke
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SearchResponse
@@ -79,7 +81,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
 
     override fun componentWillUpdate(nextProps: BeatmapTableProps, nextState: BeatmapTableState) {
         if (props.user != nextProps.user || props.wip != nextProps.wip || props.search !== nextProps.search) {
-            state.token.cancel("Another request started")
+            state.token.cancel.invoke("Another request started")
             nextState.apply {
                 page = 0
                 loading = false

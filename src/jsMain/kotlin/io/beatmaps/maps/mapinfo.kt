@@ -1,7 +1,7 @@
 package io.beatmaps.maps
 
-import Axios
-import generateConfig
+import external.Axios
+import external.generateConfig
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate

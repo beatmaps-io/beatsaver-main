@@ -1,5 +1,6 @@
 package io.beatmaps.maps
 
+import external.axiosGet
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.Config
@@ -8,8 +9,6 @@ import io.beatmaps.index.modal
 import io.beatmaps.maps.testplay.testplay
 import io.beatmaps.setPageTitle
 import kotlinx.browser.window
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import org.w3c.dom.get
 import react.RBuilder
 import react.RComponent
@@ -49,19 +48,18 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
             "id"
         }
 
-        window.fetch("${Config.apibase}/maps/$subPath/${props.mapKey}")
-            .then {
-                it.text()
-            }.then {
-                val mapLocal = Json.decodeFromString<MapDetail>(it)
-                setPageTitle("Map - " + mapLocal.name)
-                setState {
-                    map = mapLocal
-                    selectedDiff = mapLocal.publishedVersion()?.diffs?.sortedWith(compareBy<MapDifficulty> { d -> d.characteristic }.thenByDescending { d -> d.difficulty })?.first()
-                }
-            }.catch {
-                props.history.push("/")
+        axiosGet<MapDetail>(
+            "${Config.apibase}/maps/$subPath/${props.mapKey}",
+        ).then {
+            val mapLocal = it.data
+            setPageTitle("Map - " + mapLocal.name)
+            setState {
+                map = mapLocal
+                selectedDiff = mapLocal.publishedVersion()?.diffs?.sortedWith(compareBy<MapDifficulty> { d -> d.characteristic }.thenByDescending { d -> d.difficulty })?.first()
             }
+        }.catch {
+            props.history.push("/")
+        }
     }
 
     override fun RBuilder.render() {
