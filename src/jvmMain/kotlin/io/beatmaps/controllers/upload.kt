@@ -7,6 +7,7 @@ import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.BSPrettyPrinter
 import io.beatmaps.common.Config
+import io.beatmaps.common.CopyException
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.beatsaber.MapInfo
 import io.beatmaps.common.beatsaver.localAudioFolder
@@ -183,6 +184,9 @@ fun Route.uploadController() {
                     } catch (e: ZipHelperException) {
                         file.delete()
                         throw UploadException(e.msg)
+                    } catch (e: CopyException) {
+                        file.delete()
+                        throw UploadException("Zip file too big")
                     } catch (e: Exception) {
                         file.delete()
                         throw e
