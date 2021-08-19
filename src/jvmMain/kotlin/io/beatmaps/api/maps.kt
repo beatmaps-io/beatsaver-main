@@ -36,6 +36,7 @@ import io.ktor.routing.Route
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
@@ -290,16 +291,18 @@ fun Route.mapDetailRoute() {
         requireAuthorization {
             val beatmaps = transaction {
                 Beatmap
-                    .joinVersions(true) { Versions.state neq EMapState.Published }
+                    .joinVersions(true, null)
                     .joinUploader()
                     .joinCurator()
                     .select {
                         Beatmap.id.inSubQuery(
                             Beatmap
+                                .join(Versions, JoinType.LEFT, onColumn = Beatmap.id, otherColumn = Versions.mapId, additionalConstraint = { Versions.state eq EMapState.Published })
                                 .slice(Beatmap.id)
                                 .select {
-                                    Beatmap.uploader.eq(it.userId) and (Beatmap.deletedAt.isNull())
+                                    Beatmap.uploader.eq(it.userId) and Beatmap.deletedAt.isNull() and Versions.mapId.isNull()
                                 }
+                                .groupBy(Beatmap.id)
                                 .orderBy(Beatmap.uploaded to SortOrder.DESC)
                                 .limit(r.page)
                         )

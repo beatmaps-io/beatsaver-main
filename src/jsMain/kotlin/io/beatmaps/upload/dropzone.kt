@@ -51,8 +51,8 @@ fun RElementBuilder<DropzoneProps>.simple(
     attrs.onDrop = { file ->
         captchaRef.current?.executeAsync()?.then {
             val data = FormData().also(block)
-            data.asDynamic().append("file", file[0]) // Kotlin doesn't have an equivalent method to this js
             data.append("recaptcha", it)
+            data.asDynamic().append("file", file[0]) // Kotlin doesn't have an equivalent method to this js
 
             Axios.post<dynamic>(
                 "/upload", data,
@@ -126,7 +126,7 @@ fun RElementBuilder<DropzoneProps>.simple(
                     +dropText
                 }
                 small {
-                    +"Max file size: 15MB"
+                    +"Max file size: 15MiB"
                 }
             }
         }

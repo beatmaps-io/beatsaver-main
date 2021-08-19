@@ -675,6 +675,24 @@ li.KeyboardShortcutRow {
   }
 }
 
+.user-suggestion-card {
+  max-width: 300px;
+  color: $white;
+  transition: background-color 0.17s ease;
+  text-align: center;
+  margin: auto auto 20px;
+
+  img {
+    margin-right: 6px;
+  }
+
+  &:hover {
+    background: #444;
+    text-decoration: none;
+    color: $white;
+  }
+}
+
 @include media-breakpoint-up(sm) {
   .filter-dropdown {
     width: 100%;

@@ -145,9 +145,24 @@ fun Route.uploadController() {
         val dataMap = mutableMapOf<String, String>()
         val md = MessageDigest.getInstance("SHA1")
         var extractedInfoTmp: ExtractedInfo? = null
+        var recaptchaSuccess = false
 
         multipart.forEachPart { part ->
             if (part is PartData.FormItem) {
+                // Process recaptcha immediately as it is time-critical
+                if (part.name.toString() == "recaptcha") {
+                    recaptchaSuccess = if (reCaptchaVerify == null) {
+                        uploadLogger.warning("ReCAPTCHA not setup. Allowing request anyway")
+                        true
+                    } else {
+                        val verifyResponse = withContext(Dispatchers.IO) {
+                            reCaptchaVerify.verify(part.value, call.request.origin.remoteHost)
+                        }
+
+                        verifyResponse.isSuccess || throw UploadException("Could not verify user [${verifyResponse.errorCodes.joinToString(", ")}]")
+                    }
+                }
+
                 dataMap[part.name.toString()] = part.value
             } else if (part is PartData.FileItem) {
                 uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
@@ -192,16 +207,7 @@ fun Route.uploadController() {
             }
         }
 
-        // Check the recaptcha result
-        if (reCaptchaVerify == null) {
-            uploadLogger.warning("ReCAPTCHA not setup. Allowing request anyway")
-        } else {
-            val verifyResponse = withContext(Dispatchers.IO) {
-                reCaptchaVerify.verify(dataMap["recaptcha"], call.request.origin.remoteHost)
-            }
-
-            verifyResponse.isSuccess || throw UploadException("Could not verify user [${verifyResponse.errorCodes.joinToString(", ")}]")
-        }
+        recaptchaSuccess || throw UploadException("Missing recaptcha?")
 
         val newMapId = transaction {
             // Process upload

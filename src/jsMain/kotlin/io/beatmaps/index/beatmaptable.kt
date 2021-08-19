@@ -18,7 +18,10 @@ import react.RProps
 import react.RReadableRef
 import react.RState
 import react.ReactElement
+import react.dom.a
 import react.dom.div
+import react.dom.h4
+import react.dom.img
 import react.dom.p
 import react.router.dom.RouteResultHistory
 import react.router.dom.routeLink
@@ -132,16 +135,23 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                 return@then
             }
 
-            state.user = it.data.user
             val mapLocal = it.data.docs
 
+            val morePages = mapLocal?.let { ml -> ml.size >= 20 } ?: true
             setState {
                 page = state.page + 1
-                loading = mapLocal?.isEmpty() != false
+                loading = !morePages
                 songs = mapLocal?.let { ml -> if (shouldClear) ml.toList() else songs.plus(mapLocal) } ?: songs
+
+                if (it.data.user != null) {
+                    user = it.data.user
+                } else if (shouldClear) {
+                    user = null
+                }
+
                 shouldClear = false
             }
-            if (mapLocal?.isNotEmpty() == true) {
+            if (morePages) {
                 window.setTimeout(::handleScroll, 1)
             }
         }.catch {
@@ -171,12 +181,19 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
 
     override fun RBuilder.render() {
         state.user?.let {
-            p("text-center") {
-                +"Were you looking for "
-                routeLink("/profile/${it.id}") {
-                    +it.name
+            a("/profile/${it.id}", classes = "card border-dark user-suggestion-card") {
+                div("card-body") {
+                    h4("card-title") {
+                        +"Were you looking for:"
+                    }
+                    p("card-text") {
+                        img("${it.name} avatar", it.avatar, classes = "rounded-circle") {
+                            attrs.width = "40"
+                            attrs.height = "40"
+                        }
+                        +it.name
+                    }
                 }
-                +"?"
             }
         }
         div("search-results") {

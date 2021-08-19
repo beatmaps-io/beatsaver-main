@@ -10,7 +10,6 @@ import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.ilike
 import io.beatmaps.common.db.similar
-import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
@@ -72,13 +71,13 @@ fun Route.searchRoute() {
         call.respond(HttpStatusCode.OK)
     }
 
+    val quotedPattern = Regex("\"([^\"]*)\"")
     get<SearchApi.Text>("Search for maps".responds(ok<SearchResponse>())) {
         call.response.header("Access-Control-Allow-Origin", "*")
 
         val searchIndex = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
         val originalQuery = it.q?.replace("%", "\\%")
 
-        val similarRank = CustomFunction<String>("substring_similarity", searchIndex.columnType, stringLiteral(originalQuery ?: ""), searchIndex)
         val actualSortOrder = when {
             originalQuery != null && originalQuery.length > 3 && it.sortOrder == SearchOrder.Relevance ->
                 SearchOrder.Relevance
@@ -101,7 +100,12 @@ fun Route.searchRoute() {
                     }
             }
 
-            val (mappers, nonmappers) = (originalQuery ?: "").split(' ').partition { s -> s.startsWith("mapper:") }
+            // TODO: Move parsing to its own function
+            val matches = quotedPattern.findAll(originalQuery ?: "")
+            val quotedSections = matches.map { match -> match.groupValues[1] }.toList()
+            val withoutQuotedSections = quotedPattern.split(originalQuery ?: "").filter { s -> s.isNotBlank() }.joinToString(" ") { s -> s.trim() }
+
+            val (mappers, nonmappers) = withoutQuotedSections.split(' ').partition { s -> s.startsWith("mapper:") }
             val userSubQuery = if (mappers.isNotEmpty()) {
                 User
                     .slice(User.id)
@@ -112,10 +116,12 @@ fun Route.searchRoute() {
                 null
             }
             val query = nonmappers.joinToString(" ")
+            val bothWithoutQuotes = (listOf(query) + quotedSections).joinToString(" ")
+            val similarRank = CustomFunction<String>("substring_similarity", searchIndex.columnType, stringLiteral(bothWithoutQuotes), searchIndex)
 
-            val user = if (query.isNotBlank() && !query.contains('\\')) {
+            val user = if (query.isNotBlank() && !query.contains('\\') && it.page == 0L) {
                 val userQuery = User.select {
-                    (User.uniqueName ilike query) and User.active
+                    (User.uniqueName eq query) and User.active
                 }.orderBy(Expression.build { User.discordId.isNull() }).limit(1).toList()
 
                 userQuery.firstOrNull()?.let { u -> UserDetail.from(u) }
@@ -140,6 +146,11 @@ fun Route.searchRoute() {
                                             q.and(searchIndex similar query)
                                         } else {
                                             q.and(searchIndex ilike "%$query%")
+                                        }
+                                    }
+                                    .let { q ->
+                                        quotedSections.fold(q) { p, it ->
+                                            p.and(searchIndex ilike "%$it%")
                                         }
                                     }
                                     .let { q ->
