@@ -23,7 +23,6 @@ import kotlin.coroutines.coroutineContext
 
 val redisHost = System.getenv("REDIS_HOST") ?: ""
 val redisPort = System.getenv("REDIS_PORT") ?: "6379"
-val secureCookies = System.getenv("SECURE_COOKIES") == "true"
 private val logger = Logger.getLogger("bmio.Redis")
 
 fun Application.installSessions() {
@@ -37,9 +36,7 @@ fun Application.installSessions() {
     }
 
     install(Sessions) {
-        cookie<Session>("BMSESSIONID", sessionStorage) {
-            cookie.secure = secureCookies
-        }
+        cookie<Session>("BMSESSIONID", sessionStorage)
     }
 }
 
