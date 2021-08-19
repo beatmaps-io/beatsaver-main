@@ -20,7 +20,7 @@ fun MapDetail.Companion.from(other: BeatmapDao) = MapDetail(
             it.second
         }
     },
-    other.curator?.name
+    other.curator?.name, other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.lastPublishedAt?.toKotlinInstant()
 )
 fun MapDetail.Companion.from(row: ResultRow) = from(BeatmapDao.wrapRow(row))
 

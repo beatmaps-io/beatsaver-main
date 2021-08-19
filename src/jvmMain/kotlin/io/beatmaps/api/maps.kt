@@ -69,7 +69,7 @@ import org.jetbrains.exposed.sql.update
 }
 
 enum class LatestSort {
-    FIRST_PUBLISHED, UPDATED, LAST_PUBLISHED
+    FIRST_PUBLISHED, UPDATED, LAST_PUBLISHED, CREATED
 }
 
 fun Route.mapDetailRoute() {
@@ -360,6 +360,7 @@ fun Route.mapDetailRoute() {
             null, LatestSort.FIRST_PUBLISHED -> Beatmap.uploaded
             LatestSort.UPDATED -> Beatmap.updatedAt
             LatestSort.LAST_PUBLISHED -> Beatmap.lastPublishedAt
+            LatestSort.CREATED -> Beatmap.createdAt
         }
 
         val beatmaps = transaction {
@@ -390,6 +391,7 @@ fun Route.mapDetailRoute() {
                         null, LatestSort.FIRST_PUBLISHED -> map.uploaded
                         LatestSort.UPDATED -> map.updatedAt
                         LatestSort.LAST_PUBLISHED -> map.lastPublishedAt
+                        LatestSort.CREATED -> map.createdAt
                     }
                 }
                 .map { map ->

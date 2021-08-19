@@ -34,7 +34,10 @@ data class MapDetail(
     val ranked: Boolean,
     val qualified: Boolean,
     val versions: List<MapVersion> = listOf(),
-    val curator: String? = null
+    val curator: String? = null,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val lastPublishedAt: Instant? = null
 ) {
     fun intId() = id.toInt(16)
     fun latestVersion() = versions.maxByOrNull { it.createdAt }
