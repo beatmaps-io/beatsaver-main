@@ -119,14 +119,6 @@ fun Route.searchRoute() {
             val bothWithoutQuotes = (listOf(query) + quotedSections).joinToString(" ")
             val similarRank = CustomFunction<String>("substring_similarity", searchIndex.columnType, stringLiteral(bothWithoutQuotes), searchIndex)
 
-            val user = if (query.isNotBlank() && !query.contains('\\') && it.page == 0L) {
-                val userQuery = User.select {
-                    (User.uniqueName eq query) and User.active
-                }.orderBy(Expression.build { User.discordId.isNull() }).limit(1).toList()
-
-                userQuery.firstOrNull()?.let { u -> UserDetail.from(u) }
-            } else null
-
             val beatmaps = Beatmap
                 .joinVersions(true)
                 .joinUploader()
@@ -200,7 +192,7 @@ fun Route.searchRoute() {
                 .complexToBeatmap()
                 .map { m -> MapDetail.from(m) }
 
-            call.respond(SearchResponse(beatmaps, user = user))
+            call.respond(SearchResponse(beatmaps))
         }
     }
 }

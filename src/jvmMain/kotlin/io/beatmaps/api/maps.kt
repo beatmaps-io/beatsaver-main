@@ -65,6 +65,7 @@ import org.jetbrains.exposed.sql.update
     )
     @Group("Maps") @Location("/maps/plays/{page}") data class ByPlayCount(@DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
     @Group("Users") @Location("/users/id/{id}") data class UserId(val id: Int, @Ignore val api: MapsApi)
+    @Group("Users") @Location("/users/name/{name}") data class UserName(val name: String, @Ignore val api: MapsApi)
     @Group("Users") @Location("/users/verify") data class Verify(@Ignore val api: MapsApi)
 }
 
@@ -353,7 +354,7 @@ fun Route.mapDetailRoute() {
         call.respond(SearchResponse(beatmaps))
     }
 
-    get<MapsApi.ByUploadDate>("Get maps ordered by upload date".responds(ok<SearchResponse>())) {
+    get<MapsApi.ByUploadDate>("Get maps ordered by upload/publish/updated. If you're going to scrape the data and make 100s of requests make this this endpoint you use.".responds(ok<SearchResponse>())) {
         call.response.header("Access-Control-Allow-Origin", "*")
 
         val sortField = when (it.sort) {

@@ -122,6 +122,20 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
 
         setState {
             loading = true
+            user = null
+        }
+
+        if (state.page == 0 && !props.wip && props.user == null && props.search.search.length > 2) {
+            Axios.get<UserDetail>(
+                "/api/users/name/${encodeURIComponent(props.search.search)}",
+                generateConfig<String, UserDetail>(state.token.token)
+            ).then {
+                setState {
+                    user = it.data
+                }
+            }.catch {
+                // Ignore errors, this is only a secondary request
+            }
         }
 
         Axios.get<SearchResponse>(
@@ -141,13 +155,6 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                 page = state.page + 1
                 loading = !morePages
                 songs = mapLocal?.let { ml -> if (shouldClear) ml.toList() else songs.plus(mapLocal) } ?: songs
-
-                if (it.data.user != null) {
-                    user = it.data.user
-                } else if (shouldClear) {
-                    user = null
-                }
-
                 shouldClear = false
             }
             if (morePages) {

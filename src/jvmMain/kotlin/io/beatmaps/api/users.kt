@@ -51,6 +51,7 @@ import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.OrOp
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.Sum
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
@@ -643,18 +644,31 @@ fun Route.userRoute() {
         }
     }
 
+    fun userBy(where: SqlExpressionBuilder.() -> Op<Boolean>) = transaction {
+        UserDao.wrapRows(User.select(where)).first()
+    }
+
     options<MapsApi.UserId> {
         call.response.header("Access-Control-Allow-Origin", "*")
         call.respond(HttpStatusCode.OK)
     }
     get<MapsApi.UserId>("Get user info".responds(ok<UserDetail>()).responds(notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
-        val user = transaction {
-            UserDao.wrapRows(
-                User.select {
-                    User.id.eq(it.id)
-                }
-            ).first()
+        val user = userBy {
+            (User.id eq it.id) and User.active
+        }
+
+        call.respond(UserDetail.from(user, stats = statsForUser(user)))
+    }
+
+    options<MapsApi.UserName> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
+    }
+    get<MapsApi.UserName>("Get user info by name".responds(ok<UserDetail>()).responds(notFound())) {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        val user = userBy {
+            (User.uniqueName eq it.name) and User.active
         }
 
         call.respond(UserDetail.from(user, stats = statsForUser(user)))
