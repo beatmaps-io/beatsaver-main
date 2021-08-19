@@ -14,6 +14,7 @@ import io.beatmaps.common.beatsaver.localAudioFolder
 import io.beatmaps.common.beatsaver.localCoverFolder
 import io.beatmaps.common.beatsaver.localFolder
 import io.beatmaps.common.copyToSuspend
+import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
@@ -254,6 +255,7 @@ fun Route.uploadController() {
                             },
                             {
                                 setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
+                                it[updatedAt] = NowExpression(updatedAt.columnType)
                             },
                             Beatmap.id
                         )?.firstOrNull()?.let { it[Beatmap.id] } ?: throw UploadException("Map doesn't exist to add version")

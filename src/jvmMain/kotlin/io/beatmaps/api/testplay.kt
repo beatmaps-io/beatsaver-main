@@ -285,6 +285,8 @@ fun Route.testplayRoute() {
                             { Beatmap.id eq newState.mapId },
                             {
                                 it[uploaded] = coalesce(uploaded, NowExpression<Instant?>(uploaded.columnType))
+                                it[lastPublishedAt] = NowExpression(lastPublishedAt.columnType)
+                                it[updatedAt] = NowExpression(updatedAt.columnType)
 
                                 it[chroma] = stats.any { s -> s.chroma }
                                 it[noodle] = stats.any { s -> s.ne }

@@ -10,6 +10,7 @@ import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.client
+import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Beatmap
@@ -182,6 +183,7 @@ fun Route.userRoute() {
                             .also {
                                 Beatmap.update({ Beatmap.uploader eq oldId }) {
                                     it[uploader] = s.userId
+                                    it[updatedAt] = NowExpression(updatedAt.columnType)
                                 }
                             }
                     }

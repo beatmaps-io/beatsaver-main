@@ -58,13 +58,18 @@ import org.jetbrains.exposed.sql.update
         @Description("Like `before` but will get you maps more recent than the time supplied.\nYYYY-MM-DDTHH:MM:SS+00:00")
         val after: Instant? = null,
         @Description("true = both, false = no ai")
-        val automapper: Boolean = false,
+        val automapper: Boolean? = false,
+        val sort: LatestSort? = LatestSort.FIRST_PUBLISHED,
         @Ignore
         val api: MapsApi
     )
     @Group("Maps") @Location("/maps/plays/{page}") data class ByPlayCount(@DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
     @Group("Users") @Location("/users/id/{id}") data class UserId(val id: Int, @Ignore val api: MapsApi)
     @Group("Users") @Location("/users/verify") data class Verify(@Ignore val api: MapsApi)
+}
+
+enum class LatestSort {
+    FIRST_PUBLISHED, UPDATED, LAST_PUBLISHED
 }
 
 fun Route.mapDetailRoute() {
@@ -112,6 +117,7 @@ fun Route.mapDetailRoute() {
                             it[curatedAt] = null
                             it[curator] = null
                         }
+                        it[updatedAt] = NowExpression(updatedAt.columnType)
                     } > 0
                 }
 
@@ -148,6 +154,7 @@ fun Route.mapDetailRoute() {
                         } else {
                             mapUpdate.name?.let { n -> it[name] = n }
                             mapUpdate.description?.let { d -> it[description] = d }
+                            it[updatedAt] = NowExpression(updatedAt.columnType)
                         }
                     }
 
@@ -360,14 +367,18 @@ fun Route.mapDetailRoute() {
                             .slice(Beatmap.id)
                             .select {
                                 Beatmap.deletedAt.isNull().let { q ->
-                                    if (!it.automapper) q.and(Beatmap.automapper eq false) else q
+                                    if (it.automapper != true) q.and(Beatmap.automapper eq false) else q
                                 }.notNull(it.before) {
                                     Beatmap.uploaded less it.toJavaInstant()
                                 }.notNull(it.after) {
                                     Beatmap.uploaded greater it.toJavaInstant()
                                 }
                             }
-                            .orderBy(Beatmap.uploaded to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
+                            .orderBy(when (it.sort) {
+                                null, LatestSort.FIRST_PUBLISHED -> Beatmap.uploaded
+                                LatestSort.UPDATED -> Beatmap.updatedAt
+                                LatestSort.LAST_PUBLISHED -> Beatmap.lastPublishedAt
+                            } to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
                             .limit(20)
                     )
                 }
