@@ -24,7 +24,6 @@ import react.dom.h4
 import react.dom.img
 import react.dom.p
 import react.router.dom.RouteResultHistory
-import react.router.dom.routeLink
 import react.setState
 
 external interface BeatmapTableProps : RProps {

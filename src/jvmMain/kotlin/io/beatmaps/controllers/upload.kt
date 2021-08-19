@@ -31,7 +31,6 @@ import io.beatmaps.genericPage
 import io.beatmaps.login.Session
 import io.beatmaps.login.localAvatarFolder
 import io.ktor.application.call
-import io.ktor.client.request.get
 import io.ktor.features.origin
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData

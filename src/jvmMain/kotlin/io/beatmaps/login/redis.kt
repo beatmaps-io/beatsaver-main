@@ -21,8 +21,9 @@ import java.io.ByteArrayOutputStream
 import java.util.logging.Logger
 import kotlin.coroutines.coroutineContext
 
-val redisHost: String = System.getenv("REDIS_HOST") ?: ""
-val redisPort: String = System.getenv("REDIS_PORT") ?: "6379"
+val redisHost = System.getenv("REDIS_HOST") ?: ""
+val redisPort = System.getenv("REDIS_PORT") ?: "6379"
+val secureCookies = System.getenv("SECURE_COOKIES") == "true"
 private val logger = Logger.getLogger("bmio.Redis")
 
 fun Application.installSessions() {
@@ -36,7 +37,9 @@ fun Application.installSessions() {
     }
 
     install(Sessions) {
-        cookie<Session>("BMSESSIONID", sessionStorage)
+        cookie<Session>("BMSESSIONID", sessionStorage) {
+            cookie.secure = secureCookies
+        }
     }
 }
 
@@ -50,7 +53,7 @@ class RedisSessionStorage(private val redisClient: RedisCoroutinesCommands<Strin
         if (data == null) {
             redisClient.del(id)
         } else {
-            redisClient.set(id, String(data), SetArgs.Builder.ex(7 * 24 * 3600))
+            redisClient.set(id, String(data), SetArgs.Builder.ex(7 * 24 * 3600L))
         }
     }
 }
