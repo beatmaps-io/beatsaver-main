@@ -355,6 +355,13 @@ fun Route.mapDetailRoute() {
 
     get<MapsApi.ByUploadDate>("Get maps ordered by upload date".responds(ok<SearchResponse>())) {
         call.response.header("Access-Control-Allow-Origin", "*")
+
+        val sortField = when (it.sort) {
+            null, LatestSort.FIRST_PUBLISHED -> Beatmap.uploaded
+            LatestSort.UPDATED -> Beatmap.updatedAt
+            LatestSort.LAST_PUBLISHED -> Beatmap.lastPublishedAt
+        }
+
         val beatmaps = transaction {
             Beatmap
                 .joinVersions(true)
@@ -366,27 +373,28 @@ fun Route.mapDetailRoute() {
                             .joinVersions()
                             .slice(Beatmap.id)
                             .select {
-                                Beatmap.deletedAt.isNull().let { q ->
-                                    if (it.automapper != true) q.and(Beatmap.automapper eq false) else q
-                                }.notNull(it.before) {
-                                    Beatmap.uploaded less it.toJavaInstant()
-                                }.notNull(it.after) {
-                                    Beatmap.uploaded greater it.toJavaInstant()
-                                }
+                                Beatmap.deletedAt.isNull()
+                                    .let { q ->
+                                        if (it.automapper != true) q.and(Beatmap.automapper eq false) else q
+                                    }
+                                    .notNull(it.before) { o -> sortField less o.toJavaInstant() }
+                                    .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
                             }
-                            .orderBy(when (it.sort) {
-                                null, LatestSort.FIRST_PUBLISHED -> Beatmap.uploaded
-                                LatestSort.UPDATED -> Beatmap.updatedAt
-                                LatestSort.LAST_PUBLISHED -> Beatmap.lastPublishedAt
-                            } to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
+                            .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
                             .limit(20)
                     )
                 }
                 .complexToBeatmap()
-                .map {
-                    MapDetail.from(it)
+                .sortedByDescending { map ->
+                    when (it.sort) {
+                        null, LatestSort.FIRST_PUBLISHED -> map.uploaded
+                        LatestSort.UPDATED -> map.updatedAt
+                        LatestSort.LAST_PUBLISHED -> map.lastPublishedAt
+                    }
                 }
-                .sortedByDescending { it.uploaded }
+                .map { map ->
+                    MapDetail.from(map)
+                }
         }
 
         call.respond(SearchResponse(beatmaps))
