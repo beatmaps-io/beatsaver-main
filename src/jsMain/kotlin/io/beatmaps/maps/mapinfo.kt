@@ -11,7 +11,9 @@ import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
+import io.beatmaps.index.encodeURIComponent
 import io.beatmaps.index.oneclick
+import io.beatmaps.index.previewBaseUrl
 import io.beatmaps.index.setClipboard
 import kotlinx.browser.window
 import kotlinx.html.InputType
@@ -113,7 +115,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                             attrs.attributes["aria-label"] = "Download zip"
                             i("fas fa-download text-info") { }
                         }
-                        a("#") {
+                        a("$previewBaseUrl?url=${encodeURIComponent(version.downloadURL)}") {
                             attrs.title = "Preview"
                             attrs.attributes["aria-label"] = "Preview"
                             attrs.onClickFunction = {
@@ -239,7 +241,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                             )
                                         )
                                     }
-                                    +"Recall"
+                                    +"Unpublish"
                                 }
                             } else {
                                 a(classes = "btn btn-danger m-1") {

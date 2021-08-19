@@ -3,7 +3,6 @@ package io.beatmaps.maps
 import external.TimeAgo
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
-import io.beatmaps.index.botInfo
 import kotlinx.html.DIV
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.role
@@ -43,20 +42,12 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
         div("col-lg-4 text-nowrap") {
             val publishedVersion = props.map.publishedVersion()
             div("list-group") {
-                infoItem("Mapper", props.map.uploader.name, "/profile/${props.map.uploader.id}")
+                infoItem("Mapper", "${props.map.uploader.name} (${props.map.metadata.levelAuthorName})", "/profile/${props.map.uploader.id}")
 
                 div("list-group-item d-flex justify-content-between") {
                     +"Uploaded"
                     TimeAgo.default {
                         attrs.date = props.map.uploaded.toString()
-                    }
-                }
-
-                div("list-group-item d-flex justify-content-between") {
-                    +"Author"
-                    span("text-truncate ml-4") {
-                        botInfo(publishedVersion, false)
-                        +props.map.metadata.levelAuthorName
                     }
                 }
 

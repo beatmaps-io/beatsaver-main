@@ -79,7 +79,8 @@ fun RDOMBuilder<*>.links(map: MapDetail, version: MapVersion?, modal: RReadableR
             attrs.attributes["aria-hidden"] = "true"
         }
     }
-    a("#") {
+    val altLink = version?.downloadURL?.let { "$previewBaseUrl?url=${encodeURIComponent(it)}" } ?: "#"
+    a(altLink) {
         attrs.title = "Preview"
         attrs.attributes["aria-label"] = "Preview"
         attrs.onClickFunction = {
