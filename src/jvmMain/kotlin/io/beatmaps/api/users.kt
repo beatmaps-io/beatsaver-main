@@ -30,6 +30,7 @@ import io.jsonwebtoken.security.SignatureException
 import io.ktor.application.call
 import io.ktor.client.features.timeout
 import io.ktor.client.request.get
+import io.ktor.features.NotFoundException
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location
@@ -645,8 +646,8 @@ fun Route.userRoute() {
     }
 
     fun userBy(where: SqlExpressionBuilder.() -> Op<Boolean>) = transaction {
-        UserDao.wrapRows(User.select(where)).first()
-    }
+        UserDao.wrapRows(User.select(where)).firstOrNull()
+    } ?: throw NotFoundException()
 
     options<MapsApi.UserId> {
         call.response.header("Access-Control-Allow-Origin", "*")
