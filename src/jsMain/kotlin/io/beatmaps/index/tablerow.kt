@@ -71,7 +71,7 @@ fun setClipboard(str: String) {
 }
 
 fun RDOMBuilder<*>.links(map: MapDetail, version: MapVersion?, modal: RReadableRef<ModalComponent>) {
-    a("${Config.cdnbase}/${version?.hash}.zip", target = "_blank") {
+    a("${Config.cdnbase}/beatsaver/${map.id}.zip", target = "_blank") {
         attrs.rel = "noopener"
         attrs.title = "Download zip"
         attrs.attributes["aria-label"] = "Download zip"

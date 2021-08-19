@@ -108,7 +108,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                 }
                 div("ml-auto") {
                     props.mapInfo.latestVersion()?.let { version ->
-                        a("${Config.cdnbase}/${version.hash}.zip", target = "_blank") {
+                        a("${Config.cdnbase}/beatsaver/${props.mapInfo.id}.zip", target = "_blank") {
                             attrs.title = "Download zip"
                             attrs.attributes["aria-label"] = "Download zip"
                             i("fas fa-download text-info") { }
