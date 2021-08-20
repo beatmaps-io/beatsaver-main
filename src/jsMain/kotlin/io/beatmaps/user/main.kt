@@ -1,6 +1,7 @@
 package io.beatmaps.user
 
 import external.axiosGet
+import io.beatmaps.UserData
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
 import io.beatmaps.common.formatTime
@@ -9,7 +10,6 @@ import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
 import io.beatmaps.setPageTitle
 import kotlinx.browser.localStorage
-import kotlinx.browser.window
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.get
 import org.w3c.dom.set
@@ -32,6 +32,7 @@ import react.router.dom.RouteResultHistory
 import react.setState
 
 external interface ProfilePageProps : RProps {
+    var userData: UserData?
     var history: RouteResultHistory
     var userId: Int?
 }
@@ -90,7 +91,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
     }
 
     override fun RBuilder.render() {
-        val loggedInLocal = window["userId"] as Int?
+        val loggedInLocal = props.userData?.userId
         modal {
             ref = modalRef
         }

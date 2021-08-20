@@ -1,5 +1,7 @@
 package io.beatmaps
 
+import io.beatmaps.api.UserDetail
+import io.beatmaps.common.json
 import io.beatmaps.index.HomePage
 import io.beatmaps.index.HomePageProps
 import io.beatmaps.maps.MapPage
@@ -19,9 +21,10 @@ import io.beatmaps.user.pickUsernamePage
 import io.beatmaps.user.resetPage
 import io.beatmaps.user.signupPage
 import io.beatmaps.user.userList
-import kotlinext.js.require
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.html.RP
+import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLAnchorElement
 import react.RBuilder
 import react.RComponent
@@ -38,19 +41,31 @@ fun setPageTitle(page: String) {
     document.title = "BeatSaver - $page"
 }
 
+external interface UserData {
+    val userId: Int
+    val admin: Boolean
+}
+
 fun main() {
     window.onload = {
         val root = document.getElementById("root")
         render(root) {
-            child(App::class) { }
+            child(App::class) {
+                attrs.userData = document.getElementById("user-data")?.let {
+                    JSON.parse<UserData>(it.textContent ?: "")
+                }
+            }
         }
     }
 }
 
 const val dateFormat = "YYYY-MM-DD"
+external interface AppProps : RProps {
+    var userData: UserData?
+}
 
 @JsExport
-class App : RComponent<RProps, RState>() {
+class App : RComponent<AppProps, RState>() {
     private fun initWithHistory(history: RouteResultHistory, replaceHomelink: Boolean = true) {
         if (replaceHomelink) {
             val homeLink = document.getElementById("home-link") as HTMLAnchorElement
@@ -79,6 +94,7 @@ class App : RComponent<RProps, RState>() {
                 route<MapPageProps>("/beatsaver/:mapKey", exact = true) {
                     initWithHistory(it.history)
                     child(MapPage::class) {
+                        attrs.userData = props.userData
                         attrs.history = it.history
                         attrs.mapKey = it.match.params.mapKey
                         attrs.beatsaver = true
@@ -87,6 +103,7 @@ class App : RComponent<RProps, RState>() {
                 route<MapPageProps>("/maps/:mapKey", exact = true) {
                     initWithHistory(it.history)
                     child(MapPage::class) {
+                        attrs.userData = props.userData
                         attrs.history = it.history
                         attrs.mapKey = it.match.params.mapKey
                         attrs.beatsaver = false
@@ -101,6 +118,7 @@ class App : RComponent<RProps, RState>() {
                 route<ProfilePageProps>("/profile/:userId?", exact = true) {
                     initWithHistory(it.history)
                     child(ProfilePage::class) {
+                        attrs.userData = props.userData
                         attrs.history = it.history
                         attrs.userId = it.match.params.userId
                     }

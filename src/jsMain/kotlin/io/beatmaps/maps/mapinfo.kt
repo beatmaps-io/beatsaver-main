@@ -2,6 +2,7 @@ package io.beatmaps.maps
 
 import external.Axios
 import external.generateConfig
+import io.beatmaps.UserData
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
@@ -46,6 +47,7 @@ import kotlin.collections.set
 external interface MapInfoProps : RProps {
     var mapInfo: MapDetail
     var isOwner: Boolean
+    var isAdmin: Boolean?
     var modal: RReadableRef<ModalComponent>
     var reloadMap: () -> Unit
     var deleteMap: () -> Unit
@@ -140,7 +142,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                             }
                         }
 
-                        val adminLocal = window["admin"] as Boolean?
+                        val adminLocal = props.isAdmin
 
                         if (adminLocal == true || props.isOwner) {
                             a("#") {

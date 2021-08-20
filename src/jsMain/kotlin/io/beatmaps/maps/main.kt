@@ -1,6 +1,7 @@
 package io.beatmaps.maps
 
 import external.axiosGet
+import io.beatmaps.UserData
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.Config
@@ -9,7 +10,6 @@ import io.beatmaps.index.modal
 import io.beatmaps.maps.testplay.testplay
 import io.beatmaps.setPageTitle
 import kotlinx.browser.window
-import org.w3c.dom.get
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -21,6 +21,7 @@ import react.router.dom.RouteResultHistory
 import react.setState
 
 external interface MapPageProps : RProps {
+    var userData: UserData?
     var history: RouteResultHistory
     var mapKey: String
     var beatsaver: Boolean
@@ -65,13 +66,14 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
     override fun RBuilder.render() {
         state.map?.let {
             val version = it.publishedVersion()
-            val isOwnerLocal = window["userId"] as Int? == it.uploader.id
-            val loggedInLocal = window["userId"] as Int?
+            val loggedInLocal = props.userData?.userId
+            val isOwnerLocal = loggedInLocal == it.uploader.id
 
             if (version == null) {
                 testplay {
                     mapInfo = it
                     isOwner = isOwnerLocal
+                    isAdmin = props.userData?.admin
                     loggedInId = loggedInLocal
                     refreshPage = {
                         loadMap()
@@ -87,6 +89,7 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                 mapInfo {
                     mapInfo = it
                     isOwner = isOwnerLocal
+                    isAdmin = props.userData?.admin
                     modal = modalRef
                     reloadMap = ::loadMap
                     deleteMap = {
