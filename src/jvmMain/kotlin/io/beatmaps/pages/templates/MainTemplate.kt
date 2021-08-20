@@ -27,11 +27,13 @@ class MainTemplate(private val s: Session?, private val body: Template<BODY>) : 
         lang = "en"
         head {
             title { +pageTitle }
-            script(src = "https://kit.fontawesome.com/0d3e310ec2.js") {
+            script(src = "https://use.fontawesome.com/releases/v5.15.3/js/all.js") {
+                attributes["data-auto-add-css"] = "false"
                 attributes["crossorigin"] = "anonymous"
                 defer = true
             }
             styleLink("/static/main.css")
+            styleLink("https://use.fontawesome.com/releases/v5.15.3/css/svg-with-js.css")
             meta("theme-color", "#375a7f")
             meta("viewport", "width=device-width, min-width=575")
             meta("Description", "Beat saber custom maps")

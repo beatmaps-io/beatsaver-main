@@ -1,6 +1,7 @@
 $navbar-padding-y: .5rem;
 $navbar-padding-x: .5rem;
 
+@use "datepicker";
 @import "bootswatch/dist/darkly/variables.scss";
 @import "bootstrap/scss/bootstrap.scss";
 @import "bootswatch/dist/darkly/bootswatch.scss";

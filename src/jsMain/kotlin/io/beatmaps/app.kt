@@ -39,7 +39,6 @@ fun setPageTitle(page: String) {
 }
 
 fun main() {
-    require("react-dates/lib/css/_datepicker.css")
     window.onload = {
         val root = document.getElementById("root")
         render(root) {
