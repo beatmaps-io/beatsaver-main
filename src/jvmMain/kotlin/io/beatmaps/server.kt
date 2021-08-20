@@ -97,7 +97,6 @@ suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStat
 fun main() {
     setupLogging()
     setupDB()
-    downloadsThread()
 
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::beatmapsio).start(wait = true)
 }
@@ -258,6 +257,7 @@ fun Application.beatmapsio() {
         install(RabbitMQ) {
             setupAMQP()
         }
+        downloadsThread()
     }
 
     routing {

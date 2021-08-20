@@ -9,6 +9,7 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Downloads
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.pub
 import io.beatmaps.login.localAvatarFolder
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -60,6 +61,8 @@ val illegalCharacters = arrayOf(
     '\u0017', '\u0018', '\u0019', '\u001a', '\u001b', '\u001c', '\u001d', '\u001f',
 ).toCharArray()
 
+data class DownloadInfo(val hash: String, val remote: String)
+
 fun Route.cdnRoute() {
     options<CDN.Zip> {
         call.response.header("Access-Control-Allow-Origin", "*")
@@ -75,13 +78,8 @@ fun Route.cdnRoute() {
         }
 
         val file = File(localFolder(it.file), "${it.file}.zip")
-        if (file.exists() && call.request.origin.remoteHost.length <= 15) {
-            transaction {
-                Downloads.insert { dl ->
-                    dl[hash] = it.file
-                    dl[remote] = call.request.origin.remoteHost
-                }
-            }
+        if (file.exists()) {
+            call.pub("beatmaps", "download.${it.file}", null, DownloadInfo(it.file, call.request.origin.remoteHost))
         }
 
         call.response.header("Access-Control-Allow-Origin", "*")
@@ -101,11 +99,8 @@ fun Route.cdnRoute() {
                         map.publishedVersion()?.let { version ->
                             val file = File(localFolder(version.hash), "${version.hash}.zip")
 
-                            if (file.exists() && call.request.origin.remoteHost.length <= 15) {
-                                Downloads.insert { dl ->
-                                    dl[hash] = it.file
-                                    dl[remote] = call.request.origin.remoteHost
-                                }
+                            if (file.exists()) {
+                                call.pub("beatmaps", "download.${it.file}", null, DownloadInfo(it.file, call.request.origin.remoteHost))
                             }
 
                             val filename = "${map.id} (${map.metadata.songName} - ${map.metadata.levelAuthorName}).zip".split(*illegalCharacters).joinToString()
