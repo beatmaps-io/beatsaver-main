@@ -87,12 +87,14 @@ kotlin {
                 implementation("io.jsonwebtoken:jjwt-impl:0.11.2")
                 implementation("io.jsonwebtoken:jjwt-jackson:0.11.2")
                 implementation("com.ToxicBakery.library.bcrypt:bcrypt:+")
+                implementation("org.apache.logging.log4j:log4j-api:2.14.1")
 
                 // Helpful
                 implementation("org.valiktor:valiktor-core:0.12.0")
                 implementation("io.github.keetraxx:recaptcha:0.5")
                 implementation("de.nielsfalk.ktor:ktor-swagger:0.7.+")
                 implementation("org.bouncycastle:bcprov-jdk15:1.46")
+                implementation("nl.basjes.parse.useragent:yauaa:6.0")
 
                 // Metrics
                 implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")

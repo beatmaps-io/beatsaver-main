@@ -18,6 +18,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.ktor.application.call
+import io.ktor.features.NotFoundException
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location
 import io.ktor.locations.options
@@ -77,8 +78,28 @@ fun Route.searchRoute() {
         val searchIndex = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
         val originalQuery = it.q?.replace("%", "\\%")
 
+        // TODO: Move parsing to its own function
+        val matches = quotedPattern.findAll(originalQuery ?: "")
+        val quotedSections = matches.map { match -> match.groupValues[1] }.toList()
+        val withoutQuotedSections = quotedPattern.split(originalQuery ?: "").filter { s -> s.isNotBlank() }.joinToString(" ") { s -> s.trim() }
+
+        val (mappers, nonmappers) = withoutQuotedSections.split(' ').partition { s -> s.startsWith("mapper:") }
+        val userSubQuery = if (mappers.isNotEmpty()) {
+            User
+                .slice(User.id)
+                .select {
+                    User.uniqueName inList mappers.map { m -> m.substring(7) }
+                }
+        } else {
+            null
+        }
+        val query = nonmappers.joinToString(" ")
+        val bothWithoutQuotes = (nonmappers + quotedSections).joinToString(" ")
+        val similarRank = CustomFunction<String>("substring_similarity", searchIndex.columnType, stringLiteral(bothWithoutQuotes), searchIndex)
+        // Parsing complete
+
         val actualSortOrder = when {
-            originalQuery != null && originalQuery.length > 3 && it.sortOrder == SearchOrder.Relevance ->
+            originalQuery != null && bothWithoutQuotes.replace(" ", "").length > 3 && it.sortOrder == SearchOrder.Relevance ->
                 SearchOrder.Relevance
             it.sortOrder == SearchOrder.Rating ->
                 SearchOrder.Rating
@@ -98,25 +119,6 @@ fun Route.searchRoute() {
                         return@newSuspendedTransaction
                     }
             }
-
-            // TODO: Move parsing to its own function
-            val matches = quotedPattern.findAll(originalQuery ?: "")
-            val quotedSections = matches.map { match -> match.groupValues[1] }.toList()
-            val withoutQuotedSections = quotedPattern.split(originalQuery ?: "").filter { s -> s.isNotBlank() }.joinToString(" ") { s -> s.trim() }
-
-            val (mappers, nonmappers) = withoutQuotedSections.split(' ').partition { s -> s.startsWith("mapper:") }
-            val userSubQuery = if (mappers.isNotEmpty()) {
-                User
-                    .slice(User.id)
-                    .select {
-                        User.uniqueName inList mappers.map { m -> m.substring(7) }
-                    }
-            } else {
-                null
-            }
-            val query = nonmappers.joinToString(" ")
-            val bothWithoutQuotes = (listOf(query) + quotedSections).joinToString(" ")
-            val similarRank = CustomFunction<String>("substring_similarity", searchIndex.columnType, stringLiteral(bothWithoutQuotes), searchIndex)
 
             val beatmaps = Beatmap
                 .joinVersions(true)
