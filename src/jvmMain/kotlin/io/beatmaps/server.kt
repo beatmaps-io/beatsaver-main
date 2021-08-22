@@ -40,6 +40,7 @@ import io.ktor.features.DataConversion
 import io.ktor.features.NotFoundException
 import io.ktor.features.ParameterConversionException
 import io.ktor.features.StatusPages
+import io.ktor.features.HttpsRedirect
 import io.ktor.features.XForwardedHeaderSupport
 import io.ktor.html.respondHtmlTemplate
 import io.ktor.http.ContentType
@@ -152,6 +153,7 @@ fun Application.beatmapsio() {
         }
     }
 
+    install(HttpsRedirect)
     install(XForwardedHeaderSupport)
 
     install(ConditionalHeaders) {
