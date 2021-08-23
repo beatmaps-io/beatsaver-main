@@ -1,9 +1,8 @@
 package io.beatmaps.index
 
-import external.TimeAgo
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
-import io.beatmaps.common.Config
+import kotlinx.html.title
 import react.RBuilder
 import react.RComponent
 import react.RProps
