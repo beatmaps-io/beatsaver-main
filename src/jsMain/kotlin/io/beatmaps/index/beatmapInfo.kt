@@ -35,7 +35,7 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, RState>() {
                 val rawScore = props.map.stats.upvotes / totalVotes
                 val uncertainty = abs((rawScore - 0.5) * 2.0.pow(-log10(totalVotes + 1)))
 
-                img(src = "${Config.cdnbase}/${props.version?.hash}.jpg", alt = "Cover Image", classes = "cover") {
+                img(src = props.version?.coverURL, alt = "Cover Image", classes = "cover") {
                     attrs.width = "100"
                     attrs.height = "100"
                 }
@@ -69,21 +69,23 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, RState>() {
                     }
                 }
                 p {
-                    routeLink("/profile/${props.map.uploader.id}") {
-                        +props.map.uploader.name
-                    }
-                    botInfo(props.version)
-                    +" - "
-                    TimeAgo.default {
-                        attrs.date = props.map.uploaded.toString()
+                    uploader {
+                        attrs.map = props.map
+                        attrs.version = props.version
                     }
                 }
                 div("diffs") {
-                    diffIcons(props.version?.diffs)
+                    diffIcons {
+                        attrs.diffs = props.version?.diffs
+                    }
                 }
             }
             div("links") {
-                links(props.map, props.version, props.modal)
+                links {
+                    attrs.map = props.map
+                    attrs.version = props.version
+                    attrs.modal = props.modal
+                }
             }
         }
     }

@@ -8,6 +8,7 @@ import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
+import io.beatmaps.cdnPrefix
 import io.beatmaps.common.Config
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.InfoEditData
@@ -42,6 +43,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import java.lang.Integer.toHexString
 
 @Location("/api") class MapsApi {
     @Location("/maps/update") data class Update(val api: MapsApi)
@@ -50,7 +52,12 @@ import org.jetbrains.exposed.sql.update
     @Location("/download/key/{key}") data class BeatsaverDownload(val key: String, val api: MapsApi)
     @Location("/maps/beatsaver/{key}") data class Beatsaver(val key: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/id/{id}") data class Detail(val id: String, @Ignore val api: MapsApi)
-    @Group("Maps") @Location("/maps/hash/{hash}") data class ByHash(val hash: String, @Ignore val api: MapsApi)
+    @Group("Maps") @Location("/maps/hash/{hash}") data class ByHash(
+        @Description("Up to 50 hashes seperated by commas")
+        val hash: String,
+        @Ignore
+        val api: MapsApi
+    )
     @Group("Maps") @Location("/maps/uploader/{id}/{page}") data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/latest") data class ByUploadDate(
         @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
@@ -194,7 +201,7 @@ fun Route.mapDetailRoute() {
                     .firstOrNull()
                     ?.enrichTestplays()
                     ?.run {
-                        MapDetail.from(this)
+                        MapDetail.from(this, cdnPrefix())
                     }
             }
         } catch (_: NumberFormatException) {
@@ -228,7 +235,7 @@ fun Route.mapDetailRoute() {
                 .complexToBeatmap()
                 .firstOrNull()
                 ?.run {
-                    MapDetail.from(this)
+                    MapDetail.from(this, cdnPrefix())
                 }
         }
 
@@ -250,7 +257,7 @@ fun Route.mapDetailRoute() {
                     .complexToBeatmap()
                     .firstOrNull()
                     ?.run {
-                        MapDetail.from(this)
+                        MapDetail.from(this, cdnPrefix())
                     }
             }?.publishedVersion()
         } catch (_: NumberFormatException) {
@@ -264,27 +271,38 @@ fun Route.mapDetailRoute() {
         }
     }
 
-    get<MapsApi.ByHash>("Get map for a map hash".responds(ok<MapDetail>()).responds(notFound())) {
+    get<MapsApi.ByHash>("Get map(s) for a map hash".responds(ok<MapDetail>()).responds(notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
         val r = transaction {
+            val versions = Versions
+                .slice(Versions.mapId, Versions.hash)
+                .select {
+                    Versions.hash.inList(it.hash.lowercase().split(',', ignoreCase = false).take(50))
+                }
+            val versionMapping = versions.associate { it[Versions.hash] to it[Versions.mapId].value }
+            val mapIds = versionMapping.values.toHashSet()
+
             Beatmap
                 .joinVersions(true)
                 .joinUploader()
                 .joinCurator()
                 .select {
-                    Beatmap.id.inSubQuery(
-                        Versions
-                            .slice(Versions.mapId)
-                            .select {
-                                Versions.hash.eq(it.hash.lowercase())
-                            }
-                            .limit(1)
-                    ) and (Beatmap.deletedAt.isNull())
+                    Beatmap.id.inList(mapIds) and (Beatmap.deletedAt.isNull())
                 }
                 .complexToBeatmap()
-                .firstOrNull()
-                ?.run {
-                    MapDetail.from(this)
+                .map {
+                    MapDetail.from(it, cdnPrefix())
+                }.let { maps ->
+                    val assocMaps = maps.associateBy { it.id }
+                    when (maps.size) {
+                        0 -> null
+                        1 -> maps.first()
+                        else -> {
+                            versionMapping.mapValues {
+                                assocMaps[toHexString(it.value)]
+                            }
+                        }
+                    }
                 }
         }
 
@@ -317,7 +335,7 @@ fun Route.mapDetailRoute() {
                     }
                     .complexToBeatmap()
                     .map {
-                        MapDetail.from(it)
+                        MapDetail.from(it, cdnPrefix())
                     }
                     .sortedByDescending { it.uploaded }
             }
@@ -346,7 +364,7 @@ fun Route.mapDetailRoute() {
                 }
                 .complexToBeatmap()
                 .map {
-                    MapDetail.from(it)
+                    MapDetail.from(it, cdnPrefix())
                 }
                 .sortedByDescending { it.uploaded }
         }
@@ -396,7 +414,7 @@ fun Route.mapDetailRoute() {
                     }
                 }
                 .map { map ->
-                    MapDetail.from(map)
+                    MapDetail.from(map, cdnPrefix())
                 }
         }
 
@@ -423,7 +441,7 @@ fun Route.mapDetailRoute() {
                 }
                 .complexToBeatmap()
                 .map {
-                    MapDetail.from(it)
+                    MapDetail.from(it, cdnPrefix())
                 }
                 .sortedByDescending { it.stats.plays }
         }

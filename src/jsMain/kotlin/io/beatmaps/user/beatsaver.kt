@@ -10,6 +10,7 @@ import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
 import react.RBuilder
@@ -32,16 +33,23 @@ external interface BeatsaverPageProps : RProps {
     var history: RouteResultHistory
 }
 
-data class BeatsaverPageState(var failed: Boolean = false, var loading: Boolean = false) : RState
+external interface BeatsaverPageState : RState {
+    var failed: Boolean
+    var loading: Boolean
+    var oldName: Boolean
+}
 
 @JsExport
 class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
     private val inputRef = createRef<HTMLInputElement>()
     private val passwordRef = createRef<HTMLInputElement>()
-    private val oldNameRef = createRef<HTMLInputElement>()
 
-    init {
-        state = BeatsaverPageState()
+    override fun componentWillMount() {
+        setState {
+            failed = false
+            loading = false
+            oldName = true
+        }
     }
 
     override fun componentDidMount() {
@@ -111,9 +119,13 @@ class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
                 div("form-group") {
                     div("form-check") {
                         input(InputType.checkBox, classes = "form-check-input") {
+                            attrs.onChangeFunction = {
+                                setState {
+                                    oldName = !state.oldName
+                                }
+                            }
                             attrs.id = "oldName"
-                            ref = oldNameRef
-                            attrs.checked = true
+                            attrs.checked = state.oldName
                         }
                         label("form-check-label") {
                             attrs.htmlFor = "oldName"
@@ -125,7 +137,7 @@ class BeatsaverPage : RComponent<BeatsaverPageProps, BeatsaverPageState>() {
                     attrs.onClickFunction = {
                         val usr = inputRef.current?.value ?: ""
                         val pwd = passwordRef.current?.value ?: ""
-                        val useOldName = oldNameRef.current?.checked ?: true
+                        val useOldName = state.oldName
 
                         setState {
                             loading = true

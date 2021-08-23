@@ -11,10 +11,10 @@ import org.jetbrains.exposed.sql.Query
 import org.jetbrains.exposed.sql.ResultRow
 import java.lang.Integer.toHexString
 
-fun MapDetail.Companion.from(other: BeatmapDao) = MapDetail(
+fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
     toHexString(other.id.value), other.name, other.description,
     UserDetail.from(other.uploader), MapDetailMetadata.from(other), MapStats.from(other), other.uploaded?.toKotlinInstant(), other.automapper, other.ranked, other.qualified,
-    other.versions.values.map { MapVersion.from(it) }.partition { it.state == EMapState.Published }.let {
+    other.versions.values.map { MapVersion.from(it, cdnPrefix) }.partition { it.state == EMapState.Published }.let {
         // Once a map is published hide previous versions
         it.first.ifEmpty {
             it.second
@@ -22,15 +22,15 @@ fun MapDetail.Companion.from(other: BeatmapDao) = MapDetail(
     },
     other.curator?.name, other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.lastPublishedAt?.toKotlinInstant()
 )
-fun MapDetail.Companion.from(row: ResultRow) = from(BeatmapDao.wrapRow(row))
+fun MapDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(BeatmapDao.wrapRow(row), cdnPrefix)
 
-fun MapVersion.Companion.from(other: VersionsDao) = MapVersion(
+fun MapVersion.Companion.from(other: VersionsDao, cdnPrefix: String) = MapVersion(
     other.hash, other.key64, other.state, other.uploaded.toKotlinInstant(), other.sageScore,
     other.difficulties.values.map { MapDifficulty.from(it) }.sortedWith(compareBy(MapDifficulty::characteristic, MapDifficulty::difficulty)), other.feedback,
     other.testplayAt?.toKotlinInstant(), if (other.testplays.isEmpty()) null else other.testplays.values.map { MapTestplay.from(it) },
-    "${Config.cdnbase}/${other.hash}.zip", "${Config.cdnbase}/${other.hash}.jpg", "${Config.cdnbase}/${other.hash}.mp3"
+    "${Config.cdnBase(cdnPrefix)}/${other.hash}.zip", "${Config.cdnBase(cdnPrefix)}/${other.hash}.jpg", "${Config.cdnBase(cdnPrefix)}/${other.hash}.mp3"
 )
-fun MapVersion.Companion.from(row: ResultRow) = from(VersionsDao.wrapRow(row))
+fun MapVersion.Companion.from(row: ResultRow, cdnPrefix: String) = from(VersionsDao.wrapRow(row), cdnPrefix)
 
 fun MapDifficulty.Companion.from(other: DifficultyDao) = MapDifficulty(
     other.njs, other.offset, other.notes, other.bombs, other.obstacles, other.nps.toDouble(),

@@ -2,15 +2,19 @@ package io.beatmaps.controllers
 
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
+import io.beatmaps.common.DownloadInfo
+import io.beatmaps.common.DownloadType
 import io.beatmaps.common.beatsaver.localAudioFolder
 import io.beatmaps.common.beatsaver.localCoverFolder
 import io.beatmaps.common.beatsaver.localFolder
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.Downloads
+import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.downloadFilename
+import io.beatmaps.common.localAvatarFolder
 import io.beatmaps.common.pub
-import io.beatmaps.login.localAvatarFolder
+import io.beatmaps.common.returnFile
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.features.NotFoundException
@@ -20,10 +24,10 @@ import io.ktor.locations.Location
 import io.ktor.locations.get
 import io.ktor.locations.options
 import io.ktor.response.header
-import io.ktor.response.respondFile
 import io.ktor.routing.Route
 import io.ktor.util.pipeline.PipelineContext
-import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
@@ -37,31 +41,6 @@ import java.io.File
     @Location("/{file}.mp3") data class Audio(val file: String, val api: CDN)
     @Location("/beatsaver/{file}.mp3") data class BSAudio(val file: String, val api: CDN)
 }
-
-suspend fun PipelineContext<*, ApplicationCall>.returnFile(file: File?, filename: String? = null) {
-    if (file != null && file.exists()) {
-        filename?.let {
-            call.response.header(
-                HttpHeaders.ContentDisposition,
-                "attachment; filename=\"$it\""
-            )
-        }
-
-        call.respondFile(file)
-    } else {
-        throw NotFoundException()
-    }
-}
-
-val illegalCharacters = arrayOf(
-    '<', '>', ':', '/', '\\', '|', '?', '*', '"',
-    '\u0000', '\u0001', '\u0002', '\u0003', '\u0004', '\u0005', '\u0006', '\u0007',
-    '\u0008', '\u0009', '\u000a', '\u000b', '\u000c', '\u000d', '\u000e', '\u000d',
-    '\u000f', '\u0010', '\u0011', '\u0012', '\u0013', '\u0014', '\u0015', '\u0016',
-    '\u0017', '\u0018', '\u0019', '\u001a', '\u001b', '\u001c', '\u001d', '\u001f',
-).toCharArray()
-
-data class DownloadInfo(val hash: String, val remote: String)
 
 fun Route.cdnRoute() {
     options<CDN.Zip> {
@@ -78,12 +57,27 @@ fun Route.cdnRoute() {
         }
 
         val file = File(localFolder(it.file), "${it.file}.zip")
-        if (file.exists()) {
-            call.pub("beatmaps", "download.${it.file}", null, DownloadInfo(it.file, call.request.origin.remoteHost))
-        }
+        val name = if (file.exists()) {
+            transaction {
+                Beatmap
+                    .join(Versions, JoinType.FULL, onColumn = Beatmap.id, otherColumn = Versions.mapId)//, additionalConstraint = { Versions.state neq EMapState.Uploaded })
+                    .select {
+                        (Versions.hash eq it.file) and Beatmap.deletedAt.isNull()
+                    }
+                    .complexToBeatmap()
+                    .firstOrNull()
+                    ?.let { map ->
+                        downloadFilename(Integer.toHexString(map.id.value), map.songName, map.levelAuthorName)
+                    }
+            }?.also { _ ->
+                call.pub("beatmaps", "download.hash.${it.file}", null, DownloadInfo(it.file, DownloadType.HASH, call.request.origin.remoteHost))
+            }
+        } else {
+            null
+        } ?: throw NotFoundException()
 
         call.response.header("Access-Control-Allow-Origin", "*")
-        returnFile(file)
+        returnFile(file, name)
     }
 
     get<CDN.BeatSaver> {
@@ -91,30 +85,28 @@ fun Route.cdnRoute() {
             transaction {
                 Beatmap.joinVersions(false)
                     .select {
-                        Beatmap.id eq it.file.toInt(16)
+                        Beatmap.id eq it.file.toInt(16) and Beatmap.deletedAt.isNull()
                     }.limit(1)
                     .complexToBeatmap()
-                    .map { MapDetail.from(it) }
+                    .map { MapDetail.from(it, "") }
                     .firstOrNull()?.let { map ->
                         map.publishedVersion()?.let { version ->
                             val file = File(localFolder(version.hash), "${version.hash}.zip")
 
                             if (file.exists()) {
-                                call.pub("beatmaps", "download.${it.file}", null, DownloadInfo(it.file, call.request.origin.remoteHost))
+                                call.pub("beatmaps", "download.key.${it.file}", null, DownloadInfo(it.file, DownloadType.KEY, call.request.origin.remoteHost))
                             }
 
-                            val filename = "${map.id} (${map.metadata.songName} - ${map.metadata.levelAuthorName}).zip".split(*illegalCharacters).joinToString()
-
-                            file to filename
+                            file to downloadFilename(map.id, map.metadata.songName, map.metadata.levelAuthorName)
                         }
                     }
             }
         } catch (_: NumberFormatException) {
             null
-        }
+        } ?: throw NotFoundException()
 
         call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
-        returnFile(res?.first, res?.second)
+        returnFile(res.first, res.second)
     }
 
     get<CDN.Audio> {
@@ -131,7 +123,7 @@ fun Route.cdnRoute() {
                 VersionsDao.wrapRows(
                     Beatmap.joinVersions(false)
                         .select {
-                            Beatmap.id eq it.file.toInt(16)
+                            Beatmap.id eq it.file.toInt(16) and Beatmap.deletedAt.isNull()
                         }.limit(1)
                 ).firstOrNull()?.hash
             }

@@ -95,6 +95,7 @@ kotlin {
                 implementation("de.nielsfalk.ktor:ktor-swagger:0.7.+")
                 implementation("org.bouncycastle:bcprov-jdk15:1.46")
                 implementation("nl.basjes.parse.useragent:yauaa:6.0")
+                implementation("com.maxmind.geoip2:geoip2:2.15.0")
 
                 // Metrics
                 implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")

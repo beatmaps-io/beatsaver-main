@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
+import io.beatmaps.cdnPrefix
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EMapState
@@ -142,7 +143,7 @@ suspend fun PipelineContext<*, ApplicationCall>.validateJWT(jwt: String, block: 
         this.block(it)
     }
 
-fun getTestplayQueue(userId: Int?, includePlayed: Boolean, page: Long?) = transaction {
+fun PipelineContext<*, ApplicationCall>.getTestplayQueue(userId: Int?, includePlayed: Boolean, page: Long?) = transaction {
     Beatmap
         .joinVersions(true) { Versions.state eq EMapState.Testplay }
         .joinUploader()
@@ -173,11 +174,11 @@ fun getTestplayQueue(userId: Int?, includePlayed: Boolean, page: Long?) = transa
         }
         .complexToBeatmap()
         .map {
-            MapDetail.from(it)
+            MapDetail.from(it, cdnPrefix())
         }
 }
 
-fun getTestplayRecent(userId: Int, page: Long?) = transaction {
+fun PipelineContext<*, ApplicationCall>.getTestplayRecent(userId: Int, page: Long?) = transaction {
     // Maybe a little bit cross-product, but not made worse by testplay info as only info from the current user is included
     // Beatmaps get grouped by complexToBeatmap and clients need to reconstruct the ordering
     Testplay
@@ -195,7 +196,7 @@ fun getTestplayRecent(userId: Int, page: Long?) = transaction {
         .limit(page)
         .complexToBeatmap()
         .map {
-            MapDetail.from(it)
+            MapDetail.from(it, cdnPrefix())
         }
 }
 
@@ -255,7 +256,8 @@ fun Route.testplayRoute() {
                     val originalState = MapVersion.from(
                         Versions.select {
                             Versions.hash eq newState.hash
-                        }.single()
+                        }.single(),
+                        cdnPrefix()
                     )
 
                     fun updateState() =

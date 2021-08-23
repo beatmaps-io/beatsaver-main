@@ -7,6 +7,7 @@ import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.jackson
+import io.beatmaps.common.localAvatarFolder
 import io.beatmaps.genericPage
 import io.ktor.application.call
 import io.ktor.auth.OAuthAccessTokenResponse
@@ -36,8 +37,6 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.File
 import java.lang.Long.parseLong
-
-fun localAvatarFolder() = File(System.getenv("AVATAR_DIR") ?: "K:\\BMAvatar")
 
 data class Session(
     val userId: Int,

@@ -2,6 +2,7 @@ package io.beatmaps.controllers
 
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
+import io.beatmaps.cdnPrefix
 import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
@@ -65,7 +66,7 @@ fun Route.mapController() {
                     transaction {
                         Beatmap.joinVersions().select {
                             Beatmap.id eq it.key.toInt(16)
-                        }.limit(1).complexToBeatmap().map { MapDetail.from(it) }.firstOrNull()
+                        }.limit(1).complexToBeatmap().map { MapDetail.from(it, cdnPrefix()) }.firstOrNull()
                     }?.let {
                         meta("og:type", "website")
                         meta("og:site_name", "BeatSaver")
@@ -85,7 +86,7 @@ fun Route.mapController() {
         transaction {
             Beatmap.joinVersions().select {
                 Versions.key64 eq it.key
-            }.limit(1).complexToBeatmap().map { MapDetail.from(it) }.firstOrNull()
+            }.limit(1).complexToBeatmap().map { MapDetail.from(it, cdnPrefix()) }.firstOrNull()
         }?.let {
             call.respondRedirect("/maps/${it.id}")
         } ?: run {

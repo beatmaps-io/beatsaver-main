@@ -22,6 +22,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.jackson
+import io.beatmaps.common.localAvatarFolder
 import io.beatmaps.common.pub
 import io.beatmaps.common.zip.ExtractedInfo
 import io.beatmaps.common.zip.ZipHelper
@@ -30,7 +31,6 @@ import io.beatmaps.common.zip.ZipHelperException
 import io.beatmaps.common.zip.sharedInsert
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session
-import io.beatmaps.login.localAvatarFolder
 import io.ktor.application.call
 import io.ktor.features.origin
 import io.ktor.http.HttpStatusCode

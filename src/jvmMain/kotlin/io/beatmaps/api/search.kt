@@ -7,7 +7,9 @@ import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
+import io.beatmaps.cdnPrefix
 import io.beatmaps.common.db.PgConcat
+import io.beatmaps.common.db.distinctOn
 import io.beatmaps.common.db.ilike
 import io.beatmaps.common.db.similar
 import io.beatmaps.common.dbo.Beatmap
@@ -30,6 +32,7 @@ import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.sql.CustomFunction
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.stringLiteral
@@ -120,6 +123,8 @@ fun Route.searchRoute() {
                     }
             }
 
+            val needsDiff = it.minNps != null || it.maxNps != null
+
             val beatmaps = Beatmap
                 .joinVersions(true)
                 .joinUploader()
@@ -128,8 +133,21 @@ fun Route.searchRoute() {
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
-                            .joinVersions(it.minNps != null || it.maxNps != null)
-                            .slice(Beatmap.id)
+                            .joinVersions(needsDiff)
+                            .slice(
+                                if (needsDiff) {
+                                    Beatmap.id.distinctOn(
+                                        Beatmap.id,
+                                        when (actualSortOrder) {
+                                            SearchOrder.Relevance -> similarRank
+                                            SearchOrder.Rating -> Beatmap.score
+                                            SearchOrder.Latest -> Beatmap.uploaded
+                                        }
+                                    )
+                                } else {
+                                    Beatmap.id
+                                }
+                            )
                             .select {
                                 Beatmap.deletedAt.isNull()
                                     .let { q ->
@@ -191,7 +209,7 @@ fun Route.searchRoute() {
                 }
                 .orderBy(Beatmap.uploaded, SortOrder.DESC)
                 .complexToBeatmap()
-                .map { m -> MapDetail.from(m) }
+                .map { m -> MapDetail.from(m, cdnPrefix()) }
 
             call.respond(SearchResponse(beatmaps))
         }

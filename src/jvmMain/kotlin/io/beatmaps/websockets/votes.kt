@@ -3,6 +3,7 @@ package io.beatmaps.websockets
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.VoteSummaryHex
 import io.beatmaps.api.from
+import io.beatmaps.cdnPrefix
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.complexToBeatmap
@@ -29,7 +30,7 @@ fun Route.votesWebsocket() {
                     }
                     .complexToBeatmap()
                     .firstOrNull()?.let {
-                        val mapDetail = MapDetail.from(it)
+                        val mapDetail = MapDetail.from(it, "")
 
                         VoteSummaryHex(
                             mapDetail.publishedVersion()?.hash,

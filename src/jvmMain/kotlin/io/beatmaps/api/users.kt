@@ -5,6 +5,7 @@ import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
+import io.beatmaps.cdnPrefix
 import io.beatmaps.common.Config
 import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.api.EDifficulty
@@ -86,7 +87,7 @@ fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: Use
 
 fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false) = from(UserDao.wrapRow(row), roles)
 fun Alert.Companion.from(other: ModLogDao, map: MapDetail) = Alert(map, other.opAt.toKotlinInstant(), other.realAction())
-fun Alert.Companion.from(row: ResultRow) = from(ModLogDao.wrapRow(row), MapDetail.from(row))
+fun Alert.Companion.from(row: ResultRow, cdnPrefix: String) = from(ModLogDao.wrapRow(row), MapDetail.from(row, cdnPrefix))
 
 @Location("/api/users")
 class UsersApi {
@@ -472,7 +473,7 @@ fun Route.userRoute() {
                 ModLog.join(Beatmap, JoinType.INNER, Beatmap.id, ModLog.opOn).select {
                     (Beatmap.uploader eq user.userId) and
                         (ModLog.type inList listOf(ModLogOpType.Unpublish, ModLogOpType.Delete).map { it.ordinal })
-                }.orderBy(ModLog.opAt, SortOrder.DESC).limit(30).map { Alert.from(it) }
+                }.orderBy(ModLog.opAt, SortOrder.DESC).limit(30).map { Alert.from(it, cdnPrefix()) }
             }
 
             call.respond(alerts)

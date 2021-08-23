@@ -12,6 +12,8 @@ import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
+import io.beatmaps.index.copyBsr
+import io.beatmaps.index.downloadZip
 import io.beatmaps.index.encodeURIComponent
 import io.beatmaps.index.oneclick
 import io.beatmaps.index.previewBaseUrl
@@ -111,18 +113,17 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                     +props.mapInfo.name
                 }
                 div("ml-auto") {
-                    props.mapInfo.latestVersion()?.let { version ->
-                        a("${Config.cdnbase}/beatsaver/${props.mapInfo.id}.zip", target = "_blank") {
-                            attrs.title = "Download zip"
-                            attrs.attributes["aria-label"] = "Download zip"
-                            i("fas fa-download text-info") { }
+                    props.mapInfo.mainVersion()?.let { version ->
+                        downloadZip.invoke {
+                            attrs.map = props.mapInfo
+                            attrs.version = version
                         }
                         a("$previewBaseUrl?url=${encodeURIComponent(version.downloadURL)}") {
                             attrs.title = "Preview"
                             attrs.attributes["aria-label"] = "Preview"
                             attrs.onClickFunction = {
                                 it.preventDefault()
-                                props.modal.current?.show(version.hash)
+                                props.modal.current?.show(version.downloadURL)
                             }
                             i("fas fa-play text-info") { }
                         }
@@ -130,16 +131,8 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                             mapId = props.mapInfo.id
                             modal = props.modal
                         }
-                        a("#") {
-                            attrs.title = "Copy BSR"
-                            attrs.attributes["aria-label"] = "Copy BSR"
-                            attrs.onClickFunction = {
-                                it.preventDefault()
-                                setClipboard("!bsr ${props.mapInfo.id}")
-                            }
-                            i("fab fa-twitch text-info") {
-                                attrs.attributes["aria-hidden"] = "true"
-                            }
+                        copyBsr {
+                            attrs.map = props.mapInfo
                         }
 
                         val adminLocal = props.isAdmin
@@ -207,7 +200,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                 }
             }
             div("card-body mapinfo") {
-                img("Cover Image", "${Config.cdnbase}/${props.mapInfo.versions.first().hash}.jpg") {
+                img("Cover Image", props.mapInfo.mainVersion()?.coverURL) {
                     attrs.width = "200"
                     attrs.height = "200"
                 }

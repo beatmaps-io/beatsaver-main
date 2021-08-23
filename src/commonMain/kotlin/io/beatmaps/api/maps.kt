@@ -42,6 +42,7 @@ data class MapDetail(
     fun intId() = id.toInt(16)
     fun latestVersion() = versions.maxByOrNull { it.createdAt }
     fun publishedVersion() = versions.firstOrNull { it.state == EMapState.Published }
+    fun mainVersion() = publishedVersion() ?: latestVersion()
     companion object
 }
 
