@@ -56,6 +56,7 @@ fun Application.installMetrics() {
 
     install(MicrometerMetrics) {
         registry = appMicrometerRegistry
+        distinctNotRegisteredRoutes = false
         timers { call, _ ->
             call.attributes[extraTags].forEach {
                 tag(it.key, it.value)
