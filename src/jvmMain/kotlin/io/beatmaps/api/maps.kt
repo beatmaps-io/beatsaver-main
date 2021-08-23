@@ -267,7 +267,7 @@ fun Route.mapDetailRoute() {
         if (r == null) {
             call.respond(HttpStatusCode.NotFound)
         } else {
-            call.respondRedirect("${Config.cdnbase}/${r.hash}.zip")
+            call.respondRedirect(r.downloadURL)
         }
     }
 
@@ -354,6 +354,7 @@ fun Route.mapDetailRoute() {
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
+                            .joinVersions()
                             .slice(Beatmap.id)
                             .select {
                                 Beatmap.uploader.eq(it.id) and (Beatmap.deletedAt.isNull())
