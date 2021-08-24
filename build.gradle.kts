@@ -22,6 +22,9 @@ repositories {
 }
 
 kotlin {
+    jvmToolchain {
+        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(15))
+    }
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "15"
