@@ -3,7 +3,6 @@ package io.beatmaps.websockets
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.VoteSummaryHex
 import io.beatmaps.api.from
-import io.beatmaps.cdnPrefix
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.complexToBeatmap

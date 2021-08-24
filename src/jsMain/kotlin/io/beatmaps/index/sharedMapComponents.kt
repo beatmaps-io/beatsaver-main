@@ -1,4 +1,5 @@
 package io.beatmaps.index
+
 import external.TimeAgo
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty

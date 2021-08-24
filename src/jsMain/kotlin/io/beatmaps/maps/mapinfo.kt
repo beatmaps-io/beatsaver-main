@@ -2,12 +2,10 @@ package io.beatmaps.maps
 
 import external.Axios
 import external.generateConfig
-import io.beatmaps.UserData
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.StateUpdate
-import io.beatmaps.common.Config
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
@@ -17,7 +15,6 @@ import io.beatmaps.index.downloadZip
 import io.beatmaps.index.encodeURIComponent
 import io.beatmaps.index.oneclick
 import io.beatmaps.index.previewBaseUrl
-import io.beatmaps.index.setClipboard
 import kotlinx.browser.window
 import kotlinx.html.InputType
 import kotlinx.html.Tag
@@ -26,7 +23,6 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
-import org.w3c.dom.get
 import react.RBuilder
 import react.RComponent
 import react.RProps

@@ -9,9 +9,7 @@ import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.inlineJackson
-import io.beatmaps.common.pub
 import io.beatmaps.common.rabbitOptional
-import io.ktor.application.call
 import io.ktor.routing.Route
 import io.ktor.routing.application
 import io.ktor.websocket.webSocket

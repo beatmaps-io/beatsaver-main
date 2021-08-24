@@ -1,7 +1,5 @@
 package io.beatmaps
 
-import io.beatmaps.api.UserDetail
-import io.beatmaps.common.json
 import io.beatmaps.index.HomePage
 import io.beatmaps.index.HomePageProps
 import io.beatmaps.maps.MapPage
@@ -23,8 +21,6 @@ import io.beatmaps.user.signupPage
 import io.beatmaps.user.userList
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.html.RP
-import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLAnchorElement
 import react.RBuilder
 import react.RComponent

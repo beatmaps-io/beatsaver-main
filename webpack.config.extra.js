@@ -13,7 +13,7 @@ let config = {
 
 ;(function(config) {
   const webpack = require('./build/js/node_modules/webpack');
-    config.plugins.push(new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /en\-gb/))
+  config.plugins.push(new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /en\-gb/))
 })(config);
 
 module.exports = config;

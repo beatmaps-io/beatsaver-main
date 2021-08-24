@@ -7,7 +7,6 @@ import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
-import io.beatmaps.cdnPrefix
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning

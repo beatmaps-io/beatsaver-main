@@ -7,7 +7,6 @@ import kotlinx.html.div
 import kotlinx.html.id
 import kotlinx.html.main
 import kotlinx.html.script
-import kotlinx.html.unsafe
 
 class GenericPageTemplate(private val s: Session?) : Template<BODY> {
     override fun BODY.apply() {

@@ -60,7 +60,7 @@ fun Route.cdnRoute() {
         val name = if (file.exists()) {
             transaction {
                 Beatmap
-                    .join(Versions, JoinType.FULL, onColumn = Beatmap.id, otherColumn = Versions.mapId)//, additionalConstraint = { Versions.state neq EMapState.Uploaded })
+                    .join(Versions, JoinType.FULL, onColumn = Beatmap.id, otherColumn = Versions.mapId) // , additionalConstraint = { Versions.state neq EMapState.Uploaded })
                     .select {
                         (Versions.hash eq it.file) and Beatmap.deletedAt.isNull()
                     }
