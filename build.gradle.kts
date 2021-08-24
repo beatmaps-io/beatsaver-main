@@ -197,7 +197,8 @@ tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
     outputFileName = "output.js"
     sourceMaps = true
     report = true
-    args = mutableListOf("--config", "..\\..\\..\\..\\webpack.config.extra.js", "--merge")
+    val slash = File.separator
+    args = mutableListOf("--config", "..$slash..$slash..$slash..${slash}webpack.config.extra.js", "--merge")
 }
 
 tasks.withType<AbstractCopyTask> {
