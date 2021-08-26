@@ -27,11 +27,11 @@ val geoIp = DatabaseReader.Builder(File(geodbFilePath)).withCache(CHMCache()).bu
 val cdnPrefixes = mapOf(
     "AF" to "",
     "AN" to "",
-    "AS" to "sea.",
+    "AS" to "as.",
     "EU" to "",
     "NA" to "na.",
-    "OC" to "sea.",
-    "SA" to ""
+    "OC" to "as.",
+    "SA" to "na."
 )
 private val cdnPrefixAttr = AttributeKey<String>("cdnPrefix")
 

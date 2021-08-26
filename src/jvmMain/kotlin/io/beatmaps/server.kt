@@ -1,5 +1,6 @@
 package io.beatmaps
 
+import com.rabbitmq.client.BuiltinExchangeType
 import de.nielsfalk.ktor.swagger.SwaggerSupport
 import de.nielsfalk.ktor.swagger.version.shared.Contact
 import de.nielsfalk.ktor.swagger.version.shared.Information
@@ -12,6 +13,7 @@ import io.beatmaps.api.testplayRoute
 import io.beatmaps.api.userRoute
 import io.beatmaps.api.voteRoute
 import io.beatmaps.common.db.setupDB
+import io.beatmaps.common.genericQueueConfig
 import io.beatmaps.common.jackson
 import io.beatmaps.common.json
 import io.beatmaps.common.rabbitHost
@@ -255,7 +257,24 @@ fun Application.beatmapsio() {
     installDiscordOauth()
     if (rabbitHost.isNotEmpty()) {
         install(RabbitMQ) {
-            setupAMQP()
+            setupAMQP {
+                exchangeDeclare("beatmaps.dlq", BuiltinExchangeType.TOPIC, true)
+                exchangeDeclare("beatmaps", BuiltinExchangeType.TOPIC, true)
+                queueDeclare("vote", true, false, false, genericQueueConfig)
+                queueBind("vote", "beatmaps", "vote.#")
+
+                queueDeclare("uvstats", true, false, false, genericQueueConfig)
+                queueBind("uvstats", "beatmaps", "user.stats.*")
+
+                queueDeclare("bm.updateStream", true, false, false, genericQueueConfig)
+                queueBind("bm.updateStream", "beatmaps", "maps.*.updated")
+
+                queueDeclare("bm.voteStream", true, false, false, genericQueueConfig)
+                queueBind("bm.voteStream", "beatmaps", "voteupdate.*")
+
+                queueDeclare("bm.downloadCount", true, false, false, genericQueueConfig)
+                queueBind("bm.downloadCount", "beatmaps", "download.#")
+            }
         }
         downloadsThread()
     }

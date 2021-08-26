@@ -48,8 +48,10 @@ fun Application.installMetrics() {
         .addResources("classpath:agents/*.yaml")
         .build()
 
-    val mods = hashSetOf("BMBF", "QuestSongDownloader", "BeatSaverVoting", "ModAssistant", "Beatlist", "PlaylistManager", "MorePlaylists", "BSDataPuller", "DiTails",
-        "Beatsaber", "BeatSaberPlus", "SongRequestManager", "PlaylistDownLoader", "Beatdrop", "SiraUtil", "BeatSyncConsole")
+    val mods = hashSetOf(
+        "BMBF", "QuestSongDownloader", "BeatSaverVoting", "ModAssistant", "Beatlist", "PlaylistManager", "MorePlaylists", "BSDataPuller", "DiTails",
+        "Beatsaber", "BeatSaberPlus", "SongRequestManager", "PlaylistDownLoader", "Beatdrop", "SiraUtil", "BeatSyncConsole"
+    )
 
     val appMicrometerRegistry = InfluxMeterRegistry(config, Clock.SYSTEM)
     appMicrometerRegistry.config().commonTags("host", System.getenv("HOSTNAME") ?: "unknown")
