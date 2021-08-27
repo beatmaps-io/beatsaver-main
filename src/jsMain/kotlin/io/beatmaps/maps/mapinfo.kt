@@ -119,7 +119,11 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                             attrs.attributes["aria-label"] = "Preview"
                             attrs.onClickFunction = {
                                 it.preventDefault()
-                                props.modal.current?.show(version.downloadURL)
+                                if (version.state == EMapState.Published) {
+                                    props.modal.current?.showById(props.mapInfo.id)
+                                } else {
+                                    props.modal.current?.show(version.downloadURL)
+                                }
                             }
                             i("fas fa-play text-info") { }
                         }

@@ -4,6 +4,7 @@ import external.TimeAgo
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.MapVersion
+import io.beatmaps.common.api.EMapState
 import io.beatmaps.maps.diffImg
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -119,8 +120,13 @@ val links = functionComponent<LinksProps> { props ->
         attrs.attributes["aria-label"] = "Preview"
         attrs.onClickFunction = {
             it.preventDefault()
-            props.version?.downloadURL?.let { downloadURL ->
-                props.modal.current?.show(downloadURL)
+
+            if (props.version?.state == EMapState.Published) {
+                props.modal.current?.showById(props.map.id)
+            } else {
+                props.version?.downloadURL?.let { downloadURL ->
+                    props.modal.current?.show(downloadURL)
+                }
             }
         }
         i("fas fa-play text-info") {

@@ -14,6 +14,11 @@ body {
   margin: auto;
 }
 
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
 .mapinfo-list td {
   width: 50%;
 }
@@ -466,11 +471,11 @@ li.list-group-item:hover, a.list-group-item:hover {
 }
 
 .rabbit-dialog {
-  max-width: 1200px !important;
-}
+  max-width: 800px !important;
 
-.rabbit-dialog iframe {
-  height: 700px;
+  iframe {
+    height: 467px;
+  }
 }
 
 .modal.show {
@@ -781,6 +786,56 @@ li.KeyboardShortcutRow {
     span {
       font-size: 10px;
       width: 59px;
+    }
+  }
+}
+
+@media (min-width: 1400px) {
+  .rabbit-dialog {
+    max-width: 1200px !important;
+
+    iframe {
+      height: 700px;
+    }
+  }
+}
+
+@media (min-width: 1750px) {
+  .rabbit-dialog {
+    max-width: 1500px !important;
+
+    iframe {
+      height: 875px;
+    }
+  }
+}
+
+@media (min-width: 2100px) {
+  .rabbit-dialog {
+    max-width: 1800px !important;
+
+    iframe {
+      height: 1050px;
+    }
+  }
+}
+
+@media (min-width: 2450px) {
+  .rabbit-dialog {
+    max-width: 2100px !important;
+
+    iframe {
+      height: 1225px;
+    }
+  }
+}
+
+@media (min-width: 2800px) {
+  .rabbit-dialog {
+    max-width: 2400px !important;
+
+    iframe {
+      height: 1400px;
     }
   }
 }
