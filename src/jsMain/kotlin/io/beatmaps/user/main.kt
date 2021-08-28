@@ -42,8 +42,14 @@ external interface ProfilePageState : RState {
     var loading: Boolean
     var startup: Boolean
     var userDetail: UserDetail?
-    var wip: Boolean
-    var edit: Boolean
+    var state: ProfileTab
+}
+
+enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps) -> Boolean = { true }, val bootCondition: () -> Boolean = { false }, val onSelected: () -> Unit = {}) {
+    PUBLISHED("Published", onSelected = { localStorage["profile.showwip"] = "false" }),
+    UNPUBLISHED("Unpublished", condition = { (it.userId == null) }, bootCondition = { (localStorage["profile.showwip"] == "true") }, onSelected = { localStorage["profile.showwip"] = "true" }),
+    ACCOUNT("Account", condition = { (it.userId == null) }, bootCondition = { (window.location.hash.substring(1) == "account") }),
+    MODERATOR("Alerts", condition = { (it.userData?.admin == true) }, bootCondition = { (window.location.hash.substring(1) == "alerts") })
 }
 
 @JsExport
@@ -55,8 +61,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             loading = false
             startup = false
             userDetail = null
-            wip = false
-            edit = false
+            state = ProfileTab.UNPUBLISHED
         }
     }
 
@@ -64,8 +69,17 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         setPageTitle("Profile")
 
         setState {
-            edit = window.location.hash.substring(1) == "account"
-            wip = props.userId == null && localStorage["profile.showwip"] == "true"
+            // We care about what tab you're on if you are an admin or looking at your own profile
+            state = if (ProfileTab.ACCOUNT.condition(props) && ProfileTab.ACCOUNT.bootCondition()) {
+                ProfileTab.ACCOUNT
+            } else if (ProfileTab.MODERATOR.condition(props) && ProfileTab.MODERATOR.bootCondition()) {
+                ProfileTab.MODERATOR
+            } else if (ProfileTab.UNPUBLISHED.condition(props) && ProfileTab.UNPUBLISHED.bootCondition()) {
+                ProfileTab.UNPUBLISHED
+            } else {
+                ProfileTab.PUBLISHED
+            }
+
             startup = true
         }
 
@@ -170,44 +184,22 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                         }*/
                     }
                 }
-                if (props.userId == null) {
+                if (props.userId == null || props.userData?.admin == true) {
                     ul("nav nav-tabs") {
-                        li("nav-item") {
-                            a("#", classes = "nav-link" + if (!state.wip && !state.edit) " active" else "") {
-                                attrs.onClickFunction = {
-                                    it.preventDefault()
-                                    localStorage["profile.showwip"] = "false"
-                                    setState {
-                                        wip = false
-                                        edit = false
+                        ProfileTab.values().forEach { tab ->
+                            if (!tab.condition(props)) return@forEach
+
+                            li("nav-item") {
+                                a("#", classes = "nav-link" + if (state.state == tab) " active" else "") {
+                                    attrs.onClickFunction = {
+                                        it.preventDefault()
+                                        tab.onSelected()
+                                        setState {
+                                            state = tab
+                                        }
                                     }
+                                    +tab.tabText
                                 }
-                                +"Published"
-                            }
-                        }
-                        li("nav-item") {
-                            a("#", classes = "nav-link" + if (state.wip) " active" else "") {
-                                attrs.onClickFunction = {
-                                    it.preventDefault()
-                                    localStorage["profile.showwip"] = "true"
-                                    setState {
-                                        wip = true
-                                        edit = false
-                                    }
-                                }
-                                +"Unpublished"
-                            }
-                        }
-                        li("nav-item") {
-                            a("#", classes = "nav-link" + if (state.edit) " active" else "") {
-                                attrs.onClickFunction = {
-                                    it.preventDefault()
-                                    setState {
-                                        wip = false
-                                        edit = true
-                                    }
-                                }
-                                +"Account"
                             }
                         }
                     }
@@ -215,15 +207,19 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             }
         }
         val detail = state.userDetail
-        if (state.edit && detail != null) {
+        if (state.state == ProfileTab.ACCOUNT && detail != null) {
             account {
                 userDetail = detail
+            }
+        } else if (state.state == ProfileTab.MODERATOR) {
+            alertsPage {
+                userId = props.userId
             }
         } else if (state.startup) {
             beatmapTable {
                 user = props.userId ?: loggedInLocal ?: 0
                 modal = modalRef
-                wip = state.wip
+                wip = state.state == ProfileTab.UNPUBLISHED
                 history = props.history
             }
         }

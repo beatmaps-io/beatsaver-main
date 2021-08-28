@@ -159,8 +159,8 @@ fun Route.mapDetailRoute() {
                         if (mapUpdate.deleted) {
                             it[deletedAt] = NowExpression(deletedAt.columnType)
                         } else {
-                            mapUpdate.name?.let { n -> it[name] = n }
-                            mapUpdate.description?.let { d -> it[description] = d }
+                            mapUpdate.name?.let { n -> it[name] = n.take(1000) }
+                            mapUpdate.description?.let { d -> it[description] = d.take(10000) }
                             it[updatedAt] = NowExpression(updatedAt.columnType)
                         }
                     }

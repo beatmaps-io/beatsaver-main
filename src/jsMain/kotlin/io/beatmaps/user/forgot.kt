@@ -24,6 +24,7 @@ import react.dom.form
 import react.dom.input
 import react.dom.jsStyle
 import react.dom.p
+import react.router.dom.routeLink
 import react.setState
 
 external interface ForgotPageState : RState {
@@ -114,8 +115,7 @@ class ForgotPage : RComponent<RProps, ForgotPageState>() {
                         attrs.disabled = state.loading
                         +"Reset password"
                     }
-                    a("/login") {
-                        attrs.id = "login_back"
+                    routeLink("/login", className = "login_back") {
                         +"< Back"
                     }
                 }

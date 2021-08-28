@@ -113,8 +113,8 @@ class UsersApi {
     @Location("/beatsaver")
     data class LinkBeatsaver(val api: UsersApi)
 
-    @Location("/alerts")
-    data class Alerts(val api: UsersApi)
+    @Location("/alerts/{id?}")
+    data class Alerts(val id: Int? = null, val api: UsersApi)
 
     @Location("/list/{page}")
     data class List(val page: Long = 0, val api: UsersApi)
@@ -376,9 +376,15 @@ fun Route.userRoute() {
 
     get<UsersApi.Alerts> {
         requireAuthorization { user ->
+            val targetId = if (it.id != null && user.admin) {
+                it.id
+            } else {
+                user.userId
+            }
+
             val alerts = transaction {
                 ModLog.join(Beatmap, JoinType.INNER, Beatmap.id, ModLog.opOn).select {
-                    (Beatmap.uploader eq user.userId) and
+                    (Beatmap.uploader eq targetId) and
                         (ModLog.type inList listOf(ModLogOpType.Unpublish, ModLogOpType.Delete).map { it.ordinal })
                 }.orderBy(ModLog.opAt, SortOrder.DESC).limit(30).map { Alert.from(it, cdnPrefix()) }
             }

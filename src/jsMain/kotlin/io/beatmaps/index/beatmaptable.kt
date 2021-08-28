@@ -24,6 +24,7 @@ import react.dom.h4
 import react.dom.img
 import react.dom.p
 import react.router.dom.RouteResultHistory
+import react.router.dom.routeLink
 import react.setState
 
 external interface BeatmapTableProps : RProps {
@@ -187,7 +188,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
 
     override fun RBuilder.render() {
         state.user?.let {
-            a("/profile/${it.id}", classes = "card border-dark user-suggestion-card") {
+            routeLink("/profile/${it.id}", className = "card border-dark user-suggestion-card") {
                 div("card-body") {
                     h4("card-title") {
                         +"Were you looking for:"

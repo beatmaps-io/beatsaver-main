@@ -12,6 +12,7 @@ import io.beatmaps.user.AlertsPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ProfilePageProps
 import io.beatmaps.user.ResetPageProps
+import io.beatmaps.user.alertsPage
 import io.beatmaps.user.forgotPage
 import io.beatmaps.user.loginPage
 import io.beatmaps.user.pickUsernamePage
@@ -121,10 +122,6 @@ class App : RComponent<AppProps, RState>() {
                 route<RProps>("/test", exact = true) {
                     initWithHistory(it.history)
                     recentTestplays { }
-                }
-                route<RProps>("/alerts", exact = true) {
-                    initWithHistory(it.history)
-                    child(AlertsPage::class) { }
                 }
                 route<RProps>("/policy/dmca", exact = true) {
                     initWithHistory(it.history, false)

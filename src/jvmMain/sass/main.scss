@@ -71,6 +71,13 @@ table.search-results {
 
     small.vote {
       width: 100px;
+      display: flex;
+      max-height: 146px;
+      overflow: hidden;
+      margin-top: 8px;
+      margin-right: 10px;
+      border-radius: 3px;
+      margin-bottom: -19px;
 
       div {
         height: 15px;
@@ -136,18 +143,14 @@ table.search-results {
   }
 }
 .search-results, .mapinfo-list {
+  word-break: break-word;
   a {
-    word-break: break-word;
     font-size: 14px;
   }
   small {
-    display: flex;
-    max-height: 146px;
-    overflow: hidden;
+    display: block;
     margin-top: 8px;
     margin-right: 10px;
-    border-radius: 3px;
-    margin-bottom: -19px;
   }
   p {
     margin-bottom: 0;
@@ -652,7 +655,7 @@ li.KeyboardShortcutRow {
     border-color: $gray-600;
   }
 
-  button[type="submit"], #forgot_pwd, #login_back {
+  button[type="submit"], .forgot_pwd, .login_back {
     display: block;
     margin-top: 10px;
   }
@@ -663,7 +666,7 @@ li.KeyboardShortcutRow {
   margin-top: 80px;
   text-align: center;
 
-  #login_back {
+  .login_back {
     text-align: left;
   }
 

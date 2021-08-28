@@ -10,6 +10,7 @@ import react.RBuilder
 import react.RComponent
 import react.RProps
 import react.RState
+import react.ReactElement
 import react.dom.RDOMBuilder
 import react.dom.br
 import react.dom.div
@@ -24,10 +25,14 @@ import react.dom.tr
 import react.router.dom.routeLink
 import react.setState
 
+external interface AlertsPageProps : RProps {
+    var userId: Int?
+}
+
 data class AlertsPageState(var alerts: List<Alert> = listOf(), var loading: Boolean = false) : RState
 
 @JsExport
-class AlertsPage : RComponent<RProps, AlertsPageState>() {
+class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
     init {
         state = AlertsPageState()
     }
@@ -44,7 +49,7 @@ class AlertsPage : RComponent<RProps, AlertsPageState>() {
         }
 
         axiosGet<List<Alert>>(
-            "/api/users/alerts",
+            "/api/users/alerts" + if (props.userId == null) "" else "/${props.userId}",
         ).then {
             setState {
                 alerts = it.data
@@ -104,5 +109,11 @@ class AlertsPage : RComponent<RProps, AlertsPageState>() {
                 }
             }
         }
+    }
+}
+
+fun RBuilder.alertsPage(handler: AlertsPageProps.() -> Unit): ReactElement {
+    return child(AlertsPage::class) {
+        this.attrs(handler)
     }
 }

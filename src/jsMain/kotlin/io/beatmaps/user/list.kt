@@ -29,6 +29,7 @@ import react.dom.th
 import react.dom.thead
 import react.dom.tr
 import react.router.dom.RouteResultHistory
+import react.router.dom.routeLink
 import react.setState
 import kotlin.math.ceil
 import kotlin.math.max
@@ -184,7 +185,7 @@ class UserList : RComponent<UserListProps, UserListState>() {
                                     }
                                 }
                                 td {
-                                    a("/profile/${u.id}") {
+                                    routeLink("/profile/${u.id}") {
                                         +u.name
                                     }
                                 }

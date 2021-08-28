@@ -264,8 +264,8 @@ fun Route.uploadController() {
                             Beatmap.id
                         )?.firstOrNull()?.let { it[Beatmap.id] } ?: throw UploadException("Map doesn't exist to add version")
                     } ?: Beatmap.insertAndGetId {
-                        it[name] = dataMap["title"] ?: ""
-                        it[description] = dataMap["description"] ?: ""
+                        it[name] = (dataMap["title"] ?: "").take(1000)
+                        it[description] = (dataMap["description"] ?: "").take(10000)
                         it[uploader] = EntityID(session.userId, User)
 
                         setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })

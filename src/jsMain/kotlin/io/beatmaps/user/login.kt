@@ -22,6 +22,7 @@ import react.dom.input
 import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
+import react.router.dom.routeLink
 
 @JsExport
 class LoginPage : RComponent<RProps, RState>() {
@@ -86,13 +87,11 @@ class LoginPage : RComponent<RProps, RState>() {
                     i("fas fa-sign-in-alt") {}
                     +" Sign in"
                 }
-                a("/forgot") {
-                    attrs.id = "forgot_pwd"
+                routeLink("/forgot", className = "forgot_pwd") {
                     +"Forgot password?" // Send the user a JWT that will allow them to reset the password until it expires in ~20 mins
                 }
                 hr {}
-                a("/register", classes = "btn btn-primary btn-block") {
-                    attrs.id = "btn-signup"
+                routeLink("/register", className = "btn btn-primary btn-block") {
                     i("fas fa-user-plus") {}
                     +" Sign up new account"
                 }

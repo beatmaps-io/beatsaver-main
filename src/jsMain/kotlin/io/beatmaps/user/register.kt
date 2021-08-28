@@ -25,6 +25,7 @@ import react.dom.i
 import react.dom.input
 import react.dom.jsStyle
 import react.dom.p
+import react.router.dom.routeLink
 import react.setState
 
 external interface SignupPageState : RState {
@@ -147,8 +148,7 @@ class SignupPage : RComponent<RProps, SignupPageState>() {
                         i("fas fa-user-plus") {}
                         +" Register"
                     }
-                    a("/login") {
-                        attrs.id = "login_back"
+                    routeLink("/login", className = "login_back") {
                         +"< Back"
                     }
                 }
