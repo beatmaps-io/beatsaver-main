@@ -59,6 +59,7 @@ import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.min
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
@@ -233,7 +234,7 @@ fun Route.userRoute() {
             {
                 transaction {
                     User.select {
-                        (User.email eq req.email) and User.discordId.isNull() and User.password.isNotNull()
+                        (User.email eq req.email) and User.password.isNotNull() and (User.active or User.verifyToken.isNotNull())
                     }.firstOrNull()?.let { UserDao.wrapRow(it) }
                 }?.let { user ->
                     val builder = Jwts.builder().setExpiration(Date.from(Instant.now().plus(20L, ChronoUnit.MINUTES)))
