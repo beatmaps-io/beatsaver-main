@@ -528,7 +528,7 @@ fun Route.userRoute() {
             val cases = EDifficulty.values().associateWith { diffCase(it) }
             val diffStats = Difficulty
                 .join(Beatmap, JoinType.INNER, Beatmap.id, Difficulty.mapId)
-                .join(Versions, JoinType.INNER, Beatmap.id, Versions.mapId) {
+                .join(Versions, JoinType.INNER, Difficulty.versionId, Versions.id) {
                     Versions.state eq EMapState.Published
                 }
                 .slice(Difficulty.id.count(), *cases.values.toTypedArray())
