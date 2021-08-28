@@ -14,6 +14,7 @@ import io.ktor.auth.oauth
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.http.HttpMethod
+import io.ktor.request.uri
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -36,7 +37,7 @@ fun Application.installDiscordOauth() {
         oauth("discord") {
             client = HttpClient(Apache)
             providerLookup = { discordProvider }
-            urlProvider = { "$baseName/discord" }
+            urlProvider = { "$baseName${request.uri.substringBefore("?")}" }
         }
         form("auth-form") {
             userParamName = "username"
@@ -46,12 +47,13 @@ fun Application.installDiscordOauth() {
                 transaction {
                     User.select {
                         if (credentials.name.contains('@')) {
-                            User.email eq credentials.name
+                            (User.email eq credentials.name) and User.discordId.isNull()
                         } else {
                             User.uniqueName eq credentials.name
-                        } and User.discordId.isNull() and User.active
+                        } and User.active
                     }.firstOrNull()?.let {
-                        if (Bcrypt.verify(credentials.password, it[User.password].toByteArray())) {
+                        val curPw = it[User.password]
+                        if (curPw != null && Bcrypt.verify(credentials.password, curPw.toByteArray())) {
                             SimpleUserPrincipal(UserDao.wrapRow(it))
                         } else {
                             null

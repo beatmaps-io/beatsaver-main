@@ -114,7 +114,14 @@ val links = functionComponent<LinksProps> { props ->
             attrs.version = v
         }
     }
-    val altLink = props.version?.downloadURL?.let { "$previewBaseUrl?url=${encodeURIComponent(it)}" } ?: "#"
+    val version = props.version
+    val altLink = if (version?.state == EMapState.Published) {
+        "$previewBaseUrl?id=${props.map.id}"
+    } else if (version != null) {
+        "$previewBaseUrl?url=${encodeURIComponent(version.downloadURL)}"
+    } else {
+        "#"
+    }
     a(altLink) {
         attrs.title = "Preview"
         attrs.attributes["aria-label"] = "Preview"

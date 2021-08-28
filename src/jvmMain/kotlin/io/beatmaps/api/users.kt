@@ -11,9 +11,7 @@ import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.client
-import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
-import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.ModLog
@@ -21,7 +19,6 @@ import io.beatmaps.common.dbo.ModLogDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.complexToBeatmap
-import io.beatmaps.common.pub
 import io.beatmaps.common.sendEmail
 import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.JwtException
@@ -50,7 +47,6 @@ import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.IntegerColumnType
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
-import org.jetbrains.exposed.sql.OrOp
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
@@ -58,13 +54,11 @@ import org.jetbrains.exposed.sql.Sum
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
-import org.jetbrains.exposed.sql.booleanLiteral
 import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.min
-import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
@@ -126,95 +120,6 @@ class UsersApi {
 }
 
 fun Route.userRoute() {
-    get<UsersApi.LinkBeatsaver> {
-        requireAuthorization {
-            call.respond(BeatsaverLink(!it.canLink))
-        }
-    }
-
-    post<UsersApi.LinkBeatsaver> { _ ->
-        requireAuthorization { s ->
-            val r = call.receive<BeatsaverLinkReq>()
-
-            val userToCheck = transaction {
-                UserDao.wrapRows(
-                    User.select {
-                        User.active and User.password.isNotNull() and ((User.uniqueName eq r.user and User.hash.isNotNull()) or (User.hash eq r.user.lowercase() and User.discordId.isNull()))
-                    }
-                ).firstOrNull()
-            }
-
-            val valid = userToCheck != null && Bcrypt.verify(r.password, userToCheck.password.toByteArray())
-            val result = transaction {
-                val user = UserDao.wrapRows(
-                    User.select {
-                        User.id eq s.userId
-                    }
-                ).toList().firstOrNull()
-
-                val canLink = (user?.discordId != null) && (user.hash == null)
-
-                if (!canLink) {
-                    call.sessions.set(
-                        user?.hash?.let {
-                            s.copy(hash = it, canLink = false)
-                        } ?: s.copy(canLink = false)
-                    )
-                    return@transaction true to listOf()
-                }
-
-                if (valid && userToCheck != null) {
-                    val oldmapIds = User.updateReturning(
-                        { User.hash eq userToCheck.hash and User.discordId.isNull() },
-                        { u ->
-                            u[hash] = null
-                            u[uniqueName] = null
-                            u[active] = false
-                        },
-                        User.id
-                    )?.let { r ->
-                        if (r.isEmpty()) return@let listOf()
-
-                        // If we returned a row
-                        val oldId = r.first()[User.id]
-
-                        Beatmap
-                            .slice(Beatmap.id)
-                            .select {
-                                Beatmap.uploader eq oldId
-                            }.map { it[Beatmap.id].value }
-                            .also {
-                                Beatmap.update({ Beatmap.uploader eq oldId }) {
-                                    it[uploader] = s.userId
-                                    it[updatedAt] = NowExpression(updatedAt.columnType)
-                                }
-                            }
-                    }
-
-                    User.update({ User.id eq s.userId }) {
-                        it[hash] = userToCheck.hash
-                        it[admin] = OrOp(listOf(admin, booleanLiteral(userToCheck.admin)))
-                        it[upvotes] = userToCheck.upvotes
-                        if (r.useOldName) {
-                            it[uniqueName] = userToCheck.uniqueName
-                        }
-                    }
-                    call.sessions.set(s.copy(hash = userToCheck.hash))
-
-                    true to oldmapIds
-                } else {
-                    false to listOf()
-                }
-            }
-
-            result.second?.forEach { updatedMapId ->
-                call.pub("beatmaps", "maps.$updatedMapId.updated", null, updatedMapId)
-            }
-
-            call.respond(BeatsaverLink(result.first))
-        }
-    }
-
     val usernameRegex = Regex("^[._\\-A-Za-z0-9]{3,}$")
     post<UsersApi.Username> {
         requireAuthorization { sess ->
@@ -433,7 +338,8 @@ fun Route.userRoute() {
                     User.select {
                         User.id eq sess.userId
                     }.firstOrNull()?.let { r ->
-                        if (Bcrypt.verify(req.currentPassword, r[User.password].toByteArray())) {
+                        val curPw = r[User.password]
+                        if (curPw != null && Bcrypt.verify(req.currentPassword, curPw.toByteArray())) {
                             User.update({
                                 User.id eq sess.userId
                             }) {
@@ -642,7 +548,17 @@ fun Route.userRoute() {
                 call.sessions.set(it.copy(uniqueName = user.uniqueName))
             }
 
-            call.respond(UserDetail.from(user, stats = statsForUser(user)))
+            val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
+
+            call.respond(
+                UserDetail.from(user, stats = statsForUser(user)).let { usr ->
+                    if (dualAccount) {
+                        usr.copy(type = AccountType.DUAL, email = user.email)
+                    } else {
+                        usr.copy(email = user.email)
+                    }
+                }
+            )
         }
     }
 

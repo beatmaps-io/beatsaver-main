@@ -9,7 +9,6 @@ import io.beatmaps.maps.recent.recentTestplays
 import io.beatmaps.nav.manageNav
 import io.beatmaps.nav.viewportMinWidthPolyfill
 import io.beatmaps.user.AlertsPage
-import io.beatmaps.user.BeatsaverPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ProfilePageProps
 import io.beatmaps.user.ResetPageProps
@@ -126,12 +125,6 @@ class App : RComponent<AppProps, RState>() {
                 route<RProps>("/alerts", exact = true) {
                     initWithHistory(it.history)
                     child(AlertsPage::class) { }
-                }
-                route<RProps>("/beatsaver", exact = true) {
-                    initWithHistory(it.history)
-                    child(BeatsaverPage::class) {
-                        attrs.history = it.history
-                    }
                 }
                 route<RProps>("/policy/dmca", exact = true) {
                     initWithHistory(it.history, false)

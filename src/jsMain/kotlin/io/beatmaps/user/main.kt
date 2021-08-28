@@ -10,6 +10,7 @@ import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
 import io.beatmaps.setPageTitle
 import kotlinx.browser.localStorage
+import kotlinx.browser.window
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.get
 import org.w3c.dom.set
@@ -63,6 +64,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         setPageTitle("Profile")
 
         setState {
+            edit = window.location.hash.substring(1) == "account"
             wip = props.userId == null && localStorage["profile.showwip"] == "true"
             startup = true
         }

@@ -26,6 +26,7 @@ import react.RProps
 import react.RState
 import react.ReactElement
 import react.createRef
+import react.dom.a
 import react.dom.button
 import react.dom.div
 import react.dom.form
@@ -69,7 +70,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
         // Having 2 forms confuses password managers, only the password section needs to invoke them
         div(classes = "user-form") {
             h5("mt-5") {
-                +"Name"
+                +"Account details"
             }
             hr("mt-2") {}
             div("form-group") {
@@ -85,6 +86,23 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                 }
                 small("form-text text-muted") {
                     +"You can't change this."
+                }
+            }
+            if (props.userDetail.type != AccountType.DISCORD) {
+                div("form-group") {
+                    label {
+                        attrs.htmlFor = "email"
+                        +"Email"
+                    }
+                    input(InputType.text, classes = "form-control") {
+                        key = "email"
+                        attrs.id = "email"
+                        attrs.disabled = true
+                        attrs.value = props.userDetail.email ?: ""
+                    }
+                    small("form-text text-muted") {
+                        +"You can't change this."
+                    }
                 }
             }
         }
@@ -148,6 +166,8 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     }
                 }
             }
+        }
+        if (props.userDetail.type != AccountType.DISCORD) {
             form(classes = "user-form", action = "/profile", method = FormMethod.post) {
                 attrs.onSubmitFunction = { ev ->
                     ev.preventDefault()
@@ -240,6 +260,32 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
                         attrs.disabled = state.loading
                         +"Change password"
+                    }
+                }
+            }
+        }
+        if (props.userDetail.type == AccountType.DUAL) {
+            form(classes = "user-form", action = "/profile/unlink-discord", method = FormMethod.post) {
+                h5("mt-5") {
+                    +"Unlink discord"
+                }
+                hr("mt-2") {}
+                div("form-group") {
+                    button(classes = "btn btn-danger btn-block", type = ButtonType.submit) {
+                        attrs.disabled = state.loading
+                        +"Unlink discord"
+                    }
+                }
+            }
+        } else if (props.userDetail.type == AccountType.SIMPLE) {
+            form(classes = "user-form", action = "/profile/unlink-discord", method = FormMethod.post) {
+                h5("mt-5") {
+                    +"Link discord"
+                }
+                hr("mt-2") {}
+                div("form-group") {
+                    a("/discord-link", classes = "btn btn-info btn-block") {
+                        +"Link discord"
                     }
                 }
             }

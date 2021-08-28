@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 
 enum class AccountType {
-    DISCORD, SIMPLE
+    DISCORD, SIMPLE, DUAL
 }
 
 @Serializable
@@ -19,7 +19,8 @@ data class UserDetail(
     val testplay: Boolean? = null,
     val avatar: String,
     val stats: UserStats? = null,
-    val type: AccountType
+    val type: AccountType,
+    val email: String? = null
 ) { companion object }
 @Serializable
 data class UserStats(

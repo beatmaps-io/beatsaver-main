@@ -95,11 +95,6 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                             +"Link steam account"
                                         }
                                     }
-                                    if (s.canLink) {
-                                        a("/beatsaver", classes = "dropdown-item") {
-                                            +"Link beatsaver account"
-                                        }
-                                    }
                                     div("dropdown-divider") {}
                                     a("/logout", classes = "dropdown-item") {
                                         +"Logout"

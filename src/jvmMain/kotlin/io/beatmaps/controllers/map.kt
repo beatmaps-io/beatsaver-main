@@ -10,14 +10,19 @@ import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.genericPage
+import io.beatmaps.login.Session
 import io.ktor.application.call
 import io.ktor.locations.Location
 import io.ktor.locations.get
+import io.ktor.locations.post
 import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
+import io.ktor.sessions.get
+import io.ktor.sessions.sessions
 import kotlinx.html.meta
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 
 @Location("/maps") class MapController {
     @Location("/{key}") data class Detail(val key: String, val api: MapController)
@@ -40,6 +45,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 }
 
 @Location("/profile") class UserController {
+    @Location("/unlink-discord") data class UnlinkDiscord(val api: UserController)
     @Location("/{id?}") data class Detail(val id: Int? = null, val api: UserController)
 }
 
@@ -111,6 +117,24 @@ fun Route.mapController() {
     }
 
     get<UserController.Detail> {
-        genericPage()
+        if (it.id == null && call.sessions.get<Session>() == null) {
+            call.respondRedirect("/login")
+        } else {
+            genericPage()
+        }
+    }
+
+    post<UserController.UnlinkDiscord> {
+        val sess = call.sessions.get<Session>()
+        if (sess != null) {
+            transaction {
+                User.update({ User.id eq sess.userId }) {
+                    it[discordId] = null
+                }
+            }
+            call.respondRedirect("/profile#account")
+        } else {
+            call.respondRedirect("/login")
+        }
     }
 }

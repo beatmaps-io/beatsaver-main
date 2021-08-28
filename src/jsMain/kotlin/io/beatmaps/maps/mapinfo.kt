@@ -114,7 +114,12 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                             attrs.map = props.mapInfo
                             attrs.version = version
                         }
-                        a("$previewBaseUrl?url=${encodeURIComponent(version.downloadURL)}") {
+                        val linkQuery = if (version.state == EMapState.Published) {
+                            "url=${encodeURIComponent(version.downloadURL)}"
+                        } else {
+                            "id=${props.mapInfo.id}"
+                        }
+                        a("$previewBaseUrl?$linkQuery") {
                             attrs.title = "Preview"
                             attrs.attributes["aria-label"] = "Preview"
                             attrs.onClickFunction = {
