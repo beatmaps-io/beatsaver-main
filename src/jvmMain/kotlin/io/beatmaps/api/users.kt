@@ -18,6 +18,7 @@ import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.ModLogDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.sendEmail
 import io.jsonwebtoken.ExpiredJwtException
@@ -494,51 +495,58 @@ fun Route.userRoute() {
 
     fun statsForUser(user: UserDao) = transaction {
         val statTmp =
-            Beatmap.slice(
-                Beatmap.id.count(),
-                Beatmap.upVotesInt.sum(),
-                Beatmap.downVotesInt.sum(),
-                Beatmap.bpm.avg(),
-                Beatmap.score.avg(3),
-                Beatmap.duration.avg(0),
-                countWithFilter(Beatmap.ranked),
-                Beatmap.uploaded.min(),
-                Beatmap.uploaded.max()
-            ).select {
-                (Beatmap.uploader eq user.id) and (Beatmap.deletedAt.isNull())
-            }.first().let {
-                UserStats(
-                    it[Beatmap.upVotesInt.sum()] ?: 0,
-                    it[Beatmap.downVotesInt.sum()] ?: 0,
-                    it[Beatmap.id.count()].toInt(),
-                    it[countWithFilter(Beatmap.ranked)],
-                    it[Beatmap.bpm.avg()]?.toFloat() ?: 0f,
-                    it[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f,
-                    it[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
-                    it[Beatmap.uploaded.min()]?.toKotlinInstant(),
-                    it[Beatmap.uploaded.max()]?.toKotlinInstant()
-                )
-            }
+            Beatmap
+                .join(Versions, JoinType.INNER, Beatmap.id, Versions.mapId) {
+                    Versions.state eq EMapState.Published
+                }
+                .slice(
+                    Beatmap.id.count(),
+                    Beatmap.upVotesInt.sum(),
+                    Beatmap.downVotesInt.sum(),
+                    Beatmap.bpm.avg(),
+                    Beatmap.score.avg(3),
+                    Beatmap.duration.avg(0),
+                    countWithFilter(Beatmap.ranked),
+                    Beatmap.uploaded.min(),
+                    Beatmap.uploaded.max()
+                ).select {
+                    (Beatmap.uploader eq user.id) and (Beatmap.deletedAt.isNull())
+                }.first().let {
+                    UserStats(
+                        it[Beatmap.upVotesInt.sum()] ?: 0,
+                        it[Beatmap.downVotesInt.sum()] ?: 0,
+                        it[Beatmap.id.count()].toInt(),
+                        it[countWithFilter(Beatmap.ranked)],
+                        it[Beatmap.bpm.avg()]?.toFloat() ?: 0f,
+                        it[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f,
+                        it[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
+                        it[Beatmap.uploaded.min()]?.toKotlinInstant(),
+                        it[Beatmap.uploaded.max()]?.toKotlinInstant()
+                    )
+                }
 
-        val cases = EDifficulty.values().associate { it to diffCase(it) }
-        val diffStats = Difficulty
-            .join(Beatmap, JoinType.INNER, Beatmap.id, Difficulty.mapId)
-            .slice(Difficulty.id.count(), *cases.values.toTypedArray())
-            .select {
-                (Beatmap.uploader eq user.id) and (Beatmap.deletedAt.isNull())
-            }.first().let {
-                fun safeGetCount(diff: EDifficulty) = cases[diff]?.let { c -> it.getOrNull(c) } ?: 0
-                UserDiffStats(
-                    it[Difficulty.id.count()].toInt(),
-                    safeGetCount(EDifficulty.Easy),
-                    safeGetCount(EDifficulty.Normal),
-                    safeGetCount(EDifficulty.Hard),
-                    safeGetCount(EDifficulty.Expert),
-                    safeGetCount(EDifficulty.ExpertPlus)
-                )
-            }
+            val cases = EDifficulty.values().associateWith { diffCase(it) }
+            val diffStats = Difficulty
+                .join(Beatmap, JoinType.INNER, Beatmap.id, Difficulty.mapId)
+                .join(Versions, JoinType.INNER, Beatmap.id, Versions.mapId) {
+                    Versions.state eq EMapState.Published
+                }
+                .slice(Difficulty.id.count(), *cases.values.toTypedArray())
+                .select {
+                    (Beatmap.uploader eq user.id) and (Beatmap.deletedAt.isNull())
+                }.first().let {
+                    fun safeGetCount(diff: EDifficulty) = cases[diff]?.let { c -> it.getOrNull(c) } ?: 0
+                    UserDiffStats(
+                        it[Difficulty.id.count()].toInt(),
+                        safeGetCount(EDifficulty.Easy),
+                        safeGetCount(EDifficulty.Normal),
+                        safeGetCount(EDifficulty.Hard),
+                        safeGetCount(EDifficulty.Expert),
+                        safeGetCount(EDifficulty.ExpertPlus)
+                    )
+                }
 
-        statTmp.copy(diffStats = diffStats)
+            statTmp.copy(diffStats = diffStats)
     }
 
     get<UsersApi.Me> {
