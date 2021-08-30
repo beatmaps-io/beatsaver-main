@@ -28,7 +28,7 @@ val cdnPrefixes = mapOf(
     "AF" to "",
     "AN" to "",
     "AS" to "as.",
-    "EU" to "",
+    "EU" to "eu.",
     "NA" to "na.",
     "OC" to "as.",
     "SA" to "na."

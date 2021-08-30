@@ -19,7 +19,7 @@ import io.beatmaps.common.dbo.Votes
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.pub
 import io.beatmaps.common.rabbitOptional
-import io.beatmaps.tag
+import io.beatmaps.common.tag
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location

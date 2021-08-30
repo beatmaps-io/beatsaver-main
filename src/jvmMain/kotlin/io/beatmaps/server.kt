@@ -14,6 +14,7 @@ import io.beatmaps.api.userRoute
 import io.beatmaps.api.voteRoute
 import io.beatmaps.common.db.setupDB
 import io.beatmaps.common.genericQueueConfig
+import io.beatmaps.common.installMetrics
 import io.beatmaps.common.jackson
 import io.beatmaps.common.json
 import io.beatmaps.common.rabbitHost
@@ -72,7 +73,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.html.HEAD
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.StringFormat
 import org.valiktor.ConstraintViolationException
 import org.valiktor.i18n.mapToMessage
@@ -105,7 +105,6 @@ fun main() {
 
 data class ErrorResponse(val error: String)
 
-@ExperimentalSerializationApi
 fun Application.beatmapsio() {
     installMetrics()
 
