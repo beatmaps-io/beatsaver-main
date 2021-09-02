@@ -77,6 +77,7 @@ import kotlinx.serialization.StringFormat
 import org.valiktor.ConstraintViolationException
 import org.valiktor.i18n.mapToMessage
 import pl.jutupe.ktor_rabbitmq.RabbitMQ
+import java.io.File
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.time.Duration
@@ -157,7 +158,13 @@ fun Application.beatmapsio() {
 
     install(ConditionalHeaders) {
         val md = MessageDigest.getInstance("MD5")
-        val dockerHash = System.getenv("HOSTNAME") ?: ""
+        val dockerHash = File("/etc/hostname").let {
+            if (it.exists()) {
+                it.readText()
+            } else {
+                ""
+            }
+        }
         md.update(dockerHash.toByteArray())
 
         val fx = "%0" + md.digestLength * 2 + "x"
