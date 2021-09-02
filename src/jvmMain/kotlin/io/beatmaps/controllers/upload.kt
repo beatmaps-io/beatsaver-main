@@ -193,7 +193,7 @@ fun Route.uploadController() {
                             }
                         }
                         file.delete()
-                        throw e
+                        throw UploadException("Error opening zip file")
                     } catch (e: JsonMappingException) {
                         file.delete()
                         throw UploadException("Could not parse json")
@@ -399,8 +399,8 @@ fun ZipHelper.oggToEgg(info: ExtractedInfo) =
             val originalAudioName = info.mapInfo._songFilename
             info.mapInfo = info.mapInfo.copy(_songFilename = originalAudioName.replace(Regex("\\.ogg$"), ".egg"))
             Files.move(path, newPath("/${info.mapInfo._songFilename}"))
-            files.minus(infoPrefix() + originalAudioName.lowercase())
-                .plus(infoPrefix() + info.mapInfo._songFilename.lowercase()) to filesOriginalCase.minus(infoPrefix() + originalAudioName)
+            files.minus((infoPrefix() + originalAudioName).lowercase())
+                .plus((infoPrefix() + info.mapInfo._songFilename).lowercase()) to filesOriginalCase.minus(infoPrefix() + originalAudioName)
         } else {
             null
         }
