@@ -31,12 +31,18 @@ val cdnPrefixes = mapOf(
     "EU" to "eu.",
     "NA" to "na.",
     "OC" to "as.",
-    "SA" to "na."
+    "SA" to "na.",
+    "CN" to "na."
 )
 private val cdnPrefixAttr = AttributeKey<String>("cdnPrefix")
 
 fun getContinentSafe(addr: InetAddress) = try {
-    geoIp.country(addr).continent.code ?: ""
+    val countryInfo = geoIp.country(addr)
+    if (countryInfo.country.isoCode == "CN") {
+        "CN"
+    } else {
+        countryInfo.continent.code ?: ""
+    }
 } catch (e: GeoIp2Exception) {
     ""
 }
