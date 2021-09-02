@@ -793,7 +793,7 @@ li.KeyboardShortcutRow {
   }
 }
 
-@media (min-width: 1400px) {
+@media (min-width: 1400px) and (min-height: 800px) {
   .rabbit-dialog {
     max-width: 1200px !important;
 
@@ -803,7 +803,7 @@ li.KeyboardShortcutRow {
   }
 }
 
-@media (min-width: 1750px) {
+@media (min-width: 1750px) and (min-height: 975px) {
   .rabbit-dialog {
     max-width: 1500px !important;
 
@@ -813,7 +813,7 @@ li.KeyboardShortcutRow {
   }
 }
 
-@media (min-width: 2100px) {
+@media (min-width: 2100px) and (min-height: 1150px) {
   .rabbit-dialog {
     max-width: 1800px !important;
 
@@ -823,7 +823,7 @@ li.KeyboardShortcutRow {
   }
 }
 
-@media (min-width: 2450px) {
+@media (min-width: 2450px) and (min-height: 1325px) {
   .rabbit-dialog {
     max-width: 2100px !important;
 
@@ -833,7 +833,7 @@ li.KeyboardShortcutRow {
   }
 }
 
-@media (min-width: 2800px) {
+@media (min-width: 2800px) and (min-height: 1500px) {
   .rabbit-dialog {
     max-width: 2400px !important;
 
