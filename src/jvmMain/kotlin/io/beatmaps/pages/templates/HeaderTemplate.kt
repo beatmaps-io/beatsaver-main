@@ -58,6 +58,9 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 a("https://discord.gg/beatsabermods", classes = "dropdown-item") {
                                     +"BSMG Discord"
                                 }
+                                a("https://discord.gg/rjVDapkMmj", classes = "dropdown-item") {
+                                    +"BeatSaver Discord"
+                                }
                                 div("dropdown-divider") {}
                                 a("/policy/dmca", classes = "dropdown-item") {
                                     +"DMCA Policy"
