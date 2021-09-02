@@ -343,7 +343,7 @@ fun ZipHelper.validateFiles(dos: DigestOutputStream) =
         ExtractedInfo(findAllowedFiles(it), dos, it, scoreMap())
     }.also { p ->
         // Rename audio file if it ends in .ogg
-        val newFiles = oggToEgg(p)
+        val (newFiles, newFilesOriginalCase) = oggToEgg(p)
 
         // Ensure it ends in a slash
         val prefix = infoPrefix()
@@ -366,7 +366,7 @@ fun ZipHelper.validateFiles(dos: DigestOutputStream) =
         }
 
         // Delete any extra files in the zip (like autosaves)
-        val paritioned = filesOriginalCase.filter { !it.endsWith("/Info.dat", true) }.partition {
+        val paritioned = newFilesOriginalCase.filter { !it.endsWith("/Info.dat", true) }.partition {
             val originalWithoutPrefix = it.lowercase().removePrefix(prefix.lowercase())
             !p.allowedFiles.contains(originalWithoutPrefix)
         }
@@ -394,16 +394,17 @@ fun findAllowedFiles(info: MapInfo) = (
     ).map { it.lowercase() }
 
 fun ZipHelper.oggToEgg(info: ExtractedInfo) =
-    getPath("/${info.mapInfo._songFilename.lowercase()}")?.let { path ->
+    fromInfo(info.mapInfo._songFilename.lowercase())?.let { path ->
         if (info.mapInfo._songFilename.endsWith(".ogg")) {
             val originalAudioName = info.mapInfo._songFilename
             info.mapInfo = info.mapInfo.copy(_songFilename = originalAudioName.replace(Regex("\\.ogg$"), ".egg"))
             Files.move(path, newPath("/${info.mapInfo._songFilename}"))
-            files.minus("/${originalAudioName.lowercase()}").plus("/${info.mapInfo._songFilename.lowercase()}")
+            files.minus(infoPrefix() + originalAudioName.lowercase())
+                .plus(infoPrefix() + info.mapInfo._songFilename.lowercase()) to filesOriginalCase.minus(infoPrefix() + originalAudioName)
         } else {
             null
         }
-    } ?: files
+    } ?: (files to filesOriginalCase)
 
 class UploadException(private val msg: String) : RuntimeException() {
     fun toResponse() = FailedUploadResponse(listOf(msg))
