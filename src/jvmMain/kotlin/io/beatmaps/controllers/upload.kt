@@ -10,9 +10,9 @@ import io.beatmaps.common.Config
 import io.beatmaps.common.CopyException
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.beatsaber.MapInfo
-import io.beatmaps.common.beatsaver.localAudioFolder
-import io.beatmaps.common.beatsaver.localCoverFolder
-import io.beatmaps.common.beatsaver.localFolder
+import io.beatmaps.common.localAudioFolder
+import io.beatmaps.common.localCoverFolder
+import io.beatmaps.common.localFolder
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning

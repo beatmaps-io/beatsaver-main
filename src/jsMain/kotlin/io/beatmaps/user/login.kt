@@ -5,7 +5,6 @@ import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
 import kotlinx.html.InputType
-import kotlinx.html.id
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent

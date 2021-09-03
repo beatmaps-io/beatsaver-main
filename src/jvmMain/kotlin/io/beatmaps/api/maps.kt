@@ -108,7 +108,7 @@ fun Route.mapDetailRoute() {
     post<MapsApi.Curate> {
         call.response.header("Access-Control-Allow-Origin", "*")
         requireAuthorization { user ->
-            if (!user.admin) {
+            if (!user.isAdmin) {
                 call.respond(HttpStatusCode.BadRequest)
             } else {
                 val mapUpdate = call.receive<CurateMap>()
@@ -140,7 +140,7 @@ fun Route.mapDetailRoute() {
             val mapUpdate = call.receive<MapInfoUpdate>()
 
             val result = transaction {
-                val oldData = if (user.admin) {
+                val oldData = if (user.isAdmin) {
                     BeatmapDao.wrapRow(Beatmap.select { Beatmap.id eq mapUpdate.id }.single())
                 } else {
                     null
@@ -149,7 +149,7 @@ fun Route.mapDetailRoute() {
                 fun updateMap() =
                     Beatmap.update({
                         (Beatmap.id eq mapUpdate.id).let { q ->
-                            if (user.admin) {
+                            if (user.isAdmin) {
                                 q // If current user is admin don't check the user
                             } else {
                                 q and (Beatmap.uploader eq user.userId)

@@ -8,7 +8,6 @@ import io.beatmaps.api.ForgotRequest
 import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
-import kotlinx.html.id
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.RBuilder
@@ -17,7 +16,6 @@ import react.RProps
 import react.RState
 import react.ReactElement
 import react.createRef
-import react.dom.a
 import react.dom.button
 import react.dom.div
 import react.dom.form

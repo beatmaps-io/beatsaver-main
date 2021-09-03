@@ -4,9 +4,9 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
 import io.beatmaps.common.DownloadInfo
 import io.beatmaps.common.DownloadType
-import io.beatmaps.common.beatsaver.localAudioFolder
-import io.beatmaps.common.beatsaver.localCoverFolder
-import io.beatmaps.common.beatsaver.localFolder
+import io.beatmaps.common.localAudioFolder
+import io.beatmaps.common.localCoverFolder
+import io.beatmaps.common.localFolder
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao

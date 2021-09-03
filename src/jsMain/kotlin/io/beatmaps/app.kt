@@ -8,11 +8,9 @@ import io.beatmaps.maps.UploadPage
 import io.beatmaps.maps.recent.recentTestplays
 import io.beatmaps.nav.manageNav
 import io.beatmaps.nav.viewportMinWidthPolyfill
-import io.beatmaps.user.AlertsPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ProfilePageProps
 import io.beatmaps.user.ResetPageProps
-import io.beatmaps.user.alertsPage
 import io.beatmaps.user.forgotPage
 import io.beatmaps.user.loginPage
 import io.beatmaps.user.pickUsernamePage

@@ -18,7 +18,6 @@ import react.RProps
 import react.RReadableRef
 import react.RState
 import react.ReactElement
-import react.dom.a
 import react.dom.div
 import react.dom.h4
 import react.dom.img

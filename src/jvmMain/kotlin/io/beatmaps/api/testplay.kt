@@ -324,7 +324,7 @@ fun Route.testplayRoute() {
                     fun updateState() =
                         Versions.join(Beatmap, JoinType.INNER, onColumn = Versions.mapId, otherColumn = Beatmap.id).update({
                             (Versions.hash eq newState.hash) and (Versions.mapId eq newState.mapId).let { q ->
-                                if (sess.admin) {
+                                if (sess.isAdmin) {
                                     q // If current user is admin don't check the user
                                 } else {
                                     q and (Beatmap.uploader eq sess.userId)
@@ -338,7 +338,7 @@ fun Route.testplayRoute() {
                         }
 
                     (updateState() > 0).also { rTemp ->
-                        if (rTemp && sess.admin && newState.reason?.isEmpty() == false) {
+                        if (rTemp && sess.isAdmin && newState.reason?.isEmpty() == false) {
                             ModLog.insert(
                                 sess.userId,
                                 newState.mapId,

@@ -377,7 +377,7 @@ fun Route.userRoute() {
 
     get<UsersApi.Alerts> {
         requireAuthorization { user ->
-            val targetId = if (it.id != null && user.admin) {
+            val targetId = if (it.id != null && user.isAdmin) {
                 it.id
             } else {
                 user.userId
@@ -525,28 +525,28 @@ fun Route.userRoute() {
                     )
                 }
 
-            val cases = EDifficulty.values().associateWith { diffCase(it) }
-            val diffStats = Difficulty
-                .join(Beatmap, JoinType.INNER, Beatmap.id, Difficulty.mapId)
-                .join(Versions, JoinType.INNER, Difficulty.versionId, Versions.id) {
-                    Versions.state eq EMapState.Published
-                }
-                .slice(Difficulty.id.count(), *cases.values.toTypedArray())
-                .select {
-                    (Beatmap.uploader eq user.id) and (Beatmap.deletedAt.isNull())
-                }.first().let {
-                    fun safeGetCount(diff: EDifficulty) = cases[diff]?.let { c -> it.getOrNull(c) } ?: 0
-                    UserDiffStats(
-                        it[Difficulty.id.count()].toInt(),
-                        safeGetCount(EDifficulty.Easy),
-                        safeGetCount(EDifficulty.Normal),
-                        safeGetCount(EDifficulty.Hard),
-                        safeGetCount(EDifficulty.Expert),
-                        safeGetCount(EDifficulty.ExpertPlus)
-                    )
-                }
+        val cases = EDifficulty.values().associateWith { diffCase(it) }
+        val diffStats = Difficulty
+            .join(Beatmap, JoinType.INNER, Beatmap.id, Difficulty.mapId)
+            .join(Versions, JoinType.INNER, Difficulty.versionId, Versions.id) {
+                Versions.state eq EMapState.Published
+            }
+            .slice(Difficulty.id.count(), *cases.values.toTypedArray())
+            .select {
+                (Beatmap.uploader eq user.id) and (Beatmap.deletedAt.isNull())
+            }.first().let {
+                fun safeGetCount(diff: EDifficulty) = cases[diff]?.let { c -> it.getOrNull(c) } ?: 0
+                UserDiffStats(
+                    it[Difficulty.id.count()].toInt(),
+                    safeGetCount(EDifficulty.Easy),
+                    safeGetCount(EDifficulty.Normal),
+                    safeGetCount(EDifficulty.Hard),
+                    safeGetCount(EDifficulty.Expert),
+                    safeGetCount(EDifficulty.ExpertPlus)
+                )
+            }
 
-            statTmp.copy(diffStats = diffStats)
+        statTmp.copy(diffStats = diffStats)
     }
 
     get<UsersApi.Me> {

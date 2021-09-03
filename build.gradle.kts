@@ -2,8 +2,8 @@ import io.miret.etienne.gradle.sass.CompileSass
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 
 plugins {
-    kotlin("multiplatform") version "1.5.30-RC"
-    kotlin("plugin.serialization") version "1.5.30-RC"
+    kotlin("multiplatform") version "1.5.30"
+    kotlin("plugin.serialization") version "1.5.30"
     id("io.miret.etienne.sass") version "1.1.2"
     id("org.flywaydb.flyway") version "7.12.0"
     id("org.jlleitschuh.gradle.ktlint") version "10.1.0"
@@ -74,7 +74,7 @@ kotlin {
             languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
             languageSettings.optIn("kotlinx.coroutines.DelicateCoroutinesApi")
             dependencies {
-                api(kotlin("reflect", "1.5.30-RC"))
+                api(kotlin("reflect", "1.5.30"))
 
                 // Core
                 implementation("io.ktor:ktor-server-netty:$ktorVersion")
@@ -85,8 +85,8 @@ kotlin {
                 implementation("io.ktor:ktor-websockets:$ktorVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3")
                 implementation("ch.qos.logback:logback-classic:1.2.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.5.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.5.2")
                 implementation("io.jsonwebtoken:jjwt-impl:0.11.2")
                 implementation("io.jsonwebtoken:jjwt-jackson:0.11.2")
                 implementation("com.ToxicBakery.library.bcrypt:bcrypt:+")
@@ -123,7 +123,6 @@ kotlin {
                 // implementation("com.googlecode.soundlibs:vorbisspi:1.0.3.3")
                 implementation("com.tagtraum:ffsampledsp-complete:0.9.32")
 
-                implementation("io.beatmaps:BeatMaps-Common:1.0.+")
                 implementation("io.beatmaps:BeatMaps-CommonMP:1.0.+")
 
                 runtimeOnly(files("BeatMaps-BeatSage-1.0-SNAPSHOT.jar"))
@@ -191,8 +190,8 @@ tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
     outputFileName = "output.js"
     sourceMaps = true
     report = true
-    val slash = File.separator
-    args = mutableListOf("--config", "..$slash..$slash..$slash..${slash}webpack.config.extra.js", "--merge")
+    val up = "..${File.separator}"
+    args = mutableListOf("--config", "$up$up$up${up}webpack.config.extra.js", "--merge")
 }
 
 tasks.withType<AbstractCopyTask> {

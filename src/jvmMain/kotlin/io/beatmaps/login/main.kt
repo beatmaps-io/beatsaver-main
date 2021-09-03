@@ -65,6 +65,9 @@ data class Session(
         this(userId, hash, userEmail, userName, testplay, steamId, oculusId, false)
     constructor(userId: Int, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?) :
         this(userId, null, userEmail, userName, testplay, steamId, oculusId)
+
+    private val actualUser: UserDao by lazy { UserDao[userId] }
+    val isAdmin = admin && actualUser.admin
 }
 
 @Location("/login") class Login
