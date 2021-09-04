@@ -206,9 +206,11 @@ fun Application.beatmapsio() {
             /*(call.attributes.allKeys.find { it.name == "SessionKey" } as? AttributeKey<Any>)?.let {
                 call.attributes.remove(it)
             }*/
-            val apiRoute = call.request.path().startsWith("/api")
-            if (apiRoute) {
+            val reqPath = call.request.path()
+            if (reqPath.startsWith("/api")) {
                 call.respond(HttpStatusCode.NotFound, ErrorResponse("Not Found"))
+            } else if (reqPath.startsWith("/cdn")) {
+                call.respond(HttpStatusCode.NotFound)
             } else {
                 genericPage(HttpStatusCode.NotFound)
             }

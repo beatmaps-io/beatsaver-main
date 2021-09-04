@@ -21,6 +21,7 @@ import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.sendEmail
+import io.beatmaps.login.Session
 import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
@@ -40,6 +41,7 @@ import io.ktor.request.receive
 import io.ktor.response.header
 import io.ktor.response.respond
 import io.ktor.routing.Route
+import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
 import kotlinx.datetime.toKotlinInstant
@@ -120,6 +122,13 @@ class UsersApi {
     @Location("/list/{page}")
     data class List(val page: Long = 0, val api: UsersApi)
 }
+
+fun alertCount(userId: Int) = ModLog
+    .join(Beatmap, JoinType.INNER, Beatmap.id, ModLog.opOn)
+    .select {
+        (Beatmap.uploader eq userId) and
+            (ModLog.type inList listOf(ModLogOpType.Unpublish, ModLogOpType.Delete).map { opType -> opType.ordinal })
+    }.count().toInt()
 
 fun Route.userRoute() {
     val usernameRegex = Regex("^[._\\-A-Za-z0-9]{3,}$")
@@ -377,7 +386,7 @@ fun Route.userRoute() {
 
     get<UsersApi.Alerts> {
         requireAuthorization { user ->
-            val targetId = if (it.id != null && user.isAdmin) {
+            val targetId = if (it.id != null && user.isAdmin()) {
                 it.id
             } else {
                 user.userId
@@ -551,16 +560,22 @@ fun Route.userRoute() {
 
     get<UsersApi.Me> {
         requireAuthorization {
-            val user = transaction {
+            val (user, alertCount) = transaction {
                 UserDao.wrapRows(
                     User.select {
                         User.id.eq(it.userId)
                     }
-                ).first()
+                ).first() to alertCount(it.userId)
             }
 
-            if (user.uniqueName != null && it.uniqueName == null) {
-                call.sessions.set(it.copy(uniqueName = user.uniqueName))
+            it.copy(testplay = user.testplay, admin = user.admin, alerts = alertCount).let { newSess ->
+                if (user.uniqueName != null && it.uniqueName == null) {
+                    newSess.copy(uniqueName = user.uniqueName)
+                } else {
+                    newSess
+                }
+            }.let { newSess ->
+                call.sessions.set(newSess)
             }
 
             val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
@@ -591,7 +606,15 @@ fun Route.userRoute() {
             (User.id eq it.id) and User.active
         }
 
-        call.respond(UserDetail.from(user, stats = statsForUser(user)))
+        val userDetail = UserDetail.from(user, stats = statsForUser(user)).let {
+            if (call.sessions.get<Session>()?.isAdmin() == true) {
+                it.copy(uploadLimit = user.uploadLimit)
+            } else {
+                it
+            }
+        }
+
+        call.respond(userDetail)
     }
 
     options<MapsApi.UserName> {

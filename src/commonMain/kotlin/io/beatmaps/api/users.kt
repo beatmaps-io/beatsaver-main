@@ -20,7 +20,8 @@ data class UserDetail(
     val avatar: String,
     val stats: UserStats? = null,
     val type: AccountType,
-    val email: String? = null
+    val email: String? = null,
+    val uploadLimit: Int? = null
 ) { companion object }
 @Serializable
 data class UserStats(

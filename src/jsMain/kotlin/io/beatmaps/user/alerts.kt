@@ -27,6 +27,8 @@ import react.setState
 
 external interface AlertsPageProps : RProps {
     var userId: Int?
+    var visible: Boolean?
+    var alertCountCallback: (Int) -> Unit
 }
 
 data class AlertsPageState(var alerts: List<Alert> = listOf(), var loading: Boolean = false) : RState
@@ -55,6 +57,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                 alerts = it.data
                 loading = false
             }
+            props.alertCountCallback(it.data.size)
         }.catch {
             // Cancelled request
         }
@@ -68,6 +71,8 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
     }
 
     override fun RBuilder.render() {
+        if (props.visible != true) return
+
         if (!state.loading && state.alerts.isEmpty()) {
             div("jumbotron") {
                 h1 {

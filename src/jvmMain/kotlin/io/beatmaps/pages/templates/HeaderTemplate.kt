@@ -91,6 +91,13 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                         +"Profile"
                                     }
                                     a("/profile#alerts", classes = "dropdown-item") {
+
+                                        if (s.alerts != null && s.alerts > 0) {
+                                            span("badge rounded-pill bg-danger mr-2") {
+                                                +"${s.alerts}"
+                                            }
+                                        }
+
                                         +"Alerts"
                                     }
                                     if (s.steamId == null) {

@@ -9,9 +9,11 @@ import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
 import io.beatmaps.setPageTitle
+import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import kotlinx.html.js.onClickFunction
+import org.w3c.dom.events.Event
 import org.w3c.dom.get
 import org.w3c.dom.set
 import react.RBuilder
@@ -27,6 +29,7 @@ import react.dom.h4
 import react.dom.i
 import react.dom.img
 import react.dom.li
+import react.dom.span
 import react.dom.ul
 import react.ref
 import react.router.dom.RouteResultHistory
@@ -43,13 +46,14 @@ external interface ProfilePageState : RState {
     var startup: Boolean
     var userDetail: UserDetail?
     var state: ProfileTab
+    var notificationCount: Map<ProfileTab, Int>
 }
 
 enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps) -> Boolean = { true }, val bootCondition: () -> Boolean = { false }, val onSelected: () -> Unit = {}) {
     PUBLISHED("Published", onSelected = { localStorage["profile.showwip"] = "false" }),
     UNPUBLISHED("Unpublished", condition = { (it.userId == null) }, bootCondition = { (localStorage["profile.showwip"] == "true") }, onSelected = { localStorage["profile.showwip"] = "true" }),
-    ACCOUNT("Account", condition = { (it.userId == null) }, bootCondition = { (window.location.hash.substring(1) == "account") }),
-    MODERATOR("Alerts", condition = { (it.userData?.admin == true) }, bootCondition = { (window.location.hash.substring(1) == "alerts") })
+    ACCOUNT("Account", condition = { (it.userId == null) }),
+    MODERATOR("Alerts", condition = { (it.userData?.admin == true || it.userId == null) })
 }
 
 @JsExport
@@ -62,28 +66,42 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             startup = false
             userDetail = null
             state = ProfileTab.UNPUBLISHED
+            notificationCount = mapOf()
         }
     }
 
     override fun componentDidMount() {
         setPageTitle("Profile")
 
+        val hash = window.location.hash.substring(1)
         setState {
-            // We care about what tab you're on if you are an admin or looking at your own profile
-            state = if (ProfileTab.ACCOUNT.condition(props) && ProfileTab.ACCOUNT.bootCondition()) {
-                ProfileTab.ACCOUNT
-            } else if (ProfileTab.MODERATOR.condition(props) && ProfileTab.MODERATOR.bootCondition()) {
-                ProfileTab.MODERATOR
-            } else if (ProfileTab.UNPUBLISHED.condition(props) && ProfileTab.UNPUBLISHED.bootCondition()) {
-                ProfileTab.UNPUBLISHED
-            } else {
-                ProfileTab.PUBLISHED
+            state = ProfileTab.values().firstOrNull { hash == it.tabText.lowercase() && it.condition(props) } ?:
+                ProfileTab.values().firstOrNull { it.bootCondition() && it.condition(props) } ?: run {
+                    if (ProfileTab.UNPUBLISHED.condition(props)) {
+                        ProfileTab.UNPUBLISHED
+                    } else {
+                        ProfileTab.PUBLISHED
+                    }
             }
 
             startup = true
         }
 
+        window.addEventListener("hashchange", ::onHashChange)
+
         loadState()
+    }
+
+    override fun componentWillUnmount() {
+        window.removeEventListener("hashchange", ::onHashChange)
+    }
+
+    private fun onHashChange(it: Event) {
+        val hash = window.location.hash.substring(1)
+        val newState = ProfileTab.values().firstOrNull { hash == it.tabText.lowercase() && it.condition(props) } ?: state.state
+        setState {
+            state = newState
+        }
     }
 
     private fun loadState() {
@@ -191,14 +209,30 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
                             li("nav-item") {
                                 a("#", classes = "nav-link" + if (state.state == tab) " active" else "") {
+                                    key = tab.tabText
                                     attrs.onClickFunction = {
                                         it.preventDefault()
+
+                                        val userPart = if (props.userId != null) "/${props.userId}" else ""
+                                        props.history.push("/profile${userPart}#${tab.tabText.lowercase()}")
+
                                         tab.onSelected()
                                         setState {
                                             state = tab
                                         }
                                     }
-                                    +tab.tabText
+
+                                    state.notificationCount.getOrElse(tab) { 0 }.let { notifCount ->
+                                        if (notifCount > 0) {
+                                            span("badge rounded-pill bg-danger") {
+                                                +"$notifCount"
+                                            }
+                                        }
+                                    }
+
+                                    span("mx-2") {
+                                        +tab.tabText
+                                    }
                                 }
                             }
                         }
@@ -207,15 +241,23 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             }
         }
         val detail = state.userDetail
+        if (ProfileTab.MODERATOR.condition(props)) {
+            alertsPage {
+                alertCountCallback = {
+                    setState {
+                        notificationCount = notificationCount.plus(ProfileTab.MODERATOR to it)
+                    }
+                }
+                visible = state.state == ProfileTab.MODERATOR
+                userId = props.userId
+            }
+        }
+
         if (state.state == ProfileTab.ACCOUNT && detail != null) {
             account {
                 userDetail = detail
             }
-        } else if (state.state == ProfileTab.MODERATOR) {
-            alertsPage {
-                userId = props.userId
-            }
-        } else if (state.startup) {
+        } else if (state.startup && (state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED)) {
             beatmapTable {
                 user = props.userId ?: loggedInLocal ?: 0
                 modal = modalRef

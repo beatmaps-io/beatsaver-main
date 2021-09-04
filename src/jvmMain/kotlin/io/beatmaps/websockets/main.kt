@@ -6,6 +6,8 @@ import io.ktor.websocket.DefaultWebSocketServerSession
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 enum class WebsocketMessageType {
     MAP_UPDATE, MAP_DELETE, VOTE
@@ -30,7 +32,7 @@ suspend fun DefaultWebSocketServerSession.websocketConnection(holder: ChannelHol
         holder.channels = holder.channels.plus(it)
     }.let { channel ->
         try {
-            launch {
+            launch(EmptyCoroutineContext) {
                 channel.consumeEach {
                     outgoing.send(Frame.Text(it))
                 }

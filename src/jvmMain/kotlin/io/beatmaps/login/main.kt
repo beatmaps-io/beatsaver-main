@@ -1,6 +1,7 @@
 package io.beatmaps.login
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.beatmaps.api.alertCount
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.Config
 import io.beatmaps.common.client
@@ -55,8 +56,11 @@ data class Session(
     val oculusId: Long? = null,
     val admin: Boolean = false,
     val uniqueName: String? = null,
-    val canLink: Boolean = false
+    val canLink: Boolean = false,
+    val alerts: Int? = null
 ) {
+    constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean) :
+        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, transaction { alertCount(userId) })
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?) :
         this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, true)
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean) :
@@ -66,8 +70,7 @@ data class Session(
     constructor(userId: Int, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?) :
         this(userId, null, userEmail, userName, testplay, steamId, oculusId)
 
-    private val actualUser: UserDao by lazy { UserDao[userId] }
-    val isAdmin = admin && actualUser.admin
+    fun isAdmin() = admin && transaction { UserDao[userId].admin }
 }
 
 @Location("/login") class Login
@@ -121,7 +124,7 @@ fun Route.authRoute() {
                 UserDao[userId]
             }
 
-            call.sessions.set(Session(user.id.value, user.hash, "", discordName, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, user.hash == null))
+            call.sessions.set(Session(user.id.value, user.hash, "", discordName, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, user.hash == null, alertCount(user.id.value)))
             call.respondRedirect("/")
         }
     }
@@ -197,7 +200,7 @@ fun Route.authRoute() {
         post<Login> {
             call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
                 val user = newPrincipal.user
-                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false))
+                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, alertCount(user.id.value)))
             }
             call.respondRedirect("/")
         }

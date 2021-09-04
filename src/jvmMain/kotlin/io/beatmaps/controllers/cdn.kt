@@ -4,15 +4,15 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
 import io.beatmaps.common.DownloadInfo
 import io.beatmaps.common.DownloadType
-import io.beatmaps.common.localAudioFolder
-import io.beatmaps.common.localCoverFolder
-import io.beatmaps.common.localFolder
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.downloadFilename
+import io.beatmaps.common.localAudioFolder
 import io.beatmaps.common.localAvatarFolder
+import io.beatmaps.common.localCoverFolder
+import io.beatmaps.common.localFolder
 import io.beatmaps.common.pub
 import io.beatmaps.common.returnFile
 import io.ktor.application.ApplicationCall
@@ -32,14 +32,22 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 
-@Location("/cdn") class CDN {
-    @Location("/{file}.zip") data class Zip(val file: String, val api: CDN)
-    @Location("/{file}.jpg") data class Cover(val file: String, val api: CDN)
-    @Location("/avatar/{user}.png") data class Avatar(val user: Long, val api: CDN)
-    @Location("/avatar/{user}.jpg") data class AvatarSimple(val user: Long, val api: CDN)
-    @Location("/beatsaver/{file}.zip") data class BeatSaver(val file: String, val api: CDN)
-    @Location("/{file}.mp3") data class Audio(val file: String, val api: CDN)
-    @Location("/beatsaver/{file}.mp3") data class BSAudio(val file: String, val api: CDN)
+@Location("/cdn")
+class CDN {
+    @Location("/{file}.zip")
+    data class Zip(val file: String, val api: CDN)
+    @Location("/{file}.jpg")
+    data class Cover(val file: String, val api: CDN)
+    @Location("/avatar/{user}.png")
+    data class Avatar(val user: Long, val api: CDN)
+    @Location("/avatar/{user}.jpg")
+    data class AvatarSimple(val user: Long, val api: CDN)
+    @Location("/beatsaver/{file}.zip")
+    data class BeatSaver(val file: String, val api: CDN)
+    @Location("/{file}.mp3")
+    data class Audio(val file: String, val api: CDN)
+    @Location("/beatsaver/{file}.mp3")
+    data class BSAudio(val file: String, val api: CDN)
 }
 
 fun Route.cdnRoute() {
