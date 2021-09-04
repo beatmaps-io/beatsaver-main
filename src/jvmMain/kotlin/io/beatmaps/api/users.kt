@@ -68,6 +68,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import java.lang.Integer.toHexString
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.time.Instant
@@ -471,7 +472,7 @@ fun Route.userRoute() {
         val playlistSongs = maps.mapNotNull { map ->
             map.versions.values.firstOrNull { v -> v.state == EMapState.Published }?.let { v ->
                 PlaylistSong(
-                    v.key64,
+                    toHexString(map.id.value),
                     v.hash,
                     map.name
                 )
