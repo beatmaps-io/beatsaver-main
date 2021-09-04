@@ -113,7 +113,7 @@ fun Route.authRoute() {
             val discordIdLocal = parseLong(data["id"] as String)
             val avatarLocal = (data["avatar"] as String?)?.let { downloadDiscordAvatar(it, discordIdLocal) }
 
-            val user = transaction {
+            val (user, alertCount) = transaction {
                 val userId = User.upsert(User.discordId) {
                     it[name] = discordName
                     it[discordId] = discordIdLocal
@@ -121,10 +121,10 @@ fun Route.authRoute() {
                     it[active] = true
                 }.value
 
-                UserDao[userId]
+                UserDao[userId] to alertCount(userId)
             }
 
-            call.sessions.set(Session(user.id.value, user.hash, "", discordName, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, user.hash == null, alertCount(user.id.value)))
+            call.sessions.set(Session(user.id.value, user.hash, "", discordName, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, user.hash == null, alertCount))
             call.respondRedirect("/")
         }
     }
@@ -200,7 +200,7 @@ fun Route.authRoute() {
         post<Login> {
             call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
                 val user = newPrincipal.user
-                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, alertCount(user.id.value)))
+                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount))
             }
             call.respondRedirect("/")
         }
