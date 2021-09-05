@@ -146,7 +146,7 @@ class UserList : RComponent<UserListProps, UserListState>() {
     private fun lastPage() = max(state.visablePages.last, state.pages.maxByOrNull { it.key }?.key ?: 0)
 
     override fun RBuilder.render() {
-        table("table table-dark mappers") {
+        table("table table-dark table-striped mappers") {
             thead {
                 tr {
                     th { +"#" }
