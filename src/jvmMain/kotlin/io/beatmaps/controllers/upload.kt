@@ -17,10 +17,12 @@ import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
+import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.jackson
 import io.beatmaps.common.localAvatarFolder
 import io.beatmaps.common.pub
@@ -48,10 +50,14 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.toKotlinInstant
 import net.coobird.thumbnailator.Thumbnails
 import net.coobird.thumbnailator.tasks.UnsupportedFormatException
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
@@ -253,7 +259,7 @@ fun Route.uploadController() {
             val newMap = try {
                 fun insertOrUpdate() =
                     dataMap["mapId"]?.toInt()?.let { mapId ->
-                        Beatmap.updateReturning(
+                        (Beatmap.updateReturning(
                             {
                                 (Beatmap.id eq mapId) and (Beatmap.uploader eq session.userId)
                             },
@@ -262,7 +268,21 @@ fun Route.uploadController() {
                                 it[updatedAt] = NowExpression(updatedAt.columnType)
                             },
                             Beatmap.id
-                        )?.firstOrNull()?.let { it[Beatmap.id] } ?: throw UploadException("Map doesn't exist to add version")
+                        )?.firstOrNull()?.let { it[Beatmap.id] } ?: throw UploadException("Map doesn't exist to add version")).also {
+                            val latestVersions = VersionsDao.wrapRows(
+                                Versions.select {
+                                    (Versions.mapId eq mapId)
+                                }.orderBy(Versions.uploaded, SortOrder.DESC).limit(2)
+                            ).toList()
+
+                            if (latestVersions.size > 1) {
+                                // Check time since one before previous upload = 2 uploads / day / map
+                                val hoursUntilNext = 12 - Clock.System.now().minus(latestVersions[1].uploaded.toKotlinInstant()).inWholeHours
+                                if (hoursUntilNext > 0) {
+                                    throw UploadException("Please wait another $hoursUntilNext hours before uploading another version")
+                                }
+                            }
+                        }
                     } ?: Beatmap.insertAndGetId {
                         it[name] = (dataMap["title"] ?: "").take(1000)
                         it[description] = (dataMap["description"] ?: "").take(10000)
