@@ -60,8 +60,6 @@ data class QueuedVote(val userId: Long, val steam: Boolean, val mapId: Int, val 
 
 @Serializable
 data class VoteSummary(val hash: String?, val mapId: Int, val key64: String?, val upvotes: Int, val downvotes: Int, val score: Double)
-@Serializable
-data class VoteSummaryHex(val hash: String?, val mapId: String, val upvotes: Int, val downvotes: Int, val score: Double)
 
 fun Route.voteRoute() {
     options<VoteApi.Vote> {

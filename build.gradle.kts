@@ -82,7 +82,6 @@ kotlin {
                 implementation("io.ktor:ktor-auth:$ktorVersion")
                 implementation("io.ktor:ktor-locations:$ktorVersion")
                 implementation("io.ktor:ktor-client-apache:$ktorVersion")
-                implementation("io.ktor:ktor-websockets:$ktorVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3")
                 implementation("ch.qos.logback:logback-classic:1.2.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")

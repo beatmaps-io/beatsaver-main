@@ -8,19 +8,20 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
 import io.beatmaps.common.dbo.complexToBeatmap
-import io.beatmaps.common.inlineJackson
 import io.beatmaps.common.rabbitOptional
 import io.ktor.routing.Route
 import io.ktor.routing.application
-import io.ktor.websocket.webSocket
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import pl.jutupe.ktor_rabbitmq.publish
 import java.lang.Integer.toHexString
 
-fun Route.mapsWebsocket() {
-    val holder = ChannelHolder()
+enum class MapUpdateMessageType {
+    MAP_UPDATE, MAP_DELETE
+}
+data class MapUpdateMessage(val type: MapUpdateMessageType, val msg: Any)
 
+fun Route.mapUpdateEnricher() {
     application.rabbitOptional {
         consumeAck("bm.updateStream", Int::class) { _, mapId ->
             transaction {
@@ -42,18 +43,14 @@ fun Route.mapsWebsocket() {
 
                 publish("beatmaps", "cdn.${cdnUpdate.mapId}", null, cdnUpdate)
 
-                loopAndTerminateOnError(holder) {
-                    if (map.first == null) {
-                        it.send(inlineJackson.writeValueAsString(WebsocketMessage(WebsocketMessageType.MAP_UPDATE, map.second)))
-                    } else {
-                        it.send(inlineJackson.writeValueAsString(WebsocketMessage(WebsocketMessageType.MAP_DELETE, toHexString(mapId))))
-                    }
+                val wsMsg = if (map.first == null) {
+                    MapUpdateMessage(MapUpdateMessageType.MAP_UPDATE, map.second)
+                } else {
+                    MapUpdateMessage(MapUpdateMessageType.MAP_DELETE, toHexString(mapId))
                 }
+
+                publish("beatmaps", "ws.map.$mapId", null, wsMsg)
             }
         }
-    }
-
-    webSocket("/ws/maps") {
-        websocketConnection(holder)
     }
 }

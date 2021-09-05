@@ -31,7 +31,7 @@ import io.beatmaps.login.installDiscordOauth
 import io.beatmaps.login.installSessions
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
-import io.beatmaps.websockets.websockets
+import io.beatmaps.websockets.mapUpdateEnricher
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -47,7 +47,6 @@ import io.ktor.features.XForwardedHeaderSupport
 import io.ktor.html.respondHtmlTemplate
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.cio.websocket.pingPeriod
 import io.ktor.http.content.EntityTagVersion
 import io.ktor.http.content.resources
 import io.ktor.http.content.static
@@ -66,7 +65,6 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.util.DataConversionException
 import io.ktor.util.pipeline.PipelineContext
-import io.ktor.websocket.WebSockets
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -80,7 +78,6 @@ import pl.jutupe.ktor_rabbitmq.RabbitMQ
 import java.io.File
 import java.math.BigInteger
 import java.security.MessageDigest
-import java.time.Duration
 import kotlin.time.Duration.Companion.nanoseconds
 
 suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) {
@@ -257,10 +254,6 @@ fun Application.beatmapsio() {
         }
     }
 
-    install(WebSockets) {
-        pingPeriod = Duration.ofSeconds(60)
-    }
-
     installSessions()
     installDiscordOauth()
     if (rabbitHost.isNotEmpty()) {
@@ -276,9 +269,6 @@ fun Application.beatmapsio() {
 
                 queueDeclare("bm.updateStream", true, false, false, genericQueueConfig)
                 queueBind("bm.updateStream", "beatmaps", "maps.*.updated")
-
-                queueDeclare("bm.voteStream", true, false, false, genericQueueConfig)
-                queueBind("bm.voteStream", "beatmaps", "voteupdate.*")
 
                 queueDeclare("bm.downloadCount", true, false, false, genericQueueConfig)
                 queueBind("bm.downloadCount", "beatmaps", "download.#")
@@ -306,7 +296,7 @@ fun Application.beatmapsio() {
         uploadController()
         policyController()
 
-        websockets()
+        mapUpdateEnricher()
 
         static("/static") {
             resources()
