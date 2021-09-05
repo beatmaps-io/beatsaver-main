@@ -11,6 +11,8 @@ import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.client
+import io.beatmaps.common.db.DateMinusDays
+import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
@@ -54,6 +56,7 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.Sum
+import org.jetbrains.exposed.sql.`java-time`.timestampLiteral
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
@@ -71,6 +74,7 @@ import org.jetbrains.exposed.sql.update
 import java.lang.Integer.toHexString
 import java.math.BigInteger
 import java.security.MessageDigest
+import java.time.Clock
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -142,19 +146,21 @@ fun Route.userRoute() {
             } else {
                 val success = transaction {
                     try {
-                        User.update({ User.id eq sess.userId and User.uniqueName.isNull() }) { u ->
+                        User.update({ User.id eq sess.userId and User.renamedAt.lessEq(DateMinusDays(NowExpression(User.renamedAt.columnType), 1)) }) { u ->
                             u[uniqueName] = req.username
+                            u[renamedAt] = NowExpression(User.renamedAt.columnType)
                         }
-                        true
                     } catch (e: ExposedSQLException) {
-                        false
+                        -1
                     }
                 }
 
-                if (success) {
+                if (success > 0) {
                     // Success
                     call.sessions.set(sess.copy(uniqueName = req.username))
                     call.respond(ActionResponse(true, listOf()))
+                } else if (success == 0) {
+                    call.respond(ActionResponse(false, listOf("You can only set a new username once per day")))
                 } else {
                     call.respond(ActionResponse(false, listOf("Username already taken")))
                 }
@@ -569,15 +575,7 @@ fun Route.userRoute() {
                 ).first() to alertCount(it.userId)
             }
 
-            it.copy(testplay = user.testplay, admin = user.admin, alerts = alertCount).let { newSess ->
-                if (user.uniqueName != null && it.uniqueName == null) {
-                    newSess.copy(uniqueName = user.uniqueName)
-                } else {
-                    newSess
-                }
-            }.let { newSess ->
-                call.sessions.set(newSess)
-            }
+            call.sessions.set(it.copy(testplay = user.testplay, admin = user.admin, alerts = alertCount, uniqueName = user.uniqueName))
 
             val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
 

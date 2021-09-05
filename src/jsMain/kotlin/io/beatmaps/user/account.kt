@@ -6,6 +6,7 @@ import io.beatmaps.api.AccountRequest
 import io.beatmaps.api.AccountType
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
+import io.beatmaps.api.UsernameReq
 import io.beatmaps.maps.UploadRequestConfig
 import kotlinx.browser.window
 import kotlinx.html.ButtonType
@@ -13,6 +14,7 @@ import kotlinx.html.FormMethod
 import kotlinx.html.InputType
 import kotlinx.html.hidden
 import kotlinx.html.id
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onSubmitFunction
 import kotlinx.html.role
@@ -44,15 +46,20 @@ external interface AccountComponentProps : RProps {
 }
 
 external interface AccountComponentState : RState {
-    var loading: Boolean
-    var uploading: Boolean
+    var loading: Boolean?
+    var userLoading: Boolean?
+    var uploading: Boolean?
     var errors: List<String>
+    var usernameErrors: List<String>
+    var username: String
 }
 
 @JsExport
 class AccountComponent : RComponent<AccountComponentProps, AccountComponentState>() {
     private val avatarRef = createRef<HTMLInputElement>()
     private val progressBarInnerRef = createRef<HTMLElement>()
+
+    private val usernameRef = createRef<HTMLInputElement>()
 
     private val currpassRef = createRef<HTMLInputElement>()
     private val passwordRef = createRef<HTMLInputElement>()
@@ -62,7 +69,10 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
         setState {
             loading = false
             uploading = false
+            userLoading = false
             errors = listOf()
+            usernameErrors = listOf()
+            username = props.userDetail.name
         }
     }
 
@@ -73,6 +83,31 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                 +"Account details"
             }
             hr("mt-2") {}
+            if (props.userDetail.type != AccountType.DISCORD) {
+                div("form-group row") {
+                    label("col-sm-2 col-form-label") {
+                        attrs.htmlFor = "email"
+                        +"Email"
+                    }
+                    div("col-sm-10") {
+                        input(InputType.text, classes = "form-control-plaintext") {
+                            key = "email"
+                            attrs.id = "email"
+                            attrs.disabled = true
+                            attrs.value = props.userDetail.email ?: ""
+                        }
+                    }
+                }
+            }
+            div("invalid-feedback") {
+                val error = state.usernameErrors.firstOrNull()
+                if (error != null) {
+                    attrs.jsStyle {
+                        display = "block"
+                    }
+                    +error
+                }
+            }
             div("form-group") {
                 label {
                     attrs.htmlFor = "name"
@@ -81,28 +116,44 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                 input(InputType.text, classes = "form-control") {
                     key = "username"
                     attrs.id = "name"
-                    attrs.readonly = true
-                    attrs.value = props.userDetail.name
+                    attrs.value = state.username
+                    attrs.onChangeFunction = {
+                        setState {
+                            username = usernameRef.current?.value ?: ""
+                        }
+                    }
+                    ref = usernameRef
                 }
-                small("form-text text-muted") {
-                    +"You can't change this."
-                }
-            }
-            if (props.userDetail.type != AccountType.DISCORD) {
-                div("form-group") {
-                    label {
-                        attrs.htmlFor = "email"
-                        +"Email"
+                button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
+                    attrs.onClickFunction = { ev ->
+                        ev.preventDefault()
+
+                        setState {
+                            userLoading = true
+                        }
+
+                        Axios.post<ActionResponse>(
+                            "/api/users/username",
+                            UsernameReq(usernameRef.current?.value ?: ""),
+                            generateConfig<UsernameReq, ActionResponse>()
+                        ).then {
+                            if (it.data.success) {
+                                window.location.reload()
+                            } else {
+                                setState {
+                                    usernameErrors = it.data.errors
+                                    userLoading = false
+                                }
+                            }
+                        }.catch {
+                            // Cancelled request
+                            setState {
+                                userLoading = false
+                            }
+                        }
                     }
-                    input(InputType.text, classes = "form-control") {
-                        key = "email"
-                        attrs.id = "email"
-                        attrs.disabled = true
-                        attrs.value = props.userDetail.email ?: ""
-                    }
-                    small("form-text text-muted") {
-                        +"You can't change this."
-                    }
+                    attrs.disabled = state.userLoading == true
+                    +"Change username"
                 }
             }
         }
@@ -116,10 +167,10 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     input(InputType.file) {
                         key = "avatar"
                         ref = avatarRef
-                        attrs.hidden = state.uploading
+                        attrs.hidden = state.uploading == true
                     }
                     button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
-                        attrs.hidden = state.uploading
+                        attrs.hidden = state.uploading == true
                         attrs.onClickFunction = { ev ->
                             ev.preventDefault()
 
@@ -158,7 +209,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                         +"Upload"
                     }
                     div("progress") {
-                        attrs.hidden = !state.uploading
+                        attrs.hidden = state.uploading == false
                         div("progress-bar progress-bar-striped progress-bar-animated bg-info") {
                             attrs.role = "progressbar"
                             ref = progressBarInnerRef
@@ -258,7 +309,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                         attrs.attributes["autocomplete"] = "new-password"
                     }
                     button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
-                        attrs.disabled = state.loading
+                        attrs.disabled = state.loading == true
                         +"Change password"
                     }
                 }
@@ -272,7 +323,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                 hr("mt-2") {}
                 div("form-group") {
                     button(classes = "btn btn-danger btn-block", type = ButtonType.submit) {
-                        attrs.disabled = state.loading
+                        attrs.disabled = state.loading == true
                         +"Unlink discord"
                     }
                 }
