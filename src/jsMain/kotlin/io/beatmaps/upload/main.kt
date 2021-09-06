@@ -193,7 +193,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                             +" need to upload your map to test it in game."
                         }
                         p("card-text") {
-                            +"On PC you can access WIPs directly if you have songcore."
+                            +"On PC you can access WIPs directly if you have SongCore."
                             br {}
                             +"On Quest you can follow "
                             a("https://bsmg.wiki/mapping/#testing-on-a-quest", target = "_blank") {
