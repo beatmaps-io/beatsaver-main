@@ -37,7 +37,6 @@ import react.dom.hr
 import react.dom.input
 import react.dom.jsStyle
 import react.dom.label
-import react.dom.small
 import react.setState
 import kotlin.collections.set
 

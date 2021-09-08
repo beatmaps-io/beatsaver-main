@@ -95,7 +95,6 @@ kotlin {
                 implementation("io.github.keetraxx:recaptcha:0.5")
                 implementation("de.nielsfalk.ktor:ktor-swagger:0.7.+")
                 implementation("org.bouncycastle:bcprov-jdk15:1.46")
-                implementation("com.maxmind.geoip2:geoip2:2.15.0")
 
                 // Database library
                 implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
