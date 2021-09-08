@@ -22,6 +22,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.pub
+import io.beatmaps.login.Session
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location
@@ -33,6 +34,8 @@ import io.ktor.response.header
 import io.ktor.response.respond
 import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
+import io.ktor.sessions.get
+import io.ktor.sessions.sessions
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.dao.id.EntityID
@@ -194,7 +197,13 @@ fun Route.mapDetailRoute() {
                     .joinUploader()
                     .joinCurator()
                     .select {
-                        Beatmap.id eq it.id.toInt(16) and (Beatmap.deletedAt.isNull())
+                        (Beatmap.id eq it.id.toInt(16))?.let {
+                            if (call.sessions.get<Session>()?.isAdmin() != true) {
+                                it and Beatmap.deletedAt.isNull()
+                            } else {
+                                it
+                            }
+                        }
                     }
                     .complexToBeatmap()
                     .firstOrNull()

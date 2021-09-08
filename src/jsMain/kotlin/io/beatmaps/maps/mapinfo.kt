@@ -101,107 +101,107 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     }
 
     override fun RBuilder.render() {
+        val deleted = props.mapInfo.deletedAt != null
         div("card") {
-            div("card-header d-flex") {
+            div("card-header d-flex" + if (deleted) " bg-danger" else "") {
                 if (state.editing) {
                     +"Edit map"
                 } else {
                     +props.mapInfo.name
                 }
                 div("ml-auto") {
-                    props.mapInfo.mainVersion()?.let { version ->
-                        downloadZip.invoke {
-                            attrs.map = props.mapInfo
-                            attrs.version = version
-                        }
-                        val linkQuery = if (version.state == EMapState.Published) {
-                            "url=${encodeURIComponent(version.downloadURL)}"
-                        } else {
-                            "id=${props.mapInfo.id}"
-                        }
-                        a("$previewBaseUrl?$linkQuery") {
-                            attrs.title = "Preview"
-                            attrs.attributes["aria-label"] = "Preview"
-                            attrs.onClickFunction = {
-                                it.preventDefault()
-                                if (version.state == EMapState.Published) {
-                                    props.modal.current?.showById(props.mapInfo.id)
-                                } else {
-                                    props.modal.current?.show(version.downloadURL)
-                                }
+                    if (!deleted) {
+                        props.mapInfo.mainVersion()?.let { version ->
+                            downloadZip.invoke {
+                                attrs.map = props.mapInfo
+                                attrs.version = version
                             }
-                            i("fas fa-play text-info") { }
-                        }
-                        oneclick {
-                            mapId = props.mapInfo.id
-                            modal = props.modal
-                        }
-                        copyBsr {
-                            attrs.map = props.mapInfo
-                        }
-
-                        val adminLocal = props.isAdmin
-
-                        if (adminLocal == true || props.isOwner) {
-                            a("#") {
-                                attrs.title = "Edit"
-                                attrs.attributes["aria-label"] = "Edit"
+                            val linkQuery = if (version.state == EMapState.Published) {
+                                "url=${encodeURIComponent(version.downloadURL)}"
+                            } else {
+                                "id=${props.mapInfo.id}"
+                            }
+                            a("$previewBaseUrl?$linkQuery") {
+                                attrs.title = "Preview"
+                                attrs.attributes["aria-label"] = "Preview"
                                 attrs.onClickFunction = {
                                     it.preventDefault()
-                                    setState {
-                                        editing = !state.editing
+                                    if (version.state == EMapState.Published) {
+                                        props.modal.current?.showById(props.mapInfo.id)
+                                    } else {
+                                        props.modal.current?.show(version.downloadURL)
                                     }
-                                    window.setTimeout(
-                                        {
-                                            inputRef.current?.value = props.mapInfo.name
-                                        },
-                                        1
-                                    )
                                 }
-                                i("fas fa-pen text-warning") { }
+                                i("fas fa-play text-info") { }
                             }
-                        }
+                            oneclick {
+                                mapId = props.mapInfo.id
+                                modal = props.modal
+                            }
+                            copyBsr {
+                                attrs.map = props.mapInfo
+                            }
 
-                        if (adminLocal == true) {
-                            a("#") {
-                                attrs.title = "Curate"
-                                attrs.attributes["aria-label"] = "Curate"
-                                attrs.onClickFunction = {
-                                    it.preventDefault()
-                                    curate(props.mapInfo.curator == null)
-                                }
-                                i("fas fa-award " + if (props.mapInfo.curator != null) "text-danger" else "text-success") { }
-                            }
-                            a("#") {
-                                attrs.title = "Delete"
-                                attrs.attributes["aria-label"] = "Delete"
-                                attrs.onClickFunction = {
-                                    it.preventDefault()
-                                    props.modal.current?.showDialog(
-                                        ModalData(
-                                            "Delete map",
-                                            bodyCallback = {
-                                                p {
-                                                    +"Delete completely so that no more versions can be added or just unpublish the current version?"
-                                                }
-                                                p {
-                                                    +"Reason for action:"
-                                                }
-                                                textarea(classes = "form-control") {
-                                                    ref = reasonRef
-                                                }
+                            val adminLocal = props.isAdmin
+
+                            if (adminLocal == true || props.isOwner) {
+                                a("#") {
+                                    attrs.title = "Edit"
+                                    attrs.attributes["aria-label"] = "Edit"
+                                    attrs.onClickFunction = {
+                                        it.preventDefault()
+                                        setState {
+                                            editing = !state.editing
+                                        }
+                                        window.setTimeout(
+                                            {
+                                                inputRef.current?.value = props.mapInfo.name
                                             },
-                                            buttons = listOf(ModalButton("DELETE", "danger", ::delete), ModalButton("Unpublish", "primary", ::recall), ModalButton("Cancel"))
+                                            1
                                         )
-                                    )
+                                    }
+                                    i("fas fa-pen text-warning") { }
                                 }
-                                i("fas fa-trash text-danger") { }
+                            }
+
+                            if (adminLocal == true) {
+                                a("#") {
+                                    attrs.title = "Curate"
+                                    attrs.attributes["aria-label"] = "Curate"
+                                    attrs.onClickFunction = {
+                                        it.preventDefault()
+                                        curate(props.mapInfo.curator == null)
+                                    }
+                                    i("fas fa-award " + if (props.mapInfo.curator != null) "text-danger" else "text-success") { }
+                                }
+                                a("#") {
+                                    attrs.title = "Delete"
+                                    attrs.attributes["aria-label"] = "Delete"
+                                    attrs.onClickFunction = {
+                                        it.preventDefault()
+                                        props.modal.current?.showDialog(
+                                            ModalData(
+                                                "Delete map",
+                                                bodyCallback = {
+                                                    p {
+                                                        +"Delete completely so that no more versions can be added or just unpublish the current version?"
+                                                    }
+                                                    p {
+                                                        +"Reason for action:"
+                                                    }
+                                                    textarea(classes = "form-control") {
+                                                        ref = reasonRef
+                                                    }
+                                                },
+                                                buttons = listOf(ModalButton("DELETE", "danger", ::delete), ModalButton("Unpublish", "primary", ::recall), ModalButton("Cancel"))
+                                            )
+                                        )
+                                    }
+                                    i("fas fa-trash text-danger") { }
+                                }
                             }
                         }
                     }
-                    /*a("#") {
-                        i("fab fa-twitch text-info") { }
-                    }*/
                 }
             }
             div("card-body mapinfo") {

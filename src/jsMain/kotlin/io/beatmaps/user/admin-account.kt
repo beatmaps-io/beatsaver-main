@@ -3,9 +3,11 @@ package io.beatmaps.user
 import external.Axios
 import external.generateConfig
 import io.beatmaps.api.ActionResponse
+import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.UserAdminRequest
 import io.beatmaps.api.UserDetail
 import kotlinx.html.ButtonType
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLSelectElement
 import react.RBuilder
@@ -30,6 +32,7 @@ external interface AdminAccountComponentProps : RProps {
 external interface AdminAccountComponentState : RState {
     var loading: Boolean?
     var errors: List<String>
+    var uploadLimit: Int
 }
 
 @JsExport
@@ -40,6 +43,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
         setState {
             loading = false
             errors = listOf()
+            uploadLimit = props.userDetail.uploadLimit ?: 1
         }
     }
 
@@ -57,17 +61,21 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                 select("form-control") {
                     arrayOf(0, 15).forEach {
                         option {
+                            attrs.selected = state.uploadLimit == it
                             +"$it"
                         }
                     }
 
+                    attrs.onChangeFunction = {
+                        setState {
+                            uploadLimit = maxUploadRef.current?.value?.toInt() ?: 15
+                        }
+                    }
                     ref = maxUploadRef
                 }
                 button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
                     attrs.onClickFunction = { ev ->
                         ev.preventDefault()
-
-                        val newMaxUpload = maxUploadRef.current?.value?.toInt() ?: error("Error getting max upload value")
 
                         setState {
                             loading = true
@@ -75,7 +83,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
 
                         Axios.post<ActionResponse>(
                             "/api/users/admin",
-                            UserAdminRequest(props.userDetail.id, newMaxUpload),
+                            UserAdminRequest(props.userDetail.id, state.uploadLimit),
                             generateConfig<UserAdminRequest, ActionResponse>()
                         ).then {
                             setState {

@@ -37,7 +37,8 @@ data class MapDetail(
     val curator: String? = null,
     val createdAt: Instant,
     val updatedAt: Instant,
-    val lastPublishedAt: Instant? = null
+    val lastPublishedAt: Instant? = null,
+    val deletedAt: Instant? = null
 ) {
     fun intId() = id.toInt(16)
     fun latestVersion() = versions.maxByOrNull { it.createdAt }

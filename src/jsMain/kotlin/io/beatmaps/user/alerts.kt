@@ -88,7 +88,13 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                     state.alerts.forEach {
                         tr {
                             td {
-                                +it.map.name
+                                routeLink("/maps/${it.map.id}") {
+                                    if (it.map.name.isNotBlank()) {
+                                        +it.map.name
+                                    } else {
+                                        +"<NO NAME>"
+                                    }
+                                }
                                 p {
                                     routeLink("/profile/${it.map.uploader.id}") {
                                         +it.map.uploader.name

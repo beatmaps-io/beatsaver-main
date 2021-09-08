@@ -69,7 +69,7 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
             val loggedInLocal = props.userData?.userId
             val isOwnerLocal = loggedInLocal == it.uploader.id
 
-            if (version == null) {
+            if (version == null && it.deletedAt == null) {
                 testplay {
                     mapInfo = it
                     isOwner = isOwnerLocal
@@ -106,9 +106,11 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                             }
                         }
                     }
-                    scoreTable {
-                        mapKey = version.hash
-                        selected = state.selectedDiff
+                    if (version != null && it.deletedAt == null) {
+                        scoreTable {
+                            mapKey = version.hash
+                            selected = state.selectedDiff
+                        }
                     }
                 }
             }

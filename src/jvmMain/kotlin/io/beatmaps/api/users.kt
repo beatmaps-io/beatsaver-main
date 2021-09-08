@@ -100,6 +100,9 @@ class UsersApi {
     @Location("/username")
     data class Username(val api: UsersApi)
 
+    @Location("/admin")
+    data class Admin(val api: UsersApi)
+
     @Location("/register")
     data class Register(val api: UsersApi)
 
@@ -146,9 +149,9 @@ fun Route.userRoute() {
             } else {
                 val success = transaction {
                     try {
-                        User.update({ User.id eq sess.userId and User.renamedAt.lessEq(DateMinusDays(NowExpression(User.renamedAt.columnType), 1)) }) { u ->
+                        User.update({ User.id eq sess.userId and (User.uniqueName.isNull() or User.renamedAt.lessEq(DateMinusDays(NowExpression(User.renamedAt.columnType), 1))) }) { u ->
                             u[uniqueName] = req.username
-                            u[renamedAt] = NowExpression(User.renamedAt.columnType)
+                            u[renamedAt] = NowExpression(renamedAt.columnType)
                         }
                     } catch (e: ExposedSQLException) {
                         -1
@@ -164,6 +167,36 @@ fun Route.userRoute() {
                 } else {
                     call.respond(ActionResponse(false, listOf("Username already taken")))
                 }
+            }
+        }
+    }
+
+    post<UsersApi.Admin> {
+        requireAuthorization { sess ->
+            if (!sess.isAdmin()) {
+                ActionResponse(false, listOf("Not an admin"))
+            } else {
+                val req = call.receive<UserAdminRequest>()
+                val allowedUploadSizes = arrayOf(0, 15)
+                if (allowedUploadSizes.contains(req.maxUploadSize)) {
+                    transaction {
+                        User.update({
+                            User.id eq req.userId
+                        }) { u ->
+                            u[uploadLimit] = req.maxUploadSize
+                        } > 0
+                    }.let { success ->
+                        if (success) {
+                            ActionResponse(true, listOf())
+                        } else {
+                            ActionResponse(false, listOf("User not found"))
+                        }
+                    }
+                } else {
+                    ActionResponse(false, listOf("Upload size not allowed"))
+                }
+            }.let {
+                call.respond(it)
             }
         }
     }

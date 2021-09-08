@@ -40,7 +40,7 @@ fun RDOMBuilder<*>.diffImg(diff: MapDifficulty) {
 class InfoTable : RComponent<InfoTableProps, RState>() {
     override fun RBuilder.render() {
         div("col-lg-4 text-nowrap") {
-            val publishedVersion = props.map.publishedVersion()
+            val publishedVersion = if (props.map.deletedAt == null) props.map.publishedVersion() else null
             div("list-group") {
                 infoItem("Mapper", "${props.map.uploader.name} (${props.map.metadata.levelAuthorName})", "/profile/${props.map.uploader.id}")
 

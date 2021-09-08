@@ -52,7 +52,7 @@ external interface ProfilePageState : RState {
 enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps) -> Boolean = { true }, val bootCondition: () -> Boolean = { false }, val onSelected: () -> Unit = {}) {
     PUBLISHED("Published", onSelected = { localStorage["profile.showwip"] = "false" }),
     UNPUBLISHED("Unpublished", condition = { (it.userId == null) }, bootCondition = { (localStorage["profile.showwip"] == "true") }, onSelected = { localStorage["profile.showwip"] = "true" }),
-    ACCOUNT("Account", condition = { (it.userId == null) }),
+    ACCOUNT("Account", condition = { (it.userData?.admin == true || it.userId == null) }),
     MODERATOR("Alerts", condition = { (it.userData?.admin == true || it.userId == null) })
 }
 
@@ -254,8 +254,14 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         }
 
         if (state.state == ProfileTab.ACCOUNT && detail != null) {
-            account {
-                userDetail = detail
+            if (props.userId == null) {
+                account {
+                    userDetail = detail
+                }
+            } else {
+                adminAccount {
+                    userDetail = detail
+                }
             }
         } else if (state.startup && (state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED)) {
             beatmapTable {
