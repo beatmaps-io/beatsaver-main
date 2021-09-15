@@ -20,6 +20,7 @@ import react.router.dom.routeLink
 import kotlin.collections.set
 
 external interface BotInfoProps : RProps {
+    var automapper: Boolean?
     var version: MapVersion?
     var marginLeft: Boolean?
 }
@@ -27,7 +28,7 @@ external interface BotInfoProps : RProps {
 val botInfo = functionComponent<BotInfoProps> { props ->
     val score = (props.version?.sageScore ?: 0)
     val marginLeft = props.marginLeft ?: true
-    if (score < -4) {
+    if (score < -4 || props.automapper == true) {
         span("badge badge-pill badge-danger " + if (marginLeft) "ml-2" else "mr-2") {
             attrs.title = "Made by a bot"
             +"Bot"
@@ -46,7 +47,7 @@ external interface DiffIconsProps : RProps {
 
 val diffIcons = functionComponent<DiffIconsProps> { props ->
     props.diffs?.forEach { d ->
-        span("badge badge-pill badge-${d.difficulty.color} mr-2 mb-1") {
+        span("badge badge-pill badge-${d.difficulty.color}") {
             diffImg(d)
             +d.difficulty.human()
         }
@@ -160,6 +161,7 @@ val uploader = functionComponent<UploaderProps> { props ->
     }
     botInfo {
         attrs.version = props.version
+        attrs.automapper = props.map.automapper
     }
     +" - "
     TimeAgo.default {

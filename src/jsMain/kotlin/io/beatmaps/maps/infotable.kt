@@ -19,6 +19,7 @@ import react.dom.i
 import react.dom.img
 import react.dom.span
 import react.router.dom.routeLink
+import kotlin.math.floor
 
 external interface InfoTableProps : RProps {
     var map: MapDetail
@@ -105,7 +106,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
                 mapItem("walls", "Walls", diff.obstacles)
                 diff.stars ?: mapItem("warn", "Parity warnings", diff.paritySummary.warns)
                 mapItem("njs", "Note jump speed", diff.njs.toString())
-                mapItem("nps", "Notes per second", diff.nps.toString())
+                mapItem("nps", "Notes per second", (floor(diff.nps * 100) / 100).toString())
                 mapItem("lights", "Lights", diff.events)
             }
         }

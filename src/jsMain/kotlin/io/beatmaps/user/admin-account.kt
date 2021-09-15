@@ -3,7 +3,6 @@ package io.beatmaps.user
 import external.Axios
 import external.generateConfig
 import io.beatmaps.api.ActionResponse
-import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.UserAdminRequest
 import io.beatmaps.api.UserDetail
 import kotlinx.html.ButtonType

@@ -16,7 +16,6 @@ body {
 
 img {
   image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
 }
 
 .mapinfo-list td {
@@ -100,6 +99,56 @@ table.search-results {
       text-shadow: 0 0 3px #000;
       text-align: center;
     }
+
+    &:hover {
+      .additional {
+        margin-left: 5px;
+      }
+      .links {
+        a {
+          background: #444;
+          width: 32px;
+        }
+      }
+    }
+
+    .additional {
+      transition: margin-left 0.2s;
+      margin-left: 17px;
+    }
+    .links {
+      margin-left: 5px;
+    }
+    .links, .additional {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+
+      a {
+        padding: 3px 0;
+        width: 20px;
+        border-radius: 9px;
+        text-align: center;
+        transition: background-color 0.2s, width 0.2s;
+
+        &:hover {
+          background: #222;
+        }
+      }
+
+      span {
+        padding: 3px 6px;
+        i, img {
+          margin-left: 5px;
+        }
+      }
+
+      a, span {
+        margin: 0 0 6px 0;
+        font-size: 12px;
+      }
+    }
   }
 
   td:nth-child(1) {
@@ -112,33 +161,20 @@ table.search-results {
   img.mode {
     width: 16px;
     height: 16px;
-    margin-right: 4px;
   }
   .diffs {
     padding-top: 6px;
 
     span {
-      padding: 0.25em 0.6em;
-    }
-  }
-  .links {
-    min-width: 38px;
-    width: 38px;
-    padding: 0;
-    margin-left: 5px;
+      padding: 0 0.6em;
 
-    a {
-      display: block;
-      padding: 3px 0;
-      background: #444;
-      border-radius: 14px;
-      margin: 6px 0;
-      font-size: 12px;
-      text-align: center;
+      font-size: 0;
+      height: 22px;
+      vertical-align: bottom;
+      min-width: 26px;
+      line-height: 22px;
 
-      &:hover {
-        background: #222;
-      }
+      margin: 0 .5rem .5rem 0;
     }
   }
 }
@@ -719,6 +755,16 @@ li.KeyboardShortcutRow {
 }
 
 @include media-breakpoint-up(md) {
+  .search-results {
+    img.mode {
+      margin-right: 4px;
+    }
+    .diffs {
+      span {
+        font-size: 0.7rem;
+      }
+    }
+  }
   .table.mappers {
     td, th {
       &:nth-child(4), &:nth-child(5) {
@@ -740,6 +786,16 @@ li.KeyboardShortcutRow {
 }
 
 @include media-breakpoint-up(lg) {
+  .search-results {
+    img.mode {
+      margin-right: 0;
+    }
+    .diffs {
+      span {
+        font-size: 0;
+      }
+    }
+  }
   .table.mappers {
     td, th {
       &:nth-child(n+13) {
@@ -775,6 +831,16 @@ li.KeyboardShortcutRow {
 }
 
 @include media-breakpoint-up(xl) {
+  .search-results {
+    img.mode {
+      margin-right: 4px;
+    }
+    .diffs {
+      span {
+        font-size: 0.7rem;
+      }
+    }
+  }
   .table.mappers {
     td, th {
       &:nth-child(n+11) {

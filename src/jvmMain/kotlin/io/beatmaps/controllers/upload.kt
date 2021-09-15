@@ -10,21 +10,20 @@ import io.beatmaps.common.Config
 import io.beatmaps.common.CopyException
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.beatsaber.MapInfo
-import io.beatmaps.common.localAudioFolder
-import io.beatmaps.common.localCoverFolder
-import io.beatmaps.common.localFolder
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.jackson
+import io.beatmaps.common.localAudioFolder
 import io.beatmaps.common.localAvatarFolder
+import io.beatmaps.common.localCoverFolder
+import io.beatmaps.common.localFolder
 import io.beatmaps.common.pub
 import io.beatmaps.common.zip.ExtractedInfo
 import io.beatmaps.common.zip.ZipHelper
@@ -51,7 +50,6 @@ import io.ktor.sessions.sessions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.datetime.toKotlinInstant
 import net.coobird.thumbnailator.Thumbnails
 import net.coobird.thumbnailator.tasks.UnsupportedFormatException
@@ -85,8 +83,10 @@ val uploadDir = File(System.getenv("UPLOAD_DIR") ?: "S:\\A")
 val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
 val reCaptchaVerify = System.getenv("RECAPTCHA_SECRET")?.let { ReCaptchaVerify(it) }
 
-@Location("/upload") class UploadMap
-@Location("/avatar") class UploadAvatar
+@Location("/upload")
+class UploadMap
+@Location("/avatar")
+class UploadAvatar
 
 private val uploadLogger = Logger.getLogger("bmio.Upload")
 
@@ -259,7 +259,7 @@ fun Route.uploadController() {
             val newMap = try {
                 fun insertOrUpdate() =
                     dataMap["mapId"]?.toInt()?.let { mapId ->
-                        (Beatmap.updateReturning(
+                        fun updateIt() = Beatmap.updateReturning(
                             {
                                 (Beatmap.id eq mapId) and (Beatmap.uploader eq session.userId)
                             },
@@ -268,7 +268,9 @@ fun Route.uploadController() {
                                 it[updatedAt] = NowExpression(updatedAt.columnType)
                             },
                             Beatmap.id
-                        )?.firstOrNull()?.let { it[Beatmap.id] } ?: throw UploadException("Map doesn't exist to add version")).also {
+                        )?.firstOrNull()?.let { it[Beatmap.id] } ?: throw UploadException("Map doesn't exist to add version")
+
+                        updateIt().also {
                             val latestVersions = VersionsDao.wrapRows(
                                 Versions.select {
                                     (Versions.mapId eq mapId)

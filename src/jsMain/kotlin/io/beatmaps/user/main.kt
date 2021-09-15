@@ -9,7 +9,6 @@ import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
 import io.beatmaps.setPageTitle
-import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import kotlinx.html.js.onClickFunction
@@ -75,13 +74,14 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
         val hash = window.location.hash.substring(1)
         setState {
-            state = ProfileTab.values().firstOrNull { hash == it.tabText.lowercase() && it.condition(props) } ?:
-                ProfileTab.values().firstOrNull { it.bootCondition() && it.condition(props) } ?: run {
-                    if (ProfileTab.UNPUBLISHED.condition(props)) {
-                        ProfileTab.UNPUBLISHED
-                    } else {
-                        ProfileTab.PUBLISHED
-                    }
+            state = ProfileTab.values().firstOrNull {
+                hash == it.tabText.lowercase() && it.condition(props)
+            } ?: ProfileTab.values().firstOrNull { it.bootCondition() && it.condition(props) } ?: run {
+                if (ProfileTab.UNPUBLISHED.condition(props)) {
+                    ProfileTab.UNPUBLISHED
+                } else {
+                    ProfileTab.PUBLISHED
+                }
             }
 
             startup = true
@@ -214,7 +214,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                         it.preventDefault()
 
                                         val userPart = if (props.userId != null) "/${props.userId}" else ""
-                                        props.history.push("/profile${userPart}#${tab.tabText.lowercase()}")
+                                        props.history.push("/profile$userPart#${tab.tabText.lowercase()}")
 
                                         tab.onSelected()
                                         setState {

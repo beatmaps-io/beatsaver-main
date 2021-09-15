@@ -2,6 +2,7 @@ package io.beatmaps.index
 
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
+import io.beatmaps.common.formatTime
 import kotlinx.html.title
 import react.RBuilder
 import react.RComponent
@@ -10,12 +11,15 @@ import react.RReadableRef
 import react.RState
 import react.ReactElement
 import react.dom.div
+import react.dom.i
 import react.dom.img
 import react.dom.jsStyle
 import react.dom.p
 import react.dom.small
+import react.dom.span
 import react.router.dom.routeLink
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
 
@@ -77,6 +81,27 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, RState>() {
                 div("diffs") {
                     diffIcons {
                         attrs.diffs = props.version?.diffs
+                    }
+                }
+            }
+            div("additional") {
+                span {
+                    +props.map.id
+                    i("fas fa-key") {
+                        attrs.attributes["aria-hidden"] = "true"
+                    }
+                }
+                span {
+                    +props.map.metadata.duration.formatTime()
+                    i("fas fa-clock") {
+                        attrs.attributes["aria-hidden"] = "true"
+                    }
+                }
+                span {
+                    +(floor(props.map.metadata.bpm * 100) / 100).toString()
+                    img("Metronome", "/static/icons/metronome.svg") {
+                        attrs.width = "12"
+                        attrs.height = "12"
                     }
                 }
             }
