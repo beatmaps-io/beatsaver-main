@@ -109,11 +109,8 @@ external interface LinksProps : RProps {
 }
 
 val links = functionComponent<LinksProps> { props ->
-    props.version?.let { v ->
-        downloadZip {
-            attrs.map = props.map
-            attrs.version = v
-        }
+    copyBsr {
+        attrs.map = props.map
     }
     val version = props.version
     val altLink = if (version?.state == EMapState.Published) {
@@ -145,8 +142,11 @@ val links = functionComponent<LinksProps> { props ->
         mapId = props.map.id
         this.modal = modal
     }
-    copyBsr {
-        attrs.map = props.map
+    props.version?.let { v ->
+        downloadZip {
+            attrs.map = props.map
+            attrs.version = v
+        }
     }
 }
 
