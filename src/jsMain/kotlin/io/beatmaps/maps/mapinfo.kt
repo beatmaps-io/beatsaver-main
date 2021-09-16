@@ -13,6 +13,7 @@ import io.beatmaps.index.ModalData
 import io.beatmaps.index.copyBsr
 import io.beatmaps.index.downloadZip
 import io.beatmaps.index.encodeURIComponent
+import io.beatmaps.index.links
 import io.beatmaps.index.oneclick
 import io.beatmaps.index.previewBaseUrl
 import kotlinx.browser.window
@@ -112,34 +113,10 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                 div("ml-auto") {
                     if (!deleted) {
                         props.mapInfo.mainVersion()?.let { version ->
-                            downloadZip.invoke {
+                            links {
                                 attrs.map = props.mapInfo
                                 attrs.version = version
-                            }
-                            val linkQuery = if (version.state == EMapState.Published) {
-                                "url=${encodeURIComponent(version.downloadURL)}"
-                            } else {
-                                "id=${props.mapInfo.id}"
-                            }
-                            a("$previewBaseUrl?$linkQuery") {
-                                attrs.title = "Preview"
-                                attrs.attributes["aria-label"] = "Preview"
-                                attrs.onClickFunction = {
-                                    it.preventDefault()
-                                    if (version.state == EMapState.Published) {
-                                        props.modal.current?.showById(props.mapInfo.id)
-                                    } else {
-                                        props.modal.current?.show(version.downloadURL)
-                                    }
-                                }
-                                i("fas fa-play text-info") { }
-                            }
-                            oneclick {
-                                mapId = props.mapInfo.id
-                                modal = props.modal
-                            }
-                            copyBsr {
-                                attrs.map = props.mapInfo
+                                attrs.modal = props.modal
                             }
 
                             val adminLocal = props.isAdmin
