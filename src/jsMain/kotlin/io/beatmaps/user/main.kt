@@ -41,16 +41,16 @@ external interface ProfilePageProps : RProps {
 }
 
 external interface ProfilePageState : RState {
-    var loading: Boolean
-    var startup: Boolean
+    var loading: Boolean?
+    var startup: Boolean?
     var userDetail: UserDetail?
     var state: ProfileTab
     var notificationCount: Map<ProfileTab, Int>
 }
 
-enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps) -> Boolean = { true }, val bootCondition: () -> Boolean = { false }, val onSelected: () -> Unit = {}) {
-    PUBLISHED("Published", onSelected = { localStorage["profile.showwip"] = "false" }),
-    UNPUBLISHED("Unpublished", condition = { (it.userId == null) }, bootCondition = { (localStorage["profile.showwip"] == "true") }, onSelected = { localStorage["profile.showwip"] = "true" }),
+enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps) -> Boolean = { true }, val bootCondition: () -> Boolean = { false }, val onSelected: (ProfilePageProps) -> Unit = {}) {
+    PUBLISHED("Published", bootCondition = { (localStorage["profile.showwip"] == "false") }, onSelected = { if (it.userId == null) { localStorage["profile.showwip"] = "false" } }),
+    UNPUBLISHED("Unpublished", condition = { (it.userId == null) }, bootCondition = { (localStorage["profile.showwip"] == "true") }, onSelected = { if (it.userId == null) { localStorage["profile.showwip"] = "true" } }),
     ACCOUNT("Account", condition = { (it.userData?.admin == true || it.userId == null) }),
     MODERATOR("Alerts", condition = { (it.userData?.admin == true || it.userId == null) })
 }
@@ -216,7 +216,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                         val userPart = if (props.userId != null) "/${props.userId}" else ""
                                         props.history.push("/profile$userPart#${tab.tabText.lowercase()}")
 
-                                        tab.onSelected()
+                                        tab.onSelected(props)
                                         setState {
                                             state = tab
                                         }
@@ -263,7 +263,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                     userDetail = detail
                 }
             }
-        } else if (state.startup && (state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED)) {
+        } else if (state.startup == true && (state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED)) {
             beatmapTable {
                 user = props.userId ?: loggedInLocal ?: 0
                 modal = modalRef
