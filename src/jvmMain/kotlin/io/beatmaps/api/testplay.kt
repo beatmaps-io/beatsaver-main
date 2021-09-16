@@ -24,6 +24,7 @@ import io.beatmaps.common.dbo.Testplay
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
+import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.jackson
 import io.beatmaps.common.pub
@@ -253,10 +254,14 @@ fun Route.testplayRoute() {
 
             val valid = transaction {
                 if (newState.state == EMapState.Published) {
-                    val originalState = MapVersion.from(
+                    val publishingVersion = VersionsDao.wrapRow(
                         Versions.select {
                             Versions.hash eq newState.hash
-                        }.single(),
+                        }.single()
+                    )
+
+                    val originalState = MapVersion.from(
+                        publishingVersion,
                         cdnPrefix()
                     )
 
@@ -278,7 +283,7 @@ fun Route.testplayRoute() {
 
                         val stats = DifficultyDao.wrapRows(
                             Difficulty.select {
-                                Difficulty.mapId eq newState.mapId
+                                Difficulty.versionId eq publishingVersion.id
                             }
                         )
 
