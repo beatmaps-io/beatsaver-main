@@ -151,7 +151,7 @@ fun Route.mapDetailRoute() {
 
                 fun updateMap() =
                     Beatmap.update({
-                        (Beatmap.id eq mapUpdate.id).let { q ->
+                        (Beatmap.id eq mapUpdate.id and Beatmap.deletedAt.isNull()).let { q ->
                             if (user.isAdmin()) {
                                 q // If current user is admin don't check the user
                             } else {
