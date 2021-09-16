@@ -44,6 +44,10 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
             val publishedVersion = if (props.map.deletedAt == null) props.map.publishedVersion() else null
             div("list-group") {
                 infoItem("Mapper", "${props.map.uploader.name} (${props.map.metadata.levelAuthorName})", "/profile/${props.map.uploader.id}")
+                val score = publishedVersion?.sageScore ?: 0
+                if (score < -4 || props.map.automapper) {
+                    infoItem("AI", if (score < -4) "Bot" else "Unsure")
+                }
 
                 div("list-group-item d-flex justify-content-between") {
                     +"Uploaded"
