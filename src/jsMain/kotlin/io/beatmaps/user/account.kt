@@ -127,27 +127,33 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     attrs.onClickFunction = { ev ->
                         ev.preventDefault()
 
-                        setState {
-                            userLoading = true
-                        }
+                        if (props.userDetail.name == state.username) {
+                            setState {
+                                usernameErrors = listOf("That's already your username!")
+                            }
+                        } else {
+                            setState {
+                                userLoading = true
+                            }
 
-                        Axios.post<ActionResponse>(
-                            "/api/users/username",
-                            UsernameReq(usernameRef.current?.value ?: ""),
-                            generateConfig<UsernameReq, ActionResponse>()
-                        ).then {
-                            if (it.data.success) {
-                                window.location.reload()
-                            } else {
+                            Axios.post<ActionResponse>(
+                                "/api/users/username",
+                                UsernameReq(state.username),
+                                generateConfig<UsernameReq, ActionResponse>()
+                            ).then {
+                                if (it.data.success) {
+                                    window.location.reload()
+                                } else {
+                                    setState {
+                                        usernameErrors = it.data.errors
+                                        userLoading = false
+                                    }
+                                }
+                            }.catch {
+                                // Cancelled request
                                 setState {
-                                    usernameErrors = it.data.errors
                                     userLoading = false
                                 }
-                            }
-                        }.catch {
-                            // Cancelled request
-                            setState {
-                                userLoading = false
                             }
                         }
                     }
