@@ -112,6 +112,7 @@ class App : RComponent<AppProps, RState>() {
                 route<ProfilePageProps>("/profile/:userId?", exact = true) {
                     initWithHistory(it.history)
                     child(ProfilePage::class) {
+                        key = "profile-${it.match.params.userId}"
                         attrs.userData = props.userData
                         attrs.history = it.history
                         attrs.userId = it.match.params.userId
