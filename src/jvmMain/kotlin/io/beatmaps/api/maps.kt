@@ -197,7 +197,7 @@ fun Route.mapDetailRoute() {
                     .joinUploader()
                     .joinCurator()
                     .select {
-                        (Beatmap.id eq it.id.toInt(16))?.let {
+                        (Beatmap.id eq it.id.toInt(16)).let {
                             if (call.sessions.get<Session>()?.isAdmin() != true) {
                                 it and Beatmap.deletedAt.isNull()
                             } else {

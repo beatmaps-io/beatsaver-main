@@ -40,6 +40,8 @@ import org.jetbrains.exposed.sql.update
     @Location("/{key}") data class RedirectOld(val key: String, val api: UploaderController)
 }
 
+@Location("/search") class OldSearch
+
 @Location("/browse") class OldBrowseController {
     @Location("/hot") data class Hot(val api: OldBrowseController)
 }
@@ -62,6 +64,10 @@ fun Route.mapController() {
     }
 
     get<OldBrowseController.Hot> {
+        call.respondRedirect("/")
+    }
+
+    get<OldSearch> {
         call.respondRedirect("/")
     }
 

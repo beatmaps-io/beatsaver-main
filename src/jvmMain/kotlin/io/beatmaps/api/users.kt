@@ -56,7 +56,6 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.Sum
-import org.jetbrains.exposed.sql.`java-time`.timestampLiteral
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
@@ -74,7 +73,6 @@ import org.jetbrains.exposed.sql.update
 import java.lang.Integer.toHexString
 import java.math.BigInteger
 import java.security.MessageDigest
-import java.time.Clock
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -151,7 +149,7 @@ fun Route.userRoute() {
                     try {
                         User.update({ User.id eq sess.userId and (User.uniqueName.isNull() or User.renamedAt.lessEq(DateMinusDays(NowExpression(User.renamedAt.columnType), 1))) }) { u ->
                             u[uniqueName] = req.username
-                            u[renamedAt] = NowExpression(renamedAt.columnType)
+                            u[renamedAt] = Expression.build { case().When(uniqueName eq req.username, renamedAt).Else(NowExpression(renamedAt.columnType)) }
                         }
                     } catch (e: ExposedSQLException) {
                         -1
