@@ -54,8 +54,8 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.2.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.0")
                 implementation("io.beatmaps:BeatMaps-CommonMP:1.0.+")
             }
         }
@@ -188,8 +188,6 @@ tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
     outputFileName = "output.js"
     sourceMaps = true
     report = true
-    val up = "..${File.separator}"
-    args = mutableListOf("--config", "$up$up$up${up}webpack.config.extra.js", "--merge")
 }
 
 tasks.withType<AbstractCopyTask> {
@@ -200,9 +198,9 @@ tasks.getByName<Jar>("jvmJar") {
     dependsOn(tasks.getByName("jsBrowserProductionWebpack"), tasks.getByName("compileSass"))
     val jsBrowserProductionWebpack = tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack")
 
-    listOf(jsBrowserProductionWebpack.outputFileName, jsBrowserProductionWebpack.outputFileName + ".map", "modules.js", "modules.js.map").forEach {
-        from(File(jsBrowserProductionWebpack.destinationDirectory, it))
-    }
+    from(jsBrowserProductionWebpack.destinationDirectory)
+    include("**/*.js")
+    include("**/*.map")
 }
 
 tasks.getByName<JavaExec>("run") {

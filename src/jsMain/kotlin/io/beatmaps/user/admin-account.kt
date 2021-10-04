@@ -58,7 +58,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                     +"Max upload size"
                 }
                 select("form-control") {
-                    arrayOf(0, 15).forEach {
+                    arrayOf(0, 15, 30).forEach {
                         option {
                             attrs.selected = state.uploadLimit == it
                             +"$it"

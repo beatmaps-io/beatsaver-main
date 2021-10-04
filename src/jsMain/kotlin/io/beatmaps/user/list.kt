@@ -43,7 +43,7 @@ external interface UserListState : RState {
     var loading: Boolean
     var visItem: Int
     var visPage: Int
-    var visablePages: IntRange
+    var visiblePages: IntRange
     var scroll: Boolean
 }
 
@@ -60,7 +60,7 @@ class UserList : RComponent<UserListProps, UserListState>() {
             loading = false
             visItem = -1
             visPage = -1
-            visablePages = IntRange.EMPTY
+            visiblePages = IntRange.EMPTY
             scroll = true
         }
     }
@@ -71,7 +71,7 @@ class UserList : RComponent<UserListProps, UserListState>() {
         setState {
             visItem = (hashPos ?: 1) - 1
             visPage = visItem / usersPerPage
-            visablePages = visPage.rangeTo(visPage + totalVisiblePages)
+            visiblePages = visPage.rangeTo(visPage + totalVisiblePages)
             scroll = hashPos != null
 
             if (pages.containsKey(visPage)) {
@@ -97,7 +97,7 @@ class UserList : RComponent<UserListProps, UserListState>() {
         if (state.loading)
             return
 
-        val toLoad = state.visablePages.firstOrNull { !state.pages.containsKey(it) } ?: return
+        val toLoad = state.visiblePages.firstOrNull { !state.pages.containsKey(it) } ?: return
 
         setState {
             loading = true
@@ -135,7 +135,7 @@ class UserList : RComponent<UserListProps, UserListState>() {
             setState {
                 visItem = item
                 visPage = item / usersPerPage
-                visablePages = visPage.rangeTo(visPage + totalVisiblePages)
+                visiblePages = visPage.rangeTo(visPage + totalVisiblePages)
             }
             props.history.replace("/mappers#${item + 1}")
         }
@@ -143,7 +143,7 @@ class UserList : RComponent<UserListProps, UserListState>() {
         loadNextPage()
     }
 
-    private fun lastPage() = max(state.visablePages.last, state.pages.maxByOrNull { it.key }?.key ?: 0)
+    private fun lastPage() = max(state.visiblePages.last, state.pages.maxByOrNull { it.key }?.key ?: 0)
 
     override fun RBuilder.render() {
         table("table table-dark table-striped mappers") {
