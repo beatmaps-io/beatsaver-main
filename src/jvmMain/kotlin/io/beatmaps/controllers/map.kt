@@ -7,7 +7,6 @@ import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
-import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session

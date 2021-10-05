@@ -1,5 +1,6 @@
 +function () {
-    const ContextReplacementPlugin = require('webpack').ContextReplacementPlugin;
+    const webpack = require('webpack');
+    const ContextReplacementPlugin = webpack.ContextReplacementPlugin;
 
     config.optimization = {
         usedExports: true,

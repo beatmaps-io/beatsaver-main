@@ -31,7 +31,7 @@ fun RDOMBuilder<*>.diffImg(diff: MapDifficulty) {
     val humanText = diff.characteristic.human()
 
     img(humanText, "/static/icons/${humanText.lowercase()}.svg", classes = "mode") {
-        attrs.title = diff.characteristic.human()
+        attrs.title = diff.difficulty.human() + " " + diff.characteristic.human()
         attrs.width = "16"
         attrs.height = "16"
     }

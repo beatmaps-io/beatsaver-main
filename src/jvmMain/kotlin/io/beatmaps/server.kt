@@ -63,7 +63,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
-import io.ktor.util.DataConversionException
+import io.ktor.util.converters.DataConversionException
 import io.ktor.util.pipeline.PipelineContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant

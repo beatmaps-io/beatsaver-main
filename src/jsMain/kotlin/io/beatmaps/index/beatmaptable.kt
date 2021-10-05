@@ -9,8 +9,10 @@ import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SearchResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
-import kotlinx.browser.document
 import kotlinx.browser.window
+import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HashChangeEvent
+import org.w3c.dom.asList
 import org.w3c.dom.events.Event
 import react.RBuilder
 import react.RComponent
@@ -18,6 +20,7 @@ import react.RProps
 import react.RReadableRef
 import react.RState
 import react.ReactElement
+import react.createRef
 import react.dom.div
 import react.dom.h4
 import react.dom.img
@@ -25,13 +28,16 @@ import react.dom.p
 import react.router.dom.RouteResultHistory
 import react.router.dom.routeLink
 import react.setState
+import kotlin.math.ceil
+import kotlin.math.max
 
 external interface BeatmapTableProps : RProps {
-    var search: SearchParams
+    var search: SearchParams?
     var user: Int?
     var wip: Boolean
     var modal: RReadableRef<ModalComponent>
     var history: RouteResultHistory
+    var updateScrollIndex: (Int) -> Unit
 }
 
 data class SearchParams(
@@ -51,12 +57,18 @@ data class SearchParams(
 )
 
 external interface BeatmapTableState : RState {
-    var page: Int
-    var loading: Boolean
     var shouldClear: Boolean
-    var songs: List<MapDetail>
     var user: UserDetail?
     var token: CancelTokenSource
+
+    var pages: Map<Int, List<MapDetail>>
+    var loading: Boolean
+    var visItem: Int
+    var visPage: Int
+    var visiblePages: IntRange
+    var scroll: Boolean
+
+    var itemsPerRow: Int
 }
 
 external fun encodeURIComponent(uri: String): String
@@ -64,82 +76,174 @@ external fun encodeURIComponent(uri: String): String
 @JsExport
 class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
 
+    private val emptyPage = List<MapDetail?>(20) { null }
+    private val resultsTable = createRef<HTMLDivElement>()
+
+    private val rowHeight = 155.0 // At least, can be more
+    private fun itemsPerRow() = if (window.innerWidth < 992) 1 else 2
+    private val itemsPerPage = 20
+    private val beforeContent = 60
+    private fun rowsPerPage() = itemsPerPage / itemsPerRow()
+    private fun pageHeight() = rowHeight * rowsPerPage()
+
     override fun componentWillMount() {
         setState {
-            page = 0
-            loading = false
             shouldClear = false
-            songs = listOf()
             user = null
             token = Axios.CancelToken.source()
+
+            pages = mapOf()
+            loading = false
+            visItem = -1
+            visPage = -1
+            visiblePages = IntRange.EMPTY
+            scroll = true
+        }
+    }
+
+    private fun scrollTo(idx: Int) {
+        val top = resultsTable.current?.children?.asList()?.get(idx)?.getBoundingClientRect()?.top ?: 0.0
+        val scrollTo = top + window.pageYOffset - beforeContent
+        window.scrollTo(0.0, scrollTo)
+    }
+
+    private fun currentItem(): Int {
+        resultsTable.current?.children?.asList()?.forEachIndexed { idx, it ->
+            val rect = it.getBoundingClientRect()
+            if (rect.top >= beforeContent) {
+                return idx
+            }
+        }
+        return 0
+    }
+
+    private fun updateFromHash(e: HashChangeEvent?) {
+        val totalVisiblePages = ceil(window.innerHeight / pageHeight()).toInt()
+        val hashPos = window.location.hash.substring(1).toIntOrNull()
+        setState {
+            itemsPerRow = itemsPerRow()
+            visItem = (hashPos ?: 1) - 1
+            visPage = max(1, visItem - itemsPerRow()) / itemsPerPage
+            visiblePages = visPage.rangeTo(visPage + totalVisiblePages)
+            scroll = hashPos != null
+
+            if (pages.containsKey(visPage)) {
+                scrollTo(visItem)
+            }
+        }
+    }
+
+    override fun componentDidUpdate(prevProps: BeatmapTableProps, prevState: BeatmapTableState, snapshot: Any) {
+        if (state.visItem != prevState.visItem) {
+            loadNextPage()
         }
     }
 
     override fun componentDidMount() {
-        window.onscroll = ::handleScroll
+        updateFromHash(null)
 
-        loadNextPage()
+        window.onhashchange = ::updateFromHash
     }
 
     override fun componentWillUpdate(nextProps: BeatmapTableProps, nextState: BeatmapTableState) {
         if (props.user != nextProps.user || props.wip != nextProps.wip || props.search !== nextProps.search) {
             state.token.cancel.invoke("Another request started")
+
+            val windowSize = window.innerHeight
+            val totalVisiblePages = ceil(windowSize / pageHeight()).toInt()
             nextState.apply {
-                page = 0
                 loading = false
+
                 shouldClear = true
+                user = null
                 token = Axios.CancelToken.source()
+
+                pages = mapOf()
+                visItem = 0
+                visPage = 0
+                visiblePages = visPage.rangeTo(visPage + totalVisiblePages)
+                scroll = false
             }
 
             window.setTimeout(::loadNextPage, 0)
         }
     }
 
-    private fun getUrl() =
+    private fun lastPage() = max(state.visiblePages.last, state.pages.maxByOrNull { it.key }?.key ?: 0)
+
+    private fun getUrl(page: Int) =
         if (props.wip) {
-            "/api/maps/wip/${state.page}"
+            "/api/maps/wip/$page"
         } else if (props.user != null) {
-            "${Config.apibase}/maps/uploader/${props.user}/${state.page}"
+            "${Config.apibase}/maps/uploader/${props.user}/$page"
         } else {
-            "${Config.apibase}/search/text/${state.page}?sortOrder=${props.search.sortOrder}" +
-                (if (props.search.automapper != null) "&automapper=${props.search.automapper}" else "") +
-                (if (props.search.chroma != null) "&chroma=${props.search.chroma}" else "") +
-                (if (props.search.noodle != null) "&noodle=${props.search.noodle}" else "") +
-                (if (props.search.me != null) "&me=${props.search.me}" else "") +
-                (if (props.search.cinema != null) "&cinema=${props.search.cinema}" else "") +
-                (if (props.search.ranked != null) "&ranked=${props.search.ranked}" else "") +
-                (if (props.search.fullSpread != null) "&fullSpread=${props.search.fullSpread}" else "") +
-                (if (props.search.search.isNotBlank()) "&q=${encodeURIComponent(props.search.search)}" else "") +
-                (if (props.search.maxNps != null) "&maxNps=${props.search.maxNps}" else "") +
-                (if (props.search.minNps != null) "&minNps=${props.search.minNps}" else "") +
-                (if (props.search.from != null) "&from=${props.search.from}" else "") +
-                (if (props.search.to != null) "&to=${props.search.to}" else "")
+            props.search?.let { search ->
+                "${Config.apibase}/search/text/$page?sortOrder=${search.sortOrder}" +
+                    (if (search.automapper != null) "&automapper=${search.automapper}" else "") +
+                    (if (search.chroma != null) "&chroma=${search.chroma}" else "") +
+                    (if (search.noodle != null) "&noodle=${search.noodle}" else "") +
+                    (if (search.me != null) "&me=${search.me}" else "") +
+                    (if (search.cinema != null) "&cinema=${search.cinema}" else "") +
+                    (if (search.ranked != null) "&ranked=${search.ranked}" else "") +
+                    (if (search.fullSpread != null) "&fullSpread=${search.fullSpread}" else "") +
+                    (if (search.search.isNotBlank()) "&q=${encodeURIComponent(search.search)}" else "") +
+                    (if (search.maxNps != null) "&maxNps=${search.maxNps}" else "") +
+                    (if (search.minNps != null) "&minNps=${search.minNps}" else "") +
+                    (if (search.from != null) "&from=${search.from}" else "") +
+                    (if (search.to != null) "&to=${search.to}" else "")
+            } ?: ""
         }
+
+    private val hashRegex = Regex("^[A-Za-z0-9]{40}$")
+    private fun redirectIfHash() =
+        props.search?.let { search ->
+            if (hashRegex.matches(search.search)) {
+                Axios.get<MapDetail>(
+                    "/api/maps/hash/${encodeURIComponent(search.search)}",
+                    generateConfig<String, MapDetail>(state.token.token)
+                ).then {
+                    val dyn: dynamic = props.history
+                    dyn.replace("/maps/" + it.data.id)
+                }.catch {
+                    // Ignore errors, this is only a secondary request
+                }
+
+                true
+            } else {
+                false
+            }
+        } ?: false
 
     private fun loadNextPage() {
         if (state.loading)
             return
 
+        val toLoad = state.visiblePages.firstOrNull { !state.pages.containsKey(it) } ?: return
+
         setState {
             loading = true
-            user = null
         }
 
-        if (state.page == 0 && !props.wip && props.user == null && props.search.search.length > 2) {
-            Axios.get<UserDetail>(
-                "/api/users/name/${encodeURIComponent(props.search.search)}",
-                generateConfig<String, UserDetail>(state.token.token)
-            ).then {
-                setState {
-                    user = it.data
+        if (redirectIfHash())
+            return
+
+        props.search?.let { search ->
+            if (toLoad == 0 && !props.wip && props.user == null && search.search.length > 2) {
+                Axios.get<UserDetail>(
+                    "/api/users/name/${encodeURIComponent(search.search)}",
+                    generateConfig<String, UserDetail>(state.token.token)
+                ).then {
+                    setState {
+                        user = it.data
+                    }
+                }.catch {
+                    // Ignore errors, this is only a secondary request
                 }
-            }.catch {
-                // Ignore errors, this is only a secondary request
             }
         }
 
         Axios.get<SearchResponse>(
-            getUrl(),
+            getUrl(toLoad),
             generateConfig<String, SearchResponse>(state.token.token)
         ).then {
             if (it.data.redirect != null) {
@@ -148,16 +252,26 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                 return@then
             }
 
-            val mapLocal = it.data.docs
-
-            val morePages = mapLocal?.let { ml -> ml.size >= 20 } ?: true
+            val shouldScroll = state.scroll
+            val page = it.data.docs
             setState {
-                page = state.page + 1
-                loading = !morePages
-                songs = mapLocal?.let { ml -> if (shouldClear) ml.toList() else songs.plus(mapLocal) } ?: songs
-                shouldClear = false
+                loading = page?.isEmpty() == true
+                pages = if (shouldClear) { mapOf() } else { pages }.let {
+                    if (page != null) {
+                        pages.plus(toLoad to page.toList())
+                    } else {
+                        pages
+                    }
+                }
+                scroll = false
             }
-            if (morePages) {
+
+            if (shouldScroll) {
+                scrollTo(state.visItem)
+            }
+            window.onscroll = ::handleScroll
+            window.onresize = ::reportWindow
+            if (page?.isNotEmpty() == true) {
                 window.setTimeout(::handleScroll, 1)
             }
         }.catch {
@@ -170,18 +284,33 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
 
     override fun componentWillUnmount() {
         window.onscroll = null
+        window.onresize = null
     }
 
     @Suppress("UNUSED_PARAMETER")
     private fun handleScroll(e: Event) {
-        val scrollPosition = window.pageYOffset
         val windowSize = window.innerHeight
-        val bodyHeight = document.body?.offsetHeight ?: 0
-        val headerSize = 55
-        val trigger = 500
 
-        if (bodyHeight - (scrollPosition + windowSize) + headerSize < trigger) {
-            loadNextPage()
+        val item = currentItem()
+        if (item != state.visItem) {
+            val totalVisiblePages = ceil(windowSize / pageHeight()).toInt()
+            setState {
+                visItem = item
+                visPage = max(1, item - itemsPerRow()) / itemsPerPage
+                visiblePages = visPage.rangeTo(visPage + totalVisiblePages)
+            }
+            props.updateScrollIndex(item + 1)
+        }
+
+        loadNextPage()
+    }
+
+    private fun reportWindow(e: Event) {
+        if (state.itemsPerRow != itemsPerRow()) {
+            scrollTo(state.visItem)
+            setState {
+                itemsPerRow = itemsPerRow()
+            }
         }
     }
 
@@ -203,12 +332,15 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
             }
         }
         div("search-results") {
-            state.songs.forEach {
-                beatmapInfo {
-                    key = it.id
-                    map = it
-                    version = if (props.wip) it.latestVersion() else it.publishedVersion()
-                    modal = props.modal
+            ref = resultsTable
+            for (pIdx in 0..lastPage()) {
+                (state.pages[pIdx] ?: emptyPage).forEach userLoop@{ it ->
+                    beatmapInfo {
+                        // key = it.id
+                        map = it
+                        version = it?.let { if (props.wip) it.latestVersion() else it.publishedVersion() }
+                        modal = props.modal
+                    }
                 }
             }
         }

@@ -65,7 +65,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
         }
     }
 
-    private fun updateSearchParams(searchParamsLocal: SearchParams) {
+    private fun updateSearchParams(searchParamsLocal: SearchParams, row: Int?) {
         val newQuery = listOfNotNull(
             (if (searchParamsLocal.search.isNotBlank()) "q=${searchParamsLocal.search}" else null),
             (if (searchParamsLocal.chroma == true) "chroma=true" else null),
@@ -81,7 +81,8 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             (if (searchParamsLocal.from != null) "from=${searchParamsLocal.from}" else null),
             (if (searchParamsLocal.to != null) "to=${searchParamsLocal.to}" else null)
         )
-        props.history.push(if (newQuery.isEmpty()) "/" else "?" + newQuery.joinToString("&"))
+        val hash = row?.let { "#$it" } ?: ""
+        props.history.push((if (newQuery.isEmpty()) "/" else "?" + newQuery.joinToString("&")) + hash)
 
         setState {
             searchParams = searchParamsLocal
@@ -92,7 +93,9 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
         search {
             ref = searchRef
             maxNps = 16
-            updateSearchParams = ::updateSearchParams
+            updateSearchParams = {
+                updateSearchParams(it, null)
+            }
         }
         modal {
             ref = modalRef
@@ -101,6 +104,9 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             search = state.searchParams
             modal = modalRef
             history = props.history
+            updateScrollIndex = {
+                updateSearchParams(state.searchParams, if (it < 2) null else it)
+            }
         }
     }
 }

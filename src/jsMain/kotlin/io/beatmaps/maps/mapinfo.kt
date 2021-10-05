@@ -10,12 +10,7 @@ import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
-import io.beatmaps.index.copyBsr
-import io.beatmaps.index.downloadZip
-import io.beatmaps.index.encodeURIComponent
 import io.beatmaps.index.links
-import io.beatmaps.index.oneclick
-import io.beatmaps.index.previewBaseUrl
 import kotlinx.browser.window
 import kotlinx.html.InputType
 import kotlinx.html.Tag
