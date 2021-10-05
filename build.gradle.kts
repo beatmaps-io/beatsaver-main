@@ -6,7 +6,7 @@ plugins {
     kotlin("plugin.serialization") version "1.5.30"
     id("io.miret.etienne.sass") version "1.1.2"
     id("org.flywaydb.flyway") version "7.12.0"
-    id("org.jlleitschuh.gradle.ktlint") version "10.1.0"
+    id("org.jlleitschuh.gradle.ktlint") version "10.2.0"
     application
 }
 
@@ -23,11 +23,11 @@ repositories {
 
 kotlin {
     jvmToolchain {
-        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(15))
+        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(16))
     }
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "15"
+            kotlinOptions.jvmTarget = "16"
         }
         testRuns["test"].executionTask.configure {
             useJUnit()
@@ -55,7 +55,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.0-RC")
                 implementation("io.beatmaps:BeatMaps-CommonMP:1.0.+")
             }
         }
@@ -199,8 +199,9 @@ tasks.getByName<Jar>("jvmJar") {
     val jsBrowserProductionWebpack = tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack")
 
     from(jsBrowserProductionWebpack.destinationDirectory)
-    include("**/*.js")
-    include("**/*.map")
+    listOf(jsBrowserProductionWebpack.outputFileName, jsBrowserProductionWebpack.outputFileName + ".map", "modules.js", "modules.js.map").forEach {
+        from(File(jsBrowserProductionWebpack.destinationDirectory, it))
+    }
 }
 
 tasks.getByName<JavaExec>("run") {
