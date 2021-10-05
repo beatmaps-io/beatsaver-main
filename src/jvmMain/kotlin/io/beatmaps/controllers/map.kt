@@ -95,12 +95,17 @@ fun Route.mapController() {
     }
 
     get<BeatmapController.RedirectOld> {
-        transaction {
-            Beatmap.joinVersions().select {
-                Versions.key64 eq it.key
-            }.limit(1).complexToBeatmap().map { MapDetail.from(it, cdnPrefix()) }.firstOrNull()
-        }?.let {
-            call.respondRedirect("/maps/${it.id}")
+        try {
+            transaction {
+                Beatmap.select {
+                    Beatmap.id eq it.key.toInt(16)
+                }.limit(1).map { MapDetail.from(it, "") }.firstOrNull()
+            }?.let {
+                call.respondRedirect("/maps/${it.id}")
+                true
+            }
+        } catch (_: NumberFormatException) {
+            null
         } ?: run {
             call.respondRedirect("/")
         }
