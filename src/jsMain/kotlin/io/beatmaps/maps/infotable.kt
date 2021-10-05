@@ -140,6 +140,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
                 routeLink(href, className = "list-group-item d-flex justify-content-between") {
                     +label
                     span("text-truncate ml-4") {
+                        attrs.title = info
                         +info
                     }
                 }
