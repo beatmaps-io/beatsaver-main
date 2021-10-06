@@ -219,49 +219,53 @@ fun Route.userRoute() {
                 } else if (!usernameRegex.matches(req.username)) {
                     ActionResponse(false, listOf("Username not valid"))
                 } else {
-                    val bcrypt = String(Bcrypt.hash(req.password, 12))
-                    val token = getHash(req.email)
+                    try {
+                        val bcrypt = String(Bcrypt.hash(req.password, 12))
+                        val token = getHash(req.email)
 
-                    val newUserId = transaction {
-                        try {
-                            User.insertAndGetId {
-                                it[name] = req.username
-                                it[email] = req.email
-                                it[password] = bcrypt
-                                it[verifyToken] = token
-                                it[uniqueName] = req.username
-                                it[active] = false
-                            } to null
-                        } catch (e: ExposedSQLException) {
-                            if (e.message?.contains("simple_username") == true) {
-                                // Username constraint -> show conflict error
-                                null to ActionResponse(false, listOf("Username taken"))
-                            } else {
-                                // Email constraint -> show success message / check your email
-                                null to null
+                        val newUserId = transaction {
+                            try {
+                                User.insertAndGetId {
+                                    it[name] = req.username
+                                    it[email] = req.email
+                                    it[password] = bcrypt
+                                    it[verifyToken] = token
+                                    it[uniqueName] = req.username
+                                    it[active] = false
+                                } to null
+                            } catch (e: ExposedSQLException) {
+                                if (e.message?.contains("simple_username") == true) {
+                                    // Username constraint -> show conflict error
+                                    null to ActionResponse(false, listOf("Username taken"))
+                                } else {
+                                    // Email constraint -> show success message / check your email
+                                    null to null
+                                }
                             }
                         }
-                    }
 
-                    // Complicated series of fallbacks. If the id is set we created a news user, send them an email. If a response is set send it.
-                    // Otherwise the email was a duplicate, tell the user via email so we don't reveal which emails have been registered already.
-                    newUserId.first?.let {
-                        sendEmail(
-                            req.email,
-                            "BeatSaver Account Verification",
-                            "${req.username}\n\nTo verify your account, please click the link below:\n${Config.basename}/verify?user=$it&token=$token"
-                        )
+                        // Complicated series of fallbacks. If the id is set we created a news user, send them an email. If a response is set send it.
+                        // Otherwise the email was a duplicate, tell the user via email so we don't reveal which emails have been registered already.
+                        newUserId.first?.let {
+                            sendEmail(
+                                req.email,
+                                "BeatSaver Account Verification",
+                                "${req.username}\n\nTo verify your account, please click the link below:\n${Config.basename}/verify?user=$it&token=$token"
+                            )
 
-                        ActionResponse(true)
-                    } ?: newUserId.second ?: run {
-                        sendEmail(
-                            req.email,
-                            "BeatSaver Account",
-                            "Someone just tried to create a new account at ${Config.basename} with this email address but an account using this email already exists.\n\n" +
-                                "If this wasn't you then you can safely ignore this email otherwise please use a different email"
-                        )
+                            ActionResponse(true)
+                        } ?: newUserId.second ?: run {
+                            sendEmail(
+                                req.email,
+                                "BeatSaver Account",
+                                "Someone just tried to create a new account at ${Config.basename} with this email address but an account using this email already exists.\n\n" +
+                                    "If this wasn't you then you can safely ignore this email otherwise please use a different email"
+                            )
 
-                        ActionResponse(true)
+                            ActionResponse(true)
+                        }
+                    } catch (e: IllegalArgumentException) {
+                        ActionResponse(false, listOf("Password too long"))
                     }
                 }
             }
@@ -317,9 +321,9 @@ fun Route.userRoute() {
         } else if (req.password.length < 8) {
             ActionResponse(false, listOf("Password too short"))
         } else {
-            val bcrypt = String(Bcrypt.hash(req.password, 12))
-
             try {
+                val bcrypt = String(Bcrypt.hash(req.password, 12))
+
                 val i = req.jwt.lastIndexOf('.')
                 val withoutSignature = req.jwt.substring(0, i + 1)
                 val untrusted = Jwts.parserBuilder().build().parseClaimsJwt(withoutSignature)
@@ -359,6 +363,8 @@ fun Route.userRoute() {
                         } ?: ActionResponse(false, listOf("User not found"))
                     }
                 }
+            } catch (e: IllegalArgumentException) {
+                ActionResponse(false, listOf("Password too long"))
             } catch (e: ExpiredJwtException) {
                 ActionResponse(false, listOf("Password reset link has expired"))
             } catch (e: JwtException) {
@@ -381,24 +387,28 @@ fun Route.userRoute() {
             } else if (req.password.length < 8) {
                 ActionResponse(false, listOf("Password too short"))
             } else {
-                val bcrypt = String(Bcrypt.hash(req.password, 12))
+                try {
+                    val bcrypt = String(Bcrypt.hash(req.password, 12))
 
-                transaction {
-                    User.select {
-                        User.id eq sess.userId
-                    }.firstOrNull()?.let { r ->
-                        val curPw = r[User.password]
-                        if (curPw != null && Bcrypt.verify(req.currentPassword, curPw.toByteArray())) {
-                            User.update({
-                                User.id eq sess.userId
-                            }) {
-                                it[password] = bcrypt
+                    transaction {
+                        User.select {
+                            User.id eq sess.userId
+                        }.firstOrNull()?.let { r ->
+                            val curPw = r[User.password]
+                            if (curPw != null && Bcrypt.verify(req.currentPassword, curPw.toByteArray())) {
+                                User.update({
+                                    User.id eq sess.userId
+                                }) {
+                                    it[password] = bcrypt
+                                }
+                                ActionResponse(true)
+                            } else {
+                                ActionResponse(false, listOf("Current password incorrect"))
                             }
-                            ActionResponse(true)
-                        } else {
-                            ActionResponse(false, listOf("Current password incorrect"))
-                        }
-                    } ?: ActionResponse(false, listOf("Account not found")) // Shouldn't ever happen
+                        } ?: ActionResponse(false, listOf("Account not found")) // Shouldn't ever happen
+                    }
+                } catch (e: IllegalArgumentException) {
+                    ActionResponse(false, listOf("Password too long"))
                 }
             }
 
