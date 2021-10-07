@@ -12,6 +12,7 @@ import io.beatmaps.api.searchRoute
 import io.beatmaps.api.testplayRoute
 import io.beatmaps.api.userRoute
 import io.beatmaps.api.voteRoute
+import io.beatmaps.common.StatusPagesCustom
 import io.beatmaps.common.db.setupDB
 import io.beatmaps.common.genericQueueConfig
 import io.beatmaps.common.installMetrics
@@ -42,7 +43,6 @@ import io.ktor.features.ContentNegotiation
 import io.ktor.features.DataConversion
 import io.ktor.features.NotFoundException
 import io.ktor.features.ParameterConversionException
-import io.ktor.features.StatusPages
 import io.ktor.features.XForwardedHeaderSupport
 import io.ktor.html.respondHtmlTemplate
 import io.ktor.http.ContentType
@@ -198,7 +198,7 @@ fun Application.beatmapsio() {
     }
 
     install(Locations)
-    install(StatusPages) {
+    install(StatusPagesCustom) {
         status(HttpStatusCode.NotFound) {
             /*(call.attributes.allKeys.find { it.name == "SessionKey" } as? AttributeKey<Any>)?.let {
                 call.attributes.remove(it)
