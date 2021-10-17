@@ -93,6 +93,10 @@ class UserList : RComponent<UserListProps, UserListState>() {
         window.onhashchange = ::updateFromHash
     }
 
+    override fun componentWillUnmount() {
+        window.onscroll = null
+    }
+
     private fun loadNextPage() {
         if (state.loading)
             return

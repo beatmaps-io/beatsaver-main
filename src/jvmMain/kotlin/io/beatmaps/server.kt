@@ -96,7 +96,7 @@ suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStat
 
 fun main() {
     setupLogging()
-    setupDB()
+    setupDB(app = "BeatSaver Main")
 
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::beatmapsio).start(wait = true)
 }

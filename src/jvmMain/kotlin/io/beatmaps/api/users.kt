@@ -513,7 +513,12 @@ fun Route.userRoute() {
         val (maps, user) = transaction {
             Beatmap.joinVersions().select {
                 Beatmap.uploader eq it.id and Beatmap.deletedAt.isNull()
-            }.complexToBeatmap().sortedByDescending { b -> b.uploaded } to UserDetail.from(User.select { User.id eq it.id }.first())
+            }.complexToBeatmap().sortedByDescending { b -> b.uploaded } to User.select { User.id eq it.id }.firstOrNull()?.let { row -> UserDetail.from(row) }
+        }
+
+        if (user == null) {
+            call.respond(HttpStatusCode.NotFound)
+            return@get
         }
 
         val playlistSongs = maps.mapNotNull { map ->
