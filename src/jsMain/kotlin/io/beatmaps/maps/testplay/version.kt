@@ -44,6 +44,7 @@ external interface VersionProps : RProps {
     var state: EMapState?
     var reloadMap: () -> Unit
     var modal: RReadableRef<ModalComponent>
+    var allowPublish: Boolean?
 }
 
 data class VersionState(var state: EMapState? = null, var loading: Boolean = false, var loadingState: Boolean = false, var text: String = "", var time: String = "") : RState
@@ -121,23 +122,30 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                         }
 
                         if (props.firstVersion && (state.state == EMapState.Uploaded || state.state == EMapState.Feedback)) {
-                            button(classes = "btn btn-danger m-1") {
-                                attrs.onClickFunction = {
-                                    props.modal.current?.showDialog(
-                                        ModalData(
-                                            "Are you sure?",
-                                            "This will make your map visible to everyone\n\nYou should only publish maps that are completed, " +
-                                                "if you just want to test your map check out the guides here:\nhttps://bsmg.wiki/mapping/#playtesting\n\n" +
-                                                // "You should also consider placing your map into the playtest queue for feedback first\n\n" +
-                                                "You should also consider getting your map playtested by other mappers for feedback first\n\n" +
-                                                "Uploading new versions later will cause leaderboards for your map to be reset",
-                                            listOf(ModalButton("Publish", "primary") { mapState(EMapState.Published) }, ModalButton("Cancel")),
-                                            true
+                            if (props.allowPublish == true) {
+                                button(classes = "btn btn-danger m-1") {
+                                    attrs.onClickFunction = {
+                                        props.modal.current?.showDialog(
+                                            ModalData(
+                                                "Are you sure?",
+                                                "This will make your map visible to everyone\n\nYou should only publish maps that are completed, " +
+                                                    "if you just want to test your map check out the guides here:\nhttps://bsmg.wiki/mapping/#playtesting\n\n" +
+                                                    // "You should also consider placing your map into the playtest queue for feedback first\n\n" +
+                                                    "You should also consider getting your map playtested by other mappers for feedback first\n\n" +
+                                                    "Uploading new versions later will cause leaderboards for your map to be reset",
+                                                listOf(ModalButton("Publish", "primary") { mapState(EMapState.Published) }, ModalButton("Cancel")),
+                                                true
+                                            )
                                         )
-                                    )
+                                    }
+                                    attrs.disabled = state.loading || state.loadingState
+                                    +"Publish"
                                 }
-                                attrs.disabled = state.loading || state.loadingState
-                                +"Publish"
+                            } else {
+                                button(classes = "btn btn-danger m-1") {
+                                    attrs.disabled = true
+                                    +"Set a name to publish"
+                                }
                             }
                             if (testplayEnabled) {
                                 button(classes = "btn btn-info m-1") {

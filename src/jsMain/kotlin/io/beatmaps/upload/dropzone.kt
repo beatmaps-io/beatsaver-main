@@ -46,6 +46,7 @@ fun RElementBuilder<DropzoneProps>.simple(
     captchaRef: RReadableRef<ReCAPTCHA>,
     block: (FormData) -> Unit,
     errorsBlock: (List<String>) -> Unit,
+    extraInfo: List<String> = emptyList(),
     successBlock: ((AxiosResponse<dynamic>) -> Unit)? = null
 ) {
     attrs.onDrop = { file ->
@@ -127,6 +128,11 @@ fun RElementBuilder<DropzoneProps>.simple(
                 }
                 small {
                     +"Max file size: 15MiB"
+                }
+                extraInfo.forEach {
+                    small {
+                        +it
+                    }
                 }
             }
         }

@@ -65,6 +65,9 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 a("/policy/dmca", classes = "dropdown-item") {
                                     +"DMCA Policy"
                                 }
+                                a("/policy/tos", classes = "dropdown-item") {
+                                    +"Terms of Service"
+                                }
                             }
                         }
                     }

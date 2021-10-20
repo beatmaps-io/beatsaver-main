@@ -80,6 +80,11 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                         window.scrollTo(0.0, 0.0)
                     }
                     history = props.history
+                    updateMapinfo = {
+                        setState {
+                            map = it
+                        }
+                    }
                 }
             } else {
                 modal {

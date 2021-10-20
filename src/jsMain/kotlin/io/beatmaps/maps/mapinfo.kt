@@ -45,6 +45,7 @@ external interface MapInfoProps : RProps {
     var modal: RReadableRef<ModalComponent>
     var reloadMap: () -> Unit
     var deleteMap: () -> Unit
+    var updateMapinfo: (MapDetail) -> Unit
 }
 
 data class MapInfoState(var loading: Boolean = false, var editing: Boolean = false) : RState
@@ -240,7 +241,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                 }
 
                                 Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.intId(), newTitle, newDescription), generateConfig<MapInfoUpdate, String>()).then({
-                                    props.mapInfo = props.mapInfo.copy(name = newTitle, description = newDescription)
+                                    props.updateMapinfo(props.mapInfo.copy(name = newTitle, description = newDescription))
                                     setState {
                                         loading = false
                                         editing = false

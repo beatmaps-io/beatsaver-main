@@ -126,6 +126,10 @@ class App : RComponent<AppProps, RState>() {
                     initWithHistory(it.history, false)
                     div {}
                 }
+                route<RProps>("/policy/tos", exact = true) {
+                    initWithHistory(it.history, false)
+                    div {}
+                }
                 route<RProps>("/mappers", exact = true) {
                     initWithHistory(it.history)
                     userList {

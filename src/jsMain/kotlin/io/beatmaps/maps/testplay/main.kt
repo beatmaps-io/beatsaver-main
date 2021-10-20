@@ -20,6 +20,7 @@ external interface TestplayProps : RProps {
     var loggedInId: Int?
     var refreshPage: () -> Unit
     var history: RouteResultHistory
+    var updateMapinfo: (MapDetail) -> Unit
 }
 
 @JsExport
@@ -33,12 +34,13 @@ class Testplay : RComponent<TestplayProps, RState>() {
         mapInfo {
             mapInfo = props.mapInfo
             isOwner = props.isOwner
-            isAdmin = isAdmin
+            isAdmin = props.isAdmin
             modal = modalRef
             reloadMap = props.refreshPage
             deleteMap = {
                 props.history.push("/profile")
             }
+            updateMapinfo = props.updateMapinfo
         }
         timeline {
             mapInfo = props.mapInfo

@@ -7,6 +7,7 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.upload.simple
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.w3c.dom.HTMLElement
 import react.RBuilder
@@ -83,6 +84,21 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                         i("fas fa-plus") {}
                     }
                     div("card-body") {
+                        val now = Clock.System.now()
+                        val recentVersions = props.mapInfo.versions.map { now.minus(it.createdAt).inWholeHours }.filter { it < 12 }
+
+                        val hoursUntilNext = if (recentVersions.size > 1) {
+                            12 - (recentVersions.maxOrNull() ?: 12)
+                        } else {
+                            0
+                        }
+
+                        val extraText = listOf("${recentVersions.size} / 2 uploads used in the last 12 hours").let {
+                            if (hoursUntilNext > 0) {
+                                it + "$hoursUntilNext hours until next upload"
+                            } else it
+                        }
+
                         Dropzone.default {
                             simple(
                                 props.history, state.loading, state.errors.isNotEmpty(), progressBarInnerRef,
@@ -98,7 +114,8 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                                         errors = it
                                         loading = false
                                     }
-                                }
+                                },
+                                extraInfo = extraText
                             ) {
                                 setState {
                                     errors = listOf()
@@ -139,6 +156,7 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                             reloadMap = props.reloadMap
                             mapId = props.mapInfo.intId()
                             modal = props.modal
+                            allowPublish = props.mapInfo.name.isNotEmpty()
                         }
                         first = false
                     }
