@@ -646,12 +646,14 @@ li.KeyboardShortcutRow {
 .mapstats .diff-stars {
   padding-top: 14px;
 }
-.card.bg-danger .card-text > a {
-  color: $body-color;
-  text-decoration: underline;
+.card.bg-danger, .card.bg-secondary {
+  .card-text > a {
+    color: $body-color;
+    text-decoration: underline;
 
-  &:hover {
-    color: #000;
+    &:hover {
+      color: #000;
+    }
   }
 }
 .btn-check {
@@ -691,14 +693,14 @@ li.KeyboardShortcutRow {
 
 .user-form {
   width: 600px;
-}
-
-.user-form, .login-form {
-  margin: auto;
 
   hr {
     border-color: $gray-600;
   }
+}
+
+.user-form, .login-form {
+  margin: auto;
 
   button[type="submit"], .forgot_pwd, .login_back {
     display: block;
@@ -710,6 +712,10 @@ li.KeyboardShortcutRow {
   width: 420px;
   margin-top: 80px;
   text-align: center;
+
+  hr {
+    border-color: $gray-700;
+  }
 
   .login_back {
     text-align: left;

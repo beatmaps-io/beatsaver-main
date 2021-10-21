@@ -8,6 +8,7 @@ import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.cdnPrefix
 import io.beatmaps.common.Config
 import io.beatmaps.common.ModLogOpType
+import io.beatmaps.common.UploadLimitData
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.client
@@ -178,11 +179,22 @@ fun Route.userRoute() {
                 val allowedUploadSizes = arrayOf(0, 15, 30)
                 if (allowedUploadSizes.contains(req.maxUploadSize)) {
                     transaction {
-                        User.update({
-                            User.id eq req.userId
-                        }) { u ->
-                            u[uploadLimit] = req.maxUploadSize
-                        } > 0
+                        fun runUpdate() =
+                            User.update({
+                                User.id eq req.userId
+                            }) { u ->
+                                u[uploadLimit] = req.maxUploadSize
+                            } > 0
+
+                        runUpdate().also {
+                            if (it) {
+                                ModLog.insert(
+                                    sess.userId,
+                                    req.userId,
+                                    UploadLimitData(req.maxUploadSize)
+                                )
+                            }
+                        }
                     }.let { success ->
                         if (success) {
                             ActionResponse(true, listOf())

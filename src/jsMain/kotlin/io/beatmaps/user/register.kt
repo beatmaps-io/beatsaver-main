@@ -16,13 +16,16 @@ import react.RProps
 import react.RState
 import react.ReactElement
 import react.createRef
+import react.dom.a
 import react.dom.button
 import react.dom.div
 import react.dom.form
+import react.dom.hr
 import react.dom.i
 import react.dom.input
 import react.dom.jsStyle
 import react.dom.p
+import react.dom.small
 import react.router.dom.routeLink
 import react.setState
 
@@ -120,7 +123,10 @@ class SignupPage : RComponent<RProps, SignupPageState>() {
                         attrs.required = true
                         attrs.autoFocus = true
                     }
-                    input(type = InputType.email, classes = "form-control") {
+                    small("form-text text-muted mb-3 text-left") {
+                        +"Can only contain letters, numbers and ' . ', ' _ ', ' - ', no spaces"
+                    }
+                    input(type = InputType.email, classes = "form-control mb-3") {
                         key = "email"
                         ref = emailRef
                         attrs.name = "email"
@@ -146,6 +152,15 @@ class SignupPage : RComponent<RProps, SignupPageState>() {
                         i("fas fa-user-plus") {}
                         +" Register"
                     }
+                    hr {}
+                    small {
+                        +"By clicking Register, you agree to our "
+                        a("/policy/tos") {
+                            +"Terms of Service"
+                        }
+                        +"."
+                    }
+                    hr {}
                     routeLink("/login", className = "login_back") {
                         +"< Back"
                     }

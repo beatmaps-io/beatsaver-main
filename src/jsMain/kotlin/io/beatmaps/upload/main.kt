@@ -240,6 +240,17 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                         }
                     }
                 }
+                div("card bg-secondary mb-3") {
+                    div("card-body") {
+                        p("card-text") {
+                            +"By uploading your map, you acknowledge that you agree to our "
+                            a("/policy/tos") {
+                                +"Terms of Service"
+                            }
+                            +"."
+                        }
+                    }
+                }
             }
         }
     }

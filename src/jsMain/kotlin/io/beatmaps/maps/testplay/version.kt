@@ -187,7 +187,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                 textToContent(
                                     "Some of your difficulties have a high percentage of parity errors\n\n" +
                                         "You can read more about parity on the BSMG wiki:\nhttps://bsmg.wiki/mapping/basic-mapping.html#do-mapping-with-flow\n\n" +
-                                        "To check these errors yourself visit the paity checker here:\nhttps://galaxymaster2.github.io/bs-parity?url=${Config.cdnbase}/${props.hash}.zip"
+                                        "To check these errors yourself visit the parity checker here:\nhttps://galaxymaster2.github.io/bs-parity?url=${Config.cdnbase}/${props.hash}.zip"
                                 )
                             }
                         }
