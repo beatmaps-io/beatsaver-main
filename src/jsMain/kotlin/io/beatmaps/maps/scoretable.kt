@@ -120,9 +120,9 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
     }
 
     private fun maxScore(n: Int, maxScorePerBlock: Int = 115) =
-        (if (n > 13) maxScorePerBlock * 8 * (n - 13) else 0) +
-            (if (n >= 7) maxScorePerBlock * 4 * (n.coerceAtMost(13) - 5) else 0) +
-            (if (n >= 3) maxScorePerBlock * 2 * (n.coerceAtMost(5) - 1) else 0) +
+        (if (n > (1 + 4 + 8)) maxScorePerBlock * 8 * (n - 13) else 0) +
+            (if (n > (1 + 4)) maxScorePerBlock * 4 * (n.coerceAtMost(13) - 5) else 0) +
+            (if (n > 1) maxScorePerBlock * 2 * (n.coerceAtMost(5) - 1) else 0) +
             n.coerceAtMost(1) * maxScorePerBlock
 
     override fun RBuilder.render() {
