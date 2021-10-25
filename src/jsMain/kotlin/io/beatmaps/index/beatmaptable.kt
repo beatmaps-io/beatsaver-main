@@ -30,6 +30,7 @@ import react.router.dom.routeLink
 import react.setState
 import kotlin.math.ceil
 import kotlin.math.max
+import kotlin.math.min
 
 external interface BeatmapTableProps : RProps {
     var search: SearchParams?
@@ -65,6 +66,7 @@ external interface BeatmapTableState : RState {
     var loading: Boolean
     var visItem: Int
     var visPage: Int
+    var finalPage: Int
     var visiblePages: IntRange
     var scroll: Boolean
 
@@ -96,6 +98,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
             loading = false
             visItem = -1
             visPage = -1
+            finalPage = Int.MAX_VALUE
             visiblePages = IntRange.EMPTY
             scroll = true
         }
@@ -127,7 +130,9 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
             visiblePages = visPage.rangeTo(visPage + totalVisiblePages)
             scroll = hashPos != null
 
-            if (pages.containsKey(visPage)) {
+            if (visPage == 0) {
+                window.scrollTo(0.0, 0.0)
+            } else if (pages.containsKey(visPage)) {
                 scrollTo(visItem)
             }
         }
@@ -161,6 +166,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                 pages = mapOf()
                 visItem = 0
                 visPage = 0
+                finalPage = Int.MAX_VALUE
                 visiblePages = visPage.rangeTo(visPage + totalVisiblePages)
                 scroll = false
             }
@@ -169,7 +175,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         }
     }
 
-    private fun lastPage() = max(state.visiblePages.last, state.pages.maxByOrNull { it.key }?.key ?: 0)
+    private fun lastPage() = min(state.finalPage, max(state.visiblePages.last, state.pages.maxByOrNull { it.key }?.key ?: 0))
 
     private fun getUrl(page: Int) =
         if (props.wip) {
@@ -256,6 +262,9 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
             val page = it.data.docs
             setState {
                 loading = page?.isEmpty() == true
+                if (loading) {
+                    finalPage = toLoad
+                }
                 pages = if (shouldClear) { mapOf() } else { pages }.let {
                     if (page != null) {
                         pages.plus(toLoad to page.toList())

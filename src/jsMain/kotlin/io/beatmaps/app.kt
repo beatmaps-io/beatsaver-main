@@ -20,6 +20,7 @@ import io.beatmaps.user.userList
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLAnchorElement
+import org.w3c.dom.HashChangeEvent
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -65,6 +66,7 @@ class App : RComponent<AppProps, RState>() {
             val homeLink = document.getElementById("home-link") as HTMLAnchorElement
             homeLink.onclick = {
                 history.push("/")
+                window.dispatchEvent(HashChangeEvent("hashchange"))
                 it.preventDefault()
             }
         }
