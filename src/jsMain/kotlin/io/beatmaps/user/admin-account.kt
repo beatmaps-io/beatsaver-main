@@ -19,6 +19,7 @@ import react.dom.button
 import react.dom.div
 import react.dom.h5
 import react.dom.hr
+import react.dom.jsStyle
 import react.dom.label
 import react.dom.option
 import react.dom.select
@@ -30,6 +31,7 @@ external interface AdminAccountComponentProps : RProps {
 
 external interface AdminAccountComponentState : RState {
     var loading: Boolean?
+    var success: Boolean?
     var errors: List<String>
     var uploadLimit: Int
 }
@@ -41,6 +43,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
     override fun componentWillMount() {
         setState {
             loading = false
+            success = false
             errors = listOf()
             uploadLimit = props.userDetail.uploadLimit ?: 1
         }
@@ -56,6 +59,14 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                 label {
                     attrs.htmlFor = "name"
                     +"Max upload size"
+                }
+                if (state.success == true) {
+                    div("valid-feedback") {
+                        attrs.jsStyle {
+                            display = "block"
+                        }
+                        +"Updated successfully."
+                    }
                 }
                 select("form-control") {
                     arrayOf(0, 15, 30).forEach {
@@ -88,11 +99,13 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                             setState {
                                 errors = it.data.errors
                                 loading = false
+                                success = it.data.success
                             }
                         }.catch {
                             // Cancelled request
                             setState {
                                 loading = false
+                                success = false
                             }
                         }
                     }

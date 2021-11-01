@@ -190,8 +190,9 @@ fun Route.userRoute() {
                             if (it) {
                                 ModLog.insert(
                                     sess.userId,
-                                    req.userId,
-                                    UploadLimitData(req.maxUploadSize)
+                                    null,
+                                    UploadLimitData(req.maxUploadSize),
+                                    req.userId
                                 )
                             }
                         }

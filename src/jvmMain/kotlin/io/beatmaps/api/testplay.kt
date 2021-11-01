@@ -65,6 +65,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertIgnore
+import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -347,7 +348,10 @@ fun Route.testplayRoute() {
                             ModLog.insert(
                                 sess.userId,
                                 newState.mapId,
-                                UnpublishData(newState.reason)
+                                UnpublishData(newState.reason),
+                                wrapAsExpressionNotNull<Int>(
+                                    Beatmap.slice(Beatmap.uploader).select { Beatmap.id eq newState.mapId }.limit(1)
+                                )
                             )
                         }
                     }

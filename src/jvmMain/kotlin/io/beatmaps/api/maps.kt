@@ -177,7 +177,8 @@ fun Route.mapDetailRoute() {
                                 DeletedData(mapUpdate.reason ?: "")
                             } else {
                                 InfoEditData(oldData.name, oldData.description, mapUpdate.name ?: "", mapUpdate.description ?: "")
-                            }
+                            },
+                            oldData.uploader.id.value
                         )
                     }
                 }
