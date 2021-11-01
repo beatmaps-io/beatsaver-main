@@ -48,6 +48,7 @@ import io.ktor.html.respondHtmlTemplate
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.EntityTagVersion
+import io.ktor.http.content.defaultResource
 import io.ktor.http.content.resources
 import io.ktor.http.content.static
 import io.ktor.jackson.JacksonConverter
@@ -298,8 +299,9 @@ fun Application.beatmapsio() {
 
         mapUpdateEnricher()
 
-        static("/static") {
+        static("static") {
             resources()
+            defaultResource("404.html")
         }
     }
 }

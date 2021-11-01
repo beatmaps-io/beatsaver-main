@@ -473,6 +473,7 @@ fun Route.userRoute() {
                 .join(Beatmap, JoinType.INNER, userAlias[User.id], Beatmap.uploader) {
                     Beatmap.deletedAt.isNull()
                 }
+                .join(Versions, JoinType.INNER, onColumn = Beatmap.id, otherColumn = Versions.mapId, additionalConstraint = { Versions.state eq EMapState.Published })
                 .slice(
                     Beatmap.uploader,
                     Beatmap.id.count(),

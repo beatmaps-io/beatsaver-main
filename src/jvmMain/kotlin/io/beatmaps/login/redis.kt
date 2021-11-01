@@ -36,7 +36,9 @@ fun Application.installSessions() {
     }
 
     install(Sessions) {
-        cookie<Session>("BMSESSIONID", sessionStorage)
+        cookie<Session>("BMSESSIONID", sessionStorage) {
+            cookie.extensions["SameSite"] = "lax"
+        }
     }
 }
 
