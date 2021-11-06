@@ -100,6 +100,11 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                     deleteMap = {
                         props.history.push("/profile")
                     }
+                    updateMapinfo = {
+                        setState {
+                            map = it
+                        }
+                    }
                 }
                 div("row mt-3") {
                     infoTable {
