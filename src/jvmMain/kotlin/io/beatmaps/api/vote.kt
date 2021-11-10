@@ -7,6 +7,7 @@ import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
+import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
@@ -33,9 +34,11 @@ import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Count
 import org.jetbrains.exposed.sql.Index
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.innerJoin
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.sum
@@ -113,9 +116,12 @@ fun Route.voteRoute() {
 
         consumeAck("uvstats", Int::class) { _, body ->
             transaction {
-                val subQuery = Beatmap.slice(coalesce(Beatmap.upVotesInt.sum(), intLiteral(0)).alias("votes")).select {
-                    Beatmap.uploader eq body and Beatmap.deletedAt.isNull()
-                }
+                val subQuery = Beatmap
+                    .joinVersions()
+                    .slice(coalesce(Beatmap.upVotesInt.sum(), intLiteral(0)).alias("votes"))
+                    .select {
+                        Beatmap.uploader eq body and Beatmap.deletedAt.isNull()
+                    }
 
                 User.update({
                     User.id eq body
