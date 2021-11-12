@@ -12,6 +12,8 @@ import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.distinctOn
 import io.beatmaps.common.db.ilike
 import io.beatmaps.common.db.similar
+import io.beatmaps.common.db.unaccent
+import io.beatmaps.common.db.wildcard
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
@@ -33,7 +35,6 @@ import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.stringLiteral
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.lang.Integer.toHexString
 
@@ -77,7 +78,7 @@ fun Route.searchRoute() {
         call.response.header("Access-Control-Allow-Origin", "*")
 
         val searchFields = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
-        val searchIndex = CustomFunction<String>("bs_unaccent", searchFields.columnType, searchFields)
+        val searchIndex = unaccent(searchFields)
         val originalQuery = it.q?.replace("%", "\\%")
 
         // TODO: Move parsing to its own function
@@ -97,7 +98,7 @@ fun Route.searchRoute() {
         }
         val query = nonmappers.joinToString(" ")
         val bothWithoutQuotes = (nonmappers + quotedSections).joinToString(" ")
-        val similarRank = CustomFunction<String>("substring_similarity", searchIndex.columnType, stringLiteral(bothWithoutQuotes), searchIndex)
+        val similarRank = CustomFunction<String>("substring_similarity", searchIndex.columnType, unaccent(bothWithoutQuotes), searchIndex)
         // Parsing complete
 
         val actualSortOrder = when {
@@ -153,14 +154,14 @@ fun Route.searchRoute() {
                                         if (query.isBlank()) {
                                             q
                                         } else if (query.length > 3) {
-                                            q.and(searchIndex similar query)
+                                            q.and(searchIndex similar unaccent(query))
                                         } else {
-                                            q.and(searchIndex ilike "%$query%")
+                                            q.and(searchIndex ilike wildcard(unaccent(query)))
                                         }
                                     }
                                     .let { q ->
                                         quotedSections.fold(q) { p, it ->
-                                            p.and(searchIndex ilike "%$it%")
+                                            p.and(searchIndex ilike wildcard(unaccent(it)))
                                         }
                                     }
                                     .let { q ->
