@@ -76,7 +76,8 @@ fun Route.searchRoute() {
     get<SearchApi.Text>("Search for maps".responds(ok<SearchResponse>())) {
         call.response.header("Access-Control-Allow-Origin", "*")
 
-        val searchIndex = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
+        val searchFields = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
+        val searchIndex = CustomFunction<String>("bs_unaccent", searchFields.columnType, searchFields)
         val originalQuery = it.q?.replace("%", "\\%")
 
         // TODO: Move parsing to its own function
