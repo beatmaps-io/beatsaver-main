@@ -71,7 +71,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
             loadingState = true
         }
 
-        Axios.post<String>("/api/testplay/state", StateUpdate(props.hash, nextState, props.mapId), generateConfig<StateUpdate, String>()).then({
+        Axios.post<String>("${Config.apibase}/testplay/state", StateUpdate(props.hash, nextState, props.mapId), generateConfig<StateUpdate, String>()).then({
             if (nextState == EMapState.Published) {
                 props.reloadMap()
             }
@@ -104,7 +104,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                         loading = true
                                     }
 
-                                    Axios.post<String>("/api/testplay/version", FeedbackUpdate(props.hash, newText), generateConfig<FeedbackUpdate, String>()).then({
+                                    Axios.post<String>("${Config.apibase}/testplay/version", FeedbackUpdate(props.hash, newText), generateConfig<FeedbackUpdate, String>()).then({
                                         setState {
                                             text = newText
                                             time = Instant.now().toString()

@@ -8,6 +8,9 @@ import io.beatmaps.maps.UploadPage
 import io.beatmaps.maps.recent.recentTestplays
 import io.beatmaps.nav.manageNav
 import io.beatmaps.nav.viewportMinWidthPolyfill
+import io.beatmaps.playlist.PlaylistProps
+import io.beatmaps.playlist.editPlaylist
+import io.beatmaps.playlist.playlist
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ProfilePageProps
 import io.beatmaps.user.ResetPageProps
@@ -25,6 +28,7 @@ import react.RBuilder
 import react.RComponent
 import react.RProps
 import react.RState
+import react.createContext
 import react.dom.div
 import react.dom.render
 import react.router.dom.RouteResultHistory
@@ -41,26 +45,26 @@ external interface UserData {
     val admin: Boolean
 }
 
+val globalContext = createContext<UserData?>(null)
+
 fun main() {
     window.onload = {
         val root = document.getElementById("root")
         render(root) {
-            child(App::class) {
-                attrs.userData = document.getElementById("user-data")?.let {
+            globalContext.Provider {
+                attrs.value = document.getElementById("user-data")?.let {
                     JSON.parse<UserData>(it.textContent ?: "")
                 }
+                child(App::class) { }
             }
         }
     }
 }
 
 const val dateFormat = "YYYY-MM-DD"
-external interface AppProps : RProps {
-    var userData: UserData?
-}
 
 @JsExport
-class App : RComponent<AppProps, RState>() {
+class App : RComponent<RProps, RState>() {
     private fun initWithHistory(history: RouteResultHistory, replaceHomelink: Boolean = true) {
         if (replaceHomelink) {
             val homeLink = document.getElementById("home-link") as HTMLAnchorElement
@@ -90,7 +94,6 @@ class App : RComponent<AppProps, RState>() {
                 route<MapPageProps>("/beatsaver/:mapKey", exact = true) {
                     initWithHistory(it.history)
                     child(MapPage::class) {
-                        attrs.userData = props.userData
                         attrs.history = it.history
                         attrs.mapKey = it.match.params.mapKey
                         attrs.beatsaver = true
@@ -99,7 +102,6 @@ class App : RComponent<AppProps, RState>() {
                 route<MapPageProps>("/maps/:mapKey", exact = true) {
                     initWithHistory(it.history)
                     child(MapPage::class) {
-                        attrs.userData = props.userData
                         attrs.history = it.history
                         attrs.mapKey = it.match.params.mapKey
                         attrs.beatsaver = false
@@ -113,11 +115,34 @@ class App : RComponent<AppProps, RState>() {
                 }
                 route<ProfilePageProps>("/profile/:userId?", exact = true) {
                     initWithHistory(it.history)
-                    child(ProfilePage::class) {
-                        key = "profile-${it.match.params.userId}"
-                        attrs.userData = props.userData
-                        attrs.history = it.history
-                        attrs.userId = it.match.params.userId
+                    globalContext.Consumer { userData ->
+                        child(ProfilePage::class) {
+                            key = "profile-${it.match.params.userId}"
+                            attrs.userData = userData
+                            attrs.history = it.history
+                            attrs.userId = it.match.params.userId
+                        }
+                    }
+                }
+                route<RProps>("/playlists/new", exact = true) {
+                    initWithHistory(it.history)
+                    editPlaylist {
+                        id = null
+                        history = it.history
+                    }
+                }
+                route<PlaylistProps>("/playlists/:id", exact = true) {
+                    initWithHistory(it.history)
+                    playlist {
+                        id = it.match.params.id
+                        history = it.history
+                    }
+                }
+                route<PlaylistProps>("/playlists/:id/edit", exact = true) {
+                    initWithHistory(it.history)
+                    editPlaylist {
+                        id = it.match.params.id
+                        history = it.history
                     }
                 }
                 route<RProps>("/test", exact = true) {

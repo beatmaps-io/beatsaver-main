@@ -17,6 +17,7 @@ import io.beatmaps.common.db.upsert
 import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Beatmap.joinUploader
+import io.beatmaps.common.dbo.Beatmap.joinVersions
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.DifficultyDao
 import io.beatmaps.common.dbo.ModLog
@@ -65,7 +66,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertIgnore
-import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update

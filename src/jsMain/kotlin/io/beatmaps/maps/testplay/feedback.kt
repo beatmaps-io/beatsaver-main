@@ -4,6 +4,7 @@ import external.Axios
 import external.TimeAgo
 import external.generateConfig
 import io.beatmaps.api.FeedbackUpdate
+import io.beatmaps.common.Config
 import io.beatmaps.maps.textToContent
 import kotlinx.datetime.internal.JSJoda.Instant
 import kotlinx.html.TEXTAREA
@@ -65,7 +66,7 @@ class Feedback : RComponent<FeedbackProps, FeedbackState>() {
                                         loading = true
                                     }
 
-                                    Axios.post<String>("/api/testplay/feedback", FeedbackUpdate(props.hash, newText), generateConfig<FeedbackUpdate, String>()).then({
+                                    Axios.post<String>("${Config.apibase}/testplay/feedback", FeedbackUpdate(props.hash, newText), generateConfig<FeedbackUpdate, String>()).then({
                                         setState {
                                             text = newText
                                             time = Instant.now().toString()

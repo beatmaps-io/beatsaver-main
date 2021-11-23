@@ -8,6 +8,7 @@ import io.beatmaps.common.formatTime
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
+import io.beatmaps.playlist.userPlaylists
 import io.beatmaps.setPageTitle
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
@@ -45,12 +46,14 @@ external interface ProfilePageState : RState {
     var startup: Boolean?
     var userDetail: UserDetail?
     var state: ProfileTab
+    var lastMapStateWip: Boolean?
     var notificationCount: Map<ProfileTab, Int>
 }
 
 enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps) -> Boolean = { true }, val bootCondition: () -> Boolean = { false }, val onSelected: (ProfilePageProps) -> Unit = {}) {
     PUBLISHED("Published", bootCondition = { (localStorage["profile.showwip"] == "false") }, onSelected = { if (it.userId == null) { localStorage["profile.showwip"] = "false" } }),
     UNPUBLISHED("Unpublished", condition = { (it.userId == null) }, bootCondition = { (localStorage["profile.showwip"] == "true") }, onSelected = { if (it.userId == null) { localStorage["profile.showwip"] = "true" } }),
+    PLAYLISTS("Playlists"),
     ACCOUNT("Account", condition = { (it.userData?.admin == true || it.userId == null) }),
     MODERATOR("Alerts", condition = { (it.userData?.admin == true || it.userId == null) })
 }
@@ -109,7 +112,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             loading = true
         }
 
-        val url = props.userId?.let { "${Config.apibase}/users/id/$it" } ?: "/api/users/me"
+        val url = "${Config.apibase}/users" + (props.userId?.let { "/id/$it" } ?: "/me")
 
         axiosGet<UserDetail>(
             url
@@ -202,37 +205,35 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                         }*/
                     }
                 }
-                if (props.userId == null || props.userData?.admin == true) {
-                    ul("nav nav-tabs") {
-                        ProfileTab.values().forEach { tab ->
-                            if (!tab.condition(props)) return@forEach
+                ul("nav nav-tabs") {
+                    ProfileTab.values().forEach { tab ->
+                        if (!tab.condition(props)) return@forEach
 
-                            li("nav-item") {
-                                a("#", classes = "nav-link" + if (state.state == tab) " active" else "") {
-                                    key = tab.tabText
-                                    attrs.onClickFunction = {
-                                        it.preventDefault()
+                        li("nav-item") {
+                            a("#", classes = "nav-link" + if (state.state == tab) " active" else "") {
+                                key = tab.tabText
+                                attrs.onClickFunction = {
+                                    it.preventDefault()
 
-                                        val userPart = if (props.userId != null) "/${props.userId}" else ""
-                                        props.history.push("/profile$userPart#${tab.tabText.lowercase()}")
+                                    val userPart = if (props.userId != null) "/${props.userId}" else ""
+                                    props.history.push("/profile$userPart#${tab.tabText.lowercase()}")
 
-                                        tab.onSelected(props)
-                                        setState {
-                                            state = tab
+                                    tab.onSelected(props)
+                                    setState {
+                                        state = tab
+                                    }
+                                }
+
+                                state.notificationCount.getOrElse(tab) { 0 }.let { notifCount ->
+                                    if (notifCount > 0) {
+                                        span("badge rounded-pill bg-danger") {
+                                            +"$notifCount"
                                         }
                                     }
+                                }
 
-                                    state.notificationCount.getOrElse(tab) { 0 }.let { notifCount ->
-                                        if (notifCount > 0) {
-                                            span("badge rounded-pill bg-danger") {
-                                                +"$notifCount"
-                                            }
-                                        }
-                                    }
-
-                                    span("mx-2") {
-                                        +tab.tabText
-                                    }
+                                span {
+                                    +tab.tabText
                                 }
                             }
                         }
@@ -253,6 +254,36 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             }
         }
 
+        if (detail != null) {
+            userPlaylists {
+                own = props.userId == null
+                userId = detail.id
+                history = props.history
+                visible = state.state == ProfileTab.PLAYLISTS
+            }
+            if (state.startup == true) {
+                when (state.state) {
+                    ProfileTab.UNPUBLISHED -> true
+                    ProfileTab.PUBLISHED -> false
+                    else -> null
+                }?.let {
+                    if (state.lastMapStateWip != it) {
+                        setState {
+                            lastMapStateWip = it
+                        }
+                    }
+                }
+
+                beatmapTable {
+                    user = props.userId ?: loggedInLocal ?: 0
+                    modal = modalRef
+                    wip = state.lastMapStateWip == true
+                    history = props.history
+                    visible = state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED
+                }
+            }
+        }
+
         if (state.state == ProfileTab.ACCOUNT && detail != null) {
             if (props.userId == null) {
                 account {
@@ -262,13 +293,6 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                 adminAccount {
                     userDetail = detail
                 }
-            }
-        } else if (state.startup == true && (state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED)) {
-            beatmapTable {
-                user = props.userId ?: loggedInLocal ?: 0
-                modal = modalRef
-                wip = state.state == ProfileTab.UNPUBLISHED
-                history = props.history
             }
         }
     }

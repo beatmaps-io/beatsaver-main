@@ -1,7 +1,9 @@
 package external
 
+import react.RBuilder
 import react.RClass
 import react.RProps
+import react.RReadableRef
 import kotlin.js.Promise
 
 external interface IGoogleReCaptchaProps : RProps {
@@ -26,4 +28,12 @@ external object ReCAPTCHA {
     fun execute(): String
     fun executeAsync(): Promise<String>
     fun reset()
+}
+
+fun RBuilder.recaptcha(captchaRef: RReadableRef<ReCAPTCHA>) {
+    ReCAPTCHA.default {
+        attrs.sitekey = "6LdMpxUaAAAAAA6a3Fb2BOLQk9KO8wCSZ-a_YIaH"
+        attrs.size = "invisible"
+        ref = captchaRef
+    }
 }

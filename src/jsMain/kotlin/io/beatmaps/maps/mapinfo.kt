@@ -6,6 +6,7 @@ import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.StateUpdate
+import io.beatmaps.common.Config
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
@@ -62,7 +63,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
 
     private fun recall() {
         props.mapInfo.publishedVersion()?.hash?.let { hash ->
-            Axios.post<String>("/api/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.intId(), reasonRef.current?.asDynamic()?.value as? String), generateConfig<StateUpdate, String>())
+            Axios.post<String>("${Config.apibase}/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.intId(), reasonRef.current?.asDynamic()?.value as? String), generateConfig<StateUpdate, String>())
                 .then({
                     props.reloadMap()
 
@@ -78,7 +79,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     }
 
     private fun delete() {
-        Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.asDynamic()?.value as? String), generateConfig<MapInfoUpdate, String>()).then({
+        Axios.post<String>("${Config.apibase}/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.asDynamic()?.value as? String), generateConfig<MapInfoUpdate, String>()).then({
             props.deleteMap()
         }) {
             setState {
@@ -88,7 +89,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     }
 
     private fun curate(curated: Boolean = true) {
-        Axios.post<String>("/api/maps/curate", CurateMap(props.mapInfo.intId(), curated), generateConfig<CurateMap, String>()).then({
+        Axios.post<String>("${Config.apibase}/maps/curate", CurateMap(props.mapInfo.intId(), curated), generateConfig<CurateMap, String>()).then({
             props.reloadMap()
         }) {
             setState {
@@ -240,7 +241,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                     loading = true
                                 }
 
-                                Axios.post<String>("/api/maps/update", MapInfoUpdate(props.mapInfo.intId(), newTitle, newDescription), generateConfig<MapInfoUpdate, String>()).then({
+                                Axios.post<String>("${Config.apibase}/maps/update", MapInfoUpdate(props.mapInfo.intId(), newTitle, newDescription), generateConfig<MapInfoUpdate, String>()).then({
                                     props.updateMapinfo(props.mapInfo.copy(name = newTitle, description = newDescription))
                                     setState {
                                         loading = false

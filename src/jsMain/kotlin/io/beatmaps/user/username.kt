@@ -6,6 +6,7 @@ import external.generateConfig
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UsernameReq
+import io.beatmaps.common.Config
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
@@ -64,7 +65,7 @@ class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
         }
 
         axiosGet<String>(
-            "/api/users/me"
+            "${Config.apibase}/users/me"
         ).then {
             // Decode is here so that 401 actually passes to error handler
             val data = json.decodeFromString<UserDetail>(it.data)
@@ -96,7 +97,7 @@ class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
                     ev.preventDefault()
 
                     Axios.post<ActionResponse>(
-                        "/api/users/username",
+                        "${Config.apibase}/users/username",
                         UsernameReq(inputRef.current?.value ?: ""),
                         generateConfig<UsernameReq, ActionResponse>()
                     ).then {

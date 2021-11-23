@@ -7,6 +7,7 @@ import io.beatmaps.api.AccountType
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UsernameReq
+import io.beatmaps.common.Config
 import io.beatmaps.maps.UploadRequestConfig
 import kotlinx.browser.window
 import kotlinx.html.ButtonType
@@ -137,7 +138,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                             }
 
                             Axios.post<ActionResponse>(
-                                "/api/users/username",
+                                "${Config.apibase}/users/username",
                                 UsernameReq(state.username),
                                 generateConfig<UsernameReq, ActionResponse>()
                             ).then {
@@ -229,7 +230,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     ev.preventDefault()
 
                     Axios.post<ActionResponse>(
-                        "/api/users/me",
+                        "${Config.apibase}/users/me",
                         AccountRequest(
                             currpassRef.current?.value ?: "",
                             passwordRef.current?.value ?: "",

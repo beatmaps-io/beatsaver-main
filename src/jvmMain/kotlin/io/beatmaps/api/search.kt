@@ -17,6 +17,7 @@ import io.beatmaps.common.db.wildcard
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
+import io.beatmaps.common.dbo.Beatmap.joinVersions
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions

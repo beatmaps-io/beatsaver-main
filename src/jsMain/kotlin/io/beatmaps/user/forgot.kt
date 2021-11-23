@@ -3,8 +3,10 @@ package io.beatmaps.user
 import external.Axios
 import external.ReCAPTCHA
 import external.generateConfig
+import external.recaptcha
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ForgotRequest
+import io.beatmaps.common.Config
 import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
@@ -68,7 +70,7 @@ class ForgotPage : RComponent<RProps, ForgotPageState>() {
 
                         captchaRef.current?.executeAsync()?.then { captcha ->
                             Axios.post<ActionResponse>(
-                                "/api/users/forgot",
+                                "${Config.apibase}/users/forgot",
                                 ForgotRequest(
                                     captcha,
                                     emailRef.current?.value ?: "",
@@ -120,11 +122,7 @@ class ForgotPage : RComponent<RProps, ForgotPageState>() {
             }
         }
 
-        ReCAPTCHA.default {
-            attrs.sitekey = "6LdMpxUaAAAAAA6a3Fb2BOLQk9KO8wCSZ-a_YIaH"
-            attrs.size = "invisible"
-            ref = captchaRef
-        }
+        recaptcha(captchaRef)
     }
 }
 

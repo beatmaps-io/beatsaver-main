@@ -5,6 +5,7 @@ import external.generateConfig
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserAdminRequest
 import io.beatmaps.api.UserDetail
+import io.beatmaps.common.Config
 import kotlinx.html.ButtonType
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
@@ -92,7 +93,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                         }
 
                         Axios.post<ActionResponse>(
-                            "/api/users/admin",
+                            "${Config.apibase}/users/admin",
                             UserAdminRequest(props.userDetail.id, state.uploadLimit),
                             generateConfig<UserAdminRequest, ActionResponse>()
                         ).then {

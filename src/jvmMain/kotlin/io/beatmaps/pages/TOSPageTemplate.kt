@@ -59,7 +59,7 @@ class TOSPageTemplate : Template<BODY> {
                     +"Works In Progress"
                 }
                 p {
-                    +"Test maps and Works In Progress uploaded to BeatSaver must stay in the unpublished state. Any found to be published will be unpublished and a warning issued."
+                    +"You should only upload completed maps (from start to finish) to BeatSaver. You should not use the site to get testplays, send the map to other users directly or use the #testplays channel in the BSMG discord before uploading."
                 }
                 hr("my-4") {}
                 h3 {
@@ -170,7 +170,7 @@ class TOSPageTemplate : Template<BODY> {
                 }
                 hr("my-4") {}
                 p("text-muted") {
-                    +"This document was last updated on October 20, 2021"
+                    +"This document was last updated on November 21, 2021"
                 }
             }
         }

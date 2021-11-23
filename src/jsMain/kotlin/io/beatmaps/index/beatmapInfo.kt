@@ -3,6 +3,8 @@ package io.beatmaps.index
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
 import io.beatmaps.common.formatTime
+import io.beatmaps.globalContext
+import io.beatmaps.playlist.addToPlaylist
 import kotlinx.browser.window
 import kotlinx.html.title
 import org.w3c.dom.HTMLDivElement
@@ -140,6 +142,14 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
                         img("Metronome", "/static/icons/metronome.svg") {
                             attrs.width = "12"
                             attrs.height = "12"
+                        }
+                    }
+                    globalContext.Consumer { userData ->
+                        if (userData != null) {
+                            addToPlaylist {
+                                this.map = map
+                                modal = props.modal
+                            }
                         }
                     }
                 }

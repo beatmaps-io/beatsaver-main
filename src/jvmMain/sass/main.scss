@@ -39,7 +39,7 @@ table.search-results {
     width: 43px;
   }
 }
-.search-results {
+.search-results, .playlist {
   .ranked {
     box-shadow: inset 0 0 10px rgba(255, 212, 0, 0.4);
   }
@@ -52,19 +52,20 @@ table.search-results {
 
   .beatmap.loading {
     background: #262626;
+    background-clip: padding-box;
   }
 
   .beatmap {
-    float: left;
     width: 100%;
     display: flex;
     background: $dark;
-    border: 5px solid $body-bg;
+    border: 5px solid transparent;
     padding: 10px;
     border-radius: 10px;
     height: 155px;
     overflow: hidden;
     transition: height 0.2s;
+    background-clip: padding-box;
 
     .info {
       flex: 1;
@@ -111,7 +112,7 @@ table.search-results {
       .additional {
         margin-left: 5px;
       }
-      .links {
+      .additional, .links {
         a {
           background: #444;
           width: 32px;
@@ -168,6 +169,8 @@ table.search-results {
   img.mode {
     width: 16px;
     height: 16px;
+    vertical-align: top;
+    margin-top: 2px;
   }
   .diffs {
     span {
@@ -183,7 +186,7 @@ table.search-results {
     }
   }
 }
-.search-results, .mapinfo-list {
+.search-results, .mapinfo-list, .playlist {
   word-break: break-word;
   a {
     font-size: 14px;
@@ -753,6 +756,56 @@ li.KeyboardShortcutRow {
   }
 }
 
+.playlist-info {
+  white-space: nowrap !important;
+
+  img {
+    width: 100%;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+    border: 1px solid #444;
+    border-bottom: 0;
+  }
+  .btn-group a {
+    flex: 1 1 0;
+  }
+  .list-group, .btn-group {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  .ws-normal {
+    white-space: normal;
+  }
+}
+
+.playlist.table {
+  img {
+    width: 48px;
+    height: 48px;
+  }
+  tbody tr {
+    cursor: pointer;
+  }
+  td:nth-child(1), td:nth-child(3) {
+    width: 72px;
+  }
+  td, th {
+    vertical-align: middle;
+  }
+}
+
+.custom-file-label {
+  right: 74px;
+  color: #888;
+  &::after {
+    top: -1px;
+    right: -74px;
+    bottom: auto;
+    height: auto;
+    border: 1px solid #222;
+  }
+}
+
 @include media-breakpoint-up(sm) {
   .filter-dropdown {
     width: 100%;
@@ -770,7 +823,7 @@ li.KeyboardShortcutRow {
 }
 
 @include media-breakpoint-up(md) {
-  .search-results {
+  .search-results, .playlist {
     img.mode {
       margin-right: 4px;
     }

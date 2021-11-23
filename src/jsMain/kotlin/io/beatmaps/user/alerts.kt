@@ -3,6 +3,7 @@ package io.beatmaps.user
 import external.TimeAgo
 import external.axiosGet
 import io.beatmaps.api.Alert
+import io.beatmaps.common.Config
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.setPageTitle
@@ -51,7 +52,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
         }
 
         axiosGet<List<Alert>>(
-            "/api/users/alerts" + if (props.userId == null) "" else "/${props.userId}",
+            "${Config.apibase}/users/alerts" + if (props.userId == null) "" else "/${props.userId}",
         ).then {
             setState {
                 alerts = it.data

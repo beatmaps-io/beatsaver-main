@@ -7,13 +7,13 @@ import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
-import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Beatmap.joinVersions
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.Votes
@@ -34,11 +34,9 @@ import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Count
 import org.jetbrains.exposed.sql.Index
-import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.innerJoin
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.sum
@@ -132,7 +130,7 @@ fun Route.voteRoute() {
         }
     }
 
-    get<VoteApi.Since>("Get votes".responds(ok<List<VoteSummary>>()).responds(notFound())) { req ->
+    get<VoteApi.Since>("Get votes".responds(ok<List<VoteSummary>>(), notFound())) { req ->
         call.response.header("Access-Control-Allow-Origin", "*")
 
         val voteSummary = transaction {

@@ -3,6 +3,7 @@ package io.beatmaps.maps.testplay
 import external.Dropzone
 import external.ReCAPTCHA
 import external.TimeAgo
+import external.recaptcha
 import io.beatmaps.api.MapDetail
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalComponent
@@ -191,11 +192,7 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                 }
             }
 
-            ReCAPTCHA.default {
-                attrs.sitekey = "6LdMpxUaAAAAAA6a3Fb2BOLQk9KO8wCSZ-a_YIaH"
-                attrs.size = "invisible"
-                ref = captchaRef
-            }
+            recaptcha(captchaRef)
         }
     }
 }

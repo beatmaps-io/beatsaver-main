@@ -16,6 +16,7 @@ import io.beatmaps.common.db.DateMinusDays
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Beatmap.joinVersions
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.ModLogDao
@@ -659,7 +660,7 @@ fun Route.userRoute() {
         call.response.header("Access-Control-Allow-Origin", "*")
         call.respond(HttpStatusCode.OK)
     }
-    get<MapsApi.UserId>("Get user info".responds(ok<UserDetail>()).responds(notFound())) {
+    get<MapsApi.UserId>("Get user info".responds(ok<UserDetail>(), notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
         val user = userBy {
             (User.id eq it.id) and User.active
@@ -680,7 +681,7 @@ fun Route.userRoute() {
         call.response.header("Access-Control-Allow-Origin", "*")
         call.respond(HttpStatusCode.OK)
     }
-    get<MapsApi.UserName>("Get user info by name".responds(ok<UserDetail>()).responds(notFound())) {
+    get<MapsApi.UserName>("Get user info by name".responds(ok<UserDetail>(), notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
         val user = userBy {
             (User.uniqueName eq it.name) and User.active

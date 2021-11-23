@@ -39,6 +39,7 @@ external interface BeatmapTableProps : RProps {
     var modal: RReadableRef<ModalComponent>
     var history: RouteResultHistory
     var updateScrollIndex: (Int) -> Unit
+    var visible: Boolean?
 }
 
 data class SearchParams(
@@ -179,7 +180,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
 
     private fun getUrl(page: Int) =
         if (props.wip) {
-            "/api/maps/wip/$page"
+            "${Config.apibase}/maps/wip/$page"
         } else if (props.user != null) {
             "${Config.apibase}/maps/uploader/${props.user}/$page"
         } else {
@@ -205,7 +206,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         props.search?.let { search ->
             if (hashRegex.matches(search.search)) {
                 Axios.get<MapDetail>(
-                    "/api/maps/hash/${encodeURIComponent(search.search)}",
+                    "${Config.apibase}/maps/hash/${encodeURIComponent(search.search)}",
                     generateConfig<String, MapDetail>(state.token.token)
                 ).then {
                     val dyn: dynamic = props.history
@@ -236,7 +237,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         props.search?.let { search ->
             if (toLoad == 0 && !props.wip && props.user == null && search.search.length > 2) {
                 Axios.get<UserDetail>(
-                    "/api/users/name/${encodeURIComponent(search.search)}",
+                    "${Config.apibase}/users/name/${encodeURIComponent(search.search)}",
                     generateConfig<String, UserDetail>(state.token.token)
                 ).then {
                     setState {
@@ -324,6 +325,8 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
     }
 
     override fun RBuilder.render() {
+        if (props.visible == false) return
+
         state.user?.let {
             routeLink("/profile/${it.id}", className = "card border-dark user-suggestion-card") {
                 div("card-body") {
@@ -345,7 +348,6 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
             for (pIdx in 0..lastPage()) {
                 (state.pages[pIdx] ?: emptyPage).forEach userLoop@{ it ->
                     beatmapInfo {
-                        // key = it.id
                         map = it
                         version = it?.let { if (props.wip) it.latestVersion() else it.publishedVersion() }
                         modal = props.modal

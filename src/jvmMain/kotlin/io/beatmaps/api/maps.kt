@@ -16,8 +16,12 @@ import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
+import io.beatmaps.common.dbo.Beatmap.joinVersions
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.ModLog
+import io.beatmaps.common.dbo.Playlist
+import io.beatmaps.common.dbo.PlaylistDao
+import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
@@ -54,6 +58,7 @@ import java.lang.Integer.toHexString
     @Location("/download/key/{key}") data class BeatsaverDownload(val key: String, val api: MapsApi)
     @Location("/maps/beatsaver/{key}") data class Beatsaver(val key: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/id/{id}") data class Detail(val id: String, @Ignore val api: MapsApi)
+    @Location("/maps/id/{id}/playlists") data class InPlaylists(val id: String, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/hash/{hash}") data class ByHash(
         @Description("Up to 50 hashes seperated by commas")
         val hash: String,
@@ -189,8 +194,10 @@ fun Route.mapDetailRoute() {
         }
     }
 
-    get<MapsApi.Detail>("Get map information".responds(ok<MapDetail>()).responds(notFound())) {
+    get<MapsApi.Detail>("Get map information".responds(ok<MapDetail>(), notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
+        val sess = call.sessions.get<Session>()
+        val isAdmin = sess?.isAdmin() != true
         val r = try {
             transaction {
                 Beatmap
@@ -199,10 +206,10 @@ fun Route.mapDetailRoute() {
                     .joinCurator()
                     .select {
                         (Beatmap.id eq it.id.toInt(16)).let {
-                            if (call.sessions.get<Session>()?.isAdmin() != true) {
-                                it and Beatmap.deletedAt.isNull()
-                            } else {
+                            if (isAdmin) {
                                 it
+                            } else {
+                                it and Beatmap.deletedAt.isNull()
                             }
                         }
                     }
@@ -217,10 +224,35 @@ fun Route.mapDetailRoute() {
             null
         }
 
-        if (r == null) {
-            call.respond(HttpStatusCode.NotFound)
-        } else {
+        if (r != null && (r.publishedVersion() != null || r.uploader.id == sess?.userId || sess?.testplay == true || isAdmin)) {
             call.respond(r)
+        } else {
+            call.respond(HttpStatusCode.NotFound)
+        }
+    }
+
+    get<MapsApi.InPlaylists> {
+        val mapId = it.id
+
+        requireAuthorization {
+            try {
+                transaction {
+                    Playlist.joinMaps {
+                        PlaylistMap.mapId eq mapId.toInt(16)
+                    }.select {
+                        Playlist.owner eq it.userId
+                    }.map { row ->
+                        PlaylistDao.wrapRow(row) to (row.getOrNull(PlaylistMap.id) != null)
+                    }
+                }.map { pmd -> InPlaylist(PlaylistBasic.from(pmd.first, cdnPrefix()), pmd.second) }
+            } catch (_: NumberFormatException) {
+                null
+            }.let { inPlaylists ->
+                when (inPlaylists) {
+                    null -> call.respond(HttpStatusCode.NotFound)
+                    else -> call.respond(inPlaylists)
+                }
+            }
         }
     }
 
@@ -280,7 +312,7 @@ fun Route.mapDetailRoute() {
         }
     }
 
-    get<MapsApi.ByHash>("Get map(s) for a map hash".responds(ok<MapDetail>()).responds(notFound())) {
+    get<MapsApi.ByHash>("Get map(s) for a map hash".responds(ok<MapDetail>(), notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
         val r = transaction {
             val versions = Versions

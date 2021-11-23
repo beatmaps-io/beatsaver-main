@@ -4,6 +4,7 @@ import ch.compile.recaptcha.ReCaptchaVerify
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.ObjectWriter
 import io.beatmaps.api.FailedUploadResponse
+import io.beatmaps.api.handleMultipart
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.BSPrettyPrinter
 import io.beatmaps.common.Config
@@ -33,7 +34,6 @@ import io.beatmaps.common.zip.sharedInsert
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session
 import io.ktor.application.call
-import io.ktor.features.origin
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
@@ -47,8 +47,6 @@ import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toKotlinInstant
 import net.coobird.thumbnailator.Thumbnails
@@ -151,73 +149,52 @@ fun Route.uploadController() {
             "upload-${System.currentTimeMillis()}-${session.userId.hashCode()}.zip"
         )
 
-        val multipart = call.receiveMultipart()
-        val dataMap = mutableMapOf<String, String>()
         val md = MessageDigest.getInstance("SHA1")
         var extractedInfoTmp: ExtractedInfo? = null
-        var recaptchaSuccess = false
 
-        multipart.forEachPart { part ->
-            if (part is PartData.FormItem) {
-                // Process recaptcha immediately as it is time-critical
-                if (part.name.toString() == "recaptcha") {
-                    recaptchaSuccess = if (reCaptchaVerify == null) {
-                        uploadLogger.warning("ReCAPTCHA not setup. Allowing request anyway")
-                        true
-                    } else {
-                        val verifyResponse = withContext(Dispatchers.IO) {
-                            reCaptchaVerify.verify(part.value, call.request.origin.remoteHost)
+        val multipart = call.handleMultipart { part ->
+            uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
+            extractedInfoTmp = part.streamProvider().use { its ->
+                try {
+                    file.outputStream().buffered().use {
+                        its.copyToSuspend(it, sizeLimit = currentLimit * 1024 * 1024)
+                    }.run {
+                        DigestOutputStream(OutputStream.nullOutputStream(), md).use { dos ->
+                            openZip(file) {
+                                validateFiles(dos)
+                            }
                         }
-
-                        verifyResponse.isSuccess || throw UploadException("Could not verify user [${verifyResponse.errorCodes.joinToString(", ")}]")
                     }
-                }
-
-                dataMap[part.name.toString()] = part.value
-            } else if (part is PartData.FileItem) {
-                uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
-                extractedInfoTmp = part.streamProvider().use { its ->
-                    try {
-                        file.outputStream().buffered().use {
-                            its.copyToSuspend(it, sizeLimit = currentLimit * 1024 * 1024)
-                        }.run {
-                            DigestOutputStream(OutputStream.nullOutputStream(), md).use { dos ->
-                                openZip(file) {
-                                    validateFiles(dos)
-                                }
-                            }
+                } catch (e: ZipException) {
+                    if (file.exists()) {
+                        val rar = file.inputStream().use {
+                            String(it.readNBytes(4)) == "Rar!"
                         }
-                    } catch (e: ZipException) {
-                        if (file.exists()) {
-                            val rar = file.inputStream().use {
-                                String(it.readNBytes(4)) == "Rar!"
-                            }
 
-                            if (rar) {
-                                file.delete()
-                                throw UploadException("Don't upload rar files. Use the package button in your map editor.")
-                            }
+                        if (rar) {
+                            file.delete()
+                            throw UploadException("Don't upload rar files. Use the package button in your map editor.")
                         }
-                        file.delete()
-                        throw UploadException("Error opening zip file")
-                    } catch (e: JsonMappingException) {
-                        file.delete()
-                        throw UploadException("Could not parse json")
-                    } catch (e: ZipHelperException) {
-                        file.delete()
-                        throw UploadException(e.msg)
-                    } catch (e: CopyException) {
-                        file.delete()
-                        throw UploadException("Zip file too big")
-                    } catch (e: Exception) {
-                        file.delete()
-                        throw e
                     }
+                    file.delete()
+                    throw UploadException("Error opening zip file")
+                } catch (e: JsonMappingException) {
+                    file.delete()
+                    throw UploadException("Could not parse json")
+                } catch (e: ZipHelperException) {
+                    file.delete()
+                    throw UploadException(e.msg)
+                } catch (e: CopyException) {
+                    file.delete()
+                    throw UploadException("Zip file too big")
+                } catch (e: Exception) {
+                    file.delete()
+                    throw e
                 }
             }
         }
 
-        recaptchaSuccess || throw UploadException("Missing recaptcha?")
+        multipart.recaptchaSuccess || throw UploadException("Missing recaptcha?")
 
         val newMapId = transaction {
             // Process upload
@@ -258,7 +235,7 @@ fun Route.uploadController() {
 
             val newMap = try {
                 fun insertOrUpdate() =
-                    dataMap["mapId"]?.toInt()?.let { mapId ->
+                    multipart.dataMap["mapId"]?.toInt()?.let { mapId ->
                         fun updateIt() = Beatmap.updateReturning(
                             {
                                 (Beatmap.id eq mapId) and (Beatmap.uploader eq session.userId)
@@ -286,13 +263,13 @@ fun Route.uploadController() {
                             }
                         }
                     } ?: Beatmap.insertAndGetId {
-                        it[name] = (dataMap["title"] ?: "").take(1000)
-                        it[description] = (dataMap["description"] ?: "").take(10000)
+                        it[name] = (multipart.dataMap["title"] ?: "").take(1000)
+                        it[description] = (multipart.dataMap["description"] ?: "").take(10000)
                         it[uploader] = EntityID(session.userId, User)
 
                         setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
 
-                        val declaredAsAI = (dataMap["beatsage"] ?: "").isNotEmpty()
+                        val declaredAsAI = (multipart.dataMap["beatsage"] ?: "").isNotEmpty()
                         it[automapper] = declaredAsAI || extractedInfo.score < -4
                         it[ai] = declaredAsAI
 

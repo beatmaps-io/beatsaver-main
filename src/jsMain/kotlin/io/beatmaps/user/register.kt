@@ -3,8 +3,10 @@ package io.beatmaps.user
 import external.Axios
 import external.ReCAPTCHA
 import external.generateConfig
+import external.recaptcha
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.RegisterRequest
+import io.beatmaps.common.Config
 import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
@@ -79,7 +81,7 @@ class SignupPage : RComponent<RProps, SignupPageState>() {
 
                         captchaRef.current?.executeAsync()?.then { captcha ->
                             Axios.post<ActionResponse>(
-                                "/api/users/register",
+                                "${Config.apibase}/users/register",
                                 RegisterRequest(
                                     captcha,
                                     usernameRef.current?.value ?: "",
@@ -168,11 +170,7 @@ class SignupPage : RComponent<RProps, SignupPageState>() {
             }
         }
 
-        ReCAPTCHA.default {
-            attrs.sitekey = "6LdMpxUaAAAAAA6a3Fb2BOLQk9KO8wCSZ-a_YIaH"
-            attrs.size = "invisible"
-            ref = captchaRef
-        }
+        recaptcha(captchaRef)
     }
 }
 

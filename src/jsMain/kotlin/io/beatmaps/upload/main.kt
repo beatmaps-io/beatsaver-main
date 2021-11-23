@@ -4,6 +4,7 @@ import external.AxiosProgress
 import external.AxiosRequestConfig
 import external.Dropzone
 import external.ReCAPTCHA
+import external.recaptcha
 import io.beatmaps.setPageTitle
 import io.beatmaps.upload.simple
 import kotlinx.html.InputType
@@ -171,11 +172,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                             }
                         }
 
-                        ReCAPTCHA.default {
-                            attrs.sitekey = "6LdMpxUaAAAAAA6a3Fb2BOLQk9KO8wCSZ-a_YIaH"
-                            attrs.size = "invisible"
-                            ref = captchaRef
-                        }
+                        recaptcha(captchaRef)
                     }
                 }
             }

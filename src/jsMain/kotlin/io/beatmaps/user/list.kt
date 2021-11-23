@@ -107,7 +107,7 @@ class UserList : RComponent<UserListProps, UserListState>() {
             loading = true
         }
 
-        axiosGet<Array<UserDetail>>("/api/users/list/$toLoad").then {
+        axiosGet<Array<UserDetail>>("${Config.apibase}/users/list/$toLoad").then {
             val shouldScroll = state.scroll
             setState {
                 loading = it.data.isEmpty()

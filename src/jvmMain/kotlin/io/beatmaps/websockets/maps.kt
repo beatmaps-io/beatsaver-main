@@ -7,6 +7,7 @@ import io.beatmaps.common.consumeAck
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
+import io.beatmaps.common.dbo.Beatmap.joinVersions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.rabbitOptional
 import io.ktor.routing.Route

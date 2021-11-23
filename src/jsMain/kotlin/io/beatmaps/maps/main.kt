@@ -1,10 +1,10 @@
 package io.beatmaps.maps
 
 import external.axiosGet
-import io.beatmaps.UserData
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.Config
+import io.beatmaps.globalContext
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
 import io.beatmaps.maps.testplay.testplay
@@ -21,7 +21,6 @@ import react.router.dom.RouteResultHistory
 import react.setState
 
 external interface MapPageProps : RProps {
-    var userData: UserData?
     var history: RouteResultHistory
     var mapKey: String
     var beatsaver: Boolean
@@ -64,62 +63,64 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
     }
 
     override fun RBuilder.render() {
-        state.map?.let {
-            val version = it.publishedVersion()
-            val loggedInLocal = props.userData?.userId
-            val isOwnerLocal = loggedInLocal == it.uploader.id
+        globalContext.Consumer { userData ->
+            state.map?.let {
+                val version = it.publishedVersion()
+                val loggedInLocal = userData?.userId
+                val isOwnerLocal = loggedInLocal == it.uploader.id
 
-            if (version == null && it.deletedAt == null) {
-                testplay {
-                    mapInfo = it
-                    isOwner = isOwnerLocal
-                    isAdmin = props.userData?.admin
-                    loggedInId = loggedInLocal
-                    refreshPage = {
-                        loadMap()
-                        window.scrollTo(0.0, 0.0)
-                    }
-                    history = props.history
-                    updateMapinfo = {
-                        setState {
-                            map = it
+                if (version == null && it.deletedAt == null) {
+                    testplay {
+                        mapInfo = it
+                        isOwner = isOwnerLocal
+                        isAdmin = userData?.admin
+                        loggedInId = loggedInLocal
+                        refreshPage = {
+                            loadMap()
+                            window.scrollTo(0.0, 0.0)
                         }
-                    }
-                }
-            } else {
-                modal {
-                    ref = modalRef
-                }
-
-                mapInfo {
-                    mapInfo = it
-                    isOwner = isOwnerLocal
-                    isAdmin = props.userData?.admin
-                    modal = modalRef
-                    reloadMap = ::loadMap
-                    deleteMap = {
-                        props.history.push("/profile")
-                    }
-                    updateMapinfo = {
-                        setState {
-                            map = it
-                        }
-                    }
-                }
-                div("row mt-3") {
-                    infoTable {
-                        map = it
-                        selected = state.selectedDiff
-                        changeSelectedDiff = {
+                        history = props.history
+                        updateMapinfo = {
                             setState {
-                                selectedDiff = it
+                                map = it
                             }
                         }
                     }
-                    if (version != null && it.deletedAt == null) {
-                        scoreTable {
-                            mapKey = version.hash
+                } else {
+                    modal {
+                        ref = modalRef
+                    }
+
+                    mapInfo {
+                        mapInfo = it
+                        isOwner = isOwnerLocal
+                        isAdmin = userData?.admin
+                        modal = modalRef
+                        reloadMap = ::loadMap
+                        deleteMap = {
+                            props.history.push("/profile")
+                        }
+                        updateMapinfo = {
+                            setState {
+                                map = it
+                            }
+                        }
+                    }
+                    div("row mt-3") {
+                        infoTable {
+                            map = it
                             selected = state.selectedDiff
+                            changeSelectedDiff = {
+                                setState {
+                                    selectedDiff = it
+                                }
+                            }
+                        }
+                        if (version != null && it.deletedAt == null) {
+                            scoreTable {
+                                mapKey = version.hash
+                                selected = state.selectedDiff
+                            }
                         }
                     }
                 }

@@ -4,6 +4,7 @@ import external.Axios
 import external.generateConfig
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ResetRequest
+import io.beatmaps.common.Config
 import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
@@ -63,7 +64,7 @@ class ResetPage : RComponent<ResetPageProps, ResetPageState>() {
                     }
 
                     Axios.post<ActionResponse>(
-                        "/api/users/reset",
+                        "${Config.apibase}/users/reset",
                         ResetRequest(
                             props.jwt,
                             passwordRef.current?.value ?: "",
