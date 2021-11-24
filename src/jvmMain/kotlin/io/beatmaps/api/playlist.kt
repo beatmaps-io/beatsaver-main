@@ -10,6 +10,8 @@ import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.cdnPrefix
 import io.beatmaps.common.Config
+import io.beatmaps.common.DeletedPlaylistData
+import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.cleanString
 import io.beatmaps.common.db.NowExpression
@@ -20,6 +22,7 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Beatmap.joinCurator
 import io.beatmaps.common.dbo.Beatmap.joinUploader
 import io.beatmaps.common.dbo.Beatmap.joinVersions
+import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.Playlist.joinOwner
 import io.beatmaps.common.dbo.PlaylistDao
@@ -484,7 +487,7 @@ fun Route.playlistRoute() {
                 }
             }
 
-            transaction {
+            val beforePlaylist = transaction {
                 Playlist.select(query).firstOrNull()?.let { PlaylistFull.from(it, cdnPrefix()) }
             } ?: throw UploadException("Playlist not found")
 
@@ -500,6 +503,7 @@ fun Route.playlistRoute() {
             }
 
             val shouldDelete = multipart.dataMap["deleted"].toBoolean()
+            val newDescription = multipart.dataMap["description"] ?: ""
             val toCreate = PlaylistBasic(
                 0, "",
                 multipart.dataMap["name"] ?: "",
@@ -513,22 +517,36 @@ fun Route.playlistRoute() {
                 }
             }
 
-            fun updatePlaylist() = transaction {
-                Playlist.update({
-                    query
-                }) {
-                    if (shouldDelete) {
-                        it[deletedAt] = NowExpression(deletedAt.columnType)
-                    } else {
-                        it[name] = toCreate.name
-                        it[description] = multipart.dataMap["description"] ?: ""
-                        it[public] = toCreate.public
-                    }
-                    it[updatedAt] = NowExpression(updatedAt.columnType)
-                }
-            } > 0
+            transaction {
+                fun updatePlaylist() =
+                    Playlist.update({
+                        query
+                    }) {
+                        if (shouldDelete) {
+                            it[deletedAt] = NowExpression(deletedAt.columnType)
+                        } else {
+                            it[name] = toCreate.name
+                            it[description] = newDescription
+                            it[public] = toCreate.public
+                        }
+                        it[updatedAt] = NowExpression(updatedAt.columnType)
+                    } > 0 || throw UploadException("Update failed")
 
-            updatePlaylist() || throw UploadException("Update failed")
+                updatePlaylist().also {
+                    if (it && sess.isAdmin()) {
+                        ModLog.insert(
+                            sess.userId,
+                            null,
+                            if (shouldDelete) {
+                                DeletedPlaylistData(req.id,"")
+                            } else {
+                                EditPlaylistData(req.id, beforePlaylist.name, beforePlaylist.description, beforePlaylist.public, toCreate.name, newDescription, toCreate.public)
+                            },
+                            beforePlaylist.owner?.id ?: 0
+                        )
+                    }
+                }
+            }
 
             call.respond(HttpStatusCode.OK)
         }
