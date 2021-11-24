@@ -32,6 +32,7 @@ import io.ktor.routing.Route
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.sql.CustomFunction
+import org.jetbrains.exposed.sql.ExpressionWithColumnType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
@@ -68,27 +69,16 @@ import java.lang.Integer.toHexString
 
 fun <T> Op<Boolean>.notNull(b: T?, block: (T) -> Op<Boolean>) = if (b == null) this else this.and(block(b))
 
-fun Route.searchRoute() {
-    options<SearchApi.Text> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    val quotedPattern = Regex("\"([^\"]*)\"")
-    get<SearchApi.Text>("Search for maps".responds(ok<SearchResponse>())) {
-        call.response.header("Access-Control-Allow-Origin", "*")
-
-        val searchFields = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
-        val searchIndex = unaccent(searchFields)
-        val originalQuery = it.q?.replace("%", "\\%")
-
-        // TODO: Move parsing to its own function
-        val matches = quotedPattern.findAll(originalQuery ?: "")
-        val quotedSections = matches.map { match -> match.groupValues[1] }.toList()
-        val withoutQuotedSections = quotedPattern.split(originalQuery ?: "").filter { s -> s.isNotBlank() }.joinToString(" ") { s -> s.trim() }
-
-        val (mappers, nonmappers) = withoutQuotedSections.split(' ').partition { s -> s.startsWith("mapper:") }
-        val userSubQuery = if (mappers.isNotEmpty()) {
+class SearchParams(
+    val escapedQuery: String?,
+    private val searchIndex: ExpressionWithColumnType<String>,
+    private val query: String,
+    private val quotedSections: List<String>,
+    private val bothWithoutQuotes: String,
+    private val mappers: List<String>
+) {
+    val userSubQuery by lazy {
+        if (mappers.isNotEmpty()) {
             User
                 .slice(User.id)
                 .select {
@@ -97,26 +87,64 @@ fun Route.searchRoute() {
         } else {
             null
         }
-        val query = nonmappers.joinToString(" ")
-        val bothWithoutQuotes = (nonmappers + quotedSections).joinToString(" ")
-        val similarRank = CustomFunction<String>("substring_similarity", searchIndex.columnType, unaccent(bothWithoutQuotes), searchIndex)
-        // Parsing complete
+    }
+    val similarRank by lazy { CustomFunction<String>("substring_similarity", searchIndex.columnType, unaccent(bothWithoutQuotes), searchIndex) }
 
-        val actualSortOrder = when {
-            originalQuery != null && bothWithoutQuotes.replace(" ", "").length > 3 && it.sortOrder == SearchOrder.Relevance ->
+    fun validateSearchOrder(originalOrder: SearchOrder) =
+        when {
+            escapedQuery != null && bothWithoutQuotes.replace(" ", "").length > 3 && originalOrder == SearchOrder.Relevance ->
                 SearchOrder.Relevance
-            it.sortOrder == SearchOrder.Rating ->
-                SearchOrder.Rating
-            else ->
-                SearchOrder.Latest
+            originalOrder == SearchOrder.Rating -> SearchOrder.Rating
+            else -> SearchOrder.Latest
         }
 
+    fun applyQuery(q: Op<Boolean>) =
+        if (query.isBlank()) {
+            q
+        } else if (query.length > 3) {
+            q.and(searchIndex similar unaccent(query))
+        } else {
+            q.and(searchIndex ilike wildcard(unaccent(query)))
+        }.let {
+            quotedSections.fold(it) { p, section ->
+                p.and(searchIndex ilike wildcard(unaccent(section)))
+            }
+        }
+}
+private val quotedPattern = Regex("\"([^\"]*)\"")
+fun parseSearchQuery(q: String?, searchFields: ExpressionWithColumnType<String>): SearchParams {
+    val originalQuery = q?.replace("%", "\\%")
+
+    val matches = quotedPattern.findAll(originalQuery ?: "")
+    val quotedSections = matches.map { match -> match.groupValues[1] }.toList()
+    val withoutQuotedSections = quotedPattern.split(originalQuery ?: "").filter { s -> s.isNotBlank() }.joinToString(" ") { s -> s.trim() }
+
+    val (mappers, nonmappers) = withoutQuotedSections.split(' ').partition { s -> s.startsWith("mapper:") }
+    val query = nonmappers.joinToString(" ")
+    val bothWithoutQuotes = (nonmappers + quotedSections).joinToString(" ")
+
+    return SearchParams(originalQuery, unaccent(searchFields), query, quotedSections, bothWithoutQuotes, mappers)
+}
+
+fun Route.searchRoute() {
+    options<SearchApi.Text> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
+    }
+
+    get<SearchApi.Text>("Search for maps".responds(ok<SearchResponse>())) {
+        call.response.header("Access-Control-Allow-Origin", "*")
+
+        val searchFields = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
+        val searchInfo = parseSearchQuery(it.q, searchFields)
+        val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
+
         newSuspendedTransaction {
-            if (originalQuery != null && originalQuery.startsWith("key:")) {
+            if (searchInfo.escapedQuery != null && searchInfo.escapedQuery.startsWith("key:")) {
                 Beatmap
                     .slice(Beatmap.id)
                     .select {
-                        Beatmap.id eq originalQuery.substring(4).toInt(16) and (Beatmap.deletedAt.isNull())
+                        Beatmap.id eq searchInfo.escapedQuery.substring(4).toInt(16) and (Beatmap.deletedAt.isNull())
                     }
                     .limit(1).firstOrNull()?.let { r ->
                         call.respond(SearchResponse(redirect = toHexString(r[Beatmap.id].value)))
@@ -130,7 +158,7 @@ fun Route.searchRoute() {
                 .joinVersions(true)
                 .joinUploader()
                 .joinCurator()
-                .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(similarRank) else listOf()) + Beatmap.columns + Versions.columns + Difficulty.columns + User.columns)
+                .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) + Beatmap.columns + Versions.columns + Difficulty.columns + User.columns)
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
@@ -140,7 +168,7 @@ fun Route.searchRoute() {
                                     Beatmap.id.distinctOn(
                                         Beatmap.id,
                                         when (actualSortOrder) {
-                                            SearchOrder.Relevance -> similarRank
+                                            SearchOrder.Relevance -> searchInfo.similarRank
                                             SearchOrder.Rating -> Beatmap.score
                                             SearchOrder.Latest -> Beatmap.uploaded
                                         }
@@ -151,20 +179,7 @@ fun Route.searchRoute() {
                             )
                             .select {
                                 Beatmap.deletedAt.isNull()
-                                    .let { q ->
-                                        if (query.isBlank()) {
-                                            q
-                                        } else if (query.length > 3) {
-                                            q.and(searchIndex similar unaccent(query))
-                                        } else {
-                                            q.and(searchIndex ilike wildcard(unaccent(query)))
-                                        }
-                                    }
-                                    .let { q ->
-                                        quotedSections.fold(q) { p, it ->
-                                            p.and(searchIndex ilike wildcard(unaccent(it)))
-                                        }
-                                    }
+                                    .let { q -> searchInfo.applyQuery(q) }
                                     .let { q ->
                                         // Doesn't quite make sense but we want to exclude beat sage by default
                                         when (it.automapper) {
@@ -173,7 +188,7 @@ fun Route.searchRoute() {
                                             null -> q.and(Beatmap.automapper eq false)
                                         }
                                     }
-                                    .notNull(userSubQuery) { o -> Beatmap.uploader inSubQuery o }
+                                    .notNull(searchInfo.userSubQuery) { o -> Beatmap.uploader inSubQuery o }
                                     .notNull(it.chroma) { o -> Beatmap.chroma eq o }
                                     .notNull(it.noodle) { o -> Beatmap.noodle eq o }
                                     .notNull(it.ranked) { o -> Beatmap.ranked eq o }
@@ -193,7 +208,7 @@ fun Route.searchRoute() {
                             }
                             .orderBy(
                                 when (actualSortOrder) {
-                                    SearchOrder.Relevance -> similarRank
+                                    SearchOrder.Relevance -> searchInfo.similarRank
                                     SearchOrder.Rating -> Beatmap.score
                                     SearchOrder.Latest -> Beatmap.uploaded
                                 },
@@ -203,7 +218,7 @@ fun Route.searchRoute() {
                     )
                 }.let { q ->
                     when (actualSortOrder) {
-                        SearchOrder.Relevance -> q.orderBy(similarRank, SortOrder.DESC)
+                        SearchOrder.Relevance -> q.orderBy(searchInfo.similarRank, SortOrder.DESC)
                         SearchOrder.Rating -> q.orderBy(Beatmap.score, SortOrder.DESC)
                         SearchOrder.Latest -> q
                     }

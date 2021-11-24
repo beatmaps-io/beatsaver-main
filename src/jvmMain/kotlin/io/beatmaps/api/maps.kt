@@ -197,7 +197,7 @@ fun Route.mapDetailRoute() {
     get<MapsApi.Detail>("Get map information".responds(ok<MapDetail>(), notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
         val sess = call.sessions.get<Session>()
-        val isAdmin = sess?.isAdmin() != true
+        val isAdmin = sess?.isAdmin() == true
         val r = try {
             transaction {
                 Beatmap
@@ -240,7 +240,7 @@ fun Route.mapDetailRoute() {
                     Playlist.joinMaps {
                         PlaylistMap.mapId eq mapId.toInt(16)
                     }.select {
-                        Playlist.owner eq it.userId
+                        Playlist.owner eq it.userId and Playlist.deletedAt.isNull()
                     }.map { row ->
                         PlaylistDao.wrapRow(row) to (row.getOrNull(PlaylistMap.id) != null)
                     }

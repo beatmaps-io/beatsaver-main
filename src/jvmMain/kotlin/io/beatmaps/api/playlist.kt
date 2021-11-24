@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+import de.nielsfalk.ktor.swagger.DefaultValue
 import de.nielsfalk.ktor.swagger.Description
 import de.nielsfalk.ktor.swagger.Ignore
 import de.nielsfalk.ktor.swagger.get
@@ -12,6 +13,7 @@ import io.beatmaps.common.Config
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.cleanString
 import io.beatmaps.common.db.NowExpression
+import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
@@ -23,6 +25,7 @@ import io.beatmaps.common.dbo.Playlist.joinOwner
 import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.PlaylistMapDao
+import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.handleOwner
 import io.beatmaps.common.localPlaylistCoverFolder
@@ -56,12 +59,15 @@ import kotlinx.datetime.toJavaInstant
 import net.coobird.thumbnailator.Thumbnails
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import org.valiktor.constraints.NotBlank
@@ -74,7 +80,7 @@ import java.nio.file.Files
 const val prefix: String = "/playlists"
 @Location("/api") class PlaylistApi {
     @Location("$prefix/id/{id}") data class Detail(val id: Int, val api: PlaylistApi)
-    @Group("Playlists") @Location("$prefix/id/{id}/{page}") data class DetailWithPage(val id: Int, val page: Long, @Ignore val api: PlaylistApi)
+    @Group("Playlists") @Location("$prefix/id/{id}/{page}") data class DetailWithPage(val id: Int, @DefaultValue("0") val page: Long, @Ignore val api: PlaylistApi)
     @Location("$prefix/id/{id}/download/{filename?}") data class Download(val id: Int, val filename: String? = null, val api: PlaylistApi)
     @Location("$prefix/id/{id}/add") data class Add(val id: Int, val api: PlaylistApi)
     @Location("$prefix/id/{id}/edit") data class Edit(val id: Int, val api: PlaylistApi)
@@ -88,6 +94,15 @@ const val prefix: String = "/playlists"
         val sort: LatestPlaylistSort? = LatestPlaylistSort.CREATED,
         @Ignore
         val api: PlaylistApi
+    )
+    @Group("Playlists") @Location("$prefix/search/{page}")
+    data class Text(
+        val q: String? = "",
+        @DefaultValue("0") val page: Long = 0,
+        val sortOrder: SearchOrder = SearchOrder.Relevance,
+        val from: Instant? = null,
+        val to: Instant? = null,
+        @Ignore val api: PlaylistApi
     )
 }
 
@@ -166,12 +181,57 @@ fun Route.playlistRoute() {
         call.respond(PlaylistSearchResponse(playlists))
     }
 
-    fun getDetail(id: Int, cdnPrefix: String, userId: Int?, page: Long?): PlaylistPage? {
+    options<PlaylistApi.Text> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
+    }
+
+    get<PlaylistApi.Text>("Search for playlists".responds(ok<SearchResponse>())) {
+        call.response.header("Access-Control-Allow-Origin", "*")
+
+        val searchFields = PgConcat(" ", Playlist.name, Playlist.description)
+        val searchInfo = parseSearchQuery(it.q, searchFields)
+        val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
+
+        newSuspendedTransaction {
+            val playlists = Playlist
+                .joinOwner()
+                .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) + Playlist.columns + User.columns)
+                .select {
+                    (Playlist.deletedAt.isNull() and Playlist.public)
+                        .let { q -> searchInfo.applyQuery(q) }
+                        .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
+                        .notNull(it.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }
+                        .notNull(it.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
+                }
+                .orderBy(
+                    when (actualSortOrder) {
+                        SearchOrder.Relevance -> searchInfo.similarRank
+                        SearchOrder.Rating, SearchOrder.Latest -> Playlist.createdAt
+                    },
+                    SortOrder.DESC
+                )
+                .limit(it.page)
+                .map { playlist ->
+                    PlaylistFull.from(playlist, cdnPrefix())
+                }
+
+            call.respond(PlaylistSearchResponse(playlists))
+        }
+    }
+
+    fun getDetail(id: Int, cdnPrefix: String, userId: Int?, isAdmin: Boolean, page: Long?): PlaylistPage? {
         val detailPage = transaction {
             val playlist = Playlist
                 .joinOwner()
                 .select {
-                    (Playlist.id eq id) and Playlist.deletedAt.isNull()
+                    (Playlist.id eq id).let {
+                        if (isAdmin) {
+                            it
+                        } else {
+                            it and Playlist.deletedAt.isNull()
+                        }
+                    }
                 }
                 .handleOwner()
                 .firstOrNull()?.let {
@@ -209,7 +269,7 @@ fun Route.playlistRoute() {
             PlaylistPage(playlist, mapsWithOrder)
         }
 
-        return if (detailPage.playlist != null && (detailPage.playlist.public || detailPage.playlist.owner?.id == userId)) {
+        return if (detailPage.playlist != null && (detailPage.playlist.public || detailPage.playlist.owner?.id == userId || isAdmin)) {
             detailPage
         } else {
             null
@@ -218,12 +278,12 @@ fun Route.playlistRoute() {
 
     get<PlaylistApi.Detail> { req ->
         val sess = call.sessions.get<Session>()
-        getDetail(req.id, cdnPrefix(), sess?.userId, null)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
+        getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, null)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
     }
 
     get<PlaylistApi.DetailWithPage>("Get playlist detail".responds(ok<PlaylistPage>(), notFound())) { req ->
         val sess = call.sessions.get<Session>()
-        getDetail(req.id, cdnPrefix(), sess?.userId, req.page)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
+        getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, req.page)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
     }
 
     get<PlaylistApi.ByUser> { req ->
@@ -416,10 +476,16 @@ fun Route.playlistRoute() {
         requireAuthorization { sess ->
             val localFile = File(localPlaylistCoverFolder(), "${req.id}.jpg")
 
+            val query = (Playlist.id eq req.id and Playlist.deletedAt.isNull()).let { q ->
+                if (sess.isAdmin()) {
+                    q
+                } else {
+                    q.and(Playlist.owner eq sess.userId)
+                }
+            }
+
             transaction {
-                Playlist.select {
-                    Playlist.id eq req.id and Playlist.deletedAt.isNull() and (Playlist.owner eq sess.userId)
-                }.firstOrNull()?.let { PlaylistFull.from(it, cdnPrefix()) }
+                Playlist.select(query).firstOrNull()?.let { PlaylistFull.from(it, cdnPrefix()) }
             } ?: throw UploadException("Playlist not found")
 
             val multipart = call.handleMultipart { part ->
@@ -449,7 +515,7 @@ fun Route.playlistRoute() {
 
             fun updatePlaylist() = transaction {
                 Playlist.update({
-                    Playlist.id eq req.id and Playlist.deletedAt.isNull() and (Playlist.owner eq sess.userId)
+                    query
                 }) {
                     if (shouldDelete) {
                         it[deletedAt] = NowExpression(deletedAt.columnType)

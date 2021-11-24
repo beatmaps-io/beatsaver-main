@@ -59,6 +59,6 @@ fun PlaylistBasic.Companion.from(row: ResultRow, cdnPrefix: String) = from(Playl
 
 fun PlaylistFull.Companion.from(other: PlaylistDao, cdnPrefix: String) = PlaylistFull(
     other.id.value, other.name, other.description, "${Config.cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.public, UserDetail.from(other.owner),
-    other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.songsChangedAt?.toKotlinInstant()
+    other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.songsChangedAt?.toKotlinInstant(), other.deletedAt?.toKotlinInstant()
 )
 fun PlaylistFull.Companion.from(row: ResultRow, cdnPrefix: String) = from(PlaylistDao.wrapRow(row), cdnPrefix)

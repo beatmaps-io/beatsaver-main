@@ -176,7 +176,11 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
             div("row mt-3") {
                 div("playlist-info col-lg-4") {
                     state.playlist?.let { pl ->
-                        if (state.playlist?.owner?.id == userData?.userId) {
+                        if (pl.deletedAt != null) {
+                            div("alert alert-danger text-center") {
+                                +"DELETED"
+                            }
+                        } else if (state.playlist?.owner?.id == userData?.userId || userData?.admin == true) {
                             div("btn-group") {
                                 routeLink("/playlists/${pl.playlistId}/edit", className = "btn btn-primary") {
                                     +"Edit"

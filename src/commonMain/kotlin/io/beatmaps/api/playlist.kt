@@ -32,7 +32,8 @@ data class PlaylistFull(
     val owner: UserDetail?,
     val createdAt: Instant,
     val updatedAt: Instant,
-    val songsChangedAt: Instant?
+    val songsChangedAt: Instant?,
+    val deletedAt: Instant? = null
 ) {
     companion object
 }
