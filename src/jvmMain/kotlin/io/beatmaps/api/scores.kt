@@ -9,6 +9,7 @@ import io.beatmaps.common.jackson
 import io.ktor.application.call
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
+import io.ktor.client.features.ClientRequestException
 import io.ktor.client.features.cookies.AcceptAllCookiesStorage
 import io.ktor.client.features.cookies.HttpCookies
 import io.ktor.client.request.get
@@ -49,13 +50,12 @@ data class SSLeaderboardInfo(
     val songSubName: String,
     val songAuthorName: String,
     val levelAuthorName: String,
-    val difficulty: Int,
-    val difficultyRaw: String,
+    val difficulty: SSLeaderboardInfoDiff,
     val maxScore: Int,
     val createdDate: Instant,
-    val rankedDate: Long,
-    val qualifiedDate: Long,
-    val lovedDate: Long,
+    val rankedDate: Instant?,
+    val qualifiedDate: Instant?,
+    val lovedDate: Instant?,
     val ranked: Boolean,
     val qualified: Boolean,
     val loved: Boolean,
@@ -74,7 +74,7 @@ data class SSLeaderboardInfo(
     )
 }
 
-data class SSLeaderboardInfoDiff(val leaderboardId: Int, val difficulty: Int)
+data class SSLeaderboardInfoDiff(val leaderboardId: Int, val difficulty: Int, val gameMode: String, val difficultyRaw: String)
 data class SSLeaderboardScore(
     val id: Long,
     val leaderboardPlayerInfo: SSLeaderboardPlayer,
@@ -129,6 +129,8 @@ suspend fun getLeaderboardInfo(hash: String, diff: EDifficulty = EDifficulty.Exp
         }.run {
             jackson.readValue<SSLeaderboardInfo>(this)
         }
+    } catch (e: ClientRequestException) {
+        null
     } catch (e: JacksonException) {
         e.printStackTrace()
         null
@@ -145,6 +147,8 @@ suspend fun getScores(hash: String, diff: EDifficulty = EDifficulty.ExpertPlus, 
         }.run {
             jackson.readValue<List<SSLeaderboardScore>>(this)
         }
+    } catch (e: ClientRequestException) {
+        null
     } catch (e: JacksonException) {
         e.printStackTrace()
         null
