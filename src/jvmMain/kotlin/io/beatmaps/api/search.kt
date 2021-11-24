@@ -13,6 +13,7 @@ import io.beatmaps.common.db.distinctOn
 import io.beatmaps.common.db.ilike
 import io.beatmaps.common.db.similar
 import io.beatmaps.common.db.unaccent
+import io.beatmaps.common.db.unaccentLiteral
 import io.beatmaps.common.db.wildcard
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Beatmap.joinCurator
@@ -71,6 +72,7 @@ fun <T> Op<Boolean>.notNull(b: T?, block: (T) -> Op<Boolean>) = if (b == null) t
 
 class SearchParams(
     val escapedQuery: String?,
+    private val useLiteral: Boolean,
     private val searchIndex: ExpressionWithColumnType<String>,
     private val query: String,
     private val quotedSections: List<String>,
@@ -88,7 +90,15 @@ class SearchParams(
             null
         }
     }
-    val similarRank by lazy { CustomFunction<String>("substring_similarity", searchIndex.columnType, unaccent(bothWithoutQuotes), searchIndex) }
+
+    val similarRank by lazy {
+        CustomFunction<String>(
+            "substring_similarity",
+            searchIndex.columnType,
+            (if (useLiteral) ::unaccentLiteral else ::unaccent).invoke(bothWithoutQuotes),
+            searchIndex
+        )
+    }
 
     fun validateSearchOrder(originalOrder: SearchOrder) =
         when {
@@ -112,7 +122,7 @@ class SearchParams(
         }
 }
 private val quotedPattern = Regex("\"([^\"]*)\"")
-fun parseSearchQuery(q: String?, searchFields: ExpressionWithColumnType<String>): SearchParams {
+fun parseSearchQuery(q: String?, searchFields: ExpressionWithColumnType<String>, useLiteral: Boolean = false): SearchParams {
     val originalQuery = q?.replace("%", "\\%")
 
     val matches = quotedPattern.findAll(originalQuery ?: "")
@@ -123,7 +133,7 @@ fun parseSearchQuery(q: String?, searchFields: ExpressionWithColumnType<String>)
     val query = nonmappers.joinToString(" ")
     val bothWithoutQuotes = (nonmappers + quotedSections).joinToString(" ")
 
-    return SearchParams(originalQuery, unaccent(searchFields), query, quotedSections, bothWithoutQuotes, mappers)
+    return SearchParams(originalQuery, useLiteral, unaccent(searchFields), query, quotedSections, bothWithoutQuotes, mappers)
 }
 
 fun Route.searchRoute() {
@@ -135,8 +145,9 @@ fun Route.searchRoute() {
     get<SearchApi.Text>("Search for maps".responds(ok<SearchResponse>())) {
         call.response.header("Access-Control-Allow-Origin", "*")
 
+        val needsDiff = it.minNps != null || it.maxNps != null
         val searchFields = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
-        val searchInfo = parseSearchQuery(it.q, searchFields)
+        val searchInfo = parseSearchQuery(it.q, searchFields, needsDiff)
         val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
 
         newSuspendedTransaction {
@@ -151,8 +162,6 @@ fun Route.searchRoute() {
                         return@newSuspendedTransaction
                     }
             }
-
-            val needsDiff = it.minNps != null || it.maxNps != null
 
             val beatmaps = Beatmap
                 .joinVersions(true)
