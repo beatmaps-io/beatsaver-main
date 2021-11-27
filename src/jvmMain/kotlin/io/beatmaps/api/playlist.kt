@@ -60,7 +60,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import net.coobird.thumbnailator.Thumbnails
-import org.jetbrains.exposed.sql.Join
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -80,6 +79,20 @@ import org.valiktor.functions.isNotBlank
 import org.valiktor.validate
 import java.io.File
 import java.nio.file.Files
+import java.util.Base64
+import kotlin.collections.Map
+import kotlin.collections.firstOrNull
+import kotlin.collections.joinToString
+import kotlin.collections.listOf
+import kotlin.collections.map
+import kotlin.collections.mapNotNull
+import kotlin.collections.mutableListOf
+import kotlin.collections.mutableMapOf
+import kotlin.collections.plus
+import kotlin.collections.set
+import kotlin.collections.sortedByDescending
+import kotlin.collections.toTypedArray
+import kotlin.collections.zip
 
 const val prefix: String = "/playlists"
 @Location("/api") class PlaylistApi {
@@ -356,6 +369,9 @@ fun Route.playlistRoute() {
         }
 
         if (playlist != null && (playlist.public || playlist.owner?.id == call.sessions.get<Session>()?.userId)) {
+            val localFile = File(localPlaylistCoverFolder(), "${playlist.playlistId}.jpg")
+            val imageStr = Base64.getEncoder().encodeToString(localFile.readBytes())
+
             val cleanName = cleanString("BeatSaver - ${playlist.name}.bplist")
             call.response.headers.append(HttpHeaders.ContentDisposition, "attachment; filename=\"${cleanName}\"")
             call.respond(
@@ -363,7 +379,7 @@ fun Route.playlistRoute() {
                     playlist.name,
                     playlist.owner?.name ?: "",
                     playlist.description,
-                    "",
+                    imageStr,
                     PlaylistCustomData("${Config.apiremotebase}/playlists/id/${playlist.playlistId}/download"),
                     playlistSongs
                 )
