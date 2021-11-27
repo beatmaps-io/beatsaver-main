@@ -60,6 +60,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import net.coobird.thumbnailator.Thumbnails
+import org.jetbrains.exposed.sql.Join
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -105,6 +106,7 @@ const val prefix: String = "/playlists"
         val sortOrder: SearchOrder = SearchOrder.Relevance,
         val from: Instant? = null,
         val to: Instant? = null,
+        val includeEmpty: Boolean? = null,
         @Ignore val api: PlaylistApi
     )
 }
@@ -198,6 +200,13 @@ fun Route.playlistRoute() {
 
         newSuspendedTransaction {
             val playlists = Playlist
+                .let { q ->
+                    if (it.includeEmpty != true) {
+                        q.joinMaps(type = JoinType.INNER)
+                    } else {
+                        q
+                    }
+                }
                 .joinOwner()
                 .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) + Playlist.columns + User.columns)
                 .select {
@@ -207,6 +216,7 @@ fun Route.playlistRoute() {
                         .notNull(it.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }
                         .notNull(it.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
                 }
+                .groupBy(Playlist.id, User.id)
                 .orderBy(
                     when (actualSortOrder) {
                         SearchOrder.Relevance -> searchInfo.similarRank
@@ -466,9 +476,6 @@ fun Route.playlistRoute() {
                 Files.move(temp.toPath(), localFile.toPath())
 
                 call.respond(newId.value)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                temp.delete()
             } finally {
                 temp.delete()
             }
@@ -533,7 +540,7 @@ fun Route.playlistRoute() {
                     } > 0 || throw UploadException("Update failed")
 
                 updatePlaylist().also {
-                    if (it && sess.isAdmin()) {
+                    if (it && sess.isAdmin() && beforePlaylist.owner?.id != sess.userId) {
                         ModLog.insert(
                             sess.userId,
                             null,
