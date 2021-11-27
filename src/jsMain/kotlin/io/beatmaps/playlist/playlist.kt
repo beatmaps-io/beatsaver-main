@@ -22,6 +22,7 @@ import kotlinx.html.CommonAttributeGroupFacade
 import kotlinx.html.classes
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
+import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.Event
 import org.w3c.xhr.FormData
 import react.RBuilder
@@ -35,6 +36,7 @@ import react.dom.div
 import react.dom.img
 import react.dom.p
 import react.dom.span
+import react.dom.textarea
 import react.ref
 import react.router.dom.RouteResultHistory
 import react.router.dom.routeLink
@@ -57,6 +59,7 @@ var CommonAttributeGroupFacade.onTransitionEndFunction: (Event) -> Unit
 @JsExport
 class Playlist : RComponent<PlaylistProps, PlaylistState>() {
     private val modalRef = createRef<ModalComponent>()
+    private val reasonRef = createRef<HTMLTextAreaElement>()
     private val itemsPerPage = 100
 
     override fun componentDidMount() {
@@ -149,6 +152,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
 
         val data = FormData()
         data.append("deleted", "true")
+        data.append("reason", reasonRef.current?.value ?: "")
 
         Axios.post<dynamic>(
             "${Config.apibase}/playlists/id/${props.id}/edit", data,
@@ -194,6 +198,14 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                                 bodyCallback = {
                                                     p {
                                                         +"Are you sure? This action cannot be reversed."
+                                                    }
+                                                    if (userData?.admin == true) {
+                                                        p {
+                                                            +"Reason for action:"
+                                                        }
+                                                        textarea(classes = "form-control") {
+                                                            ref = reasonRef
+                                                        }
                                                     }
                                                 },
                                                 buttons = listOf(ModalButton("YES, DELETE", "danger", ::delete), ModalButton("Cancel"))

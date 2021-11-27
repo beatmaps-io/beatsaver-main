@@ -80,19 +80,6 @@ import org.valiktor.validate
 import java.io.File
 import java.nio.file.Files
 import java.util.Base64
-import kotlin.collections.Map
-import kotlin.collections.firstOrNull
-import kotlin.collections.joinToString
-import kotlin.collections.listOf
-import kotlin.collections.map
-import kotlin.collections.mapNotNull
-import kotlin.collections.mutableListOf
-import kotlin.collections.mutableMapOf
-import kotlin.collections.plus
-import kotlin.collections.set
-import kotlin.collections.sortedByDescending
-import kotlin.collections.toTypedArray
-import kotlin.collections.zip
 
 const val prefix: String = "/playlists"
 @Location("/api") class PlaylistApi {
@@ -561,7 +548,7 @@ fun Route.playlistRoute() {
                             sess.userId,
                             null,
                             if (shouldDelete) {
-                                DeletedPlaylistData(req.id,"")
+                                DeletedPlaylistData(req.id, multipart.dataMap["reason"] ?: "")
                             } else {
                                 EditPlaylistData(req.id, beforePlaylist.name, beforePlaylist.description, beforePlaylist.public, toCreate.name, newDescription, toCreate.public)
                             },
