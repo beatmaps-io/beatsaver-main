@@ -149,6 +149,11 @@ fun Route.searchRoute() {
         val searchFields = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
         val searchInfo = parseSearchQuery(it.q, searchFields, needsDiff)
         val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
+        val sortArgs = when (actualSortOrder) {
+            SearchOrder.Relevance -> listOf(searchInfo.similarRank to SortOrder.DESC, Beatmap.score to SortOrder.DESC, Beatmap.uploaded to SortOrder.DESC)
+            SearchOrder.Rating -> listOf(Beatmap.score to SortOrder.DESC, Beatmap.uploaded to SortOrder.DESC)
+            SearchOrder.Latest -> listOf(Beatmap.uploaded to SortOrder.DESC)
+        }.toTypedArray()
 
         newSuspendedTransaction {
             if (searchInfo.escapedQuery != null && searchInfo.escapedQuery.startsWith("key:")) {
@@ -215,24 +220,11 @@ fun Route.searchRoute() {
                                     .notNull(it.me) { o -> Beatmap.me eq o }
                                     .notNull(it.cinema) { o -> Beatmap.cinema eq o }
                             }
-                            .orderBy(
-                                when (actualSortOrder) {
-                                    SearchOrder.Relevance -> searchInfo.similarRank
-                                    SearchOrder.Rating -> Beatmap.score
-                                    SearchOrder.Latest -> Beatmap.uploaded
-                                },
-                                SortOrder.DESC
-                            )
+                            .orderBy(*sortArgs)
                             .limit(it.page)
                     )
-                }.let { q ->
-                    when (actualSortOrder) {
-                        SearchOrder.Relevance -> q.orderBy(searchInfo.similarRank, SortOrder.DESC)
-                        SearchOrder.Rating -> q.orderBy(Beatmap.score, SortOrder.DESC)
-                        SearchOrder.Latest -> q
-                    }
                 }
-                .orderBy(Beatmap.uploaded, SortOrder.DESC)
+                .orderBy(*sortArgs)
                 .complexToBeatmap()
                 .map { m -> MapDetail.from(m, cdnPrefix()) }
 
