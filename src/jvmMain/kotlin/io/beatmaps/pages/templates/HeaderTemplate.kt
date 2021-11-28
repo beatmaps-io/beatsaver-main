@@ -1,5 +1,6 @@
 package io.beatmaps.pages.templates
 
+import io.beatmaps.common.Config
 import io.beatmaps.login.Session
 import io.ktor.html.Template
 import kotlinx.html.ButtonType
@@ -67,6 +68,13 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 }
                                 a("/policy/tos", classes = "dropdown-item") {
                                     +"Terms of Service"
+                                }
+                                div("dropdown-divider") {}
+                                a("https://github.com/beatmaps-io/beatsaver-main", classes = "dropdown-item") {
+                                    +"GitHub"
+                                }
+                                a("${Config.apiremotebase}/docs/", classes = "dropdown-item") {
+                                    +"API Docs"
                                 }
                             }
                         }
