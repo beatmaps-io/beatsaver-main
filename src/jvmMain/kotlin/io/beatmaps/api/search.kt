@@ -181,11 +181,7 @@ fun Route.searchRoute() {
                                 if (needsDiff) {
                                     Beatmap.id.distinctOn(
                                         Beatmap.id,
-                                        when (actualSortOrder) {
-                                            SearchOrder.Relevance -> searchInfo.similarRank
-                                            SearchOrder.Rating -> Beatmap.score
-                                            SearchOrder.Latest -> Beatmap.uploaded
-                                        }
+                                        *sortArgs.map { arg -> arg.first }.toTypedArray()
                                     )
                                 } else {
                                     Beatmap.id
