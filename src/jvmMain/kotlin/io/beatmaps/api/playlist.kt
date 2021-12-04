@@ -253,6 +253,8 @@ fun Route.playlistRoute() {
 
             val mapsWithOrder = page?.let { page ->
                 val mapsSubQuery = PlaylistMap
+                    .join(Beatmap, JoinType.INNER, PlaylistMap.mapId, Beatmap.id)
+                    .joinVersions()
                     .slice(PlaylistMap.mapId, PlaylistMap.order)
                     .select {
                         (PlaylistMap.playlistId eq id)
