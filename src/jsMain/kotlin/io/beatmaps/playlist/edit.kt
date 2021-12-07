@@ -172,6 +172,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                         input(type = InputType.text, classes = "form-control") {
                             key = "name"
                             ref = nameRef
+                            attrs.id = "name"
                             attrs.placeholder = "Name"
                             attrs.disabled = state.loading == true
                             attrs.required = true

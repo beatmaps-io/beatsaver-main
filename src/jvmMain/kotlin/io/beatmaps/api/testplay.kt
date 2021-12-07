@@ -7,10 +7,8 @@ import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.cdnPrefix
 import io.beatmaps.common.UnpublishData
-import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.client
-import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.isFalse
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
@@ -19,18 +17,17 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Beatmap.joinUploader
 import io.beatmaps.common.dbo.Beatmap.joinVersions
 import io.beatmaps.common.dbo.Difficulty
-import io.beatmaps.common.dbo.DifficultyDao
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Testplay
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
-import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.jackson
 import io.beatmaps.common.pub
 import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.login.Session
+import io.beatmaps.util.publishVersion
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import io.ktor.application.ApplicationCall
@@ -54,22 +51,19 @@ import io.ktor.sessions.sessions
 import io.ktor.util.pipeline.PipelineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
-import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
-import org.jetbrains.exposed.sql.QueryParameter
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
-import java.math.BigDecimal
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Date
@@ -251,80 +245,20 @@ fun Route.testplayRoute() {
 
     post<TestplayApi.State> {
         requireAuthorization { sess ->
-            val newState = call.receive<StateUpdate>()
+            val newState = call.receive<StateUpdate>().let {
+                if (it.state == EMapState.Published && it.scheduleAt != null) {
+                    it.copy(state = EMapState.Scheduled)
+                } else if (it.state == EMapState.Scheduled && it.scheduleAt == null) {
+                    it.copy(state = EMapState.Published)
+                } else {
+                    it
+                }
+            }
 
             val valid = transaction {
                 if (newState.state == EMapState.Published) {
-                    val publishingVersion = VersionsDao.wrapRow(
-                        Versions.select {
-                            Versions.hash eq newState.hash
-                        }.single()
-                    )
-
-                    val originalState = MapVersion.from(
-                        publishingVersion,
-                        cdnPrefix()
-                    )
-
-                    fun updateState() =
-                        Versions.join(Beatmap, JoinType.INNER, onColumn = Versions.mapId, otherColumn = Beatmap.id).update({
-                            (Versions.mapId eq newState.mapId) and (Beatmap.uploader eq sess.userId)
-                        }) {
-                            val exp = Expression.build {
-                                case()
-                                    .When(Versions.hash eq newState.hash, QueryParameter(EMapState.Published, Versions.state.columnType))
-                                    .Else(QueryParameter(EMapState.Uploaded, Versions.state.columnType))
-                            }
-
-                            it[Versions.state] = exp
-                        }
-
-                    (updateState() > 0).also { valid ->
-                        if (!valid) return@also
-
-                        val stats = DifficultyDao.wrapRows(
-                            Difficulty.select {
-                                Difficulty.versionId eq publishingVersion.id
-                            }
-                        )
-
-                        // Set published time for sorting, but don't allow gaming the system
-                        val urResult = Beatmap.updateReturning(
-                            { Beatmap.id eq newState.mapId },
-                            {
-                                it[uploaded] = coalesce(uploaded, NowExpression<Instant?>(uploaded.columnType))
-                                it[lastPublishedAt] = NowExpression(lastPublishedAt.columnType)
-                                it[updatedAt] = NowExpression(updatedAt.columnType)
-
-                                it[chroma] = stats.any { s -> s.chroma }
-                                it[noodle] = stats.any { s -> s.ne }
-                                it[me] = stats.any { s -> s.me }
-                                it[cinema] = stats.any { s -> s.cinema }
-
-                                it[minNps] = stats.minByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
-                                it[maxNps] = stats.maxByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
-                                it[fullSpread] = stats.filter { diff -> diff.characteristic == ECharacteristic.Standard }
-                                    .map { diff -> diff.difficulty }
-                                    .distinct().count() == 5
-
-                                // Because of magical typing reasons this can't be one line
-                                // They actually call completely different setting functions
-                                if (originalState.sageScore != null && originalState.sageScore < -4) {
-                                    it[automapper] = true
-                                } else {
-                                    it[automapper] = ai
-                                }
-                            },
-                            Beatmap.uploaded
-                        )
-
-                        urResult?.firstOrNull()?.get(Beatmap.uploaded)?.let { uploadTimeLocal ->
-                            Difficulty.join(Versions, JoinType.INNER, onColumn = Difficulty.versionId, otherColumn = Versions.id).update({
-                                (Versions.mapId eq newState.mapId)
-                            }) {
-                                it[Difficulty.createdAt] = uploadTimeLocal
-                            } > 0
-                        }
+                    publishVersion(newState.mapId, newState.hash) {
+                        it and (Beatmap.uploader eq sess.userId)
                     }
                 } else {
                     fun updateState() =
@@ -340,6 +274,9 @@ fun Route.testplayRoute() {
                             it[Versions.state] = newState.state
                             if (newState.state == EMapState.Testplay) {
                                 it[Versions.testplayAt] = Instant.now()
+                            } else if (newState.state == EMapState.Scheduled) {
+                                // Can't be null as newState is set to Published in that case above
+                                it[Versions.scheduledAt] = newState.scheduleAt!!.toJavaInstant()
                             }
                         }
 
@@ -349,7 +286,7 @@ fun Route.testplayRoute() {
                                 sess.userId,
                                 newState.mapId,
                                 UnpublishData(newState.reason),
-                                wrapAsExpressionNotNull<Int>(
+                                wrapAsExpressionNotNull(
                                     Beatmap.slice(Beatmap.uploader).select { Beatmap.id eq newState.mapId }.limit(1)
                                 )
                             )

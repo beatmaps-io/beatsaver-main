@@ -107,12 +107,14 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                         }
                     }
                     div("row mt-3") {
-                        infoTable {
-                            map = it
-                            selected = state.selectedDiff
-                            changeSelectedDiff = {
-                                setState {
-                                    selectedDiff = it
+                        div("col-lg-4 text-nowrap") {
+                            infoTable {
+                                map = it
+                                selected = state.selectedDiff
+                                changeSelectedDiff = {
+                                    setState {
+                                        selectedDiff = it
+                                    }
                                 }
                             }
                         }

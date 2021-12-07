@@ -6,6 +6,7 @@ import de.nielsfalk.ktor.swagger.version.shared.Contact
 import de.nielsfalk.ktor.swagger.version.shared.Information
 import de.nielsfalk.ktor.swagger.version.v2.Swagger
 import io.beatmaps.api.FailedUploadResponse
+import io.beatmaps.api.ScoreSaberServerException
 import io.beatmaps.api.mapDetailRoute
 import io.beatmaps.api.playlistRoute
 import io.beatmaps.api.scoresRoute
@@ -33,6 +34,7 @@ import io.beatmaps.login.installDiscordOauth
 import io.beatmaps.login.installSessions
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
+import io.beatmaps.util.scheduleTask
 import io.beatmaps.websockets.mapUpdateEnricher
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
@@ -230,6 +232,10 @@ fun Application.beatmapsio() {
             call.respond(HttpStatusCode.BadRequest, cause.toResponse())
         }
 
+        exception<ScoreSaberServerException> { cause ->
+            call.respond(HttpStatusCode.BadGateway, ErrorResponse("Upstream responded with ${cause.originalException.response}"))
+        }
+
         exception<DataConversionException> { cause ->
             call.respond(HttpStatusCode.InternalServerError, ErrorResponse(cause.message ?: ""))
         }
@@ -278,6 +284,8 @@ fun Application.beatmapsio() {
         }
         downloadsThread()
     }
+
+    scheduleTask()
 
     routing {
         get("/") {

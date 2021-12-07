@@ -69,6 +69,9 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 a("/policy/tos", classes = "dropdown-item") {
                                     +"Terms of Service"
                                 }
+                                a("/policy/privacy", classes = "dropdown-item") {
+                                    +"Privacy Policy"
+                                }
                                 div("dropdown-divider") {}
                                 a("https://github.com/beatmaps-io/beatsaver-main", classes = "dropdown-item") {
                                     +"GitHub"

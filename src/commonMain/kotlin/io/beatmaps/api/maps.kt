@@ -60,7 +60,8 @@ data class MapVersion(
     val testplays: List<MapTestplay>? = null,
     val downloadURL: String,
     val coverURL: String,
-    val previewURL: String
+    val previewURL: String,
+    val scheduledAt: Instant? = null
 ) { companion object }
 
 @Serializable

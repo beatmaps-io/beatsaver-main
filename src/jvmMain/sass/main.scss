@@ -806,6 +806,24 @@ li.KeyboardShortcutRow {
   }
 }
 
+.check-border {
+  border: 1px solid;
+  border-radius: 5px;
+  padding-left: 0;
+  margin-bottom: 10px;
+  width: 400px;
+
+  .form-check-label {
+    padding: 10px 10px 10px 40px;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  input[type=datetime-local] {
+    width: 240px;
+  }
+}
+
 @include media-breakpoint-up(sm) {
   .filter-dropdown {
     width: 100%;

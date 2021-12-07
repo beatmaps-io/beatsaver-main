@@ -29,7 +29,8 @@ fun MapVersion.Companion.from(other: VersionsDao, cdnPrefix: String) = MapVersio
     other.hash, other.key64, other.state, other.uploaded.toKotlinInstant(), other.sageScore,
     other.difficulties.values.map { MapDifficulty.from(it) }.sortedWith(compareBy(MapDifficulty::characteristic, MapDifficulty::difficulty)), other.feedback,
     other.testplayAt?.toKotlinInstant(), if (other.testplays.isEmpty()) null else other.testplays.values.map { MapTestplay.from(it) },
-    "${Config.cdnBase(cdnPrefix)}/${other.hash}.zip", "${Config.cdnBase(cdnPrefix)}/${other.hash}.jpg", "${Config.cdnBase(cdnPrefix)}/${other.hash}.mp3"
+    "${Config.cdnBase(cdnPrefix)}/${other.hash}.zip", "${Config.cdnBase(cdnPrefix)}/${other.hash}.jpg", "${Config.cdnBase(cdnPrefix)}/${other.hash}.mp3",
+    other.scheduledAt?.toKotlinInstant()
 )
 fun MapVersion.Companion.from(row: ResultRow, cdnPrefix: String) = from(VersionsDao.wrapRow(row), cdnPrefix)
 

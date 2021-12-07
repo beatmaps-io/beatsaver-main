@@ -78,4 +78,5 @@ external class Moment {
     fun subtract(v: Int, unit: String): Moment
     fun format(format: String): String
     fun locale(l: String): Unit
+    fun toISOString(): String
 }

@@ -45,7 +45,7 @@ class TOSPageTemplate : Template<BODY> {
                     +"Republishing or use of another user's content posted on BeatSaver including derivative work without explicit written permission is in violation of this policy. Crediting users' work in the description is not enough."
                 }
                 p {
-                    +"If you are a copyright owner or an agent thereof, and you believe that any material available on our Services infringes your copyrights, please visit our DMCA Policy for more information on filing a notification of infringement.\n"
+                    +"If you are a copyright owner or an agent thereof, and you believe that any material available on our Services infringes your copyrights, please visit our DMCA Policy for more information on filing a notification of infringement."
                 }
                 hr("my-4") {}
                 h3 {

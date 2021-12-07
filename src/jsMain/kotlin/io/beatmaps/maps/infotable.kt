@@ -23,6 +23,7 @@ import kotlin.math.floor
 
 external interface InfoTableProps : RProps {
     var map: MapDetail
+    var horizontal: Boolean?
     var selected: MapDifficulty?
     var changeSelectedDiff: (MapDifficulty) -> Unit
 }
@@ -39,47 +40,51 @@ fun RDOMBuilder<*>.diffImg(diff: MapDifficulty) {
 
 @JsExport
 class InfoTable : RComponent<InfoTableProps, RState>() {
+    private val itemClasses by lazy { "list-group-item d-flex justify-content-between" + if (props.horizontal == true) " col-lg" else "" }
+
     override fun RBuilder.render() {
-        div("col-lg-4 text-nowrap") {
-            val publishedVersion = if (props.map.deletedAt == null) props.map.publishedVersion() else null
-            div("list-group") {
-                infoItem("Mapper", "${props.map.uploader.name} (${props.map.metadata.levelAuthorName})", "/profile/${props.map.uploader.id}")
-                val score = publishedVersion?.sageScore ?: 0
-                if (score < -4 || props.map.automapper) {
-                    infoItem("AI", if (score < -4) "Bot" else "Unsure")
-                }
+        val publishedVersion = if (props.map.deletedAt == null) props.map.publishedVersion() else null
+        div("list-group" + if (props.horizontal == true) " list-group-horizontal row m-4" else "") {
+            infoItem("Mapper", "${props.map.uploader.name} (${props.map.metadata.levelAuthorName})", "/profile/${props.map.uploader.id}")
+            val score = publishedVersion?.sageScore ?: 0
+            if (score < -4 || props.map.automapper) {
+                infoItem("AI", if (score < -4) "Bot" else "Unsure")
+            }
 
-                div("list-group-item d-flex justify-content-between") {
-                    +"Uploaded"
+            div(itemClasses) {
+                +"Uploaded"
+                props.map.uploaded?.let { uploadedAt ->
                     TimeAgo.default {
-                        attrs.date = props.map.uploaded.toString()
+                        attrs.date = uploadedAt.toString()
                     }
+                } ?: span("text-truncate ml-4") {
+                    +"Never published"
                 }
+            }
 
-                props.map.curator?.let { curator ->
-                    div("list-group-item d-flex justify-content-between") {
-                        +"Curated by"
-                        span("text-truncate ml-4") {
-                            +curator
-                        }
-                    }
-                }
-
-                props.map.stats.let { stats ->
-                    div("list-group-item d-flex justify-content-between") {
-                        +"Rating"
-                        span("text-truncate ml-4") {
-                            +"${stats.upvotes} / ${stats.downvotes} (${(stats.score * 1000).toInt() / 10f}%)"
-                        }
+            props.map.curator?.let { curator ->
+                div(itemClasses) {
+                    +"Curated by"
+                    span("text-truncate ml-4") {
+                        +curator
                     }
                 }
             }
 
-            div("list-group mapstats") {
-                publishedVersion?.diffs?.groupBy { it.characteristic }?.forEach { char ->
-                    char.value.sortedByDescending { it.difficulty }.forEach { diff ->
-                        mapItem(diff)
+            props.map.stats.let { stats ->
+                div(itemClasses) {
+                    +"Rating"
+                    span("text-truncate ml-4") {
+                        +"${stats.upvotes} / ${stats.downvotes} (${(stats.score * 1000).toInt() / 10f}%)"
                     }
+                }
+            }
+        }
+
+        div("list-group mapstats") {
+            publishedVersion?.diffs?.groupBy { it.characteristic }?.forEach { char ->
+                char.value.sortedByDescending { it.difficulty }.forEach { diff ->
+                    mapItem(diff)
                 }
             }
         }
@@ -137,14 +142,14 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
     private fun RDOMBuilder<DIV>.infoItem(label: String, info: String, href: String? = null) =
         if (info.isNotBlank())
             href?.let {
-                routeLink(href, className = "list-group-item d-flex justify-content-between") {
+                routeLink(href, className = itemClasses) {
                     +label
                     span("text-truncate ml-4") {
                         attrs.title = info
                         +info
                     }
                 }
-            } ?: div("list-group-item d-flex justify-content-between") {
+            } ?: div(itemClasses) {
                 +label
                 span("text-truncate ml-4") {
                     +info

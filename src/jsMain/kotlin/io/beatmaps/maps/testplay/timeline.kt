@@ -30,7 +30,7 @@ import react.setState
 enum class EventType {
     Feedback, Play, Version
 }
-data class Event(val type: EventType, val state: EMapState?, val title: String, val body: String, val time: Instant, val hash: String, val userId: Int? = null)
+data class Event(val type: EventType, val state: EMapState?, val title: String, val body: String, val time: Instant, val hash: String, val userId: Int? = null, val secondaryTime: Instant? = null)
 
 external interface TimelineProps : RProps {
     var mapInfo: MapDetail
@@ -69,7 +69,7 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                     )
                 }
             }.let { it ?: listOf() } + listOf(
-                Event(EventType.Version, v.state, "New version uploaded", v.feedback ?: "", v.createdAt, v.hash)
+                Event(EventType.Version, v.state, "New version uploaded", v.feedback ?: "", v.createdAt, v.hash, secondaryTime = v.scheduledAt)
             )
         }.filterNotNull().sortedWith(compareByDescending<Event> { versionTimes[it.hash] }.thenByDescending { it.time })
 
@@ -154,6 +154,7 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                             firstVersion = first
                             time = it.time.toString()
                             state = it.state
+                            scheduledAt = it.secondaryTime
                             reloadMap = props.reloadMap
                             mapId = props.mapInfo.intId()
                             modal = props.modal

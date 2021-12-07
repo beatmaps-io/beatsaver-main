@@ -1,6 +1,7 @@
 package io.beatmaps.maps.testplay
 
 import external.Axios
+import external.Moment
 import external.TimeAgo
 import external.generateConfig
 import io.beatmaps.api.FeedbackUpdate
@@ -12,9 +13,14 @@ import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.maps.textToContent
-import kotlinx.datetime.internal.JSJoda.Instant
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.html.InputType
 import kotlinx.html.TEXTAREA
+import kotlinx.html.id
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
+import org.w3c.dom.HTMLInputElement
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -22,16 +28,22 @@ import react.RReadableRef
 import react.RState
 import react.ReactElement
 import react.createRef
+import react.dom.a
 import react.dom.article
+import react.dom.br
 import react.dom.button
+import react.dom.defaultValue
 import react.dom.div
 import react.dom.h3
 import react.dom.i
+import react.dom.input
+import react.dom.label
 import react.dom.p
 import react.dom.small
 import react.dom.strong
-import react.dom.textarea
+import react.functionComponent
 import react.setState
+import react.useState
 
 external interface VersionProps : RProps {
     var mapId: Int
@@ -42,12 +54,22 @@ external interface VersionProps : RProps {
     var time: String
     var isOwner: Boolean
     var state: EMapState?
+    var scheduledAt: Instant?
     var reloadMap: () -> Unit
     var modal: RReadableRef<ModalComponent>
     var allowPublish: Boolean?
 }
 
-data class VersionState(var state: EMapState? = null, var loading: Boolean = false, var loadingState: Boolean = false, var text: String = "", var time: String = "") : RState
+external interface VersionState : RState {
+    var state: EMapState?
+    var loading: Boolean?
+    var loadingState: Boolean?
+    var text: String?
+    var time: String?
+    var scheduledAt: Instant?
+
+    var scheduleAt: Instant?
+}
 private const val testplayEnabled = false
 
 @JsExport
@@ -55,7 +77,13 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
     private val textareaRef = createRef<TEXTAREA>()
 
     init {
-        state = VersionState()
+        setState {
+            state = null
+            loading = false
+            loadingState = false
+            text = ""
+            time = ""
+        }
     }
 
     override fun componentWillMount() {
@@ -63,6 +91,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
             state = props.state
             text = props.feedback
             time = props.time
+            scheduledAt = props.scheduledAt
         }
     }
 
@@ -71,14 +100,22 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
             loadingState = true
         }
 
-        Axios.post<String>("${Config.apibase}/testplay/state", StateUpdate(props.hash, nextState, props.mapId), generateConfig<StateUpdate, String>()).then({
+        Axios.post<String>("${Config.apibase}/testplay/state", StateUpdate(props.hash, nextState, props.mapId, scheduleAt = state.scheduleAt), generateConfig<StateUpdate, String>()).then({
             if (nextState == EMapState.Published) {
-                props.reloadMap()
-            }
-
-            setState {
-                state = nextState
-                loadingState = false
+                if (state.scheduleAt == null) {
+                    props.reloadMap()
+                    null
+                } else {
+                    EMapState.Scheduled
+                }
+            } else {
+                nextState
+            }?.let {
+                setState {
+                    state = it
+                    loadingState = false
+                    scheduledAt = scheduleAt
+                }
             }
         }) {
             setState {
@@ -87,7 +124,78 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
         }
     }
 
+    fun publishModal() = functionComponent<RProps> {
+        val (publishType, setPublishType) = useState(false)
+
+        p {
+            +"This will make your map visible to everyone"
+        }
+        p {
+            +"You should only publish maps that are completed, if you just want to test your map check out the guides here:"
+            br {}
+            a("https://bsmg.wiki/mapping/#playtesting") {
+                +"https://bsmg.wiki/mapping/#playtesting"
+            }
+        }
+        p {
+            +"You should also consider getting your map playtested by other mappers for feedback first"
+        }
+        p {
+            +"Uploading new versions later will cause leaderboards for your map to be reset"
+        }
+        div("form-group") {
+            div("form-check check-border") {
+                label("form-check-label") {
+                    input(InputType.radio, classes = "form-check-input") {
+                        attrs.name = "publishType"
+                        attrs.id = "publishTypeNow"
+                        attrs.value = "now"
+                        attrs.defaultChecked = true
+                        attrs.onChangeFunction = {
+                            setState {
+                                scheduleAt = null
+                            }
+                            setPublishType(false)
+                        }
+                    }
+                    +"Release immediately"
+                }
+            }
+
+            div("form-check check-border") {
+                label("form-check-label") {
+                    attrs.htmlFor = "publishTypeSchedule"
+                    input(InputType.radio, classes = "form-check-input") {
+                        attrs.name = "publishType"
+                        attrs.id = "publishTypeSchedule"
+                        attrs.value = "schedule"
+                        attrs.onChangeFunction = {
+                            setPublishType(true)
+                        }
+                    }
+                    +"Schedule release"
+
+                    if (publishType) {
+                        input(InputType.dateTimeLocal, classes = "form-control m-2") {
+                            attrs.id = "scheduleAt"
+                            val nowStr = Moment().format("YYYY-MM-DDTHH:mm")
+                            attrs.defaultValue = nowStr
+                            attrs.min = nowStr
+                            attrs.onChangeFunction = {
+                                setState {
+                                    scheduleAt = Instant.parse(Moment((it.target as HTMLInputElement).value).toISOString())
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     override fun RBuilder.render() {
+        val shouldDisable = state.loading == true || state.loadingState == true
+
         article("card border-danger") {
             div("card-header icon bg-danger") {
                 i("fas fa-upload") {}
@@ -107,7 +215,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                     Axios.post<String>("${Config.apibase}/testplay/version", FeedbackUpdate(props.hash, newText), generateConfig<FeedbackUpdate, String>()).then({
                                         setState {
                                             text = newText
-                                            time = Instant.now().toString()
+                                            time = Clock.System.now().toString()
                                             loading = false
                                         }
                                     }) {
@@ -116,7 +224,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                         }
                                     }
                                 }
-                                attrs.disabled = state.loading || state.loadingState
+                                attrs.disabled = shouldDisable
                                 +"Save"
                             }
                         }
@@ -128,17 +236,17 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                         props.modal.current?.showDialog(
                                             ModalData(
                                                 "Are you sure?",
-                                                "This will make your map visible to everyone\n\nYou should only publish maps that are completed, " +
-                                                    "if you just want to test your map check out the guides here:\nhttps://bsmg.wiki/mapping/#playtesting\n\n" +
-                                                    // "You should also consider placing your map into the playtest queue for feedback first\n\n" +
-                                                    "You should also consider getting your map playtested by other mappers for feedback first\n\n" +
-                                                    "Uploading new versions later will cause leaderboards for your map to be reset",
-                                                listOf(ModalButton("Publish", "primary") { mapState(EMapState.Published) }, ModalButton("Cancel")),
-                                                true
-                                            )
+                                                buttons = listOf(ModalButton("Publish", "primary") { mapState(EMapState.Published) }, ModalButton("Cancel")),
+                                                large = true
+                                            ) {
+                                                setState {
+                                                    scheduleAt = null
+                                                }
+                                                publishModal().invoke { }
+                                            }
                                         )
                                     }
-                                    attrs.disabled = state.loading || state.loadingState
+                                    attrs.disabled = shouldDisable
                                     +"Publish"
                                 }
                             } else {
@@ -152,7 +260,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                     attrs.onClickFunction = {
                                         mapState(EMapState.Testplay)
                                     }
-                                    attrs.disabled = state.loading || state.loadingState
+                                    attrs.disabled = shouldDisable
                                     +"Add to testplay queue"
                                 }
                             }
@@ -161,8 +269,21 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                 attrs.onClickFunction = {
                                     mapState(EMapState.Uploaded)
                                 }
-                                attrs.disabled = state.loading || state.loadingState
+                                attrs.disabled = shouldDisable
                                 +"Remove from testplay queue"
+                            }
+                        } else if (state.state == EMapState.Scheduled) {
+                            button(classes = "btn btn-info m-1") {
+                                attrs.disabled = true
+                                val formatted = Moment(state.scheduledAt.toString()).format("YYYY-MM-DD HH:mm")
+                                +"Scheduled for $formatted"
+                            }
+                            button(classes = "btn btn-danger m-1") {
+                                attrs.onClickFunction = {
+                                    mapState(EMapState.Uploaded)
+                                }
+                                attrs.disabled = shouldDisable
+                                +"Cancel"
                             }
                         }
                     }
@@ -194,19 +315,21 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                     }
                 }
 
+                /*
                 if (props.isOwner && props.firstVersion && (state.state != EMapState.Uploaded || testplayEnabled)) {
                     p {
                         +"Tell testplayers what kind of feedback you're looking for:"
                     }
                     textarea("10", classes = "form-control mb-4") {
                         ref = textareaRef
-                        +state.text
+                        +(state.text ?: "")
                     }
                 } else {
                     p {
-                        textToContent(state.text)
+                        state.text?.let { textToContent(it) }
                     }
                 }
+                 */
 
                 props.diffs?.chunked(4) { chunk ->
                     div("row") {
@@ -235,8 +358,10 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
             }
             div("card-footer") {
                 small {
-                    TimeAgo.default {
-                        attrs.date = state.time
+                    state.time?.let {
+                        TimeAgo.default {
+                            attrs.date = it
+                        }
                     }
                 }
             }

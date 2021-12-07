@@ -10,6 +10,7 @@ import io.ktor.application.call
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.ClientRequestException
+import io.ktor.client.features.ServerResponseException
 import io.ktor.client.features.cookies.AcceptAllCookiesStorage
 import io.ktor.client.features.cookies.HttpCookies
 import io.ktor.client.request.get
@@ -100,6 +101,8 @@ data class SSLeaderboardScore(
     @Location("/{key}/{page}") data class Leaderboard(val key: String, val page: Int = 1, val difficulty: Int = -1, val gameMode: Int = -1, val api: ScoresApi)
 }
 
+class ScoreSaberServerException(val originalException: ServerResponseException) : RuntimeException()
+
 fun Route.scoresRoute() {
     options<ScoresApi.Leaderboard> {
         call.response.header("Access-Control-Allow-Origin", Config.basename)
@@ -131,6 +134,8 @@ suspend fun getLeaderboardInfo(hash: String, diff: EDifficulty = EDifficulty.Exp
         }
     } catch (e: ClientRequestException) {
         null
+    } catch (e: ServerResponseException) {
+        throw ScoreSaberServerException(e)
     } catch (e: JacksonException) {
         e.printStackTrace()
         null
@@ -149,6 +154,8 @@ suspend fun getScores(hash: String, diff: EDifficulty = EDifficulty.ExpertPlus, 
         }
     } catch (e: ClientRequestException) {
         null
+    } catch (e: ServerResponseException) {
+        throw ScoreSaberServerException(e)
     } catch (e: JacksonException) {
         e.printStackTrace()
         null

@@ -3,6 +3,7 @@ package io.beatmaps.maps.testplay
 import io.beatmaps.api.MapDetail
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
+import io.beatmaps.maps.infoTable
 import io.beatmaps.maps.mapInfo
 import react.RBuilder
 import react.RComponent
@@ -41,6 +42,12 @@ class Testplay : RComponent<TestplayProps, RState>() {
                 props.history.push("/profile")
             }
             updateMapinfo = props.updateMapinfo
+        }
+        infoTable {
+            map = props.mapInfo
+            horizontal = true
+            selected = null
+            changeSelectedDiff = { }
         }
         timeline {
             mapInfo = props.mapInfo
