@@ -75,6 +75,9 @@ data class SSLeaderboardInfo(
     )
 }
 
+data class SSPaged(val metadata: SSPagedMetadata, val scores: List<SSLeaderboardScore>)
+data class SSPagedMetadata(val total: Int, val page: Int, val itemsPerPage: Int)
+
 data class SSLeaderboardInfoDiff(val leaderboardId: Int, val difficulty: Int, val gameMode: String, val difficultyRaw: String)
 data class SSLeaderboardScore(
     val id: Long,
@@ -150,7 +153,7 @@ suspend fun getScores(hash: String, diff: EDifficulty = EDifficulty.ExpertPlus, 
             parameter("gameMode", mode)
             parameter("page", page)
         }.run {
-            jackson.readValue<List<SSLeaderboardScore>>(this)
+            jackson.readValue<SSPaged>(this).scores
         }
     } catch (e: ClientRequestException) {
         null
