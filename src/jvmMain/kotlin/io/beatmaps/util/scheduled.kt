@@ -24,7 +24,6 @@ fun Application.scheduleTask() {
     val firstInvocationLocal = LocalDateTime.now().withSecond(0).plusMinutes(1L)
     val firstInvocation = Timestamp.valueOf(firstInvocationLocal)
 
-    schedulerLogger.level = Level.ALL
     schedulerLogger.info("Scheduler check rabbitmq")
     rabbitOptional {
         schedulerLogger.info("Scheduler starting")
