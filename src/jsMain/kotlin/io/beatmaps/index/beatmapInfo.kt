@@ -28,6 +28,7 @@ import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
+import kotlin.math.roundToInt
 
 external interface BeatmapInfoProps : RProps {
     var map: MapDetail?
@@ -99,7 +100,7 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
                     }
                     div("percentage") {
                         attrs.title = "${map.stats.upvotes}/${map.stats.downvotes}"
-                        +"${(map.stats.score * 1000).toInt() / 10f}%"
+                        +"${(map.stats.score * 1000).roundToInt() / 10f}%"
                     }
                 }
                 div("info") {
