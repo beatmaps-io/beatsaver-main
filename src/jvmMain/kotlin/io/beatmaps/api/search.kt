@@ -109,13 +109,13 @@ class SearchParams(
         }
 
     fun applyQuery(q: Op<Boolean>) =
-        if (query.isBlank()) {
+        (if (query.isBlank()) {
             q
         } else if (query.length > 3) {
             q.and(searchIndex similar unaccent(query))
         } else {
             q.and(searchIndex ilike wildcard(unaccent(query)))
-        }.let {
+        }).let {
             quotedSections.fold(it) { p, section ->
                 p.and(searchIndex ilike wildcard(unaccent(section)))
             }
