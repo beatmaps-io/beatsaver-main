@@ -8,10 +8,12 @@ import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.StateUpdate
 import io.beatmaps.common.Config
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.links
+import io.beatmaps.playlist.addToPlaylist
 import kotlinx.browser.window
 import kotlinx.html.InputType
 import kotlinx.html.Tag
@@ -110,6 +112,15 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                 div("ml-auto flex-shrink-0") {
                     if (!deleted) {
                         props.mapInfo.mainVersion()?.let { version ->
+                            globalContext.Consumer { userData ->
+                                if (userData != null) {
+                                    addToPlaylist {
+                                        map = props.mapInfo
+                                        modal = props.modal
+                                    }
+                                }
+                            }
+
                             links {
                                 attrs.map = props.mapInfo
                                 attrs.version = version
