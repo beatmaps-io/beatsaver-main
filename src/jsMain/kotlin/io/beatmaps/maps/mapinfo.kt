@@ -107,7 +107,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                 } else {
                     +props.mapInfo.name
                 }
-                div("ml-auto") {
+                div("ml-auto flex-shrink-0") {
                     if (!deleted) {
                         props.mapInfo.mainVersion()?.let { version ->
                             links {
