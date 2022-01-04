@@ -101,7 +101,6 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
     }
 
     private fun updateOrder(mapId: String, order: Float) {
-        console.log("mapId = $mapId, order = $order")
         Axios.post<String>(
             "${Config.apibase}/playlists/id/${props.id}/add",
             PlaylistMapRequest(mapId, true, order),

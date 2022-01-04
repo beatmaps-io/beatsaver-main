@@ -205,12 +205,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                         div("custom-file w-25") {
                             input(InputType.file, classes = "custom-file-input") {
                                 attrs.onChangeFunction = {
-                                    console.log("On change")
-                                    console.log(coverRef.current?.files)
                                     val file = coverRef.current?.files?.let { it[0] }
-                                    console.log(file)
-                                    console.log(file?.name)
-                                    console.log(file?.name)
                                     setState {
                                         filename = file?.name
                                     }
