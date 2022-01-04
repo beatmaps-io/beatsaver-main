@@ -14,6 +14,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlin.math.roundToInt
 
 object InstantAsStringSerializer : KSerializer<Instant> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
@@ -99,7 +100,10 @@ data class MapDetailMetadata(
 ) { companion object }
 
 @Serializable
-data class MapStats(val plays: Int, val downloads: Int, val upvotes: Int, val downvotes: Int, val score: Float) { companion object }
+data class MapStats(val plays: Int, val downloads: Int, val upvotes: Int, val downvotes: Int, val score: Float) {
+    val scoreOneDP by lazy { (score * 1000).roundToInt() / 10f }
+    companion object
+}
 
 @Serializable
 data class MapTestplay(val feedback: String? = null, val video: String? = null, val user: UserDetail, val createdAt: Instant, val feedbackAt: Instant? = null) { companion object }

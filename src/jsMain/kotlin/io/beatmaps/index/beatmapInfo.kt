@@ -100,7 +100,7 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
                     }
                     div("percentage") {
                         attrs.title = "${map.stats.upvotes}/${map.stats.downvotes}"
-                        +"${(map.stats.score * 1000).roundToInt() / 10f}%"
+                        +"${map.stats.scoreOneDP}%"
                     }
                 }
                 div("info") {

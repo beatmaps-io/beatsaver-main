@@ -20,6 +20,7 @@ import react.dom.img
 import react.dom.span
 import react.router.dom.routeLink
 import kotlin.math.floor
+import kotlin.math.roundToInt
 
 external interface InfoTableProps : RProps {
     var map: MapDetail
@@ -75,7 +76,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
                 div(itemClasses) {
                     +"Rating"
                     span("text-truncate ml-4") {
-                        +"${stats.upvotes} / ${stats.downvotes} (${(stats.score * 1000).toInt() / 10f}%)"
+                        +"${stats.upvotes} / ${stats.downvotes} (${stats.scoreOneDP}%)"
                     }
                 }
             }
