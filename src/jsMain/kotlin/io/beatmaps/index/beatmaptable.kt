@@ -38,7 +38,7 @@ external interface BeatmapTableProps : RProps {
     var wip: Boolean
     var modal: RReadableRef<ModalComponent>
     var history: RouteResultHistory
-    var updateScrollIndex: (Int) -> Unit
+    var updateScrollIndex: ((Int) -> Unit)?
     var visible: Boolean?
 }
 
@@ -262,8 +262,8 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
             val shouldScroll = state.scroll
             val page = it.data.docs
             setState {
-                loading = page?.isEmpty() == true
-                if (loading) {
+                loading = false
+                if (page?.isEmpty() == true && toLoad < finalPage) {
                     finalPage = toLoad
                 }
                 pages = if (shouldClear) { mapOf() } else { pages }.let {
@@ -281,9 +281,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
             }
             window.onscroll = ::handleScroll
             window.onresize = ::reportWindow
-            if (page?.isNotEmpty() == true) {
-                window.setTimeout(::handleScroll, 1)
-            }
+            window.setTimeout(::handleScroll, 1)
         }.catch {
             // Cancelled request?
             setState {
@@ -309,7 +307,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                 visPage = max(1, item - itemsPerRow()) / itemsPerPage
                 visiblePages = visPage.rangeTo(visPage + totalVisiblePages)
             }
-            props.updateScrollIndex(item + 1)
+            props.updateScrollIndex?.invoke(item + 1)
         }
 
         loadNextPage()
