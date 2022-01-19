@@ -71,6 +71,22 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
                 }
             }
 
+            if (props.map.tags.isNotEmpty()) {
+                div(itemClasses) {
+                    +"Tags"
+                    span("text-truncate ml-4") {
+                        props.map.tags.forEach {
+                            mapTag {
+                                attrs.selected = true
+                                attrs.margins = "ml-2"
+                                attrs.tag = it
+                                attrs.onClick = { }
+                            }
+                        }
+                    }
+                }
+            }
+
             props.map.stats.let { stats ->
                 div(itemClasses) {
                     +"Rating"
