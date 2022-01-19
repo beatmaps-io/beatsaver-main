@@ -609,10 +609,10 @@ div.mapstats {
   margin-right: 3px;
 }
 
-.list-group-item.stat-orange { background: rgba($orange, 0.1); }
-.list-group-item.stat-danger { background: rgba($red, 0.1); }
-.list-group-item.stat-info { background: rgba($cyan, 0.1); }
-.list-group-item.stat-success { background: rgba($green, 0.1); }
+.list-group-item.stat-hard { background: rgba($orange, 0.1); }
+.list-group-item.stat-expert { background: rgba($red, 0.1); }
+.list-group-item.stat-blue { background: rgba($cyan, 0.1); }
+.list-group-item.stat-green { background: rgba($green, 0.1); }
 .list-group-item.stat-purple { background: rgba($purple, 0.1); }
 
 .nav-tabs {

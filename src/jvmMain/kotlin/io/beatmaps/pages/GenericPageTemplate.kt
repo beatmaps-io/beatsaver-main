@@ -16,7 +16,7 @@ class GenericPageTemplate(private val s: Session?) : Template<BODY> {
         s?.let { snn ->
             div("d-none") {
                 id = "user-data"
-                +"{\"userId\": ${snn.userId}, \"admin\": ${snn.admin}, \"curator\": ${snn.curator}}"
+                +"{\"userId\": ${snn.userId}, \"admin\": ${snn.admin}, \"curator\": ${snn.curator || snn.admin}}"
             }
         }
         script(src = "/static/modules.js") {}
