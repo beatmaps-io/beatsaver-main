@@ -11,6 +11,7 @@ import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.cdnPrefix
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.InfoEditData
+import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Beatmap
@@ -51,8 +52,10 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.lang.Integer.toHexString
 
-@Location("/api") class MapsApi {
+@Location("/api")
+class MapsApi {
     @Location("/maps/update") data class Update(val api: MapsApi)
+    @Location("/maps/tagupdate") data class TagUpdate(val api: MapsApi)
     @Location("/maps/curate") data class Curate(val api: MapsApi)
     @Location("/maps/wip/{page}") data class WIP(val page: Long = 0, val api: MapsApi)
     @Location("/download/key/{key}") data class BeatsaverDownload(val key: String, val api: MapsApi)
@@ -65,6 +68,7 @@ import java.lang.Integer.toHexString
         @Ignore
         val api: MapsApi
     )
+
     @Group("Maps") @Location("/maps/uploader/{id}/{page}") data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/latest") data class ByUploadDate(
         @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
@@ -77,6 +81,7 @@ import java.lang.Integer.toHexString
         @Ignore
         val api: MapsApi
     )
+
     @Group("Maps") @Location("/maps/plays/{page}") data class ByPlayCount(@DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
     @Group("Users") @Location("/users/id/{id}") data class UserId(val id: Int, @Ignore val api: MapsApi)
     @Group("Users") @Location("/users/name/{name}") data class UserName(val name: String, @Ignore val api: MapsApi)
@@ -116,7 +121,7 @@ fun Route.mapDetailRoute() {
     post<MapsApi.Curate> {
         call.response.header("Access-Control-Allow-Origin", "*")
         requireAuthorization { user ->
-            if (!user.isAdmin()) {
+            if (!user.isCurator()) {
                 call.respond(HttpStatusCode.BadRequest)
             } else {
                 val mapUpdate = call.receive<CurateMap>()
@@ -147,6 +152,10 @@ fun Route.mapDetailRoute() {
         requireAuthorization { user ->
             val mapUpdate = call.receive<MapInfoUpdate>()
 
+            val tooMany = mapUpdate.tags?.mapNotNull { MapTag.fromSlug(it) }?.groupBy { it.type }?.mapValues { it.value.size }?.withDefault { 0 }?.let { byType ->
+                MapTag.maxPerType.any { byType.getValue(it.key) > it.value }
+            }
+
             val result = transaction {
                 val oldData = if (user.isAdmin()) {
                     BeatmapDao.wrapRow(Beatmap.select { Beatmap.id eq mapUpdate.id }.single())
@@ -169,6 +178,9 @@ fun Route.mapDetailRoute() {
                         } else {
                             mapUpdate.name?.let { n -> it[name] = n.take(1000) }
                             mapUpdate.description?.let { d -> it[description] = d.take(10000) }
+                            if (tooMany != true) { // Don't update tags if request is trying to add too many tags
+                                mapUpdate.tags?.let { t -> it[tags] = t.toTypedArray() }
+                            }
                             it[updatedAt] = NowExpression(updatedAt.columnType)
                         }
                     }
@@ -181,12 +193,53 @@ fun Route.mapDetailRoute() {
                             if (mapUpdate.deleted) {
                                 DeletedData(mapUpdate.reason ?: "")
                             } else {
-                                InfoEditData(oldData.name, oldData.description, mapUpdate.name ?: "", mapUpdate.description ?: "")
+                                InfoEditData(oldData.name, oldData.description, mapUpdate.name ?: "", mapUpdate.description ?: "", oldData.tags?.toList(), mapUpdate.tags)
                             },
                             oldData.uploader.id.value
                         )
                     }
                 }
+            }
+
+            if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
+            call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+        }
+    }
+
+    post<MapsApi.TagUpdate> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        requireAuthorization { user ->
+            val mapUpdate = call.receive<SimpleMapInfoUpdate>()
+
+            val tooMany = mapUpdate.tags?.mapNotNull { MapTag.fromSlug(it) }?.groupBy { it.type }?.mapValues { it.value.size }?.withDefault { 0 }?.let { byType ->
+                MapTag.maxPerType.any { byType.getValue(it.key) > it.value }
+            }
+
+            val result = if (tooMany != true && user.isCurator()) {
+                transaction {
+                    val oldData = BeatmapDao.wrapRow(Beatmap.select { Beatmap.id eq mapUpdate.id }.single())
+
+                    fun updateMap() =
+                        Beatmap.update({
+                            Beatmap.id eq mapUpdate.id and Beatmap.deletedAt.isNull()
+                        }) {
+                            mapUpdate.tags?.let { t -> it[tags] = t.toTypedArray() }
+                            it[updatedAt] = NowExpression(updatedAt.columnType)
+                        }
+
+                    (updateMap() > 0).also { rTemp ->
+                        if (rTemp && oldData.uploaderId.value != user.userId) {
+                            ModLog.insert(
+                                user.userId,
+                                mapUpdate.id,
+                                InfoEditData(oldData.name, oldData.description, "", "", oldData.tags?.toList(), mapUpdate.tags),
+                                oldData.uploader.id.value
+                            )
+                        }
+                    }
+                }
+            } else {
+                false
             }
 
             if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
@@ -364,7 +417,13 @@ fun Route.mapDetailRoute() {
                     .select {
                         Beatmap.id.inSubQuery(
                             Beatmap
-                                .join(Versions, JoinType.LEFT, onColumn = Beatmap.id, otherColumn = Versions.mapId, additionalConstraint = { Versions.state eq EMapState.Published })
+                                .join(
+                                    Versions,
+                                    JoinType.LEFT,
+                                    onColumn = Beatmap.id,
+                                    otherColumn = Versions.mapId,
+                                    additionalConstraint = { Versions.state eq EMapState.Published }
+                                )
                                 .slice(Beatmap.id)
                                 .select {
                                     Beatmap.uploader.eq(it.userId) and Beatmap.deletedAt.isNull() and Versions.mapId.isNull()
@@ -414,7 +473,11 @@ fun Route.mapDetailRoute() {
         call.respond(SearchResponse(beatmaps))
     }
 
-    get<MapsApi.ByUploadDate>("Get maps ordered by upload/publish/updated. If you're going to scrape the data and make 100s of requests make this this endpoint you use.".responds(ok<SearchResponse>())) {
+    get<MapsApi.ByUploadDate>(
+        "Get maps ordered by upload/publish/updated. If you're going to scrape the data and make 100s of requests make this this endpoint you use.".responds(
+            ok<SearchResponse>()
+        )
+    ) {
         call.response.header("Access-Control-Allow-Origin", "*")
 
         val sortField = when (it.sort) {

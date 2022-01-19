@@ -20,7 +20,6 @@ import react.dom.img
 import react.dom.span
 import react.router.dom.routeLink
 import kotlin.math.floor
-import kotlin.math.roundToInt
 
 external interface InfoTableProps : RProps {
     var map: MapDetail

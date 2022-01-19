@@ -185,6 +185,7 @@ fun Route.userRoute() {
                                 User.id eq req.userId
                             }) { u ->
                                 u[uploadLimit] = req.maxUploadSize
+                                u[curator] = req.curator
                             } > 0
 
                         runUpdate().also {
@@ -192,7 +193,7 @@ fun Route.userRoute() {
                                 ModLog.insert(
                                     sess.userId,
                                     null,
-                                    UploadLimitData(req.maxUploadSize),
+                                    UploadLimitData(req.maxUploadSize, req.curator),
                                     req.userId
                                 )
                             }
@@ -636,7 +637,7 @@ fun Route.userRoute() {
                 ).first() to alertCount(it.userId)
             }
 
-            call.sessions.set(it.copy(testplay = user.testplay, admin = user.admin, alerts = alertCount, uniqueName = user.uniqueName))
+            call.sessions.set(it.copy(testplay = user.testplay, curator = user.curator, admin = user.admin, alerts = alertCount, uniqueName = user.uniqueName))
 
             val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
 
@@ -668,7 +669,7 @@ fun Route.userRoute() {
 
         val userDetail = UserDetail.from(user, stats = statsForUser(user)).let {
             if (call.sessions.get<Session>()?.isAdmin() == true) {
-                it.copy(uploadLimit = user.uploadLimit)
+                it.copy(uploadLimit = user.uploadLimit, curator = user.curator)
             } else {
                 it
             }

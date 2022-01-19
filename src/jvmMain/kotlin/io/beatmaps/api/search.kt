@@ -9,6 +9,7 @@ import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.cdnPrefix
 import io.beatmaps.common.db.PgConcat
+import io.beatmaps.common.db.contains
 import io.beatmaps.common.db.distinctOn
 import io.beatmaps.common.db.ilike
 import io.beatmaps.common.db.similar
@@ -64,7 +65,9 @@ import java.lang.Integer.toHexString
         val minBpm: Float? = null,
         val maxBpm: Float? = null,
         val me: Boolean? = null,
-        val cinema: Boolean? = null
+        val cinema: Boolean? = null,
+        @Description("Comma seperated tags")
+        val tags: String? = null
     )
 }
 
@@ -108,14 +111,17 @@ class SearchParams(
             else -> SearchOrder.Latest
         }
 
-    fun applyQuery(q: Op<Boolean>) =
-        (if (query.isBlank()) {
+    private fun preApplyQuery(q: Op<Boolean>) =
+        if (query.isBlank()) {
             q
         } else if (query.length > 3) {
             q.and(searchIndex similar unaccent(query))
         } else {
             q.and(searchIndex ilike wildcard(unaccent(query)))
-        }).let {
+        }
+
+    fun applyQuery(q: Op<Boolean>) =
+        preApplyQuery(q).let {
             quotedSections.fold(it) { p, section ->
                 p.and(searchIndex ilike wildcard(unaccent(section)))
             }
@@ -215,6 +221,7 @@ fun Route.searchRoute() {
                                     .notNull(it.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
                                     .notNull(it.me) { o -> Beatmap.me eq o }
                                     .notNull(it.cinema) { o -> Beatmap.cinema eq o }
+                                    .notNull(it.tags) { o -> Beatmap.tags contains o.split(",").toTypedArray() }
                             }
                             .orderBy(*sortArgs)
                             .limit(it.page)

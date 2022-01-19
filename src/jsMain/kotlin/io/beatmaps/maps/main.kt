@@ -73,7 +73,6 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                     testplay {
                         mapInfo = it
                         isOwner = isOwnerLocal
-                        isAdmin = userData?.admin
                         loggedInId = loggedInLocal
                         refreshPage = {
                             loadMap()
@@ -94,7 +93,6 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                     mapInfo {
                         mapInfo = it
                         isOwner = isOwnerLocal
-                        isAdmin = userData?.admin
                         modal = modalRef
                         reloadMap = ::loadMap
                         deleteMap = {

@@ -1,16 +1,19 @@
 package io.beatmaps.api
 
 import io.beatmaps.common.Config
+import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.DifficultyDao
 import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.TestplayDao
 import io.beatmaps.common.dbo.VersionsDao
+import kotlinx.datetime.Clock
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.Query
 import org.jetbrains.exposed.sql.ResultRow
 import java.lang.Integer.toHexString
+import kotlin.time.Duration
 
 fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
     toHexString(other.id.value), other.name, other.description,
@@ -21,17 +24,31 @@ fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
             it.second
         }
     },
-    other.curator?.name, other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.lastPublishedAt?.toKotlinInstant(), other.deletedAt?.toKotlinInstant()
+    other.curator?.name, other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.lastPublishedAt?.toKotlinInstant(), other.deletedAt?.toKotlinInstant(),
+    other.tags?.mapNotNull {
+        MapTag.fromSlug(it)
+    } ?: listOf()
 )
 fun MapDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(BeatmapDao.wrapRow(row), cdnPrefix)
 
-fun MapVersion.Companion.from(other: VersionsDao, cdnPrefix: String) = MapVersion(
-    other.hash, other.key64, other.state, other.uploaded.toKotlinInstant(), other.sageScore,
-    other.difficulties.values.map { MapDifficulty.from(it) }.sortedWith(compareBy(MapDifficulty::characteristic, MapDifficulty::difficulty)), other.feedback,
-    other.testplayAt?.toKotlinInstant(), if (other.testplays.isEmpty()) null else other.testplays.values.map { MapTestplay.from(it) },
-    "${Config.cdnBase(cdnPrefix)}/${other.hash}.zip", "${Config.cdnBase(cdnPrefix)}/${other.hash}.jpg", "${Config.cdnBase(cdnPrefix)}/${other.hash}.mp3",
-    other.scheduledAt?.toKotlinInstant()
-)
+fun getActualPrefixForVersion(other: VersionsDao, cdnPrefix: String) =
+    // Don't use cdn servers during sync period
+    if (Clock.System.now() - other.uploaded.toKotlinInstant() > Duration.Companion.seconds(30)) {
+        cdnPrefix
+    } else {
+        ""
+    }
+fun MapVersion.Companion.from(other: VersionsDao, cdnPrefix: String) =
+    getActualPrefixForVersion(other, cdnPrefix).let { actualPrefix ->
+        MapVersion(
+            other.hash, other.key64, other.state, other.uploaded.toKotlinInstant(), other.sageScore,
+            other.difficulties.values.map { MapDifficulty.from(it) }.sortedWith(compareBy(MapDifficulty::characteristic, MapDifficulty::difficulty)), other.feedback,
+            other.testplayAt?.toKotlinInstant(), if (other.testplays.isEmpty()) null else other.testplays.values.map { MapTestplay.from(it) },
+            "${Config.cdnBase(actualPrefix)}/${other.hash}.zip", "${Config.cdnBase(actualPrefix)}/${other.hash}.jpg",
+            "${Config.cdnBase(actualPrefix)}/${other.hash}.mp3",
+            other.scheduledAt?.toKotlinInstant()
+        )
+    }
 fun MapVersion.Companion.from(row: ResultRow, cdnPrefix: String) = from(VersionsDao.wrapRow(row), cdnPrefix)
 
 fun MapDifficulty.Companion.from(other: DifficultyDao) = MapDifficulty(

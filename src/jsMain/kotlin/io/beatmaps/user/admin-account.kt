@@ -7,8 +7,11 @@ import io.beatmaps.api.UserAdminRequest
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
 import kotlinx.html.ButtonType
+import kotlinx.html.InputType
+import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
+import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import react.RBuilder
 import react.RComponent
@@ -20,6 +23,7 @@ import react.dom.button
 import react.dom.div
 import react.dom.h5
 import react.dom.hr
+import react.dom.input
 import react.dom.jsStyle
 import react.dom.label
 import react.dom.option
@@ -40,6 +44,7 @@ external interface AdminAccountComponentState : RState {
 @JsExport
 class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccountComponentState>() {
     private val maxUploadRef = createRef<HTMLSelectElement>()
+    private val curatorRef = createRef<HTMLInputElement>()
 
     override fun componentWillMount() {
         setState {
@@ -50,6 +55,10 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
         }
     }
 
+    override fun componentDidMount() {
+        curatorRef.current?.checked = props.userDetail.curator == true
+    }
+
     override fun RBuilder.render() {
         div(classes = "user-form") {
             h5("mt-5") {
@@ -57,10 +66,6 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
             }
             hr("mt-2") {}
             div("form-group") {
-                label {
-                    attrs.htmlFor = "name"
-                    +"Max upload size"
-                }
                 if (state.success == true) {
                     div("valid-feedback") {
                         attrs.jsStyle {
@@ -68,6 +73,11 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                         }
                         +"Updated successfully."
                     }
+                }
+
+                label {
+                    attrs.htmlFor = "name"
+                    +"Max upload size"
                 }
                 select("form-control") {
                     arrayOf(0, 15, 30).forEach {
@@ -84,6 +94,17 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                     }
                     ref = maxUploadRef
                 }
+                div("custom-control custom-switch mb-3 mt-3") {
+                    input(InputType.checkBox, classes = "custom-control-input") {
+                        attrs.id = "curator"
+                        attrs.disabled = state.loading == true
+                        ref = curatorRef
+                    }
+                    label("custom-control-label") {
+                        attrs.htmlFor = "curator"
+                        +"Curator"
+                    }
+                }
                 button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
                     attrs.onClickFunction = { ev ->
                         ev.preventDefault()
@@ -94,7 +115,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
 
                         Axios.post<ActionResponse>(
                             "${Config.apibase}/users/admin",
-                            UserAdminRequest(props.userDetail.id, state.uploadLimit),
+                            UserAdminRequest(props.userDetail.id, state.uploadLimit, curatorRef.current?.checked ?: false),
                             generateConfig<UserAdminRequest, ActionResponse>()
                         ).then {
                             setState {

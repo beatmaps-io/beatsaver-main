@@ -17,7 +17,6 @@ import react.router.dom.RouteResultHistory
 external interface TestplayProps : RProps {
     var mapInfo: MapDetail
     var isOwner: Boolean
-    var isAdmin: Boolean?
     var loggedInId: Int?
     var refreshPage: () -> Unit
     var history: RouteResultHistory
@@ -35,7 +34,6 @@ class Testplay : RComponent<TestplayProps, RState>() {
         mapInfo {
             mapInfo = props.mapInfo
             isOwner = props.isOwner
-            isAdmin = props.isAdmin
             modal = modalRef
             reloadMap = props.refreshPage
             deleteMap = {

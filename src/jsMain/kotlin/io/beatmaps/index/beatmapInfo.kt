@@ -28,7 +28,6 @@ import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
-import kotlin.math.roundToInt
 
 external interface BeatmapInfoProps : RProps {
     var map: MapDetail?

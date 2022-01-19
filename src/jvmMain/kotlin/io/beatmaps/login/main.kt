@@ -57,8 +57,11 @@ data class Session(
     val admin: Boolean = false,
     val uniqueName: String? = null,
     val canLink: Boolean = false,
-    val alerts: Int? = null
+    val alerts: Int? = null,
+    val curator: Boolean = false
 ) {
+    constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?) :
+        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, false)
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean) :
         this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, transaction { alertCount(userId) })
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?) :
@@ -71,6 +74,7 @@ data class Session(
         this(userId, null, userEmail, userName, testplay, steamId, oculusId)
 
     fun isAdmin() = admin && transaction { UserDao[userId].admin }
+    fun isCurator() = isAdmin() || (curator && transaction { UserDao[userId].curator })
 }
 
 @Location("/login") class Login
@@ -200,7 +204,7 @@ fun Route.authRoute() {
         post<Login> {
             call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
                 val user = newPrincipal.user
-                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount))
+                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator))
             }
             call.respondRedirect("/")
         }

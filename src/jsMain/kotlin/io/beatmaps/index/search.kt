@@ -4,8 +4,12 @@ import external.DateRangePicker
 import external.Moment
 import external.ReactSlider
 import io.beatmaps.api.SearchOrder
+import io.beatmaps.common.MapTag
+import io.beatmaps.common.MapTagType
 import io.beatmaps.dateFormat
+import io.beatmaps.maps.mapTag
 import kotlinx.browser.document
+import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.DIV
 import kotlinx.html.InputType
@@ -17,6 +21,7 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.events.Event
+import org.w3c.dom.events.KeyboardEvent
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -51,7 +56,9 @@ data class SearchState(
     var focusedInput: String? = null,
     var startDate: Moment? = null,
     var endDate: Moment? = null,
-    var filtersOpen: Boolean = false
+    var filtersOpen: Boolean = false,
+    var tags: Set<MapTag> = setOf(),
+    var shiftHeld: Boolean = false
 ) : RState
 data class PresetDateRange(val startDate: Moment?, val endDate: Moment?)
 
@@ -78,6 +85,8 @@ val filters = listOf(
     FilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true },
 )
 
+inline fun <T> T.applyIf(condition: Boolean, block: T.() -> T): T = if (condition) block(this) else this
+
 @JsExport
 class Search : RComponent<SearchProps, SearchState>() {
     private val filterRefs = filters.associateWith { createRef<HTMLInputElement>() }
@@ -101,6 +110,8 @@ class Search : RComponent<SearchProps, SearchState>() {
         dropdownRef.current?.addEventListener("mouseup", ::stopProp)
         dropdownDivRef.current?.addEventListener("mouseup", ::stopProp)
         document.addEventListener("mouseup", ::hideFilters)
+        document.addEventListener("keyup", ::handleShift)
+        document.addEventListener("keydown", ::handleShift)
     }
 
     private fun stopProp(it: Event) {
@@ -113,8 +124,16 @@ class Search : RComponent<SearchProps, SearchState>() {
         }
     }
 
+    private fun handleShift(it: Event) {
+        setState {
+            shiftHeld = (it as? KeyboardEvent)?.shiftKey ?: false
+        }
+    }
+
     override fun componentWillUnmount() {
         document.removeEventListener("mouseup", ::hideFilters)
+        document.removeEventListener("keyup", ::handleShift)
+        document.removeEventListener("keydown", ::handleShift)
         dropdownDivRef.current?.addEventListener("mouseup", ::stopProp)
         dropdownRef.current?.removeEventListener("mouseup", ::stopProp)
     }
@@ -171,6 +190,7 @@ class Search : RComponent<SearchProps, SearchState>() {
             order = fromParams.sortOrder
             startDate = fromParams.from?.let { Moment(it) }
             endDate = fromParams.to?.let { Moment(it) }
+            tags = fromParams.tags.mapNotNull { MapTag.fromSlug(it) }.toSet()
         }
     }
 
@@ -207,7 +227,8 @@ class Search : RComponent<SearchProps, SearchState>() {
                                     if (isFiltered("ranked")) true else null,
                                     if (isFiltered("fs")) true else null,
                                     if (isFiltered("me")) true else null,
-                                    if (isFiltered("cinema")) true else null
+                                    if (isFiltered("cinema")) true else null,
+                                    state.tags.map { o -> o.slug }
                                 )
                             )
                         }
@@ -226,7 +247,7 @@ class Search : RComponent<SearchProps, SearchState>() {
                         }
                         ref = dropdownRef
                         span {
-                            val filters = filterRefs.filter { state.filterMap.getOrElse(it.key) { false } }.map { it.key.key }
+                            val filters = filterRefs.filter { state.filterMap.getOrElse(it.key) { false } }.map { it.key.key } + state.tags.map { it.slug }
 
                             if (filters.isEmpty()) {
                                 +"Filters"
@@ -239,20 +260,59 @@ class Search : RComponent<SearchProps, SearchState>() {
                     div("dropdown-menu" + if (state.filtersOpen) " show" else "") {
                         ref = dropdownDivRef
 
-                        filterRefs.entries.fold(FilterCategory.NONE) { cat, filter ->
-                            if (cat != filter.key.cat) {
-                                h4(if (cat == FilterCategory.NONE) "" else "mt-4") {
-                                    +filter.key.cat.toString()
+                        div("d-flex") {
+                            div {
+                                filterRefs.entries.fold(FilterCategory.NONE) { cat, filter ->
+                                    if (cat != filter.key.cat) {
+                                        h4(if (cat == FilterCategory.NONE) "" else "mt-4") {
+                                            +filter.key.cat.toString()
+                                        }
+                                    }
+
+                                    toggle(filter.key.key, filter.key.name, filter.value) {
+                                        setState {
+                                            state.filterMap[filter.key] = it
+                                        }
+                                    }
+
+                                    filter.key.cat
                                 }
                             }
 
-                            toggle(filter.key.key, filter.key.name, filter.value) {
-                                setState {
-                                    state.filterMap[filter.key] = it
+                            div("tags") {
+                                h4 {
+                                    +"Tags"
+                                }
+                                MapTag.sorted.fold(MapTagType.None) { prev, it ->
+                                    if (it.type != prev) div("break") {}
+
+                                    if (it.type != MapTagType.None) {
+                                        mapTag {
+                                            attrs.selected = state.tags.contains(it) || state.tags.isEmpty()
+                                            attrs.tag = it
+                                            attrs.onClick = { _ ->
+                                                val shouldAdd = !state.tags.contains(it)
+
+                                                val newTags = state.tags.applyIf(!state.shiftHeld) {
+                                                    filterTo(hashSetOf()) { o -> o.type != it.type }
+                                                }.applyIf(shouldAdd) {
+                                                    plus(it)
+                                                }.applyIf(state.shiftHeld && !shouldAdd) {
+                                                    minus(it)
+                                                }
+
+                                                setState {
+                                                    tags = newTags
+                                                }
+                                                window.asDynamic().getSelection().removeAllRanges()
+
+                                                Unit
+                                            }
+                                        }
+                                    }
+                                    it.type
                                 }
                             }
-
-                            filter.key.cat
                         }
                     }
                 }

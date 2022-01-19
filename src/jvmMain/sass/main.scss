@@ -1,6 +1,21 @@
 $navbar-padding-y: .5rem;
 $navbar-padding-x: .5rem;
 
+$white: #fff;
+$navbar-dark-color: rgba($white, .8);
+$bs-blue: #1268a1;
+$bs-green: #008055;
+$bs-red: #b52a1c;
+$bs-orange: #bd5500;
+$bs-yellow: #fff301;
+$theme-colors: (
+  "blue": $bs-blue,
+  "green": $bs-green,
+  "expert": $bs-red,
+  "hard": $bs-orange,
+  "unsure": $bs-yellow
+);
+
 @use "datepicker";
 @import "bootswatch/dist/darkly/variables.scss";
 @import "bootstrap/scss/bootstrap.scss";
@@ -258,6 +273,7 @@ table.search-results {
   span {
     display: inline-block;
     text-overflow: ellipsis;
+    white-space: nowrap;
     overflow: hidden;
     width: 176px;
   }
@@ -269,7 +285,7 @@ table.search-results {
 .form-group .dropdown-menu {
   padding: 1rem 1rem 0.8rem 1rem !important;
   left: 50% !important;
-  transform: translate(-50%, 0);
+  transform: translate(-124px, 0);
   white-space: nowrap;
 }
 .dropdown-menu {
@@ -282,6 +298,22 @@ table.search-results {
   h4 {
     text-transform: uppercase;
     font-size: 12px;
+  }
+  .d-flex {
+    column-gap: 20px;
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      width: 358px;
+      align-content: start;
+      .break {
+        flex-basis: 100%;
+        height: 0;
+      }
+      .badge {
+        cursor: pointer;
+      }
+    }
   }
 }
 .mapinfo {
@@ -374,6 +406,21 @@ th a {
   }
   small {
     display: block;
+  }
+}
+
+.card {
+  .tags {
+    h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .break:first-of-type:not(h4 + .break) {
+      height: 10px;
+    }
+    .badge {
+      cursor: pointer;
+    }
   }
 }
 

@@ -34,7 +34,7 @@ val botInfo = functionComponent<BotInfoProps> { props ->
             +"Bot"
         }
     } else if (score < 0) {
-        span("badge badge-pill badge-warning " + if (marginLeft) "ml-2" else "mr-2") {
+        span("badge badge-pill badge-unsure " + if (marginLeft) "ml-2" else "mr-2") {
             attrs.title = "Could be a bot"
             +"Unsure"
         }

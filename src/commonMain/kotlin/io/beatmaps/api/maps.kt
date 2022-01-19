@@ -1,6 +1,7 @@
 @file:UseSerializers(InstantAsStringSerializer::class, ECharacteristicSerializer::class)
 package io.beatmaps.api
 
+import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.ECharacteristicSerializer
 import io.beatmaps.common.api.EDifficulty
@@ -39,7 +40,8 @@ data class MapDetail(
     val createdAt: Instant,
     val updatedAt: Instant,
     val lastPublishedAt: Instant? = null,
-    val deletedAt: Instant? = null
+    val deletedAt: Instant? = null,
+    val tags: List<MapTag> = listOf()
 ) {
     fun intId() = id.toInt(16)
     fun latestVersion() = versions.maxByOrNull { it.createdAt }

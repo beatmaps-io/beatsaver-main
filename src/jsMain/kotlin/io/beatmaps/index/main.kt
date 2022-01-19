@@ -51,7 +51,8 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             params.get("ranked")?.toBoolean(),
             params.get("fullSpread")?.toBoolean(),
             params.get("me")?.toBoolean(),
-            params.get("cinema")?.toBoolean()
+            params.get("cinema")?.toBoolean(),
+            params.get("tags")?.split(",") ?: listOf()
         )
     }
 
@@ -79,7 +80,8 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             (if (searchParamsLocal.minNps != null) "minNps=${searchParamsLocal.minNps}" else null),
             (if (searchParamsLocal.sortOrder != SearchOrder.Relevance) "order=${searchParamsLocal.sortOrder}" else null),
             (if (searchParamsLocal.from != null) "from=${searchParamsLocal.from}" else null),
-            (if (searchParamsLocal.to != null) "to=${searchParamsLocal.to}" else null)
+            (if (searchParamsLocal.to != null) "to=${searchParamsLocal.to}" else null),
+            (if (searchParamsLocal.tags.isNotEmpty()) "tags=${searchParamsLocal.tags.joinToString(",")}" else null)
         )
         val hash = row?.let { "#$it" } ?: ""
         props.history.push((if (newQuery.isEmpty()) "/" else "?" + newQuery.joinToString("&")) + hash)

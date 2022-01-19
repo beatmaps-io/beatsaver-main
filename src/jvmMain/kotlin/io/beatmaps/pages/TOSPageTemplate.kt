@@ -162,6 +162,13 @@ class TOSPageTemplate : Template<BODY> {
                     }
                 }
                 hr("my-4") {}
+                h3 {
+                    +"Blockchain Technology"
+                }
+                p {
+                    +"Using this service as part of any blockchain technology is not allowed. This includes, but is not limited to, minting content hosted on the site in a non-fungible token (NFT). Repeated violations are subject to content removal, account restrictions, or termination."
+                }
+                hr("my-4") {}
                 h1 {
                     +"Changes and amendments"
                 }
@@ -170,7 +177,7 @@ class TOSPageTemplate : Template<BODY> {
                 }
                 hr("my-4") {}
                 p("text-muted") {
-                    +"This document was last updated on November 21, 2021"
+                    +"This document was last updated on January 19, 2022"
                 }
             }
         }

@@ -21,7 +21,8 @@ data class UserDetail(
     val stats: UserStats? = null,
     val type: AccountType,
     val email: String? = null,
-    val uploadLimit: Int? = null
+    val uploadLimit: Int? = null,
+    val curator: Boolean? = null
 ) { companion object }
 @Serializable
 data class UserStats(
@@ -57,4 +58,4 @@ data class ResetRequest(val jwt: String, val password: String, val password2: St
 @Serializable
 data class AccountRequest(val currentPassword: String? = null, val password: String? = null, val password2: String? = null)
 @Serializable
-data class UserAdminRequest(val userId: Int, val maxUploadSize: Int)
+data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val curator: Boolean)
