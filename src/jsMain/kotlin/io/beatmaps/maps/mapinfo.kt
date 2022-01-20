@@ -232,14 +232,16 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                     }
                     div("card-text clearfix") {
                         if (state.editing == true) {
+                            // If you're not an admin or the owner I hope you're a curator
+                            val isCurating = !(userData?.admin == true || props.isOwner)
                             input(InputType.text, classes = "form-control m-2") {
                                 attrs.id = "name"
-                                attrs.disabled = state.loading == true || userData?.admin != true
+                                attrs.disabled = state.loading == true || isCurating
                                 ref = inputRef
                             }
                             textarea("10", classes = "form-control m-2") {
                                 attrs.id = "description"
-                                attrs.disabled = state.loading == true || userData?.admin != true
+                                attrs.disabled = state.loading == true || isCurating
                                 +props.mapInfo.description
                                 ref = textareaRef
                             }
