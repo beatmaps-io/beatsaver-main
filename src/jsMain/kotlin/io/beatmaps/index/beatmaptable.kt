@@ -53,6 +53,7 @@ data class SearchParams(
     val to: String?,
     val noodle: Boolean?,
     val ranked: Boolean?,
+    val curated: Boolean?,
     val fullSpread: Boolean?,
     val me: Boolean?,
     val cinema: Boolean?,
@@ -193,6 +194,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                     (if (search.me != null) "&me=${search.me}" else "") +
                     (if (search.cinema != null) "&cinema=${search.cinema}" else "") +
                     (if (search.ranked != null) "&ranked=${search.ranked}" else "") +
+                    (if (search.curated != null) "&curated=${search.curated}" else "") +
                     (if (search.fullSpread != null) "&fullSpread=${search.fullSpread}" else "") +
                     (if (search.search.isNotBlank()) "&q=${encodeURIComponent(search.search)}" else "") +
                     (if (search.maxNps != null) "&maxNps=${search.maxNps}" else "") +

@@ -57,6 +57,7 @@ import java.lang.Integer.toHexString
         @Ignore val api: SearchApi,
         val noodle: Boolean? = null,
         val ranked: Boolean? = null,
+        val curated: Boolean? = null,
         val fullSpread: Boolean? = null,
         val minDuration: Int? = null,
         val maxDuration: Int? = null,
@@ -208,6 +209,7 @@ fun Route.searchRoute() {
                                     .notNull(it.chroma) { o -> Beatmap.chroma eq o }
                                     .notNull(it.noodle) { o -> Beatmap.noodle eq o }
                                     .notNull(it.ranked) { o -> Beatmap.ranked eq o }
+                                    .notNull(it.curated) { o -> with(Beatmap.curatedAt) { if (o) isNotNull() else isNull() } }
                                     .notNull(it.fullSpread) { o -> Beatmap.fullSpread eq o }
                                     .notNull(it.minNps) { o -> (Beatmap.maxNps greaterEq o) and (Difficulty.nps greaterEq o) }
                                     .notNull(it.maxNps) { o -> (Beatmap.minNps lessEq o) and (Difficulty.nps lessEq o) }
