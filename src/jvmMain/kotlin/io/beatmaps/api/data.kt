@@ -24,7 +24,8 @@ fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
             it.second
         }
     },
-    other.curator?.name, other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.lastPublishedAt?.toKotlinInstant(), other.deletedAt?.toKotlinInstant(),
+    other.curator?.let { UserDetail.from(it) }, other.curatedAt?.toKotlinInstant(), other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(),
+    other.lastPublishedAt?.toKotlinInstant(), other.deletedAt?.toKotlinInstant(),
     other.tags?.mapNotNull {
         MapTag.fromSlug(it)
     } ?: listOf()

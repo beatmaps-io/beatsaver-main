@@ -14,7 +14,7 @@ enum class AccountType {
 data class UserDetail(
     val id: Int,
     val name: String,
-    val uniqueSet: Boolean,
+    val uniqueSet: Boolean = true,
     val hash: String? = null,
     val testplay: Boolean? = null,
     val avatar: String,

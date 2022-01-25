@@ -66,7 +66,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
                 div(itemClasses) {
                     +"Curated by"
                     span("text-truncate ml-4") {
-                        +curator
+                        +curator.name
                     }
                 }
             }
