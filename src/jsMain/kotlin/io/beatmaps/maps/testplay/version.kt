@@ -183,7 +183,8 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                             attrs.min = nowStr
                             attrs.onChangeFunction = {
                                 setState {
-                                    scheduleAt = Instant.parse(Moment((it.target as HTMLInputElement).value).toISOString())
+                                    val textVal = (it.target as HTMLInputElement).value
+                                    scheduleAt = if (textVal.isEmpty()) null else Instant.parse(Moment(textVal).toISOString())
                                 }
                             }
                         }
