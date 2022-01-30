@@ -578,18 +578,24 @@ fun Route.playlistRoute() {
                 val mapUpdate = call.receive<CurateMap>()
 
                 val result = transaction {
-                    Playlist.updateReturning({
-                        (Playlist.id eq mapUpdate.id)
-                    }, {
-                        if (mapUpdate.curated) {
-                            it[curatedAt] = NowExpression(curatedAt.columnType)
-                            it[curator] = EntityID(user.userId, User)
-                        } else {
-                            it[curatedAt] = null
-                            it[curator] = null
-                        }
-                        it[updatedAt] = NowExpression(updatedAt.columnType)
-                    }, *Playlist.columns.toTypedArray())?.firstOrNull()?.let { PlaylistFull.from(it, cdnPrefix()) }
+                    Playlist.updateReturning(
+                        {
+                            (Playlist.id eq mapUpdate.id)
+                        },
+                        {
+                            if (mapUpdate.curated) {
+                                it[curatedAt] = NowExpression(curatedAt.columnType)
+                                it[curator] = EntityID(user.userId, User)
+                            } else {
+                                it[curatedAt] = null
+                                it[curator] = null
+                            }
+                            it[updatedAt] = NowExpression(updatedAt.columnType)
+                        },
+                        *Playlist.columns.toTypedArray()
+                    )?.firstOrNull()?.let {
+                        PlaylistFull.from(it, cdnPrefix())
+                    }
                 }
 
                 call.respond(result ?: HttpStatusCode.BadRequest)

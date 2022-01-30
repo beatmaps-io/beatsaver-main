@@ -24,8 +24,14 @@ fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
             it.second
         }
     },
-    other.curator?.let { UserDetail.from(it) }, other.curatedAt?.toKotlinInstant(), other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(),
-    other.lastPublishedAt?.toKotlinInstant(), other.deletedAt?.toKotlinInstant(), other.tags?.mapNotNull { MapTag.fromSlug(it) } ?: listOf()
+    other.curator?.let {
+        UserDetail.from(it)
+    },
+    other.curatedAt?.toKotlinInstant(), other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.lastPublishedAt?.toKotlinInstant(),
+    other.deletedAt?.toKotlinInstant(),
+    other.tags?.mapNotNull {
+        MapTag.fromSlug(it)
+    } ?: listOf()
 )
 fun MapDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(BeatmapDao.wrapRow(row), cdnPrefix)
 
@@ -75,7 +81,10 @@ fun PlaylistBasic.Companion.from(row: ResultRow, cdnPrefix: String) = from(Playl
 
 fun PlaylistFull.Companion.from(other: PlaylistDao, cdnPrefix: String) = PlaylistFull(
     other.id.value, other.name, other.description, "${Config.cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.public, UserDetail.from(other.owner),
-    other.curator?.let { UserDetail.from(it) }, other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.songsChangedAt?.toKotlinInstant(),
-    other.curatedAt?.toKotlinInstant(), other.deletedAt?.toKotlinInstant()
+    other.curator?.let {
+        UserDetail.from(it)
+    },
+    other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.songsChangedAt?.toKotlinInstant(), other.curatedAt?.toKotlinInstant(),
+    other.deletedAt?.toKotlinInstant()
 )
 fun PlaylistFull.Companion.from(row: ResultRow, cdnPrefix: String) = from(PlaylistDao.wrapRow(row), cdnPrefix)
