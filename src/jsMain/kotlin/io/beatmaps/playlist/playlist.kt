@@ -5,6 +5,7 @@ import external.DragAndDrop.DragDropContext
 import external.dragable
 import external.droppable
 import external.generateConfig
+import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetailWithOrder
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistMapRequest
@@ -171,6 +172,14 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
         }
     }
 
+    private fun curate(playlistId: Int, userId: Int, curated: Boolean = true) {
+        Axios.post<PlaylistFull>("${Config.apibase}/playlists/curate", CurateMap(playlistId, curated), generateConfig<CurateMap, PlaylistFull>()).then({
+            setState {
+                playlist = it.data
+            }
+        }) { }
+    }
+
     override fun RBuilder.render() {
         modal {
             ref = modalRef
@@ -215,6 +224,21 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                 }
                             }
                         }
+                        if (pl.deletedAt == null && userData?.curator == true) {
+                            div("break") {}
+                            div("btn-group") {
+                                a("#", classes = "btn " + if (pl.curatedAt == null) "btn-green" else "btn-expert") {
+                                    val text = ((if (pl.curatedAt == null) "" else "Un-") + "Curate")
+                                    attrs.title = text
+                                    attrs.attributes["aria-label"] = text
+                                    attrs.onClickFunction = {
+                                        it.preventDefault()
+                                        curate(pl.playlistId, userData.userId, pl.curatedAt == null)
+                                    }
+                                    +text
+                                }
+                            }
+                        }
                         div("list-group") {
                             img("Cover", pl.playlistImage) { }
                             div("list-group-item d-flex justify-content-between") {
@@ -228,6 +252,14 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                 span("text-truncate ml-4") {
                                     attrs.title = (pl.owner?.name ?: "")
                                     +(pl.owner?.name ?: "")
+                                }
+                            }
+                            pl.curator?.let { curator ->
+                                div("list-group-item d-flex justify-content-between") {
+                                    +"Curated by"
+                                    span("text-truncate ml-4") {
+                                        +curator.name
+                                    }
                                 }
                             }
                             div("list-group-item d-flex justify-content-between") {

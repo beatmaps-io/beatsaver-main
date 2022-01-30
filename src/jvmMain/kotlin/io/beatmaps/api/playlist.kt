@@ -60,6 +60,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import net.coobird.thumbnailator.Thumbnails
+import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -89,6 +90,7 @@ const val prefix: String = "/playlists"
     @Location("$prefix/id/{id}/add") data class Add(val id: Int, val api: PlaylistApi)
     @Location("$prefix/id/{id}/edit") data class Edit(val id: Int, val api: PlaylistApi)
     @Location("$prefix/create") data class Create(val api: PlaylistApi)
+    @Location("$prefix/curate") data class Curate(val api: PlaylistApi)
     @Location("$prefix/user/{userId}/{page}") data class ByUser(val userId: Int, val page: Long, val api: PlaylistApi)
     @Group("Playlists") @Location("$prefix/latest") data class ByUploadDate(
         @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
@@ -107,6 +109,7 @@ const val prefix: String = "/playlists"
         val from: Instant? = null,
         val to: Instant? = null,
         val includeEmpty: Boolean? = null,
+        val curated: Boolean? = null,
         @Ignore val api: PlaylistApi
     )
 }
@@ -215,11 +218,13 @@ fun Route.playlistRoute() {
                         .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
                         .notNull(it.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }
                         .notNull(it.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
+                        .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }
                 }
                 .groupBy(Playlist.id, User.id)
                 .orderBy(
                     when (actualSortOrder) {
                         SearchOrder.Relevance -> searchInfo.similarRank
+                        SearchOrder.Curated -> Playlist.curatedAt
                         SearchOrder.Rating, SearchOrder.Latest -> Playlist.createdAt
                     },
                     SortOrder.DESC
@@ -561,6 +566,34 @@ fun Route.playlistRoute() {
             }
 
             call.respond(HttpStatusCode.OK)
+        }
+    }
+
+    post<PlaylistApi.Curate> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        requireAuthorization { user ->
+            if (!user.isCurator()) {
+                call.respond(HttpStatusCode.BadRequest)
+            } else {
+                val mapUpdate = call.receive<CurateMap>()
+
+                val result = transaction {
+                    Playlist.updateReturning({
+                        (Playlist.id eq mapUpdate.id)
+                    }, {
+                        if (mapUpdate.curated) {
+                            it[curatedAt] = NowExpression(curatedAt.columnType)
+                            it[curator] = EntityID(user.userId, User)
+                        } else {
+                            it[curatedAt] = null
+                            it[curator] = null
+                        }
+                        it[updatedAt] = NowExpression(updatedAt.columnType)
+                    }, *Playlist.columns.toTypedArray())?.firstOrNull()?.let { PlaylistFull.from(it, cdnPrefix()) }
+                }
+
+                call.respond(result ?: HttpStatusCode.BadRequest)
+            }
         }
     }
 }

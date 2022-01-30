@@ -109,6 +109,7 @@ class SearchParams(
             escapedQuery != null && bothWithoutQuotes.replace(" ", "").length > 3 && originalOrder == SearchOrder.Relevance ->
                 SearchOrder.Relevance
             originalOrder == SearchOrder.Rating -> SearchOrder.Rating
+            originalOrder == SearchOrder.Curated -> SearchOrder.Curated
             else -> SearchOrder.Latest
         }
 
@@ -160,6 +161,7 @@ fun Route.searchRoute() {
             SearchOrder.Relevance -> listOf(searchInfo.similarRank to SortOrder.DESC, Beatmap.score to SortOrder.DESC, Beatmap.uploaded to SortOrder.DESC)
             SearchOrder.Rating -> listOf(Beatmap.score to SortOrder.DESC, Beatmap.uploaded to SortOrder.DESC)
             SearchOrder.Latest -> listOf(Beatmap.uploaded to SortOrder.DESC)
+            SearchOrder.Curated -> listOf(Beatmap.curatedAt to SortOrder.DESC_NULLS_LAST, Beatmap.uploaded to SortOrder.DESC)
         }.toTypedArray()
 
         newSuspendedTransaction {

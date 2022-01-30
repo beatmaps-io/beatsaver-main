@@ -116,21 +116,13 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     private fun delete() {
         Axios.post<String>("${Config.apibase}/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.value), generateConfig<MapInfoUpdate, String>()).then({
             props.deleteMap()
-        }) {
-            setState {
-                loading = false
-            }
-        }
+        }) { }
     }
 
     private fun curate(curated: Boolean = true) {
         Axios.post<String>("${Config.apibase}/maps/curate", CurateMap(props.mapInfo.intId(), curated), generateConfig<CurateMap, String>()).then({
             props.reloadMap()
-        }) {
-            setState {
-                loading = false
-            }
-        }
+        }) { }
     }
 
     override fun RBuilder.render() {

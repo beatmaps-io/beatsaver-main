@@ -64,7 +64,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
             val now = Clock.System.now()
             setState {
                 loading = false
-                playlist = PlaylistFull(0, "", "", "", true, null, now, now, null)
+                playlist = PlaylistFull(0, "", "", "", true, null, null, now, now, null)
             }
             window.setTimeout(
                 {

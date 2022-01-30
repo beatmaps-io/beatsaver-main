@@ -30,9 +30,11 @@ data class PlaylistFull(
     val playlistImage: String,
     val public: Boolean,
     val owner: UserDetail?,
+    val curator: UserDetail? = null,
     val createdAt: Instant,
     val updatedAt: Instant,
     val songsChangedAt: Instant?,
+    val curatedAt: Instant? = null,
     val deletedAt: Instant? = null
 ) {
     companion object

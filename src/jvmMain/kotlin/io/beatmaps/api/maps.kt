@@ -131,7 +131,7 @@ fun Route.mapDetailRoute() {
                         (Beatmap.id eq mapUpdate.id)
                     }) {
                         if (mapUpdate.curated) {
-                            it[curatedAt] = NowExpression(deletedAt.columnType)
+                            it[curatedAt] = NowExpression(curatedAt.columnType)
                             it[curator] = EntityID(user.userId, User)
                         } else {
                             it[curatedAt] = null
