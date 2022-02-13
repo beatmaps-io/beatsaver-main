@@ -360,6 +360,16 @@ fun String.transformURLIntoLinks() =
         if (it.groupValues[1].isEmpty()) it.value else "<a target=\"_blank\" href=\"${it.value}\">${it.value}</a>"
     }
 
+fun String.parseBoldMarkdown() =
+    replace("(^| )(\\*\\*|__)(.*?)\\2".toRegex(RegexOption.MULTILINE)) {
+        "${it.groupValues[1]}<b>${it.groupValues[3]}</b>"
+    }
+
+fun String.parseItalicMarkdown() =
+    replace("(^| )(\\*|_)(.*?)\\2".toRegex(RegexOption.MULTILINE)) {
+        "${it.groupValues[1]}<i>${it.groupValues[3]}</i>"
+    }
+
 fun RBuilder.mapInfo(handler: MapInfoProps.() -> Unit): ReactElement {
     return child(MapInfo::class) {
         this.attrs(handler)
@@ -373,6 +383,8 @@ fun <T : Tag> RDOMBuilder<T>.textToContent(text: String) {
     domProps.dangerouslySetInnerHTML = DangerousHtml(
         text
             .replace(Regex("<[^>]+>"), "")
+            .parseBoldMarkdown()
+            .parseItalicMarkdown()
             .transformURLIntoLinks()
             .replace("\n", "<br />")
     )
