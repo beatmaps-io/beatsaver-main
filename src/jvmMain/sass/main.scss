@@ -37,6 +37,14 @@ img {
   width: 50%;
 }
 
+.navbar-brand {
+  padding: 0;
+  img {
+    height: 23px;
+    margin: 7.75px 0;
+  }
+}
+
 div.search-results {
   display: flex;
   flex-wrap: wrap;

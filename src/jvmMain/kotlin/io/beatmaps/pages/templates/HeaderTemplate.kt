@@ -9,9 +9,11 @@ import kotlinx.html.a
 import kotlinx.html.button
 import kotlinx.html.div
 import kotlinx.html.id
+import kotlinx.html.img
 import kotlinx.html.li
 import kotlinx.html.nav
 import kotlinx.html.span
+import kotlinx.html.title
 import kotlinx.html.ul
 
 class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
@@ -20,7 +22,10 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
             div("container") {
                 a("/", classes = "navbar-brand") {
                     id = "home-link"
-                    +"BeatSaver"
+                    img("BeatSaver", "/static/beatsaver_logo.svg") {
+                        title = "BeatSaver"
+                        height = "23px"
+                    }
                 }
                 button(classes = "navbar-toggler", type = ButtonType.button) {
                     id = "navbar-button"
