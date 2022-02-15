@@ -68,6 +68,8 @@ fun RElementBuilder<DropzoneProps>.simple(
                     } else {
                         history.push("/maps/${r.data}")
                     }
+                } else if (r.status == 413) {
+                    errorsBlock(listOf("Zip file too big"))
                 } else {
                     captchaRef.current?.reset()
                     val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)

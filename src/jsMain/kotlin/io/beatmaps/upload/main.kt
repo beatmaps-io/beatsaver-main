@@ -46,7 +46,7 @@ fun <P> RBuilder.renderChild(rc: RBuilder.(P) -> Unit) {
 class UploadRequestConfig(block: (AxiosProgress) -> Unit) : AxiosRequestConfig {
     override var onUploadProgress: ((progressEvent: AxiosProgress) -> Unit)? = block
     override var validateStatus: ((Number) -> Boolean)? = {
-        arrayOf(200, 400).contains(it)
+        arrayOf(200, 400, 413).contains(it)
     }
 }
 
