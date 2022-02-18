@@ -1,5 +1,6 @@
 import io.miret.etienne.gradle.sass.CompileSass
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
+import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
     kotlin("multiplatform") version "1.5.30"
@@ -204,6 +205,13 @@ tasks.getByName<Jar>("jvmJar") {
     from(jsBrowserProductionWebpack.destinationDirectory)
     listOf(jsBrowserProductionWebpack.outputFileName, jsBrowserProductionWebpack.outputFileName + ".map", "modules.js", "modules.js.map").forEach {
         from(File(jsBrowserProductionWebpack.destinationDirectory, it))
+    }
+}
+
+ktlint {
+    version.set("0.44.0")
+    reporters {
+        reporter(ReporterType.CHECKSTYLE)
     }
 }
 
