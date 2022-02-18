@@ -17,9 +17,9 @@ import io.beatmaps.common.db.unaccent
 import io.beatmaps.common.db.unaccentLiteral
 import io.beatmaps.common.db.wildcard
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.Beatmap.joinCurator
-import io.beatmaps.common.dbo.Beatmap.joinUploader
-import io.beatmaps.common.dbo.Beatmap.joinVersions
+import io.beatmaps.common.dbo.joinCurator
+import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions

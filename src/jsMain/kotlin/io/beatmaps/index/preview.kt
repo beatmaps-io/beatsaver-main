@@ -21,7 +21,6 @@ import react.dom.button
 import react.dom.div
 import react.dom.h5
 import react.dom.iframe
-import react.dom.span
 import react.setState
 
 const val previewBaseUrl = "https://skystudioapps.com/bs-viewer/"

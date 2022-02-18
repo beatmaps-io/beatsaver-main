@@ -16,7 +16,7 @@ import io.beatmaps.common.db.DateMinusDays
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.Beatmap.joinVersions
+import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.ModLogDao

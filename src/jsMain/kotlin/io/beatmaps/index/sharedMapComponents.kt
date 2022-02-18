@@ -27,9 +27,10 @@ external interface BotInfoProps : RProps {
 
 val botInfo = functionComponent<BotInfoProps> { props ->
     val score = (props.version?.sageScore ?: 0)
+    val margin = if (props.marginLeft != false) "ms-2" else "me-2"
 
     fun renderBadge(color: String, title: String, text: String) =
-        span("badge rounded-pill badge-${color} " + if (props.marginLeft != false) "ms-2" else "me-2") {
+        span("badge rounded-pill badge-$color $margin") {
             attrs.title = title
             +text
         }

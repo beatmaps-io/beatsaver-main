@@ -6,7 +6,7 @@ import io.beatmaps.api.from
 import io.beatmaps.cdnPrefix
 import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.Beatmap.joinVersions
+import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
