@@ -25,6 +25,7 @@ val redisHost = System.getenv("REDIS_HOST") ?: ""
 val redisPort = System.getenv("REDIS_PORT") ?: "6379"
 private val logger = Logger.getLogger("bmio.Redis")
 
+val cookieName = System.getenv("COOKIE_NAME") ?: "BMSESSIONID"
 val cookieDomain = System.getenv("COOKIE_DOMAIN") ?: null
 
 fun Application.installSessions() {
@@ -38,7 +39,7 @@ fun Application.installSessions() {
     }
 
     install(Sessions) {
-        cookie<Session>("BMSESSIONID", sessionStorage) {
+        cookie<Session>(cookieName, sessionStorage) {
             cookie.extensions["SameSite"] = "lax"
             cookie.domain = cookieDomain
         }
