@@ -111,9 +111,11 @@ class ForgotPage : RComponent<RProps, ForgotPageState>() {
                         attrs.required = true
                         attrs.autoFocus = true
                     }
-                    button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
-                        attrs.disabled = state.loading
-                        +"Reset password"
+                    div("d-grid") {
+                        button(classes = "btn btn-success", type = ButtonType.submit) {
+                            attrs.disabled = state.loading
+                            +"Reset password"
+                        }
                     }
                     routeLink("/login", className = "login_back") {
                         +"< Back"

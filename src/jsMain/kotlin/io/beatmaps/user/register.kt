@@ -125,7 +125,7 @@ class SignupPage : RComponent<RProps, SignupPageState>() {
                         attrs.required = true
                         attrs.autoFocus = true
                     }
-                    small("form-text text-muted mb-3 text-left") {
+                    small("d-block form-text text-muted mb-3 text-start") {
                         +"Can only contain letters, numbers and ' . ', ' _ ', ' - ', no spaces"
                     }
                     input(type = InputType.email, classes = "form-control mb-3") {
@@ -149,10 +149,12 @@ class SignupPage : RComponent<RProps, SignupPageState>() {
                         attrs.required = true
                         attrs.attributes["autocomplete"] = "new-password"
                     }
-                    button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
-                        attrs.disabled = state.loading
-                        i("fas fa-user-plus") {}
-                        +" Register"
+                    div("d-grid") {
+                        button(classes = "btn btn-success", type = ButtonType.submit) {
+                            attrs.disabled = state.loading
+                            i("fas fa-user-plus") {}
+                            +" Register"
+                        }
                     }
                     hr {}
                     small {

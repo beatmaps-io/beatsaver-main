@@ -123,7 +123,7 @@ class UserPlaylists : RComponent<UserPlaylistsProps, UserPlaylistsState>() {
                         attrs.colSpan = "2"
                         +"Name"
                         if (props.own == true) {
-                            routeLink("/playlists/new", className = "btn btn-success btn-sm float-right") {
+                            routeLink("/playlists/new", className = "btn btn-success btn-sm float-end") {
                                 +"Create New"
                             }
                         }

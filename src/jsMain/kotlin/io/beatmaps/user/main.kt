@@ -153,7 +153,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                     }
                 }
             }
-            div("col-md-8 mb-3") {
+            div("col-md-8 mb-3 position-relative") {
                 div("card user-badges") {
                     div("card-body") {
                         state.userDetail?.stats?.let {
@@ -226,7 +226,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
                                 state.notificationCount.getOrElse(tab) { 0 }.let { notifCount ->
                                     if (notifCount > 0) {
-                                        span("badge rounded-pill bg-danger") {
+                                        span("badge rounded-pill badge-danger") {
                                             +"$notifCount"
                                         }
                                     }

@@ -57,7 +57,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
                     TimeAgo.default {
                         attrs.date = uploadedAt.toString()
                     }
-                } ?: span("text-truncate ml-4") {
+                } ?: span("text-truncate ms-4") {
                     +"Never published"
                 }
             }
@@ -65,7 +65,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
             props.map.curator?.let { curator ->
                 div(itemClasses) {
                     +"Curated by"
-                    span("text-truncate ml-4") {
+                    span("text-truncate ms-4") {
                         +curator.name
                     }
                 }
@@ -74,11 +74,11 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
             if (props.map.tags.isNotEmpty()) {
                 div(itemClasses) {
                     +"Tags"
-                    span("text-truncate ml-4") {
+                    span("text-truncate ms-4") {
                         props.map.tags.forEach {
                             mapTag {
                                 attrs.selected = true
-                                attrs.margins = "ml-2"
+                                attrs.margins = "ms-2"
                                 attrs.tag = it
                                 attrs.onClick = { }
                             }
@@ -90,7 +90,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
             props.map.stats.let { stats ->
                 div(itemClasses) {
                     +"Rating"
-                    span("text-truncate ml-4") {
+                    span("text-truncate ms-4") {
                         +"${stats.upvotes} / ${stats.downvotes} (${stats.scoreOneDP}%)"
                     }
                 }
@@ -160,14 +160,14 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
             href?.let {
                 routeLink(href, className = itemClasses) {
                     +label
-                    span("text-truncate ml-4") {
+                    span("text-truncate ms-4") {
                         attrs.title = info
                         +info
                     }
                 }
             } ?: div(itemClasses) {
                 +label
-                span("text-truncate ml-4") {
+                span("text-truncate ms-4") {
                     +info
                 }
             } else null

@@ -114,11 +114,8 @@ class ModalComponent : RComponent<RProps, ModalState>() {
                         h5("modal-title") {
                             +(state.modal?.titleText ?: "")
                         }
-                        button(type = ButtonType.button, classes = "close") {
+                        button(type = ButtonType.button, classes = "btn-close") {
                             attrs.onClickFunction = { hide() }
-                            span {
-                                +"×"
-                            }
                         }
                     }
                     div("modal-body") {

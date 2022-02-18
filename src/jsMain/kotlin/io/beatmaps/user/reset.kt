@@ -110,9 +110,11 @@ class ResetPage : RComponent<ResetPageProps, ResetPageState>() {
                     attrs.required = true
                     attrs.attributes["autocomplete"] = "new-password"
                 }
-                button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
-                    attrs.disabled = state.loading
-                    +"Reset password"
+                div("d-grid") {
+                    button(classes = "btn btn-success", type = ButtonType.submit) {
+                        attrs.disabled = state.loading
+                        +"Reset password"
+                    }
                 }
             }
         }

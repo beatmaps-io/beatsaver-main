@@ -56,7 +56,7 @@ class Feedback : RComponent<FeedbackProps, FeedbackState>() {
             }
             div("card-header") {
                 if (props.isOwner) {
-                    div("float-right") {
+                    div("float-end") {
                         if (state.editing) {
                             button(classes = "btn btn-success m-1") {
                                 attrs.onClickFunction = {

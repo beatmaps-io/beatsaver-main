@@ -3,15 +3,51 @@ $navbar-padding-x: .5rem;
 
 $white: #fff;
 $navbar-dark-color: rgba($white, .8);
+
+$primary: #375a7f;
+$secondary: #444;
+$success: #00bc8c;
+$info: #3498db;
+$warning: #f39c12;
+$danger: #e74c3c;
+$light: #999;
+$dark: #333;
+
 $bs-blue: #1268a1;
 $bs-green: #008055;
 $bs-red: #b52a1c;
 $bs-orange: #bd5500;
 $bs-yellow: #fff301;
+$bs-purple: #6610f2;
+
+// Bring back old look
+$card-cap-padding-y: .75rem;
+$card-cap-padding-x: 1.25rem;
+$badge-padding-y: .25em;
+$badge-padding-x: .4em;
+$list-group-item-padding-y: .6rem;
+$list-group-item-padding-x: 1rem;
+$table-cell-padding-y: .75rem;
+$table-cell-padding-x: .75rem;
+$font-size-base: 0.9375rem;
+$link-decoration: none;
+$link-hover-decoration: underline;
+$table-group-separator-color: #434343;
+
 $theme-colors: (
+  "primary":    $primary,
+  "secondary":  $secondary,
+  "success":    $success,
+  "info":       $info,
+  "warning":    $warning,
+  "danger":     $danger,
+  "light":      $light,
+  "dark":       $dark,
+
   "blue": $bs-blue,
   "green": $bs-green,
   "expert": $bs-red,
+  "purple": $bs-purple,
   "hard": $bs-orange,
   "unsure": $bs-yellow
 );
@@ -20,6 +56,14 @@ $theme-colors: (
 @import "bootswatch/dist/darkly/variables.scss";
 @import "bootstrap/scss/bootstrap.scss";
 @import "bootswatch/dist/darkly/bootswatch.scss";
+
+// I can't see anything in bootstrap that can set the foreground color correctly anymore so here we are
+@each $color, $value in $theme-colors {
+  .badge-#{$color} {
+    color: color-contrast($value);
+    background-color: $value;
+  }
+}
 
 body {
   padding-top: 70px;
@@ -39,6 +83,7 @@ img {
 
 .navbar-brand {
   padding: 0;
+  margin-right: 1rem;
   img {
     height: 23px;
     margin: 7.75px 0;
@@ -248,7 +293,7 @@ table.search-results {
       bottom: 0;
       left: 0;
       width: 100%;
-      border-top: 1px solid $table-dark-border-color;
+      border-top: 1px solid var(--bs-table-active-bg);
     }
   }
   td {
@@ -290,36 +335,40 @@ table.search-results {
     line-height: 23px;
   }
 }
-.form-group .dropdown-menu {
-  padding: 1rem 1rem 0.8rem 1rem !important;
-  left: 50% !important;
-  transform: translate(-124px, 0);
-  white-space: nowrap;
-}
-.dropdown-menu {
-  .custom-control.custom-switch {
-    padding-bottom: 0.2rem;
-  }
-  .custom-control-label {
-    display: block;
-  }
-  h4 {
-    text-transform: uppercase;
-    font-size: 12px;
-  }
-  .d-flex {
-    column-gap: 20px;
-    .tags {
-      display: flex;
-      flex-wrap: wrap;
-      width: 358px;
-      align-content: start;
-      .break {
-        flex-basis: 100%;
-        height: 0;
-      }
-      .badge {
-        cursor: pointer;
+.filter-container {
+  margin-bottom: 1rem;
+  text-align: center;
+  .dropdown-menu {
+    padding: 1rem 1rem 0.8rem 1rem !important;
+    left: 50% !important;
+    transform: translate(-50%, 0);
+    white-space: nowrap;
+    .form-check.form-check-input {
+      padding-bottom: 0.2rem;
+    }
+    .form-check-label {
+      display: block;
+    }
+    h4 {
+      text-transform: uppercase;
+      font-size: 12px;
+    }
+    .d-flex {
+      column-gap: 20px;
+      row-gap: 20px;
+      flex-direction: column;
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        width: 358px;
+        align-content: start;
+        .break {
+          flex-basis: 100%;
+          height: 0;
+        }
+        .badge {
+          cursor: pointer;
+        }
       }
     }
   }
@@ -395,6 +444,7 @@ th a {
     overflow-y: scroll;
     table-layout: fixed;
     height: 500px;
+    background-color: var(--bs-table-bg);
   }
 }
 
@@ -548,19 +598,9 @@ li.list-group-item:hover, a.list-group-item:hover {
   color: $body-color;
 }
 
-.badge-purple {
-  color: $body-color;
-  background-color: $indigo;
-}
-
-.badge-pink {
+.bg-pink {
   color: $body-color;
   background-color: $pink;
-}
-
-.badge-orange {
-  color: $body-color;
-  background-color: #da6300;
 }
 
 .diffs .badge-success {
@@ -893,6 +933,9 @@ li.KeyboardShortcutRow {
   .DateInput__small {
     width: 48px !important;
   }
+  .filter-container .dropdown-menu .d-flex {
+    flex-direction: row;
+  }
 }
 
 @include media-breakpoint-up(md) {
@@ -923,6 +966,12 @@ li.KeyboardShortcutRow {
   }
   .DateInput__small {
     width: 70px !important;
+  }
+  .filter-container {
+    position: relative;
+    .dropdown-menu {
+      transform: translate(-125px, 0);
+    }
   }
 }
 
@@ -998,6 +1047,26 @@ li.KeyboardShortcutRow {
       width: 59px;
     }
   }
+}
+
+@include media-breakpoint-up(xxl) {
+  .filter-dropdown {
+    width: 250px;
+    span {
+      width: 226px;
+    }
+  }
+  .DateInput_input__small {
+    padding: 8px 8px 6px !important;
+    font-size: 15px !important;
+  }
+  .DateInput__small {
+    width: 110px !important;
+  }
+  .filter-container .dropdown-menu {
+    transform: translate(-148px, 0);
+  }
+
 }
 
 @media (min-width: 1400px) and (min-height: 800px) {

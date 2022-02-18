@@ -82,17 +82,21 @@ class LoginPage : RComponent<RProps, RState>() {
                     attrs.required = true
                     attrs.attributes["autocomplete"] = "current-password"
                 }
-                button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
-                    i("fas fa-sign-in-alt") {}
-                    +" Sign in"
+                div("d-grid") {
+                    button(classes = "btn btn-success", type = ButtonType.submit) {
+                        i("fas fa-sign-in-alt") {}
+                        +" Sign in"
+                    }
                 }
                 routeLink("/forgot", className = "forgot_pwd") {
                     +"Forgot password?" // Send the user a JWT that will allow them to reset the password until it expires in ~20 mins
                 }
                 hr {}
-                routeLink("/register", className = "btn btn-primary btn-block") {
-                    i("fas fa-user-plus") {}
-                    +" Sign up new account"
+                div("d-grid") {
+                    routeLink("/register", className = "btn btn-primary") {
+                        i("fas fa-user-plus") {}
+                        +" Sign up new account"
+                    }
                 }
             }
         }

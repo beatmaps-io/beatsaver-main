@@ -84,7 +84,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             }
             hr("mt-2") {}
             if (props.userDetail.type != AccountType.DISCORD) {
-                div("form-group row") {
+                div("mb-3 row") {
                     label("col-sm-2 col-form-label") {
                         attrs.htmlFor = "email"
                         +"Email"
@@ -108,8 +108,8 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     +error
                 }
             }
-            div("form-group") {
-                label {
+            div("mb-3") {
+                label("form-label") {
                     attrs.htmlFor = "name"
                     +"Username"
                 }
@@ -124,42 +124,44 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     }
                     ref = usernameRef
                 }
-                button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
-                    attrs.onClickFunction = { ev ->
-                        ev.preventDefault()
+                div("d-grid") {
+                    button(classes = "btn btn-success", type = ButtonType.submit) {
+                        attrs.onClickFunction = { ev ->
+                            ev.preventDefault()
 
-                        if (props.userDetail.name == state.username) {
-                            setState {
-                                usernameErrors = listOf("That's already your username!")
-                            }
-                        } else {
-                            setState {
-                                userLoading = true
-                            }
+                            if (props.userDetail.name == state.username) {
+                                setState {
+                                    usernameErrors = listOf("That's already your username!")
+                                }
+                            } else {
+                                setState {
+                                    userLoading = true
+                                }
 
-                            Axios.post<ActionResponse>(
-                                "${Config.apibase}/users/username",
-                                UsernameReq(state.username),
-                                generateConfig<UsernameReq, ActionResponse>()
-                            ).then {
-                                if (it.data.success) {
-                                    window.location.reload()
-                                } else {
+                                Axios.post<ActionResponse>(
+                                    "${Config.apibase}/users/username",
+                                    UsernameReq(state.username),
+                                    generateConfig<UsernameReq, ActionResponse>()
+                                ).then {
+                                    if (it.data.success) {
+                                        window.location.reload()
+                                    } else {
+                                        setState {
+                                            usernameErrors = it.data.errors
+                                            userLoading = false
+                                        }
+                                    }
+                                }.catch {
+                                    // Cancelled request
                                     setState {
-                                        usernameErrors = it.data.errors
                                         userLoading = false
                                     }
                                 }
-                            }.catch {
-                                // Cancelled request
-                                setState {
-                                    userLoading = false
-                                }
                             }
                         }
+                        attrs.disabled = state.userLoading == true
+                        +"Change username"
                     }
-                    attrs.disabled = state.userLoading == true
-                    +"Change username"
                 }
             }
         }
@@ -169,50 +171,52 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     +"Avatar"
                 }
                 hr("mt-2") {}
-                div("form-group") {
+                div("mb-3") {
                     input(InputType.file) {
                         key = "avatar"
                         ref = avatarRef
                         attrs.hidden = state.uploading == true
                     }
-                    button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
-                        attrs.hidden = state.uploading == true
-                        attrs.onClickFunction = { ev ->
-                            ev.preventDefault()
+                    div("d-grid") {
+                        button(classes = "btn btn-success", type = ButtonType.submit) {
+                            attrs.hidden = state.uploading == true
+                            attrs.onClickFunction = { ev ->
+                                ev.preventDefault()
 
-                            val file = avatarRef.current?.files?.let { it[0] }
-                            if (file != null) {
-                                setState {
-                                    uploading = true
-                                }
-
-                                val data = FormData()
-                                data.asDynamic().append("file", file)
-
-                                Axios.post<dynamic>(
-                                    "/avatar", data,
-                                    UploadRequestConfig { progress ->
-                                        val v = ((progress.loaded * 100f) / progress.total).toInt()
-                                        progressBarInnerRef.current?.style?.width = "$v%"
+                                val file = avatarRef.current?.files?.let { it[0] }
+                                if (file != null) {
+                                    setState {
+                                        uploading = true
                                     }
-                                ).then { r ->
-                                    if (r.status == 200) {
-                                        window.location.reload()
-                                    } else {
+
+                                    val data = FormData()
+                                    data.asDynamic().append("file", file)
+
+                                    Axios.post<dynamic>(
+                                        "/avatar", data,
+                                        UploadRequestConfig { progress ->
+                                            val v = ((progress.loaded * 100f) / progress.total).toInt()
+                                            progressBarInnerRef.current?.style?.width = "$v%"
+                                        }
+                                    ).then { r ->
+                                        if (r.status == 200) {
+                                            window.location.reload()
+                                        } else {
+                                            setState {
+                                                uploading = false
+                                                avatarRef.current?.value = ""
+                                            }
+                                        }
+                                    }.catch {
                                         setState {
                                             uploading = false
                                             avatarRef.current?.value = ""
                                         }
                                     }
-                                }.catch {
-                                    setState {
-                                        uploading = false
-                                        avatarRef.current?.value = ""
-                                    }
                                 }
                             }
+                            +"Upload"
                         }
-                        +"Upload"
                     }
                     div("progress") {
                         attrs.hidden = state.uploading == false
@@ -279,8 +283,8 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                         +error
                     }
                 }
-                div("form-group") {
-                    label {
+                div("mb-3") {
+                    label("form-label") {
                         attrs.htmlFor = "current-password"
                         +"Current Password"
                     }
@@ -293,8 +297,8 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                         attrs.attributes["autocomplete"] = "current-password"
                     }
                 }
-                div("form-group") {
-                    label {
+                div("mb-3") {
+                    label("form-label") {
                         attrs.htmlFor = "new-password"
                         +"New Password"
                     }
@@ -314,9 +318,11 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                         attrs.placeholder = "Repeat Password"
                         attrs.attributes["autocomplete"] = "new-password"
                     }
-                    button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
-                        attrs.disabled = state.loading == true
-                        +"Change password"
+                    div("d-grid") {
+                        button(classes = "btn btn-success", type = ButtonType.submit) {
+                            attrs.disabled = state.loading == true
+                            +"Change password"
+                        }
                     }
                 }
             }
@@ -327,8 +333,8 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     +"Unlink discord"
                 }
                 hr("mt-2") {}
-                div("form-group") {
-                    button(classes = "btn btn-danger btn-block", type = ButtonType.submit) {
+                div("mb-3 d-grid") {
+                    button(classes = "btn btn-danger", type = ButtonType.submit) {
                         attrs.disabled = state.loading == true
                         +"Unlink discord"
                     }
@@ -340,8 +346,8 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     +"Link discord"
                 }
                 hr("mt-2") {}
-                div("form-group") {
-                    a("/discord-link", classes = "btn btn-info btn-block") {
+                div("mb-3 d-grid") {
+                    a("/discord-link", classes = "btn btn-info") {
                         +"Link discord"
                     }
                 }

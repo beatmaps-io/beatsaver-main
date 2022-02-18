@@ -143,7 +143,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
         p {
             +"Uploading new versions later will cause leaderboards for your map to be reset"
         }
-        div("form-group") {
+        div("mb-3") {
             div("form-check check-border") {
                 label("form-check-label") {
                     input(InputType.radio, classes = "form-check-input") {
@@ -203,7 +203,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
             }
             div("card-header") {
                 if (props.isOwner) {
-                    div("float-right") {
+                    div("float-end") {
                         if (props.firstVersion && textareaRef.current != null) {
                             button(classes = "btn btn-success m-1") {
                                 attrs.onClickFunction = {
@@ -304,8 +304,8 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
 
                     if (anyErrors) {
                         div("alert alert-danger") {
-                            i("fas fa-exclamation-circle float-left mt-1 fa-2x") {}
-                            p("ml-5") {
+                            i("fas fa-exclamation-circle float-start mt-1 fa-2x") {}
+                            p("ms-5") {
                                 textToContent(
                                     "Some of your difficulties have a high percentage of parity errors\n\n" +
                                         "You can read more about parity on the BSMG wiki:\nhttps://bsmg.wiki/mapping/basic-mapping.html#do-mapping-with-flow\n\n" +
@@ -341,7 +341,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                 div("alert alert-" + if (error) "danger" else "info") {
                                     strong {
                                         if (error) {
-                                            i("fas fa-exclamation-circle mr-1") {}
+                                            i("fas fa-exclamation-circle me-1") {}
                                         }
                                         +"${it.characteristic.human()} - ${it.difficulty.human()}"
                                     }

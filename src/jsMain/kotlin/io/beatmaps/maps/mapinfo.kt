@@ -58,7 +58,7 @@ external interface MapTagProps : RProps {
 
 val mapTag = functionComponent<MapTagProps> { props ->
     val dark = !props.selected
-    val margins = props.margins ?: "mr-2 mb-2"
+    val margins = props.margins ?: "me-2 mb-2"
     span("badge badge-${props.tag.type.color} $margins") {
         attrs.jsStyle {
             opacity = if (dark) 0.4 else 1
@@ -135,7 +135,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                     } else {
                         +props.mapInfo.name
                     }
-                    div("ml-auto flex-shrink-0") {
+                    div("ms-auto flex-shrink-0") {
                         if (!deleted) {
                             props.mapInfo.mainVersion()?.let { version ->
                                 if (userData != null) {
@@ -287,7 +287,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                     }
 
                     if (state.editing == true) {
-                        div("text-right") {
+                        div("text-end") {
                             if (props.isOwner) {
                                 if (props.mapInfo.publishedVersion() != null) {
                                     a(classes = "btn btn-danger m-1") {

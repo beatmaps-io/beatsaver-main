@@ -40,7 +40,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                 div("collapse navbar-collapse") {
                     id = "navbar"
 
-                    ul("navbar-nav mr-auto") {
+                    ul("navbar-nav me-auto") {
                         if (s?.testplay == true) {
                             li("nav-item") {
                                 a("/test", classes = "nav-link") {
@@ -112,7 +112,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                     a("/profile#alerts", classes = "dropdown-item") {
 
                                         if (s.alerts != null && s.alerts > 0) {
-                                            span("badge rounded-pill bg-danger mr-2") {
+                                            span("badge rounded-pill badge-danger me-2") {
                                                 +"${s.alerts}"
                                             }
                                         }

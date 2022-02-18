@@ -116,18 +116,18 @@ class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
                         }
                     }
                 }
-                p("text-left") {
+                p("text-start") {
                     attrs.jsStyle {
                         fontSize = "0.8rem"
                     }
                     +"Please pick a beatsaver username for your account. You will not be able to change this later."
                 }
-                p("text-left") {
+                p("text-start") {
                     attrs.jsStyle {
                         fontSize = "0.8rem"
                     }
                     +"Usernames must be made up of letters, numbers and any of "
-                    span("badge bg-secondary") {
+                    span("badge badge-secondary") {
                         attrs.jsStyle {
                             fontSize = "0.8rem"
                         }
@@ -150,10 +150,12 @@ class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
                     attrs.required = true
                     attrs.autoFocus = true
                 }
-                button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
-                    attrs.disabled = state.submitted
-                    i("fas fa-check") {}
-                    +" Continue"
+                div("d-grid") {
+                    button(classes = "btn btn-success", type = ButtonType.submit) {
+                        attrs.disabled = state.submitted
+                        i("fas fa-check") {}
+                        +" Continue"
+                    }
                 }
             }
         }

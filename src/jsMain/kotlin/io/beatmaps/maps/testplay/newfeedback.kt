@@ -56,7 +56,7 @@ class NewFeedback : RComponent<NewFeedbackProps, NewFeedbackState>() {
                         attrs.disabled = state.loading
                         ref = textareaRef
                     }
-                    div("float-right") {
+                    div("float-end") {
                         button(classes = "btn btn-info mt-3") {
                             attrs.onClickFunction = {
                                 val newText = textareaRef.current?.asDynamic().value as String

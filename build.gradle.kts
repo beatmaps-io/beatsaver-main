@@ -148,8 +148,8 @@ kotlin {
                 implementation(npm("react-google-recaptcha", "2.1.0"))
                 implementation(npm("axios", "0.21.1"))
                 implementation(npm("react-slider", "1.1.2"))
-                implementation(npm("bootswatch", "4.5.3"))
-                implementation(npm("bootstrap", "4.5.3"))
+                implementation(npm("bootswatch", "5.1.3"))
+                implementation(npm("bootstrap", "5.1.3"))
             }
         }
         val jsTest by getting {

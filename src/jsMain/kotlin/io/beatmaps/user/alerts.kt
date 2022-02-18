@@ -65,7 +65,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
     }
 
     fun RDOMBuilder<*>.simpleReason(title: String, reason: String) {
-        i("fas fa-exclamation-circle mr-1") {}
+        i("fas fa-exclamation-circle me-1") {}
         +title
         br { }
         +"Reason: $reason"

@@ -27,17 +27,17 @@ external interface BotInfoProps : RProps {
 
 val botInfo = functionComponent<BotInfoProps> { props ->
     val score = (props.version?.sageScore ?: 0)
-    val marginLeft = props.marginLeft ?: true
+
+    fun renderBadge(color: String, title: String, text: String) =
+        span("badge rounded-pill badge-${color} " + if (props.marginLeft != false) "ms-2" else "me-2") {
+            attrs.title = title
+            +text
+        }
+
     if (score < -4 || props.automapper == true) {
-        span("badge badge-pill badge-danger " + if (marginLeft) "ml-2" else "mr-2") {
-            attrs.title = "Made by a bot"
-            +"Bot"
-        }
+        renderBadge("danger", "Made by a bot", "Bot")
     } else if (score < 0) {
-        span("badge badge-pill badge-unsure " + if (marginLeft) "ml-2" else "mr-2") {
-            attrs.title = "Could be a bot"
-            +"Unsure"
-        }
+        renderBadge("unsure", "Could be a bot", "Unsure")
     }
 }
 
@@ -47,7 +47,7 @@ external interface DiffIconsProps : RProps {
 
 val diffIcons = functionComponent<DiffIconsProps> { props ->
     props.diffs?.forEach { d ->
-        span("badge badge-pill badge-${d.difficulty.color}") {
+        span("badge rounded-pill badge-${d.difficulty.color}") {
             diffImg(d)
             +d.difficulty.human()
         }

@@ -164,7 +164,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                             sendForm(data)
                         }
                     }
-                    div("form-group") {
+                    div("mb-3") {
                         label("form-label") {
                             attrs.htmlFor = "name"
                             +"Name"
@@ -179,7 +179,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                             attrs.autoFocus = true
                         }
                     }
-                    div("form-group") {
+                    div("mb-3") {
                         label("form-label") {
                             attrs.htmlFor = "description"
                             +"Description"
@@ -190,37 +190,35 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                             ref = descriptionRef
                         }
                     }
-                    div("custom-control custom-switch mb-3") {
-                        input(InputType.checkBox, classes = "custom-control-input") {
+                    div("form-check form-switch mb-3") {
+                        input(InputType.checkBox, classes = "form-check-input") {
                             attrs.id = "public"
                             attrs.disabled = state.loading == true
                             ref = publicRef
                         }
-                        label("custom-control-label") {
+                        label("form-check-label") {
                             attrs.htmlFor = "public"
                             +"Public"
                         }
                     }
-                    div("form-group") {
-                        div("custom-file w-25") {
-                            input(InputType.file, classes = "custom-file-input") {
-                                attrs.onChangeFunction = {
-                                    val file = coverRef.current?.files?.let { it[0] }
-                                    setState {
-                                        filename = file?.name
-                                    }
-                                }
-                                key = "cover"
-                                attrs.id = "cover"
-                                ref = coverRef
-                                attrs.hidden = state.loading == true
+                    div("mb-3 w-25") {
+                        label("form-label") {
+                            attrs.htmlFor = "cover"
+                            div("text-truncate") {
+                                +"Cover image"
                             }
-                            label("custom-file-label") {
-                                attrs.htmlFor = "cover"
-                                div("text-truncate") {
-                                    +(state.filename ?: "Choose cover image")
+                        }
+                        input(InputType.file, classes = "form-control") {
+                            attrs.onChangeFunction = {
+                                val file = coverRef.current?.files?.let { it[0] }
+                                setState {
+                                    filename = file?.name
                                 }
                             }
+                            key = "cover"
+                            attrs.id = "cover"
+                            ref = coverRef
+                            attrs.hidden = state.loading == true
                         }
                     }
                     state.errors?.forEach {
@@ -235,12 +233,13 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                         routeLink("/playlists/${props.id}", className = "btn btn-secondary") {
                             +"Cancel"
                         }
+                        if (props.id == null) {
+                            // Middle element otherwise the button corners don't round properly
+                            recaptcha(captchaRef)
+                        }
                         button(classes = "btn btn-success", type = ButtonType.submit) {
                             attrs.disabled = state.loading == true
                             +(if (props.id == null) "Create" else "Save")
-                        }
-                        if (props.id == null) {
-                            recaptcha(captchaRef)
                         }
                     }
                 }

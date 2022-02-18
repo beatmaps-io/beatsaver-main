@@ -65,7 +65,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                 +"Admin"
             }
             hr("mt-2") {}
-            div("form-group") {
+            div("mb-3") {
                 if (state.success == true) {
                     div("valid-feedback") {
                         attrs.jsStyle {
@@ -75,11 +75,11 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                     }
                 }
 
-                label {
+                label("form-label") {
                     attrs.htmlFor = "name"
                     +"Max upload size"
                 }
-                select("form-control") {
+                select("form-select") {
                     arrayOf(0, 15, 30).forEach {
                         option {
                             attrs.selected = state.uploadLimit == it
@@ -94,45 +94,47 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                     }
                     ref = maxUploadRef
                 }
-                div("custom-control custom-switch mb-3 mt-3") {
-                    input(InputType.checkBox, classes = "custom-control-input") {
+                div("form-check form-switch mb-3 mt-3") {
+                    input(InputType.checkBox, classes = "form-check-input") {
                         attrs.id = "curator"
                         attrs.disabled = state.loading == true
                         ref = curatorRef
                     }
-                    label("custom-control-label") {
+                    label("form-check-label") {
                         attrs.htmlFor = "curator"
                         +"Curator"
                     }
                 }
-                button(classes = "btn btn-success btn-block", type = ButtonType.submit) {
-                    attrs.onClickFunction = { ev ->
-                        ev.preventDefault()
+                div("d-grid") {
+                    button(classes = "btn btn-success", type = ButtonType.submit) {
+                        attrs.onClickFunction = { ev ->
+                            ev.preventDefault()
 
-                        setState {
-                            loading = true
-                        }
+                            setState {
+                                loading = true
+                            }
 
-                        Axios.post<ActionResponse>(
-                            "${Config.apibase}/users/admin",
-                            UserAdminRequest(props.userDetail.id, state.uploadLimit, curatorRef.current?.checked ?: false),
-                            generateConfig<UserAdminRequest, ActionResponse>()
-                        ).then {
-                            setState {
-                                errors = it.data.errors
-                                loading = false
-                                success = it.data.success
-                            }
-                        }.catch {
-                            // Cancelled request
-                            setState {
-                                loading = false
-                                success = false
+                            Axios.post<ActionResponse>(
+                                "${Config.apibase}/users/admin",
+                                UserAdminRequest(props.userDetail.id, state.uploadLimit, curatorRef.current?.checked ?: false),
+                                generateConfig<UserAdminRequest, ActionResponse>()
+                            ).then {
+                                setState {
+                                    errors = it.data.errors
+                                    loading = false
+                                    success = it.data.success
+                                }
+                            }.catch {
+                                // Cancelled request
+                                setState {
+                                    loading = false
+                                    success = false
+                                }
                             }
                         }
+                        attrs.disabled = state.loading == true
+                        +"Save"
                     }
-                    attrs.disabled = state.loading == true
-                    +"Save"
                 }
             }
         }

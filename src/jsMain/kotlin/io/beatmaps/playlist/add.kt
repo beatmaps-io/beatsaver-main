@@ -93,9 +93,9 @@ class AddToPlaylist : RComponent<AddToPlaylistProps, AddToPlaylistState>() {
         props.inPlaylists.map { ip ->
             val (checked, setChecked) = useState(ip.inPlaylist)
 
-            div("custom-control custom-checkbox mb-2") {
+            div("form-check mb-2") {
                 val id = "in-playlist-${ip.playlist.playlistId}"
-                input(InputType.checkBox, classes = "custom-control-input") {
+                input(InputType.checkBox, classes = "form-check-input") {
                     attrs.id = id
                     attrs.checked = checked
                     attrs.onChangeFunction = {
@@ -108,7 +108,7 @@ class AddToPlaylist : RComponent<AddToPlaylistProps, AddToPlaylistState>() {
                         }
                     }
                 }
-                label("w-100 custom-control-label") {
+                label("w-100 form-check-label") {
                     attrs.htmlFor = id
                     +ip.playlist.name
                 }

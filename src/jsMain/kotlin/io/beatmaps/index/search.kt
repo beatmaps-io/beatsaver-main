@@ -140,15 +140,15 @@ class Search : RComponent<SearchProps, SearchState>() {
     }
 
     private fun RDOMBuilder<DIV>.toggle(id: String, text: String, localRef: RReadableRef<HTMLInputElement>, block: (Boolean) -> Unit) {
-        div("custom-control custom-switch") {
-            input(InputType.checkBox, classes = "custom-control-input") {
+        div("form-check form-switch") {
+            input(InputType.checkBox, classes = "form-check-input") {
                 attrs.id = id
                 ref = localRef
                 attrs.onChangeFunction = {
                     block(localRef.current?.checked ?: false)
                 }
             }
-            label("custom-control-label") {
+            label("form-check-label") {
                 attrs.htmlFor = id
                 +text
             }
@@ -156,7 +156,7 @@ class Search : RComponent<SearchProps, SearchState>() {
     }
 
     private fun RDOMBuilder<DIV>.slider(text: String, currentMin: Float, currentMax: Float, max: Int, block: (Array<Int>) -> Unit) {
-        div("form-group col-sm-3") {
+        div("mb-3 col-sm-3") {
             val maxSlider = max * 10
             ReactSlider.default {
                 attrs.ariaLabel = arrayOf("Min NPS", "Max NPS")
@@ -166,10 +166,10 @@ class Search : RComponent<SearchProps, SearchState>() {
                 attrs.minDistance = 5
                 attrs.onChange = block
             }
-            p("m-0 float-left") {
+            p("m-0 float-start") {
                 +text
             }
-            p("m-0 float-right") {
+            p("m-0 float-end") {
                 val maxStr = if (currentMax >= max) "∞" else currentMax.toString()
                 +"$currentMin - $maxStr"
             }
@@ -203,15 +203,15 @@ class Search : RComponent<SearchProps, SearchState>() {
     override fun RBuilder.render() {
         form("") {
             div("row") {
-                div("form-group col-lg-9") {
+                div("mb-3 col-lg-9") {
                     input(InputType.search, classes = "form-control") {
                         attrs.placeholder = "Search"
                         attrs.attributes["aria-label"] = "Search"
                         ref = inputRef
                     }
                 }
-                div("form-group col-lg-3") {
-                    button(type = ButtonType.submit, classes = "btn btn-block btn-primary") {
+                div("mb-3 col-lg-3 d-grid") {
+                    button(type = ButtonType.submit, classes = "btn btn-primary") {
                         attrs.onClickFunction = {
                             it.preventDefault()
                             props.updateSearchParams(
@@ -239,7 +239,7 @@ class Search : RComponent<SearchProps, SearchState>() {
                 }
             }
             div("row") {
-                div("form-group col-sm-3 text-center") {
+                div("filter-container col-sm-3") {
                     button(classes = "filter-dropdown") {
                         attrs.onClickFunction = {
                             it.preventDefault()
@@ -324,7 +324,7 @@ class Search : RComponent<SearchProps, SearchState>() {
                         maxNps = it[1] / 10f
                     }
                 }
-                div("form-group col-sm-3") {
+                div("mb-3 col-sm-3") {
                     DateRangePicker.default {
                         attrs.startDate = state.startDate
                         attrs.endDate = state.endDate
@@ -364,8 +364,8 @@ class Search : RComponent<SearchProps, SearchState>() {
                         }
                     }
                 }
-                div("form-group col-sm-3") {
-                    select("form-control") {
+                div("mb-3 col-sm-3") {
+                    select("form-select") {
                         ref = sortRef
                         attrs.attributes["aria-label"] = "Sort by"
                         attrs.onChangeFunction = {

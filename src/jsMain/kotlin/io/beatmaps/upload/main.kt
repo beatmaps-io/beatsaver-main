@@ -80,8 +80,8 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                 }
                 form("") {
                     fieldset {
-                        div("form-group") {
-                            label {
+                        div("mb-3") {
+                            label("form-label") {
                                 attrs.htmlFor = "name"
                                 +"Title"
                             }
@@ -92,8 +92,8 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                             }
                         }
 
-                        div("form-group") {
-                            label {
+                        div("mb-3") {
+                            label("form-label") {
                                 attrs.htmlFor = "description"
                                 +"Description"
                             }
@@ -104,7 +104,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                             }
                         }
 
-                        div("form-group") {
+                        div("mb-3") {
                             input(InputType.radio, name = "beatsage", classes = "btn-check") {
                                 attrs.id = "beatsage-no"
                                 attrs.autoComplete = false
@@ -117,7 +117,9 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                             }
                             label("btn btn-outline-light") {
                                 attrs.htmlFor = "beatsage-no"
-                                +"I made this map myself with no AI assistance"
+                                +"I made this map myself with no"
+                                br {}
+                                +"AI assistance"
                             }
 
                             input(InputType.radio, name = "beatsage", classes = "btn-check") {

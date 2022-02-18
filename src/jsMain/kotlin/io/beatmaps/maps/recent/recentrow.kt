@@ -75,7 +75,7 @@ class RecentTestplayRow : RComponent<RecentTestplayRowProps, RecentTestplayRowSt
                         textToContent(state.text)
                     }
                 }
-                div("text-right mt-3") {
+                div("text-end mt-3") {
                     if (state.editing) {
                         button(classes = "btn btn-success m-1") {
                             attrs.onClickFunction = {

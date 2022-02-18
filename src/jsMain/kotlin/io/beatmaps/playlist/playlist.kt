@@ -243,13 +243,13 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                             img("Cover", pl.playlistImage) { }
                             div("list-group-item d-flex justify-content-between") {
                                 +"Name"
-                                span("text-truncate ml-4") {
+                                span("text-truncate ms-4") {
                                     +pl.name
                                 }
                             }
                             routeLink("/profile/${pl.owner?.id}", className = "list-group-item d-flex justify-content-between") {
                                 +"Created by"
-                                span("text-truncate ml-4") {
+                                span("text-truncate ms-4") {
                                     attrs.title = (pl.owner?.name ?: "")
                                     +(pl.owner?.name ?: "")
                                 }
@@ -257,14 +257,14 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                             pl.curator?.let { curator ->
                                 div("list-group-item d-flex justify-content-between") {
                                     +"Curated by"
-                                    span("text-truncate ml-4") {
+                                    span("text-truncate ms-4") {
                                         +curator.name
                                     }
                                 }
                             }
                             div("list-group-item d-flex justify-content-between") {
                                 +"Maps"
-                                span("text-truncate ml-4") {
+                                span("text-truncate ms-4") {
                                     +(state.maps?.size ?: 0).toString()
                                 }
                             }
