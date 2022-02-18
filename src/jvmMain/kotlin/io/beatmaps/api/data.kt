@@ -15,6 +15,12 @@ import org.jetbrains.exposed.sql.ResultRow
 import java.lang.Integer.toHexString
 import kotlin.time.Duration
 
+val remoteCdn = System.getenv("REMOTE_CDN") != null
+fun cdnBase(prefix: String) = when(remoteCdn) {
+    true -> Config.cdnBase(prefix)
+    false -> "/cdn"
+}
+
 fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
     toHexString(other.id.value), other.name, other.description,
     UserDetail.from(other.uploader), MapDetailMetadata.from(other), MapStats.from(other), other.uploaded?.toKotlinInstant(), other.automapper, other.ranked, other.qualified,
@@ -48,8 +54,8 @@ fun MapVersion.Companion.from(other: VersionsDao, cdnPrefix: String) =
             other.hash, other.key64, other.state, other.uploaded.toKotlinInstant(), other.sageScore,
             other.difficulties.values.map { MapDifficulty.from(it) }.sortedWith(compareBy(MapDifficulty::characteristic, MapDifficulty::difficulty)), other.feedback,
             other.testplayAt?.toKotlinInstant(), if (other.testplays.isEmpty()) null else other.testplays.values.map { MapTestplay.from(it) },
-            "${Config.cdnBase(actualPrefix)}/${other.hash}.zip", "${Config.cdnBase(actualPrefix)}/${other.hash}.jpg",
-            "${Config.cdnBase(actualPrefix)}/${other.hash}.mp3",
+            "${cdnBase(actualPrefix)}/${other.hash}.zip", "${cdnBase(actualPrefix)}/${other.hash}.jpg",
+            "${cdnBase(actualPrefix)}/${other.hash}.mp3",
             other.scheduledAt?.toKotlinInstant()
         )
     }
@@ -75,12 +81,12 @@ fun Query.limit(page: Long?, pageSize: Int = 20): Query {
 }
 
 fun PlaylistBasic.Companion.from(other: PlaylistDao, cdnPrefix: String) = PlaylistBasic(
-    other.id.value, "${Config.cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.name, other.public, other.ownerId.value
+    other.id.value, "${cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.name, other.public, other.ownerId.value
 )
 fun PlaylistBasic.Companion.from(row: ResultRow, cdnPrefix: String) = from(PlaylistDao.wrapRow(row), cdnPrefix)
 
 fun PlaylistFull.Companion.from(other: PlaylistDao, cdnPrefix: String) = PlaylistFull(
-    other.id.value, other.name, other.description, "${Config.cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.public, UserDetail.from(other.owner),
+    other.id.value, other.name, other.description, "${cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.public, UserDetail.from(other.owner),
     other.curator?.let {
         UserDetail.from(it)
     },
