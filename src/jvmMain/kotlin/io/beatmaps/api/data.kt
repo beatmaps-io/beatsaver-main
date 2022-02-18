@@ -16,7 +16,7 @@ import java.lang.Integer.toHexString
 import kotlin.time.Duration
 
 val remoteCdn = System.getenv("REMOTE_CDN") != null
-fun cdnBase(prefix: String) = when(remoteCdn) {
+fun cdnBase(prefix: String) = when (remoteCdn) {
     true -> Config.cdnBase(prefix)
     false -> "/cdn"
 }
