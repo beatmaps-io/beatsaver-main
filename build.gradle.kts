@@ -102,6 +102,7 @@ kotlin {
                 implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
                 implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
                 implementation("com.zaxxer:HikariCP:3.4.2")
+                implementation("org.flywaydb:flyway-core:7.14.0")
 
                 // Database drivers
                 implementation("org.postgresql:postgresql:42.1.4")

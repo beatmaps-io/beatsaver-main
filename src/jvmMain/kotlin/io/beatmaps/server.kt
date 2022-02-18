@@ -76,6 +76,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.html.HEAD
 import kotlinx.serialization.StringFormat
+import org.flywaydb.core.Flyway
 import org.valiktor.ConstraintViolationException
 import org.valiktor.i18n.mapToMessage
 import pl.jutupe.ktor_rabbitmq.RabbitMQ
@@ -100,7 +101,13 @@ suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStat
 
 fun main() {
     setupLogging()
-    setupDB(app = "BeatSaver Main")
+    setupDB(app = "BeatSaver Main").let { ds ->
+        Flyway.configure()
+            .dataSource(ds)
+            .locations("db")
+            .load()
+            .migrate()
+    }
 
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::beatmapsio).start(wait = true)
 }
