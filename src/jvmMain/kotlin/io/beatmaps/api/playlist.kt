@@ -19,9 +19,6 @@ import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.joinCurator
-import io.beatmaps.common.dbo.joinUploader
-import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.Playlist.joinOwner
@@ -31,6 +28,9 @@ import io.beatmaps.common.dbo.PlaylistMapDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.handleOwner
+import io.beatmaps.common.dbo.joinCurator
+import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.localPlaylistCoverFolder
 import io.beatmaps.controllers.UploadException
 import io.beatmaps.controllers.reCaptchaVerify

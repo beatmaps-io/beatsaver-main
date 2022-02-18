@@ -5,10 +5,10 @@ import io.beatmaps.api.from
 import io.beatmaps.common.DownloadInfo
 import io.beatmaps.common.DownloadType
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.downloadFilename
 import io.beatmaps.common.localAudioFolder
 import io.beatmaps.common.localAvatarFolder

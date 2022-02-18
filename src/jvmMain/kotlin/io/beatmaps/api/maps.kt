@@ -15,9 +15,6 @@ import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.joinCurator
-import io.beatmaps.common.dbo.joinUploader
-import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
@@ -26,6 +23,9 @@ import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.joinCurator
+import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.login.Session
 import io.ktor.application.call

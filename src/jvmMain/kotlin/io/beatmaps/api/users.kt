@@ -16,7 +16,6 @@ import io.beatmaps.common.db.DateMinusDays
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.ModLogDao
@@ -24,6 +23,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.sendEmail
 import io.beatmaps.login.Session
 import io.jsonwebtoken.ExpiredJwtException

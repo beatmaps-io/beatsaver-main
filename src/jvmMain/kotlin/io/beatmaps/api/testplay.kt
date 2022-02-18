@@ -14,8 +14,6 @@ import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.joinUploader
-import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Testplay
@@ -23,6 +21,8 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.jackson
 import io.beatmaps.common.pub
 import io.beatmaps.controllers.reCaptchaVerify

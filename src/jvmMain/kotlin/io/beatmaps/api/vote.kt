@@ -13,11 +13,11 @@ import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.Votes
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.common.rabbitOptional
 import io.beatmaps.common.tag
