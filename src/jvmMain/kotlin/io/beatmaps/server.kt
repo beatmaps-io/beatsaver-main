@@ -99,12 +99,14 @@ suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStat
     }
 }
 
+val migrationType = System.getenv("DISABLE_TEST_MIGRATIONS") != null
+
 fun main() {
     setupLogging()
     setupDB(app = "BeatSaver Main").let { ds ->
         Flyway.configure()
             .dataSource(ds)
-            .locations("db")
+            .locations(if (migrationType) "db/migrations" else "db")
             .load()
             .migrate()
     }
