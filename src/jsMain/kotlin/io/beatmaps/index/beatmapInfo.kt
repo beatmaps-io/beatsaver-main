@@ -73,10 +73,7 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
                 if (map.curator != null) "curated" else null
             )
 
-            val classes = listOf(
-                "beatmap",
-                *mapAttributes.toTypedArray()
-            ).joinToString(" ")
+            val classes = listOf("beatmap").plus(mapAttributes).joinToString(" ")
 
             div(classes) {
                 attrs.jsStyle {
