@@ -78,93 +78,96 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
                 attrs.jsStyle {
                     height = state.height
                 }
-                div {
-                    val totalVotes = (map.stats.upvotes + map.stats.downvotes).toDouble()
-                    val rawScore = map.stats.upvotes / totalVotes
-                    val uncertainty = abs((rawScore - 0.5) * 2.0.pow(-log10(totalVotes + 1)))
+                div("color") { }
+                div("body") {
+                    div {
+                        val totalVotes = (map.stats.upvotes + map.stats.downvotes).toDouble()
+                        val rawScore = map.stats.upvotes / totalVotes
+                        val uncertainty = abs((rawScore - 0.5) * 2.0.pow(-log10(totalVotes + 1)))
 
-                    img(src = props.version?.coverURL, alt = "Cover Image", classes = "cover") {
-                        attrs.width = "100"
-                        attrs.height = "100"
-                    }
-                    small("text-center vote") {
-                        div("u") {
-                            attrs.jsStyle {
-                                flex = map.stats.upvotes
+                        img(src = props.version?.coverURL, alt = "Cover Image", classes = "cover") {
+                            attrs.width = "100"
+                            attrs.height = "100"
+                        }
+                        small("text-center vote") {
+                            div("u") {
+                                attrs.jsStyle {
+                                    flex = map.stats.upvotes
+                                }
+                            }
+                            div("o") {
+                                attrs.jsStyle {
+                                    flex = if (totalVotes < 1) 1 else (uncertainty * totalVotes / (1 - uncertainty))
+                                }
+                            }
+                            div("d") {
+                                attrs.jsStyle {
+                                    flex = map.stats.downvotes
+                                }
                             }
                         }
-                        div("o") {
-                            attrs.jsStyle {
-                                flex = if (totalVotes < 1) 1 else (uncertainty * totalVotes / (1 - uncertainty))
-                            }
-                        }
-                        div("d") {
-                            attrs.jsStyle {
-                                flex = map.stats.downvotes
-                            }
+                        div("percentage") {
+                            attrs.title = "${map.stats.upvotes}/${map.stats.downvotes}"
+                            +"${map.stats.scoreOneDP}%"
                         }
                     }
-                    div("percentage") {
-                        attrs.title = "${map.stats.upvotes}/${map.stats.downvotes}"
-                        +"${map.stats.scoreOneDP}%"
-                    }
-                }
-                div("info") {
-                    ref = divRef
+                    div("info") {
+                        ref = divRef
 
-                    routeLink("/maps/${map.id}") {
-                        if (map.name.isNotBlank()) {
-                            +map.name
-                        } else {
-                            +"<NO NAME>"
+                        routeLink("/maps/${map.id}") {
+                            if (map.name.isNotBlank()) {
+                                +map.name
+                            } else {
+                                +"<NO NAME>"
+                            }
+                        }
+                        p {
+                            uploader {
+                                attrs.map = map
+                                attrs.version = props.version
+                            }
+                        }
+                        div("diffs") {
+                            diffIcons {
+                                attrs.diffs = props.version?.diffs
+                            }
                         }
                     }
-                    p {
-                        uploader {
+                    div("additional") {
+                        span {
+                            +map.id
+                            i("fas fa-key") {
+                                attrs.attributes["aria-hidden"] = "true"
+                            }
+                        }
+                        span {
+                            +map.metadata.duration.formatTime()
+                            i("fas fa-clock") {
+                                attrs.attributes["aria-hidden"] = "true"
+                            }
+                        }
+                        span {
+                            +(floor(map.metadata.bpm * 100) / 100).toString()
+                            img("Metronome", "/static/icons/metronome.svg") {
+                                attrs.width = "12"
+                                attrs.height = "12"
+                            }
+                        }
+                        globalContext.Consumer { userData ->
+                            if (userData != null) {
+                                addToPlaylist {
+                                    this.map = map
+                                    modal = props.modal
+                                }
+                            }
+                        }
+                    }
+                    div("links") {
+                        links {
                             attrs.map = map
                             attrs.version = props.version
+                            attrs.modal = props.modal
                         }
-                    }
-                    div("diffs") {
-                        diffIcons {
-                            attrs.diffs = props.version?.diffs
-                        }
-                    }
-                }
-                div("additional") {
-                    span {
-                        +map.id
-                        i("fas fa-key") {
-                            attrs.attributes["aria-hidden"] = "true"
-                        }
-                    }
-                    span {
-                        +map.metadata.duration.formatTime()
-                        i("fas fa-clock") {
-                            attrs.attributes["aria-hidden"] = "true"
-                        }
-                    }
-                    span {
-                        +(floor(map.metadata.bpm * 100) / 100).toString()
-                        img("Metronome", "/static/icons/metronome.svg") {
-                            attrs.width = "12"
-                            attrs.height = "12"
-                        }
-                    }
-                    globalContext.Consumer { userData ->
-                        if (userData != null) {
-                            addToPlaylist {
-                                this.map = map
-                                modal = props.modal
-                            }
-                        }
-                    }
-                }
-                div("links") {
-                    links {
-                        attrs.map = map
-                        attrs.version = props.version
-                        attrs.modal = props.modal
                     }
                 }
             }
