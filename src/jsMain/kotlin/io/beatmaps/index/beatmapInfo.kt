@@ -67,18 +67,21 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
 
     override fun RBuilder.render() {
         props.map?.let { map ->
-            val classes = listOfNotNull(
-                "beatmap",
+            val mapAttributes = listOfNotNull(
                 if (map.ranked) "ranked" else null,
                 if (map.qualified && !map.ranked) "qualified" else null,
                 if (map.curator != null) "curated" else null
-            ).joinToString(" ")
+            )
+
+            val classes = listOf("beatmap").plus(mapAttributes).joinToString(" ")
 
             div(classes) {
                 attrs.jsStyle {
                     height = state.height
                 }
-                div("color") { }
+                div("color") {
+                    attrs.title = mapAttributes.joinToString(" + ")
+                }
                 div("body") {
                     div {
                         val totalVotes = (map.stats.upvotes + map.stats.downvotes).toDouble()
