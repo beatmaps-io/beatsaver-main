@@ -21,6 +21,7 @@ import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
@@ -68,7 +69,9 @@ import java.lang.Integer.toHexString
         val me: Boolean? = null,
         val cinema: Boolean? = null,
         @Description("Comma seperated tags")
-        val tags: String? = null
+        val tags: String? = null,
+        @Ignore val mapper: Int? = null,
+        @Ignore val curator: Int? = null
     )
 }
 
@@ -181,7 +184,7 @@ fun Route.searchRoute() {
                 .joinVersions(true)
                 .joinUploader()
                 .joinCurator()
-                .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) + Beatmap.columns + Versions.columns + Difficulty.columns + User.columns)
+                .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) + Beatmap.columns + Versions.columns + Difficulty.columns + User.columns + curatorAlias.columns)
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
@@ -226,6 +229,8 @@ fun Route.searchRoute() {
                                     .notNull(it.me) { o -> Beatmap.me eq o }
                                     .notNull(it.cinema) { o -> Beatmap.cinema eq o }
                                     .notNull(it.tags) { o -> Beatmap.tags contains o.split(",").toTypedArray() }
+                                    .notNull(it.mapper) { o -> Beatmap.uploader eq o }
+                                    .notNull(it.curator) { o -> Beatmap.curator eq o }
                             }
                             .orderBy(*sortArgs)
                             .limit(it.page)

@@ -85,7 +85,8 @@ import java.util.Date
 fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null) =
     UserDetail(
         other.id.value, other.uniqueName ?: other.name, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
-        other.avatar ?: "https://www.gravatar.com/avatar/${other.hash}?d=retro", stats, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE
+        other.avatar ?: "https://www.gravatar.com/avatar/${other.hash}?d=retro", stats, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
+        curator = other.curator
     )
 
 fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false) = from(UserDao.wrapRow(row), roles)
@@ -669,7 +670,7 @@ fun Route.userRoute() {
 
         val userDetail = UserDetail.from(user, stats = statsForUser(user)).let {
             if (call.sessions.get<Session>()?.isAdmin() == true) {
-                it.copy(uploadLimit = user.uploadLimit, curator = user.curator)
+                it.copy(uploadLimit = user.uploadLimit)
             } else {
                 it
             }

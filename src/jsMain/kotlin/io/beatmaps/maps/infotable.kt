@@ -63,12 +63,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
             }
 
             props.map.curator?.let { curator ->
-                div(itemClasses) {
-                    +"Curated by"
-                    span("text-truncate ms-4") {
-                        +curator.name
-                    }
-                }
+                infoItem("Curated by", curator.name, "/profile/${curator.id}#curated")
             }
 
             if (props.map.tags.isNotEmpty()) {
@@ -88,12 +83,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
             }
 
             props.map.stats.let { stats ->
-                div(itemClasses) {
-                    +"Rating"
-                    span("text-truncate ms-4") {
-                        +"${stats.upvotes} / ${stats.downvotes} (${stats.scoreOneDP}%)"
-                    }
-                }
+                infoItem("Rating", "${stats.upvotes} / ${stats.downvotes} (${stats.scoreOneDP}%)")
             }
         }
 

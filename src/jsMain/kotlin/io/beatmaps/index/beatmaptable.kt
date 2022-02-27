@@ -35,7 +35,8 @@ import kotlin.math.min
 external interface BeatmapTableProps : RProps {
     var search: SearchParams?
     var user: Int?
-    var wip: Boolean
+    var curated: Boolean?
+    var wip: Boolean?
     var modal: RReadableRef<ModalComponent>
     var history: RouteResultHistory
     var updateScrollIndex: ((Int) -> Unit)?
@@ -154,7 +155,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
     }
 
     override fun componentWillUpdate(nextProps: BeatmapTableProps, nextState: BeatmapTableState) {
-        if (props.user != nextProps.user || props.wip != nextProps.wip || props.search !== nextProps.search) {
+        if (props.user != nextProps.user || props.wip != nextProps.wip || props.curated != nextProps.curated || props.search !== nextProps.search) {
             state.token.cancel.invoke("Another request started")
 
             val windowSize = window.innerHeight
@@ -181,10 +182,12 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
     private fun lastPage() = min(state.finalPage, max(state.visiblePages.last, state.pages.maxByOrNull { it.key }?.key ?: 0))
 
     private fun getUrl(page: Int) =
-        if (props.wip) {
+        if (props.wip == true) {
             "${Config.apibase}/maps/wip/$page"
+        } else if (props.curated == true && props.user != null) {
+            "${Config.apibase}/search/text/$page?sortOrder=Curated&curator=${props.user}"
         } else if (props.user != null) {
-            "${Config.apibase}/maps/uploader/${props.user}/$page"
+            "${Config.apibase}/search/text/$page?mapper=${props.user}"
         } else {
             props.search?.let { search ->
                 "${Config.apibase}/search/text/$page?sortOrder=${search.sortOrder}" +
@@ -239,7 +242,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
             return
 
         props.search?.let { search ->
-            if (toLoad == 0 && !props.wip && props.user == null && search.search.length > 2) {
+            if (toLoad == 0 && props.wip != true && props.curated != true && props.user == null && search.search.length > 2) {
                 Axios.get<UserDetail>(
                     "${Config.apibase}/users/name/${encodeURIComponent(search.search)}",
                     generateConfig<String, UserDetail>(state.token.token)
@@ -351,7 +354,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                 (state.pages[pIdx] ?: emptyPage).forEach userLoop@{ it ->
                     beatmapInfo {
                         map = it
-                        version = it?.let { if (props.wip) it.latestVersion() else it.publishedVersion() }
+                        version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
                         modal = props.modal
                     }
                 }
