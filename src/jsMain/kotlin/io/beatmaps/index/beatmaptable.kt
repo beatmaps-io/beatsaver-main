@@ -185,9 +185,9 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         if (props.wip == true) {
             "${Config.apibase}/maps/wip/$page"
         } else if (props.curated == true && props.user != null) {
-            "${Config.apibase}/search/text/$page?sortOrder=Curated&curator=${props.user}"
+            "${Config.apibase}/search/text/$page?sortOrder=Curated&curator=${props.user}&automapper=true"
         } else if (props.user != null) {
-            "${Config.apibase}/search/text/$page?mapper=${props.user}"
+            "${Config.apibase}/search/text/$page?mapper=${props.user}&automapper=true"
         } else {
             props.search?.let { search ->
                 "${Config.apibase}/search/text/$page?sortOrder=${search.sortOrder}" +
