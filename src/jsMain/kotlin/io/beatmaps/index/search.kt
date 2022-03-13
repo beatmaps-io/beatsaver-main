@@ -216,7 +216,7 @@ class Search : RComponent<SearchProps, SearchState>() {
                             it.preventDefault()
                             props.updateSearchParams(
                                 SearchParams(
-                                    inputRef.current?.value ?: "",
+                                    inputRef.current?.value?.trim() ?: "",
                                     if (isFiltered("bot")) true else null,
                                     if (state.minNps > 0) state.minNps else null,
                                     if (state.maxNps < props.maxNps) state.maxNps else null,
