@@ -50,12 +50,13 @@ external interface ProfilePageState : RState {
     var notificationCount: Map<ProfileTab, Int>
 }
 
-enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps) -> Boolean = { true }, val bootCondition: () -> Boolean = { false }, val onSelected: (ProfilePageProps) -> Unit = {}) {
+enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps, ProfilePageState) -> Boolean = { _, _ -> true }, val bootCondition: () -> Boolean = { false }, val onSelected: (ProfilePageProps) -> Unit = {}) {
     PUBLISHED("Published", bootCondition = { (localStorage["profile.showwip"] == "false") }, onSelected = { if (it.userId == null) { localStorage["profile.showwip"] = "false" } }),
-    UNPUBLISHED("Unpublished", condition = { (it.userId == null) }, bootCondition = { (localStorage["profile.showwip"] == "true") }, onSelected = { if (it.userId == null) { localStorage["profile.showwip"] = "true" } }),
+    UNPUBLISHED("Unpublished", condition = { it, _ -> (it.userId == null) }, bootCondition = { (localStorage["profile.showwip"] == "true") }, onSelected = { if (it.userId == null) { localStorage["profile.showwip"] = "true" } }),
     PLAYLISTS("Playlists"),
-    ACCOUNT("Account", condition = { (it.userData?.admin == true || it.userId == null) }),
-    MODERATOR("Alerts", condition = { (it.userData?.admin == true || it.userId == null) })
+    CURATED("Curated", condition = { _, it -> (it.userDetail?.curator == true) }),
+    ACCOUNT("Account", condition = { it, _ -> (it.userData?.admin == true || it.userId == null) }),
+    MODERATOR("Alerts", condition = { it, _ -> (it.userData?.admin == true || it.userId == null) })
 }
 
 @JsExport
@@ -75,23 +76,6 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
     override fun componentDidMount() {
         setPageTitle("Profile")
 
-        val hash = window.location.hash.substring(1)
-        setState {
-            state = ProfileTab.values().firstOrNull {
-                hash == it.tabText.lowercase() && it.condition(props)
-            } ?: ProfileTab.values().firstOrNull { it.bootCondition() && it.condition(props) } ?: run {
-                if (ProfileTab.UNPUBLISHED.condition(props)) {
-                    ProfileTab.UNPUBLISHED
-                } else {
-                    ProfileTab.PUBLISHED
-                }
-            }
-
-            startup = true
-        }
-
-        window.addEventListener("hashchange", ::onHashChange)
-
         loadState()
     }
 
@@ -101,7 +85,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
     private fun onHashChange(it: Event) {
         val hash = window.location.hash.substring(1)
-        val newState = ProfileTab.values().firstOrNull { hash == it.tabText.lowercase() && it.condition(props) } ?: state.state
+        val newState = ProfileTab.values().firstOrNull { hash == it.tabText.lowercase() && it.condition(props, state) } ?: state.state
         setState {
             state = newState
         }
@@ -122,9 +106,29 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                 userDetail = it.data
                 loading = false
             }
+            setupTabState()
         }.catch {
             // Cancelled request
         }
+    }
+
+    private fun setupTabState() {
+        val hash = window.location.hash.substring(1)
+        setState {
+            state = ProfileTab.values().firstOrNull {
+                hash == it.tabText.lowercase() && it.condition(props, this)
+            } ?: ProfileTab.values().firstOrNull { it.bootCondition() && it.condition(props, this) } ?: run {
+                if (ProfileTab.UNPUBLISHED.condition(props, this)) {
+                    ProfileTab.UNPUBLISHED
+                } else {
+                    ProfileTab.PUBLISHED
+                }
+            }
+
+            startup = true
+        }
+
+        window.addEventListener("hashchange", ::onHashChange)
     }
 
     override fun RBuilder.render() {
@@ -207,7 +211,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                 }
                 ul("nav nav-tabs") {
                     ProfileTab.values().forEach { tab ->
-                        if (!tab.condition(props)) return@forEach
+                        if (!tab.condition(props, state)) return@forEach
 
                         li("nav-item") {
                             a("#", classes = "nav-link" + if (state.state == tab) " active" else "") {
@@ -242,7 +246,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             }
         }
         val detail = state.userDetail
-        if (ProfileTab.MODERATOR.condition(props)) {
+        if (ProfileTab.MODERATOR.condition(props, state)) {
             alertsPage {
                 alertCountCallback = {
                     setState {
@@ -278,8 +282,9 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                     user = props.userId ?: loggedInLocal ?: 0
                     modal = modalRef
                     wip = state.lastMapStateWip == true
+                    curated = state.state == ProfileTab.CURATED
                     history = props.history
-                    visible = state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED
+                    visible = state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED || state.state == ProfileTab.CURATED
                 }
             }
         }

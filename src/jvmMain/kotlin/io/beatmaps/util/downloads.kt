@@ -27,7 +27,10 @@ val cdnPrefixes = mapOf(
     "OC" to "as.",
     "SA" to "na.",
     "CN" to "na."
-)
+).mapValues {
+    val disabled = System.getenv("DISABLECDN_${it.value.trim('.')}") != null
+    if (disabled) "" else it.value
+}
 private val cdnPrefixAttr = AttributeKey<String>("cdnPrefix")
 
 fun getContinentSafe(countryInfo: CountryInfo) =
