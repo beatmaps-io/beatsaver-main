@@ -106,7 +106,7 @@ fun main() {
     setupDB(app = "BeatSaver Main").let { ds ->
         Flyway.configure()
             .dataSource(ds)
-            .locations(if (migrationType) "db/migrations" else "db")
+            .locations(if (migrationType) "db/migration" else "db")
             .load()
             .migrate()
     }
