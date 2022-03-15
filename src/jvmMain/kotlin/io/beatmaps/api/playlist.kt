@@ -95,7 +95,8 @@ const val prefix: String = "/playlists"
         @Description("Pages have 100 playlists")
         val page: Long,
         @Ignore
-        val api: PlaylistApi)
+        val api: PlaylistApi
+    )
     @Group("Playlists") @Location("$prefix/latest") data class ByUploadDate(
         @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
         val before: Instant? = null,
