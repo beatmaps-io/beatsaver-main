@@ -90,7 +90,12 @@ const val prefix: String = "/playlists"
     @Location("$prefix/id/{id}/edit") data class Edit(val id: Int, val api: PlaylistApi)
     @Location("$prefix/create") data class Create(val api: PlaylistApi)
     @Location("$prefix/curate") data class Curate(val api: PlaylistApi)
-    @Location("$prefix/user/{userId}/{page}") data class ByUser(val userId: Int, val page: Long, val api: PlaylistApi)
+    @Group("Playlists") @Location("$prefix/user/{userId}/{page}") data class ByUser(
+        val userId: Int,
+        @Description("Pages have 100 playlists")
+        val page: Long,
+        @Ignore
+        val api: PlaylistApi)
     @Group("Playlists") @Location("$prefix/latest") data class ByUploadDate(
         @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
         val before: Instant? = null,
@@ -151,7 +156,8 @@ fun Route.playlistRoute() {
         call.response.header("Access-Control-Allow-Origin", "*")
         call.respond(HttpStatusCode.OK)
     }
-    get<PlaylistApi.ByUploadDate>("Get playlists ordered by created/updated".responds(ok<SearchResponse>())) {
+
+    get<PlaylistApi.ByUploadDate>("Get playlists ordered by created/updated".responds(ok<PlaylistSearchResponse>())) {
         call.response.header("Access-Control-Allow-Origin", "*")
 
         val sess = call.sessions.get<Session>()
@@ -193,7 +199,7 @@ fun Route.playlistRoute() {
         call.respond(HttpStatusCode.OK)
     }
 
-    get<PlaylistApi.Text>("Search for playlists".responds(ok<SearchResponse>())) {
+    get<PlaylistApi.Text>("Search for playlists".responds(ok<PlaylistSearchResponse>())) {
         call.response.header("Access-Control-Allow-Origin", "*")
 
         val searchFields = PgConcat(" ", Playlist.name, Playlist.description)
@@ -300,12 +306,26 @@ fun Route.playlistRoute() {
         getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, null)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
     }
 
+    options<PlaylistApi.DetailWithPage> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
+    }
+
     get<PlaylistApi.DetailWithPage>("Get playlist detail".responds(ok<PlaylistPage>(), notFound())) { req ->
+        call.response.header("Access-Control-Allow-Origin", "*")
+
         val sess = call.sessions.get<Session>()
         getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, req.page)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
     }
 
-    get<PlaylistApi.ByUser> { req ->
+    options<PlaylistApi.ByUser> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
+    }
+
+    get<PlaylistApi.ByUser>("Get playlists by user".responds(ok<List<PlaylistBasic>>())) { req ->
+        call.response.header("Access-Control-Allow-Origin", "*")
+
         val sess = call.sessions.get<Session>()
         val page = transaction {
             Playlist
