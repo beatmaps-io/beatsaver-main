@@ -9,7 +9,6 @@ import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.cdnPrefix
-import io.beatmaps.common.Config
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.api.EMapState
@@ -374,7 +373,7 @@ fun Route.playlistRoute() {
                     playlist.owner?.name ?: "",
                     playlist.description,
                     imageStr,
-                    PlaylistCustomData("${Config.apiremotebase}/playlists/id/${playlist.playlistId}/download"),
+                    PlaylistCustomData(playlist.downloadURL),
                     playlistSongs
                 )
             )
