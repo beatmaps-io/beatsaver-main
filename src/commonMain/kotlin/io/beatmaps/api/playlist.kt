@@ -40,7 +40,7 @@ data class PlaylistFull(
     val deletedAt: Instant? = null
 ) {
     @EncodeDefault(EncodeDefault.Mode.ALWAYS)
-    val downloadURL = "${Config.apiremotebase}/playlists/id/${playlistId}/download"
+    val downloadURL = "${Config.apiremotebase}/playlists/id/$playlistId/download"
     companion object
 }
 
