@@ -96,7 +96,6 @@ const val prefix: String = "/playlists"
     @Location("$prefix/curate") data class Curate(val api: PlaylistApi)
     @Group("Playlists") @Location("$prefix/user/{userId}/{page}") data class ByUser(
         val userId: Int,
-        @Description("Pages have 100 playlists")
         val page: Long,
         @Ignore
         val basic: Boolean = false,
