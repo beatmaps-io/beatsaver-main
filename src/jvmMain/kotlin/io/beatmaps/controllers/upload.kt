@@ -1,7 +1,6 @@
 package io.beatmaps.controllers
 
 import ch.compile.recaptcha.ReCaptchaVerify
-import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.ObjectWriter
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.handleMultipart
@@ -49,6 +48,7 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toKotlinInstant
+import kotlinx.serialization.SerializationException
 import net.coobird.thumbnailator.Thumbnails
 import net.coobird.thumbnailator.tasks.UnsupportedFormatException
 import org.jetbrains.exposed.dao.id.EntityID
@@ -178,7 +178,8 @@ fun Route.uploadController() {
                     }
                     file.delete()
                     throw UploadException("Error opening zip file")
-                } catch (e: JsonMappingException) {
+                } catch (e: SerializationException) {
+                    e.printStackTrace()
                     file.delete()
                     throw UploadException("Could not parse json")
                 } catch (e: ZipHelperException) {

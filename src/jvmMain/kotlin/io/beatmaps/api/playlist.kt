@@ -21,11 +21,13 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.Playlist.joinOwner
+import io.beatmaps.common.dbo.Playlist.joinPlaylistCurator
 import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.PlaylistMapDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.handleCurator
 import io.beatmaps.common.dbo.handleOwner
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
@@ -60,7 +62,9 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import net.coobird.thumbnailator.Thumbnails
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.ColumnSet
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
@@ -94,6 +98,8 @@ const val prefix: String = "/playlists"
         val userId: Int,
         @Description("Pages have 100 playlists")
         val page: Long,
+        @Ignore
+        val basic: Boolean = false,
         @Ignore
         val api: PlaylistApi
     )
@@ -170,6 +176,7 @@ fun Route.playlistRoute() {
 
         val playlists = transaction {
             Playlist
+                .joinPlaylistCurator()
                 .joinOwner()
                 .select {
                     (Playlist.deletedAt.isNull() and (sess?.let { s -> Playlist.owner eq s.userId or Playlist.public } ?: Playlist.public))
@@ -179,6 +186,7 @@ fun Route.playlistRoute() {
                 .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
                 .limit(20)
                 .handleOwner()
+                .handleCurator()
                 .map { row -> PlaylistDao.wrapRow(row) }
                 .sortedByDescending { map ->
                     when (it.sort) {
@@ -217,6 +225,7 @@ fun Route.playlistRoute() {
                     }
                 }
                 .joinOwner()
+                .joinPlaylistCurator()
                 .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) + Playlist.columns + User.columns)
                 .select {
                     (Playlist.deletedAt.isNull() and Playlist.public)
@@ -236,6 +245,8 @@ fun Route.playlistRoute() {
                     SortOrder.DESC
                 )
                 .limit(it.page)
+                .handleCurator()
+                .handleOwner()
                 .map { playlist ->
                     PlaylistFull.from(playlist, cdnPrefix())
                 }
@@ -248,6 +259,7 @@ fun Route.playlistRoute() {
         val detailPage = transaction {
             val playlist = Playlist
                 .joinOwner()
+                .joinPlaylistCurator()
                 .select {
                     (Playlist.id eq id).let {
                         if (isAdmin) {
@@ -258,6 +270,7 @@ fun Route.playlistRoute() {
                     }
                 }
                 .handleOwner()
+                .handleCurator()
                 .firstOrNull()?.let {
                     PlaylistFull.from(it, cdnPrefix)
                 }
@@ -324,40 +337,57 @@ fun Route.playlistRoute() {
         call.respond(HttpStatusCode.OK)
     }
 
-    get<PlaylistApi.ByUser>("Get playlists by user".responds(ok<List<PlaylistBasic>>())) { req ->
+    get<PlaylistApi.ByUser>("Get playlists by user".responds(ok<PlaylistSearchResponse>())) { req ->
         call.response.header("Access-Control-Allow-Origin", "*")
 
         val sess = call.sessions.get<Session>()
-        val page = transaction {
-            Playlist
-                .select {
-                    ((Playlist.owner eq req.userId) and Playlist.deletedAt.isNull()).let {
-                        if (req.userId == sess?.userId) {
-                            it
-                        } else {
-                            it.and(Playlist.public)
+
+        fun <T> doQuery(table: ColumnSet = Playlist, block: (ResultRow) -> T) =
+            transaction {
+                table
+                    .select {
+                        ((Playlist.owner eq req.userId) and Playlist.deletedAt.isNull()).let {
+                            if (req.userId == sess?.userId) {
+                                it
+                            } else {
+                                it.and(Playlist.public)
+                            }
                         }
                     }
-                }
-                .orderBy(Playlist.createdAt, SortOrder.DESC)
-                .limit(req.page, 100)
-                .map {
-                    PlaylistBasic.from(it, cdnPrefix())
-                }
-        }
+                    .orderBy(Playlist.createdAt, SortOrder.DESC)
+                    .limit(req.page, 20)
+                    .handleCurator()
+                    .map(block)
+            }
 
-        call.respond(page)
+        if (req.basic) {
+            val page = doQuery {
+                PlaylistBasic.from(it, cdnPrefix())
+            }
+
+            call.respond(page)
+        } else {
+            val page = doQuery(
+                Playlist.joinPlaylistCurator()
+            ) {
+                PlaylistFull.from(it, cdnPrefix())
+            }
+
+            call.respond(PlaylistSearchResponse(page))
+        }
     }
 
     get<PlaylistApi.Download> { req ->
         val (playlist, playlistSongs) = transaction {
             fun getPlaylist() =
                 Playlist
+                    .joinPlaylistCurator()
                     .joinOwner()
                     .select {
                         (Playlist.id eq req.id) and Playlist.deletedAt.isNull()
                     }
                     .handleOwner()
+                    .handleCurator()
                     .firstOrNull()?.let {
                         PlaylistFull.from(it, cdnPrefix())
                     }

@@ -76,7 +76,7 @@ class UserPlaylists : RComponent<UserPlaylistsProps, UserPlaylistsState>() {
         }
 
         Axios.get<List<PlaylistBasic>>(
-            "${Config.apibase}/playlists/user/${props.userId}/$toLoad",
+            "${Config.apibase}/playlists/user/${props.userId}/$toLoad?basic=true",
             generateConfig<String, List<PlaylistBasic>>()
         ).then {
             setState {
