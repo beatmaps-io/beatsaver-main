@@ -150,6 +150,11 @@ table.search-results {
         background-color: $info;
       }
     }
+    &.verified {
+      .color {
+        background-color: $bs-purple;
+      }
+    }
     &.ranked, &.qualified {
       &.curated {
         .color {
@@ -695,6 +700,11 @@ div.mapstats {
   &.qualified {
     .color {
       background-color: $info;
+    }
+  }
+  &.verified {
+    .color {
+      background-color: $bs-purple;
     }
   }
   &.ranked, &.qualified {
