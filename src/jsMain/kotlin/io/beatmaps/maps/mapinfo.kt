@@ -171,7 +171,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                     }
                                 }
 
-                                if (userData?.curator == true) {
+                                if (userData?.curator == true && !props.isOwner) {
                                     a("#") {
                                         attrs.title = "Curate"
                                         attrs.attributes["aria-label"] = "Curate"
