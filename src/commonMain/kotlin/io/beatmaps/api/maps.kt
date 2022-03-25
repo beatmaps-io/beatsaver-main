@@ -86,7 +86,8 @@ data class MapDifficulty(
     val cinema: Boolean,
     val seconds: Double,
     val paritySummary: MapParitySummary,
-    val stars: Float? = null
+    val stars: Float? = null,
+    val maxScore: Int
 ) { companion object }
 
 @Serializable

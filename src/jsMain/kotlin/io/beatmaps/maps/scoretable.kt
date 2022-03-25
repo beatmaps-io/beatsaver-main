@@ -38,7 +38,6 @@ external interface ScoreTableState : RState {
     var page: Int
     var loading: Boolean
     var scores: List<LeaderboardScore>
-    var maxScore: Int
     var scroll: Int
     var uid: Int
     var token: CancelTokenSource
@@ -54,7 +53,6 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
             page = 1
             loading = false
             scores = listOf()
-            maxScore = 0
             scroll = 0
             uid = 0
             token = Axios.CancelToken.source()
@@ -62,9 +60,6 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
     }
 
     override fun componentDidMount() {
-        setState {
-            maxScore = maxScore(props.selected?.notes ?: 0)
-        }
         window.addEventListener("scroll", ::handleScroll)
 
         loadNextPage()
@@ -80,7 +75,6 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
             nextState.scroll = 0
             nextState.uid = 0
             nextState.token = Axios.CancelToken.source()
-            nextState.maxScore = maxScore(nextProps.selected?.notes ?: 0)
 
             window.setTimeout(::loadNextPage, 0)
         }
@@ -119,12 +113,6 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
         }
     }
 
-    private fun maxScore(n: Int, maxScorePerBlock: Int = 115) =
-        (if (n > (1 + 4 + 8)) maxScorePerBlock * 8 * (n - 13) else 0) +
-            (if (n > (1 + 4)) maxScorePerBlock * 4 * (n.coerceAtMost(13) - 5) else 0) +
-            (if (n > 1) maxScorePerBlock * 2 * (n.coerceAtMost(5) - 1) else 0) +
-            n.coerceAtMost(1) * maxScorePerBlock
-
     override fun RBuilder.render() {
         div("scores col-lg-8") {
             table("table table-striped table-dark") {
@@ -149,6 +137,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
                     ref = myRef
                     attrs.onScrollFunction = ::handleScroll
                     state.scores.forEachIndexed { idx, it ->
+                        val maxScore = props.selected?.maxScore ?: 0
                         score {
                             key = idx.toString()
                             position = idx + 1
@@ -156,9 +145,9 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
                             name = it.name
                             pp = it.pp
                             score = it.score
-                            scoreColor = scoreColor(it.score, state.maxScore)
+                            scoreColor = scoreColor(it.score, maxScore)
                             mods = it.mods
-                            percentage = ((it.score * 100) / state.maxScore.toFloat()).fixed(2) + "%"
+                            percentage = ((it.score * 100) / maxScore.toFloat()).fixed(2) + "%"
                         }
                     }
                 }
