@@ -3,6 +3,7 @@ package io.beatmaps.maps
 import external.TimeAgo
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
+import io.beatmaps.common.formatTime
 import kotlinx.html.DIV
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.role
@@ -93,6 +94,11 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
                         }
                     }
                 }
+            }
+
+            props.map.metadata.let { metadata ->
+                infoItem("Song Length", metadata.duration.formatTime())
+                infoItem("BPM", "${metadata.bpm}")
             }
 
             props.map.stats.let { stats ->
