@@ -57,6 +57,7 @@ class MapsApi {
     @Location("/maps/update") data class Update(val api: MapsApi)
     @Location("/maps/tagupdate") data class TagUpdate(val api: MapsApi)
     @Location("/maps/curate") data class Curate(val api: MapsApi)
+    @Location("/maps/validate") data class Validate(val api: MapsApi)
     @Location("/maps/wip/{page}") data class WIP(val page: Long = 0, val api: MapsApi)
     @Location("/download/key/{key}") data class BeatsaverDownload(val key: String, val api: MapsApi)
     @Location("/maps/beatsaver/{key}") data class Beatsaver(val key: String, @Ignore val api: MapsApi)
@@ -137,6 +138,29 @@ fun Route.mapDetailRoute() {
                             it[curatedAt] = null
                             it[curator] = null
                         }
+                        it[updatedAt] = NowExpression(updatedAt.columnType)
+                    } > 0
+                }
+
+                if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
+                call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+            }
+        }
+    }
+
+    post<MapsApi.Validate> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        requireAuthorization { user ->
+            if (!user.isAdmin()) {
+                call.respond(HttpStatusCode.BadRequest)
+            } else {
+                val mapUpdate = call.receive<ValidateMap>()
+
+                val result = transaction {
+                    Beatmap.update({
+                        (Beatmap.id eq mapUpdate.id)
+                    }) {
+                        it[automapper] = mapUpdate.automapper
                         it[updatedAt] = NowExpression(updatedAt.columnType)
                     } > 0
                 }
