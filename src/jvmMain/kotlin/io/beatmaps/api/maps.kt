@@ -129,7 +129,7 @@ fun Route.mapDetailRoute() {
 
                 val result = transaction {
                     Beatmap.update({
-                        (Beatmap.id eq mapUpdate.id)
+                        (Beatmap.id eq mapUpdate.id) and (Beatmap.uploader neq user.userId)
                     }) {
                         if (mapUpdate.curated) {
                             it[curatedAt] = NowExpression(curatedAt.columnType)
