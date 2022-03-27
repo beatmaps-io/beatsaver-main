@@ -45,6 +45,7 @@ external interface AdminAccountComponentState : RState {
 class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccountComponentState>() {
     private val maxUploadRef = createRef<HTMLSelectElement>()
     private val curatorRef = createRef<HTMLInputElement>()
+    private val verifiedMapperRef = createRef<HTMLInputElement>()
 
     override fun componentWillMount() {
         setState {
@@ -57,6 +58,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
 
     override fun componentDidMount() {
         curatorRef.current?.checked = props.userDetail.curator == true
+        verifiedMapperRef.current?.checked = props.userDetail.verifiedMapper
     }
 
     override fun RBuilder.render() {
@@ -95,6 +97,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                     ref = maxUploadRef
                 }
                 div("form-check form-switch mb-3 mt-3") {
+                    key = "curator"
                     input(InputType.checkBox, classes = "form-check-input") {
                         attrs.id = "curator"
                         attrs.disabled = state.loading == true
@@ -103,6 +106,18 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                     label("form-check-label") {
                         attrs.htmlFor = "curator"
                         +"Curator"
+                    }
+                }
+                div("form-check form-switch mb-3 mt-3") {
+                    key = "verifiedMapper"
+                    input(InputType.checkBox, classes = "form-check-input") {
+                        attrs.id = "verifiedMapper"
+                        attrs.disabled = state.loading == true
+                        ref = verifiedMapperRef
+                    }
+                    label("form-check-label") {
+                        attrs.htmlFor = "verifiedMapper"
+                        +"Verified Mapper"
                     }
                 }
                 div("d-grid") {
@@ -116,7 +131,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
 
                             Axios.post<ActionResponse>(
                                 "${Config.apibase}/users/admin",
-                                UserAdminRequest(props.userDetail.id, state.uploadLimit, curatorRef.current?.checked ?: false),
+                                UserAdminRequest(props.userDetail.id, state.uploadLimit, curatorRef.current?.checked ?: false, verifiedMapperRef.current?.checked ?: false),
                                 generateConfig<UserAdminRequest, ActionResponse>()
                             ).then {
                                 setState {

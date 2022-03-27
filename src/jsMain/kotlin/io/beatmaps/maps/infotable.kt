@@ -47,7 +47,8 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
         val mapAttributes = listOfNotNull(
             if (props.map.ranked) "ranked" else null,
             if (props.map.qualified && !props.map.ranked) "qualified" else null,
-            if (props.map.curator != null) "curated" else null
+            if (props.map.curator != null) "curated" else null,
+            if (!props.map.ranked && !props.map.qualified && props.map.curator == null && props.map.uploader.verifiedMapper) "verified" else null
         )
 
         val classes = mapAttributes.plus("list-group").joinToString(" ")

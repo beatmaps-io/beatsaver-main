@@ -9,7 +9,6 @@ import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.cdnPrefix
-import io.beatmaps.common.Config
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.api.EMapState
@@ -21,14 +20,16 @@ import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
-import io.beatmaps.common.dbo.Playlist.joinOwner
 import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.PlaylistMapDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.handleCurator
 import io.beatmaps.common.dbo.handleOwner
 import io.beatmaps.common.dbo.joinCurator
+import io.beatmaps.common.dbo.joinOwner
+import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.localPlaylistCoverFolder
@@ -61,7 +62,9 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import net.coobird.thumbnailator.Thumbnails
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.ColumnSet
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
@@ -91,7 +94,14 @@ const val prefix: String = "/playlists"
     @Location("$prefix/id/{id}/edit") data class Edit(val id: Int, val api: PlaylistApi)
     @Location("$prefix/create") data class Create(val api: PlaylistApi)
     @Location("$prefix/curate") data class Curate(val api: PlaylistApi)
-    @Location("$prefix/user/{userId}/{page}") data class ByUser(val userId: Int, val page: Long, val api: PlaylistApi)
+    @Group("Playlists") @Location("$prefix/user/{userId}/{page}") data class ByUser(
+        val userId: Int,
+        val page: Long,
+        @Ignore
+        val basic: Boolean = false,
+        @Ignore
+        val api: PlaylistApi
+    )
     @Group("Playlists") @Location("$prefix/latest") data class ByUploadDate(
         @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
         val before: Instant? = null,
@@ -152,7 +162,8 @@ fun Route.playlistRoute() {
         call.response.header("Access-Control-Allow-Origin", "*")
         call.respond(HttpStatusCode.OK)
     }
-    get<PlaylistApi.ByUploadDate>("Get playlists ordered by created/updated".responds(ok<SearchResponse>())) {
+
+    get<PlaylistApi.ByUploadDate>("Get playlists ordered by created/updated".responds(ok<PlaylistSearchResponse>())) {
         call.response.header("Access-Control-Allow-Origin", "*")
 
         val sess = call.sessions.get<Session>()
@@ -164,6 +175,7 @@ fun Route.playlistRoute() {
 
         val playlists = transaction {
             Playlist
+                .joinPlaylistCurator()
                 .joinOwner()
                 .select {
                     (Playlist.deletedAt.isNull() and (sess?.let { s -> Playlist.owner eq s.userId or Playlist.public } ?: Playlist.public))
@@ -173,6 +185,7 @@ fun Route.playlistRoute() {
                 .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
                 .limit(20)
                 .handleOwner()
+                .handleCurator()
                 .map { row -> PlaylistDao.wrapRow(row) }
                 .sortedByDescending { map ->
                     when (it.sort) {
@@ -194,7 +207,7 @@ fun Route.playlistRoute() {
         call.respond(HttpStatusCode.OK)
     }
 
-    get<PlaylistApi.Text>("Search for playlists".responds(ok<SearchResponse>())) {
+    get<PlaylistApi.Text>("Search for playlists".responds(ok<PlaylistSearchResponse>())) {
         call.response.header("Access-Control-Allow-Origin", "*")
 
         val searchFields = PgConcat(" ", Playlist.name, Playlist.description)
@@ -211,6 +224,7 @@ fun Route.playlistRoute() {
                     }
                 }
                 .joinOwner()
+                .joinPlaylistCurator()
                 .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) + Playlist.columns + User.columns)
                 .select {
                     (Playlist.deletedAt.isNull() and Playlist.public)
@@ -230,6 +244,8 @@ fun Route.playlistRoute() {
                     SortOrder.DESC
                 )
                 .limit(it.page)
+                .handleCurator()
+                .handleOwner()
                 .map { playlist ->
                     PlaylistFull.from(playlist, cdnPrefix())
                 }
@@ -242,6 +258,7 @@ fun Route.playlistRoute() {
         val detailPage = transaction {
             val playlist = Playlist
                 .joinOwner()
+                .joinPlaylistCurator()
                 .select {
                     (Playlist.id eq id).let {
                         if (isAdmin) {
@@ -252,6 +269,7 @@ fun Route.playlistRoute() {
                     }
                 }
                 .handleOwner()
+                .handleCurator()
                 .firstOrNull()?.let {
                     PlaylistFull.from(it, cdnPrefix)
                 }
@@ -301,43 +319,74 @@ fun Route.playlistRoute() {
         getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, null)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
     }
 
+    options<PlaylistApi.DetailWithPage> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
+    }
+
     get<PlaylistApi.DetailWithPage>("Get playlist detail".responds(ok<PlaylistPage>(), notFound())) { req ->
+        call.response.header("Access-Control-Allow-Origin", "*")
+
         val sess = call.sessions.get<Session>()
         getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, req.page)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
     }
 
-    get<PlaylistApi.ByUser> { req ->
+    options<PlaylistApi.ByUser> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
+    }
+
+    get<PlaylistApi.ByUser>("Get playlists by user".responds(ok<PlaylistSearchResponse>())) { req ->
+        call.response.header("Access-Control-Allow-Origin", "*")
+
         val sess = call.sessions.get<Session>()
-        val page = transaction {
-            Playlist
-                .select {
-                    ((Playlist.owner eq req.userId) and Playlist.deletedAt.isNull()).let {
-                        if (req.userId == sess?.userId) {
-                            it
-                        } else {
-                            it.and(Playlist.public)
+
+        fun <T> doQuery(table: ColumnSet = Playlist, block: (ResultRow) -> T) =
+            transaction {
+                table
+                    .select {
+                        ((Playlist.owner eq req.userId) and Playlist.deletedAt.isNull()).let {
+                            if (req.userId == sess?.userId) {
+                                it
+                            } else {
+                                it.and(Playlist.public)
+                            }
                         }
                     }
-                }
-                .orderBy(Playlist.createdAt, SortOrder.DESC)
-                .limit(req.page, 100)
-                .map {
-                    PlaylistBasic.from(it, cdnPrefix())
-                }
-        }
+                    .orderBy(Playlist.createdAt, SortOrder.DESC)
+                    .limit(req.page, 20)
+                    .handleCurator()
+                    .map(block)
+            }
 
-        call.respond(page)
+        if (req.basic) {
+            val page = doQuery {
+                PlaylistBasic.from(it, cdnPrefix())
+            }
+
+            call.respond(page)
+        } else {
+            val page = doQuery(
+                Playlist.joinPlaylistCurator()
+            ) {
+                PlaylistFull.from(it, cdnPrefix())
+            }
+
+            call.respond(PlaylistSearchResponse(page))
+        }
     }
 
     get<PlaylistApi.Download> { req ->
         val (playlist, playlistSongs) = transaction {
             fun getPlaylist() =
                 Playlist
+                    .joinPlaylistCurator()
                     .joinOwner()
                     .select {
                         (Playlist.id eq req.id) and Playlist.deletedAt.isNull()
                     }
                     .handleOwner()
+                    .handleCurator()
                     .firstOrNull()?.let {
                         PlaylistFull.from(it, cdnPrefix())
                     }
@@ -374,7 +423,7 @@ fun Route.playlistRoute() {
                     playlist.owner?.name ?: "",
                     playlist.description,
                     imageStr,
-                    PlaylistCustomData("${Config.apiremotebase}/playlists/id/${playlist.playlistId}/download"),
+                    PlaylistCustomData(playlist.downloadURL),
                     playlistSongs
                 )
             )

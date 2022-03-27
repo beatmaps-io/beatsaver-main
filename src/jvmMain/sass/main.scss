@@ -89,7 +89,13 @@ img {
     margin: 7.75px 0;
   }
 }
-
+.jumbotron {
+  border-radius: 0.3rem;
+  --bs-bg-opacity: 1;
+  background-color: rgba(var(--bs-dark-rgb), var(--bs-bg-opacity));
+  padding: 3rem;
+  margin: 1.5rem 0;
+}
 div.search-results {
   display: flex;
   flex-wrap: wrap;
@@ -142,6 +148,11 @@ table.search-results {
     &.qualified {
       .color {
         background-color: $info;
+      }
+    }
+    &.verified {
+      .color {
+        background-color: $bs-purple;
       }
     }
     &.ranked, &.qualified {
@@ -689,6 +700,11 @@ div.mapstats {
   &.qualified {
     .color {
       background-color: $info;
+    }
+  }
+  &.verified {
+    .color {
+      background-color: $bs-purple;
     }
   }
   &.ranked, &.qualified {

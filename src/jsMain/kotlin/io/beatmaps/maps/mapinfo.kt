@@ -180,13 +180,15 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
 
                                 if (userData?.curator == true && !props.isOwner) {
                                     a("#") {
-                                        attrs.title = "Curate"
-                                        attrs.attributes["aria-label"] = "Curate"
+                                        val isCurated = props.mapInfo.curator != null
+                                        val text = if (isCurated) "Uncurate" else "Curate"
+                                        attrs.title = text
+                                        attrs.attributes["aria-label"] = text
                                         attrs.onClickFunction = {
                                             it.preventDefault()
                                             curate(props.mapInfo.curator == null)
                                         }
-                                        i("fas fa-award " + if (props.mapInfo.curator != null) "text-danger" else "text-success") { }
+                                        i("fas fa-award " + if (isCurated) "text-danger" else "text-success") { }
                                     }
                                 }
                                 if (userData?.admin == true) {

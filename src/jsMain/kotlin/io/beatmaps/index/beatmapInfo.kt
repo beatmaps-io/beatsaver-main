@@ -70,7 +70,8 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
             val mapAttributes = listOfNotNull(
                 if (map.ranked) "ranked" else null,
                 if (map.qualified && !map.ranked) "qualified" else null,
-                if (map.curator != null) "curated" else null
+                if (map.curator != null) "curated" else null,
+                if (!map.ranked && !map.qualified && map.curator == null && map.uploader.verifiedMapper) "verified" else null
             )
 
             val classes = listOf("beatmap").plus(mapAttributes).joinToString(" ")
