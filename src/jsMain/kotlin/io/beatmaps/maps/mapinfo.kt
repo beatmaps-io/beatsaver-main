@@ -7,6 +7,7 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.SimpleMapInfoUpdate
 import io.beatmaps.api.StateUpdate
+import io.beatmaps.api.ValidateMap
 import io.beatmaps.common.Config
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.MapTagType
@@ -125,6 +126,12 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
         }) { }
     }
 
+    private fun validate(automapper: Boolean = true) {
+        Axios.post<String>("${Config.apibase}/maps/validate", ValidateMap(props.mapInfo.intId(), automapper), generateConfig<ValidateMap, String>()).then({
+            props.reloadMap()
+        }) { }
+    }
+
     override fun RBuilder.render() {
         val deleted = props.mapInfo.deletedAt != null
         globalContext.Consumer { userData ->
@@ -171,7 +178,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                     }
                                 }
 
-                                if (userData?.curator == true) {
+                                if (userData?.curator == true && !props.isOwner) {
                                     a("#") {
                                         val isCurated = props.mapInfo.curator != null
                                         val text = if (isCurated) "Uncurate" else "Curate"
@@ -185,6 +192,15 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                     }
                                 }
                                 if (userData?.admin == true) {
+                                    a("#") {
+                                        attrs.title = if (props.mapInfo.automapper) "Flag as Human-made Map" else "Flag as AI-assisted Map"
+                                        attrs.attributes["aria-label"] = if (props.mapInfo.automapper) "Validate" else "Invalidate"
+                                        attrs.onClickFunction = {
+                                            it.preventDefault()
+                                            validate(!props.mapInfo.automapper)
+                                        }
+                                        i("fas " + if (props.mapInfo.automapper) "fa-user-check text-success" else "fa-user-times text-danger") { }
+                                    }
                                     a("#") {
                                         attrs.title = "Delete"
                                         attrs.attributes["aria-label"] = "Delete"
