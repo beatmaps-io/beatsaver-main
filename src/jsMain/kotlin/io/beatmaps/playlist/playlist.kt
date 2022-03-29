@@ -17,8 +17,8 @@ import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.beatmapInfo
 import io.beatmaps.index.modal
-import io.beatmaps.maps.UploadRequestConfig
 import io.beatmaps.setPageTitle
+import io.beatmaps.upload.UploadRequestConfig
 import kotlinx.html.CommonAttributeGroupFacade
 import kotlinx.html.classes
 import kotlinx.html.js.onClickFunction

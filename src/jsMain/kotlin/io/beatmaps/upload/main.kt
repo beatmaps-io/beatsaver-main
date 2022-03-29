@@ -1,4 +1,4 @@
-package io.beatmaps.maps
+package io.beatmaps.upload
 
 import external.AxiosProgress
 import external.AxiosRequestConfig

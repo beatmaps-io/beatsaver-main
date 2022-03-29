@@ -8,8 +8,8 @@ import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
 import io.beatmaps.common.Config
-import io.beatmaps.maps.UploadRequestConfig
 import io.beatmaps.setPageTitle
+import io.beatmaps.upload.UploadRequestConfig
 import kotlinx.browser.window
 import kotlinx.datetime.Clock
 import kotlinx.html.ButtonType

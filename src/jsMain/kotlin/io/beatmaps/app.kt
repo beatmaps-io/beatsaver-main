@@ -4,13 +4,13 @@ import io.beatmaps.index.HomePage
 import io.beatmaps.index.HomePageProps
 import io.beatmaps.maps.MapPage
 import io.beatmaps.maps.MapPageProps
-import io.beatmaps.maps.UploadPage
 import io.beatmaps.maps.recent.recentTestplays
 import io.beatmaps.nav.manageNav
 import io.beatmaps.nav.viewportMinWidthPolyfill
 import io.beatmaps.playlist.PlaylistProps
 import io.beatmaps.playlist.editPlaylist
 import io.beatmaps.playlist.playlist
+import io.beatmaps.upload.UploadPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ProfilePageProps
 import io.beatmaps.user.ResetPageProps

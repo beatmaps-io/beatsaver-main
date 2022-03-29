@@ -8,7 +8,7 @@ import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UsernameReq
 import io.beatmaps.common.Config
-import io.beatmaps.maps.UploadRequestConfig
+import io.beatmaps.upload.UploadRequestConfig
 import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
