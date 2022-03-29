@@ -85,7 +85,6 @@ external interface MapInfoState : RState {
     var tags: Set<MapTag>?
 }
 
-@JsExport
 class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     private val inputRef = createRef<HTMLInputElement>()
     private val textareaRef = createRef<HTMLTextAreaElement>()

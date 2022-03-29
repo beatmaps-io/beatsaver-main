@@ -29,7 +29,6 @@ data class ModalState(var modal: ModalData? = null) : RState
 data class ModalData(val titleText: String, val bodyText: String = "", val buttons: List<ModalButton>, val large: Boolean = false, val bodyCallback: (RDOMBuilder<DIV>.() -> Unit)? = null)
 data class ModalButton(val text: String, val color: String = "secondary", val callback: () -> Unit = {})
 
-@JsExport
 class ModalComponent : RComponent<RProps, ModalState>() {
     private val backdrop = createRef<HTMLDivElement>()
     private val modal = createRef<HTMLDivElement>()

@@ -56,7 +56,6 @@ external interface UploadPageProps : RProps {
 
 data class UploadPageState(var errors: List<String> = listOf(), var loading: Boolean = false, var beatsage: Boolean? = null) : RState
 
-@JsExport
 class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
     private val captchaRef = createRef<ReCAPTCHA>()
     private val titleRef = createRef<HTMLInputElement>()

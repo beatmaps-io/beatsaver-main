@@ -34,7 +34,6 @@ external interface ResetPageState : RState {
     var loading: Boolean
 }
 
-@JsExport
 class ResetPage : RComponent<ResetPageProps, ResetPageState>() {
     private val passwordRef = createRef<HTMLInputElement>()
     private val password2Ref = createRef<HTMLInputElement>()

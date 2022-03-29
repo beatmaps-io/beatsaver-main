@@ -20,7 +20,6 @@ external interface HomePageState : RState {
     var searchParams: SearchParams
 }
 
-@JsExport
 class HomePage : RComponent<HomePageProps, HomePageState>() {
     private val searchRef = createRef<Search>()
     private val modalRef = createRef<ModalComponent>()

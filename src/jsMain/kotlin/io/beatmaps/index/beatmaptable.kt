@@ -79,7 +79,6 @@ external interface BeatmapTableState : RState {
 
 external fun encodeURIComponent(uri: String): String
 
-@JsExport
 class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
 
     private val emptyPage = List<MapDetail?>(20) { null }

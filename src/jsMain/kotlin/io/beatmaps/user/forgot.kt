@@ -33,7 +33,6 @@ external interface ForgotPageState : RState {
     var complete: Boolean
 }
 
-@JsExport
 class ForgotPage : RComponent<RProps, ForgotPageState>() {
     private val emailRef = createRef<HTMLInputElement>()
     private val captchaRef = createRef<ReCAPTCHA>()

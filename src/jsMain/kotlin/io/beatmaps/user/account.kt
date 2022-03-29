@@ -54,7 +54,6 @@ external interface AccountComponentState : RState {
     var username: String
 }
 
-@JsExport
 class AccountComponent : RComponent<AccountComponentProps, AccountComponentState>() {
     private val avatarRef = createRef<HTMLInputElement>()
     private val progressBarInnerRef = createRef<HTMLElement>()

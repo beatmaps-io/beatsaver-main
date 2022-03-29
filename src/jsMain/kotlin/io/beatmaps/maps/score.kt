@@ -12,7 +12,6 @@ import react.dom.tr
 
 data class ScoreProps(var position: Int, var playerId: Long, var name: String, var pp: Double, var score: Int, var scoreColor: String, var percentage: String, var mods: List<String>) : RProps
 
-@JsExport
 class Score : RComponent<ScoreProps, RState>() {
     override fun RBuilder.render() {
         tr {

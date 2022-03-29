@@ -44,7 +44,6 @@ external interface UserPlaylistsState : RState {
     var visiblePages: IntRange
 }
 
-@JsExport
 class UserPlaylists : RComponent<UserPlaylistsProps, UserPlaylistsState>() {
     private val playlistsPerPage = 20
     private val rowHeight = 73.0

@@ -31,7 +31,6 @@ external interface MapPageState : RState {
     var selectedDiff: MapDifficulty?
 }
 
-@JsExport
 class MapPage : RComponent<MapPageProps, MapPageState>() {
     private val modalRef = createRef<ModalComponent>()
 

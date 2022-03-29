@@ -41,7 +41,6 @@ external interface AdminAccountComponentState : RState {
     var uploadLimit: Int
 }
 
-@JsExport
 class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccountComponentState>() {
     private val maxUploadRef = createRef<HTMLSelectElement>()
     private val curatorRef = createRef<HTMLInputElement>()

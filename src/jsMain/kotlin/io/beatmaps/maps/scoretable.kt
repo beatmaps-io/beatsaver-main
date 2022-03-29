@@ -43,7 +43,6 @@ external interface ScoreTableState : RState {
     var token: CancelTokenSource
 }
 
-@JsExport
 class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
 
     private val myRef = createRef<TBODY>()

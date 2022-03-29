@@ -46,7 +46,6 @@ external interface TimelineState : RState {
     var loading: Boolean
 }
 
-@JsExport
 class Timeline : RComponent<TimelineProps, TimelineState>() {
     private val captchaRef = createRef<ReCAPTCHA>()
     private val progressBarInnerRef = createRef<HTMLElement>()

@@ -72,7 +72,6 @@ external interface VersionState : RState {
 }
 private const val testplayEnabled = false
 
-@JsExport
 class VersionComponent : RComponent<VersionProps, VersionState>() {
     private val textareaRef = createRef<TEXTAREA>()
 

@@ -21,7 +21,6 @@ import react.setState
 data class RecentTestplaysState(var testplays: List<RecentTestplay> = listOf(), var loading: Boolean = false, var page: Int = 0) : RState
 data class RecentTestplay(val mapDetail: MapDetail, val version: MapVersion, val testplay: MapTestplay)
 
-@JsExport
 class RecentTestplays : RComponent<RProps, RecentTestplaysState>() {
     private val modalRef = createRef<ModalComponent>()
 

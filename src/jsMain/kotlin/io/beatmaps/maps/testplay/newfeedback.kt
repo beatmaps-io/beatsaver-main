@@ -29,7 +29,6 @@ external interface NewFeedbackProps : RProps {
 
 data class NewFeedbackState(var loading: Boolean = false, var done: Boolean = false, var time: String = "", var text: String = "") : RState
 
-@JsExport
 class NewFeedback : RComponent<NewFeedbackProps, NewFeedbackState>() {
     private val textareaRef = createRef<TEXTAREA>()
 

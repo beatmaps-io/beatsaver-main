@@ -48,7 +48,6 @@ external interface PlaylistEditProps : RProps {
 
 data class PlaylistEditState(var playlist: PlaylistFull?, var loading: Boolean?, var filename: String?, var success: Boolean?, var errors: List<String>?) : RState
 
-@JsExport
 class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
     private val captchaRef = createRef<ReCAPTCHA>()
     private val coverRef = createRef<HTMLInputElement>()

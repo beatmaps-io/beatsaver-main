@@ -38,7 +38,6 @@ fun RDOMBuilder<*>.diffImg(diff: MapDifficulty) {
     }
 }
 
-@JsExport
 class InfoTable : RComponent<InfoTableProps, RState>() {
     private val itemClasses by lazy { "list-group-item d-flex justify-content-between" + if (props.horizontal == true) " col-lg" else "" }
 

@@ -57,7 +57,6 @@ var CommonAttributeGroupFacade.onTransitionEndFunction: (Event) -> Unit
         consumer.onTagEvent(this, "ontransitionend", newValue)
     }
 
-@JsExport
 class Playlist : RComponent<PlaylistProps, PlaylistState>() {
     private val modalRef = createRef<ModalComponent>()
     private val reasonRef = createRef<HTMLTextAreaElement>()
