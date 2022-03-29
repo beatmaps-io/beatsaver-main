@@ -37,7 +37,6 @@ external interface RecentTestplayRowProps : RProps {
 
 data class RecentTestplayRowState(var editing: Boolean = false, var loading: Boolean = false, var text: String = "", var time: String = "") : RState
 
-@JsExport
 class RecentTestplayRow : RComponent<RecentTestplayRowProps, RecentTestplayRowState>() {
     private val textareaRef = createRef<TEXTAREA>()
 

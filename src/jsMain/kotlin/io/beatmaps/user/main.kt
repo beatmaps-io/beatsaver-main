@@ -59,7 +59,6 @@ enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps, Pro
     MODERATOR("Alerts", condition = { it, _ -> (it.userData?.admin == true || it.userId == null) })
 }
 
-@JsExport
 class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
     private val modalRef = createRef<ModalComponent>()
 

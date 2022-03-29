@@ -41,7 +41,6 @@ external interface PickUsernameState : RState {
     var submitted: Boolean
 }
 
-@JsExport
 class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
     private val inputRef = createRef<HTMLInputElement>()
 

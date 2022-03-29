@@ -15,7 +15,6 @@ external interface OneClickProps : RProps {
     var modal: RReadableRef<ModalComponent>
 }
 
-@JsExport
 class OneClick : RComponent<OneClickProps, RState>() {
     override fun RBuilder.render() {
         a("beatsaver://${props.mapId}") {

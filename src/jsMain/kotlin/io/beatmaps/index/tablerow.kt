@@ -21,7 +21,6 @@ external interface TableRowProps : RProps {
     var modal: RReadableRef<ModalComponent>
 }
 
-@JsExport
 class TableRow : RComponent<TableRowProps, RState>() {
     override fun RBuilder.render() {
         tr {

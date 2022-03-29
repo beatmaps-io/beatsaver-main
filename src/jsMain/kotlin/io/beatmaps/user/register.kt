@@ -37,7 +37,6 @@ external interface SignupPageState : RState {
     var complete: Boolean
 }
 
-@JsExport
 class SignupPage : RComponent<RProps, SignupPageState>() {
     private val usernameRef = createRef<HTMLInputElement>()
     private val emailRef = createRef<HTMLInputElement>()

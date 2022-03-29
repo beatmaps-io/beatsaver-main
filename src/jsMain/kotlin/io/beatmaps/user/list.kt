@@ -47,7 +47,6 @@ external interface UserListState : RState {
     var scroll: Boolean
 }
 
-@JsExport
 class UserList : RComponent<UserListProps, UserListState>() {
 
     private val rowHeight = 53.781

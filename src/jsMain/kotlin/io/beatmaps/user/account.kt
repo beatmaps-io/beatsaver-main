@@ -8,7 +8,7 @@ import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UsernameReq
 import io.beatmaps.common.Config
-import io.beatmaps.maps.UploadRequestConfig
+import io.beatmaps.upload.UploadRequestConfig
 import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
@@ -54,7 +54,6 @@ external interface AccountComponentState : RState {
     var username: String
 }
 
-@JsExport
 class AccountComponent : RComponent<AccountComponentProps, AccountComponentState>() {
     private val avatarRef = createRef<HTMLInputElement>()
     private val progressBarInnerRef = createRef<HTMLElement>()

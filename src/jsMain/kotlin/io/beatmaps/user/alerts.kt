@@ -34,7 +34,6 @@ external interface AlertsPageProps : RProps {
 
 data class AlertsPageState(var alerts: List<Alert> = listOf(), var loading: Boolean = false) : RState
 
-@JsExport
 class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
     init {
         state = AlertsPageState()

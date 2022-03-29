@@ -23,7 +23,6 @@ import react.dom.p
 import react.dom.span
 import react.router.dom.routeLink
 
-@JsExport
 class LoginPage : RComponent<RProps, RState>() {
     override fun componentDidMount() {
         setPageTitle("Login")

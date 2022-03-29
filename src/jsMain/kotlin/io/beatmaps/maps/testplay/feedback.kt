@@ -34,7 +34,6 @@ external interface FeedbackProps : RProps {
 
 data class FeedbackState(var editing: Boolean = false, var loading: Boolean = false, var text: String = "", var time: String = "") : RState
 
-@JsExport
 class Feedback : RComponent<FeedbackProps, FeedbackState>() {
     private val textareaRef = createRef<TEXTAREA>()
 

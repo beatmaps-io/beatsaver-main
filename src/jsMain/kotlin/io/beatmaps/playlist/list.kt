@@ -8,7 +8,6 @@ import kotlinx.browser.window
 import kotlinx.html.ThScope
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
-import kotlinx.html.visible
 import org.w3c.dom.events.Event
 import react.RBuilder
 import react.RComponent
@@ -44,7 +43,6 @@ external interface UserPlaylistsState : RState {
     var visiblePages: IntRange
 }
 
-@JsExport
 class UserPlaylists : RComponent<UserPlaylistsProps, UserPlaylistsState>() {
     private val playlistsPerPage = 20
     private val rowHeight = 73.0

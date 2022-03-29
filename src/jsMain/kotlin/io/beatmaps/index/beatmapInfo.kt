@@ -40,7 +40,6 @@ external interface BeatMapInfoState : RState {
     var height: String
 }
 
-@JsExport
 class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
     private val divRef = createRef<HTMLDivElement>()
 

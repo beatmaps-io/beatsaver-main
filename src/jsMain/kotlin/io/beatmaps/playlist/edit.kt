@@ -8,8 +8,8 @@ import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
 import io.beatmaps.common.Config
-import io.beatmaps.maps.UploadRequestConfig
 import io.beatmaps.setPageTitle
+import io.beatmaps.upload.UploadRequestConfig
 import kotlinx.browser.window
 import kotlinx.datetime.Clock
 import kotlinx.html.ButtonType
@@ -48,7 +48,6 @@ external interface PlaylistEditProps : RProps {
 
 data class PlaylistEditState(var playlist: PlaylistFull?, var loading: Boolean?, var filename: String?, var success: Boolean?, var errors: List<String>?) : RState
 
-@JsExport
 class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
     private val captchaRef = createRef<ReCAPTCHA>()
     private val coverRef = createRef<HTMLInputElement>()

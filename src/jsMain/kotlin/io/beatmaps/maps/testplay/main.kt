@@ -23,7 +23,6 @@ external interface TestplayProps : RProps {
     var updateMapinfo: (MapDetail) -> Unit
 }
 
-@JsExport
 class Testplay : RComponent<TestplayProps, RState>() {
     private val modalRef = createRef<ModalComponent>()
 

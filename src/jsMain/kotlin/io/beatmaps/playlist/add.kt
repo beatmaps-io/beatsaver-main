@@ -67,7 +67,6 @@ external interface AddModalProps : RProps {
     var inPlaylists: Array<InPlaylist>
 }
 
-@JsExport
 class AddToPlaylist : RComponent<AddToPlaylistProps, AddToPlaylistState>() {
     private fun save(mapId: String, data: MutableMap<Int, Boolean>) {
         launch {
