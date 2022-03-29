@@ -373,7 +373,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
 }
 
 fun String.transformURLIntoLinks() =
-    replace("\\b((https?|ftp):\\/\\/)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[A-Za-z]{2,6}\\b(\\/[-a-zA-Z0-9@:%_\\+.~#?&//=]*)*(?:\\/|\\b)".toRegex()) {
+    replace("\\b((https?|ftp)://)?[-a-zA-Z0-9@:%._+~#=]{2,256}\\.[A-Za-z]{2,6}\\b(/[-a-zA-Z0-9@:%_+.~#?&/=]*)*(?:/|\\b)".toRegex()) {
         if (it.groupValues[1].isEmpty()) it.value else "<a target=\"_blank\" href=\"${it.value}\">${it.value}</a>"
     }
 
@@ -383,7 +383,7 @@ fun String.parseBoldMarkdown() =
     }
 
 fun String.parseItalicMarkdown() =
-    replace("(^| )(\\*|_)(.*?)\\2".toRegex(RegexOption.MULTILINE)) {
+    replace("(^| )([*_])(.*?)\\2".toRegex(RegexOption.MULTILINE)) {
         "${it.groupValues[1]}<i>${it.groupValues[3]}</i>"
     }
 
