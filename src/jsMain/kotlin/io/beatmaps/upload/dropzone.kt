@@ -5,9 +5,6 @@ import external.AxiosResponse
 import external.DropzoneProps
 import external.ReCAPTCHA
 import io.beatmaps.api.FailedUploadResponse
-import io.beatmaps.upload.DropInfo
-import io.beatmaps.upload.UploadRequestConfig
-import io.beatmaps.upload.renderChild
 import kotlinx.html.InputType
 import kotlinx.html.hidden
 import kotlinx.html.js.onBlurFunction
