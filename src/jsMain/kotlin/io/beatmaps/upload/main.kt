@@ -6,7 +6,6 @@ import external.Dropzone
 import external.ReCAPTCHA
 import external.recaptcha
 import io.beatmaps.setPageTitle
-import io.beatmaps.upload.simple
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
