@@ -229,7 +229,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                             }
                         }
 
-                        if (props.firstVersion && (state.state == EMapState.Uploaded || state.state == EMapState.Feedback)) {
+                        if (state.state == EMapState.Uploaded || state.state == EMapState.Feedback) {
                             if (props.allowPublish == true) {
                                 button(classes = "btn btn-danger m-1") {
                                     attrs.onClickFunction = {
@@ -255,7 +255,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                     +"Set a name to publish"
                                 }
                             }
-                            if (testplayEnabled) {
+                            if (testplayEnabled && props.firstVersion) {
                                 button(classes = "btn btn-info m-1") {
                                     attrs.onClickFunction = {
                                         mapState(EMapState.Testplay)
