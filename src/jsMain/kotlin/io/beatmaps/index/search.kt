@@ -78,6 +78,7 @@ val filters = listOf(
     FilterInfo("bot", "AI", FilterCategory.GENERAL) { it.automapper == true },
     FilterInfo("ranked", "Ranked", FilterCategory.GENERAL) { it.ranked == true },
     FilterInfo("curated", "Curated", FilterCategory.GENERAL) { it.curated == true },
+    FilterInfo("verified", "Verified Mapper", FilterCategory.GENERAL) { it.verified == true },
     FilterInfo("fs", "Full Spread", FilterCategory.GENERAL) { it.fullSpread == true },
 
     FilterInfo("chroma", "Chroma", FilterCategory.REQUIREMENTS) { it.chroma == true },
@@ -226,6 +227,7 @@ class Search : RComponent<SearchProps, SearchState>() {
                                     if (isFiltered("noodle")) true else null,
                                     if (isFiltered("ranked")) true else null,
                                     if (isFiltered("curated")) true else null,
+                                    if (isFiltered("verified")) true else null,
                                     if (isFiltered("fs")) true else null,
                                     if (isFiltered("me")) true else null,
                                     if (isFiltered("cinema")) true else null,
