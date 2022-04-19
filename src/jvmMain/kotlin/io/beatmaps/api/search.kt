@@ -190,6 +190,7 @@ fun Route.searchRoute() {
                     Beatmap.id.inSubQuery(
                         Beatmap
                             .joinVersions(needsDiff)
+                            .joinUploader()
                             .slice(
                                 if (needsDiff) {
                                     Beatmap.id.distinctOn(
