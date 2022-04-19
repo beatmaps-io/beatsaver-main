@@ -95,9 +95,11 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
                 }
             }
 
-            props.map.metadata.let { metadata ->
-                infoItem("Song Length", metadata.duration.formatTime())
-                infoItem("BPM", "${metadata.bpm}")
+            if (publishedVersion != null) {
+                props.map.metadata.let { metadata ->
+                    infoItem("Song Length", metadata.duration.formatTime())
+                    infoItem("BPM", "${metadata.bpm}")
+                }
             }
 
             props.map.stats.let { stats ->
