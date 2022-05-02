@@ -179,7 +179,7 @@ fun Route.mapController() {
     get<UserController.RedirectName> {
         transaction {
             User.select {
-                User.name eq it.username.lowercase()
+                (User.uniqueName eq it.username) and User.active
             }.firstOrNull()?.let { UserDao.wrapRow(it) }
         }?.let {
             call.respondRedirect("/profile/${it.id}")
