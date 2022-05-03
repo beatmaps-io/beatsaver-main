@@ -164,8 +164,10 @@ val uploader = functionComponent<UploaderProps> { props ->
         attrs.version = props.version
         attrs.automapper = props.map.automapper
     }
-    +" - "
-    TimeAgo.default {
-        attrs.date = props.map.uploaded.toString()
+    if (props.version?.state == EMapState.Published) {
+        +" - "
+        TimeAgo.default {
+            attrs.date = props.map.uploaded.toString()
+        }
     }
 }

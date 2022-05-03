@@ -387,6 +387,16 @@ fun String.parseItalicMarkdown() =
         "${it.groupValues[1]}<i>${it.groupValues[3]}</i>"
     }
 
+fun String.parseMapReference() =
+    replace("(^| )#([\\da-f]+?)($| )".toRegex(setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))) {
+        """${it.groupValues[1]}<a href="/maps/${it.groupValues[2].lowercase()}">#${it.groupValues[2]}</a>${it.groupValues[3]}"""
+    }
+
+fun String.parseUserReference() =
+    replace("(^| )@([\\w.-]+?)($| )".toRegex(setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))) {
+        """${it.groupValues[1]}<a href="/profile/username/${it.groupValues[2].lowercase()}">@${it.groupValues[2]}</a>${it.groupValues[3]}"""
+    }
+
 fun RBuilder.mapInfo(handler: MapInfoProps.() -> Unit): ReactElement {
     return child(MapInfo::class) {
         this.attrs(handler)
@@ -402,6 +412,8 @@ fun <T : Tag> RDOMBuilder<T>.textToContent(text: String) {
             .replace(Regex("<[^>]+>"), "")
             .parseBoldMarkdown()
             .parseItalicMarkdown()
+            .parseMapReference()
+            .parseUserReference()
             .transformURLIntoLinks()
             .replace("\n", "<br />")
     )

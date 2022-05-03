@@ -52,6 +52,7 @@ import org.jetbrains.exposed.sql.update
 @Location("/profile") class UserController {
     @Location("/unlink-discord") data class UnlinkDiscord(val api: UserController)
     @Location("/{id?}") data class Detail(val id: Int? = null, val api: UserController)
+    @Location("/username/{name}") data class RedirectName(val name: String, val api: UserController)
 }
 
 @Location("/playlists") class PlaylistController {
@@ -172,6 +173,18 @@ fun Route.mapController() {
             call.respondRedirect("/login")
         } else {
             genericPage()
+        }
+    }
+
+    get<UserController.RedirectName> {
+        transaction {
+            User.select {
+                (User.uniqueName eq it.name) and User.active
+            }.firstOrNull()?.let { UserDao.wrapRow(it) }
+        }?.let {
+            call.respondRedirect("/profile/${it.id}")
+        } ?: run {
+            call.respondRedirect("/")
         }
     }
 
