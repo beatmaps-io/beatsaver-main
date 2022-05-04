@@ -378,22 +378,22 @@ fun String.transformURLIntoLinks() =
     }
 
 fun String.parseBoldMarkdown() =
-    replace("(^| )(\\*\\*|__)(.*?)\\2".toRegex(RegexOption.MULTILINE)) {
+    replace("(^|\\s)(\\*\\*|__)(.*?)\\2".toRegex(RegexOption.MULTILINE)) {
         "${it.groupValues[1]}<b>${it.groupValues[3]}</b>"
     }
 
 fun String.parseItalicMarkdown() =
-    replace("(^| )([*_])(.*?)\\2".toRegex(RegexOption.MULTILINE)) {
+    replace("(^|\\s)([*_])(.*?)\\2".toRegex(RegexOption.MULTILINE)) {
         "${it.groupValues[1]}<i>${it.groupValues[3]}</i>"
     }
 
 fun String.parseMapReference() =
-    replace("(^| )#([\\da-f]+?)($| )".toRegex(setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))) {
+    replace("(^|\\s)#([\\da-f]+?)($|[^\\da-z])".toRegex(setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))) {
         """${it.groupValues[1]}<a href="/maps/${it.groupValues[2].lowercase()}">#${it.groupValues[2]}</a>${it.groupValues[3]}"""
     }
 
 fun String.parseUserReference() =
-    replace("(^| )@([\\w.-]+?)($| )".toRegex(setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))) {
+    replace("(^|\\s)@([\\w.-]+?)($|[^\\w.-])".toRegex(setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))) {
         """${it.groupValues[1]}<a href="/profile/username/${it.groupValues[2].lowercase()}">@${it.groupValues[2]}</a>${it.groupValues[3]}"""
     }
 
@@ -409,7 +409,7 @@ class DangerousHtml(override var __html: String) : InnerHTML
 fun <T : Tag> RDOMBuilder<T>.textToContent(text: String) {
     domProps.dangerouslySetInnerHTML = DangerousHtml(
         text
-            .replace(Regex("<[^>]+>"), "")
+            .replace(Regex("<.+?>"), "")
             .parseBoldMarkdown()
             .parseItalicMarkdown()
             .parseMapReference()
