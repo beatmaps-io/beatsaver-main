@@ -57,7 +57,9 @@ data class SearchState(
     var startDate: Moment? = null,
     var endDate: Moment? = null,
     var filtersOpen: Boolean = false,
-    var tags: Set<MapTag> = setOf(),
+    var styleTags: Set<MapTag> = setOf(),
+    var genreTags: Set<MapTag> = setOf(),
+    var excludedTags: Set<MapTag> = setOf(),
     var shiftHeld: Boolean = false
 ) : RState
 data class PresetDateRange(val startDate: Moment?, val endDate: Moment?)
@@ -84,7 +86,7 @@ val filters = listOf(
     FilterInfo("chroma", "Chroma", FilterCategory.REQUIREMENTS) { it.chroma == true },
     FilterInfo("noodle", "Noodle", FilterCategory.REQUIREMENTS) { it.noodle == true },
     FilterInfo("me", "Mapping Extensions", FilterCategory.REQUIREMENTS) { it.me == true },
-    FilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true },
+    FilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true }
 )
 
 inline fun <T> T.applyIf(condition: Boolean, block: T.() -> T): T = if (condition) block(this) else this
@@ -191,7 +193,9 @@ class Search : RComponent<SearchProps, SearchState>() {
             order = fromParams.sortOrder
             startDate = fromParams.from?.let { Moment(it) }
             endDate = fromParams.to?.let { Moment(it) }
-            tags = fromParams.tags.mapNotNull { MapTag.fromSlug(it) }.toSet()
+            styleTags = fromParams.styleTags.mapNotNull { MapTag.fromSlug(it) }.toSet()
+            genreTags = fromParams.genreTags.mapNotNull { MapTag.fromSlug(it) }.toSet()
+            excludedTags = fromParams.excludedTags.mapNotNull { MapTag.fromSlug(it) }.toSet()
         }
     }
 
@@ -199,6 +203,8 @@ class Search : RComponent<SearchProps, SearchState>() {
         filters.first { it.key == s }.let { filter ->
             state.filterMap.getOrElse(filter) { false }
         }
+
+    private fun allTags() = state.styleTags + state.genreTags + state.excludedTags
 
     override fun RBuilder.render() {
         form("") {
@@ -231,7 +237,9 @@ class Search : RComponent<SearchProps, SearchState>() {
                                     if (isFiltered("fs")) true else null,
                                     if (isFiltered("me")) true else null,
                                     if (isFiltered("cinema")) true else null,
-                                    state.tags.map { o -> o.slug }
+                                    state.styleTags.map { o -> o.slug },
+                                    state.genreTags.map { o -> o.slug },
+                                    state.excludedTags.map { o -> o.slug }
                                 )
                             )
                         }
@@ -250,12 +258,16 @@ class Search : RComponent<SearchProps, SearchState>() {
                         }
                         ref = dropdownRef
                         span {
-                            val filters = filterRefs.filter { state.filterMap.getOrElse(it.key) { false } }.map { it.key.key } + state.tags.map { it.slug }
+                            val filters =
+                                filterRefs.filter { state.filterMap.getOrElse(it.key) { false } }.map { it.key.name } +
+                                state.styleTags.map { it.name } +
+                                state.genreTags.map { it.name } +
+                                state.excludedTags.map { "-${it.name}" }
 
                             if (filters.isEmpty()) {
                                 +"Filters"
                             } else {
-                                +filters.joinToString(",")
+                                +filters.joinToString(", ")
                             }
                         }
                         i("fas fa-angle-" + if (state.filtersOpen) "up" else "down") {}
@@ -291,25 +303,47 @@ class Search : RComponent<SearchProps, SearchState>() {
 
                                     if (it.type != MapTagType.None) {
                                         mapTag {
-                                            attrs.selected = state.tags.contains(it) || state.tags.isEmpty()
+                                            attrs.selected = allTags().let { tags -> tags.contains(it) || tags.isEmpty() }
+                                            attrs.excluded = state.excludedTags.contains(it)
                                             attrs.tag = it
-                                            attrs.onClick = { _ ->
-                                                val shouldAdd = !state.tags.contains(it)
 
-                                                val newTags = state.tags.applyIf(!state.shiftHeld) {
-                                                    filterTo(hashSetOf()) { o -> o.type != it.type }
-                                                }.applyIf(shouldAdd) {
-                                                    plus(it)
-                                                }.applyIf(state.shiftHeld && !shouldAdd) {
-                                                    minus(it)
+                                            when {
+                                                state.shiftHeld -> state.excludedTags
+                                                it.type == MapTagType.Style -> state.styleTags
+                                                it.type == MapTagType.Genre -> state.genreTags
+                                                else -> setOf()
+                                            }.let { tags ->
+                                                attrs.onClick = { _ ->
+                                                    val shouldAdd = !tags.contains(it)
+
+                                                    val newTags = tags.applyIf(shouldAdd) {
+                                                        plus(it)
+                                                    }.applyIf(!shouldAdd) {
+                                                        minus(it)
+                                                    }
+
+                                                    setState {
+                                                        when {
+                                                            state.shiftHeld -> {
+                                                                excludedTags = newTags
+                                                                styleTags = styleTags - it
+                                                                genreTags = genreTags - it
+                                                            }
+                                                            it.type == MapTagType.Style -> {
+                                                                styleTags = newTags
+                                                                excludedTags = excludedTags - it
+                                                            }
+                                                            it.type == MapTagType.Genre -> {
+                                                                genreTags = newTags
+                                                                excludedTags = excludedTags - it
+                                                            }
+                                                            else -> {}
+                                                        }
+                                                    }
+                                                    window.asDynamic().getSelection().removeAllRanges()
+
+                                                    Unit
                                                 }
-
-                                                setState {
-                                                    tags = newTags
-                                                }
-                                                window.asDynamic().getSelection().removeAllRanges()
-
-                                                Unit
                                             }
                                         }
                                     }

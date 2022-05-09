@@ -59,7 +59,9 @@ data class SearchParams(
     val fullSpread: Boolean?,
     val me: Boolean?,
     val cinema: Boolean?,
-    val tags: List<String>
+    val styleTags: List<String>,
+    val genreTags: List<String>,
+    val excludedTags: List<String>
 )
 
 external interface BeatmapTableState : RState {
@@ -205,7 +207,9 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                     (if (search.minNps != null) "&minNps=${search.minNps}" else "") +
                     (if (search.from != null) "&from=${search.from}" else "") +
                     (if (search.to != null) "&to=${search.to}" else "") +
-                    (if (search.tags.isNotEmpty()) "&tags=${search.tags.joinToString(",")}" else "")
+                    (if (search.styleTags.isNotEmpty()) "&styleTags=${search.styleTags.joinToString(",")}" else "") +
+                    (if (search.genreTags.isNotEmpty()) "&genreTags=${search.genreTags.joinToString(",")}" else "") +
+                    (if (search.excludedTags.isNotEmpty()) "&excludedTags=${search.excludedTags.joinToString(",")}" else "")
             } ?: ""
         }
 
