@@ -46,7 +46,7 @@ fun getActualPrefixForVersion(other: VersionsDao, cdnPrefix: String) =
     if (Clock.System.now() - other.uploaded.toKotlinInstant() < Duration.Companion.seconds(30)) {
         ""
     } else if (other.r2) {
-        "r2"
+        "r2."
     } else {
         cdnPrefix
     }
