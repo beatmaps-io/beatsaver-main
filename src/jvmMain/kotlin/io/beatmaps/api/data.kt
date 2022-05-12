@@ -43,10 +43,12 @@ fun MapDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(BeatmapDa
 
 fun getActualPrefixForVersion(other: VersionsDao, cdnPrefix: String) =
     // Don't use cdn servers during sync period
-    if (Clock.System.now() - other.uploaded.toKotlinInstant() > Duration.Companion.seconds(30)) {
-        cdnPrefix
-    } else {
+    if (Clock.System.now() - other.uploaded.toKotlinInstant() < Duration.Companion.seconds(30)) {
         ""
+    } else if (other.r2) {
+        "r2"
+    } else {
+        cdnPrefix
     }
 fun MapVersion.Companion.from(other: VersionsDao, cdnPrefix: String) =
     getActualPrefixForVersion(other, cdnPrefix).let { actualPrefix ->
