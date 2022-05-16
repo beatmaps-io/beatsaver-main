@@ -28,7 +28,7 @@ private fun requestCommon(builder: HttpRequestBuilder, authToken: String) {
     }
 }
 
-private class KVStore(val worker: Worker, val namespaceId: String): IKVStore {
+private class KVStore(val worker: Worker, val namespaceId: String) : IKVStore {
     @Throws(HttpRequestTimeoutException::class)
     override suspend fun getKeys() = client.get<KeyResponse>("https://api.cloudflare.com/client/v4/accounts/${worker.accountId}/storage/kv/namespaces/$namespaceId/keys") {
         requestCommon(this, worker.authToken)
@@ -50,7 +50,6 @@ private class KVStore(val worker: Worker, val namespaceId: String): IKVStore {
             body = kvs
         }
     }
-
 }
 
 class Worker(val accountId: String, val authToken: String) {

@@ -19,7 +19,7 @@ class R2(accountId: String, accessKey: String, secretKey: String) {
         r2Client = initAmazonS3Client("https://$accountId.r2.cloudflarestorage.com", accessKey, secretKey)
     }
 
-    private class R2Bucket(val r2: R2, val bucketName: String): IR2Bucket {
+    private class R2Bucket(val r2: R2, val bucketName: String) : IR2Bucket {
         override fun uploadFile(file: File) {
             r2.uploadFile(bucketName, file)
         }

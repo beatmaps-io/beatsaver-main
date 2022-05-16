@@ -46,7 +46,7 @@ fun Application.filenameUpdater() {
             val hash = update.hash ?: return@consumeAck
 
             updateDownloadFilename(update, beatsaverKVStore, hash)
-            //uploadToR2(update, r2Client)
+            // uploadToR2(update, r2Client)
         }
     }
 }
@@ -72,7 +72,7 @@ private fun uploadToR2(update: CDNUpdate, r2Client: IR2Bucket) {
         ).map { it.hash }
     }
 
-    toUpload.map { File(localFolder(it), "${it}.zip") }.filter { it.exists() }.map {
+    toUpload.map { File(localFolder(it), "$it.zip") }.filter { it.exists() }.map {
         r2Client.uploadFile(it)
     }
 
@@ -95,7 +95,7 @@ private fun deleteFromR2(update: CDNUpdate, r2Client: IR2Bucket) {
     }
 
     toDelete.forEach {
-        r2Client.deleteFile("${it}.zip")
+        r2Client.deleteFile("$it.zip")
     }
 
     transaction {
