@@ -42,6 +42,7 @@ fun Application.filenameUpdater() {
     val worker = Worker(cloudflareAccountId, cloudflareAuthToken)
     val beatsaverKVStore = worker.getKVStore(cloudflareKVId)
     val r2Client = R2(cloudflareAccountId, cloudflareR2Key, cloudflareR2Secret).getBucket(cloudflareR2Bucket)
+    val downloadFilenameCache = createLRUMap<String, String>(100)
 
     rabbitOptional {
         consumeAck("cdn.r2", CDNUpdate::class) { _, update ->
@@ -53,7 +54,6 @@ fun Application.filenameUpdater() {
 
             val hash = update.hash ?: return@consumeAck
 
-            val downloadFilenameCache = createLRUMap<String, String>(100)
             updateDownloadFilename(update, beatsaverKVStore, hash, downloadFilenameCache)
             // uploadToR2(update, r2Client)
         }
