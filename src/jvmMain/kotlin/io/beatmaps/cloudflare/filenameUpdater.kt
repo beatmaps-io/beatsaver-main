@@ -1,14 +1,18 @@
 package io.beatmaps.cloudflare
 
 import io.beatmaps.common.CDNUpdate
+import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.consumeAck
+import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.downloadFilename
 import io.beatmaps.common.localFolder
 import io.beatmaps.common.rabbitOptional
 import io.ktor.application.Application
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -46,12 +50,9 @@ fun Application.filenameUpdater() {
 
     rabbitOptional {
         consumeAck("cdn.r2", CDNUpdate::class) { _, update ->
-            if (update.deleted) {
-                deleteFromR2(update, r2Client)
+            deleteFromR2(update, r2Client)
 
-                return@consumeAck
-            }
-
+            if (update.deleted) return@consumeAck
             val hash = update.hash ?: return@consumeAck
 
             updateDownloadFilename(update, beatsaverKVStore, hash, downloadFilenameCache)
@@ -80,8 +81,9 @@ private suspend fun updateDownloadFilename(update: CDNUpdate, beatsaverKVStore: 
 private fun uploadToR2(update: CDNUpdate, r2Client: IR2Bucket) {
     val toUpload = transaction {
         VersionsDao.wrapRows(
-            Versions.select {
-                (Versions.r2 neq true) and (Versions.mapId eq update.mapId)
+            Versions.join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id).select {
+                // Not uploaded, not beatsage, published
+                (Versions.r2 neq true) and (Versions.mapId eq update.mapId) and (Beatmap.automapper eq false) and (Versions.state eq EMapState.Published)
             }
         ).map { it.hash }
     }
@@ -102,8 +104,9 @@ private fun uploadToR2(update: CDNUpdate, r2Client: IR2Bucket) {
 private fun deleteFromR2(update: CDNUpdate, r2Client: IR2Bucket) {
     val toDelete = transaction {
         VersionsDao.wrapRows(
-            Versions.select {
-                (Versions.r2 eq true) and (Versions.mapId eq update.mapId)
+            Versions.join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id).select {
+                // Uploaded, deleted or beatsage or not published
+                (Versions.r2 eq true) and (Versions.mapId eq update.mapId) and ((Beatmap.deletedAt.isNotNull()) or (Beatmap.automapper eq true) or (Versions.state neq EMapState.Published))
             }
         ).map { it.hash }
     }
