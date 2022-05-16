@@ -25,6 +25,14 @@ val cloudflareR2Bucket = System.getenv("CF_R2_BUCKET") ?: "beatsaver"
 
 private val logger = Logger.getLogger("bmio.Cloudflare")
 
+fun <K, V> createLRUMap(maxEntries: Int): MutableMap<K, V> {
+    return object : LinkedHashMap<K, V>(maxEntries * 10 / 7, 0.7f, true) {
+        override fun removeEldestEntry(eldest: Map.Entry<K, V>): Boolean {
+            return size > maxEntries
+        }
+    }
+}
+
 fun Application.filenameUpdater() {
     if (cloudflareAccountId.isEmpty()) {
         logger.warning("Cloudflare updater not set up")
@@ -45,21 +53,27 @@ fun Application.filenameUpdater() {
 
             val hash = update.hash ?: return@consumeAck
 
-            updateDownloadFilename(update, beatsaverKVStore, hash)
+            val downloadFilenameCache = createLRUMap<String, String>(100)
+            updateDownloadFilename(update, beatsaverKVStore, hash, downloadFilenameCache)
             // uploadToR2(update, r2Client)
         }
     }
 }
 
-private suspend fun updateDownloadFilename(update: CDNUpdate, beatsaverKVStore: IKVStore, hash: String) {
+private suspend fun updateDownloadFilename(update: CDNUpdate, beatsaverKVStore: IKVStore, hash: String, downloadFilenameCache: MutableMap<String, String>) {
     val updateSongName = update.songName
     val updateLevelAuthorName = update.levelAuthorName
 
     if (updateSongName != null && updateLevelAuthorName != null) {
-        beatsaverKVStore.setValue(
-            hash,
-            downloadFilename(Integer.toHexString(update.mapId), updateSongName, updateLevelAuthorName)
-        )
+        val dlFilename = downloadFilename(Integer.toHexString(update.mapId), updateSongName, updateLevelAuthorName)
+
+        if (downloadFilenameCache.getOrDefault(hash, "") != dlFilename) {
+            beatsaverKVStore.setValue(
+                hash,
+                dlFilename
+            )
+            downloadFilenameCache[hash] = dlFilename
+        }
     }
 }
 
