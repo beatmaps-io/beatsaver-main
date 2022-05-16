@@ -70,7 +70,7 @@ private suspend fun updateDownloadFilename(update: CDNUpdate, beatsaverKVStore: 
 
         if (downloadFilenameCache.getOrDefault(hash, "") != dlFilename) {
             beatsaverKVStore.setValue(
-                hash,
+                "$hash.zip",
                 dlFilename
             )
             downloadFilenameCache[hash] = dlFilename
