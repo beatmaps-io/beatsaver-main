@@ -1,6 +1,8 @@
 package io.beatmaps.index
 
 import io.beatmaps.api.SearchOrder
+import io.beatmaps.common.MapTag
+import io.beatmaps.common.MapTagType
 import io.beatmaps.setPageTitle
 import kotlinx.browser.window
 import org.w3c.dom.url.URLSearchParams
@@ -53,9 +55,17 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             params.get("fullSpread")?.toBoolean(),
             params.get("me")?.toBoolean(),
             params.get("cinema")?.toBoolean(),
-            params.get("styleTags")?.split(",") ?: listOf(),
-            params.get("genreTags")?.split(",") ?: listOf(),
-            params.get("excludedTags")?.split(",") ?: listOf()
+            params.get("tags")?.split(",", "|")?.filter {
+                !it.startsWith("!") &&
+                MapTag.fromSlug(it)?.type == MapTagType.Style
+            } ?: listOf(),
+            params.get("tags")?.split(",", "|")?.filter {
+                !it.startsWith("!") &&
+                MapTag.fromSlug(it)?.type == MapTagType.Genre
+            } ?: listOf(),
+            params.get("tags")?.split(",", "|")?.filter {
+                it.startsWith("!")
+            }?.map { it.substringAfter("!") } ?: listOf()
         )
     }
 
@@ -86,9 +96,13 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             (if (searchParamsLocal.sortOrder != SearchOrder.Relevance) "order=${searchParamsLocal.sortOrder}" else null),
             (if (searchParamsLocal.from != null) "from=${searchParamsLocal.from}" else null),
             (if (searchParamsLocal.to != null) "to=${searchParamsLocal.to}" else null),
-            (if (searchParamsLocal.styleTags.isNotEmpty()) "styleTags=${searchParamsLocal.styleTags.joinToString(",")}" else null),
-            (if (searchParamsLocal.genreTags.isNotEmpty()) "genreTags=${searchParamsLocal.genreTags.joinToString(",")}" else null),
-            (if (searchParamsLocal.excludedTags.isNotEmpty()) "excludedTags=${searchParamsLocal.excludedTags.joinToString(",")}" else null)
+            ((
+                searchParamsLocal.styleTags +
+                searchParamsLocal.genreTags +
+                searchParamsLocal.excludedTags.map { "!$it" }
+            ).joinToString(",").let {
+                if (it.isNotEmpty()) "tags=$it" else null
+            })
         )
         val hash = row?.let { "#$it" } ?: ""
         props.history.push((if (newQuery.isEmpty()) "/" else "?" + newQuery.joinToString("&")) + hash)

@@ -71,12 +71,8 @@ import java.lang.Integer.toHexString
         val maxBpm: Float? = null,
         val me: Boolean? = null,
         val cinema: Boolean? = null,
-        @Description("Comma seperated style tags")
-        val styleTags: String? = null,
-        @Description("Comma seperated genre tags")
-        val genreTags: String? = null,
-        @Description("Comma seperated genre tags")
-        val excludedTags: String? = null,
+        @Description("Tag query, separated by `,` (and) or `|` (or). Excluded tags are prefixed with `!`.")
+        val tags: String? = null,
         @Ignore val mapper: Int? = null,
         @Ignore val curator: Int? = null
     )
@@ -237,20 +233,17 @@ fun Route.searchRoute() {
                                     .notNull(it.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
                                     .notNull(it.me) { o -> Beatmap.me eq o }
                                     .notNull(it.cinema) { o -> Beatmap.cinema eq o }
-                                    .notNull(it.styleTags) { o ->
-                                        o.split(",").fold(Op.FALSE as Op<Boolean>) { op, t ->
-                                            op or (Beatmap.tags contains arrayOf(t))
-                                        }
-                                    }
-                                    .notNull(it.genreTags) { o ->
-                                        o.split(",").fold(Op.FALSE as Op<Boolean>) { op, t ->
-                                            op or (Beatmap.tags contains arrayOf(t))
-                                        }
-                                    }
-                                    .notNull(it.excludedTags) { o ->
-                                        Beatmap.tags.isNull() or not(o.split(",").fold(Op.FALSE as Op<Boolean>) { op, t ->
-                                            op or (Beatmap.tags contains arrayOf(t))
-                                        })
+                                    .notNull(it.tags) { o ->
+                                        println(o)
+                                        o.split(",").fold(Op.TRUE as Op<Boolean>) { op, t ->
+                                            op and t.split("|").fold(Op.FALSE as Op<Boolean>) { op2, t2 ->
+                                                op2 or
+                                                    if (t2.startsWith("!"))
+                                                        Beatmap.tags.isNull() or not(Beatmap.tags contains arrayOf(t2.substringAfter("!")))
+                                                    else
+                                                        Beatmap.tags contains arrayOf(t2)
+                                            }
+                                        }.also(::println)
                                     }
                                     .notNull(it.mapper) { o -> Beatmap.uploader eq o }
                                     .notNull(it.curator) { o -> Beatmap.curator eq o }

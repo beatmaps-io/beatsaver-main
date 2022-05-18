@@ -262,7 +262,7 @@ class Search : RComponent<SearchProps, SearchState>() {
                                 filterRefs.filter { state.filterMap.getOrElse(it.key) { false } }.map { it.key.name } +
                                 state.styleTags.map { it.name } +
                                 state.genreTags.map { it.name } +
-                                state.excludedTags.map { "-${it.name}" }
+                                state.excludedTags.map { "!${it.name}" }
 
                             if (filters.isEmpty()) {
                                 +"Filters"

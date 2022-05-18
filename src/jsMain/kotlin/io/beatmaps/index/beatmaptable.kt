@@ -207,9 +207,13 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                     (if (search.minNps != null) "&minNps=${search.minNps}" else "") +
                     (if (search.from != null) "&from=${search.from}" else "") +
                     (if (search.to != null) "&to=${search.to}" else "") +
-                    (if (search.styleTags.isNotEmpty()) "&styleTags=${search.styleTags.joinToString(",")}" else "") +
-                    (if (search.genreTags.isNotEmpty()) "&genreTags=${search.genreTags.joinToString(",")}" else "") +
-                    (if (search.excludedTags.isNotEmpty()) "&excludedTags=${search.excludedTags.joinToString(",")}" else "")
+                    (listOfNotNull(
+                        search.styleTags.joinToString("|").ifEmpty { null },
+                        search.genreTags.joinToString("|").ifEmpty { null },
+                        search.excludedTags.joinToString(",") { "!$it" }.ifEmpty { null }
+                    ).joinToString(",").let {
+                        if (it.isNotEmpty()) "&tags=$it" else ""
+                    })
             } ?: ""
         }
 
