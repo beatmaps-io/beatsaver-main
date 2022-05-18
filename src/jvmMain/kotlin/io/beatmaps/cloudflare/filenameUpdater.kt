@@ -23,6 +23,8 @@ val cloudflareAccountId = System.getenv("CF_ACC_ID") ?: ""
 val cloudflareAuthToken = System.getenv("CF_AUTH_TOKEN") ?: ""
 val cloudflareKVId = System.getenv("CF_KV_ID") ?: ""
 
+val cloudflareR2Enabled = System.getenv("CF_R2_ENABLED") != null
+
 val cloudflareR2Key = System.getenv("CF_R2_KEY") ?: ""
 val cloudflareR2Secret = System.getenv("CF_R2_SECRET") ?: ""
 val cloudflareR2Bucket = System.getenv("CF_R2_BUCKET") ?: "beatsaver"
@@ -56,7 +58,7 @@ fun Application.filenameUpdater() {
             val hash = update.hash ?: return@consumeAck
 
             updateDownloadFilename(update, beatsaverKVStore, hash, downloadFilenameCache)
-            // uploadToR2(update, r2Client)
+            if (cloudflareR2Enabled) uploadToR2(update, r2Client)
         }
     }
 }
