@@ -234,7 +234,6 @@ fun Route.searchRoute() {
                                     .notNull(it.me) { o -> Beatmap.me eq o }
                                     .notNull(it.cinema) { o -> Beatmap.cinema eq o }
                                     .notNull(it.tags) { o ->
-                                        println(o)
                                         o.split(",").fold(Op.TRUE as Op<Boolean>) { op, t ->
                                             op and t.split("|").fold(Op.FALSE as Op<Boolean>) { op2, t2 ->
                                                 op2 or
@@ -243,7 +242,7 @@ fun Route.searchRoute() {
                                                     else
                                                         Beatmap.tags contains arrayOf(t2)
                                             }
-                                        }.also(::println)
+                                        }
                                     }
                                     .notNull(it.mapper) { o -> Beatmap.uploader eq o }
                                     .notNull(it.curator) { o -> Beatmap.curator eq o }
