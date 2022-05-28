@@ -58,6 +58,7 @@ class MapsApi {
     @Location("/maps/tagupdate") data class TagUpdate(val api: MapsApi)
     @Location("/maps/curate") data class Curate(val api: MapsApi)
     @Location("/maps/validate") data class Validate(val api: MapsApi)
+    @Location("/maps/declareai") data class DeclareAI(val api: MapsApi)
     @Location("/maps/wip/{page}") data class WIP(val page: Long = 0, val api: MapsApi)
     @Location("/download/key/{key}") data class BeatsaverDownload(val key: String, val api: MapsApi)
     @Location("/maps/beatsaver/{key}") data class Beatsaver(val key: String, @Ignore val api: MapsApi)
@@ -168,6 +169,25 @@ fun Route.mapDetailRoute() {
                 if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
                 call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
             }
+        }
+    }
+
+    post<MapsApi.DeclareAI> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        requireAuthorization { user ->
+            val mapUpdate = call.receive<DeclareMapAI>()
+
+            val result = transaction {
+                Beatmap.update({
+                    (Beatmap.id eq mapUpdate.id) and (Beatmap.uploader eq user.userId)
+                }) {
+                    it[ai] = mapUpdate.ai
+                    it[updatedAt] = NowExpression(updatedAt.columnType)
+                } > 0
+            }
+
+            if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
+            call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
         }
     }
 

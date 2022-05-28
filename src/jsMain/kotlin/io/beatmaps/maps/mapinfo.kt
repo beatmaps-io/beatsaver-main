@@ -3,6 +3,7 @@ package io.beatmaps.maps
 import external.Axios
 import external.generateConfig
 import io.beatmaps.api.CurateMap
+import io.beatmaps.api.DeclareMapAI
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.SimpleMapInfoUpdate
@@ -37,6 +38,7 @@ import react.createRef
 import react.dom.InnerHTML
 import react.dom.RDOMBuilder
 import react.dom.a
+import react.dom.button
 import react.dom.div
 import react.dom.h4
 import react.dom.i
@@ -131,9 +133,31 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
         }) { }
     }
 
+    private fun declareAI(ai: Boolean = true) {
+        Axios.post<String>("${Config.apibase}/maps/declareai", DeclareMapAI(props.mapInfo.intId(), ai), generateConfig<DeclareMapAI, String>()).then({
+            props.reloadMap()
+        }) { }
+    }
+
     override fun RBuilder.render() {
         val deleted = props.mapInfo.deletedAt != null
         globalContext.Consumer { userData ->
+            if (props.mapInfo.let { it.automapper && !it.ai && userData?.userId == it.uploader.id }) {
+                div("alert alert-danger alert-dismissible") {
+                    +"This map was automatically flagged as an AI-generated map. If you believe this was a mistake, please report it in the "
+                    a("https://discord.gg/rjVDapkMmj", classes = "alert-link") {
+                        +"BeatSaver Discord server"
+                    }
+                    +"."
+                    button(classes = "btn-close") {
+                        attrs.onClickFunction = {
+                            it.preventDefault()
+                            declareAI()
+                        }
+                    }
+                }
+            }
+
             div("card") {
                 div("card-header d-flex" + if (deleted) " bg-danger" else "") {
                     if (state.editing == true) {
