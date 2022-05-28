@@ -35,10 +35,8 @@ val botInfo = functionComponent<BotInfoProps> { props ->
             +text
         }
 
-    if (score < -4 || props.automapper == true) {
+    if (score < 0 && props.automapper != false) {
         renderBadge("danger", "Made by a bot", "Bot")
-    } else if (score < 0) {
-        renderBadge("unsure", "Could be a bot", "Unsure")
     }
 }
 

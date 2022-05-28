@@ -271,7 +271,7 @@ fun Route.uploadController() {
                         setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
 
                         val declaredAsAI = (multipart.dataMap["beatsage"] ?: "").isNotEmpty()
-                        it[automapper] = declaredAsAI || extractedInfo.score < -4
+                        it[automapper] = declaredAsAI || extractedInfo.score < 0
                         it[ai] = declaredAsAI
 
                         it[plays] = 0

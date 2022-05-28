@@ -74,7 +74,7 @@ fun publishVersion(mapId: Int, hash: String, additionalCallback: (Op<Boolean>) -
 
                 // Because of magical typing reasons this can't be one line
                 // They actually call completely different setting functions
-                if (originalState.sageScore != null && originalState.sageScore < -4) {
+                if (originalState.sageScore != null && originalState.sageScore < 0) {
                     it[automapper] = true
                 } else {
                     it[automapper] = ai

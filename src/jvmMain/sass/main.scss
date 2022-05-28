@@ -17,7 +17,6 @@ $bs-blue: #1268a1;
 $bs-green: #008055;
 $bs-red: #b52a1c;
 $bs-orange: #bd5500;
-$bs-yellow: #fff301;
 $bs-purple: #454088;
 
 // Bring back old look
@@ -48,8 +47,7 @@ $theme-colors: (
   "green": $bs-green,
   "expert": $bs-red,
   "purple": $bs-purple,
-  "hard": $bs-orange,
-  "unsure": $bs-yellow
+  "hard": $bs-orange
 );
 
 @use "datepicker";
