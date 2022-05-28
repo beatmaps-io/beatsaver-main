@@ -14,6 +14,7 @@ import io.beatmaps.api.searchRoute
 import io.beatmaps.api.testplayRoute
 import io.beatmaps.api.userRoute
 import io.beatmaps.api.voteRoute
+import io.beatmaps.cloudflare.filenameUpdater
 import io.beatmaps.common.StatusPagesCustom
 import io.beatmaps.common.db.setupDB
 import io.beatmaps.common.genericQueueConfig
@@ -289,9 +290,13 @@ fun Application.beatmapsio() {
 
                 queueDeclare("bm.downloadCount", true, false, false, genericQueueConfig)
                 queueBind("bm.downloadCount", "beatmaps", "download.#")
+
+                queueDeclare("cdn.r2", true, false, false, genericQueueConfig)
+                queueBind("cdn.r2", "beatmaps", "cdn.#")
             }
         }
         downloadsThread()
+        filenameUpdater()
     }
 
     scheduleTask()

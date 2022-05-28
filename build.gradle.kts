@@ -125,6 +125,8 @@ kotlin {
                 // implementation("com.googlecode.soundlibs:vorbisspi:1.0.3.3")
                 implementation("com.tagtraum:ffsampledsp-complete:0.9.32")
 
+                implementation("com.amazonaws:aws-java-sdk-s3:1.12.217")
+
                 implementation("io.beatmaps:BeatMaps-CommonMP:1.0.+")
 
                 runtimeOnly(files("BeatMaps-BeatSage-1.0-SNAPSHOT.jar"))

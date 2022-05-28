@@ -43,18 +43,20 @@ fun MapDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(BeatmapDa
 
 fun getActualPrefixForVersion(other: VersionsDao, cdnPrefix: String) =
     // Don't use cdn servers during sync period
-    if (Clock.System.now() - other.uploaded.toKotlinInstant() > Duration.Companion.seconds(30)) {
-        cdnPrefix
+    if (Clock.System.now() - other.uploaded.toKotlinInstant() < Duration.Companion.seconds(30)) {
+        "" to ""
+    } else if (other.r2) {
+        "r2" to cdnPrefix
     } else {
-        ""
+        cdnPrefix to cdnPrefix
     }
 fun MapVersion.Companion.from(other: VersionsDao, cdnPrefix: String) =
-    getActualPrefixForVersion(other, cdnPrefix).let { actualPrefix ->
+    getActualPrefixForVersion(other, cdnPrefix).let { (zipPrefix, actualPrefix) ->
         MapVersion(
             other.hash, other.key64, other.state, other.uploaded.toKotlinInstant(), other.sageScore,
             other.difficulties.values.map { MapDifficulty.from(it) }.sortedWith(compareBy(MapDifficulty::characteristic, MapDifficulty::difficulty)), other.feedback,
             other.testplayAt?.toKotlinInstant(), if (other.testplays.isEmpty()) null else other.testplays.values.map { MapTestplay.from(it) },
-            "${cdnBase(actualPrefix)}/${other.hash}.zip", "${cdnBase(actualPrefix)}/${other.hash}.jpg",
+            "${cdnBase(zipPrefix)}/${other.hash}.zip", "${cdnBase(actualPrefix)}/${other.hash}.jpg",
             "${cdnBase(actualPrefix)}/${other.hash}.mp3",
             other.scheduledAt?.toKotlinInstant()
         )
