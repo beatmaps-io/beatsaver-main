@@ -30,6 +30,7 @@ import react.RState
 import react.ReactElement
 import react.createRef
 import react.dom.RDOMBuilder
+import react.dom.a
 import react.dom.button
 import react.dom.div
 import react.dom.form
@@ -348,6 +349,18 @@ class Search : RComponent<SearchProps, SearchState>() {
                                         }
                                     }
                                     it.type
+                                }
+                                a("#", classes = "btn btn-primary ms-auto") {
+                                    attrs.onClickFunction = {
+                                        it.preventDefault()
+                                        setState {
+                                            styleTags = setOf()
+                                            genreTags = setOf()
+                                            excludedTags = setOf()
+                                        }
+                                    }
+
+                                    +"Reset Tags"
                                 }
                             }
                         }
