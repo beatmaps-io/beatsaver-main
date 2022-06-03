@@ -59,11 +59,11 @@ external interface MapTagProps : RProps {
 }
 
 val mapTag = functionComponent<MapTagProps> { props ->
-    val dark = !props.selected
+    val dark = !props.selected && !props.excluded
     val margins = props.margins ?: "me-2 mb-2"
     span("badge badge-${if (props.excluded) "danger" else props.tag.type.color} $margins") {
         attrs.jsStyle {
-            opacity = if (!props.excluded && dark) 0.4 else 1
+            opacity = if (dark) 0.4 else 1
         }
         attrs.title = props.tag.human
         attrs.onClickFunction = props.onClick
