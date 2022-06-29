@@ -318,7 +318,7 @@ fun Route.mapDetailRoute() {
                         PlaylistMap.mapId eq mapId.toInt(16)
                     }.select {
                         Playlist.owner eq it.userId and Playlist.deletedAt.isNull()
-                    }.map { row ->
+                    }.orderBy(Playlist.createdAt, SortOrder.DESC).map { row ->
                         PlaylistDao.wrapRow(row) to (row.getOrNull(PlaylistMap.id) != null)
                     }
                 }.map { pmd -> InPlaylist(PlaylistBasic.from(pmd.first, cdnPrefix()), pmd.second) }
