@@ -1,0 +1,1 @@
+CREATE INDEX top_curatedat ON public.beatmap USING btree ("curatedAt") WHERE "deletedAt" IS NULL;

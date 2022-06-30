@@ -90,7 +90,7 @@ class MapsApi {
 }
 
 enum class LatestSort {
-    FIRST_PUBLISHED, UPDATED, LAST_PUBLISHED, CREATED
+    FIRST_PUBLISHED, UPDATED, LAST_PUBLISHED, CREATED, CURATED
 }
 
 fun Route.mapDetailRoute() {
@@ -509,6 +509,7 @@ fun Route.mapDetailRoute() {
             LatestSort.UPDATED -> Beatmap.updatedAt
             LatestSort.LAST_PUBLISHED -> Beatmap.lastPublishedAt
             LatestSort.CREATED -> Beatmap.createdAt
+            LatestSort.CURATED -> Beatmap.curatedAt
         }
 
         val beatmaps = transaction {
@@ -540,6 +541,7 @@ fun Route.mapDetailRoute() {
                         LatestSort.UPDATED -> map.updatedAt
                         LatestSort.LAST_PUBLISHED -> map.lastPublishedAt
                         LatestSort.CREATED -> map.createdAt
+                        LatestSort.CURATED -> map.curatedAt
                     }
                 }
                 .map { map ->
