@@ -529,6 +529,9 @@ fun Route.mapDetailRoute() {
                                     }
                                     .notNull(it.before) { o -> sortField less o.toJavaInstant() }
                                     .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
+                                    .let { q ->
+                                        if (it.sort == LatestSort.CURATED) q.and(Beatmap.curatedAt.isNotNull()) else q
+                                    }
                             }
                             .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
                             .limit(20)
