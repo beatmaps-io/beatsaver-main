@@ -1,6 +1,8 @@
 package io.beatmaps.index
 
 import io.beatmaps.api.SearchOrder
+import io.beatmaps.common.MapTag
+import io.beatmaps.common.MapTagType
 import io.beatmaps.setPageTitle
 import kotlinx.browser.window
 import org.w3c.dom.url.URLSearchParams
@@ -53,7 +55,9 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             params.get("fullSpread")?.toBoolean(),
             params.get("me")?.toBoolean(),
             params.get("cinema")?.toBoolean(),
-            params.get("tags")?.split(",") ?: listOf()
+            params.get("tags")?.split(",", "|")?.groupBy { !it.startsWith("!") }?.mapValues {
+                it.value.map { slug -> slug.removePrefix("!") }.groupBy { slug -> MapTag.fromSlug(slug)?.type ?: MapTagType.None }
+            } ?: mapOf()
         )
     }
 
@@ -68,6 +72,14 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
     }
 
     private fun updateSearchParams(searchParamsLocal: SearchParams, row: Int?) {
+        val tagStr = searchParamsLocal.tags.flatMap { x ->
+            x.value.map { y ->
+                y.value.joinToString(if (x.key) "|" else ",") {
+                    (if (x.key) "" else "!") + it
+                }
+            }
+        }.joinToString(",")
+
         val newQuery = listOfNotNull(
             (if (searchParamsLocal.search.isNotBlank()) "q=${searchParamsLocal.search}" else null),
             (if (searchParamsLocal.chroma == true) "chroma=true" else null),
@@ -84,7 +96,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             (if (searchParamsLocal.sortOrder != SearchOrder.Relevance) "order=${searchParamsLocal.sortOrder}" else null),
             (if (searchParamsLocal.from != null) "from=${searchParamsLocal.from}" else null),
             (if (searchParamsLocal.to != null) "to=${searchParamsLocal.to}" else null),
-            (if (searchParamsLocal.tags.isNotEmpty()) "tags=${searchParamsLocal.tags.joinToString(",")}" else null)
+            (if (tagStr.isNotEmpty()) "tags=$tagStr" else null)
         )
         val hash = row?.let { "#$it" } ?: ""
         props.history.push((if (newQuery.isEmpty()) "/" else "?" + newQuery.joinToString("&")) + hash)

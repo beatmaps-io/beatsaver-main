@@ -39,6 +39,8 @@ import org.jetbrains.exposed.sql.ExpressionWithColumnType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.not
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.lang.Integer.toHexString
@@ -69,7 +71,7 @@ import java.lang.Integer.toHexString
         val maxBpm: Float? = null,
         val me: Boolean? = null,
         val cinema: Boolean? = null,
-        @Description("Comma seperated tags")
+        @Description("Tag query, separated by `,` (and) or `|` (or). Excluded tags are prefixed with `!`.")
         val tags: String? = null,
         @Ignore val mapper: Int? = null,
         @Ignore val curator: Int? = null
@@ -231,7 +233,17 @@ fun Route.searchRoute() {
                                     .notNull(it.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
                                     .notNull(it.me) { o -> Beatmap.me eq o }
                                     .notNull(it.cinema) { o -> Beatmap.cinema eq o }
-                                    .notNull(it.tags) { o -> Beatmap.tags contains o.split(",").toTypedArray() }
+                                    .notNull(it.tags) { o ->
+                                        o.split(",").fold(Op.TRUE as Op<Boolean>) { op, t ->
+                                            op and t.split("|").fold(Op.FALSE as Op<Boolean>) { op2, t2 ->
+                                                op2 or
+                                                    if (t2.startsWith("!"))
+                                                        Beatmap.tags.isNull() or not(Beatmap.tags contains arrayOf(t2.substringAfter("!")))
+                                                    else
+                                                        Beatmap.tags contains arrayOf(t2)
+                                            }
+                                        }
+                                    }
                                     .notNull(it.mapper) { o -> Beatmap.uploader eq o }
                                     .notNull(it.curator) { o -> Beatmap.curator eq o }
                             }

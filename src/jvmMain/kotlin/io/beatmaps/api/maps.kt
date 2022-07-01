@@ -91,7 +91,7 @@ class MapsApi {
 }
 
 enum class LatestSort {
-    FIRST_PUBLISHED, UPDATED, LAST_PUBLISHED, CREATED
+    FIRST_PUBLISHED, UPDATED, LAST_PUBLISHED, CREATED, CURATED
 }
 
 fun Route.mapDetailRoute() {
@@ -338,7 +338,7 @@ fun Route.mapDetailRoute() {
                         PlaylistMap.mapId eq mapId.toInt(16)
                     }.select {
                         Playlist.owner eq it.userId and Playlist.deletedAt.isNull()
-                    }.map { row ->
+                    }.orderBy(Playlist.createdAt, SortOrder.DESC).map { row ->
                         PlaylistDao.wrapRow(row) to (row.getOrNull(PlaylistMap.id) != null)
                     }
                 }.map { pmd -> InPlaylist(PlaylistBasic.from(pmd.first, cdnPrefix()), pmd.second) }
@@ -529,6 +529,7 @@ fun Route.mapDetailRoute() {
             LatestSort.UPDATED -> Beatmap.updatedAt
             LatestSort.LAST_PUBLISHED -> Beatmap.lastPublishedAt
             LatestSort.CREATED -> Beatmap.createdAt
+            LatestSort.CURATED -> Beatmap.curatedAt
         }
 
         val beatmaps = transaction {
@@ -548,6 +549,9 @@ fun Route.mapDetailRoute() {
                                     }
                                     .notNull(it.before) { o -> sortField less o.toJavaInstant() }
                                     .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
+                                    .let { q ->
+                                        if (it.sort == LatestSort.CURATED) q.and(Beatmap.curatedAt.isNotNull()) else q
+                                    }
                             }
                             .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
                             .limit(20)
@@ -560,6 +564,7 @@ fun Route.mapDetailRoute() {
                         LatestSort.UPDATED -> map.updatedAt
                         LatestSort.LAST_PUBLISHED -> map.lastPublishedAt
                         LatestSort.CREATED -> map.createdAt
+                        LatestSort.CURATED -> map.curatedAt
                     }
                 }
                 .map { map ->

@@ -9,6 +9,7 @@ import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SearchResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
+import io.beatmaps.common.MapTagType
 import kotlinx.browser.window
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HashChangeEvent
@@ -59,7 +60,7 @@ data class SearchParams(
     val fullSpread: Boolean?,
     val me: Boolean?,
     val cinema: Boolean?,
-    val tags: List<String>
+    val tags: Map<Boolean, Map<MapTagType, List<String>>>
 )
 
 external interface BeatmapTableState : RState {
@@ -190,6 +191,14 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
             "${Config.apibase}/search/text/$page?mapper=${props.user}&automapper=true"
         } else {
             props.search?.let { search ->
+                val tagStr = search.tags.flatMap { x ->
+                    x.value.map { y ->
+                        y.value.joinToString(if (x.key) "|" else ",") {
+                            (if (x.key) "" else "!") + it
+                        }
+                    }
+                }.joinToString(",")
+
                 "${Config.apibase}/search/text/$page?sortOrder=${search.sortOrder}" +
                     (if (search.automapper != null) "&automapper=${search.automapper}" else "") +
                     (if (search.chroma != null) "&chroma=${search.chroma}" else "") +
@@ -205,7 +214,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                     (if (search.minNps != null) "&minNps=${search.minNps}" else "") +
                     (if (search.from != null) "&from=${search.from}" else "") +
                     (if (search.to != null) "&to=${search.to}" else "") +
-                    (if (search.tags.isNotEmpty()) "&tags=${search.tags.joinToString(",")}" else "")
+                    (if (tagStr.isNotEmpty()) "&tags=$tagStr" else "")
             } ?: ""
         }
 

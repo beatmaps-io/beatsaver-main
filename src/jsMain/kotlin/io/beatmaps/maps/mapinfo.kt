@@ -54,15 +54,16 @@ import kotlin.collections.set
 
 external interface MapTagProps : RProps {
     var selected: Boolean
+    var excluded: Boolean
     var margins: String?
     var tag: MapTag
     var onClick: (Event) -> Unit
 }
 
 val mapTag = functionComponent<MapTagProps> { props ->
-    val dark = !props.selected
+    val dark = !props.selected && !props.excluded
     val margins = props.margins ?: "me-2 mb-2"
-    span("badge badge-${props.tag.type.color} $margins") {
+    span("badge badge-${if (props.excluded) "danger" else props.tag.type.color} $margins") {
         attrs.jsStyle {
             opacity = if (dark) 0.4 else 1
         }

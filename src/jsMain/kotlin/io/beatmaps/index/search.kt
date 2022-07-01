@@ -57,8 +57,9 @@ data class SearchState(
     var startDate: Moment? = null,
     var endDate: Moment? = null,
     var filtersOpen: Boolean = false,
-    var tags: Set<MapTag> = setOf(),
-    var shiftHeld: Boolean = false
+    var tags: Map<Boolean, Set<MapTag>> = mapOf(),
+    var shiftHeld: Boolean = false,
+    var altHeld: Boolean = false
 ) : RState
 data class PresetDateRange(val startDate: Moment?, val endDate: Moment?)
 
@@ -84,7 +85,7 @@ val filters = listOf(
     FilterInfo("chroma", "Chroma", FilterCategory.REQUIREMENTS) { it.chroma == true },
     FilterInfo("noodle", "Noodle", FilterCategory.REQUIREMENTS) { it.noodle == true },
     FilterInfo("me", "Mapping Extensions", FilterCategory.REQUIREMENTS) { it.me == true },
-    FilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true },
+    FilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true }
 )
 
 inline fun <T> T.applyIf(condition: Boolean, block: T.() -> T): T = if (condition) block(this) else this
@@ -128,6 +129,7 @@ class Search : RComponent<SearchProps, SearchState>() {
     private fun handleShift(it: Event) {
         setState {
             shiftHeld = (it as? KeyboardEvent)?.shiftKey ?: false
+            altHeld = (it as? KeyboardEvent)?.altKey ?: false
         }
     }
 
@@ -191,7 +193,7 @@ class Search : RComponent<SearchProps, SearchState>() {
             order = fromParams.sortOrder
             startDate = fromParams.from?.let { Moment(it) }
             endDate = fromParams.to?.let { Moment(it) }
-            tags = fromParams.tags.mapNotNull { MapTag.fromSlug(it) }.toSet()
+            tags = fromParams.tags.mapValues { it.value.flatMap { x -> x.value.mapNotNull { y -> MapTag.fromSlug(y) } }.toSet() }
         }
     }
 
@@ -231,7 +233,7 @@ class Search : RComponent<SearchProps, SearchState>() {
                                     if (isFiltered("fs")) true else null,
                                     if (isFiltered("me")) true else null,
                                     if (isFiltered("cinema")) true else null,
-                                    state.tags.map { o -> o.slug }
+                                    state.tags.mapValues { o -> o.value.groupBy { y -> y.type }.mapValues { y -> y.value.map { x -> x.slug } } }
                                 )
                             )
                         }
@@ -250,12 +252,13 @@ class Search : RComponent<SearchProps, SearchState>() {
                         }
                         ref = dropdownRef
                         span {
-                            val filters = filterRefs.filter { state.filterMap.getOrElse(it.key) { false } }.map { it.key.key } + state.tags.map { it.slug }
+                            val filters = filterRefs.filter { state.filterMap.getOrElse(it.key) { false } }.map { it.key.name } +
+                                state.tags.flatMap { y -> y.value.map { z -> (if (y.key) "" else "!") + z.slug } }
 
                             if (filters.isEmpty()) {
                                 +"Filters"
                             } else {
-                                +filters.joinToString(",")
+                                +filters.joinToString(", ")
                             }
                         }
                         i("fas fa-angle-" + if (state.filtersOpen) "up" else "down") {}
@@ -286,30 +289,39 @@ class Search : RComponent<SearchProps, SearchState>() {
                                 h4 {
                                     +"Tags"
                                 }
+                                fun modifyTags(it: MapTag) {
+                                    (state.tags[!state.altHeld] ?: setOf()).let { tags ->
+                                        val shouldAdd = !tags.contains(it)
+
+                                        val newTags = tags.applyIf(!state.shiftHeld) {
+                                            filterTo(hashSetOf()) { o -> o.type != it.type }
+                                        }.applyIf(shouldAdd) {
+                                            plus(it)
+                                        }.applyIf(state.shiftHeld && !shouldAdd) {
+                                            minus(it)
+                                        }
+
+                                        setState {
+                                            this.tags = mapOf(
+                                                !state.altHeld to newTags,
+                                                state.altHeld to (state.tags[state.altHeld]?.let { x -> x - it } ?: setOf())
+                                            )
+                                        }
+                                        window.asDynamic().getSelection().removeAllRanges()
+                                    }
+                                }
+
                                 MapTag.sorted.fold(MapTagType.None) { prev, it ->
                                     if (it.type != prev) div("break") {}
 
                                     if (it.type != MapTagType.None) {
                                         mapTag {
-                                            attrs.selected = state.tags.contains(it) || state.tags.isEmpty()
+                                            attrs.selected = state.tags.let { tags -> tags.any { x -> x.value.contains(it) } || tags.isEmpty() }
+                                            attrs.excluded = state.tags[false]?.contains(it) == true
                                             attrs.tag = it
+
                                             attrs.onClick = { _ ->
-                                                val shouldAdd = !state.tags.contains(it)
-
-                                                val newTags = state.tags.applyIf(!state.shiftHeld) {
-                                                    filterTo(hashSetOf()) { o -> o.type != it.type }
-                                                }.applyIf(shouldAdd) {
-                                                    plus(it)
-                                                }.applyIf(state.shiftHeld && !shouldAdd) {
-                                                    minus(it)
-                                                }
-
-                                                setState {
-                                                    tags = newTags
-                                                }
-                                                window.asDynamic().getSelection().removeAllRanges()
-
-                                                Unit
+                                                modifyTags(it)
                                             }
                                         }
                                     }
