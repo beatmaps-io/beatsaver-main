@@ -3,6 +3,7 @@ package io.beatmaps.api
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.AlertRecipient
 import io.beatmaps.common.dbo.Alert
+import io.beatmaps.common.dbo.AlertDao
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location
@@ -53,7 +54,9 @@ fun Route.alertsRoute() {
             }
             .orderBy(Alert.sentAt)
             .map {
-                AlertV2(it[Alert.head], it[Alert.body], it[Alert.type], it[Alert.sentAt].toKotlinInstant())
+                AlertDao.wrapRow(it).let { alert ->
+                    AlertV2(alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant())
+                }
             }
     }
 
