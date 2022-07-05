@@ -1,6 +1,6 @@
 package io.beatmaps.index
 
-import io.beatmaps.maps.textToContent
+import io.beatmaps.util.textToContent
 import kotlinx.browser.window
 import kotlinx.dom.addClass
 import kotlinx.dom.removeClass

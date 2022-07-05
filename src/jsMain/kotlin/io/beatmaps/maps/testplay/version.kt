@@ -12,7 +12,7 @@ import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
-import io.beatmaps.maps.textToContent
+import io.beatmaps.util.textToContent
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.html.InputType
