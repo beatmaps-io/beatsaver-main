@@ -50,7 +50,7 @@ fun Route.alertsRoute() {
         call.respond(HttpStatusCode.OK)
     }
 
-    fun getAlerts(userId: Int, read: Boolean): List<AlertV2> = transaction {
+    fun getAlerts(userId: Int, read: Boolean): List<UserAlert> = transaction {
         AlertRecipient
             .join(Alert, JoinType.LEFT, AlertRecipient.alertId, Alert.id)
             .select {
@@ -60,7 +60,7 @@ fun Route.alertsRoute() {
             .orderBy(Alert.sentAt)
             .map {
                 AlertDao.wrapRow(it).let { alert ->
-                    AlertV2(alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant())
+                    UserAlert(alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant())
                 }
             }
     }

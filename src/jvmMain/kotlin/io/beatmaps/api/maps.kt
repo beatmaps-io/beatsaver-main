@@ -12,8 +12,10 @@ import io.beatmaps.cdnPrefix
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.MapTag
+import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.db.NowExpression
+import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.ModLog
@@ -239,6 +241,13 @@ fun Route.mapDetailRoute() {
                             } else {
                                 InfoEditData(oldData.name, oldData.description, mapUpdate.name ?: "", mapUpdate.description ?: "", oldData.tags?.toList(), mapUpdate.tags)
                             },
+                            oldData.uploader.id.value
+                        )
+                        Alert.insert(
+                            "Removal Notice",
+                            "Your map #${mapUpdate.id}: **${oldData.name}** has been removed by a moderator.\n" +
+                            "Reason: *\"${mapUpdate.reason}\"*",
+                            EAlertType.Deletion,
                             oldData.uploader.id.value
                         )
                     }
