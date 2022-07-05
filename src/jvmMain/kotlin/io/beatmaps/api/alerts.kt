@@ -95,6 +95,7 @@ fun Route.alertsRoute() {
             val result = transaction {
                 AlertRecipient.update({
                     (AlertRecipient.id eq req.id) and
+                    AlertRecipient.readAt.run { if (req.read) isNull() else isNotNull() } and
                     (AlertRecipient.recipientId eq user.userId)
                 }) {
                     if (req.read) {
