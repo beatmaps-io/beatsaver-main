@@ -30,9 +30,14 @@ import org.jetbrains.exposed.sql.update
 
     @Location("/mark")
     data class Mark(val api: AlertsApi)
+
+    @Location("/markall")
+    data class MarkAll(val api: AlertsApi)
 }
 
 data class MarkAlert(val id: Int, val read: Boolean)
+
+data class MarkAllAlerts(val read: Boolean)
 
 fun Route.alertsRoute() {
     options<AlertsApi.Unread> {
@@ -106,6 +111,28 @@ fun Route.alertsRoute() {
                     }
                 } > 0
             }
+
+            call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+        }
+    }
+
+    post<AlertsApi.MarkAll> {
+        val req = call.receive<MarkAllAlerts>()
+
+        requireAuthorization { user ->
+            val result = transaction {
+                AlertRecipient.update({
+                    AlertRecipient.readAt.run { if (req.read) isNull() else isNotNull() } and
+                    (AlertRecipient.recipientId eq user.userId)
+                }) {
+                    if (req.read) {
+                        it[readAt] = NowExpression(readAt.columnType)
+                    }
+                    else {
+                        it[readAt] = null
+                    }
+                }
+            } > 0
 
             call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
         }
