@@ -1,7 +1,6 @@
 @file:UseSerializers(InstantAsStringSerializer::class)
 package io.beatmaps.api
 
-import io.beatmaps.common.IModLogOpAction
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
@@ -44,8 +43,6 @@ data class UserDiffStats(val total: Int, val easy: Int, val normal: Int, val har
 data class BeatsaverLink(val linked: Boolean) { companion object }
 @Serializable
 data class BeatsaverLinkReq(val user: String, val password: String, val useOldName: Boolean = true)
-@Serializable
-data class Alert(val map: MapDetail, val time: Instant, val action: IModLogOpAction) { companion object }
 @Serializable
 data class UsernameReq(val username: String)
 @Serializable

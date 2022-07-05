@@ -5,7 +5,7 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AlertV2(
+data class UserAlert(
     val head: String,
     val body: String,
     val type: EAlertType,

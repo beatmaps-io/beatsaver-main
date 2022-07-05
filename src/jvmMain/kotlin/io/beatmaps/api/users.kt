@@ -5,9 +5,7 @@ import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
-import io.beatmaps.cdnPrefix
 import io.beatmaps.common.Config
-import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.UploadLimitData
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
@@ -15,10 +13,10 @@ import io.beatmaps.common.client
 import io.beatmaps.common.db.DateMinusDays
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
+import io.beatmaps.common.dbo.AlertRecipient
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.ModLog
-import io.beatmaps.common.dbo.ModLogDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
@@ -44,6 +42,7 @@ import io.ktor.locations.post
 import io.ktor.request.receive
 import io.ktor.response.header
 import io.ktor.response.respond
+import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
@@ -90,8 +89,6 @@ fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: Use
     )
 
 fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false) = from(UserDao.wrapRow(row), roles)
-fun Alert.Companion.from(other: ModLogDao, map: MapDetail) = Alert(map, other.opAt.toKotlinInstant(), other.realAction())
-fun Alert.Companion.from(row: ResultRow, cdnPrefix: String) = from(ModLogDao.wrapRow(row), MapDetail.from(row, cdnPrefix))
 
 @Location("/api/users")
 class UsersApi {
@@ -132,11 +129,10 @@ class UsersApi {
     data class List(val page: Long = 0, val api: UsersApi)
 }
 
-fun alertCount(userId: Int) = ModLog
-    .join(Beatmap, JoinType.INNER, Beatmap.id, ModLog.opOn)
+fun alertCount(userId: Int) = AlertRecipient
     .select {
-        (Beatmap.uploader eq userId) and
-            (ModLog.type inList listOf(ModLogOpType.Unpublish, ModLogOpType.Delete).map { opType -> opType.ordinal })
+        (AlertRecipient.recipientId eq userId) and
+        AlertRecipient.readAt.isNull()
     }.count().toInt()
 
 fun Route.userRoute() {
@@ -450,22 +446,7 @@ fun Route.userRoute() {
     }
 
     get<UsersApi.Alerts> {
-        requireAuthorization { user ->
-            val targetId = if (it.id != null && user.isAdmin()) {
-                it.id
-            } else {
-                user.userId
-            }
-
-            val alerts = transaction {
-                ModLog.join(Beatmap, JoinType.INNER, Beatmap.id, ModLog.opOn).select {
-                    (Beatmap.uploader eq targetId) and
-                        (ModLog.type inList listOf(ModLogOpType.Unpublish, ModLogOpType.Delete).map { it.ordinal })
-                }.orderBy(ModLog.opAt, SortOrder.DESC).limit(30).map { Alert.from(it, cdnPrefix()) }
-            }
-
-            call.respond(alerts)
-        }
+        call.respondRedirect("/api/alerts/unread" + if (it.id != null) "/${it.id}" else "")
     }
 
     get<UsersApi.List> {

@@ -53,9 +53,24 @@ CREATE TABLE public.alert_recipient
         ON DELETE NO ACTION
 ) TABLESPACE pg_default;
 
-ALTER TABLE public.alert_recipient OWNER to beatmaps;
+ALTER TABLE public.alert_recipient OWNER TO beatmaps;
 
 CREATE UNIQUE INDEX alert_link
     ON public.alert_recipient USING btree
         ("recipientId" ASC NULLS LAST, "alertId" ASC NULLS LAST)
     TABLESPACE pg_default;
+
+INSERT INTO public.alert (head, body, "type", "sentAt") SELECT
+     'Removal Notice',
+     'Your map #' || modlog."mapId" || ': **' || beatmap.name || '** has been removed by a moderator.' || E'\n' ||
+     'Reason: *"' || substr(modlog.action, 18, length(modlog.action) - 21) || '"*',
+     'Deletion',
+     modlog."when"
+FROM public.modlog
+LEFT JOIN beatmap ON beatmap."mapId" = modlog."mapId";
+
+INSERT INTO public.alert_recipient ("recipientId", "alertId") SELECT
+    modlog."userId",
+    alert."alertId"
+FROM public.modlog
+LEFT JOIN alert ON alert."sentAt" = modlog."when";
