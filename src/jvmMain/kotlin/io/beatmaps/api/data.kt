@@ -48,7 +48,7 @@ fun getActualPrefixForVersion(other: VersionsDao, cdnPrefix: String) =
     } else if (other.r2) {
         "r2" to cdnPrefix
     } else {
-        cdnPrefix to cdnPrefix
+        "" to cdnPrefix
     }
 fun MapVersion.Companion.from(other: VersionsDao, cdnPrefix: String) =
     getActualPrefixForVersion(other, cdnPrefix).let { (zipPrefix, actualPrefix) ->
