@@ -74,5 +74,5 @@ WHERE
 INSERT INTO public.alert_recipient ("recipientId", "alertId") SELECT
     modlog."userId",
     alert."alertId"
-FROM public.modlog
-LEFT JOIN alert ON alert."sentAt" = modlog."when";
+FROM public.alert
+INNER JOIN modlog ON alert."sentAt" = modlog."when";
