@@ -67,7 +67,9 @@ INSERT INTO public.alert (head, body, "type", "sentAt") SELECT
      'Deletion',
      modlog."when"
 FROM public.modlog
-LEFT JOIN beatmap ON beatmap."mapId" = modlog."mapId";
+LEFT JOIN beatmap ON beatmap."mapId" = modlog."mapId"
+WHERE
+    ARRAY[1, 2] @> ARRAY[cast(modlog.type AS INT)];
 
 INSERT INTO public.alert_recipient ("recipientId", "alertId") SELECT
     modlog."userId",
