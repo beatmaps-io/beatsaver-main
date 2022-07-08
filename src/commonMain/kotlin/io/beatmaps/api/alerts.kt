@@ -1,3 +1,4 @@
+// ktlint-disable filename
 package io.beatmaps.api
 
 import io.beatmaps.common.api.EAlertType

@@ -132,7 +132,7 @@ class UsersApi {
 fun alertCount(userId: Int) = AlertRecipient
     .select {
         (AlertRecipient.recipientId eq userId) and
-        AlertRecipient.readAt.isNull()
+            AlertRecipient.readAt.isNull()
     }.count().toInt()
 
 fun Route.userRoute() {

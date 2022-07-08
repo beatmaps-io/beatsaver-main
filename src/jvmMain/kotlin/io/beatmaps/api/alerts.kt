@@ -1,9 +1,9 @@
 package io.beatmaps.api
 
 import io.beatmaps.common.db.NowExpression
-import io.beatmaps.common.dbo.AlertRecipient
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.AlertDao
+import io.beatmaps.common.dbo.AlertRecipient
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location
@@ -55,7 +55,7 @@ fun Route.alertsRoute() {
             .join(Alert, JoinType.LEFT, AlertRecipient.alertId, Alert.id)
             .select {
                 (AlertRecipient.recipientId eq userId) and
-                AlertRecipient.readAt.run { if (read) isNotNull() else isNull() }
+                    AlertRecipient.readAt.run { if (read) isNotNull() else isNull() }
             }
             .orderBy(Alert.sentAt)
             .map {
@@ -100,13 +100,12 @@ fun Route.alertsRoute() {
             val result = transaction {
                 AlertRecipient.update({
                     (AlertRecipient.id eq req.id) and
-                    AlertRecipient.readAt.run { if (req.read) isNull() else isNotNull() } and
-                    (AlertRecipient.recipientId eq user.userId)
+                        AlertRecipient.readAt.run { if (req.read) isNull() else isNotNull() } and
+                        (AlertRecipient.recipientId eq user.userId)
                 }) {
                     if (req.read) {
                         it[readAt] = NowExpression(readAt.columnType)
-                    }
-                    else {
+                    } else {
                         it[readAt] = null
                     }
                 } > 0
@@ -123,12 +122,11 @@ fun Route.alertsRoute() {
             val result = transaction {
                 AlertRecipient.update({
                     AlertRecipient.readAt.run { if (req.read) isNull() else isNotNull() } and
-                    (AlertRecipient.recipientId eq user.userId)
+                        (AlertRecipient.recipientId eq user.userId)
                 }) {
                     if (req.read) {
                         it[readAt] = NowExpression(readAt.columnType)
-                    }
-                    else {
+                    } else {
                         it[readAt] = null
                     }
                 }
