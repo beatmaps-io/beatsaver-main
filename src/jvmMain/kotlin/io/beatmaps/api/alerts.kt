@@ -10,7 +10,6 @@ import io.ktor.locations.Location
 import io.ktor.locations.get
 import io.ktor.locations.post
 import io.ktor.request.receive
-import io.ktor.response.header
 import io.ktor.response.respond
 import io.ktor.routing.Route
 import kotlinx.datetime.toKotlinInstant
@@ -55,7 +54,6 @@ fun Route.alertsRoute() {
     }
 
     get<AlertsApi.Unread> {
-        call.response.header("Access-Control-Allow-Origin", "*")
         requireAuthorization { user ->
             val targetId = if (it.id != null && user.isAdmin()) {
                 it.id
@@ -70,7 +68,6 @@ fun Route.alertsRoute() {
     }
 
     get<AlertsApi.Read> {
-        call.response.header("Access-Control-Allow-Origin", "*")
         requireAuthorization { user ->
             val targetId = if (it.id != null && user.isAdmin()) {
                 it.id
