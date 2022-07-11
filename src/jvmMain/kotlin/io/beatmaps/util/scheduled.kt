@@ -41,11 +41,11 @@ class CheckScheduled(private val rb: RabbitMQ) : TimerTask() {
                     Versions.select {
                         Versions.state eq EMapState.Scheduled and (Versions.scheduledAt lessEq NowExpression(Versions.scheduledAt))
                     }
-                ).forEach {
-                    schedulerLogger.info("Scheduler publishing ${it.hash}")
-                    if (publishVersion(it.mapId.value, it.hash)) {
-                        rb.publish("beatmaps", "maps.${it.mapId.value}.updated", null, it.mapId.value)
-                    }
+                )
+            }.forEach {
+                schedulerLogger.info("Scheduler publishing ${it.hash}")
+                if (publishVersion(it.mapId.value, it.hash)) {
+                    rb.publish("beatmaps", "maps.${it.mapId.value}.updated", null, it.mapId.value)
                 }
             }
         } catch (e: Exception) {
