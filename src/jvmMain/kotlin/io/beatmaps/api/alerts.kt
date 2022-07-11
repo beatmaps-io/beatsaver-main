@@ -8,7 +8,6 @@ import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Location
 import io.ktor.locations.get
-import io.ktor.locations.options
 import io.ktor.locations.post
 import io.ktor.request.receive
 import io.ktor.response.header
@@ -40,16 +39,6 @@ data class MarkAlert(val id: Int, val read: Boolean)
 data class MarkAllAlerts(val read: Boolean)
 
 fun Route.alertsRoute() {
-    options<AlertsApi.Unread> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    options<AlertsApi.Read> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
     fun getAlerts(userId: Int, read: Boolean): List<UserAlert> = transaction {
         AlertRecipient
             .join(Alert, JoinType.LEFT, AlertRecipient.alertId, Alert.id)
@@ -66,6 +55,7 @@ fun Route.alertsRoute() {
     }
 
     get<AlertsApi.Unread> {
+        call.response.header("Access-Control-Allow-Origin", "*")
         requireAuthorization { user ->
             val targetId = if (it.id != null && user.isAdmin()) {
                 it.id
@@ -80,6 +70,7 @@ fun Route.alertsRoute() {
     }
 
     get<AlertsApi.Read> {
+        call.response.header("Access-Control-Allow-Origin", "*")
         requireAuthorization { user ->
             val targetId = if (it.id != null && user.isAdmin()) {
                 it.id
