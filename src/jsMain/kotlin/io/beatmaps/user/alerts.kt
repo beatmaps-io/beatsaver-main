@@ -46,7 +46,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
         }
 
         axiosGet<List<UserAlert>>(
-            "${Config.apibase}/users/alerts" + if (props.userId == null) "" else "/${props.userId}",
+            "${Config.apibase}/alerts/unread" + if (props.userId == null) "" else "/${props.userId}",
         ).then {
             setState {
                 alerts = it.data
