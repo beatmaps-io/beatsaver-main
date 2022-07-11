@@ -21,10 +21,10 @@ import org.jetbrains.exposed.sql.update
 val cdnPrefixes = mapOf(
     "AF" to "",
     "AN" to "",
-    "AS" to "as.",
+    "AS" to "eu.",
     "EU" to "eu.",
     "NA" to "na.",
-    "OC" to "as.",
+    "OC" to "na.",
     "SA" to "na.",
     "CN" to "na."
 ).mapValues {
