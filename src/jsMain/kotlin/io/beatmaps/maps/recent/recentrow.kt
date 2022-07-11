@@ -8,7 +8,7 @@ import io.beatmaps.api.MapVersion
 import io.beatmaps.common.Config
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.beatmapTableRow
-import io.beatmaps.maps.textToContent
+import io.beatmaps.util.textToContent
 import kotlinx.datetime.internal.JSJoda.Instant
 import kotlinx.html.TEXTAREA
 import kotlinx.html.js.onClickFunction
