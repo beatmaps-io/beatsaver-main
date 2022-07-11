@@ -42,7 +42,6 @@ import io.ktor.locations.post
 import io.ktor.request.receive
 import io.ktor.response.header
 import io.ktor.response.respond
-import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
@@ -121,9 +120,6 @@ class UsersApi {
 
     @Location("/beatsaver")
     data class LinkBeatsaver(val api: UsersApi)
-
-    @Location("/alerts/{id?}")
-    data class Alerts(val id: Int? = null, val api: UsersApi)
 
     @Location("/list/{page}")
     data class List(val page: Long = 0, val api: UsersApi)
@@ -443,10 +439,6 @@ fun Route.userRoute() {
         } else {
             call.respond(UserDetail.from(user))
         }
-    }
-
-    get<UsersApi.Alerts> {
-        call.respondRedirect("/api/alerts/unread" + if (it.id != null) "/${it.id}" else "")
     }
 
     get<UsersApi.List> {
