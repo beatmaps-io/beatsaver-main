@@ -78,6 +78,10 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
             }
 
             div("beatmap") {
+                attrs.jsStyle {
+                    height = state.height
+                }
+
                 coloredCard {
                     attrs.color = mapAttrs.joinToString(" ") { it.color }
                     attrs.title = mapAttrs.joinToString(" + ") { it.name }
