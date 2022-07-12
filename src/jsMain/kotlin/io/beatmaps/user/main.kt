@@ -229,7 +229,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
                                 state.notificationCount.getOrElse(tab) { 0 }.let { notifCount ->
                                     if (notifCount > 0) {
-                                        span("badge rounded-pill badge-danger") {
+                                        span("badge rounded-pill badge-danger me-2") {
                                             +"$notifCount"
                                         }
                                     }

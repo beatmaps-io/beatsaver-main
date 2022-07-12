@@ -12,6 +12,8 @@ import io.ktor.locations.post
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.Route
+import io.ktor.sessions.sessions
+import io.ktor.sessions.set
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
@@ -48,7 +50,7 @@ fun Route.alertsRoute() {
             .orderBy(Alert.sentAt)
             .map {
                 AlertDao.wrapRow(it).let { alert ->
-                    UserAlert(alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant())
+                    UserAlert(alert.id.value, alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant())
                 }
             }
     }
@@ -99,7 +101,14 @@ fun Route.alertsRoute() {
                 } > 0
             }
 
-            call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+            if (result) {
+                call.sessions.set(
+                    user.copy(alerts = user.alerts?.let { if (req.read) it - 1 else it + 1 })
+                )
+                call.respond(HttpStatusCode.OK)
+            } else {
+                call.respond(HttpStatusCode.BadRequest)
+            }
         }
     }
 
@@ -120,7 +129,12 @@ fun Route.alertsRoute() {
                 }
             } > 0
 
-            call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+            if (result) {
+                call.sessions.set(user.copy(alerts = 0))
+                call.respond(HttpStatusCode.OK)
+            } else {
+                call.respond(HttpStatusCode.BadRequest)
+            }
         }
     }
 }
