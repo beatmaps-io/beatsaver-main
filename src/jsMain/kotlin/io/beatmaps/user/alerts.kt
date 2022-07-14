@@ -100,14 +100,16 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                                 attrs.date = alert.time.toString()
                             }
                         }
-                        div("ms-auto flex-shrink-0") {
-                            a("#") {
-                                attrs.onClickFunction = {
-                                    it.preventDefault()
-                                    markAlert(alert, true)
-                                }
+                        if (props.userId == null) {
+                            div("ms-auto flex-shrink-0") {
+                                a("#") {
+                                    attrs.onClickFunction = {
+                                        it.preventDefault()
+                                        markAlert(alert, true)
+                                    }
 
-                                i("fas fa-eye-slash text-info") { }
+                                    i("fas fa-eye-slash text-info") { }
+                                }
                             }
                         }
                     }
