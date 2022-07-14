@@ -39,6 +39,12 @@ data class MarkAlert(val id: Int, val read: Boolean)
 
 data class MarkAllAlerts(val read: Boolean)
 
+fun alertCount(userId: Int) = AlertRecipient
+    .select {
+        (AlertRecipient.recipientId eq userId) and
+                AlertRecipient.readAt.isNull()
+    }.count().toInt()
+
 fun Route.alertsRoute() {
     fun getAlerts(userId: Int, read: Boolean): List<UserAlert> = transaction {
         AlertRecipient
@@ -102,9 +108,9 @@ fun Route.alertsRoute() {
             }
 
             if (result) {
-                call.sessions.set(
-                    user.copy(alerts = user.alerts?.let { if (req.read) it - 1 else it + 1 })
-                )
+                transaction {
+                    call.sessions.set(user.copy(alerts = alertCount(user.userId)))
+                }
                 call.respond(HttpStatusCode.OK)
             } else {
                 call.respond(HttpStatusCode.BadRequest)
