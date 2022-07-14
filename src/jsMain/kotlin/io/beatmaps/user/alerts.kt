@@ -11,6 +11,7 @@ import io.beatmaps.index.coloredCard
 import io.beatmaps.setPageTitle
 import io.beatmaps.util.textToContent
 import kotlinx.html.js.onClickFunction
+import kotlinx.html.title
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -103,6 +104,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                         if (props.userId == null) {
                             div("ms-auto flex-shrink-0") {
                                 a("#") {
+                                    attrs.title = "Mark as read"
                                     attrs.onClickFunction = {
                                         it.preventDefault()
                                         markAlert(alert, true)
