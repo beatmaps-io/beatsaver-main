@@ -132,6 +132,7 @@ table.search-results {
     transition: height 0.2s;
 
     .card.colored {
+      border: none;
       height: calc(100% - 10px);
 
       .content {
