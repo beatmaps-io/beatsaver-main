@@ -78,6 +78,10 @@ img {
   image-rendering: -webkit-optimize-contrast;
 }
 
+time {
+  font-size: 10px;
+}
+
 .mapinfo-list td {
   width: 50%;
 }
@@ -117,57 +121,28 @@ table.search-results {
 .search-results, .playlist {
   .beatmap.loading {
     background: #262626;
+    height: 155px;
+    border: 5px solid transparent;
+    border-radius: calc(0.25rem - 1px);
     background-clip: padding-box;
   }
 
   .beatmap {
     width: 100%;
-    display: flex;
-    background: $dark;
-    border: 5px solid transparent;
-    border-radius: 10px;
-    height: 155px;
-    overflow: hidden;
+    height: 145px;
     transition: height 0.2s;
-    background-clip: padding-box;
 
-    .color {
-      width: 10px;
-      background-color: $gray-700;
-    }
+    .card.colored {
+      border: none;
+      height: calc(100% - 10px);
 
-    &.curated {
-      .color {
-        background-color: $success;
+      .content {
+        display: flex;
+        padding: 10px;
+        height: 100%;
+        overflow: hidden;
+        background-clip: padding-box;
       }
-    }
-    &.ranked {
-      .color {
-        background-color: $warning;
-      }
-    }
-    &.qualified {
-      .color {
-        background-color: $info;
-      }
-    }
-    &.verified {
-      .color {
-        background-color: $bs-purple;
-      }
-    }
-    &.ranked, &.qualified {
-      &.curated {
-        .color {
-          background-image: linear-gradient(180deg, $success, transparent);
-        }
-      }
-    }
-
-    .body {
-      width: 100%;
-      display: flex;
-      padding: 10px;
     }
 
     .info {
@@ -301,9 +276,6 @@ table.search-results {
   }
   p {
     margin-bottom: 0;
-  }
-  time {
-    font-size: 10px;
   }
 }
 .table.mappers {
@@ -515,6 +487,55 @@ th a {
     }
     .badge {
       cursor: pointer;
+    }
+  }
+}
+
+.card.colored {
+  display: flex;
+  flex-direction: row;
+  margin: 5px;
+
+  .color {
+    padding: 5px;
+    background-color: $gray-700;
+    border-radius: calc(0.25rem - 1px) 0 0 calc(0.25rem - 1px);
+    display: flex;
+    align-items: center;
+
+    .icon {
+      width: 2rem;
+      font-size: 1.5rem;
+      text-align: center;
+    }
+
+    &.success {
+      background-color: $success;
+    }
+    &.warning {
+      background-color: $warning;
+    }
+    &.info {
+      background-color: $info;
+    }
+    &.bs-purple {
+      background-color: $bs-purple;
+    }
+    &.danger {
+      background-color: $danger;
+    }
+    &.warning, &.info {
+      &.success {
+        background-image: linear-gradient(180deg, $success, transparent);
+      }
+    }
+  }
+
+  .content {
+    flex-basis: 100%;
+
+    .card-header {
+      border-top-left-radius: 0;
     }
   }
 }

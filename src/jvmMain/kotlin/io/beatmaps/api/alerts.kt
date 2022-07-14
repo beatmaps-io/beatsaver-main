@@ -12,6 +12,8 @@ import io.ktor.locations.post
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.Route
+import io.ktor.sessions.sessions
+import io.ktor.sessions.set
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
@@ -37,6 +39,12 @@ data class MarkAlert(val id: Int, val read: Boolean)
 
 data class MarkAllAlerts(val read: Boolean)
 
+fun alertCount(userId: Int) = AlertRecipient
+    .select {
+        (AlertRecipient.recipientId eq userId) and
+                AlertRecipient.readAt.isNull()
+    }.count().toInt()
+
 fun Route.alertsRoute() {
     fun getAlerts(userId: Int, read: Boolean): List<UserAlert> = transaction {
         AlertRecipient
@@ -48,7 +56,7 @@ fun Route.alertsRoute() {
             .orderBy(Alert.sentAt)
             .map {
                 AlertDao.wrapRow(it).let { alert ->
-                    UserAlert(alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant())
+                    UserAlert(alert.id.value, alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant())
                 }
             }
     }
@@ -99,7 +107,14 @@ fun Route.alertsRoute() {
                 } > 0
             }
 
-            call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+            if (result) {
+                transaction {
+                    call.sessions.set(user.copy(alerts = alertCount(user.userId)))
+                }
+                call.respond(HttpStatusCode.OK)
+            } else {
+                call.respond(HttpStatusCode.BadRequest)
+            }
         }
     }
 
@@ -120,7 +135,12 @@ fun Route.alertsRoute() {
                 }
             } > 0
 
-            call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+            if (result) {
+                call.sessions.set(user.copy(alerts = 0))
+                call.respond(HttpStatusCode.OK)
+            } else {
+                call.respond(HttpStatusCode.BadRequest)
+            }
         }
     }
 }

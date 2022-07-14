@@ -13,6 +13,7 @@ import kotlinx.html.title
 import react.RProps
 import react.RReadableRef
 import react.dom.a
+import react.dom.div
 import react.dom.i
 import react.dom.span
 import react.functionComponent
@@ -168,6 +169,31 @@ val uploader = functionComponent<UploaderProps> { props ->
         +" - "
         TimeAgo.default {
             attrs.date = props.map.uploaded.toString()
+        }
+    }
+}
+
+external interface ColoredCardProps : RProps {
+    var color: String
+    var icon: String?
+    var title: String?
+}
+
+val coloredCard = functionComponent<ColoredCardProps> {
+    div("card colored") {
+        div("color ${it.color}") {
+            if (it.title != null) {
+                attrs.title = it.title ?: ""
+            }
+
+            if (it.icon != null) {
+                i("fas ${it.icon} icon") {
+                    attrs.attributes["aria-hidden"] = "true"
+                }
+            }
+        }
+        div("content") {
+            it.children()
         }
     }
 }

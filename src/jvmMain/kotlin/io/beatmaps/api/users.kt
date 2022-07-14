@@ -13,7 +13,6 @@ import io.beatmaps.common.client
 import io.beatmaps.common.db.DateMinusDays
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
-import io.beatmaps.common.dbo.AlertRecipient
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.ModLog
@@ -124,12 +123,6 @@ class UsersApi {
     @Location("/list/{page}")
     data class List(val page: Long = 0, val api: UsersApi)
 }
-
-fun alertCount(userId: Int) = AlertRecipient
-    .select {
-        (AlertRecipient.recipientId eq userId) and
-            AlertRecipient.readAt.isNull()
-    }.count().toInt()
 
 fun Route.userRoute() {
     val usernameRegex = Regex("^[._\\-A-Za-z0-9]{3,}$")

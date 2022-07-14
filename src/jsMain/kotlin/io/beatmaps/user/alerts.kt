@@ -1,24 +1,29 @@
 package io.beatmaps.user
 
+import external.Axios
 import external.TimeAgo
 import external.axiosGet
+import external.generateConfig
+import io.beatmaps.api.AlertUpdate
 import io.beatmaps.api.UserAlert
 import io.beatmaps.common.Config
+import io.beatmaps.index.coloredCard
 import io.beatmaps.setPageTitle
 import io.beatmaps.util.textToContent
+import kotlinx.html.js.onClickFunction
+import kotlinx.html.title
 import react.RBuilder
 import react.RComponent
 import react.RProps
 import react.RState
 import react.ReactElement
+import react.dom.a
 import react.dom.b
 import react.dom.div
 import react.dom.h1
+import react.dom.i
 import react.dom.p
-import react.dom.table
-import react.dom.tbody
-import react.dom.td
-import react.dom.tr
+import react.dom.span
 import react.setState
 
 external interface AlertsPageProps : RProps {
@@ -27,7 +32,7 @@ external interface AlertsPageProps : RProps {
     var alertCountCallback: (Int) -> Unit
 }
 
-data class AlertsPageState(var alerts: List<UserAlert> = listOf(), var loading: Boolean = false) : RState
+data class AlertsPageState(var unreadAlerts: List<UserAlert> = listOf(), var loading: Boolean = false) : RState
 
 class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
     init {
@@ -49,7 +54,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
             "${Config.apibase}/alerts/unread" + if (props.userId == null) "" else "/${props.userId}",
         ).then {
             setState {
-                alerts = it.data
+                unreadAlerts = it.data
                 loading = false
             }
             props.alertCountCallback(it.data.size)
@@ -58,10 +63,20 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
         }
     }
 
+    private fun markAlert(alert: UserAlert, read: Boolean) {
+        Axios.post<String>("${Config.apibase}/alerts/mark", AlertUpdate(alert.id, read), generateConfig<AlertUpdate, String>())
+            .then {
+                setState {
+                    unreadAlerts = if (read) unreadAlerts - alert else unreadAlerts + alert
+                }
+                props.alertCountCallback(state.unreadAlerts.size)
+            }
+    }
+
     override fun RBuilder.render() {
         if (props.visible != true) return
 
-        if (!state.loading && state.alerts.isEmpty()) {
+        if (!state.loading && state.unreadAlerts.isEmpty()) {
             div("jumbotron") {
                 h1 {
                     +"Nothing to see here"
@@ -71,26 +86,36 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                 }
             }
         } else {
-            table("table table-dark mapinfo-list") {
-                tbody {
-                    state.alerts.forEach {
-                        tr {
-                            td {
-                                p {
-                                    b {
-                                        +it.head
+            state.unreadAlerts.forEach { alert ->
+                coloredCard {
+                    attrs.color = alert.type.color
+                    attrs.icon = alert.type.icon
+
+                    div("card-header d-flex") {
+                        span {
+                            b {
+                                +alert.head
+                            }
+                            +" - "
+                            TimeAgo.default {
+                                attrs.date = alert.time.toString()
+                            }
+                        }
+                        if (props.userId == null) {
+                            div("ms-auto flex-shrink-0") {
+                                a("#") {
+                                    attrs.title = "Mark as read"
+                                    attrs.onClickFunction = {
+                                        it.preventDefault()
+                                        markAlert(alert, true)
                                     }
-                                    +" - "
-                                    TimeAgo.default {
-                                        attrs.date = it.time.toString()
-                                    }
-                                }
-                                p {
-                                    textToContent(it.body)
+
+                                    i("fas fa-eye-slash text-info") { }
                                 }
                             }
                         }
                     }
+                    div("card-body") { textToContent(alert.body) }
                 }
             }
         }

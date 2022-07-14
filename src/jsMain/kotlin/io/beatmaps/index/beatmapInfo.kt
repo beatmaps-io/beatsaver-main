@@ -2,6 +2,7 @@ package io.beatmaps.index
 
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
+import io.beatmaps.common.api.MapAttr
 import io.beatmaps.common.formatTime
 import io.beatmaps.globalContext
 import io.beatmaps.playlist.addToPlaylist
@@ -66,23 +67,25 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
 
     override fun RBuilder.render() {
         props.map?.let { map ->
-            val mapAttributes = listOfNotNull(
-                if (map.ranked) "ranked" else null,
-                if (map.qualified && !map.ranked) "qualified" else null,
-                if (map.curator != null) "curated" else null,
-                if (!map.ranked && !map.qualified && map.curator == null && map.uploader.verifiedMapper) "verified" else null
-            )
+            val mapAttrs = listOfNotNull(
+                if (map.ranked) MapAttr.Ranked else null,
+                if (map.qualified && !map.ranked) MapAttr.Qualified else null,
+                if (map.curator != null) MapAttr.Curated else null
+            ).ifEmpty {
+                listOfNotNull(
+                    if (map.uploader.verifiedMapper) MapAttr.Verified else null
+                )
+            }
 
-            val classes = listOf("beatmap").plus(mapAttributes).joinToString(" ")
-
-            div(classes) {
+            div("beatmap") {
                 attrs.jsStyle {
                     height = state.height
                 }
-                div("color") {
-                    attrs.title = mapAttributes.joinToString(" + ")
-                }
-                div("body") {
+
+                coloredCard {
+                    attrs.color = mapAttrs.joinToString(" ") { it.color }
+                    attrs.title = mapAttrs.joinToString(" + ") { it.name }
+
                     div {
                         val totalVotes = (map.stats.upvotes + map.stats.downvotes).toDouble()
                         val rawScore = map.stats.upvotes / totalVotes
