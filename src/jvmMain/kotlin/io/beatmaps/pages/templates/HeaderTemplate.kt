@@ -113,7 +113,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                         +"Alerts"
 
                                         if (s.alerts != null && s.alerts > 0) {
-                                            span ("ms-1 text-danger") {
+                                            span("ms-1 text-danger") {
                                                 +"•"
                                             }
                                         }
