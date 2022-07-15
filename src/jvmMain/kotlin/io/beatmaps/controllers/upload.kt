@@ -388,7 +388,7 @@ fun ZipHelper.validateFiles(dos: DigestOutputStream) =
     }
 
 fun findAllowedFiles(info: MapInfo) = (
-    listOf("info.dat", "cinema-video.json", info._coverImageFilename, info._songFilename) +
+    listOf("info.dat", "bpminfo.dat", "cinema-video.json", info._coverImageFilename, info._songFilename) +
         (info._customData?._contributors?.mapNotNull { it._iconPath } ?: listOf()) +
         info._difficultyBeatmapSets.flatMap { set -> set._difficultyBeatmaps.map { it._beatmapFilename } }
     ).map { it.lowercase() }
