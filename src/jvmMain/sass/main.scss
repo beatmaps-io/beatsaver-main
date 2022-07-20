@@ -78,10 +78,6 @@ img {
   image-rendering: -webkit-optimize-contrast;
 }
 
-time {
-  font-size: 10px;
-}
-
 .mapinfo-list td {
   width: 50%;
 }
@@ -536,6 +532,10 @@ th a {
 
     .card-header {
       border-top-left-radius: 0;
+    }
+
+    time {
+      font-size: 10px;
     }
   }
 }

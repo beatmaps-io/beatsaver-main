@@ -62,7 +62,7 @@ CREATE UNIQUE INDEX alert_link
 
 INSERT INTO public.alert (head, body, "type", "sentAt") SELECT
      'Removal Notice',
-     'Your map #' || modlog."mapId" || ': **' || beatmap.name || '** has been removed by a moderator.' || E'\n' ||
+     'Your map #' || to_hex(modlog."mapId") || ': **' || beatmap.name || '** has been removed by a moderator.' || E'\n' ||
      'Reason: *' || (modlog.action::json->'reason')::text || '*',
      'Deletion',
      modlog."when"

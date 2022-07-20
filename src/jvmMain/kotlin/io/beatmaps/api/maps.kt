@@ -223,13 +223,15 @@ fun Route.mapDetailRoute() {
                             },
                             oldData.uploader.id.value
                         )
-                        Alert.insert(
-                            "Removal Notice",
-                            "Your map #${mapUpdate.id}: **${oldData.name}** has been removed by a moderator.\n" +
-                                "Reason: *\"${mapUpdate.reason}\"*",
-                            EAlertType.Deletion,
-                            oldData.uploader.id.value
-                        )
+                        if (mapUpdate.deleted) {
+                            Alert.insert(
+                                "Removal Notice",
+                                "Your map #${toHexString(mapUpdate.id)}: **${oldData.name}** has been removed by a moderator.\n" +
+                                    "Reason: *\"${mapUpdate.reason}\"*",
+                                EAlertType.Deletion,
+                                oldData.uploader.id.value
+                            )
+                        }
                     }
                 }
             }
