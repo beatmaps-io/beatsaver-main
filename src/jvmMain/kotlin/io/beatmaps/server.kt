@@ -9,6 +9,7 @@ import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.ScoreSaberServerException
 import io.beatmaps.api.alertsRoute
 import io.beatmaps.api.mapDetailRoute
+import io.beatmaps.api.modLogRoute
 import io.beatmaps.api.playlistRoute
 import io.beatmaps.api.scoresRoute
 import io.beatmaps.api.searchRoute
@@ -318,6 +319,7 @@ fun Application.beatmapsio() {
         voteRoute()
         playlistRoute()
         alertsRoute()
+        modLogRoute()
 
         mapController()
         uploadController()
