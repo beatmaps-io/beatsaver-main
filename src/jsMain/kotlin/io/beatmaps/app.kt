@@ -5,6 +5,7 @@ import io.beatmaps.index.HomePageProps
 import io.beatmaps.maps.MapPage
 import io.beatmaps.maps.MapPageProps
 import io.beatmaps.maps.recent.recentTestplays
+import io.beatmaps.modlog.modlog
 import io.beatmaps.nav.manageNav
 import io.beatmaps.nav.viewportMinWidthPolyfill
 import io.beatmaps.playlist.PlaylistProps
@@ -148,6 +149,15 @@ class App : RComponent<RProps, RState>() {
                 route<RProps>("/test", exact = true) {
                     initWithHistory(it.history)
                     recentTestplays { }
+                }
+                route<RProps>("/modlog", exact = true) {
+                    initWithHistory(it.history)
+                    globalContext.Consumer { user ->
+                        modlog {
+                            history = it.history
+                            userData = user
+                        }
+                    }
                 }
                 route<RProps>("/policy/dmca", exact = true) {
                     initWithHistory(it.history, false)

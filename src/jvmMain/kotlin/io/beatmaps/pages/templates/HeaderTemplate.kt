@@ -48,6 +48,13 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 }
                             }
                         }
+                        if (s?.isAdmin() == true) {
+                            li("nav-item") {
+                                a("/modlog", classes = "nav-link") {
+                                    +"ModLog"
+                                }
+                            }
+                        }
                         li("nav-item") {
                             a("/mappers", classes = "nav-link") {
                                 +"Mappers"

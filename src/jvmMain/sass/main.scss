@@ -1016,6 +1016,12 @@ li.KeyboardShortcutRow {
   }
 }
 
+table.modlog {
+    td, th {
+        width: 20%
+    }
+}
+
 @include media-breakpoint-up(sm) {
   .filter-dropdown {
     width: 100%;
