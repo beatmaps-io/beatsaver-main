@@ -33,6 +33,7 @@ data class MapDetail(
     val stats: MapStats,
     val uploaded: Instant? = null,
     val automapper: Boolean,
+    val ai: Boolean,
     val ranked: Boolean,
     val qualified: Boolean,
     val versions: List<MapVersion> = listOf(),

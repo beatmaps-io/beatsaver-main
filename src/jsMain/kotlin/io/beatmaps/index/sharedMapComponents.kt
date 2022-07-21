@@ -27,7 +27,6 @@ external interface BotInfoProps : RProps {
 }
 
 val botInfo = functionComponent<BotInfoProps> { props ->
-    val score = (props.version?.sageScore ?: 0)
     val margin = if (props.marginLeft != false) "ms-2" else "me-2"
 
     fun renderBadge(color: String, title: String, text: String) =
@@ -36,10 +35,8 @@ val botInfo = functionComponent<BotInfoProps> { props ->
             +text
         }
 
-    if (score < -4 || props.automapper == true) {
+    if (props.automapper != false) {
         renderBadge("danger", "Made by a bot", "Bot")
-    } else if (score < 0) {
-        renderBadge("unsure", "Could be a bot", "Unsure")
     }
 }
 
