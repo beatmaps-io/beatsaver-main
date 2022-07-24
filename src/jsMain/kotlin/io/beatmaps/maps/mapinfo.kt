@@ -119,7 +119,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     }
 
     private fun curate(curated: Boolean = true) {
-        Axios.post<String>("${Config.apibase}/maps/curate", CurateMap(props.mapInfo.intId(), curated), generateConfig<CurateMap, String>()).then({
+        Axios.post<String>("${Config.apibase}/maps/curate", CurateMap(props.mapInfo.intId(), curated, reason = reasonRef.current?.value), generateConfig<CurateMap, String>()).then({
             props.reloadMap()
         }) { }
     }
@@ -184,7 +184,27 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                         attrs.attributes["aria-label"] = text
                                         attrs.onClickFunction = {
                                             it.preventDefault()
-                                            curate(props.mapInfo.curator == null)
+                                            if (!isCurated) curate()
+                                            else props.modal.current?.showDialog(
+                                                ModalData(
+                                                    "Uncurate map",
+                                                    bodyCallback = {
+                                                        p {
+                                                            +"Are you sure you want to uncurate this map? If so, please provide a comprehensive reason."
+                                                        }
+                                                        p {
+                                                            +"Reason for action:"
+                                                        }
+                                                        textarea(classes = "form-control") {
+                                                            ref = reasonRef
+                                                        }
+                                                    },
+                                                    buttons = listOf(
+                                                        ModalButton("Uncurate", "primary") { curate(false) },
+                                                        ModalButton("Cancel")
+                                                    )
+                                                )
+                                            )
                                         }
                                         i("fas fa-award " + if (isCurated) "text-danger" else "text-success") { }
                                     }

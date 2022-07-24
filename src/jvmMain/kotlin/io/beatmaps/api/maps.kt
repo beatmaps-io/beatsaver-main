@@ -157,6 +157,14 @@ fun Route.mapDetailRoute() {
                                         EAlertType.Curation,
                                         it.uploader.id.value
                                     )
+                                } else {
+                                    Alert.insert(
+                                        "Your map has been uncurated",
+                                        "@${user.uniqueName} just uncurated your map #${toHexString(mapUpdate.id)}: **${it.name}**.\n" +
+                                            "Reason: *\"${mapUpdate.reason ?: ""}\"*",
+                                        EAlertType.Deletion,
+                                        it.uploader.id.value
+                                    )
                                 }
                             }
                         }
