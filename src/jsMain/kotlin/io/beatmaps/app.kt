@@ -5,6 +5,7 @@ import io.beatmaps.index.HomePageProps
 import io.beatmaps.maps.MapPage
 import io.beatmaps.maps.MapPageProps
 import io.beatmaps.maps.recent.recentTestplays
+import io.beatmaps.modlog.modlog
 import io.beatmaps.nav.manageNav
 import io.beatmaps.nav.viewportMinWidthPolyfill
 import io.beatmaps.playlist.PlaylistProps
@@ -24,6 +25,7 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HashChangeEvent
+import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -65,14 +67,23 @@ fun main() {
 const val dateFormat = "YYYY-MM-DD"
 
 class App : RComponent<RProps, RState>() {
-    private fun initWithHistory(history: RouteResultHistory, replaceHomelink: Boolean = true) {
-        if (replaceHomelink) {
-            val homeLink = document.getElementById("home-link") as HTMLAnchorElement
-            homeLink.onclick = {
-                history.push("/")
-                window.dispatchEvent(HashChangeEvent("hashchange"))
+    private fun fixLink(id: String, history: RouteResultHistory, url: String = "", block: (HTMLAnchorElement) -> Unit = {}) {
+        (document.getElementById(id) as? HTMLAnchorElement)?.let { elem ->
+            elem.onclick = {
+                history.push("/$url")
+                block(elem)
                 it.preventDefault()
             }
+        }
+    }
+
+    private fun initWithHistory(history: RouteResultHistory, replaceHomelink: Boolean = true) {
+        if (replaceHomelink) {
+            fixLink("home-link", history) {
+                window.dispatchEvent(HashChangeEvent("hashchange"))
+            }
+            fixLink("mappers-link", history, "mappers")
+            fixLink("modlog-link", history, "modlog")
         }
 
         manageNav()
@@ -148,6 +159,19 @@ class App : RComponent<RProps, RState>() {
                 route<RProps>("/test", exact = true) {
                     initWithHistory(it.history)
                     recentTestplays { }
+                }
+                route<RProps>("/modlog", exact = true) {
+                    initWithHistory(it.history)
+                    globalContext.Consumer { user ->
+                        modlog {
+                            history = it.history
+                            userData = user
+                            URLSearchParams(window.location.search).let { u ->
+                                mod = u.get("mod") ?: ""
+                                this.user = u.get("user") ?: ""
+                            }
+                        }
+                    }
                 }
                 route<RProps>("/policy/dmca", exact = true) {
                     initWithHistory(it.history, false)
