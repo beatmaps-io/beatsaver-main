@@ -130,18 +130,45 @@ fun Route.mapDetailRoute() {
                 val mapUpdate = call.receive<CurateMap>()
 
                 val result = transaction {
-                    Beatmap.update({
-                        (Beatmap.id eq mapUpdate.id) and (Beatmap.uploader neq user.userId) and (if (mapUpdate.curated) Beatmap.curatedAt.isNull() else Beatmap.curatedAt.isNotNull())
-                    }) {
-                        if (mapUpdate.curated) {
-                            it[curatedAt] = NowExpression(curatedAt.columnType)
-                            it[curator] = EntityID(user.userId, User)
-                        } else {
-                            it[curatedAt] = null
-                            it[curator] = null
+                    fun curateMap() =
+                        Beatmap.update({
+                            (Beatmap.id eq mapUpdate.id) and (Beatmap.uploader neq user.userId) and (if (mapUpdate.curated) Beatmap.curatedAt.isNull() else Beatmap.curatedAt.isNotNull())
+                        }) {
+                            if (mapUpdate.curated) {
+                                it[curatedAt] = NowExpression(curatedAt.columnType)
+                                it[curator] = EntityID(user.userId, User)
+                            } else {
+                                it[curatedAt] = null
+                                it[curator] = null
+                            }
+                            it[updatedAt] = NowExpression(updatedAt.columnType)
                         }
-                        it[updatedAt] = NowExpression(updatedAt.columnType)
-                    } > 0
+
+                    (curateMap() > 0).also { success ->
+                        if (success) {
+                            Beatmap.select {
+                                Beatmap.id eq mapUpdate.id
+                            }.complexToBeatmap().single().let {
+                                if (mapUpdate.curated) {
+                                    Alert.insert(
+                                        "Your map has been curated",
+                                        "@${user.uniqueName} just curated your map #${toHexString(mapUpdate.id)}: **${it.name}**.\n" +
+                                            "Congratulations!",
+                                        EAlertType.Curation,
+                                        it.uploader.id.value
+                                    )
+                                } else {
+                                    Alert.insert(
+                                        "Your map has been uncurated",
+                                        "@${user.uniqueName} just uncurated your map #${toHexString(mapUpdate.id)}: **${it.name}**.\n" +
+                                            "Reason: *\"${mapUpdate.reason ?: ""}\"*",
+                                        EAlertType.Deletion,
+                                        it.uploader.id.value
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
 
                 if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
