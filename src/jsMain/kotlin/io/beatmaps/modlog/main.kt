@@ -6,12 +6,10 @@ import io.beatmaps.UserData
 import io.beatmaps.api.ModLogEntry
 import io.beatmaps.common.Config
 import io.beatmaps.setPageTitle
-import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -33,12 +31,12 @@ import react.setState
 external interface ModLogProps : RProps {
     var history: RouteResultHistory
     var userData: UserData?
+    var mod: String?
+    var user: String?
 }
 
 external interface ModLogState : RState {
     var entries: List<ModLogEntry>?
-    var mod: String?
-    var user: String?
 }
 
 class ModLog : RComponent<ModLogProps, ModLogState>() {
@@ -48,10 +46,6 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
     override fun componentWillMount() {
         setState {
             entries = listOf()
-            URLSearchParams(window.location.search).let {
-                mod = it.get("mod") ?: ""
-                user = it.get("user") ?: ""
-            }
         }
     }
 
@@ -62,13 +56,28 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
             props.history.push("/")
         }
 
-        modRef.current?.value = state.mod ?: ""
-        userRef.current?.value = state.user ?: ""
+        modRef.current?.value = props.mod ?: ""
+        userRef.current?.value = props.user ?: ""
 
         loadPage(0)
     }
 
+    override fun componentWillReceiveProps(nextProps: ModLogProps) {
+        modRef.current?.value = nextProps.mod ?: ""
+        userRef.current?.value = nextProps.user ?: ""
+
+        if (props.mod != nextProps.mod || props.user != nextProps.user) {
+            loadPage(0)
+        }
+    }
+
     private fun loadPage(page: Long) {
+        if (page == 0L) {
+            setState {
+                entries = listOf()
+            }
+        }
+
         axiosGet<Array<ModLogEntry>>("${Config.apibase}/modlog/$page" + urlExtension()).then {
             setState {
                 entries = entries?.plus(it.data)
@@ -109,13 +118,7 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
                             button(type = ButtonType.submit, classes = "btn btn-primary") {
                                 attrs.onClickFunction = {
                                     it.preventDefault()
-                                    setState {
-                                        mod = modRef.current?.value
-                                        user = userRef.current?.value
-                                        entries = listOf()
-                                    }
 
-                                    loadPage(0)
                                     props.history.push("/modlog" + urlExtension())
                                 }
 

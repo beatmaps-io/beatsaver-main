@@ -72,7 +72,7 @@ WHERE
     ARRAY[1, 2] @> ARRAY[cast(modlog.type AS INT)];
 
 INSERT INTO public.alert_recipient ("recipientId", "alertId") SELECT
-    modlog."userId",
+    modlog."targetUserId",
     alert."alertId"
 FROM public.alert
 INNER JOIN modlog ON alert."sentAt" = modlog."when";

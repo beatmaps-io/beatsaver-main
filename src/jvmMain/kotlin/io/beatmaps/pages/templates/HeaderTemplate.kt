@@ -51,12 +51,14 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                         if (s?.isAdmin() == true) {
                             li("nav-item") {
                                 a("/modlog", classes = "nav-link") {
+                                    id = "modlog-link"
                                     +"ModLog"
                                 }
                             }
                         }
                         li("nav-item") {
                             a("/mappers", classes = "nav-link") {
+                                id = "mappers-link"
                                 +"Mappers"
                             }
                         }
@@ -120,7 +122,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                         +"Alerts"
 
                                         if (s.alerts != null && s.alerts > 0) {
-                                            span ("ms-1 text-danger") {
+                                            span("ms-1 text-danger") {
                                                 +"•"
                                             }
                                         }

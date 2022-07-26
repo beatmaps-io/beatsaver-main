@@ -89,7 +89,8 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
     private val rowHeight = 155.0 // At least, can be more
     private fun itemsPerRow() = if (window.innerWidth < 992) 1 else 2
     private val itemsPerPage = 20
-    private val beforeContent = 60
+    private val beforeContent = 59.5
+    private val grace = 5
     private fun rowsPerPage() = itemsPerPage / itemsPerRow()
     private fun pageHeight() = rowHeight * rowsPerPage()
 
@@ -118,7 +119,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
     private fun currentItem(): Int {
         resultsTable.current?.children?.asList()?.forEachIndexed { idx, it ->
             val rect = it.getBoundingClientRect()
-            if (rect.top >= beforeContent) {
+            if (rect.top >= beforeContent - grace) {
                 return idx
             }
         }
