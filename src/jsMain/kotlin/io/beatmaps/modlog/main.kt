@@ -135,7 +135,7 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
                             td {
                                 if (it.map != null) mapTitle {
                                     attrs.title = it.map.name
-                                    attrs.key = it.map.id.also { println(it) }
+                                    attrs.mapKey = it.map.id
                                 }
                             }
                             td { +it.type.name }

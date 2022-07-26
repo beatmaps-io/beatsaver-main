@@ -128,7 +128,7 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
 
                         mapTitle {
                             attrs.title = map.name
-                            attrs.key = map.id
+                            attrs.mapKey = map.id
                         }
                         p {
                             uploader {
