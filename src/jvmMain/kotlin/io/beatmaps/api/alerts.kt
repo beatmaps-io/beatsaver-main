@@ -16,6 +16,7 @@ import io.ktor.sessions.sessions
 import io.ktor.sessions.set
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -53,7 +54,7 @@ fun Route.alertsRoute() {
                 (AlertRecipient.recipientId eq userId) and
                     AlertRecipient.readAt.run { if (read) isNotNull() else isNull() }
             }
-            .orderBy(Alert.sentAt)
+            .orderBy(Alert.sentAt, SortOrder.DESC)
             .map {
                 AlertDao.wrapRow(it).let { alert ->
                     UserAlert(alert.id.value, alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant())

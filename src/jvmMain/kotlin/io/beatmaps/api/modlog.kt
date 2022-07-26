@@ -15,6 +15,7 @@ import io.ktor.routing.Route
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -43,7 +44,7 @@ fun Route.modLogRoute() {
                             (it.mod?.let { m -> curatorAlias[User.uniqueName] like "%$m%" } ?: Op.TRUE) and
                                 (it.user?.let { u -> User.uniqueName like "%$u%" } ?: Op.TRUE)
                         }
-                        .orderBy(ModLog.opAt)
+                        .orderBy(ModLog.opAt, SortOrder.DESC)
                         .limit(it.page, 30)
                         .map {
                             ModLogDao.wrapRow(it).let { entry ->
