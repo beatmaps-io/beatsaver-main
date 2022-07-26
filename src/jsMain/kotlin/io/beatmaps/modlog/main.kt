@@ -16,6 +16,7 @@ import react.RProps
 import react.RState
 import react.ReactElement
 import react.createRef
+import react.dom.a
 import react.dom.button
 import react.dom.form
 import react.dom.input
@@ -131,7 +132,11 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
                         tr {
                             td { +it.moderator }
                             td { +it.user }
-                            td { +"${it.map?.name}" }
+                            td {
+                                if (it.map != null) a("/maps/${it.map.id}") {
+                                    +it.map.name
+                                }
+                            }
                             td { +it.type.name }
                             td {
                                 TimeAgo.default {
