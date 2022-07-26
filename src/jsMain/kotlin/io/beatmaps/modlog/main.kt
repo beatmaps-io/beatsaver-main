@@ -5,6 +5,7 @@ import external.axiosGet
 import io.beatmaps.UserData
 import io.beatmaps.api.ModLogEntry
 import io.beatmaps.common.Config
+import io.beatmaps.index.mapTitle
 import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
@@ -16,7 +17,6 @@ import react.RProps
 import react.RState
 import react.ReactElement
 import react.createRef
-import react.dom.a
 import react.dom.button
 import react.dom.form
 import react.dom.input
@@ -133,8 +133,9 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
                             td { +it.moderator }
                             td { +it.user }
                             td {
-                                if (it.map != null) a("/maps/${it.map.id}") {
-                                    +it.map.name
+                                if (it.map != null) mapTitle {
+                                    attrs.title = it.map.name
+                                    attrs.key = it.map.id.also { println(it) }
                                 }
                             }
                             td { +it.type.name }
