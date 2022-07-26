@@ -44,6 +44,13 @@ external interface BeatMapInfoState : RState {
 class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
     private val divRef = createRef<HTMLDivElement>()
 
+    override fun componentDidMount() {
+        setState {
+            height = ""
+            loaded = false
+        }
+    }
+
     override fun componentDidUpdate(prevProps: BeatmapInfoProps, prevState: BeatMapInfoState, snapshot: Any) {
         if (state.loaded != true && props.map != null) {
             val innerSize = divRef.current?.scrollHeight?.let { it + 30 } ?: 0
