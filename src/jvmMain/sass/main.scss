@@ -1018,9 +1018,13 @@ li.KeyboardShortcutRow {
 }
 
 table.modlog {
-    td, th {
-        width: 20%
-    }
+  table-layout: fixed;
+
+  td, th {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 20%
+  }
 }
 
 @include media-breakpoint-up(sm) {
