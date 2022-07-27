@@ -23,7 +23,6 @@ import react.dom.jsStyle
 import react.dom.p
 import react.dom.small
 import react.dom.span
-import react.router.dom.routeLink
 import react.setState
 import kotlin.math.abs
 import kotlin.math.floor
@@ -127,12 +126,9 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
                     div("info") {
                         ref = divRef
 
-                        routeLink("/maps/${map.id}") {
-                            if (map.name.isNotBlank()) {
-                                +map.name
-                            } else {
-                                +"<NO NAME>"
-                            }
+                        mapTitle {
+                            attrs.title = map.name
+                            attrs.mapKey = map.id
                         }
                         p {
                             uploader {

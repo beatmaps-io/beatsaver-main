@@ -197,3 +197,16 @@ val coloredCard = functionComponent<ColoredCardProps> {
         }
     }
 }
+
+external interface MapTitleProps : RProps {
+    var title: String
+    var mapKey: String
+}
+
+val mapTitle = functionComponent<MapTitleProps> {
+    routeLink("/maps/${it.mapKey}") {
+        +it.title.ifBlank {
+            "<NO NAME>"
+        }
+    }
+}

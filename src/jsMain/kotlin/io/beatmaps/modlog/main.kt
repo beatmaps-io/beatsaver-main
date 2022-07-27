@@ -5,6 +5,7 @@ import external.axiosGet
 import io.beatmaps.UserData
 import io.beatmaps.api.ModLogEntry
 import io.beatmaps.common.Config
+import io.beatmaps.index.mapTitle
 import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
@@ -131,7 +132,12 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
                         tr {
                             td { +it.moderator }
                             td { +it.user }
-                            td { +"${it.map?.name}" }
+                            td {
+                                if (it.map != null) mapTitle {
+                                    attrs.title = it.map.name
+                                    attrs.mapKey = it.map.id
+                                }
+                            }
                             td { +it.type.name }
                             td {
                                 TimeAgo.default {

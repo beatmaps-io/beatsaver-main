@@ -10,12 +10,12 @@ fun String.transformURLIntoLinks() =
     }
 
 fun String.parseBoldMarkdown() =
-    replace("(^|\\s)(\\*\\*|__)(.*?)\\2".toRegex(RegexOption.MULTILINE)) {
+    replace("(^|\\s)(\\*\\*|__)((.|\\n)+?)\\2".toRegex(RegexOption.MULTILINE)) {
         "${it.groupValues[1]}<b>${it.groupValues[3]}</b>"
     }
 
 fun String.parseItalicMarkdown() =
-    replace("(^|\\s)([*_])(.*?)\\2".toRegex(RegexOption.MULTILINE)) {
+    replace("(^|\\s)([*_])((.|\\n)+?)\\2".toRegex(RegexOption.MULTILINE)) {
         "${it.groupValues[1]}<i>${it.groupValues[3]}</i>"
     }
 
