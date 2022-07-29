@@ -30,7 +30,7 @@ val discordProvider = OAuthServerSettings.OAuth2ServerSettings(
     defaultScopes = listOf("identify")
 )
 
-class SimpleUserPrincipal(val user: UserDao, val alertCount: Int) : Principal
+class SimpleUserPrincipal(val user: UserDao, val alertCount: Int, val redirect: String) : Principal
 
 fun Application.installDiscordOauth() {
     val baseName = System.getenv("BASE_URL") ?: Config.basename
@@ -55,7 +55,7 @@ fun Application.installDiscordOauth() {
                     }.firstOrNull()?.let {
                         val curPw = it[User.password]
                         if (curPw != null && Bcrypt.verify(credentials.password, curPw.toByteArray())) {
-                            SimpleUserPrincipal(UserDao.wrapRow(it), alertCount(it[User.id].value))
+                            SimpleUserPrincipal(UserDao.wrapRow(it), alertCount(it[User.id].value), request.uri)
                         } else {
                             null
                         }

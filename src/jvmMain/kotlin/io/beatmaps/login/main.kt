@@ -1,6 +1,7 @@
 package io.beatmaps.login
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.beatmaps.api.OauthClients
 import io.beatmaps.api.alertCount
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.Config
@@ -12,8 +13,7 @@ import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.jackson
 import io.beatmaps.common.localAvatarFolder
 import io.beatmaps.genericPage
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
+import io.ktor.application.*
 import io.ktor.auth.OAuthAccessTokenResponse
 import io.ktor.auth.authenticate
 import io.ktor.auth.authentication
@@ -30,13 +30,23 @@ import io.ktor.locations.Location
 import io.ktor.locations.get
 import io.ktor.locations.post
 import io.ktor.response.respondRedirect
-import io.ktor.routing.Route
-import io.ktor.routing.get
+import io.ktor.routing.*
 import io.ktor.sessions.clear
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
+import kotlinx.coroutines.runBlocking
+import nl.myndocs.oauth2.authenticator.Credentials
+import nl.myndocs.oauth2.client.AuthorizedGrantType
+import nl.myndocs.oauth2.client.Client
+import nl.myndocs.oauth2.client.inmemory.InMemoryClient
+import nl.myndocs.oauth2.identity.Identity
+import nl.myndocs.oauth2.identity.IdentityService
+import nl.myndocs.oauth2.ktor.feature.Oauth2ServerFeature
+import nl.myndocs.oauth2.ktor.feature.request.KtorCallContext
+import nl.myndocs.oauth2.tokenstore.inmemory.InMemoryTokenStore
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.select
@@ -78,6 +88,7 @@ data class Session(
 }
 
 @Location("/login") class Login
+@Location("/oauth2/authorize") class Authorize
 @Location("/register") class Register
 @Location("/forgot") class Forgot
 @Location("/reset/{jwt}") class Reset(val jwt: String)
@@ -208,6 +219,14 @@ fun Route.authRoute() {
             }
             call.respondRedirect("/")
         }
+        post<Authorize> {
+            call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
+                val user = newPrincipal.user
+                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator))
+
+                call.respondRedirect(newPrincipal.redirect)
+            }
+        }
     }
 
     get<Login> {
@@ -278,5 +297,63 @@ fun Route.authRoute() {
             call.sessions.set(sess.copy(steamId = steamid))
             call.respondRedirect("/profile")
         }
+    }
+}
+
+fun Application.installOauth2() {
+    install(Oauth2ServerFeature) {
+        authenticationCallback = { call, callRouter ->
+            runBlocking {
+                val context = KtorCallContext(call)
+
+                val userSession = call.sessions.get<Session>()
+
+                if (userSession != null) {
+                    callRouter.route(context, Credentials(userSession.userId.toString(), ""))
+                }
+            }
+        }
+
+        tokenEndpoint = "/api/oauth2/token"
+        authorizationEndpoint = "/oauth2/authorize"
+        tokenInfoEndpoint = "/api/oauth2/identity"
+
+        identityService = object : IdentityService {
+            override fun allowedScopes(forClient: Client, identity: Identity, scopes: Set<String>) = scopes
+
+            override fun identityOf(forClient: Client, username: String) =
+                transaction {
+                    User.select(where = { (User.id eq username.toInt()) and User.active }).firstOrNull()?.let {
+                        Identity(
+                            username,
+                            mapOf(
+                                "name" to it[User.name],
+                                "avatar" to (it[User.avatar] ?: ""))
+                        )
+                    }
+                }
+
+            override fun validCredentials(forClient: Client, identity: Identity, password: String) =
+                transaction {
+                    !User.select(where = {(User.id eq identity.username.toInt()) and User.active}).empty()
+                }
+        }
+
+        clientService = InMemoryClient().also { imc ->
+            OauthClients.forEach {
+                imc.client {
+                    clientId = it.id
+                    clientSecret = it.secret
+                    scopes = it.scopes ?: setOf()
+                    authorizedGrantTypes = setOf(
+                        AuthorizedGrantType.AUTHORIZATION_CODE,
+                        AuthorizedGrantType.REFRESH_TOKEN
+                    )
+                    redirectUris = if (it.redirect != null) setOf(it.redirect) else emptySet()
+                }
+            }
+        }
+
+        tokenStore = InMemoryTokenStore()
     }
 }

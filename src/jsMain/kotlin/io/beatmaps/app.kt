@@ -21,6 +21,7 @@ import io.beatmaps.user.pickUsernamePage
 import io.beatmaps.user.resetPage
 import io.beatmaps.user.signupPage
 import io.beatmaps.user.userList
+import io.beatmaps.user.authorizePage
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLAnchorElement
@@ -194,6 +195,10 @@ class App : RComponent<RProps, RState>() {
                 route<RProps>("/login", exact = true) {
                     initWithHistory(it.history)
                     loginPage { }
+                }
+                route<RProps>("/oauth2/authorize", exact = true) {
+                    initWithHistory(it.history)
+                    authorizePage { }
                 }
                 route<RProps>("/register", exact = true) {
                     initWithHistory(it.history)
