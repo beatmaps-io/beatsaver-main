@@ -93,7 +93,7 @@ suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStat
     if (sess != null && sess.uniqueName == null && call.request.path() != "/username") {
         call.respondRedirect("/username")
     } else {
-        call.respondHtmlTemplate(MainTemplate(sess, GenericPageTemplate(sess)), statusCode) {
+        call.respondHtmlTemplate(MainTemplate(sess, call.request.path() != "/profile", GenericPageTemplate(sess)), statusCode) {
             headElements {
                 headerTemplate?.invoke(this)
             }
