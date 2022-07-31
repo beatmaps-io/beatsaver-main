@@ -16,18 +16,37 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.http.HttpMethod
 import io.ktor.request.uri
+import io.ktor.util.NonceManager
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
-val discordProvider = OAuthServerSettings.OAuth2ServerSettings(
+public object EmptyNonceManager : NonceManager {
+    override suspend fun newNonce(): String {
+        return ""
+    }
+
+    override suspend fun verifyNonce(nonce: String): Boolean {
+        return true
+    }
+}
+
+fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
     name = "discord",
     authorizeUrl = "https://discord.com/api/oauth2/authorize",
     accessTokenUrl = "https://discord.com/api/oauth2/token",
     clientId = System.getenv("DISCORD_CLIENTID") ?: "",
     clientSecret = System.getenv("DISCORD_CLIENTSECRET") ?: "",
     requestMethod = HttpMethod.Post,
-    defaultScopes = listOf("identify")
+    defaultScopes = listOf("identify"),
+    nonceManager = EmptyNonceManager,
+    authorizeUrlInterceptor = {
+        state?.let {
+            this.parameters["state"]?.let {
+                this.parameters["state"] = state
+            }
+        }
+    },
 )
 
 class SimpleUserPrincipal(val user: UserDao, val alertCount: Int, val redirect: String) : Principal
@@ -37,8 +56,8 @@ fun Application.installDiscordOauth() {
     install(Authentication) {
         oauth("discord") {
             client = HttpClient(Apache)
-            providerLookup = { discordProvider }
             urlProvider = { "$baseName${request.uri.substringBefore("?")}" }
+            providerLookup = { discordProvider(request.queryParameters["state"]) }
         }
         form("auth-form") {
             userParamName = "username"
