@@ -1,7 +1,6 @@
 package io.beatmaps.login
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.beatmaps.api.OauthClients
 import io.beatmaps.api.alertCount
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.Config
@@ -11,7 +10,6 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.jackson
-import io.beatmaps.common.localAvatarFolder
 import io.beatmaps.genericPage
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -52,7 +50,6 @@ import nl.myndocs.oauth2.ktor.feature.Oauth2ServerFeature
 import nl.myndocs.oauth2.ktor.feature.request.KtorCallContext
 import nl.myndocs.oauth2.tokenstore.inmemory.InMemoryTokenStore
 import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.select
@@ -152,10 +149,12 @@ fun Route.authRoute() {
             call.sessions.set(Session(user.id.value, user.hash, "", discordName, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, user.hash == null, alertCount))
             call.parameters["state"].apply {
                 this?.let {
-                    val query = String(hex(it))
-                    if (query.isNotEmpty()) {
-                        call.respondRedirect("/oauth2/authorize/success$query")
-                    } else {
+                    try {
+                        val query = String(hex(it))
+                        if (query.isNotEmpty()) {
+                            call.respondRedirect("/oauth2/authorize/success$query")
+                        }
+                    } catch (_:Exception) {
                         call.respondRedirect("/")
                     }
                 } ?: run {

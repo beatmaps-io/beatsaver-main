@@ -16,20 +16,9 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.http.HttpMethod
 import io.ktor.request.uri
-import io.ktor.util.NonceManager
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
-
-public object EmptyNonceManager : NonceManager {
-    override suspend fun newNonce(): String {
-        return ""
-    }
-
-    override suspend fun verifyNonce(nonce: String): Boolean {
-        return true
-    }
-}
 
 fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
     name = "discord",
@@ -39,12 +28,9 @@ fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
     clientSecret = System.getenv("DISCORD_CLIENTSECRET") ?: "",
     requestMethod = HttpMethod.Post,
     defaultScopes = listOf("identify"),
-    nonceManager = EmptyNonceManager,
     authorizeUrlInterceptor = {
         state?.let {
-            this.parameters["state"]?.let {
-                this.parameters["state"] = state
-            }
+            this.parameters["state"] = state
         }
     },
 )
