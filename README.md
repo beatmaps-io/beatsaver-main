@@ -13,7 +13,7 @@ Contains both backend code for uploading and managing maps, the beatsaver API an
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 #### Lets go
-- Run `docker-compose -d up` to start the local database
+- Run `docker-compose up -d` to start the local database
 - Open the project in IntelliJ IDEA
 - Run the `run` gradle task
 - Navigate to http://localhost:8080
@@ -35,4 +35,4 @@ e.g. `cb9f1581ff6c09130c991db8823c5953c660688f.zip` must be in `$ZIP_DIR/c/cb9f1
 
 This project uses ktlint which provides fairly basic style rules.
 
-You can run the `ktlinkFormat` gradle task to automatically apply most of them or the `ktlinkCheck` task to get a list of linting errors.
+You can run the `ktlintFormat` gradle task to automatically apply most of them or the `ktlintCheck` task to get a list of linting errors.
