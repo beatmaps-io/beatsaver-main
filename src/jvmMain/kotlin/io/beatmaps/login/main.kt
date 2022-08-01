@@ -10,6 +10,7 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.jackson
+import io.beatmaps.common.localAvatarFolder
 import io.beatmaps.genericPage
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
