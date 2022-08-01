@@ -21,7 +21,47 @@ import react.dom.input
 import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
+import react.functionComponent
 import react.router.dom.routeLink
+
+external interface LoginFormProps : RProps {
+    var buttonText: String
+    var discordLink: String?
+}
+
+val loginForm = functionComponent<LoginFormProps> { props ->
+    a(href = props.discordLink ?: "/discord", classes = "btn discord-btn") {
+        span {
+            i("fab fa-discord") {}
+            +" Sign in with discord"
+        }
+    }
+    p {
+        +"OR"
+    }
+    props.children()
+    input(type = InputType.text, classes = "form-control") {
+        key = "username"
+        attrs.name = "username"
+        attrs.placeholder = "Username"
+        attrs.required = true
+        attrs.autoFocus = true
+        attrs.attributes["autocomplete"] = "username"
+    }
+    input(type = InputType.password, classes = "form-control") {
+        key = "password"
+        attrs.name = "password"
+        attrs.placeholder = "Password"
+        attrs.required = true
+        attrs.attributes["autocomplete"] = "current-password"
+    }
+    div("d-grid") {
+        button(classes = "btn btn-success", type = ButtonType.submit) {
+            i("fas fa-sign-in-alt") {}
+            +" ${props.buttonText}"
+        }
+    }
+}
 
 class LoginPage : RComponent<RProps, RState>() {
     override fun componentDidMount() {
@@ -34,57 +74,31 @@ class LoginPage : RComponent<RProps, RState>() {
                 +"Sign in"
             }
             form(classes = "card-body", method = FormMethod.post, action = "/login") {
-                a(href = "/discord", classes = "btn discord-btn") {
-                    span {
-                        i("fab fa-discord") {}
-                        +" Sign in with discord"
-                    }
-                }
-                p {
-                    +"OR"
-                }
-                val params = URLSearchParams(window.location.search)
-                if (params.has("failed")) {
-                    div("invalid-feedback") {
-                        attrs.jsStyle {
-                            display = "block"
+                loginForm {
+                    attrs.buttonText = "Sign in"
+
+                    val params = URLSearchParams(window.location.search)
+                    if (params.has("failed")) {
+                        div("invalid-feedback") {
+                            attrs.jsStyle {
+                                display = "block"
+                            }
+                            +"Username or password not valid"
                         }
-                        +"Username or password not valid"
-                    }
-                } else if (params.has("valid")) {
-                    div("valid-feedback") {
-                        attrs.jsStyle {
-                            display = "block"
+                    } else if (params.has("valid")) {
+                        div("valid-feedback") {
+                            attrs.jsStyle {
+                                display = "block"
+                            }
+                            +"Account activated, you can now login"
                         }
-                        +"Account activated, you can now login"
-                    }
-                } else if (params.has("reset")) {
-                    div("valid-feedback") {
-                        attrs.jsStyle {
-                            display = "block"
+                    } else if (params.has("reset")) {
+                        div("valid-feedback") {
+                            attrs.jsStyle {
+                                display = "block"
+                            }
+                            +"Password reset, you can now login"
                         }
-                        +"Password reset, you can now login"
-                    }
-                }
-                input(type = InputType.text, classes = "form-control") {
-                    key = "username"
-                    attrs.name = "username"
-                    attrs.placeholder = "Username"
-                    attrs.required = true
-                    attrs.autoFocus = true
-                    attrs.attributes["autocomplete"] = "username"
-                }
-                input(type = InputType.password, classes = "form-control") {
-                    key = "password"
-                    attrs.name = "password"
-                    attrs.placeholder = "Password"
-                    attrs.required = true
-                    attrs.attributes["autocomplete"] = "current-password"
-                }
-                div("d-grid") {
-                    button(classes = "btn btn-success", type = ButtonType.submit) {
-                        i("fas fa-sign-in-alt") {}
-                        +" Sign in"
                     }
                 }
                 routeLink("/forgot", className = "forgot_pwd") {

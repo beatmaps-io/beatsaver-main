@@ -30,7 +30,7 @@ fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
     defaultScopes = listOf("identify"),
     authorizeUrlInterceptor = {
         state?.let {
-            this.parameters["state"] = state
+            parameters["state"] = it
         }
     },
 )

@@ -40,7 +40,6 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
 import io.ktor.util.hex
-import kotlinx.coroutines.runBlocking
 import nl.myndocs.oauth2.authenticator.Credentials
 import nl.myndocs.oauth2.client.Client
 import nl.myndocs.oauth2.identity.Identity
@@ -146,17 +145,10 @@ fun Route.authRoute() {
             }
 
             call.sessions.set(Session(user.id.value, user.hash, "", discordName, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, user.hash == null, alertCount))
-            call.parameters["state"].apply {
-                this?.let {
-                    try {
-                        val query = String(hex(it))
-                        if (query.isNotEmpty()) {
-                            call.respondRedirect("/oauth2/authorize/success$query")
-                        }
-                    } catch (_: Exception) {
-                        call.respondRedirect("/")
-                    }
-                } ?: run {
+            call.parameters["state"]?.let { String(hex(it)) }.orEmpty().let { query ->
+                if (query.isNotEmpty()) {
+                    call.respondRedirect("/oauth2/authorize/success$query")
+                } else {
                     call.respondRedirect("/")
                 }
             }
@@ -250,7 +242,7 @@ fun Route.authRoute() {
 
     get<AuthorizeSuccess> {
         call.sessions.get<Session>()?.let {
-            call.sessions.set(Session(it.userId, it.hash, it.userEmail, it.userName, it.testplay, it.steamId, it.oculusId, it.admin, it.uniqueName, false, it.alerts, it.curator, call.parameters["client_id"]))
+            call.sessions.set(it.copy(oauth2ClientId = call.parameters["client_id"]))
 
             call.respondRedirect("/oauth2/authorize?" + call.request.queryString())
         }
@@ -335,12 +327,10 @@ fun Route.authRoute() {
 fun Application.installOauth2() {
     install(Oauth2ServerFeature) {
         authenticationCallback = { call, callRouter ->
-            runBlocking {
-                val userSession = call.sessions.get<Session>()
+            val userSession = call.sessions.get<Session>()
 
-                if (userSession?.oauth2ClientId != null) {
-                    callRouter.route(KtorCallContext(call), Credentials(userSession.userId.toString(), ""))
-                }
+            if (userSession?.oauth2ClientId != null) {
+                callRouter.route(KtorCallContext(call), Credentials(userSession.userId.toString(), ""))
             }
         }
 
@@ -362,7 +352,7 @@ fun Application.installOauth2() {
 
             override fun identityOf(forClient: Client, username: String) =
                 transaction {
-                    User.select(where = { (User.id eq username.toInt()) and User.active }).firstOrNull()?.let {
+                    User.select { (User.id eq username.toInt()) and User.active }.firstOrNull()?.let {
                         Identity(
                             username,
                             mapOf(
@@ -375,7 +365,7 @@ fun Application.installOauth2() {
 
             override fun validCredentials(forClient: Client, identity: Identity, password: String) =
                 transaction {
-                    !User.select(where = { (User.id eq identity.username.toInt()) and User.active }).empty()
+                    !User.select { (User.id eq identity.username.toInt()) and User.active }.empty()
                 }
         }
 

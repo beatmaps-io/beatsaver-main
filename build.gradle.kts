@@ -134,8 +134,6 @@ kotlin {
                 implementation("nl.myndocs:oauth2-server-core:$myndocsOauthVersion")
                 implementation("nl.myndocs:oauth2-server-ktor:$myndocsOauthVersion")
                 // In memory dependencies
-                implementation("nl.myndocs:oauth2-server-client-inmemory:$myndocsOauthVersion")
-                implementation("nl.myndocs:oauth2-server-identity-inmemory:$myndocsOauthVersion")
                 implementation("nl.myndocs:oauth2-server-token-store-inmemory:$myndocsOauthVersion")
 
                 runtimeOnly(files("BeatMaps-BeatSage-1.0-SNAPSHOT.jar"))
