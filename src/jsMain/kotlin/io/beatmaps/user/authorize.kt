@@ -129,7 +129,7 @@ class AuthorizePage : RComponent<RProps, AuthorizePageState>() {
                 }
             } else {
                 val search = window.location.search
-                form(classes = "card-body", method = FormMethod.post, action = "/oauth2/authorize${search}") {
+                form(classes = "card-body", method = FormMethod.post, action = "/oauth2/authorize$search") {
                     val serialized = search.encodeToByteArray().joinToString("") {
                         (0xFF and it.toInt()).toString(16).padStart(2, '0')
                     }
