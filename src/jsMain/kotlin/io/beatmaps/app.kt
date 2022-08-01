@@ -15,6 +15,7 @@ import io.beatmaps.upload.UploadPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ProfilePageProps
 import io.beatmaps.user.ResetPageProps
+import io.beatmaps.user.authorizePage
 import io.beatmaps.user.forgotPage
 import io.beatmaps.user.loginPage
 import io.beatmaps.user.pickUsernamePage
@@ -194,6 +195,10 @@ class App : RComponent<RProps, RState>() {
                 route<RProps>("/login", exact = true) {
                     initWithHistory(it.history)
                     loginPage { }
+                }
+                route<RProps>("/oauth2/authorize", exact = true) {
+                    initWithHistory(it.history)
+                    authorizePage { }
                 }
                 route<RProps>("/register", exact = true) {
                     initWithHistory(it.history)

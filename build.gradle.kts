@@ -13,6 +13,7 @@ plugins {
 
 val exposedVersion: String by project
 val ktorVersion: String by project
+val myndocsOauthVersion: String by project
 group = "io.beatmaps"
 version = "1.0-SNAPSHOT"
 
@@ -128,6 +129,14 @@ kotlin {
                 implementation("com.amazonaws:aws-java-sdk-s3:1.12.217")
 
                 implementation("io.beatmaps:BeatMaps-CommonMP:1.0.+")
+
+                // oauth2
+                implementation("nl.myndocs:oauth2-server-core:$myndocsOauthVersion")
+                implementation("nl.myndocs:oauth2-server-ktor:$myndocsOauthVersion")
+                // In memory dependencies
+                implementation("nl.myndocs:oauth2-server-client-inmemory:$myndocsOauthVersion")
+                implementation("nl.myndocs:oauth2-server-identity-inmemory:$myndocsOauthVersion")
+                implementation("nl.myndocs:oauth2-server-token-store-inmemory:$myndocsOauthVersion")
 
                 runtimeOnly(files("BeatMaps-BeatSage-1.0-SNAPSHOT.jar"))
             }

@@ -34,6 +34,7 @@ import io.beatmaps.controllers.uploadController
 import io.beatmaps.login.Session
 import io.beatmaps.login.authRoute
 import io.beatmaps.login.installDiscordOauth
+import io.beatmaps.login.installOauth2
 import io.beatmaps.login.installSessions
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
@@ -300,6 +301,7 @@ fun Application.beatmapsio() {
         downloadsThread()
         filenameUpdater()
     }
+    installOauth2()
 
     scheduleTask()
 

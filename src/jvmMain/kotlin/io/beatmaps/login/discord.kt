@@ -20,25 +20,30 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
-val discordProvider = OAuthServerSettings.OAuth2ServerSettings(
+fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
     name = "discord",
     authorizeUrl = "https://discord.com/api/oauth2/authorize",
     accessTokenUrl = "https://discord.com/api/oauth2/token",
     clientId = System.getenv("DISCORD_CLIENTID") ?: "",
     clientSecret = System.getenv("DISCORD_CLIENTSECRET") ?: "",
     requestMethod = HttpMethod.Post,
-    defaultScopes = listOf("identify")
+    defaultScopes = listOf("identify"),
+    authorizeUrlInterceptor = {
+        state?.let {
+            this.parameters["state"] = state
+        }
+    },
 )
 
-class SimpleUserPrincipal(val user: UserDao, val alertCount: Int) : Principal
+class SimpleUserPrincipal(val user: UserDao, val alertCount: Int, val redirect: String) : Principal
 
 fun Application.installDiscordOauth() {
     val baseName = System.getenv("BASE_URL") ?: Config.basename
     install(Authentication) {
         oauth("discord") {
             client = HttpClient(Apache)
-            providerLookup = { discordProvider }
             urlProvider = { "$baseName${request.uri.substringBefore("?")}" }
+            providerLookup = { discordProvider(request.queryParameters["state"]) }
         }
         form("auth-form") {
             userParamName = "username"
@@ -55,7 +60,7 @@ fun Application.installDiscordOauth() {
                     }.firstOrNull()?.let {
                         val curPw = it[User.password]
                         if (curPw != null && Bcrypt.verify(credentials.password, curPw.toByteArray())) {
-                            SimpleUserPrincipal(UserDao.wrapRow(it), alertCount(it[User.id].value))
+                            SimpleUserPrincipal(UserDao.wrapRow(it), alertCount(it[User.id].value), request.uri)
                         } else {
                             null
                         }

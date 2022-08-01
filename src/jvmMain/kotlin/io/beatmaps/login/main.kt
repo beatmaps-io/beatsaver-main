@@ -12,8 +12,10 @@ import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.jackson
 import io.beatmaps.common.localAvatarFolder
 import io.beatmaps.genericPage
+import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
+import io.ktor.application.install
 import io.ktor.auth.OAuthAccessTokenResponse
 import io.ktor.auth.authenticate
 import io.ktor.auth.authentication
@@ -29,6 +31,7 @@ import io.ktor.http.parametersOf
 import io.ktor.locations.Location
 import io.ktor.locations.get
 import io.ktor.locations.post
+import io.ktor.request.queryString
 import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import io.ktor.routing.get
@@ -36,6 +39,15 @@ import io.ktor.sessions.clear
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
+import io.ktor.util.hex
+import kotlinx.coroutines.runBlocking
+import nl.myndocs.oauth2.authenticator.Credentials
+import nl.myndocs.oauth2.client.Client
+import nl.myndocs.oauth2.identity.Identity
+import nl.myndocs.oauth2.identity.IdentityService
+import nl.myndocs.oauth2.ktor.feature.Oauth2ServerFeature
+import nl.myndocs.oauth2.ktor.feature.request.KtorCallContext
+import nl.myndocs.oauth2.tokenstore.inmemory.InMemoryTokenStore
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.count
@@ -58,8 +70,11 @@ data class Session(
     val uniqueName: String? = null,
     val canLink: Boolean = false,
     val alerts: Int? = null,
-    val curator: Boolean = false
+    val curator: Boolean = false,
+    val oauth2ClientId: String? = null
 ) {
+    constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?, oauth2ClientId: String?) :
+        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, false, oauth2ClientId)
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?) :
         this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, false)
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean) :
@@ -78,6 +93,8 @@ data class Session(
 }
 
 @Location("/login") class Login
+@Location("/oauth2/authorize") class Authorize
+@Location("/oauth2/authorize/success") class AuthorizeSuccess
 @Location("/register") class Register
 @Location("/forgot") class Forgot
 @Location("/reset/{jwt}") class Reset(val jwt: String)
@@ -129,7 +146,20 @@ fun Route.authRoute() {
             }
 
             call.sessions.set(Session(user.id.value, user.hash, "", discordName, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, user.hash == null, alertCount))
-            call.respondRedirect("/")
+            call.parameters["state"].apply {
+                this?.let {
+                    try {
+                        val query = String(hex(it))
+                        if (query.isNotEmpty()) {
+                            call.respondRedirect("/oauth2/authorize/success$query")
+                        }
+                    } catch (_: Exception) {
+                        call.respondRedirect("/")
+                    }
+                } ?: run {
+                    call.respondRedirect("/")
+                }
+            }
         }
     }
 
@@ -208,6 +238,22 @@ fun Route.authRoute() {
             }
             call.respondRedirect("/")
         }
+        post<Authorize> {
+            call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
+                val user = newPrincipal.user
+                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator, call.parameters["client_id"]))
+
+                call.respondRedirect(newPrincipal.redirect)
+            }
+        }
+    }
+
+    get<AuthorizeSuccess> {
+        call.sessions.get<Session>()?.let {
+            call.sessions.set(Session(it.userId, it.hash, it.userEmail, it.userName, it.testplay, it.steamId, it.oculusId, it.admin, it.uniqueName, false, it.alerts, it.curator, call.parameters["client_id"]))
+
+            call.respondRedirect("/oauth2/authorize?" + call.request.queryString())
+        }
     }
 
     get<Login> {
@@ -225,6 +271,11 @@ fun Route.authRoute() {
     get("/logout") {
         call.sessions.clear<Session>()
         call.respondRedirect("/")
+    }
+
+    get("/oauth2/authorize/not-me") {
+        call.sessions.clear<Session>()
+        call.respondRedirect("/oauth2/authorize?" + call.request.queryString())
     }
 
     get("/steam") {
@@ -278,5 +329,57 @@ fun Route.authRoute() {
             call.sessions.set(sess.copy(steamId = steamid))
             call.respondRedirect("/profile")
         }
+    }
+}
+
+fun Application.installOauth2() {
+    install(Oauth2ServerFeature) {
+        authenticationCallback = { call, callRouter ->
+            runBlocking {
+                val userSession = call.sessions.get<Session>()
+
+                if (userSession?.oauth2ClientId != null) {
+                    callRouter.route(KtorCallContext(call), Credentials(userSession.userId.toString(), ""))
+                }
+            }
+        }
+
+        tokenInfoCallback = {
+            mapOf(
+                "id" to it.identity?.username,
+                "name" to it.identity?.metadata?.get("name"),
+                "avatar" to it.identity?.metadata?.get("avatar"),
+                "scopes" to it.scopes
+            )
+        }
+
+        tokenEndpoint = "/api/oauth2/token"
+        authorizationEndpoint = "/oauth2/authorize"
+        tokenInfoEndpoint = "/api/oauth2/identity"
+
+        identityService = object : IdentityService {
+            override fun allowedScopes(forClient: Client, identity: Identity, scopes: Set<String>) = scopes
+
+            override fun identityOf(forClient: Client, username: String) =
+                transaction {
+                    User.select(where = { (User.id eq username.toInt()) and User.active }).firstOrNull()?.let {
+                        Identity(
+                            username,
+                            mapOf(
+                                "name" to it[User.name],
+                                "avatar" to (it[User.avatar] ?: "")
+                            )
+                        )
+                    }
+                }
+
+            override fun validCredentials(forClient: Client, identity: Identity, password: String) =
+                transaction {
+                    !User.select(where = { (User.id eq identity.username.toInt()) and User.active }).empty()
+                }
+        }
+
+        clientService = DBClientService()
+        tokenStore = InMemoryTokenStore()
     }
 }

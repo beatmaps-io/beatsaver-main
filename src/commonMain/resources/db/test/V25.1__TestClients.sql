@@ -1,0 +1,2 @@
+INSERT INTO oauthClients ("clientId", "name", "secret", "scopes", "redirectUrl", "iconUrl") VALUES
+    ('BeatLeader', 'BeatLeader', 'InsecureSecret', 'identity', 'https://localhost:44313/signin-beatsaver', NULL);
