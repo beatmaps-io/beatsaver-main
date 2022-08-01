@@ -11,9 +11,9 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.jackson
 import io.beatmaps.genericPage
+import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
-import io.ktor.application.Application
 import io.ktor.application.install
 import io.ktor.auth.OAuthAccessTokenResponse
 import io.ktor.auth.authenticate
@@ -41,9 +41,7 @@ import io.ktor.sessions.set
 import io.ktor.util.hex
 import kotlinx.coroutines.runBlocking
 import nl.myndocs.oauth2.authenticator.Credentials
-import nl.myndocs.oauth2.client.AuthorizedGrantType
 import nl.myndocs.oauth2.client.Client
-import nl.myndocs.oauth2.client.inmemory.InMemoryClient
 import nl.myndocs.oauth2.identity.Identity
 import nl.myndocs.oauth2.identity.IdentityService
 import nl.myndocs.oauth2.ktor.feature.Oauth2ServerFeature
@@ -75,7 +73,7 @@ data class Session(
     val oauth2ClientId: String? = null
 ) {
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?, oauth2ClientId: String?) :
-            this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, false, oauth2ClientId)
+        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, false, oauth2ClientId)
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?) :
         this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, false)
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean) :
@@ -154,14 +152,13 @@ fun Route.authRoute() {
                         if (query.isNotEmpty()) {
                             call.respondRedirect("/oauth2/authorize/success$query")
                         }
-                    } catch (_:Exception) {
+                    } catch (_: Exception) {
                         call.respondRedirect("/")
                     }
                 } ?: run {
                     call.respondRedirect("/")
                 }
             }
-
         }
     }
 
@@ -280,7 +277,6 @@ fun Route.authRoute() {
         call.respondRedirect("/oauth2/authorize?" + call.request.queryString())
     }
 
-
     get("/steam") {
         val sess = call.sessions.get<Session>()
         if (sess == null) {
@@ -370,32 +366,19 @@ fun Application.installOauth2() {
                             username,
                             mapOf(
                                 "name" to it[User.name],
-                                "avatar" to (it[User.avatar] ?: ""))
+                                "avatar" to (it[User.avatar] ?: "")
+                            )
                         )
                     }
                 }
 
             override fun validCredentials(forClient: Client, identity: Identity, password: String) =
                 transaction {
-                    !User.select(where = {(User.id eq identity.username.toInt()) and User.active}).empty()
+                    !User.select(where = { (User.id eq identity.username.toInt()) and User.active }).empty()
                 }
         }
 
-        clientService = InMemoryClient().also { imc ->
-            OauthClients.forEach {
-                imc.client {
-                    clientId = it.id
-                    clientSecret = it.secret
-                    scopes = it.scopes ?: setOf()
-                    authorizedGrantTypes = setOf(
-                        AuthorizedGrantType.AUTHORIZATION_CODE,
-                        AuthorizedGrantType.REFRESH_TOKEN
-                    )
-                    redirectUris = if (it.redirect != null) setOf(it.redirect) else emptySet()
-                }
-            }
-        }
-
+        clientService = DBClientService()
         tokenStore = InMemoryTokenStore()
     }
 }

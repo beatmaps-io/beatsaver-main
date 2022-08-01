@@ -2,7 +2,6 @@ package io.beatmaps.login
 
 import com.toxicbakery.bcrypt.Bcrypt
 import io.beatmaps.api.alertCount
-import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.ktor.application.Application

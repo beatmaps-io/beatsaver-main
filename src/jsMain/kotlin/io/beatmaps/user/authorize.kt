@@ -17,17 +17,17 @@ import react.RProps
 import react.RState
 import react.ReactElement
 import react.dom.a
+import react.dom.b
+import react.dom.br
 import react.dom.button
 import react.dom.div
 import react.dom.form
 import react.dom.i
+import react.dom.img
 import react.dom.input
 import react.dom.jsStyle
 import react.dom.p
-import react.dom.b
-import react.dom.br
 import react.dom.span
-import react.dom.img
 import react.setState
 
 external interface AuthorizePageState : RState {
@@ -115,7 +115,7 @@ class AuthorizePage : RComponent<RProps, AuthorizePageState>() {
                                 i("fas fa-user-check") {}
                                 span { b { +"  Access your id, username and avatar" } }
                             }
-                            else -> span {b { +"  Replace all your maps with RickRoll" } }
+                            else -> span { b { +"  Replace all your maps with RickRoll" } }
                         }
                     }
                 }

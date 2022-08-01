@@ -15,13 +15,13 @@ import io.beatmaps.upload.UploadPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ProfilePageProps
 import io.beatmaps.user.ResetPageProps
+import io.beatmaps.user.authorizePage
 import io.beatmaps.user.forgotPage
 import io.beatmaps.user.loginPage
 import io.beatmaps.user.pickUsernamePage
 import io.beatmaps.user.resetPage
 import io.beatmaps.user.signupPage
 import io.beatmaps.user.userList
-import io.beatmaps.user.authorizePage
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLAnchorElement
