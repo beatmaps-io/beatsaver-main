@@ -40,7 +40,7 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
 import io.ktor.util.hex
-import kotlinx.html.script
+import kotlinx.html.meta
 import nl.myndocs.oauth2.authenticator.Credentials
 import nl.myndocs.oauth2.client.Client
 import nl.myndocs.oauth2.identity.Identity
@@ -244,9 +244,7 @@ fun Route.authRoute() {
     get<Authorize> {
         genericPage(headerTemplate = {
             call.parameters["client_id"]?.let { DBClientService.getClient(it) }?.let { client ->
-                script {
-                    +"window.oauth = {'id': '${client.clientId}', 'name': '${client.name}'};"
-                }
+                meta("oauth-data", "{\"id\": \"${client.clientId}\", \"name\": \"${client.name}\"}")
             }
         })
     }

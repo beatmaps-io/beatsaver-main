@@ -5,11 +5,12 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
+import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
 import kotlinx.serialization.decodeFromString
-import org.w3c.dom.get
+import org.w3c.dom.HTMLMetaElement
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
@@ -31,6 +32,11 @@ external interface AuthorizePageState : RState {
     var loading: Boolean
     var username: String?
     var avatar: String?
+}
+
+external interface OauthData {
+    val id: String
+    val name: String
 }
 
 class AuthorizePage : RComponent<RProps, AuthorizePageState>() {
@@ -73,8 +79,10 @@ class AuthorizePage : RComponent<RProps, AuthorizePageState>() {
 
     override fun RBuilder.render() {
         val params = URLSearchParams(window.location.search)
-        val oauth = window["oauth"]
-        val clientName = oauth?.name?.toString() ?: "An unknown application"
+        val oauth = (document.querySelector("meta[name=\"oauth-data\"]") as? HTMLMetaElement)?.let {
+            JSON.parse<OauthData>(it.content)
+        }
+        val clientName = oauth?.name ?: "An unknown application"
         val scopes = (params.get("scope") ?: "").split(",")
 
         div("login-form card border-dark") {
