@@ -40,6 +40,7 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
 import io.ktor.util.hex
+import kotlinx.html.script
 import nl.myndocs.oauth2.authenticator.Credentials
 import nl.myndocs.oauth2.client.Client
 import nl.myndocs.oauth2.identity.Identity
@@ -240,6 +241,16 @@ fun Route.authRoute() {
         }
     }
 
+    get<Authorize> {
+        genericPage(headerTemplate = {
+            call.parameters["client_id"]?.let { DBClientService.getClient(it) }?.let { client ->
+                script {
+                    +"window.oauth = {'id': '${client.id}', 'name': '${client.name}'};"
+                }
+            }
+        })
+    }
+
     get<AuthorizeSuccess> {
         call.sessions.get<Session>()?.let {
             call.sessions.set(it.copy(oauth2ClientId = call.parameters["client_id"]))
@@ -369,7 +380,7 @@ fun Application.installOauth2() {
                 }
         }
 
-        clientService = DBClientService()
+        clientService = DBClientService
         tokenStore = InMemoryTokenStore()
     }
 }

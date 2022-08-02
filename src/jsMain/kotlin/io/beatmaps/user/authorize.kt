@@ -9,6 +9,7 @@ import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
 import kotlinx.serialization.decodeFromString
+import org.w3c.dom.get
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
@@ -72,13 +73,14 @@ class AuthorizePage : RComponent<RProps, AuthorizePageState>() {
 
     override fun RBuilder.render() {
         val params = URLSearchParams(window.location.search)
-        val clientId = params.get("client_id") ?: ""
+        val oauth = window["oauth"]
+        val clientName = oauth?.name?.toString() ?: "An unknown application"
         val scopes = (params.get("scope") ?: "").split(",")
 
         div("login-form card border-dark") {
             div("card-header") {
                 b {
-                    +clientId
+                    +clientName
                 }
                 br {}
                 +" wants to access your BeatSaver account"
@@ -100,7 +102,7 @@ class AuthorizePage : RComponent<RProps, AuthorizePageState>() {
             div("scopes") {
                 span("scopes-description") {
                     +"This will allow "
-                    +clientId
+                    +clientName
                     +" to:"
                 }
 
