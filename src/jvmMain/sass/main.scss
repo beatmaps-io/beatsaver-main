@@ -782,10 +782,11 @@ div.mapstats {
   margin: 0.5em;
 }
 .scopes {
-  margin: 1em
-}
-.scopes .scope {
-  margin-top: 0.5em;
+  margin: 1em 1em 0 1em;
+
+  .scope {
+    margin-top: 0.5em;
+  }
 }
 
 .DayPickerKeyboardShortcuts_panel {

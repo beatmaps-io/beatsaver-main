@@ -127,14 +127,14 @@ class AuthorizePage : RComponent<RProps, AuthorizePageState>() {
                 }
             }
             if (state.loading) {
-                span { +"Loading..." }
+                div("card-body") {
+                    span { +"Loading..." }
+                }
             } else if (state.username != null) {
-                a(href = "/oauth2/authorize/success" + window.location.search) {
-                    div("d-grid") {
-                        button(classes = "btn btn-success", type = ButtonType.submit) {
-                            i("fas fa-sign-in-alt") {}
-                            +" Authorize"
-                        }
+                div("card-body d-grid") {
+                    a("/oauth2/authorize/success" + window.location.search, classes = "btn btn-success") {
+                        i("fas fa-sign-in-alt") {}
+                        +" Authorize"
                     }
                 }
             } else {
