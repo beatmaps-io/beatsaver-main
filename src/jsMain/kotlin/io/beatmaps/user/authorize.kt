@@ -7,7 +7,6 @@ import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
 import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLMetaElement
@@ -20,7 +19,6 @@ import react.ReactElement
 import react.dom.a
 import react.dom.b
 import react.dom.br
-import react.dom.button
 import react.dom.div
 import react.dom.form
 import react.dom.i
