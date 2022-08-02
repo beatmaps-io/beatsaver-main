@@ -146,7 +146,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
                             score = it.score
                             scoreColor = scoreColor(it.score, maxScore)
                             mods = it.mods
-                            percentage = ((it.score * 100) / maxScore.toFloat()).fixed(2) + "%"
+                            percentage = ((it.score * 100L) / maxScore.toFloat()).fixed(2) + "%"
                         }
                     }
                 }
