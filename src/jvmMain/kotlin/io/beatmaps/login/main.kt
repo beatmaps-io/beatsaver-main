@@ -147,7 +147,7 @@ fun Route.authRoute() {
 
             call.sessions.set(Session(user.id.value, user.hash, "", discordName, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, user.hash == null, alertCount))
             call.parameters["state"]?.let { String(hex(it)) }.orEmpty().let { query ->
-                if (query.isNotEmpty()) {
+                if (query.isNotEmpty() && query.contains("client_id")) {
                     call.respondRedirect("/oauth2/authorize/success$query")
                 } else {
                     call.respondRedirect("/")
