@@ -8,15 +8,17 @@ import kotlinx.html.FlowContent
 import kotlinx.html.a
 import kotlinx.html.button
 import kotlinx.html.div
+import kotlinx.html.i
 import kotlinx.html.id
 import kotlinx.html.img
 import kotlinx.html.li
 import kotlinx.html.nav
+import kotlinx.html.small
 import kotlinx.html.span
 import kotlinx.html.title
 import kotlinx.html.ul
 
-class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
+class HeaderTemplate(private val s: Session?, private val showAlerts: Boolean) : Template<FlowContent> {
     override fun FlowContent.apply() {
         nav("navbar navbar-expand-lg fixed-top navbar-dark bg-primary") {
             div("container") {
@@ -106,6 +108,16 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                             }
                         } else {
                             li("nav-item") {
+                                a("/profile#alerts", classes = "nav-link") {
+                                    i("fas fa-bell")
+                                    if (s.alerts != null && s.alerts > 0 && showAlerts) {
+                                        small("alert-count") {
+                                            if (s.alerts < 10) +s.alerts.toString() else +"9+"
+                                        }
+                                    }
+                                }
+                            }
+                            li("nav-item") {
                                 a("/upload", classes = "nav-link") {
                                     +"Upload"
                                 }
@@ -117,15 +129,6 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 div("dropdown-menu") {
                                     a("/profile", classes = "dropdown-item") {
                                         +"Profile"
-                                    }
-                                    a("/profile#alerts", classes = "dropdown-item") {
-                                        +"Alerts"
-
-                                        if (s.alerts != null && s.alerts > 0) {
-                                            span("ms-1 text-danger") {
-                                                +"•"
-                                            }
-                                        }
                                     }
                                     if (s.steamId == null) {
                                         a("/steam", classes = "dropdown-item") {
