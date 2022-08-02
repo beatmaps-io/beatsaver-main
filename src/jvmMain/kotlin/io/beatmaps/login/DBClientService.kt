@@ -15,16 +15,16 @@ object DBClientService : ClientService {
     }
 
     override fun clientOf(clientId: String) = getClient(clientId)?.let { client ->
-            Client(
-                client.clientId,
-                client.scopes?.split(",")?.toSet() ?: emptySet(),
-                setOfNotNull(client.redirectUrl),
-                setOf(
-                    AuthorizedGrantType.AUTHORIZATION_CODE,
-                    AuthorizedGrantType.REFRESH_TOKEN
-                )
+        Client(
+            client.clientId,
+            client.scopes?.split(",")?.toSet() ?: emptySet(),
+            setOfNotNull(client.redirectUrl),
+            setOf(
+                AuthorizedGrantType.AUTHORIZATION_CODE,
+                AuthorizedGrantType.REFRESH_TOKEN
             )
-        }
+        )
+    }
 
     override fun validClient(client: Client, clientSecret: String): Boolean {
         return transaction {

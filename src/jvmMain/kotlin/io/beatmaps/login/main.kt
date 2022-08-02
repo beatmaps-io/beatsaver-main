@@ -245,7 +245,7 @@ fun Route.authRoute() {
         genericPage(headerTemplate = {
             call.parameters["client_id"]?.let { DBClientService.getClient(it) }?.let { client ->
                 script {
-                    +"window.oauth = {'id': '${client.id}', 'name': '${client.name}'};"
+                    +"window.oauth = {'id': '${client.clientId}', 'name': '${client.name}'};"
                 }
             }
         })
