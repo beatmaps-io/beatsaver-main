@@ -55,9 +55,11 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             params.get("fullSpread")?.toBoolean(),
             params.get("me")?.toBoolean(),
             params.get("cinema")?.toBoolean(),
-            params.get("tags")?.split(",", "|")?.groupBy { !it.startsWith("!") }?.mapValues {
-                it.value.map { slug -> slug.removePrefix("!") }.groupBy { slug -> MapTag.fromSlug(slug)?.type ?: MapTagType.None }
-            } ?: mapOf()
+            mapOf<Boolean, Map<MapTagType, List<String>>>(true to mapOf(), false to mapOf()).plus(
+                params.get("tags")?.split(",", "|")?.groupBy { !it.startsWith("!") }?.mapValues {
+                    it.value.map { slug -> slug.removePrefix("!") }.groupBy { slug -> MapTag.fromSlug(slug)?.type ?: MapTagType.None }
+                } ?: mapOf()
+            )
         )
     }
 

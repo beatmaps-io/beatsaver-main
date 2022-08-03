@@ -291,6 +291,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                         pages
                     }
                 }
+                shouldClear = false
                 scroll = false
             }
 
