@@ -94,7 +94,7 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
                     div {
                         val totalVotes = (map.stats.upvotes + map.stats.downvotes).toDouble()
                         var uncertainty = 2.0.pow(-log(totalVotes / 2 + 1, 3.0))
-                        val weightedRange = 25
+                        val weightedRange = 25.0
                         val weighting = 2
                         if ((totalVotes + weighting) < weightedRange) {
                             uncertainty += (1 - uncertainty) * (1 - (totalVotes + weighting) * (1 / weightedRange))
