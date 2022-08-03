@@ -24,9 +24,8 @@ import react.dom.p
 import react.dom.small
 import react.dom.span
 import react.setState
-import kotlin.math.abs
 import kotlin.math.floor
-import kotlin.math.log10
+import kotlin.math.log
 import kotlin.math.pow
 
 external interface BeatmapInfoProps : RProps {
@@ -94,8 +93,12 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
 
                     div {
                         val totalVotes = (map.stats.upvotes + map.stats.downvotes).toDouble()
-                        val rawScore = map.stats.upvotes / totalVotes
-                        val uncertainty = abs((rawScore - 0.5) * 2.0.pow(-log10(totalVotes + 1)))
+                        var uncertainty = 2.0.pow(-log(totalVotes / 2 + 1, 3.0))
+                        val weightedRange = 25.0
+                        val weighting = 2
+                        if ((totalVotes + weighting) < weightedRange) {
+                            uncertainty += (1 - uncertainty) * (1 - (totalVotes + weighting) * (1 / weightedRange))
+                        }
 
                         img(src = props.version?.coverURL, alt = "Cover Image", classes = "cover") {
                             attrs.width = "100"
@@ -109,7 +112,7 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
                             }
                             div("o") {
                                 attrs.jsStyle {
-                                    flex = if (totalVotes < 1) 1 else (uncertainty * totalVotes / (1 - uncertainty))
+                                    flex = uncertainty * totalVotes / (1 - uncertainty)
                                 }
                             }
                             div("d") {
