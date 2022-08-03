@@ -80,6 +80,7 @@ external interface BeatmapTableState : RState {
 }
 
 external fun encodeURIComponent(uri: String): String
+external fun decodeURIComponent(uri: String): String
 
 class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
 

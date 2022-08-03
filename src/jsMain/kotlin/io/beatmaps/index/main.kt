@@ -40,7 +40,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
 
     private fun fromURL() = URLSearchParams(window.location.search).let { params ->
         SearchParams(
-            params.get("q") ?: "",
+            decodeURIComponent(params.get("q") ?: ""),
             params.get("auto")?.toBoolean(),
             params.get("minNps")?.toFloatOrNull(),
             params.get("maxNps")?.toFloatOrNull(),
@@ -83,7 +83,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
         }.joinToString(",")
 
         val newQuery = listOfNotNull(
-            (if (searchParamsLocal.search.isNotBlank()) "q=${searchParamsLocal.search}" else null),
+            (if (searchParamsLocal.search.isNotBlank()) "q=${encodeURIComponent(searchParamsLocal.search)}" else null),
             (if (searchParamsLocal.chroma == true) "chroma=true" else null),
             (if (searchParamsLocal.ranked == true) "ranked=true" else null),
             (if (searchParamsLocal.curated == true) "curated=true" else null),
