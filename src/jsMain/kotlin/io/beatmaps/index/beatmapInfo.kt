@@ -112,7 +112,7 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
                             }
                             div("o") {
                                 attrs.jsStyle {
-                                    flex = uncertainty * totalVotes / (1 - uncertainty)
+                                    flex = if (totalVotes < 1) 1 else (uncertainty * totalVotes / (1 - uncertainty))
                                 }
                             }
                             div("d") {
