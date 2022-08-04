@@ -23,21 +23,21 @@ import io.ktor.sessions.sessions
 fun Route.policyController() {
     get<PolicyController.DMCA> {
         val sess = call.sessions.get<Session>()
-        call.respondHtmlTemplate(MainTemplate(sess, true, DMCAPageTemplate()), HttpStatusCode.OK) {
+        call.respondHtmlTemplate(MainTemplate(sess, DMCAPageTemplate()), HttpStatusCode.OK) {
             pageTitle = "BeatSaver - DMCA Policy"
         }
     }
 
     get<PolicyController.TOS> {
         val sess = call.sessions.get<Session>()
-        call.respondHtmlTemplate(MainTemplate(sess, true, TOSPageTemplate()), HttpStatusCode.OK) {
+        call.respondHtmlTemplate(MainTemplate(sess, TOSPageTemplate()), HttpStatusCode.OK) {
             pageTitle = "BeatSaver - Terms of Service"
         }
     }
 
     get<PolicyController.Privacy> {
         val sess = call.sessions.get<Session>()
-        call.respondHtmlTemplate(MainTemplate(sess, true, PrivacyPageTemplate()), HttpStatusCode.OK) {
+        call.respondHtmlTemplate(MainTemplate(sess, PrivacyPageTemplate()), HttpStatusCode.OK) {
             pageTitle = "BeatSaver - Privacy Policy"
         }
     }

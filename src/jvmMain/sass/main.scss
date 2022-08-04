@@ -1036,6 +1036,10 @@ small.alert-count {
   margin: 0 -7.5px;
   border-radius: 50%;
   background-color: $danger;
+
+  &[data-count="0"] {
+    display: none;
+  }
 }
 
 @include media-breakpoint-up(sm) {

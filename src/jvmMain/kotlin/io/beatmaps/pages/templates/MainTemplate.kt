@@ -16,7 +16,7 @@ import kotlinx.html.meta
 import kotlinx.html.styleLink
 import kotlinx.html.title
 
-class MainTemplate(private val s: Session?, private val showAlerts: Boolean, private val body: Template<BODY>) : Template<HTML> {
+class MainTemplate(private val s: Session?, private val body: Template<BODY>) : Template<HTML> {
     private val header = TemplatePlaceholder<HeaderTemplate>()
     private val bodyPlaceholder = TemplatePlaceholder<Template<BODY>>()
     val headElements = Placeholder<HEAD>()
@@ -45,7 +45,7 @@ class MainTemplate(private val s: Session?, private val showAlerts: Boolean, pri
             insert(headElements)
         }
         body {
-            insert(HeaderTemplate(s, showAlerts), header)
+            insert(HeaderTemplate(s), header)
             insert(body, bodyPlaceholder)
         }
     }

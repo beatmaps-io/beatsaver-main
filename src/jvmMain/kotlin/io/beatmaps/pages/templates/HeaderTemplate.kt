@@ -18,7 +18,7 @@ import kotlinx.html.span
 import kotlinx.html.title
 import kotlinx.html.ul
 
-class HeaderTemplate(private val s: Session?, private val showAlerts: Boolean) : Template<FlowContent> {
+class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
     override fun FlowContent.apply() {
         nav("navbar navbar-expand-lg fixed-top navbar-dark bg-primary") {
             div("container") {
@@ -110,10 +110,11 @@ class HeaderTemplate(private val s: Session?, private val showAlerts: Boolean) :
                             li("nav-item") {
                                 a("/profile#alerts", classes = "nav-link") {
                                     i("fas fa-bell")
-                                    if (s.alerts != null && s.alerts > 0 && showAlerts) {
-                                        small("alert-count") {
-                                            if (s.alerts < 10) +s.alerts.toString() else +"9+"
-                                        }
+                                    small("alert-count") {
+                                        id = "alert-count"
+                                        val count = s.alerts ?: 0
+                                        attributes["data-count"] = count.toString()
+                                        if (count < 10) +count.toString() else +"9+"
                                     }
                                 }
                             }

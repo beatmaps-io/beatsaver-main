@@ -10,6 +10,7 @@ import io.beatmaps.common.Config
 import io.beatmaps.index.coloredCard
 import io.beatmaps.setPageTitle
 import io.beatmaps.util.textToContent
+import kotlinx.browser.window
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import react.RBuilder
@@ -68,6 +69,12 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
             .then {
                 setState {
                     unreadAlerts = if (read) unreadAlerts - alert else unreadAlerts + alert
+                }
+                window.document.getElementById("alert-count")?.apply {
+                    state.unreadAlerts.size.let { count ->
+                        setAttribute("data-count", count.toString())
+                        innerHTML = if (count < 10) count.toString() else "9+"
+                    }
                 }
                 props.alertCountCallback(state.unreadAlerts.size)
             }
