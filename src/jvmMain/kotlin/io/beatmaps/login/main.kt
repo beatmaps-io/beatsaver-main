@@ -25,7 +25,6 @@ import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.features.NotFoundException
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.URLProtocol
 import io.ktor.http.Url
@@ -50,7 +49,6 @@ import nl.myndocs.oauth2.client.Client
 import nl.myndocs.oauth2.identity.Identity
 import nl.myndocs.oauth2.identity.IdentityService
 import nl.myndocs.oauth2.ktor.feature.Oauth2ServerFeature
-import nl.myndocs.oauth2.ktor.feature.request.KtorCallContext
 import nl.myndocs.oauth2.tokenstore.inmemory.InMemoryTokenStore
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
