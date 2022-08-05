@@ -1039,6 +1039,21 @@ table.modlog {
   }
 }
 
+small.alert-count {
+  font-size: 10px;
+  text-align: center;
+  display: inline-block;
+  line-height: 13px;
+  min-width: 13px;
+  margin: 0 -7.5px;
+  border-radius: 50%;
+  background-color: $danger;
+
+  &[data-count="0"] {
+    display: none;
+  }
+}
+
 @include media-breakpoint-up(sm) {
   .filter-dropdown {
     width: 100%;
