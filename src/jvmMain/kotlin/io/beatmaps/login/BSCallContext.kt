@@ -8,7 +8,6 @@ import io.ktor.request.httpMethod
 import io.ktor.request.path
 import io.ktor.request.receiveParameters
 import io.ktor.response.header
-import io.ktor.response.respondRedirect
 import io.ktor.response.respondText
 import io.ktor.util.toMap
 import kotlinx.coroutines.runBlocking
