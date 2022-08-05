@@ -23,6 +23,7 @@ import react.dom.div
 import react.dom.form
 import react.dom.i
 import react.dom.img
+import react.dom.jsStyle
 import react.dom.span
 import react.setState
 
@@ -143,6 +144,15 @@ class AuthorizePage : RComponent<RProps, AuthorizePageState>() {
                     }
 
                     loginForm {
+                        if (params.has("failed")) {
+                            div("invalid-feedback") {
+                                attrs.jsStyle {
+                                    display = "block"
+                                }
+                                +"Username or password not valid"
+                            }
+                        }
+
                         attrs.discordLink = "/discord?state=$serialized"
                         attrs.buttonText = "Authorize"
                     }

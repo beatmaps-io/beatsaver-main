@@ -25,6 +25,7 @@ import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.features.NotFoundException
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.URLProtocol
 import io.ktor.http.Url
@@ -335,7 +336,7 @@ fun Application.installOauth2() {
                 val userSession = call.sessions.get<Session>()
 
                 if (userSession?.oauth2ClientId != null) {
-                    callRouter.route(KtorCallContext(call), Credentials(userSession.userId.toString(), ""))
+                    callRouter.route(BSCallContext(call), Credentials(userSession.userId.toString(), ""))
                 } else {
                     runBlocking {
                         call.genericPage(headerTemplate = {

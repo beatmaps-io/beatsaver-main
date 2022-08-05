@@ -6,6 +6,7 @@ import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.ktor.application.Application
+import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.auth.Authentication
 import io.ktor.auth.OAuthServerSettings
@@ -16,6 +17,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.http.HttpMethod
 import io.ktor.request.uri
+import io.ktor.response.respondRedirect
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -48,7 +50,13 @@ fun Application.installDiscordOauth() {
         form("auth-form") {
             userParamName = "username"
             passwordParamName = "password"
-            challenge("/login?failed")
+            challenge {
+                if (call.request.uri.startsWith("/oauth2")) {
+                    call.respondRedirect("${call.request.uri}&failed")
+                } else {
+                    call.respondRedirect("/login?failed")
+                }
+            }
             validate { credentials ->
                 transaction {
                     User.select {
