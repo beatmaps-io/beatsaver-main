@@ -70,9 +70,6 @@ import java.security.MessageDigest
 import java.util.logging.Logger
 import java.util.zip.ZipException
 import kotlin.collections.set
-import kotlin.io.path.deleteIfExists
-import kotlin.io.path.moveTo
-import kotlin.io.path.outputStream
 import kotlin.math.roundToInt
 
 val jsonWriter: ObjectWriter = jackson.writer(BSPrettyPrinter())
@@ -361,7 +358,7 @@ fun ZipHelper.validateFiles(dos: DigestOutputStream) =
 
         // Write updated info.dat back to zip
         infoPath.deleteIfExists()
-        newPath("/Info.dat").outputStream().use {
+        getPathDirect("/Info.dat").outputStream().use {
             jsonWriter.writeValue(it, p.mapInfo)
         }
 
@@ -372,17 +369,17 @@ fun ZipHelper.validateFiles(dos: DigestOutputStream) =
         }
 
         paritioned.first.forEach {
-            newPath(it).deleteIfExists()
+            getPathDirect(it).deleteIfExists()
         }
 
         // Move files to root
         if (prefix.length > 1) {
             // Files in subfolder!
             paritioned.second.forEach {
-                newPath(it).moveTo(newPath("/" + it.removePrefix(prefix)))
+                moveFile(getPathDirect(it), "/" + it.removePrefix(prefix))
             }
             directories.filter { it.startsWith(prefix) }.sortedBy { it.length }.forEach {
-                newPath(it).deleteIfExists()
+                getPathDirect(it).deleteIfExists()
             }
         }
     }
@@ -398,7 +395,7 @@ fun ZipHelper.oggToEgg(info: ExtractedInfo) =
         if (info.mapInfo._songFilename.endsWith(".ogg")) {
             val originalAudioName = info.mapInfo._songFilename
             info.mapInfo = info.mapInfo.copy(_songFilename = originalAudioName.replace(Regex("\\.ogg$"), ".egg"))
-            Files.move(path, newPath("/${info.mapInfo._songFilename}"))
+            moveFile(path, "/${info.mapInfo._songFilename}")
             files.minus((infoPrefix() + originalAudioName).lowercase())
                 .plus((infoPrefix() + info.mapInfo._songFilename).lowercase()) to filesOriginalCase.minus(infoPrefix() + originalAudioName)
         } else {
