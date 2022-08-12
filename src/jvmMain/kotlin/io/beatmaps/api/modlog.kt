@@ -2,9 +2,11 @@ package io.beatmaps.api
 
 import io.beatmaps.cdnPrefix
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.ModLogDao
 import io.beatmaps.common.dbo.User
+import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.curatorAlias
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
@@ -46,14 +48,20 @@ fun Route.modLogRoute() {
                         }
                         .orderBy(ModLog.opAt, SortOrder.DESC)
                         .limit(it.page, 30)
-                        .map {
-                            ModLogDao.wrapRow(it).let { entry ->
+                        .map { row ->
+                            // Cache joins
+                            UserDao.wrapRow(row)
+                            UserDao.wrapRow(row, curatorAlias)
+                            if (row[ModLog.opOn] != null) BeatmapDao.wrapRow(row)
+
+                            ModLogDao.wrapRow(row).let { entry ->
                                 ModLogEntry(
-                                    entry.opBy.name,
-                                    entry.targetUser.name,
+                                    UserDetail.from(entry.opBy),
+                                    UserDetail.from(entry.targetUser),
                                     entry.opOn?.let { mapId -> MapDetail.from(mapId, cdnPrefix()) },
                                     entry.realType(),
-                                    entry.opAt.toKotlinInstant()
+                                    entry.opAt.toKotlinInstant(),
+                                    entry.realAction()
                                 )
                             }
                         }
