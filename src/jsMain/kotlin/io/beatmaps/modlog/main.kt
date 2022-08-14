@@ -287,6 +287,10 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
                                                 +"Upload Limit: ${it.action.newValue}"
                                                 br {}
                                                 +"Curator: ${it.action.newCurator}"
+                                                it.action.verifiedMapper?.let { vm ->
+                                                    br {}
+                                                    +"Verified Mapper: $vm"
+                                                }
                                             }
                                         }
                                     }
