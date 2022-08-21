@@ -62,6 +62,12 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 +"Mappers"
                             }
                         }
+                        li("nav-item") {
+                            a("/playlists", classes = "nav-link") {
+                                id = "playlist-link"
+                                +"Playlists"
+                            }
+                        }
                         li("nav-item dropdown") {
                             a("#", classes = "nav-link dropdown-toggle") {
                                 +"Help"

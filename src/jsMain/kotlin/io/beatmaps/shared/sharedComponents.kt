@@ -193,6 +193,23 @@ val uploader = functionComponent<UploaderProps> { props ->
     }
 }
 
+external interface PlaylistOwnerProps : RProps {
+    var owner: UserDetail?
+    var time: Instant
+}
+
+val playlistOwner = functionComponent<PlaylistOwnerProps> { props ->
+    props.owner?.let { owner ->
+        routeLink("/profile/${owner.id}#playlists") {
+            +owner.name
+        }
+    } ?: +"<DELETED USER>"
+    +" - "
+    TimeAgo.default {
+        attrs.date = props.time.toString()
+    }
+}
+
 external interface ColoredCardProps : RProps {
     var color: String
     var icon: String?

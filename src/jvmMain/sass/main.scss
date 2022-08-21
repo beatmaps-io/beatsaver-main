@@ -115,11 +115,10 @@ table.search-results {
   }
 }
 .search-results, .playlist {
-  .beatmap.loading {
+  .beatmap.loading, .playlist-card.loading {
     background: #262626;
-    height: 155px;
     border: 5px solid transparent;
-    border-radius: calc(0.25rem - 1px);
+    border-radius: calc(0.25rem - 1px + 5px);
     background-clip: padding-box;
   }
 
@@ -142,44 +141,13 @@ table.search-results {
     }
 
     .info {
+      padding-left: 10px;
       flex: 1;
 
       > a {
         font-weight: bold;
         font-size: inherit;
       }
-    }
-
-    small.vote {
-      width: 100px;
-      display: flex;
-      max-height: 146px;
-      overflow: hidden;
-      margin-top: 8px;
-      margin-right: 10px;
-      border-radius: 3px;
-      margin-bottom: -19px;
-
-      div {
-        height: 15px;
-      }
-      .u {
-        background: $green;
-      }
-      .d {
-        background: $warning;
-      }
-      .o {
-        background: $gray-700;
-      }
-    }
-
-    .percentage {
-      font-weight: bold;
-      width: 100px;
-      font-size: 14px;
-      text-shadow: 0 0 3px #000;
-      text-align: center;
     }
 
     &:hover {
@@ -231,6 +199,129 @@ table.search-results {
         font-size: 12px;
       }
     }
+  }
+
+  .playlist-card {
+    width: 100%;
+    height: 80px;
+
+    .content {
+      display: flex;
+      flex-wrap: wrap;
+      overflow: hidden;
+
+      &:hover {
+        .buttons {
+          a {
+            background: #444;
+          }
+        }
+      }
+
+      .info {
+        display: flex;
+        flex-basis: 100%;
+        padding: 10px 10px 0 10px;
+
+        > img {
+          width: 48px;
+          height: 48px;
+          margin-right: 10px;
+        }
+
+        .title {
+          display: block;
+          width: 300px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        a {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        a:first-child {
+          display: block;
+          font-size: 16px;
+          font-weight: bold;
+        }
+      }
+
+      .additional {
+        display: flex;
+        justify-content: space-between;
+        flex-basis: 100%;
+        padding: 10px;
+
+        .rating {
+          display: flex;
+          align-items: center;
+
+          small.vote {
+            margin-top: 0;
+            margin-right: 0;
+          }
+        }
+
+        .stats {
+          margin: 0 20px;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+        }
+
+        .buttons {
+          display: flex;
+          align-items: center;
+
+          a {
+            padding: 3px 0;
+            margin-right: 6px;
+            width: 32px;
+            border-radius: 9px;
+            text-align: center;
+            transition: background-color 0.2s, width 0.2s;
+
+            &:hover {
+              background: #222;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  small.vote {
+    width: 100px;
+    display: flex;
+    max-height: 146px;
+    overflow: hidden;
+    border-radius: 3px;
+    margin-bottom: -19px;
+
+    div {
+      height: 15px;
+    }
+    .u {
+      background: $green;
+    }
+    .d {
+      background: $warning;
+    }
+    .o {
+      background: $gray-700;
+    }
+  }
+
+  .percentage {
+    font-weight: bold;
+    width: 100px;
+    font-size: 14px;
+    text-shadow: 0 0 3px #000;
+    text-align: center;
   }
 
   td:nth-child(1) {
@@ -983,22 +1074,6 @@ li.KeyboardShortcutRow {
   }
 }
 
-.playlist.table {
-  img {
-    width: 48px;
-    height: 48px;
-  }
-  tbody tr {
-    cursor: pointer;
-  }
-  td:nth-child(1), td:nth-child(3) {
-    width: 72px;
-  }
-  td, th {
-    vertical-align: middle;
-  }
-}
-
 .custom-file-label {
   right: 74px;
   color: #888;
@@ -1068,6 +1143,11 @@ table.modlog {
         font-size: 0.7rem;
       }
     }
+    .playlist-card {
+      .title {
+        width: 600px !important;
+      }
+    }
   }
   .table.mappers {
     td, th {
@@ -1103,6 +1183,11 @@ table.modlog {
     .diffs {
       span {
         font-size: 0;
+      }
+    }
+    .playlist-card {
+      .title {
+        width: 800px !important;
       }
     }
   }
@@ -1150,6 +1235,19 @@ table.modlog {
         font-size: 0.7rem;
       }
     }
+    .playlist-card {
+      .title {
+        width: 450px !important;
+      }
+      .info {
+        flex-basis: 50% !important;
+        padding: 10px !important;
+      }
+      .additional {
+        flex-basis: 50% !important;
+        justify-content: flex-end !important;
+      }
+    }
   }
   .table.mappers {
     td, th {
@@ -1170,6 +1268,19 @@ table.modlog {
 }
 
 @include media-breakpoint-up(xxl) {
+  .search-results {
+    .playlist-card {
+      .title {
+        width: 650px !important;
+      }
+      .info {
+        flex-basis: 60% !important;
+      }
+      .additional {
+        flex-basis: 40% !important;
+      }
+    }
+  }
   .filter-dropdown {
     width: 250px;
     span {

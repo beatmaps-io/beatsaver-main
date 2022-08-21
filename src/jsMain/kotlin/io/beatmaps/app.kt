@@ -11,6 +11,7 @@ import io.beatmaps.nav.viewportMinWidthPolyfill
 import io.beatmaps.playlist.PlaylistProps
 import io.beatmaps.playlist.editPlaylist
 import io.beatmaps.playlist.playlist
+import io.beatmaps.playlist.playlistFeed
 import io.beatmaps.upload.UploadPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ProfilePageProps
@@ -134,6 +135,12 @@ class App : RComponent<RProps, RState>() {
                             attrs.history = it.history
                             attrs.userId = it.match.params.userId
                         }
+                    }
+                }
+                route<RProps>("/playlists", exact = true) {
+                    initWithHistory(it.history)
+                    playlistFeed {
+                        history = it.history
                     }
                 }
                 route<RProps>("/playlists/new", exact = true) {
