@@ -25,7 +25,7 @@ data class PlaylistCustomData(val syncURL: String)
 data class PlaylistBasic(val playlistId: Int, val playlistImage: String, val name: String, val public: Boolean, val owner: Int)
 
 @Serializable
-open class PlaylistFull(
+data class PlaylistFull(
     val playlistId: Int,
     val name: String,
     val description: String,
