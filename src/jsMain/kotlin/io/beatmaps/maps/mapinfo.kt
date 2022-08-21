@@ -357,7 +357,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                 attrs.onClickFunction = {
                                     val newTitle = inputRef.current?.value ?: ""
                                     val newDescription = textareaRef.current?.asDynamic().value as String
-                                    val newTags = state.tags?.map { it.slug }
+                                    val newTags = state.tags?.toList()
 
                                     setState {
                                         loading = true

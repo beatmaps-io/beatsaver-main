@@ -205,7 +205,7 @@ fun Route.mapDetailRoute() {
         requireAuthorization { user ->
             val mapUpdate = call.receive<MapInfoUpdate>()
 
-            val tooMany = mapUpdate.tags?.mapNotNull { MapTag.fromSlug(it) }?.groupBy { it.type }?.mapValues { it.value.size }?.withDefault { 0 }?.let { byType ->
+            val tooMany = mapUpdate.tags?.groupBy { it.type }?.mapValues { it.value.size }?.withDefault { 0 }?.let { byType ->
                 MapTag.maxPerType.any { byType.getValue(it.key) > it.value }
             }
 
@@ -232,7 +232,7 @@ fun Route.mapDetailRoute() {
                             mapUpdate.name?.let { n -> it[name] = n.take(1000) }
                             mapUpdate.description?.let { d -> it[description] = d.take(10000) }
                             if (tooMany != true) { // Don't update tags if request is trying to add too many tags
-                                mapUpdate.tags?.let { t -> it[tags] = t.toTypedArray() }
+                                mapUpdate.tags?.map { it.slug }?.let { t -> it[tags] = t.toTypedArray() }
                             }
                             it[updatedAt] = NowExpression(updatedAt.columnType)
                         }
@@ -246,7 +246,7 @@ fun Route.mapDetailRoute() {
                             if (mapUpdate.deleted) {
                                 DeletedData(mapUpdate.reason ?: "")
                             } else {
-                                InfoEditData(oldData.name, oldData.description, mapUpdate.name ?: "", mapUpdate.description ?: "", oldData.tags?.toList(), mapUpdate.tags)
+                                InfoEditData(oldData.name, oldData.description, mapUpdate.name ?: "", mapUpdate.description ?: "", oldData.tags?.mapNotNull { MapTag.fromSlug(it) }, mapUpdate.tags)
                             },
                             oldData.uploader.id.value
                         )
@@ -273,7 +273,7 @@ fun Route.mapDetailRoute() {
         requireAuthorization { user ->
             val mapUpdate = call.receive<SimpleMapInfoUpdate>()
 
-            val tooMany = mapUpdate.tags?.mapNotNull { MapTag.fromSlug(it) }?.groupBy { it.type }?.mapValues { it.value.size }?.withDefault { 0 }?.let { byType ->
+            val tooMany = mapUpdate.tags?.groupBy { it.type }?.mapValues { it.value.size }?.withDefault { 0 }?.let { byType ->
                 MapTag.maxPerType.any { byType.getValue(it.key) > it.value }
             }
 
@@ -285,7 +285,7 @@ fun Route.mapDetailRoute() {
                         Beatmap.update({
                             Beatmap.id eq mapUpdate.id and Beatmap.deletedAt.isNull()
                         }) {
-                            mapUpdate.tags?.let { t -> it[tags] = t.toTypedArray() }
+                            mapUpdate.tags?.map { it.slug }?.let { t -> it[tags] = t.toTypedArray() }
                             it[updatedAt] = NowExpression(updatedAt.columnType)
                         }
 
@@ -294,7 +294,7 @@ fun Route.mapDetailRoute() {
                             ModLog.insert(
                                 user.userId,
                                 mapUpdate.id,
-                                InfoEditData(oldData.name, oldData.description, "", "", oldData.tags?.toList(), mapUpdate.tags),
+                                InfoEditData(oldData.name, oldData.description, "", "", oldData.tags?.mapNotNull { MapTag.fromSlug(it) }, mapUpdate.tags),
                                 oldData.uploader.id.value
                             )
                         }

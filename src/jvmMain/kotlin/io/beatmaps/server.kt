@@ -89,12 +89,15 @@ import java.math.BigInteger
 import java.security.MessageDigest
 import kotlin.time.Duration.Companion.nanoseconds
 
-suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) {
-    val sess = call.sessions.get<Session>()
-    if (sess != null && sess.uniqueName == null && call.request.path() != "/username") {
-        call.respondRedirect("/username")
+suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) =
+    call.genericPage(statusCode, headerTemplate)
+
+suspend fun ApplicationCall.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) {
+    val sess = sessions.get<Session>()
+    if (sess != null && sess.uniqueName == null && request.path() != "/username") {
+        respondRedirect("/username")
     } else {
-        call.respondHtmlTemplate(MainTemplate(sess, GenericPageTemplate(sess)), statusCode) {
+        respondHtmlTemplate(MainTemplate(sess, GenericPageTemplate(sess)), statusCode) {
             headElements {
                 headerTemplate?.invoke(this)
             }

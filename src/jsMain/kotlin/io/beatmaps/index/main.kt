@@ -83,7 +83,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
 
     private fun fromURL() = URLSearchParams(window.location.search).let { params ->
         SearchParams(
-            decodeURIComponent(params.get("q") ?: ""),
+            params.get("q") ?: "",
             params.get("auto")?.toBoolean(),
             params.get("minNps")?.toFloatOrNull(),
             params.get("maxNps")?.toFloatOrNull(),

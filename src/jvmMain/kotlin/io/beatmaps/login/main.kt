@@ -25,12 +25,14 @@ import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.features.NotFoundException
+import io.ktor.http.HttpMethod
 import io.ktor.http.URLProtocol
 import io.ktor.http.Url
 import io.ktor.http.parametersOf
 import io.ktor.locations.Location
 import io.ktor.locations.get
 import io.ktor.locations.post
+import io.ktor.request.httpMethod
 import io.ktor.request.queryString
 import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
@@ -40,13 +42,13 @@ import io.ktor.sessions.get
 import io.ktor.sessions.sessions
 import io.ktor.sessions.set
 import io.ktor.util.hex
+import kotlinx.coroutines.runBlocking
 import kotlinx.html.meta
 import nl.myndocs.oauth2.authenticator.Credentials
 import nl.myndocs.oauth2.client.Client
 import nl.myndocs.oauth2.identity.Identity
 import nl.myndocs.oauth2.identity.IdentityService
 import nl.myndocs.oauth2.ktor.feature.Oauth2ServerFeature
-import nl.myndocs.oauth2.ktor.feature.request.KtorCallContext
 import nl.myndocs.oauth2.tokenstore.inmemory.InMemoryTokenStore
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
@@ -73,8 +75,8 @@ data class Session(
     val curator: Boolean = false,
     val oauth2ClientId: String? = null
 ) {
-    constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?, oauth2ClientId: String?) :
-        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, false, oauth2ClientId)
+    constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?, curator: Boolean) :
+        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, curator, null)
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?) :
         this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, false)
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean) :
@@ -241,14 +243,6 @@ fun Route.authRoute() {
         }
     }
 
-    get<Authorize> {
-        genericPage(headerTemplate = {
-            call.parameters["client_id"]?.let { DBClientService.getClient(it) }?.let { client ->
-                meta("oauth-data", "{\"id\": \"${client.clientId}\", \"name\": \"${client.name}\"}")
-            }
-        })
-    }
-
     get<AuthorizeSuccess> {
         call.sessions.get<Session>()?.let {
             call.sessions.set(it.copy(oauth2ClientId = call.parameters["client_id"]))
@@ -336,10 +330,20 @@ fun Route.authRoute() {
 fun Application.installOauth2() {
     install(Oauth2ServerFeature) {
         authenticationCallback = { call, callRouter ->
-            val userSession = call.sessions.get<Session>()
+            if (call.request.httpMethod == HttpMethod.Get) {
+                val userSession = call.sessions.get<Session>()
 
-            if (userSession?.oauth2ClientId != null) {
-                callRouter.route(KtorCallContext(call), Credentials(userSession.userId.toString(), ""))
+                if (userSession?.oauth2ClientId != null) {
+                    callRouter.route(BSCallContext(call), Credentials(userSession.userId.toString(), ""))
+                } else {
+                    runBlocking {
+                        call.genericPage(headerTemplate = {
+                            call.parameters["client_id"]?.let { DBClientService.getClient(it) }?.let { client ->
+                                meta("oauth-data", "{\"id\": \"${client.clientId}\", \"name\": \"${client.name}\"}")
+                            }
+                        })
+                    }
+                }
             }
         }
 

@@ -180,7 +180,7 @@ fun Route.userRoute() {
                                 ModLog.insert(
                                     sess.userId,
                                     null,
-                                    UploadLimitData(req.maxUploadSize, req.curator),
+                                    UploadLimitData(req.maxUploadSize, req.curator, req.verifiedMapper),
                                     req.userId
                                 )
                             }

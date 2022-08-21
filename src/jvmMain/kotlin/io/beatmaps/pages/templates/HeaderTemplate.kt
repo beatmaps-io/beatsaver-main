@@ -8,10 +8,12 @@ import kotlinx.html.FlowContent
 import kotlinx.html.a
 import kotlinx.html.button
 import kotlinx.html.div
+import kotlinx.html.i
 import kotlinx.html.id
 import kotlinx.html.img
 import kotlinx.html.li
 import kotlinx.html.nav
+import kotlinx.html.small
 import kotlinx.html.span
 import kotlinx.html.title
 import kotlinx.html.ul
@@ -48,7 +50,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 }
                             }
                         }
-                        if (s?.isAdmin() == true) {
+                        if (s?.admin == true) {
                             li("nav-item") {
                                 a("/modlog", classes = "nav-link") {
                                     id = "modlog-link"
@@ -112,6 +114,17 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                             }
                         } else {
                             li("nav-item") {
+                                a("/profile#alerts", classes = "nav-link") {
+                                    i("fas fa-bell")
+                                    small("alert-count") {
+                                        id = "alert-count"
+                                        val count = s.alerts ?: 0
+                                        attributes["data-count"] = count.toString()
+                                        if (count < 10) +count.toString() else +"9+"
+                                    }
+                                }
+                            }
+                            li("nav-item") {
                                 a("/upload", classes = "nav-link") {
                                     +"Upload"
                                 }
@@ -123,15 +136,6 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 div("dropdown-menu") {
                                     a("/profile", classes = "dropdown-item") {
                                         +"Profile"
-                                    }
-                                    a("/profile#alerts", classes = "dropdown-item") {
-                                        +"Alerts"
-
-                                        if (s.alerts != null && s.alerts > 0) {
-                                            span("ms-1 text-danger") {
-                                                +"•"
-                                            }
-                                        }
                                     }
                                     if (s.steamId == null) {
                                         a("/steam", classes = "dropdown-item") {
