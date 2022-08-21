@@ -5,7 +5,7 @@ import external.axiosGet
 import io.beatmaps.UserData
 import io.beatmaps.api.ModLogEntry
 import io.beatmaps.common.Config
-import io.beatmaps.index.mapTitle
+import io.beatmaps.shared.mapTitle
 import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType

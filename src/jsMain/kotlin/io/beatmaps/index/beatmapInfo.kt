@@ -3,11 +3,16 @@ package io.beatmaps.index
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
 import io.beatmaps.common.api.MapAttr
+import io.beatmaps.shared.coloredCard
+import io.beatmaps.shared.diffIcons
 import io.beatmaps.common.formatTime
+import io.beatmaps.shared.links
+import io.beatmaps.shared.mapTitle
+import io.beatmaps.shared.rating
+import io.beatmaps.shared.uploader
 import io.beatmaps.globalContext
 import io.beatmaps.playlist.addToPlaylist
 import kotlinx.browser.window
-import kotlinx.html.title
 import org.w3c.dom.HTMLDivElement
 import react.RBuilder
 import react.RComponent
@@ -21,12 +26,9 @@ import react.dom.i
 import react.dom.img
 import react.dom.jsStyle
 import react.dom.p
-import react.dom.small
 import react.dom.span
 import react.setState
 import kotlin.math.floor
-import kotlin.math.log
-import kotlin.math.pow
 
 external interface BeatmapInfoProps : RProps {
     var map: MapDetail?
@@ -92,38 +94,14 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
                     attrs.title = mapAttrs.joinToString(" + ") { it.name }
 
                     div {
-                        val totalVotes = (map.stats.upvotes + map.stats.downvotes).toDouble()
-                        var uncertainty = 2.0.pow(-log(totalVotes / 2 + 1, 3.0))
-                        val weightedRange = 25.0
-                        val weighting = 2
-                        if ((totalVotes + weighting) < weightedRange) {
-                            uncertainty += (1 - uncertainty) * (1 - (totalVotes + weighting) * (1 / weightedRange))
-                        }
-
                         img(src = props.version?.coverURL, alt = "Cover Image", classes = "cover") {
                             attrs.width = "100"
                             attrs.height = "100"
                         }
-                        small("text-center vote") {
-                            div("u") {
-                                attrs.jsStyle {
-                                    flex = map.stats.upvotes
-                                }
-                            }
-                            div("o") {
-                                attrs.jsStyle {
-                                    flex = if (totalVotes < 1) 1 else (uncertainty * totalVotes / (1 - uncertainty))
-                                }
-                            }
-                            div("d") {
-                                attrs.jsStyle {
-                                    flex = map.stats.downvotes
-                                }
-                            }
-                        }
-                        div("percentage") {
-                            attrs.title = "${map.stats.upvotes}/${map.stats.downvotes}"
-                            +"${map.stats.scoreOneDP}%"
+                        rating {
+                            attrs.up = map.stats.upvotes
+                            attrs.down = map.stats.downvotes
+                            attrs.rating = map.stats.scoreOneDP.toDouble()
                         }
                     }
                     div("info") {

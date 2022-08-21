@@ -16,7 +16,7 @@ import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
-import io.beatmaps.index.links
+import io.beatmaps.shared.links
 import io.beatmaps.playlist.addToPlaylist
 import io.beatmaps.util.textToContent
 import kotlinx.browser.window
