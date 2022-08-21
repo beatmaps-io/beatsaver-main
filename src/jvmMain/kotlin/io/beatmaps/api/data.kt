@@ -5,6 +5,7 @@ import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.DifficultyDao
+import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.TestplayDao
 import io.beatmaps.common.dbo.VersionsDao
@@ -87,12 +88,26 @@ fun PlaylistBasic.Companion.from(other: PlaylistDao, cdnPrefix: String) = Playli
 )
 fun PlaylistBasic.Companion.from(row: ResultRow, cdnPrefix: String) = from(PlaylistDao.wrapRow(row), cdnPrefix)
 
-fun PlaylistFull.Companion.from(other: PlaylistDao, cdnPrefix: String) = PlaylistFull(
+fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPrefix: String) = PlaylistFull(
     other.id.value, other.name, other.description, "${cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.public, UserDetail.from(other.owner),
     other.curator?.let {
         UserDetail.from(it)
     },
+    stats,
     other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.songsChangedAt?.toKotlinInstant(), other.curatedAt?.toKotlinInstant(),
     other.deletedAt?.toKotlinInstant()
 )
-fun PlaylistFull.Companion.from(row: ResultRow, cdnPrefix: String) = from(PlaylistDao.wrapRow(row), cdnPrefix)
+fun PlaylistFull.Companion.from(row: ResultRow, cdnPrefix: String) = from(
+    PlaylistDao.wrapRow(row),
+    if (row.hasValue(Playlist.mapCount)) PlaylistStats(
+        row[Playlist.mapCount],
+        row[Playlist.mapperCount],
+        row[Playlist.totalDuration] ?: 0,
+        row[Playlist.minNps]?.toDouble() ?: 0.0,
+        row[Playlist.maxNps]?.toDouble() ?: 0.0,
+        row[Playlist.upVotes] ?: 0,
+        row[Playlist.downVotes] ?: 0,
+        row[Playlist.avgScore]?.toDouble() ?: 0.0
+    ) else null,
+    cdnPrefix
+)

@@ -62,8 +62,9 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import net.coobird.thumbnailator.Thumbnails
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.sql.ColumnSet
+import org.jetbrains.exposed.sql.FieldSet
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -116,10 +117,13 @@ const val prefix: String = "/playlists"
         val q: String? = "",
         @DefaultValue("0") val page: Long = 0,
         val sortOrder: SearchOrder = SearchOrder.Relevance,
+        val minNps: Float? = null,
+        val maxNps: Float? = null,
         val from: Instant? = null,
         val to: Instant? = null,
         val includeEmpty: Boolean? = null,
         val curated: Boolean? = null,
+        val verified: Boolean? = null,
         @Ignore val api: PlaylistApi
     )
 }
@@ -157,6 +161,11 @@ suspend fun ApplicationCall.handleMultipart(cb: suspend (PartData.FileItem) -> U
     return MultipartRequest(dataMap, recaptchaSuccess)
 }
 
+val playlistStats = listOf(
+    Playlist.mapCount, Playlist.mapperCount, Playlist.totalDuration,
+    Playlist.minNps, Playlist.maxNps, Playlist.upVotes, Playlist.downVotes, Playlist.avgScore
+)
+
 fun Route.playlistRoute() {
     options<PlaylistApi.ByUploadDate> {
         call.response.header("Access-Control-Allow-Origin", "*")
@@ -175,23 +184,27 @@ fun Route.playlistRoute() {
 
         val playlists = transaction {
             Playlist
+                .joinMaps {
+                    Beatmap.deletedAt.isNull()
+                }
                 .joinPlaylistCurator()
                 .joinOwner()
+                .slice(Playlist.columns + User.columns + playlistStats)
                 .select {
                     (Playlist.deletedAt.isNull() and (sess?.let { s -> Playlist.owner eq s.userId or Playlist.public } ?: Playlist.public))
                         .notNull(it.before) { o -> sortField less o.toJavaInstant() }
                         .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
                 }
+                .groupBy(Playlist.id, User.id)
                 .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
                 .limit(20)
                 .handleOwner()
                 .handleCurator()
-                .map { row -> PlaylistDao.wrapRow(row) }
-                .sortedByDescending { map ->
+                .sortedByDescending { row ->
                     when (it.sort) {
-                        null, LatestPlaylistSort.CREATED -> map.createdAt
-                        LatestPlaylistSort.SONGS_UPDATED -> map.songsChangedAt
-                        LatestPlaylistSort.UPDATED -> map.updatedAt
+                        null, LatestPlaylistSort.CREATED -> row[Playlist.createdAt]
+                        LatestPlaylistSort.SONGS_UPDATED -> row[Playlist.songsChangedAt]
+                        LatestPlaylistSort.UPDATED -> row[Playlist.updatedAt]
                     }
                 }
                 .map { playlist ->
@@ -213,36 +226,40 @@ fun Route.playlistRoute() {
         val searchFields = PgConcat(" ", Playlist.name, Playlist.description)
         val searchInfo = parseSearchQuery(it.q, searchFields)
         val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
+        val sortArgs = when (actualSortOrder) {
+            SearchOrder.Relevance -> listOf(searchInfo.similarRank to SortOrder.DESC, Playlist.avgScore to SortOrder.DESC, Playlist.createdAt to SortOrder.DESC)
+            SearchOrder.Rating -> listOf(Playlist.avgScore to SortOrder.DESC, Playlist.createdAt to SortOrder.DESC)
+            SearchOrder.Latest -> listOf(Playlist.createdAt to SortOrder.DESC)
+            SearchOrder.Curated -> listOf(Playlist.curatedAt to SortOrder.DESC_NULLS_LAST, Playlist.createdAt to SortOrder.DESC)
+        }.toTypedArray()
 
         newSuspendedTransaction {
             val playlists = Playlist
-                .let { q ->
-                    if (it.includeEmpty != true) {
-                        q.joinMaps(type = JoinType.INNER)
-                    } else {
-                        q
-                    }
+                .joinMaps(type = JoinType.LEFT) {
+                    Beatmap.deletedAt.isNull()
                 }
                 .joinOwner()
                 .joinPlaylistCurator()
-                .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) + Playlist.columns + User.columns)
+                .slice(
+                    (if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) +
+                        Playlist.columns + User.columns + playlistStats
+                )
                 .select {
                     (Playlist.deletedAt.isNull() and Playlist.public)
                         .let { q -> searchInfo.applyQuery(q) }
                         .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
+                        .notNull(it.minNps) { o -> Beatmap.maxNps greaterEq o.toBigDecimal() }
+                        .notNull(it.maxNps) { o -> Beatmap.minNps lessEq o.toBigDecimal() }
                         .notNull(it.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }
                         .notNull(it.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
                         .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }
+                        .notNull(it.verified) { o -> User.verifiedMapper eq o }
                 }
                 .groupBy(Playlist.id, User.id)
-                .orderBy(
-                    when (actualSortOrder) {
-                        SearchOrder.Relevance -> searchInfo.similarRank
-                        SearchOrder.Curated -> Playlist.curatedAt
-                        SearchOrder.Rating, SearchOrder.Latest -> Playlist.createdAt
-                    },
-                    SortOrder.DESC
-                )
+                .having {
+                    if (it.includeEmpty == true) Op.TRUE else Playlist.mapCount greater 0
+                }
+                .orderBy(*sortArgs)
                 .limit(it.page)
                 .handleCurator()
                 .handleOwner()
@@ -257,8 +274,14 @@ fun Route.playlistRoute() {
     fun getDetail(id: Int, cdnPrefix: String, userId: Int?, isAdmin: Boolean, page: Long?): PlaylistPage? {
         val detailPage = transaction {
             val playlist = Playlist
+                .joinMaps {
+                    Beatmap.deletedAt.isNull()
+                }
                 .joinOwner()
                 .joinPlaylistCurator()
+                .slice(
+                    Playlist.columns + User.columns + playlistStats
+                )
                 .select {
                     (Playlist.id eq id).let {
                         if (isAdmin) {
@@ -268,6 +291,7 @@ fun Route.playlistRoute() {
                         }
                     }
                 }
+                .groupBy(Playlist.id, User.id)
                 .handleOwner()
                 .handleCurator()
                 .firstOrNull()?.let {
@@ -341,7 +365,7 @@ fun Route.playlistRoute() {
 
         val sess = call.sessions.get<Session>()
 
-        fun <T> doQuery(table: ColumnSet = Playlist, block: (ResultRow) -> T) =
+        fun <T> doQuery(table: FieldSet = Playlist, block: (ResultRow) -> T) =
             transaction {
                 table
                     .select {
@@ -354,7 +378,9 @@ fun Route.playlistRoute() {
                         }
                     }
                     .orderBy(Playlist.createdAt, SortOrder.DESC)
+                    .groupBy(Playlist.id, User.id)
                     .limit(req.page, 20)
+                    .handleOwner()
                     .handleCurator()
                     .map(block)
             }
@@ -367,7 +393,15 @@ fun Route.playlistRoute() {
             call.respond(page)
         } else {
             val page = doQuery(
-                Playlist.joinPlaylistCurator()
+                Playlist
+                    .joinMaps {
+                        Beatmap.deletedAt.isNull()
+                    }
+                    .joinOwner()
+                    .joinPlaylistCurator()
+                    .slice(
+                        Playlist.columns + User.columns + playlistStats
+                    )
             ) {
                 PlaylistFull.from(it, cdnPrefix())
             }

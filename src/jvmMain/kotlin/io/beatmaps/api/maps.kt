@@ -353,7 +353,7 @@ fun Route.mapDetailRoute() {
             try {
                 transaction {
                     Playlist.joinMaps {
-                        PlaylistMap.mapId eq mapId.toInt(16)
+                        Beatmap.id eq mapId.toInt(16)
                     }.select {
                         Playlist.owner eq it.userId and Playlist.deletedAt.isNull()
                     }.orderBy(Playlist.createdAt, SortOrder.DESC).map { row ->
