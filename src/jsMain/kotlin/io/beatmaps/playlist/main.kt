@@ -8,7 +8,6 @@ import io.beatmaps.shared.Search
 import io.beatmaps.shared.search
 import io.beatmaps.shared.toggle
 import io.beatmaps.dateFormat
-import io.beatmaps.index.decodeURIComponent
 import io.beatmaps.index.encodeURIComponent
 import io.beatmaps.setPageTitle
 import kotlinx.browser.window
@@ -73,7 +72,7 @@ class PlaylistFeed : RComponent<PlaylistFeedProps, PlaylistFeedState>() {
 
     private fun fromURL() = URLSearchParams(window.location.search).let { params ->
         PlaylistSearchParams(
-            decodeURIComponent(params.get("q") ?: ""),
+            params.get("q") ?: "",
             params.get("minNps")?.toFloatOrNull(),
             params.get("maxNps")?.toFloatOrNull(),
             params.get("from"),
