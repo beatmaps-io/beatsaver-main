@@ -2,6 +2,7 @@ package io.beatmaps.playlist
 
 import external.Moment
 import io.beatmaps.api.SearchOrder
+import io.beatmaps.api.SortOrderTarget
 import io.beatmaps.shared.FilterCategory
 import io.beatmaps.shared.FilterInfo
 import io.beatmaps.shared.Search
@@ -121,6 +122,7 @@ class PlaylistFeed : RComponent<PlaylistFeedProps, PlaylistFeedState>() {
     override fun RBuilder.render() {
         search<PlaylistSearchParams> {
             ref = searchRef
+            sortOrderTarget = SortOrderTarget.Playlist
             maxNps = 16
             filters = playlistFilters
             filterBody = functionComponent { props ->

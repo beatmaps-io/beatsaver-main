@@ -3,6 +3,7 @@ package io.beatmaps.shared
 import external.DateRangePicker
 import external.Moment
 import io.beatmaps.api.SearchOrder
+import io.beatmaps.api.SortOrderTarget
 import io.beatmaps.common.MapTag
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -44,6 +45,7 @@ external interface FilterBodyProps<T> : RProps {
 }
 
 data class SearchProps<T> (
+    var sortOrderTarget: SortOrderTarget,
     var maxNps: Int,
     var filters: List<FilterInfo<T>>,
     var filterBody: FC<FilterBodyProps<T>>,
@@ -270,7 +272,7 @@ open class Search<T>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchS
                                 order = SearchOrder.fromInt(sortRef.current?.selectedIndex ?: 0) ?: SearchOrder.Relevance
                             }
                         }
-                        SearchOrder.values().forEach {
+                        SearchOrder.values().filter { props.sortOrderTarget in it.targets }.forEach {
                             option {
                                 attrs.selected = state.order == it
                                 +it.toString()

@@ -2,6 +2,7 @@ package io.beatmaps.index
 
 import external.Moment
 import io.beatmaps.api.SearchOrder
+import io.beatmaps.api.SortOrderTarget
 import io.beatmaps.shared.FilterCategory
 import io.beatmaps.shared.FilterInfo
 import io.beatmaps.common.MapTag
@@ -159,6 +160,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
     override fun RBuilder.render() {
         search<SearchParams> {
             ref = searchRef
+            sortOrderTarget = SortOrderTarget.Map
             filters = mapFilters
             filterBody = functionComponent { props ->
                 div("d-flex") {
