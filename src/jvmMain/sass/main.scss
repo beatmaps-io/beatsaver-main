@@ -1288,7 +1288,6 @@ small.alert-count {
       }
       .additional {
         flex-basis: 50% !important;
-        justify-content: flex-end !important;
       }
     }
   }
@@ -1314,13 +1313,7 @@ small.alert-count {
   .search-results {
     .playlist-card {
       .title {
-        width: 650px !important;
-      }
-      .info {
-        flex-basis: 60% !important;
-      }
-      .additional {
-        flex-basis: 40% !important;
+        width: 550px !important;
       }
     }
   }
