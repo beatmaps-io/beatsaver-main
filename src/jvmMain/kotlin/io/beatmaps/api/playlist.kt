@@ -249,8 +249,8 @@ fun Route.playlistRoute() {
                         .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
                         .notNull(it.minNps) { o -> Beatmap.maxNps greaterEq o.toBigDecimal() }
                         .notNull(it.maxNps) { o -> Beatmap.minNps lessEq o.toBigDecimal() }
-                        .notNull(it.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }
-                        .notNull(it.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
+                        .notNull(it.from) { o -> Playlist.createdAt greaterEq o.toJavaInstant() }
+                        .notNull(it.to) { o -> Playlist.createdAt lessEq o.toJavaInstant() }
                         .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }
                         .notNull(it.verified) { o -> User.verifiedMapper eq o }
                 }
