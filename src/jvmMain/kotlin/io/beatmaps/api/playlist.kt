@@ -469,9 +469,9 @@ fun Route.playlistRoute() {
 
                                 playlist.id.value
                             } else {
-                                (PlaylistMap.deleteWhere {
+                                PlaylistMap.deleteWhere {
                                     (PlaylistMap.playlistId eq req.id) and (PlaylistMap.mapId eq pmr.mapId.toInt(16))
-                                } > 0).let { res -> if (res) playlist.id.value else 0 }
+                                }.let { res -> if (res > 0) playlist.id.value else 0 }
                             }
                         }
                 }
@@ -481,7 +481,7 @@ fun Route.playlistRoute() {
                 when (it) {
                     null -> call.respond(HttpStatusCode.NotFound)
                     0 -> call.respond(ActionResponse(false))
-                    else ->  {
+                    else -> {
                         call.pub("beatmaps", "playlists.$it.updated", null, it)
                         call.respond(ActionResponse(true))
                     }
