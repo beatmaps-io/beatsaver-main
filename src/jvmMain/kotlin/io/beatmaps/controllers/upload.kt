@@ -26,6 +26,7 @@ import io.beatmaps.common.localCoverFolder
 import io.beatmaps.common.localFolder
 import io.beatmaps.common.pub
 import io.beatmaps.common.zip.ExtractedInfo
+import io.beatmaps.common.zip.RarException
 import io.beatmaps.common.zip.ZipHelper
 import io.beatmaps.common.zip.ZipHelper.Companion.openZip
 import io.beatmaps.common.zip.ZipHelperException
@@ -68,7 +69,6 @@ import java.nio.file.Files
 import java.security.DigestOutputStream
 import java.security.MessageDigest
 import java.util.logging.Logger
-import java.util.zip.ZipException
 import kotlin.collections.set
 import kotlin.math.roundToInt
 
@@ -162,19 +162,9 @@ fun Route.uploadController() {
                             }
                         }
                     }
-                } catch (e: ZipException) {
-                    if (file.exists()) {
-                        val rar = file.inputStream().use {
-                            String(it.readNBytes(4)) == "Rar!"
-                        }
-
-                        if (rar) {
-                            file.delete()
-                            throw UploadException("Don't upload rar files. Use the package button in your map editor.")
-                        }
-                    }
+                } catch (e: RarException) {
                     file.delete()
-                    throw UploadException("Error opening zip file")
+                    throw UploadException("Don't upload rar files. Use the package button in your map editor.")
                 } catch (e: SerializationException) {
                     e.printStackTrace()
                     file.delete()
