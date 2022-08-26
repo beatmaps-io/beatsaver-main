@@ -14,6 +14,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.publish
+import java.math.BigDecimal
 
 fun Application.playlistStats() {
     rabbitOptional {
@@ -41,8 +42,8 @@ fun Application.playlistStats() {
                     .complexToBeatmap()
 
                 val totalMapsVal = beatmaps.size
-                val minNpsVal = beatmaps.minOf { it.minNps }
-                val maxNpsVal = beatmaps.maxOf { it.maxNps }
+                val minNpsVal = beatmaps.minOfOrNull { it.minNps } ?: BigDecimal.ZERO
+                val maxNpsVal = beatmaps.maxOfOrNull { it.maxNps } ?: BigDecimal.ZERO
 
                 Playlist.update({
                     Playlist.id eq playlistId
