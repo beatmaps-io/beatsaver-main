@@ -46,7 +46,7 @@ class CheckScheduled(private val rb: RabbitMQ) : TimerTask() {
                     if (publishVersion(it.mapId.value, it.hash)) it else null
                 }
             }.forEach {
-                rb.publish("beatmaps", "maps.${it.mapId.value}.updated", null, it.mapId.value)
+                rb.publish("beatmaps", "maps.${it.mapId.value}.updated.state", null, it.mapId.value)
             }
         } catch (e: Exception) {
             schedulerLogger.log(Level.SEVERE, "Exception while running task", e)

@@ -33,6 +33,7 @@ import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.localPlaylistCoverFolder
+import io.beatmaps.common.pub
 import io.beatmaps.controllers.UploadException
 import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.controllers.uploadDir
@@ -216,22 +217,20 @@ fun Route.playlistRoute() {
 
         newSuspendedTransaction {
             val playlists = Playlist
-                .let { q ->
-                    if (it.includeEmpty != true) {
-                        q.joinMaps(type = JoinType.INNER)
-                    } else {
-                        q
-                    }
-                }
                 .joinOwner()
                 .joinPlaylistCurator()
                 .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) + Playlist.columns + User.columns)
                 .select {
                     (Playlist.deletedAt.isNull() and Playlist.public)
                         .let { q -> searchInfo.applyQuery(q) }
+                        .let { q ->
+                            if (it.includeEmpty != true) {
+                                q.and(Playlist.totalMaps greater 0)
+                            } else q
+                        }
                         .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
-                        .notNull(it.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }
-                        .notNull(it.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
+                        .notNull(it.from) { o -> Playlist.createdAt greaterEq o.toJavaInstant() }
+                        .notNull(it.to) { o -> Playlist.createdAt lessEq o.toJavaInstant() }
                         .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }
                 }
                 .groupBy(Playlist.id, User.id)
@@ -473,6 +472,10 @@ fun Route.playlistRoute() {
                                 PlaylistMap.deleteWhere {
                                     (PlaylistMap.playlistId eq req.id) and (PlaylistMap.mapId eq pmr.mapId.toInt(16))
                                 } > 0
+                            }.also {
+                                if (it) {
+                                    call.pub("beatmaps", "playlists.${playlist.id}.updated", null, playlist.id)
+                                }
                             }
                         }
                 }
@@ -584,7 +587,7 @@ fun Route.playlistRoute() {
             }
 
             transaction {
-                fun updatePlaylist() =
+                fun updatePlaylist() {
                     Playlist.update({
                         query
                     }) {
@@ -597,9 +600,10 @@ fun Route.playlistRoute() {
                         }
                         it[updatedAt] = NowExpression(updatedAt.columnType)
                     } > 0 || throw UploadException("Update failed")
+                }
 
                 updatePlaylist().also {
-                    if (it && sess.isAdmin() && beforePlaylist.owner?.id != sess.userId) {
+                    if (sess.isAdmin() && beforePlaylist.owner?.id != sess.userId) {
                         ModLog.insert(
                             sess.userId,
                             null,

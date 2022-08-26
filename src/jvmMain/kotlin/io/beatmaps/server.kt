@@ -38,6 +38,7 @@ import io.beatmaps.login.installOauth2
 import io.beatmaps.login.installSessions
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
+import io.beatmaps.util.playlistStats
 import io.beatmaps.util.scheduleTask
 import io.beatmaps.websockets.mapUpdateEnricher
 import io.ktor.application.Application
@@ -293,6 +294,15 @@ fun Application.beatmapsio() {
 
                 queueDeclare("bm.updateStream", true, false, false, genericQueueConfig)
                 queueBind("bm.updateStream", "beatmaps", "maps.*.updated")
+                queueBind("bm.updateStream", "beatmaps", "maps.*.updated.*")
+
+                queueDeclare("bm.mapPlaylistTrigger", true, false, false, genericQueueConfig)
+                queueBind("bm.mapPlaylistTrigger", "beatmaps", "maps.*.updated.deleted")
+                queueBind("bm.mapPlaylistTrigger", "beatmaps", "maps.*.updated.state")
+
+                queueDeclare("bm.playlistStats", true, false, false, genericQueueConfig)
+                queueBind("bm.playlistStats", "beatmaps", "playlists.*.updated")
+                queueBind("bm.playlistStats", "beatmaps", "playlists.*.stats")
 
                 queueDeclare("bm.downloadCount", true, false, false, genericQueueConfig)
                 queueBind("bm.downloadCount", "beatmaps", "download.#")
@@ -307,6 +317,7 @@ fun Application.beatmapsio() {
     installOauth2()
 
     scheduleTask()
+    playlistStats()
 
     routing {
         get("/") {

@@ -171,7 +171,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
         }
     }
 
-    private fun curate(playlistId: Int, userId: Int, curated: Boolean = true) {
+    private fun curate(playlistId: Int, curated: Boolean = true) {
         Axios.post<PlaylistFull>("${Config.apibase}/playlists/curate", CurateMap(playlistId, curated), generateConfig<CurateMap, PlaylistFull>()).then({
             setState {
                 playlist = it.data
@@ -232,7 +232,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                     attrs.attributes["aria-label"] = text
                                     attrs.onClickFunction = {
                                         it.preventDefault()
-                                        curate(pl.playlistId, userData.userId, pl.curatedAt == null)
+                                        curate(pl.playlistId, pl.curatedAt == null)
                                     }
                                     +text
                                 }
