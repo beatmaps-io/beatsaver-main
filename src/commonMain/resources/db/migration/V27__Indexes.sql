@@ -1,3 +1,4 @@
+ALTER TABLE public.playlist_map DROP CONSTRAINT IF EXISTS link;
 DROP INDEX IF EXISTS link;
 
 ALTER TABLE public.playlist_map
