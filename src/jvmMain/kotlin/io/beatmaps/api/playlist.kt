@@ -467,15 +467,11 @@ fun Route.playlistRoute() {
                                     it[order] = newOrder
                                 }
 
-                                true
+                                playlist.id.value
                             } else {
-                                PlaylistMap.deleteWhere {
+                                (PlaylistMap.deleteWhere {
                                     (PlaylistMap.playlistId eq req.id) and (PlaylistMap.mapId eq pmr.mapId.toInt(16))
-                                } > 0
-                            }.also {
-                                if (it) {
-                                    call.pub("beatmaps", "playlists.${playlist.id}.updated", null, playlist.id.value)
-                                }
+                                } > 0).let { res -> if (res) playlist.id.value else 0 }
                             }
                         }
                 }
@@ -484,7 +480,11 @@ fun Route.playlistRoute() {
             }.let {
                 when (it) {
                     null -> call.respond(HttpStatusCode.NotFound)
-                    else -> call.respond(ActionResponse(it))
+                    0 -> call.respond(ActionResponse(false))
+                    else ->  {
+                        call.pub("beatmaps", "playlists.$it.updated", null, it)
+                        call.respond(ActionResponse(true))
+                    }
                 }
             }
         }
