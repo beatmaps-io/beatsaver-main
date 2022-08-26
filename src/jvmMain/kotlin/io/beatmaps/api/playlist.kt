@@ -33,6 +33,7 @@ import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.localPlaylistCoverFolder
+import io.beatmaps.common.pub
 import io.beatmaps.controllers.UploadException
 import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.controllers.uploadDir
@@ -162,8 +163,7 @@ suspend fun ApplicationCall.handleMultipart(cb: suspend (PartData.FileItem) -> U
 }
 
 val playlistStats = listOf(
-    Playlist.mapCount, Playlist.mapperCount, Playlist.totalDuration,
-    Playlist.minNps, Playlist.maxNps, Playlist.upVotes, Playlist.downVotes, Playlist.avgScore
+    Playlist.mapperCount, Playlist.totalDuration, Playlist.upVotes, Playlist.downVotes, Playlist.avgScore
 )
 
 fun Route.playlistRoute() {
@@ -246,6 +246,11 @@ fun Route.playlistRoute() {
                 .select {
                     (Playlist.deletedAt.isNull() and Playlist.public)
                         .let { q -> searchInfo.applyQuery(q) }
+                        .let { q ->
+                            if (it.includeEmpty != true) {
+                                q.and(Playlist.totalMaps greater 0)
+                            } else q
+                        }
                         .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
                         .notNull(it.minNps) { o -> Beatmap.maxNps greaterEq o.toBigDecimal() }
                         .notNull(it.maxNps) { o -> Beatmap.minNps lessEq o.toBigDecimal() }
@@ -255,10 +260,14 @@ fun Route.playlistRoute() {
                         .notNull(it.verified) { o -> User.verifiedMapper eq o }
                 }
                 .groupBy(Playlist.id, User.id)
-                .having {
-                    if (it.includeEmpty == true) Op.TRUE else Playlist.mapCount greater 0
-                }
-                .orderBy(*sortArgs)
+                .orderBy(
+                    when (actualSortOrder) {
+                        SearchOrder.Relevance -> searchInfo.similarRank
+                        SearchOrder.Curated -> Playlist.curatedAt
+                        SearchOrder.Rating, SearchOrder.Latest -> Playlist.createdAt
+                    },
+                    SortOrder.DESC
+                )
                 .limit(it.page)
                 .handleCurator()
                 .handleOwner()
@@ -501,11 +510,11 @@ fun Route.playlistRoute() {
                                     it[order] = newOrder
                                 }
 
-                                true
+                                playlist.id.value
                             } else {
                                 PlaylistMap.deleteWhere {
                                     (PlaylistMap.playlistId eq req.id) and (PlaylistMap.mapId eq pmr.mapId.toInt(16))
-                                } > 0
+                                }.let { res -> if (res > 0) playlist.id.value else 0 }
                             }
                         }
                 }
@@ -514,7 +523,11 @@ fun Route.playlistRoute() {
             }.let {
                 when (it) {
                     null -> call.respond(HttpStatusCode.NotFound)
-                    else -> call.respond(ActionResponse(it))
+                    0 -> call.respond(ActionResponse(false))
+                    else -> {
+                        call.pub("beatmaps", "playlists.$it.updated", null, it)
+                        call.respond(ActionResponse(true))
+                    }
                 }
             }
         }
@@ -617,7 +630,7 @@ fun Route.playlistRoute() {
             }
 
             transaction {
-                fun updatePlaylist() =
+                fun updatePlaylist() {
                     Playlist.update({
                         query
                     }) {
@@ -630,9 +643,10 @@ fun Route.playlistRoute() {
                         }
                         it[updatedAt] = NowExpression(updatedAt.columnType)
                     } > 0 || throw UploadException("Update failed")
+                }
 
                 updatePlaylist().also {
-                    if (it && sess.isAdmin() && beforePlaylist.owner?.id != sess.userId) {
+                    if (sess.isAdmin() && beforePlaylist.owner?.id != sess.userId) {
                         ModLog.insert(
                             sess.userId,
                             null,

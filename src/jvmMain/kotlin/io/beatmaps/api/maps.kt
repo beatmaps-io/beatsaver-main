@@ -171,7 +171,7 @@ fun Route.mapDetailRoute() {
                     }
                 }
 
-                if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
+                if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated.curation", null, mapUpdate.id)
                 call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
             }
         }
@@ -194,7 +194,7 @@ fun Route.mapDetailRoute() {
                     } > 0
                 }
 
-                if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
+                if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated.ai", null, mapUpdate.id)
                 call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
             }
         }
@@ -232,7 +232,7 @@ fun Route.mapDetailRoute() {
                             mapUpdate.name?.let { n -> it[name] = n.take(1000) }
                             mapUpdate.description?.let { d -> it[description] = d.take(10000) }
                             if (tooMany != true) { // Don't update tags if request is trying to add too many tags
-                                mapUpdate.tags?.map { it.slug }?.let { t -> it[tags] = t.toTypedArray() }
+                                mapUpdate.tags?.map { t -> t.slug }?.let { t -> it[tags] = t.toTypedArray() }
                             }
                             it[updatedAt] = NowExpression(updatedAt.columnType)
                         }
@@ -263,7 +263,8 @@ fun Route.mapDetailRoute() {
                 }
             }
 
-            if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
+            val updateType = if (mapUpdate.deleted) "delete" else "info"
+            if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated.$updateType", null, mapUpdate.id)
             call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
         }
     }
@@ -304,7 +305,7 @@ fun Route.mapDetailRoute() {
                 false
             }
 
-            if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated", null, mapUpdate.id)
+            if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated.info", null, mapUpdate.id)
             call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
         }
     }

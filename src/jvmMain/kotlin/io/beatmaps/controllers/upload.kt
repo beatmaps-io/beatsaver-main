@@ -329,7 +329,7 @@ fun Route.uploadController() {
             }
         }
 
-        call.pub("beatmaps", "maps.$newMapId.updated", null, newMapId)
+        call.pub("beatmaps", "maps.$newMapId.updated.upload", null, newMapId)
         call.respond(toHexString(newMapId))
     }
 }

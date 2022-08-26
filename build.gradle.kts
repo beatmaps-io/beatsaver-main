@@ -205,7 +205,7 @@ tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
 }
 
 tasks.withType<AbstractCopyTask> {
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 tasks.getByName<Jar>("jvmJar") {
