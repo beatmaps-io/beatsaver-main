@@ -474,7 +474,7 @@ fun Route.playlistRoute() {
                                 } > 0
                             }.also {
                                 if (it) {
-                                    call.pub("beatmaps", "playlists.${playlist.id}.updated", null, playlist.id)
+                                    call.pub("beatmaps", "playlists.${playlist.id}.updated", null, playlist.id.value)
                                 }
                             }
                         }
