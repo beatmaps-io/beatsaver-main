@@ -25,9 +25,9 @@ fun Application.playlistStats() {
                         .select {
                             PlaylistMap.mapId eq mapId
                         }
-                )
+                ).toList()
             }.forEach {
-                publish("beatmaps", "playlists.${it.playlistId}.stats", null, it.playlistId)
+                publish("beatmaps", "playlists.${it.playlistId}.stats", null, it.playlistId.value)
             }
         }
 
