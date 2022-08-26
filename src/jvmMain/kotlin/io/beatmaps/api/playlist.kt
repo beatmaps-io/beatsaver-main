@@ -233,7 +233,6 @@ fun Route.playlistRoute() {
                         .notNull(it.to) { o -> Playlist.createdAt lessEq o.toJavaInstant() }
                         .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }
                 }
-                .groupBy(Playlist.id, User.id)
                 .orderBy(
                     when (actualSortOrder) {
                         SearchOrder.Relevance -> searchInfo.similarRank
