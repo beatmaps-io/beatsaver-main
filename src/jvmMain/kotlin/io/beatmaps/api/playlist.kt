@@ -65,7 +65,6 @@ import net.coobird.thumbnailator.Thumbnails
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.FieldSet
 import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -252,22 +251,15 @@ fun Route.playlistRoute() {
                             } else q
                         }
                         .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
-                        .notNull(it.minNps) { o -> Beatmap.maxNps greaterEq o.toBigDecimal() }
-                        .notNull(it.maxNps) { o -> Beatmap.minNps lessEq o.toBigDecimal() }
+                        .notNull(it.minNps) { o -> Playlist.maxNps greaterEq o.toBigDecimal() }
+                        .notNull(it.maxNps) { o -> Playlist.minNps lessEq o.toBigDecimal() }
                         .notNull(it.from) { o -> Playlist.createdAt greaterEq o.toJavaInstant() }
                         .notNull(it.to) { o -> Playlist.createdAt lessEq o.toJavaInstant() }
                         .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }
                         .notNull(it.verified) { o -> User.verifiedMapper eq o }
                 }
                 .groupBy(Playlist.id, User.id)
-                .orderBy(
-                    when (actualSortOrder) {
-                        SearchOrder.Relevance -> searchInfo.similarRank
-                        SearchOrder.Curated -> Playlist.curatedAt
-                        SearchOrder.Rating, SearchOrder.Latest -> Playlist.createdAt
-                    },
-                    SortOrder.DESC
-                )
+                .orderBy(*sortArgs)
                 .limit(it.page)
                 .handleCurator()
                 .handleOwner()

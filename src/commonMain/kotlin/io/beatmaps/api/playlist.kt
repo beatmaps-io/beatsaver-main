@@ -47,7 +47,7 @@ data class PlaylistFull(
 
 @Serializable
 data class PlaylistStats(
-    val mapCount: Long,
+    val totalMaps: Int,
     val mapperCount: Long,
     val totalDuration: Int,
     val minNps: Double,

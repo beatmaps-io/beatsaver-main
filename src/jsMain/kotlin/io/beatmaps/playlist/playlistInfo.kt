@@ -107,7 +107,7 @@ class PlaylistInfo : RComponent<PlaylistInfoProps, PlaylistInfoState>() {
                                         attrs.attributes["aria-label"] = "Total amount of maps"
                                     }
                                     span {
-                                        +pl.stats.mapCount.toString()
+                                        +pl.stats.totalMaps.toString()
                                     }
                                 }
                                 div("me-4") {

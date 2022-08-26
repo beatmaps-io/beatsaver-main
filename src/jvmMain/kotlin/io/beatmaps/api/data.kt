@@ -99,12 +99,12 @@ fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPr
 )
 fun PlaylistFull.Companion.from(row: ResultRow, cdnPrefix: String) = from(
     PlaylistDao.wrapRow(row),
-    if (row.hasValue(Playlist.mapCount)) PlaylistStats(
-        row[Playlist.mapCount],
+    if (row.hasValue(Playlist.mapperCount)) PlaylistStats(
+        row[Playlist.totalMaps],
         row[Playlist.mapperCount],
         row[Playlist.totalDuration] ?: 0,
-        row[Playlist.minNps]?.toDouble() ?: 0.0,
-        row[Playlist.maxNps]?.toDouble() ?: 0.0,
+        row[Playlist.minNps].toDouble(),
+        row[Playlist.maxNps].toDouble(),
         row[Playlist.upVotes] ?: 0,
         row[Playlist.downVotes] ?: 0,
         row[Playlist.avgScore]?.toDouble() ?: 0.0
