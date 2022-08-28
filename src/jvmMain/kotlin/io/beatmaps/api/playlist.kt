@@ -208,7 +208,7 @@ fun Route.playlistRoute() {
                             .limit(20)
                     )
                 }
-                .groupBy(Playlist.id, User.id)
+                .groupBy(Playlist.id, User.id, curatorAlias[User.id])
                 .handleOwner()
                 .handleCurator()
                 .sortedByDescending { row ->
@@ -276,7 +276,7 @@ fun Route.playlistRoute() {
                             .limit(it.page)
                     )
                 }
-                .groupBy(Playlist.id, User.id)
+                .groupBy(Playlist.id, User.id, curatorAlias[User.id])
                 .orderBy(*sortArgs)
                 .handleCurator()
                 .handleOwner()
@@ -304,7 +304,7 @@ fun Route.playlistRoute() {
                         }
                     }
                 }
-                .groupBy(Playlist.id, User.id)
+                .groupBy(Playlist.id, User.id, curatorAlias[User.id])
                 .handleOwner()
                 .handleCurator()
                 .firstOrNull()?.let {
@@ -399,7 +399,7 @@ fun Route.playlistRoute() {
                         )
                     }
                     .orderBy(Playlist.createdAt, SortOrder.DESC)
-                    .groupBy(Playlist.id, User.id)
+                    .groupBy(Playlist.id, User.id, curatorAlias[User.id])
                     .limit(req.page, 20)
                     .handleOwner()
                     .handleCurator()
