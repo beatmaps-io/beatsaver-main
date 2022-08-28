@@ -190,9 +190,7 @@ fun Route.playlistRoute() {
 
         val playlists = transaction {
             Playlist
-                .joinMaps {
-                    Beatmap.deletedAt.isNull()
-                }
+                .joinMaps()
                 .joinPlaylistCurator()
                 .joinOwner()
                 .slice(Playlist.columns + User.columns + playlistStats)
@@ -246,9 +244,7 @@ fun Route.playlistRoute() {
 
         newSuspendedTransaction {
             val playlists = Playlist
-                .joinMaps(type = JoinType.LEFT) {
-                    Beatmap.deletedAt.isNull()
-                }
+                .joinMaps()
                 .joinOwner()
                 .joinPlaylistCurator()
                 .slice(
@@ -294,9 +290,7 @@ fun Route.playlistRoute() {
     fun getDetail(id: Int, cdnPrefix: String, userId: Int?, isAdmin: Boolean, page: Long?): PlaylistPage? {
         val detailPage = transaction {
             val playlist = Playlist
-                .joinMaps {
-                    Beatmap.deletedAt.isNull()
-                }
+                .joinMaps()
                 .joinOwner()
                 .joinPlaylistCurator()
                 .slice(
@@ -422,9 +416,7 @@ fun Route.playlistRoute() {
         } else {
             val page = doQuery(
                 Playlist
-                    .joinMaps {
-                        Beatmap.deletedAt.isNull()
-                    }
+                    .joinMaps()
                     .joinOwner()
                     .joinPlaylistCurator()
                     .slice(
