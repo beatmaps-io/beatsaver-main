@@ -165,6 +165,12 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                 i("fas fa-list") { }
                                 +"Playlist"
                             }
+                            if (props.userData?.admin == true) {
+                                a("/modlog?user=${state.userDetail?.name}", classes = "btn btn-secondary me-2") {
+                                    i("fas fa-scroll") { }
+                                    +"Mod Log"
+                                }
+                            }
 
                             +"Maps: ${it.totalMaps}, Upvotes: ${it.totalUpvotes}, Downvotes: ${it.totalDownvotes}"
                             br { }
