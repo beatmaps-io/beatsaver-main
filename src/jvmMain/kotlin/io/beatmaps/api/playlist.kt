@@ -25,6 +25,7 @@ import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.PlaylistMapDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.handleCurator
 import io.beatmaps.common.dbo.handleOwner
 import io.beatmaps.common.dbo.joinCurator
@@ -193,7 +194,7 @@ fun Route.playlistRoute() {
                 .joinMaps()
                 .joinPlaylistCurator()
                 .joinOwner()
-                .slice(Playlist.columns + User.columns + playlistStats)
+                .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats)
                 .select {
                     Playlist.id.inSubQuery(
                         Playlist
@@ -249,7 +250,7 @@ fun Route.playlistRoute() {
                 .joinPlaylistCurator()
                 .slice(
                     (if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) +
-                        Playlist.columns + User.columns + playlistStats
+                        Playlist.columns + User.columns + curatorAlias.columns + playlistStats
                 )
                 .select {
                     Playlist.id.inSubQuery(
@@ -293,9 +294,7 @@ fun Route.playlistRoute() {
                 .joinMaps()
                 .joinOwner()
                 .joinPlaylistCurator()
-                .slice(
-                    Playlist.columns + User.columns + playlistStats
-                )
+                .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats)
                 .select {
                     (Playlist.id eq id).let {
                         if (isAdmin) {
@@ -419,9 +418,7 @@ fun Route.playlistRoute() {
                     .joinMaps()
                     .joinOwner()
                     .joinPlaylistCurator()
-                    .slice(
-                        Playlist.columns + User.columns + playlistStats
-                    )
+                    .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats)
             ) {
                 PlaylistFull.from(it, cdnPrefix())
             }
