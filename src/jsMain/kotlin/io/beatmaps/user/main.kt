@@ -33,6 +33,7 @@ import react.dom.span
 import react.dom.ul
 import react.ref
 import react.router.dom.RouteResultHistory
+import react.router.dom.routeLink
 import react.setState
 
 external interface ProfilePageProps : RProps {
@@ -166,7 +167,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                 +"Playlist"
                             }
                             if (props.userData?.admin == true) {
-                                a("/modlog?user=${state.userDetail?.name}", classes = "btn btn-secondary me-2") {
+                                routeLink("/modlog?user=${state.userDetail?.name}", className = "btn btn-secondary me-2") {
                                     i("fas fa-scroll") { }
                                     +"Mod Log"
                                 }
