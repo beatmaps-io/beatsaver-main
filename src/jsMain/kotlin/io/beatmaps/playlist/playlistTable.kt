@@ -9,6 +9,8 @@ import io.beatmaps.common.Config
 import io.beatmaps.index.encodeURIComponent
 import kotlinx.browser.window
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HashChangeEvent
+import org.w3c.dom.asList
 import org.w3c.dom.events.Event
 import react.RBuilder
 import react.RComponent
@@ -52,6 +54,7 @@ external interface PlaylistTableState : RState {
     var visPage: Int
     var finalPage: Int
     var visiblePages: IntRange
+    var scroll: Boolean
 }
 
 class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
@@ -60,6 +63,8 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
 
     private val playlistsPerPage = 20
     private val rowHeight = 80.0
+    private val beforeContent = 59.5
+    private val grace = 5
 
     private val pageHeight = rowHeight * playlistsPerPage
 
@@ -68,10 +73,44 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
         setState {
             pages = mapOf()
             loading = false
-            visItem = 0
-            visPage = 0
+            visItem = -1
+            visPage = -1
             finalPage = Int.MAX_VALUE
             visiblePages = visPage.rangeTo(visPage + totalVisiblePages)
+            scroll = true
+        }
+    }
+
+    private fun scrollTo(idx: Int) {
+        val top = resultsTable.current?.children?.asList()?.get(idx)?.getBoundingClientRect()?.top ?: 0.0
+        val scrollTo = top + window.pageYOffset - beforeContent
+        window.scrollTo(0.0, scrollTo)
+    }
+
+    private fun currentItem(): Int {
+        resultsTable.current?.children?.asList()?.forEachIndexed { idx, it ->
+            val rect = it.getBoundingClientRect()
+            if (rect.top >= beforeContent - grace) {
+                return idx
+            }
+        }
+        return 0
+    }
+
+    private fun updateFromHash(e: HashChangeEvent?) {
+        val totalVisiblePages = ceil(window.innerHeight / pageHeight).toInt()
+        val hashPos = window.location.hash.substring(1).toIntOrNull()
+        setState {
+            visItem = (hashPos ?: 1) - 1
+            visPage = max(1, visItem - 1) / playlistsPerPage
+            visiblePages = visPage.rangeTo(visPage + totalVisiblePages)
+            scroll = hashPos != null
+
+            if (visPage == 0) {
+                window.scrollTo(0.0, 0.0)
+            } else if (pages.containsKey(visPage)) {
+                scrollTo(visItem)
+            }
         }
     }
 
@@ -82,7 +121,9 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
     }
 
     override fun componentDidMount() {
-        loadNextPage()
+        updateFromHash(null)
+
+        window.onhashchange = ::updateFromHash
     }
 
     override fun componentWillUpdate(nextProps: PlaylistTableProps, nextState: PlaylistTableState) {
@@ -97,6 +138,7 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
                 visPage = 0
                 finalPage = Int.MAX_VALUE
                 visiblePages = visPage.rangeTo(visPage + totalVisiblePages)
+                scroll = false
             }
 
             window.setTimeout(::loadNextPage, 0)
@@ -134,13 +176,20 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
             getUrl(toLoad),
             generateConfig<String, PlaylistSearchResponse>()
         ).then {
+            val shouldScroll = state.scroll
             val page = it.data.docs
+
             setState {
                 loading = false
                 if (page.isEmpty() && toLoad < finalPage) {
                     finalPage = toLoad
                 }
                 pages = pages.plus(toLoad to page)
+                scroll = false
+            }
+
+            if (shouldScroll) {
+                scrollTo(state.visItem)
             }
             window.onscroll = ::handleScroll
             if (it.data.docs.isNotEmpty()) {
@@ -157,10 +206,9 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
 
     @Suppress("UNUSED_PARAMETER")
     private fun handleScroll(e: Event) {
-        val scrollPosition = window.pageYOffset
         val windowSize = window.innerHeight
 
-        val item = ((scrollPosition - 19) / rowHeight).toInt()
+        val item = currentItem()
         if (item != state.visItem) {
             val totalVisiblePages = ceil(windowSize / pageHeight).toInt()
             setState {
