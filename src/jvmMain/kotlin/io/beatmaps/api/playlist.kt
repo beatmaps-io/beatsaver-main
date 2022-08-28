@@ -197,13 +197,19 @@ fun Route.playlistRoute() {
                 .joinOwner()
                 .slice(Playlist.columns + User.columns + playlistStats)
                 .select {
-                    (Playlist.deletedAt.isNull() and (sess?.let { s -> Playlist.owner eq s.userId or Playlist.public } ?: Playlist.public))
-                        .notNull(it.before) { o -> sortField less o.toJavaInstant() }
-                        .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
+                    Playlist.id.inSubQuery(
+                        Playlist
+                            .slice(Playlist.id)
+                            .select {
+                                (Playlist.deletedAt.isNull() and (sess?.let { s -> Playlist.owner eq s.userId or Playlist.public } ?: Playlist.public))
+                                    .notNull(it.before) { o -> sortField less o.toJavaInstant() }
+                                    .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
+                            }
+                            .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
+                            .limit(20)
+                    )
                 }
                 .groupBy(Playlist.id, User.id)
-                .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
-                .limit(20)
                 .handleOwner()
                 .handleCurator()
                 .sortedByDescending { row ->
@@ -250,24 +256,31 @@ fun Route.playlistRoute() {
                         Playlist.columns + User.columns + playlistStats
                 )
                 .select {
-                    (Playlist.deletedAt.isNull() and Playlist.public)
-                        .let { q -> searchInfo.applyQuery(q) }
-                        .let { q ->
-                            if (it.includeEmpty != true) {
-                                q.and(Playlist.totalMaps greater 0)
-                            } else q
-                        }
-                        .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
-                        .notNull(it.minNps) { o -> Playlist.maxNps greaterEq o.toBigDecimal() }
-                        .notNull(it.maxNps) { o -> Playlist.minNps lessEq o.toBigDecimal() }
-                        .notNull(it.from) { o -> Playlist.createdAt greaterEq o.toJavaInstant() }
-                        .notNull(it.to) { o -> Playlist.createdAt lessEq o.toJavaInstant() }
-                        .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }
-                        .notNull(it.verified) { o -> User.verifiedMapper eq o }
+                    Playlist.id.inSubQuery(
+                        Playlist
+                            .slice(Playlist.id)
+                            .select {
+                                (Playlist.deletedAt.isNull() and Playlist.public)
+                                    .let { q -> searchInfo.applyQuery(q) }
+                                    .let { q ->
+                                        if (it.includeEmpty != true) {
+                                            q.and(Playlist.totalMaps greater 0)
+                                        } else q
+                                    }
+                                    .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
+                                    .notNull(it.minNps) { o -> Playlist.maxNps greaterEq o.toBigDecimal() }
+                                    .notNull(it.maxNps) { o -> Playlist.minNps lessEq o.toBigDecimal() }
+                                    .notNull(it.from) { o -> Playlist.createdAt greaterEq o.toJavaInstant() }
+                                    .notNull(it.to) { o -> Playlist.createdAt lessEq o.toJavaInstant() }
+                                    .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }
+                                    .notNull(it.verified) { o -> User.verifiedMapper eq o }
+                            }
+                            .orderBy(*sortArgs)
+                            .limit(it.page)
+                    )
                 }
                 .groupBy(Playlist.id, User.id)
                 .orderBy(*sortArgs)
-                .limit(it.page)
                 .handleCurator()
                 .handleOwner()
                 .map { playlist ->
@@ -376,13 +389,21 @@ fun Route.playlistRoute() {
             transaction {
                 table
                     .select {
-                        ((Playlist.owner eq req.userId) and Playlist.deletedAt.isNull()).let {
-                            if (req.userId == sess?.userId) {
-                                it
-                            } else {
-                                it.and(Playlist.public)
-                            }
-                        }
+                        Playlist.id.inSubQuery(
+                            Playlist
+                                .slice(Playlist.id)
+                                .select {
+                                    ((Playlist.owner eq req.userId) and Playlist.deletedAt.isNull()).let {
+                                        if (req.userId == sess?.userId) {
+                                            it
+                                        } else {
+                                            it.and(Playlist.public)
+                                        }
+                                    }
+                                }
+                                .orderBy(Playlist.createdAt, SortOrder.DESC)
+                                .limit(req.page, 20)
+                        )
                     }
                     .orderBy(Playlist.createdAt, SortOrder.DESC)
                     .groupBy(Playlist.id, User.id)
