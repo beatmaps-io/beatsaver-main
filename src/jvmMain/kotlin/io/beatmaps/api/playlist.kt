@@ -226,7 +226,7 @@ fun Route.playlistRoute() {
         val searchInfo = parseSearchQuery(it.q, searchFields)
         val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
         val sortArgs = when (actualSortOrder) {
-            SearchOrder.Relevance -> listOf(searchInfo.similarRank to SortOrder.DESC, Playlist.avgScore to SortOrder.DESC, Playlist.createdAt to SortOrder.DESC)
+            SearchOrder.Relevance -> listOf(searchInfo.similarRank to SortOrder.DESC, Playlist.createdAt to SortOrder.DESC)
             SearchOrder.Rating, SearchOrder.Latest -> listOf(Playlist.createdAt to SortOrder.DESC)
             SearchOrder.Curated -> listOf(Playlist.curatedAt to SortOrder.DESC_NULLS_LAST, Playlist.createdAt to SortOrder.DESC)
         }.toTypedArray()
