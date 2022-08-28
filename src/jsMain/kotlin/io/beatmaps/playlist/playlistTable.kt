@@ -151,6 +151,10 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
         }
     }
 
+    override fun componentWillUnmount() {
+        window.onscroll = null
+    }
+
     @Suppress("UNUSED_PARAMETER")
     private fun handleScroll(e: Event) {
         val scrollPosition = window.pageYOffset
