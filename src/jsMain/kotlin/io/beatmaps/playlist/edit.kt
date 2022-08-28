@@ -233,7 +233,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                         }
                     }
                     div("btn-group w-100 mt-5") {
-                        routeLink("/playlists/${props.id}", className = "btn btn-secondary") {
+                        routeLink(props.id?.let { "/playlists/$it" } ?: "/", className = "btn btn-secondary") {
                             +"Cancel"
                         }
                         if (props.id == null) {
