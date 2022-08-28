@@ -25,6 +25,7 @@ import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.PlaylistMapDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.handleCurator
 import io.beatmaps.common.dbo.handleOwner
 import io.beatmaps.common.dbo.joinCurator
@@ -63,7 +64,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import net.coobird.thumbnailator.Thumbnails
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.sql.ColumnSet
+import org.jetbrains.exposed.sql.FieldSet
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
@@ -71,10 +72,13 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.avg
+import org.jetbrains.exposed.sql.countDistinct
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -117,10 +121,13 @@ const val prefix: String = "/playlists"
         val q: String? = "",
         @DefaultValue("0") val page: Long = 0,
         val sortOrder: SearchOrder = SearchOrder.Relevance,
+        val minNps: Float? = null,
+        val maxNps: Float? = null,
         val from: Instant? = null,
         val to: Instant? = null,
         val includeEmpty: Boolean? = null,
         val curated: Boolean? = null,
+        val verified: Boolean? = null,
         @Ignore val api: PlaylistApi
     )
 }
@@ -158,6 +165,14 @@ suspend fun ApplicationCall.handleMultipart(cb: suspend (PartData.FileItem) -> U
     return MultipartRequest(dataMap, recaptchaSuccess)
 }
 
+val playlistStats = listOf(
+    Beatmap.uploader.countDistinct(),
+    Beatmap.duration.sum(),
+    Beatmap.upVotesInt.sum(),
+    Beatmap.downVotesInt.sum(),
+    Beatmap.score.avg()
+)
+
 fun Route.playlistRoute() {
     options<PlaylistApi.ByUploadDate> {
         call.response.header("Access-Control-Allow-Origin", "*")
@@ -176,23 +191,31 @@ fun Route.playlistRoute() {
 
         val playlists = transaction {
             Playlist
+                .joinMaps()
                 .joinPlaylistCurator()
                 .joinOwner()
+                .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats)
                 .select {
-                    (Playlist.deletedAt.isNull() and (sess?.let { s -> Playlist.owner eq s.userId or Playlist.public } ?: Playlist.public))
-                        .notNull(it.before) { o -> sortField less o.toJavaInstant() }
-                        .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
+                    Playlist.id.inSubQuery(
+                        Playlist
+                            .slice(Playlist.id)
+                            .select {
+                                (Playlist.deletedAt.isNull() and (sess?.let { s -> Playlist.owner eq s.userId or Playlist.public } ?: Playlist.public))
+                                    .notNull(it.before) { o -> sortField less o.toJavaInstant() }
+                                    .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
+                            }
+                            .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
+                            .limit(20)
+                    )
                 }
-                .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
-                .limit(20)
+                .groupBy(Playlist.id, User.id, curatorAlias[User.id])
                 .handleOwner()
                 .handleCurator()
-                .map { row -> PlaylistDao.wrapRow(row) }
-                .sortedByDescending { map ->
+                .sortedByDescending { row ->
                     when (it.sort) {
-                        null, LatestPlaylistSort.CREATED -> map.createdAt
-                        LatestPlaylistSort.SONGS_UPDATED -> map.songsChangedAt
-                        LatestPlaylistSort.UPDATED -> map.updatedAt
+                        null, LatestPlaylistSort.CREATED -> row[Playlist.createdAt]
+                        LatestPlaylistSort.SONGS_UPDATED -> row[Playlist.songsChangedAt]
+                        LatestPlaylistSort.UPDATED -> row[Playlist.updatedAt]
                     }
                 }
                 .map { playlist ->
@@ -214,34 +237,47 @@ fun Route.playlistRoute() {
         val searchFields = PgConcat(" ", Playlist.name, Playlist.description)
         val searchInfo = parseSearchQuery(it.q, searchFields)
         val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
+        val sortArgs = when (actualSortOrder) {
+            SearchOrder.Relevance -> listOf(searchInfo.similarRank to SortOrder.DESC, Playlist.createdAt to SortOrder.DESC)
+            SearchOrder.Rating, SearchOrder.Latest -> listOf(Playlist.createdAt to SortOrder.DESC)
+            SearchOrder.Curated -> listOf(Playlist.curatedAt to SortOrder.DESC_NULLS_LAST, Playlist.createdAt to SortOrder.DESC)
+        }.toTypedArray()
 
         newSuspendedTransaction {
             val playlists = Playlist
+                .joinMaps()
                 .joinOwner()
                 .joinPlaylistCurator()
-                .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) + Playlist.columns + User.columns)
-                .select {
-                    (Playlist.deletedAt.isNull() and Playlist.public)
-                        .let { q -> searchInfo.applyQuery(q) }
-                        .let { q ->
-                            if (it.includeEmpty != true) {
-                                q.and(Playlist.totalMaps greater 0)
-                            } else q
-                        }
-                        .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
-                        .notNull(it.from) { o -> Playlist.createdAt greaterEq o.toJavaInstant() }
-                        .notNull(it.to) { o -> Playlist.createdAt lessEq o.toJavaInstant() }
-                        .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }
-                }
-                .orderBy(
-                    when (actualSortOrder) {
-                        SearchOrder.Relevance -> searchInfo.similarRank
-                        SearchOrder.Curated -> Playlist.curatedAt
-                        SearchOrder.Rating, SearchOrder.Latest -> Playlist.createdAt
-                    },
-                    SortOrder.DESC
+                .slice(
+                    (if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) +
+                        Playlist.columns + User.columns + curatorAlias.columns + playlistStats
                 )
-                .limit(it.page)
+                .select {
+                    Playlist.id.inSubQuery(
+                        Playlist
+                            .slice(Playlist.id)
+                            .select {
+                                (Playlist.deletedAt.isNull() and Playlist.public)
+                                    .let { q -> searchInfo.applyQuery(q) }
+                                    .let { q ->
+                                        if (it.includeEmpty != true) {
+                                            q.and(Playlist.totalMaps greater 0)
+                                        } else q
+                                    }
+                                    .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
+                                    .notNull(it.minNps) { o -> Playlist.maxNps greaterEq o.toBigDecimal() }
+                                    .notNull(it.maxNps) { o -> Playlist.minNps lessEq o.toBigDecimal() }
+                                    .notNull(it.from) { o -> Playlist.createdAt greaterEq o.toJavaInstant() }
+                                    .notNull(it.to) { o -> Playlist.createdAt lessEq o.toJavaInstant() }
+                                    .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }
+                                    .notNull(it.verified) { o -> User.verifiedMapper eq o }
+                            }
+                            .orderBy(*sortArgs)
+                            .limit(it.page)
+                    )
+                }
+                .groupBy(Playlist.id, User.id, curatorAlias[User.id])
+                .orderBy(*sortArgs)
                 .handleCurator()
                 .handleOwner()
                 .map { playlist ->
@@ -255,8 +291,10 @@ fun Route.playlistRoute() {
     fun getDetail(id: Int, cdnPrefix: String, userId: Int?, isAdmin: Boolean, page: Long?): PlaylistPage? {
         val detailPage = transaction {
             val playlist = Playlist
+                .joinMaps()
                 .joinOwner()
                 .joinPlaylistCurator()
+                .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats)
                 .select {
                     (Playlist.id eq id).let {
                         if (isAdmin) {
@@ -266,6 +304,7 @@ fun Route.playlistRoute() {
                         }
                     }
                 }
+                .groupBy(Playlist.id, User.id, curatorAlias[User.id])
                 .handleOwner()
                 .handleCurator()
                 .firstOrNull()?.let {
@@ -339,20 +378,30 @@ fun Route.playlistRoute() {
 
         val sess = call.sessions.get<Session>()
 
-        fun <T> doQuery(table: ColumnSet = Playlist, block: (ResultRow) -> T) =
+        fun <T> doQuery(table: FieldSet = Playlist, block: (ResultRow) -> T) =
             transaction {
                 table
                     .select {
-                        ((Playlist.owner eq req.userId) and Playlist.deletedAt.isNull()).let {
-                            if (req.userId == sess?.userId) {
-                                it
-                            } else {
-                                it.and(Playlist.public)
-                            }
-                        }
+                        Playlist.id.inSubQuery(
+                            Playlist
+                                .slice(Playlist.id)
+                                .select {
+                                    ((Playlist.owner eq req.userId) and Playlist.deletedAt.isNull()).let {
+                                        if (req.userId == sess?.userId) {
+                                            it
+                                        } else {
+                                            it.and(Playlist.public)
+                                        }
+                                    }
+                                }
+                                .orderBy(Playlist.createdAt, SortOrder.DESC)
+                                .limit(req.page, 20)
+                        )
                     }
                     .orderBy(Playlist.createdAt, SortOrder.DESC)
+                    .groupBy(Playlist.id, User.id, curatorAlias[User.id])
                     .limit(req.page, 20)
+                    .handleOwner()
                     .handleCurator()
                     .map(block)
             }
@@ -365,7 +414,11 @@ fun Route.playlistRoute() {
             call.respond(page)
         } else {
             val page = doQuery(
-                Playlist.joinPlaylistCurator()
+                Playlist
+                    .joinMaps()
+                    .joinOwner()
+                    .joinPlaylistCurator()
+                    .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats)
             ) {
                 PlaylistFull.from(it, cdnPrefix())
             }

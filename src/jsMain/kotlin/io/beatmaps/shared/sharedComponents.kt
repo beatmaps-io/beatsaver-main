@@ -1,24 +1,44 @@
-package io.beatmaps.index
+package io.beatmaps.shared
 
+import external.ReactSlider
 import external.TimeAgo
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.MapVersion
+import io.beatmaps.api.UserDetail
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.index.ModalComponent
+import io.beatmaps.index.encodeURIComponent
+import io.beatmaps.index.oneclick
+import io.beatmaps.index.previewBaseUrl
 import io.beatmaps.maps.diffImg
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.datetime.Instant
+import kotlinx.html.DIV
+import kotlinx.html.InputType
+import kotlinx.html.id
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
+import org.w3c.dom.HTMLInputElement
 import react.RProps
 import react.RReadableRef
+import react.dom.RDOMBuilder
 import react.dom.a
 import react.dom.div
 import react.dom.i
+import react.dom.input
+import react.dom.jsStyle
+import react.dom.label
+import react.dom.p
+import react.dom.small
 import react.dom.span
 import react.functionComponent
 import react.router.dom.routeLink
 import kotlin.collections.set
+import kotlin.math.log
+import kotlin.math.pow
 
 external interface BotInfoProps : RProps {
     var automapper: Boolean?
@@ -173,6 +193,23 @@ val uploader = functionComponent<UploaderProps> { props ->
     }
 }
 
+external interface PlaylistOwnerProps : RProps {
+    var owner: UserDetail?
+    var time: Instant
+}
+
+val playlistOwner = functionComponent<PlaylistOwnerProps> { props ->
+    props.owner?.let { owner ->
+        routeLink("/profile/${owner.id}#playlists") {
+            +owner.name
+        }
+    } ?: +"<DELETED USER>"
+    +" - "
+    TimeAgo.default {
+        attrs.date = props.time.toString()
+    }
+}
+
 external interface ColoredCardProps : RProps {
     var color: String
     var icon: String?
@@ -207,6 +244,83 @@ val mapTitle = functionComponent<MapTitleProps> {
     routeLink("/maps/${it.mapKey}") {
         +it.title.ifBlank {
             "<NO NAME>"
+        }
+    }
+}
+
+external interface RatingProps : RProps {
+    var up: Int
+    var down: Int
+    var rating: Double
+}
+
+val rating = functionComponent<RatingProps> {
+    val totalVotes = (it.up + it.down).toDouble()
+    var uncertainty = 2.0.pow(-log(totalVotes / 2 + 1, 3.0))
+    val weightedRange = 25.0
+    val weighting = 2
+    if ((totalVotes + weighting) < weightedRange) {
+        uncertainty += (1 - uncertainty) * (1 - (totalVotes + weighting) * (1 / weightedRange))
+    }
+
+    div {
+        small("text-center vote") {
+            div("u") {
+                attrs.jsStyle {
+                    flex = it.up
+                }
+            }
+            div("o") {
+                attrs.jsStyle {
+                    flex = if (totalVotes < 1) 1 else (uncertainty * totalVotes / (1 - uncertainty))
+                }
+            }
+            div("d") {
+                attrs.jsStyle {
+                    flex = it.down
+                }
+            }
+        }
+        div("percentage") {
+            attrs.title = "${it.up}/${it.down}"
+            +"${it.rating}%"
+        }
+    }
+}
+
+fun RDOMBuilder<DIV>.toggle(id: String, text: String, localRef: RReadableRef<HTMLInputElement>, block: (Boolean) -> Unit) {
+    div("form-check form-switch") {
+        input(InputType.checkBox, classes = "form-check-input") {
+            attrs.id = id
+            ref = localRef
+            attrs.onChangeFunction = {
+                block(localRef.current?.checked ?: false)
+            }
+        }
+        label("form-check-label") {
+            attrs.htmlFor = id
+            +text
+        }
+    }
+}
+
+fun RDOMBuilder<DIV>.slider(text: String, currentMin: Float, currentMax: Float, max: Int, block: (Array<Int>) -> Unit) {
+    div("mb-3 col-sm-3") {
+        val maxSlider = max * 10
+        ReactSlider.default {
+            attrs.ariaLabel = arrayOf("Min $text", "Max $text")
+            attrs.value = arrayOf((currentMin * 10).toInt(), (currentMax * 10).toInt())
+            attrs.max = maxSlider
+            attrs.defaultValue = arrayOf(0, maxSlider)
+            attrs.minDistance = 5
+            attrs.onChange = block
+        }
+        p("m-0 float-start") {
+            +text
+        }
+        p("m-0 float-end") {
+            val maxStr = if (currentMax >= max) "∞" else currentMax.toString()
+            +"$currentMin - $maxStr"
         }
     }
 }

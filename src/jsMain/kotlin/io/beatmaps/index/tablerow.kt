@@ -2,6 +2,9 @@ package io.beatmaps.index
 
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
+import io.beatmaps.shared.diffIcons
+import io.beatmaps.shared.links
+import io.beatmaps.shared.uploader
 import react.RBuilder
 import react.RComponent
 import react.RProps

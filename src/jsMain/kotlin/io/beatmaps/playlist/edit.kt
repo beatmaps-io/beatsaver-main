@@ -7,6 +7,7 @@ import external.recaptcha
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
+import io.beatmaps.api.PlaylistStats
 import io.beatmaps.common.Config
 import io.beatmaps.setPageTitle
 import io.beatmaps.upload.UploadRequestConfig
@@ -63,7 +64,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
             val now = Clock.System.now()
             setState {
                 loading = false
-                playlist = PlaylistFull(0, "", "", "", true, null, null, now, now, null)
+                playlist = PlaylistFull(0, "", "", "", true, null, null, PlaylistStats(0, 0, 0, .0, .0, 0, 0, .0), now, now, null)
             }
             window.setTimeout(
                 {

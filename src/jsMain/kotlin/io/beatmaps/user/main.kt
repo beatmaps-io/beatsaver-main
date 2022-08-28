@@ -8,7 +8,7 @@ import io.beatmaps.common.formatTime
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
-import io.beatmaps.playlist.userPlaylists
+import io.beatmaps.playlist.playlistTable
 import io.beatmaps.setPageTitle
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
@@ -265,7 +265,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         }
 
         if (detail != null) {
-            userPlaylists {
+            playlistTable {
                 own = props.userId == null
                 userId = detail.id
                 history = props.history

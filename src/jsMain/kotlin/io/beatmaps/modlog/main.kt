@@ -12,9 +12,9 @@ import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.UploadLimitData
-import io.beatmaps.index.mapTitle
 import io.beatmaps.maps.mapTag
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.mapTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.DIV
 import kotlinx.html.InputType

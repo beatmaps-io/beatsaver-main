@@ -33,6 +33,7 @@ data class PlaylistFull(
     val public: Boolean,
     val owner: UserDetail?,
     val curator: UserDetail? = null,
+    val stats: PlaylistStats? = null,
     val createdAt: Instant,
     val updatedAt: Instant,
     val songsChangedAt: Instant?,
@@ -43,6 +44,18 @@ data class PlaylistFull(
     val downloadURL = "${Config.apiremotebase}/playlists/id/$playlistId/download"
     companion object
 }
+
+@Serializable
+data class PlaylistStats(
+    val totalMaps: Int,
+    val mapperCount: Long,
+    val totalDuration: Int,
+    val minNps: Double,
+    val maxNps: Double,
+    val upVotes: Int,
+    val downVotes: Int,
+    val avgScore: Double
+)
 
 @Serializable
 data class InPlaylist(val playlist: PlaylistBasic, val inPlaylist: Boolean) {
