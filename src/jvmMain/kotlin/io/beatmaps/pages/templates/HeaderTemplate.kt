@@ -124,9 +124,18 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                     }
                                 }
                             }
-                            li("nav-item") {
-                                a("/upload", classes = "nav-link") {
-                                    +"Upload"
+                            li("nav-item dropdown") {
+                                a("#", classes = "nav-link dropdown-toggle no-caret") {
+                                    i("fas fa-plus-square")
+                                }
+                                div("dropdown-menu") {
+                                    a("/upload", classes = "dropdown-item") {
+                                        +"Upload Map"
+                                    }
+                                    div("dropdown-divider") {}
+                                    a("/playlists/new", classes = "dropdown-item") {
+                                        +"Create Playlist"
+                                    }
                                 }
                             }
                             li("nav-item dropdown") {

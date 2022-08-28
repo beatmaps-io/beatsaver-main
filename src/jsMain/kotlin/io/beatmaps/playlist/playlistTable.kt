@@ -20,7 +20,6 @@ import react.ReactElement
 import react.createRef
 import react.dom.div
 import react.router.dom.RouteResultHistory
-import react.router.dom.routeLink
 import react.setState
 import kotlin.math.ceil
 import kotlin.math.max
@@ -226,12 +225,6 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
 
     override fun RBuilder.render() {
         if (props.visible == false) return
-
-        if (props.own == true) {
-            routeLink("/playlists/new", className = "btn btn-success btn-sm") {
-                +"Create New"
-            }
-        }
 
         div("search-results") {
             ref = resultsTable

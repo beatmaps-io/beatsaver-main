@@ -1268,6 +1268,10 @@ small.alert-count {
   }
 }
 
+.dropdown-toggle.no-caret::after {
+  display: none !important;
+}
+
 @include media-breakpoint-up(xl) {
   .search-results {
     img.mode {
