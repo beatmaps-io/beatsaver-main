@@ -14,31 +14,31 @@ import io.beatmaps.index.previewBaseUrl
 import io.beatmaps.maps.diffImg
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.datetime.Instant
+import kotlinx.html.DIV
+import kotlinx.html.InputType
+import kotlinx.html.id
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
+import org.w3c.dom.HTMLInputElement
 import react.RProps
 import react.RReadableRef
+import react.dom.RDOMBuilder
 import react.dom.a
 import react.dom.div
 import react.dom.i
+import react.dom.input
+import react.dom.jsStyle
+import react.dom.label
+import react.dom.p
+import react.dom.small
 import react.dom.span
 import react.functionComponent
 import react.router.dom.routeLink
 import kotlin.collections.set
 import kotlin.math.log
 import kotlin.math.pow
-import kotlinx.datetime.Instant
-import kotlinx.html.DIV
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLInputElement
-import react.dom.RDOMBuilder
-import react.dom.input
-import react.dom.jsStyle
-import react.dom.label
-import react.dom.p
-import react.dom.small
 
 external interface BotInfoProps : RProps {
     var automapper: Boolean?

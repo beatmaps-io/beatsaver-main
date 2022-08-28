@@ -7,8 +7,8 @@ import external.generateConfig
 import io.beatmaps.api.AlertUpdate
 import io.beatmaps.api.UserAlert
 import io.beatmaps.common.Config
-import io.beatmaps.shared.coloredCard
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.coloredCard
 import io.beatmaps.util.textToContent
 import kotlinx.browser.window
 import kotlinx.html.js.onClickFunction

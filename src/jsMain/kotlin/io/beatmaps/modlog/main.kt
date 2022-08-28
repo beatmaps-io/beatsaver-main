@@ -6,7 +6,6 @@ import io.beatmaps.UserData
 import io.beatmaps.api.ModLogEntry
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
-import io.beatmaps.shared.mapTitle
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
@@ -15,6 +14,7 @@ import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.UploadLimitData
 import io.beatmaps.maps.mapTag
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.mapTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.DIV
 import kotlinx.html.InputType
