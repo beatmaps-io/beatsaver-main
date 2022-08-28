@@ -3,6 +3,7 @@ package io.beatmaps.api
 import io.beatmaps.common.Config
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.DifficultyDao
 import io.beatmaps.common.dbo.Playlist
@@ -13,6 +14,9 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.Query
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.avg
+import org.jetbrains.exposed.sql.countDistinct
+import org.jetbrains.exposed.sql.sum
 import java.lang.Integer.toHexString
 import kotlin.time.Duration
 
@@ -99,15 +103,15 @@ fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPr
 )
 fun PlaylistFull.Companion.from(row: ResultRow, cdnPrefix: String) = from(
     PlaylistDao.wrapRow(row),
-    if (row.hasValue(Playlist.mapperCount)) PlaylistStats(
+    if (row.hasValue(Beatmap.uploader.countDistinct())) PlaylistStats(
         row[Playlist.totalMaps],
-        row[Playlist.mapperCount],
-        row[Playlist.totalDuration] ?: 0,
+        row[Beatmap.uploader.countDistinct()],
+        row[Beatmap.duration.sum()] ?: 0,
         row[Playlist.minNps].toDouble(),
         row[Playlist.maxNps].toDouble(),
-        row[Playlist.upVotes] ?: 0,
-        row[Playlist.downVotes] ?: 0,
-        row[Playlist.avgScore]?.toDouble() ?: 0.0
+        row[Beatmap.upVotesInt.sum()] ?: 0,
+        row[Beatmap.downVotesInt.sum()] ?: 0,
+        row[Beatmap.score.avg()]?.toDouble() ?: 0.0
     ) else null,
     cdnPrefix
 )

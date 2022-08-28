@@ -71,10 +71,13 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.avg
+import org.jetbrains.exposed.sql.countDistinct
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -162,7 +165,11 @@ suspend fun ApplicationCall.handleMultipart(cb: suspend (PartData.FileItem) -> U
 }
 
 val playlistStats = listOf(
-    Playlist.mapperCount, Playlist.totalDuration, Playlist.upVotes, Playlist.downVotes, Playlist.avgScore
+    Beatmap.uploader.countDistinct(),
+    Beatmap.duration.sum(),
+    Beatmap.upVotesInt.sum(),
+    Beatmap.downVotesInt.sum(),
+    Beatmap.score.avg()
 )
 
 fun Route.playlistRoute() {
