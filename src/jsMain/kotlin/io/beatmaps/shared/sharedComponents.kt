@@ -194,16 +194,14 @@ val uploader = functionComponent<UploaderProps> { props ->
 }
 
 external interface PlaylistOwnerProps : RProps {
-    var owner: UserDetail?
+    var owner: UserDetail
     var time: Instant
 }
 
 val playlistOwner = functionComponent<PlaylistOwnerProps> { props ->
-    props.owner?.let { owner ->
-        routeLink("/profile/${owner.id}#playlists") {
-            +owner.name
-        }
-    } ?: +"<DELETED USER>"
+    routeLink("/profile/${props.owner.id}#playlists") {
+        +props.owner.name
+    }
     +" - "
     TimeAgo.default {
         attrs.date = props.time.toString()

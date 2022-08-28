@@ -344,7 +344,7 @@ fun Route.playlistRoute() {
             PlaylistPage(playlist, mapsWithOrder)
         }
 
-        return if (detailPage.playlist != null && (detailPage.playlist.public || detailPage.playlist.owner?.id == userId || isAdmin)) {
+        return if (detailPage.playlist != null && (detailPage.playlist.public || detailPage.playlist.owner.id == userId || isAdmin)) {
             detailPage
         } else {
             null
@@ -462,7 +462,7 @@ fun Route.playlistRoute() {
             getPlaylist() to getMapsInPlaylist()
         }
 
-        if (playlist != null && (playlist.public || playlist.owner?.id == call.sessions.get<Session>()?.userId)) {
+        if (playlist != null && (playlist.public || playlist.owner.id == call.sessions.get<Session>()?.userId)) {
             val localFile = File(localPlaylistCoverFolder(), "${playlist.playlistId}.jpg")
             val imageStr = Base64.getEncoder().encodeToString(localFile.readBytes())
 
@@ -655,7 +655,7 @@ fun Route.playlistRoute() {
                 }
 
                 updatePlaylist().also {
-                    if (sess.isAdmin() && beforePlaylist.owner?.id != sess.userId) {
+                    if (sess.isAdmin() && beforePlaylist.owner.id != sess.userId) {
                         ModLog.insert(
                             sess.userId,
                             null,
@@ -664,7 +664,7 @@ fun Route.playlistRoute() {
                             } else {
                                 EditPlaylistData(req.id, beforePlaylist.name, beforePlaylist.description, beforePlaylist.public, toCreate.name, newDescription, toCreate.public)
                             },
-                            beforePlaylist.owner?.id ?: 0
+                            beforePlaylist.owner.id
                         )
                     }
                 }

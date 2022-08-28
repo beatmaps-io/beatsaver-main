@@ -7,12 +7,10 @@ import external.recaptcha
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
-import io.beatmaps.api.PlaylistStats
 import io.beatmaps.common.Config
 import io.beatmaps.setPageTitle
 import io.beatmaps.upload.UploadRequestConfig
 import kotlinx.browser.window
-import kotlinx.datetime.Clock
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.hidden
@@ -47,7 +45,13 @@ external interface PlaylistEditProps : RProps {
     var history: RouteResultHistory
 }
 
-data class PlaylistEditState(var playlist: PlaylistFull?, var loading: Boolean?, var filename: String?, var success: Boolean?, var errors: List<String>?) : RState
+external interface PlaylistEditState : RState {
+    var playlist: PlaylistFull?
+    var loading: Boolean?
+    var filename: String?
+    var success: Boolean?
+    var errors: List<String>?
+}
 
 class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
     private val captchaRef = createRef<ReCAPTCHA>()
@@ -61,10 +65,9 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
         setPageTitle("Playlist")
 
         if (props.id == null) {
-            val now = Clock.System.now()
             setState {
                 loading = false
-                playlist = PlaylistFull(0, "", "", "", true, null, null, PlaylistStats(0, 0, 0, .0, .0, 0, 0, .0), now, now, null)
+                playlist = null
             }
             window.setTimeout(
                 {
@@ -110,7 +113,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
     }
 
     override fun RBuilder.render() {
-        state.playlist?.let { _ ->
+        if (state.loading == false) {
             div("card border-dark") {
                 div("card-header") {
                     +((if (props.id == null) "Create" else "Edit") + " playlist")

@@ -67,8 +67,13 @@ class PlaylistInfo : RComponent<PlaylistInfoProps, PlaylistInfoState>() {
     override fun RBuilder.render() {
         props.playlist?.let { pl ->
             val plAttrs = listOfNotNull(
-                if (pl.curator != null) MapAttr.Curated else
-                    if (pl.owner?.verifiedMapper == true) MapAttr.Verified else null
+                if (pl.curator != null) {
+                    MapAttr.Curated
+                } else if (pl.owner.verifiedMapper) {
+                    MapAttr.Verified
+                } else {
+                    null
+                }
             )
 
             div("playlist-card") {

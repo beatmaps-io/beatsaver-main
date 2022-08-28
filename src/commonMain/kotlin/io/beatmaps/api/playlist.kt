@@ -31,7 +31,7 @@ data class PlaylistFull(
     val description: String,
     val playlistImage: String,
     val public: Boolean,
-    val owner: UserDetail?,
+    val owner: UserDetail,
     val curator: UserDetail? = null,
     val stats: PlaylistStats? = null,
     val createdAt: Instant,
