@@ -22,6 +22,7 @@ import react.router.dom.routeLink
 import react.setState
 import kotlin.math.ceil
 import kotlin.math.max
+import kotlin.math.min
 
 data class PlaylistSearchParams(
     val search: String,
@@ -49,6 +50,7 @@ external interface PlaylistTableState : RState {
     var loading: Boolean?
     var visItem: Int
     var visPage: Int
+    var finalPage: Int
     var visiblePages: IntRange
 }
 
@@ -68,7 +70,8 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
             loading = false
             visItem = 0
             visPage = 0
-            visiblePages = visPage.until(visPage + totalVisiblePages)
+            finalPage = Int.MAX_VALUE
+            visiblePages = visPage.rangeTo(visPage + totalVisiblePages)
         }
     }
 
@@ -92,7 +95,8 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
                 pages = mapOf()
                 visItem = 0
                 visPage = 0
-                visiblePages = visPage.until(visPage + totalVisiblePages)
+                finalPage = Int.MAX_VALUE
+                visiblePages = visPage.rangeTo(visPage + totalVisiblePages)
             }
 
             window.setTimeout(::loadNextPage, 0)
@@ -130,9 +134,13 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
             getUrl(toLoad),
             generateConfig<String, PlaylistSearchResponse>()
         ).then {
+            val page = it.data.docs
             setState {
                 loading = false
-                pages = pages.plus(toLoad to it.data.docs)
+                if (page.isEmpty() && toLoad < finalPage) {
+                    finalPage = toLoad
+                }
+                pages = pages.plus(toLoad to page)
             }
             window.onscroll = ::handleScroll
             if (it.data.docs.isNotEmpty()) {
@@ -154,7 +162,7 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
             setState {
                 visItem = item
                 visPage = item / playlistsPerPage
-                visiblePages = visPage.until(visPage + totalVisiblePages)
+                visiblePages = visPage.rangeTo(visPage + totalVisiblePages)
             }
             props.updateScrollIndex?.invoke(item + 1)
         }
@@ -162,7 +170,7 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
         loadNextPage()
     }
 
-    private fun lastPage() = max(state.visiblePages.last, state.pages.maxByOrNull { it.key }?.key ?: 0)
+    private fun lastPage() = min(state.finalPage, max(state.visiblePages.last, state.pages.maxByOrNull { it.key }?.key ?: 0))
 
     override fun RBuilder.render() {
         if (props.visible == false) return
