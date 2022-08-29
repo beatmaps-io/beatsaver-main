@@ -46,6 +46,7 @@ external interface PlaylistEditProps : RProps {
 }
 
 external interface PlaylistEditState : RState {
+    var init: Boolean?
     var playlist: PlaylistFull?
     var loading: Boolean?
     var filename: String?
@@ -67,6 +68,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
         if (props.id == null) {
             setState {
                 loading = false
+                init = true
                 playlist = null
             }
             window.setTimeout(
@@ -105,6 +107,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
 
             setState {
                 loading = false
+                init = true
                 playlist = it.data.playlist
             }
         }.catch {
@@ -113,7 +116,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
     }
 
     override fun RBuilder.render() {
-        if (state.loading == false) {
+        if (state.init == true) {
             div("card border-dark") {
                 div("card-header") {
                     +((if (props.id == null) "Create" else "Edit") + " playlist")
