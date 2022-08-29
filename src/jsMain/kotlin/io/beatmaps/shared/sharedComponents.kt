@@ -249,7 +249,7 @@ val mapTitle = functionComponent<MapTitleProps> {
 external interface RatingProps : RProps {
     var up: Int
     var down: Int
-    var rating: Double
+    var rating: Float
 }
 
 val rating = functionComponent<RatingProps> {

@@ -4,6 +4,7 @@ import io.beatmaps.common.Config
 import kotlinx.datetime.Instant
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.Serializable
+import kotlin.math.roundToInt
 
 @Serializable
 data class Playlist(
@@ -55,7 +56,11 @@ data class PlaylistStats(
     val upVotes: Int,
     val downVotes: Int,
     val avgScore: Double
-)
+) {
+    val scoreOneDP by lazy { (avgScore * 1000).roundToInt() / 10f }
+    val minNpsTwoDP by lazy { (minNps * 100).roundToInt() / 100f }
+    val maxNpsTwoDP by lazy { (maxNps * 100).roundToInt() / 100f }
+}
 
 @Serializable
 data class InPlaylist(val playlist: PlaylistBasic, val inPlaylist: Boolean) {

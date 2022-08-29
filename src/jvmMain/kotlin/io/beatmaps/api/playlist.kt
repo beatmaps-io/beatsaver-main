@@ -170,7 +170,7 @@ val playlistStats = listOf(
     Beatmap.duration.sum(),
     Beatmap.upVotesInt.sum(),
     Beatmap.downVotesInt.sum(),
-    Beatmap.score.avg()
+    Beatmap.score.avg(4)
 )
 
 fun Route.playlistRoute() {

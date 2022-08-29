@@ -102,7 +102,7 @@ class PlaylistInfo : RComponent<PlaylistInfoProps, PlaylistInfoState>() {
                                 rating {
                                     attrs.up = pl.stats.upVotes
                                     attrs.down = pl.stats.downVotes
-                                    attrs.rating = pl.stats.avgScore
+                                    attrs.rating = pl.stats.scoreOneDP
                                 }
                             }
                             div("stats") {
@@ -141,7 +141,7 @@ class PlaylistInfo : RComponent<PlaylistInfoProps, PlaylistInfoState>() {
                                         attrs.height = "12"
                                     }
                                     span {
-                                        +"${pl.stats.minNps}-${pl.stats.maxNps}"
+                                        +"${pl.stats.minNpsTwoDP} - ${pl.stats.maxNpsTwoDP}"
                                     }
                                 }
                             }
