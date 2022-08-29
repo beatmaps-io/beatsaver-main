@@ -49,8 +49,8 @@ fun Application.playlistStats() {
                     Playlist.id eq playlistId
                 }) {
                     it[totalMaps] = totalMapsVal
-                    it[minNps] = minNpsVal
-                    it[maxNps] = maxNpsVal
+                    it[minNps] = minNpsVal.setScale(2)
+                    it[maxNps] = maxNpsVal.setScale(2)
                 }
             }
         }

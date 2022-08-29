@@ -101,7 +101,7 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
                         rating {
                             attrs.up = map.stats.upvotes
                             attrs.down = map.stats.downvotes
-                            attrs.rating = map.stats.scoreOneDP.toDouble()
+                            attrs.rating = map.stats.scoreOneDP
                         }
                     }
                     div("info") {

@@ -97,7 +97,7 @@ class PlaylistInfo : RComponent<PlaylistInfoProps, PlaylistInfoState>() {
                                 rating {
                                     attrs.up = pl.stats.upVotes
                                     attrs.down = pl.stats.downVotes
-                                    attrs.rating = pl.stats.avgScore
+                                    attrs.rating = pl.stats.scoreOneDP
                                 }
                             }
                             div("stats") {
