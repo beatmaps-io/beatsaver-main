@@ -58,6 +58,8 @@ data class PlaylistStats(
     val avgScore: Double
 ) {
     val scoreOneDP by lazy { (avgScore * 1000).roundToInt() / 10f }
+    val minNpsTwoDP by lazy { (minNps * 100).roundToInt() / 100f }
+    val maxNpsTwoDP by lazy { (maxNps * 100).roundToInt() / 100f }
 }
 
 @Serializable

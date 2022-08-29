@@ -136,7 +136,7 @@ class PlaylistInfo : RComponent<PlaylistInfoProps, PlaylistInfoState>() {
                                         attrs.height = "12"
                                     }
                                     span {
-                                        +"${pl.stats.minNps}-${pl.stats.maxNps}"
+                                        +"${pl.stats.minNpsTwoDP} - ${pl.stats.maxNpsTwoDP}"
                                     }
                                 }
                             }
