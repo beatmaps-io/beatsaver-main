@@ -111,7 +111,7 @@ fun PlaylistFull.Companion.from(row: ResultRow, cdnPrefix: String) = from(
         row[Playlist.maxNps].toDouble(),
         row[Beatmap.upVotesInt.sum()] ?: 0,
         row[Beatmap.downVotesInt.sum()] ?: 0,
-        row[Beatmap.score.avg(4)]?.toDouble() ?: 0.0
+        row[Beatmap.score.avg(4)]?.toFloat() ?: 0.0f
     ) else null,
     cdnPrefix
 )

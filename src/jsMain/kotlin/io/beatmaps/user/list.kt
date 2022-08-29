@@ -4,8 +4,8 @@ import external.Moment
 import external.axiosGet
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
+import io.beatmaps.common.fixedStr
 import io.beatmaps.common.formatTime
-import io.beatmaps.common.toFixed
 import io.beatmaps.dateFormat
 import io.beatmaps.setPageTitle
 import kotlinx.browser.window
@@ -205,8 +205,8 @@ class UserList : RComponent<UserListProps, UserListState>() {
                                     +"${u.stats.totalDownvotes}"
                                 }
                                 td {
-                                    val total = ((u.stats.totalUpvotes + u.stats.totalDownvotes) * 0.01f) // 40.95
-                                    +"${(u.stats.totalUpvotes / if (total < 0.01f) 0.01f else total).toFixed(2)}%"
+                                    val total = ((u.stats.totalUpvotes + u.stats.totalDownvotes) * 0.01f)
+                                    +"${(u.stats.totalUpvotes / if (total < 0.01f) 0.01f else total).fixedStr(2)}%"
                                 }
                                 td {
                                     +"${u.stats.totalMaps}"

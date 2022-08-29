@@ -3,6 +3,7 @@ package io.beatmaps.index
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
 import io.beatmaps.common.api.MapAttr
+import io.beatmaps.common.fixed
 import io.beatmaps.common.formatTime
 import io.beatmaps.globalContext
 import io.beatmaps.playlist.addToPlaylist
@@ -28,7 +29,6 @@ import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
 import react.setState
-import kotlin.math.floor
 
 external interface BeatmapInfoProps : RProps {
     var map: MapDetail?
@@ -137,7 +137,7 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
                             }
                         }
                         span {
-                            +(floor(map.metadata.bpm * 100) / 100).toString()
+                            +map.metadata.bpm.fixed(2).toString()
                             img("Metronome", "/static/icons/metronome.svg") {
                                 attrs.width = "12"
                                 attrs.height = "12"

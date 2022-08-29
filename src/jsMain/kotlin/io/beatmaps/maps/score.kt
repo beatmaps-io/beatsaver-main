@@ -1,5 +1,6 @@
 package io.beatmaps.maps
 
+import io.beatmaps.common.fixedStr
 import kotlinx.html.ThScope
 import react.RBuilder
 import react.RComponent
@@ -35,14 +36,11 @@ class Score : RComponent<ScoreProps, RState>() {
                 +props.percentage
             }
             td {
-                +props.pp.fixed(2)
+                +props.pp.fixedStr(2)
             }
         }
     }
 }
-
-fun Float.fixed(n: Int) = this.asDynamic().toFixed(n) as String
-fun Double.fixed(n: Int) = this.asDynamic().toFixed(n) as String
 
 fun RBuilder.score(handler: ScoreProps.() -> Unit): ReactElement {
     return child(Score::class) {

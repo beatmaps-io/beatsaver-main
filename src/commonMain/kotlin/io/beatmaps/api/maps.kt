@@ -6,6 +6,7 @@ import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.ECharacteristicSerializer
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.fixed
 import kotlinx.datetime.Instant
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -15,7 +16,6 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlin.math.roundToInt
 
 object InstantAsStringSerializer : KSerializer<Instant> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
@@ -105,7 +105,7 @@ data class MapDetailMetadata(
 
 @Serializable
 data class MapStats(val plays: Int, val downloads: Int, val upvotes: Int, val downvotes: Int, val score: Float) {
-    val scoreOneDP by lazy { (score * 1000).roundToInt() / 10f }
+    val scoreOneDP by lazy { (score * 100).fixed(1) }
     companion object
 }
 

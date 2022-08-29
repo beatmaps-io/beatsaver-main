@@ -8,6 +8,7 @@ import io.beatmaps.api.LeaderboardData
 import io.beatmaps.api.LeaderboardScore
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.Config
+import io.beatmaps.common.fixedStr
 import kotlinx.browser.window
 import kotlinx.html.TBODY
 import kotlinx.html.ThScope
@@ -146,7 +147,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
                             score = it.score
                             scoreColor = scoreColor(it.score, maxScore)
                             mods = it.mods
-                            percentage = ((it.score * 100L) / maxScore.toFloat()).fixed(2) + "%"
+                            percentage = ((it.score * 100L) / maxScore.toFloat()).fixedStr(2) + "%"
                         }
                     }
                 }

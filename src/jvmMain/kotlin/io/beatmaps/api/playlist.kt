@@ -471,7 +471,7 @@ fun Route.playlistRoute() {
             call.respond(
                 Playlist(
                     playlist.name,
-                    playlist.owner?.name ?: "",
+                    playlist.owner.name,
                     playlist.description,
                     imageStr,
                     PlaylistCustomData(playlist.downloadURL),

@@ -1,10 +1,10 @@
 package io.beatmaps.api
 
 import io.beatmaps.common.Config
+import io.beatmaps.common.fixed
 import kotlinx.datetime.Instant
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.Serializable
-import kotlin.math.roundToInt
 
 @Serializable
 data class Playlist(
@@ -55,11 +55,11 @@ data class PlaylistStats(
     val maxNps: Double,
     val upVotes: Int,
     val downVotes: Int,
-    val avgScore: Double
+    val avgScore: Float
 ) {
-    val scoreOneDP by lazy { (avgScore * 1000).roundToInt() / 10f }
-    val minNpsTwoDP by lazy { (minNps * 100).roundToInt() / 100f }
-    val maxNpsTwoDP by lazy { (maxNps * 100).roundToInt() / 100f }
+    val scoreOneDP by lazy { (avgScore * 100).fixed(1) }
+    val minNpsTwoDP by lazy { minNps.fixed(2) }
+    val maxNpsTwoDP by lazy { maxNps.fixed(2) }
 }
 
 @Serializable
