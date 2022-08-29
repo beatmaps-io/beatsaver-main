@@ -19,6 +19,7 @@ import io.beatmaps.api.voteRoute
 import io.beatmaps.cloudflare.filenameUpdater
 import io.beatmaps.common.StatusPagesCustom
 import io.beatmaps.common.db.setupDB
+import io.beatmaps.common.emailQueue
 import io.beatmaps.common.genericQueueConfig
 import io.beatmaps.common.installMetrics
 import io.beatmaps.common.jackson
@@ -309,6 +310,9 @@ fun Application.beatmapsio() {
 
                 queueDeclare("cdn.r2", true, false, false, genericQueueConfig)
                 queueBind("cdn.r2", "beatmaps", "cdn.#")
+
+                queueDeclare("email", true, false, false, genericQueueConfig)
+                queueBind("email", "beatmaps", "email")
             }
         }
         downloadsThread()
@@ -318,6 +322,7 @@ fun Application.beatmapsio() {
 
     scheduleTask()
     playlistStats()
+    emailQueue()
 
     routing {
         get("/") {
