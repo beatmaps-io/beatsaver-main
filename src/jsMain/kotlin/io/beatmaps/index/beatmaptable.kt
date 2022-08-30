@@ -12,7 +12,6 @@ import io.beatmaps.common.Config
 import io.beatmaps.common.MapTagType
 import kotlinx.browser.window
 import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.asList
 import org.w3c.dom.events.Event
 import react.RBuilder

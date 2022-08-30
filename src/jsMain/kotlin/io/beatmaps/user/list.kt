@@ -11,7 +11,6 @@ import io.beatmaps.setPageTitle
 import kotlinx.browser.window
 import kotlinx.datetime.Clock
 import kotlinx.html.title
-import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.events.Event
 import react.RBuilder
 import react.RComponent
