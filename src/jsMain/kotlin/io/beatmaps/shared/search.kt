@@ -9,7 +9,6 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
-import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLButtonElement
@@ -18,7 +17,6 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
-import org.w3c.dom.get
 import react.FC
 import react.RBuilder
 import react.RComponent
@@ -271,13 +269,14 @@ open class Search<T>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchS
                         attrs.attributes["aria-label"] = "Sort by"
                         attrs.onChangeFunction = {
                             setState {
-                                order = SearchOrder.fromString(sortRef.current?.let { it.options[it.selectedIndex]?.id } ?: "") ?: SearchOrder.Relevance
+                                order = SearchOrder.fromString(sortRef.current?.value ?: "") ?: SearchOrder.Relevance
                             }
                         }
                         SearchOrder.values().filter { props.sortOrderTarget in it.targets }.forEach {
                             option {
+                                println("$it: ${state.order == it}")
                                 attrs.selected = state.order == it
-                                attrs.id = it.toString()
+                                attrs.value = it.toString()
                                 +it.toString()
                             }
                         }
