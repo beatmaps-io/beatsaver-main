@@ -274,7 +274,6 @@ open class Search<T>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchS
                         }
                         SearchOrder.values().filter { props.sortOrderTarget in it.targets }.forEach {
                             option {
-                                println("$it: ${state.order == it}")
                                 attrs.selected = state.order == it
                                 attrs.value = it.toString()
                                 +it.toString()
