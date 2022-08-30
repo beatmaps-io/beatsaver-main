@@ -319,7 +319,6 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         val windowSize = window.innerHeight
 
         val item = currentItem()
-        console.log("beatmaptable ${state.visiblePages} $item")
         if (item != state.visItem) {
             val totalVisiblePages = ceil(windowSize / pageHeight()).toInt()
             setState {

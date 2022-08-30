@@ -200,7 +200,7 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
 
     override fun componentWillUnmount() {
         window.removeEventListener("scroll", ::handleScroll)
-        window.addEventListener("hashchange", ::updateFromHash)
+        window.removeEventListener("hashchange", ::updateFromHash)
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -208,7 +208,6 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
         val windowSize = window.innerHeight
 
         val item = currentItem()
-        console.log("playlisttable ${state.visiblePages} $item")
         if (item != state.visItem) {
             val totalVisiblePages = ceil(windowSize / pageHeight).toInt()
             setState {
