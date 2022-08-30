@@ -64,6 +64,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import net.coobird.thumbnailator.Thumbnails
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.FieldSet
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
@@ -378,7 +379,7 @@ fun Route.playlistRoute() {
 
         val sess = call.sessions.get<Session>()
 
-        fun <T> doQuery(table: FieldSet = Playlist, block: (ResultRow) -> T) =
+        fun <T> doQuery(table: FieldSet = Playlist, groupBy: Array<Column<*>> = arrayOf(Playlist.id), block: (ResultRow) -> T) =
             transaction {
                 table
                     .select {
@@ -399,7 +400,7 @@ fun Route.playlistRoute() {
                         )
                     }
                     .orderBy(Playlist.createdAt, SortOrder.DESC)
-                    .groupBy(Playlist.id, User.id, curatorAlias[User.id])
+                    .groupBy(*groupBy)
                     .limit(req.page, 20)
                     .handleOwner()
                     .handleCurator()
@@ -418,7 +419,8 @@ fun Route.playlistRoute() {
                     .joinMaps()
                     .joinOwner()
                     .joinPlaylistCurator()
-                    .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats)
+                    .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats),
+                arrayOf(Playlist.id, User.id, curatorAlias[User.id])
             ) {
                 PlaylistFull.from(it, cdnPrefix())
             }
