@@ -55,7 +55,7 @@ class PlaylistFeed : RComponent<PlaylistFeedProps, PlaylistFeedState>() {
 
     private fun Search<PlaylistSearchParams>.updateUI(fromParams: PlaylistSearchParams) {
         inputRef.current?.value = fromParams.search
-        sortRef.current?.selectedIndex = fromParams.sortOrder.idx
+        sortRef.current?.value = fromParams.sortOrder.name
         setState {
             filterRefs.forEach {
                 val newState = it.key.fromParams(fromParams)

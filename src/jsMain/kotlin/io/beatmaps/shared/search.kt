@@ -269,12 +269,13 @@ open class Search<T>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchS
                         attrs.attributes["aria-label"] = "Sort by"
                         attrs.onChangeFunction = {
                             setState {
-                                order = SearchOrder.fromInt(sortRef.current?.selectedIndex ?: 0) ?: SearchOrder.Relevance
+                                order = SearchOrder.fromString(sortRef.current?.value ?: "") ?: SearchOrder.Relevance
                             }
                         }
                         SearchOrder.values().filter { props.sortOrderTarget in it.targets }.forEach {
                             option {
                                 attrs.selected = state.order == it
+                                attrs.value = it.toString()
                                 +it.toString()
                             }
                         }
