@@ -126,7 +126,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         return 0
     }
 
-    private fun updateFromHash(e: HashChangeEvent?) {
+    private fun updateFromHash(e: Event?) {
         val totalVisiblePages = ceil(window.innerHeight / pageHeight()).toInt()
         val hashPos = window.location.hash.substring(1).toIntOrNull()
         setState {
@@ -153,7 +153,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
     override fun componentDidMount() {
         updateFromHash(null)
 
-        window.onhashchange = ::updateFromHash
+        window.addEventListener("hashchange", ::updateFromHash)
     }
 
     override fun componentWillUpdate(nextProps: BeatmapTableProps, nextState: BeatmapTableState) {
@@ -298,8 +298,8 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
             if (shouldScroll) {
                 scrollTo(state.visItem)
             }
-            window.onscroll = ::handleScroll
-            window.onresize = ::reportWindow
+            window.addEventListener("scroll", ::handleScroll)
+            window.addEventListener("resize", ::reportWindow)
             window.setTimeout(::handleScroll, 1)
         }.catch {
             // Cancelled request?
@@ -310,8 +310,9 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
     }
 
     override fun componentWillUnmount() {
-        window.onscroll = null
-        window.onresize = null
+        window.removeEventListener("scroll", ::handleScroll)
+        window.removeEventListener("resize", ::reportWindow)
+        window.removeEventListener("hashchange", ::updateFromHash)
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -319,6 +320,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         val windowSize = window.innerHeight
 
         val item = currentItem()
+        console.log("beatmaptable ${state.visiblePages} $item")
         if (item != state.visItem) {
             val totalVisiblePages = ceil(windowSize / pageHeight()).toInt()
             setState {

@@ -96,7 +96,7 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
         return 0
     }
 
-    private fun updateFromHash(e: HashChangeEvent?) {
+    private fun updateFromHash(e: Event?) {
         val totalVisiblePages = ceil(window.innerHeight / pageHeight).toInt()
         val hashPos = window.location.hash.substring(1).toIntOrNull()
         setState {
@@ -122,7 +122,7 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
     override fun componentDidMount() {
         updateFromHash(null)
 
-        window.onhashchange = ::updateFromHash
+        window.addEventListener("hashchange", ::updateFromHash)
     }
 
     override fun componentWillUpdate(nextProps: PlaylistTableProps, nextState: PlaylistTableState) {
@@ -190,7 +190,7 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
             if (shouldScroll) {
                 scrollTo(state.visItem)
             }
-            window.onscroll = ::handleScroll
+            window.addEventListener("scroll", ::handleScroll)
             if (it.data.docs.isNotEmpty()) {
                 window.setTimeout(::handleScroll, 1)
             }
@@ -200,7 +200,8 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
     }
 
     override fun componentWillUnmount() {
-        window.onscroll = null
+        window.removeEventListener("scroll", ::handleScroll)
+        window.addEventListener("hashchange", ::updateFromHash)
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -208,6 +209,7 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
         val windowSize = window.innerHeight
 
         val item = currentItem()
+        console.log("playlisttable ${state.visiblePages} $item")
         if (item != state.visItem) {
             val totalVisiblePages = ceil(windowSize / pageHeight).toInt()
             setState {

@@ -20,6 +20,7 @@ import react.dom.a
 import react.dom.div
 import react.dom.i
 import react.dom.img
+import react.dom.jsStyle
 import react.dom.span
 import react.router.dom.routeLink
 import react.setState
@@ -77,6 +78,10 @@ class PlaylistInfo : RComponent<PlaylistInfoProps, PlaylistInfoState>() {
             )
 
             div("playlist-card") {
+                attrs.jsStyle {
+                    height = state.height
+                }
+
                 coloredCard {
                     attrs.color = plAttrs.joinToString(" ") { it.color }
                     attrs.title = plAttrs.joinToString(" + ") { it.name }
