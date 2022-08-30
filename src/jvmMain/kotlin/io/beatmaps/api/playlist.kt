@@ -256,6 +256,7 @@ fun Route.playlistRoute() {
                 .select {
                     Playlist.id.inSubQuery(
                         Playlist
+                            .joinOwner()
                             .slice(Playlist.id)
                             .select {
                                 (Playlist.deletedAt.isNull() and Playlist.public)
@@ -401,7 +402,6 @@ fun Route.playlistRoute() {
                     }
                     .orderBy(Playlist.createdAt, SortOrder.DESC)
                     .groupBy(*groupBy)
-                    .limit(req.page, 20)
                     .handleOwner()
                     .handleCurator()
                     .map(block)
