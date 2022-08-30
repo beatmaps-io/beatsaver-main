@@ -125,7 +125,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         return 0
     }
 
-    private fun updateFromHash(e: Event?) {
+    private val updateFromHash = { _: Event? ->
         val totalVisiblePages = ceil(window.innerHeight / pageHeight()).toInt()
         val hashPos = window.location.hash.substring(1).toIntOrNull()
         setState {
@@ -152,7 +152,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
     override fun componentDidMount() {
         updateFromHash(null)
 
-        window.addEventListener("hashchange", ::updateFromHash)
+        window.addEventListener("hashchange", updateFromHash)
     }
 
     override fun componentWillUpdate(nextProps: BeatmapTableProps, nextState: BeatmapTableState) {
@@ -297,9 +297,9 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
             if (shouldScroll) {
                 scrollTo(state.visItem)
             }
-            window.addEventListener("scroll", ::handleScroll)
-            window.addEventListener("resize", ::reportWindow)
-            window.setTimeout(::handleScroll, 1)
+            window.addEventListener("scroll", handleScroll)
+            window.addEventListener("resize", reportWindow)
+            window.setTimeout(handleScroll, 1)
         }.catch {
             // Cancelled request?
             setState {
@@ -309,14 +309,12 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
     }
 
     override fun componentWillUnmount() {
-        window.removeEventListener("scroll", ::handleScroll)
-        window.removeEventListener("resize", ::reportWindow)
-        window.removeEventListener("hashchange", ::updateFromHash)
+        window.removeEventListener("scroll", handleScroll)
+        window.removeEventListener("resize", reportWindow)
+        window.removeEventListener("hashchange", updateFromHash)
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    private fun handleScroll(e: Event) {
-        if (props.history.location.pathname != "/" && props.history.location.hash != "#published" && props.history.location.hash != "#unpublished") return
+    private val handleScroll = { _: Event? ->
         val windowSize = window.innerHeight
 
         val item = currentItem()
@@ -333,7 +331,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         loadNextPage()
     }
 
-    private fun reportWindow(e: Event) {
+    private val reportWindow = { _: Event ->
         if (state.itemsPerRow != itemsPerRow()) {
             scrollTo(state.visItem)
             setState {

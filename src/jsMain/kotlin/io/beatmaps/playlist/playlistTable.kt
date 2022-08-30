@@ -95,7 +95,7 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
         return 0
     }
 
-    private fun updateFromHash(e: Event?) {
+    private val updateFromHash = { _: Event? ->
         val totalVisiblePages = ceil(window.innerHeight / pageHeight).toInt()
         val hashPos = window.location.hash.substring(1).toIntOrNull()
         setState {
@@ -121,7 +121,7 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
     override fun componentDidMount() {
         updateFromHash(null)
 
-        window.addEventListener("hashchange", ::updateFromHash)
+        window.addEventListener("hashchange", updateFromHash)
     }
 
     override fun componentWillUpdate(nextProps: PlaylistTableProps, nextState: PlaylistTableState) {
@@ -189,9 +189,9 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
             if (shouldScroll) {
                 scrollTo(state.visItem)
             }
-            window.addEventListener("scroll", ::handleScroll)
+            window.addEventListener("scroll", handleScroll)
             if (it.data.docs.isNotEmpty()) {
-                window.setTimeout(::handleScroll, 1)
+                window.setTimeout(handleScroll, 1)
             }
         }.catch {
             // Oh noes
@@ -199,14 +199,11 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
     }
 
     override fun componentWillUnmount() {
-        window.removeEventListener("scroll", ::handleScroll)
-        window.removeEventListener("hashchange", ::updateFromHash)
+        window.removeEventListener("scroll", handleScroll)
+        window.removeEventListener("hashchange", updateFromHash)
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    private fun handleScroll(e: Event) {
-        if (props.history.location.pathname != "/playlists" && props.history.location.hash != "#playlists") return
-
+    private val handleScroll = { _: Event ->
         val windowSize = window.innerHeight
 
         val item = currentItem()

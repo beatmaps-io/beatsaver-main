@@ -60,7 +60,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
     }
 
     override fun componentDidMount() {
-        window.addEventListener("scroll", ::handleScroll)
+        window.addEventListener("scroll", handleScroll)
 
         loadNextPage()
     }
@@ -135,7 +135,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
                 }
                 tbody {
                     ref = myRef
-                    attrs.onScrollFunction = ::handleScroll
+                    attrs.onScrollFunction = handleScroll
                     state.scores.forEachIndexed { idx, it ->
                         val maxScore = props.selected?.maxScore ?: 0
                         score {
@@ -156,24 +156,23 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
     }
 
     override fun componentWillUnmount() {
-        window.removeEventListener("scroll", ::handleScroll)
+        window.removeEventListener("scroll", handleScroll)
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    private fun handleScroll(e: Event) {
+    private val handleScroll = { _: Event ->
         val trigger = 100
-        if (myRef.current == null) return
+        if (myRef.current != null) {
+            val clientHeight = myRef.current.asDynamic().clientHeight as Int
+            val scrollTop = myRef.current.asDynamic().scrollTop as Int
+            val scrollHeight = myRef.current.asDynamic().scrollHeight as Int
 
-        val clientHeight = myRef.current.asDynamic().clientHeight as Int
-        val scrollTop = myRef.current.asDynamic().scrollTop as Int
-        val scrollHeight = myRef.current.asDynamic().scrollHeight as Int
+            setState {
+                scroll = scrollTop
+            }
 
-        setState {
-            scroll = scrollTop
-        }
-
-        if (scrollHeight - (scrollTop + clientHeight) < trigger) {
-            loadNextPage()
+            if (scrollHeight - (scrollTop + clientHeight) < trigger) {
+                loadNextPage()
+            }
         }
     }
 

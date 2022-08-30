@@ -101,24 +101,24 @@ open class Search<T>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchS
     }
 
     override fun componentDidMount() {
-        dropdownRef.current?.addEventListener("mouseup", ::stopProp)
-        dropdownDivRef.current?.addEventListener("mouseup", ::stopProp)
-        document.addEventListener("mouseup", ::hideFilters)
-        document.addEventListener("keyup", ::handleShift)
-        document.addEventListener("keydown", ::handleShift)
+        dropdownRef.current?.addEventListener("mouseup", stopProp)
+        dropdownDivRef.current?.addEventListener("mouseup", stopProp)
+        document.addEventListener("mouseup", hideFilters)
+        document.addEventListener("keyup", handleShift)
+        document.addEventListener("keydown", handleShift)
     }
 
-    private fun stopProp(it: Event) {
+    private val stopProp = { it: Event ->
         it.stopPropagation()
     }
 
-    private fun hideFilters(it: Event) {
+    private val hideFilters = { it: Event ->
         setState {
             filtersOpen = false
         }
     }
 
-    private fun handleShift(it: Event) {
+    private val handleShift = { it: Event ->
         setState {
             shiftHeld = (it as? KeyboardEvent)?.shiftKey ?: false
             altHeld = (it as? KeyboardEvent)?.altKey ?: false
@@ -126,11 +126,11 @@ open class Search<T>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchS
     }
 
     override fun componentWillUnmount() {
-        document.removeEventListener("mouseup", ::hideFilters)
-        document.removeEventListener("keyup", ::handleShift)
-        document.removeEventListener("keydown", ::handleShift)
-        dropdownDivRef.current?.addEventListener("mouseup", ::stopProp)
-        dropdownRef.current?.removeEventListener("mouseup", ::stopProp)
+        document.removeEventListener("mouseup", hideFilters)
+        document.removeEventListener("keyup", handleShift)
+        document.removeEventListener("keydown", handleShift)
+        dropdownDivRef.current?.addEventListener("mouseup", stopProp)
+        dropdownRef.current?.removeEventListener("mouseup", stopProp)
     }
 
     fun isFiltered(s: String) =

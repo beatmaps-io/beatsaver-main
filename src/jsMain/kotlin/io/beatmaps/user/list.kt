@@ -63,7 +63,7 @@ class UserList : RComponent<UserListProps, UserListState>() {
         }
     }
 
-    private fun updateFromHash(e: Event?) {
+    private val updateFromHash = { _: Event? ->
         val totalVisiblePages = ceil(window.innerHeight / pageHeight).toInt()
         val hashPos = window.location.hash.substring(1).toIntOrNull()
         setState {
@@ -88,12 +88,12 @@ class UserList : RComponent<UserListProps, UserListState>() {
         setPageTitle("Mappers")
         updateFromHash(null)
 
-        window.addEventListener("hashchange", ::updateFromHash)
+        window.addEventListener("hashchange", updateFromHash)
     }
 
     override fun componentWillUnmount() {
-        window.removeEventListener("hashchange", ::updateFromHash)
-        window.removeEventListener("scroll", ::handleScroll)
+        window.removeEventListener("hashchange", updateFromHash)
+        window.removeEventListener("scroll", handleScroll)
     }
 
     private fun loadNextPage() {
@@ -116,9 +116,9 @@ class UserList : RComponent<UserListProps, UserListState>() {
             if (shouldScroll) {
                 window.scrollTo(0.0, (rowHeight * state.visItem) + 20)
             }
-            window.addEventListener("scroll", ::handleScroll)
+            window.addEventListener("scroll", handleScroll)
             if (it.data.isNotEmpty()) {
-                window.setTimeout(::handleScroll, 1)
+                window.setTimeout(handleScroll, 1)
             }
         }.catch {
             setState {
@@ -127,8 +127,7 @@ class UserList : RComponent<UserListProps, UserListState>() {
         }
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    private fun handleScroll(e: Event) {
+    private val handleScroll = { _: Event ->
         val scrollPosition = window.pageYOffset
         val windowSize = window.innerHeight
 

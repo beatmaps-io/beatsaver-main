@@ -46,7 +46,7 @@ class PlaylistInfo : RComponent<PlaylistInfoProps, PlaylistInfoState>() {
 
     override fun componentDidUpdate(prevProps: PlaylistInfoProps, prevState: PlaylistInfoState, snapshot: Any) {
         if (state.loaded != true && props.playlist != null) {
-            val innerSize = divRef.current?.scrollHeight?.let { it + 30 } ?: 0
+            val innerSize = divRef.current?.scrollHeight?.let { it + 12 } ?: 0
             setState {
                 loaded = true
                 height = "${innerSize}px"
@@ -87,6 +87,7 @@ class PlaylistInfo : RComponent<PlaylistInfoProps, PlaylistInfoState>() {
                     attrs.title = plAttrs.joinToString(" + ") { it.name }
 
                     div("info") {
+                        ref = divRef
                         img(src = pl.playlistImage, alt = "Cover Image", classes = "cover") { }
 
                         div("title") {
