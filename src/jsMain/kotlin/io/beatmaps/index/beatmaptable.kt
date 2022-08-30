@@ -316,6 +316,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
 
     @Suppress("UNUSED_PARAMETER")
     private fun handleScroll(e: Event) {
+        if (props.history.location.pathname != "/" && props.history.location.hash != "#published" && props.history.location.hash != "#unpublished") return
         val windowSize = window.innerHeight
 
         val item = currentItem()

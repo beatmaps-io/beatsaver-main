@@ -205,6 +205,8 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
 
     @Suppress("UNUSED_PARAMETER")
     private fun handleScroll(e: Event) {
+        if (props.history.location.pathname != "/playlists" && props.history.location.hash != "#playlists") return
+
         val windowSize = window.innerHeight
 
         val item = currentItem()
