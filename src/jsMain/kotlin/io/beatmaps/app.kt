@@ -1,7 +1,6 @@
 package io.beatmaps
 
 import io.beatmaps.index.HomePage
-import io.beatmaps.index.HomePageProps
 import io.beatmaps.maps.MapPage
 import io.beatmaps.maps.MapPageProps
 import io.beatmaps.maps.recent.recentTestplays
@@ -36,9 +35,11 @@ import react.createContext
 import react.dom.div
 import react.dom.render
 import react.router.dom.RouteResultHistory
+import react.router.dom.RouteResultProps
 import react.router.dom.browserRouter
 import react.router.dom.route
 import react.router.dom.switch
+import react.setState
 
 fun setPageTitle(page: String) {
     document.title = "BeatSaver - $page"
@@ -68,7 +69,11 @@ fun main() {
 
 const val dateFormat = "YYYY-MM-DD"
 
-class App : RComponent<RProps, RState>() {
+external interface AppState : RState {
+    var init: Boolean?
+}
+
+class App : RComponent<RProps, AppState>() {
     private fun fixLink(id: String, history: RouteResultHistory, url: String = "", block: (HTMLAnchorElement) -> Unit = {}) {
         (document.getElementById(id) as? HTMLAnchorElement)?.let { elem ->
             elem.onclick = {
@@ -80,96 +85,105 @@ class App : RComponent<RProps, RState>() {
     }
 
     private fun initWithHistory(history: RouteResultHistory, replaceHomelink: Boolean = true) {
+        if (state.init == true) return
+
         if (replaceHomelink) {
             fixLink("home-link", history) {
                 window.dispatchEvent(HashChangeEvent("hashchange"))
             }
             fixLink("mappers-link", history, "mappers")
+            fixLink("playlist-link", history, "playlists")
             fixLink("modlog-link", history, "modlog")
         }
 
         manageNav()
+
+        setState {
+            init = true
+        }
     }
 
     override fun componentWillMount() {
         viewportMinWidthPolyfill()
     }
 
+    fun <T : RProps> RBuilder.bsroute(
+        path: String,
+        exact: Boolean = false,
+        strict: Boolean = false,
+        replaceHomelink: Boolean = true,
+        render: RBuilder.(RouteResultProps<T>) -> Unit
+    ) {
+        route<T>(path, exact = exact, strict = strict) {
+            initWithHistory(it.history, replaceHomelink)
+            render(it)
+        }
+    }
+
     override fun RBuilder.render() {
         browserRouter {
             switch {
-                route<HomePageProps>("/", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<RProps>("/", exact = true) {
                     child(HomePage::class) {
                         attrs.history = it.history
                     }
                 }
-                route<MapPageProps>("/beatsaver/:mapKey", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<MapPageProps>("/beatsaver/:mapKey", exact = true) {
                     child(MapPage::class) {
                         attrs.history = it.history
                         attrs.mapKey = it.match.params.mapKey
                         attrs.beatsaver = true
                     }
                 }
-                route<MapPageProps>("/maps/:mapKey", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<MapPageProps>("/maps/:mapKey", exact = true) {
                     child(MapPage::class) {
                         attrs.history = it.history
                         attrs.mapKey = it.match.params.mapKey
                         attrs.beatsaver = false
                     }
                 }
-                route<RProps>("/upload", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<RProps>("/upload", exact = true) {
                     child(UploadPage::class) {
                         attrs.history = it.history
                     }
                 }
-                route<ProfilePageProps>("/profile/:userId?", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<ProfilePageProps>("/profile/:userId?", exact = true) {
                     globalContext.Consumer { userData ->
                         child(ProfilePage::class) {
                             key = "profile-${it.match.params.userId}"
-                            attrs.userData = userData
                             attrs.history = it.history
+                            attrs.userData = userData
                             attrs.userId = it.match.params.userId
                         }
                     }
                 }
-                route<RProps>("/playlists", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<RProps>("/playlists", exact = true) {
                     playlistFeed {
                         history = it.history
                     }
                 }
-                route<RProps>("/playlists/new", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<RProps>("/playlists/new", exact = true) {
                     editPlaylist {
                         id = null
                         history = it.history
                     }
                 }
-                route<PlaylistProps>("/playlists/:id", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<PlaylistProps>("/playlists/:id", exact = true) {
                     playlist {
                         id = it.match.params.id
                         history = it.history
                     }
                 }
-                route<PlaylistProps>("/playlists/:id/edit", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<PlaylistProps>("/playlists/:id/edit", exact = true) {
                     editPlaylist {
                         id = it.match.params.id
                         history = it.history
                     }
                 }
-                route<RProps>("/test", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<RProps>("/test", exact = true) {
                     recentTestplays { }
                 }
-                route<RProps>("/modlog", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<RProps>("/modlog", exact = true) {
                     globalContext.Consumer { user ->
                         modlog {
                             history = it.history
@@ -181,56 +195,45 @@ class App : RComponent<RProps, RState>() {
                         }
                     }
                 }
-                route<RProps>("/policy/dmca", exact = true) {
-                    initWithHistory(it.history, false)
+                bsroute<RProps>("/policy/dmca", exact = true, replaceHomelink = false) {
                     div {}
                 }
-                route<RProps>("/policy/tos", exact = true) {
-                    initWithHistory(it.history, false)
+                bsroute<RProps>("/policy/tos", exact = true, replaceHomelink = false) {
                     div {}
                 }
-                route<RProps>("/policy/privacy", exact = true) {
-                    initWithHistory(it.history, false)
+                bsroute<RProps>("/policy/privacy", exact = true, replaceHomelink = false) {
                     div {}
                 }
-                route<RProps>("/mappers", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<RProps>("/mappers", exact = true) {
                     userList {
                         history = it.history
                     }
                 }
-                route<RProps>("/login", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<RProps>("/login", exact = true) {
                     loginPage { }
                 }
-                route<RProps>("/oauth2/authorize", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<RProps>("/oauth2/authorize", exact = true) {
                     authorizePage { }
                 }
-                route<RProps>("/register", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<RProps>("/register", exact = true) {
                     signupPage { }
                 }
-                route<RProps>("/forgot", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<RProps>("/forgot", exact = true) {
                     forgotPage { }
                 }
-                route<ResetPageProps>("/reset/:jwt", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<ResetPageProps>("/reset/:jwt", exact = true) {
                     resetPage {
                         jwt = it.match.params.jwt
                         history = it.history
                     }
                 }
-                route<RProps>("/username", exact = true) {
-                    initWithHistory(it.history)
+                bsroute<RProps>("/username", exact = true) {
                     pickUsernamePage {
                         history = it.history
                     }
                 }
-                route<RProps>("*") {
-                    initWithHistory(it.history)
-                    child(NotFound::class) { }
+                bsroute<RProps>("*") {
+                    notFound { }
                 }
             }
         }

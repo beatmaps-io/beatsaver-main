@@ -123,7 +123,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
         }
     }
 
-    fun publishModal() = functionComponent<RProps> {
+    val publishModal = functionComponent<RProps> {
         val (publishType, setPublishType) = useState(false)
 
         p {
@@ -242,7 +242,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                                 setState {
                                                     scheduleAt = null
                                                 }
-                                                publishModal().invoke { }
+                                                publishModal { }
                                             }
                                         )
                                     }

@@ -50,8 +50,6 @@ fun manageNav() {
             },
             1
         )
-
-        true
     }
 
     val dropdowns = document.getElementsByClassName("dropdown")
