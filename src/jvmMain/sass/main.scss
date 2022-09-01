@@ -1110,7 +1110,8 @@ table.modlog {
   td, th {
     overflow: hidden;
     text-overflow: ellipsis;
-    width: 20%
+    width: 20%;
+    white-space: nowrap;
   }
 }
 

@@ -28,10 +28,13 @@ import io.beatmaps.common.rabbitHost
 import io.beatmaps.common.setupAMQP
 import io.beatmaps.common.setupLogging
 import io.beatmaps.controllers.UploadException
+import io.beatmaps.controllers.adminController
 import io.beatmaps.controllers.cdnRoute
 import io.beatmaps.controllers.mapController
+import io.beatmaps.controllers.playlistController
 import io.beatmaps.controllers.policyController
 import io.beatmaps.controllers.uploadController
+import io.beatmaps.controllers.userController
 import io.beatmaps.login.Session
 import io.beatmaps.login.authRoute
 import io.beatmaps.login.installDiscordOauth
@@ -343,6 +346,9 @@ fun Application.beatmapsio() {
         modLogRoute()
 
         mapController()
+        userController()
+        playlistController()
+        adminController()
         uploadController()
         policyController()
 

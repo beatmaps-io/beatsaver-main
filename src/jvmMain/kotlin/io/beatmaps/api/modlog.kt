@@ -43,8 +43,9 @@ fun Route.modLogRoute() {
                         .join(User, JoinType.LEFT, ModLog.targetUser, User.id)
                         .join(Beatmap, JoinType.LEFT, ModLog.opOn, Beatmap.id)
                         .select {
-                            (it.mod?.let { m -> curatorAlias[User.uniqueName] like "%$m%" } ?: Op.TRUE) and
-                                (it.user?.let { u -> User.uniqueName like "%$u%" } ?: Op.TRUE)
+                            Op.TRUE
+                                .notNull(it.mod) { m -> curatorAlias[User.uniqueName] eq m }
+                                .notNull(it.user) { u -> User.uniqueName eq u }
                         }
                         .orderBy(ModLog.opAt, SortOrder.DESC)
                         .limit(it.page, 30)
