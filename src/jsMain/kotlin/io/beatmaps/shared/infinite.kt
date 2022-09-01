@@ -3,10 +3,8 @@ package io.beatmaps.shared
 import external.Axios
 import external.CancelTokenSource
 import external.invoke
-import io.beatmaps.api.MapDetail
-import io.beatmaps.index.BeatmapTable
-import io.beatmaps.index.BeatmapTableProps
 import kotlinx.browser.window
+import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.asList
 import org.w3c.dom.events.Event
@@ -15,12 +13,15 @@ import react.RComponent
 import react.RProps
 import react.RReadableRef
 import react.RState
-import react.ReactElement
 import react.setState
 import kotlin.js.Promise
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
+
+fun interface InfiniteScrollElementRenderer<T> {
+    fun RBuilder.invoke(it: T?)
+}
 
 external interface InfiniteScrollProps<T> : RProps {
     var resultsKey: Any?
@@ -28,10 +29,11 @@ external interface InfiniteScrollProps<T> : RProps {
     var itemsPerRow: () -> Int
     var itemsPerPage: Int
     var container: RReadableRef<HTMLElement>
-    var renderElement: (RBuilder, T?) -> Unit
+    var renderElement: InfiniteScrollElementRenderer<T>
     var updateScrollIndex: ((Int) -> Unit)?
     var loadPage: (Int, CancelTokenSource) -> Promise<List<T>?>
     var grace: Int?
+    var childFilter: ((Element) -> Boolean)?
 }
 
 external interface InfiniteScrollState<T> : RState {
@@ -71,8 +73,6 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
     }
 
     override fun componentWillUnmount() {
-        console.log("componentWillUnmount?")
-
         state.token?.cancel("Unmounted")
 
         window.removeEventListener("scroll", onScroll)
@@ -82,8 +82,6 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
 
     override fun componentWillUpdate(nextProps: InfiniteScrollProps<T>, nextState: InfiniteScrollState<T>) {
         if (nextProps.resultsKey !== props.resultsKey) {
-            console.log("componentWillUpdate")
-
             state.token?.cancel("Another request started")
             nextState.apply {
                 updateState(0)
@@ -95,7 +93,10 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
                 finalPage = null
             }
 
-            window.setTimeout(::loadNextPage, 0)
+            window.setTimeout({
+                window.scrollTo(0.0, 0.0)
+                loadNextPage()
+            }, 0)
         }
     }
 
@@ -139,7 +140,7 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
 
             shouldScroll?.let { scrollTo(it) }
             window.setTimeout(onScroll, 1)
-        }.catch { console.log("CATCH"); console.log(it); loading(false) }
+        }.catch { loading(false) }
     }
 
     private val onHashChange = { _: Event? ->
@@ -193,7 +194,7 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
     }
 
     private fun currentItem(): Int {
-        props.container.current?.children?.asList()?.forEachIndexed { idx, it ->
+        props.container.current?.children?.asList()?.filter(props.childFilter ?: { true })?.forEachIndexed { idx, it ->
             val rect = it.getBoundingClientRect()
             if (rect.top >= headerSize) {
                 return idx
@@ -211,7 +212,9 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
     override fun RBuilder.render() {
         for (pIdx in 0..lastPage()) {
             (state.pages?.get(pIdx) ?: emptyPage).forEach userLoop@{
-                props.renderElement(this, it)
+                with (props.renderElement) {
+                    this@render.invoke(it)
+                }
             }
         }
     }

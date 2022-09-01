@@ -1134,6 +1134,7 @@ small.alert-count {
   .hiddenRow {
     td {
       padding: 0;
+      height: auto;
 
       div {
         overflow: hidden;
@@ -1148,8 +1149,11 @@ small.alert-count {
       }
     }
   }
+  td {
+    height: 47.5px;
+  }
   > tbody {
-    > tr:nth-of-type(4n+2), > tr:nth-of-type(4n+3) {
+    > tr:nth-of-type(4n+1), > tr:nth-of-type(4n+2) {
       > * {
         --bs-table-accent-bg: var(--bs-table-striped-bg);
         color: var(--bs-table-striped-color);

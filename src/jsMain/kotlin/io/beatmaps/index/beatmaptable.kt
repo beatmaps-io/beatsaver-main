@@ -10,6 +10,7 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
 import io.beatmaps.common.MapTagType
 import io.beatmaps.shared.InfiniteScroll
+import io.beatmaps.shared.InfiniteScrollElementRenderer
 import kotlinx.browser.window
 import org.w3c.dom.HTMLDivElement
 import react.RBuilder
@@ -191,13 +192,11 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                 attrs.itemsPerRow = { if (window.innerWidth < 992) 1 else 2 }
                 attrs.itemsPerPage = 20
                 attrs.container = resultsTable
-                attrs.renderElement = { rb, it ->
-                    with (rb) {
-                        beatmapInfo {
-                            map = it
-                            version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
-                            modal = props.modal
-                        }
+                attrs.renderElement = InfiniteScrollElementRenderer { it ->
+                    beatmapInfo {
+                        map = it
+                        version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
+                        modal = props.modal
                     }
                 }
                 attrs.updateScrollIndex = props.updateScrollIndex
