@@ -19,17 +19,23 @@ import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
-fun interface InfiniteScrollElementRenderer<T> {
+sealed interface ElementRenderer<T>
+
+fun interface InfiniteScrollElementRenderer<T> : ElementRenderer<T> {
     fun RBuilder.invoke(it: T?)
+}
+
+fun interface IndexedInfiniteScrollElementRenderer<T> : ElementRenderer<T> {
+    fun RBuilder.invoke(idx: Int, it: T?)
 }
 
 external interface InfiniteScrollProps<T> : RProps {
     var resultsKey: Any?
     var rowHeight: Double
-    var itemsPerRow: () -> Int
+    var itemsPerRow: (() -> Int)?
     var itemsPerPage: Int
     var container: RReadableRef<HTMLElement>
-    var renderElement: InfiniteScrollElementRenderer<T>
+    var renderElement: ElementRenderer<T>
     var updateScrollIndex: ((Int) -> Unit)?
     var loadPage: (Int, CancelTokenSource) -> Promise<List<T>?>
     var grace: Int?
@@ -152,7 +158,7 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
             val newPage = updateState(newItem)
             scroll = hashPos != null
 
-            if (newPage == 0) {
+            if (newItem == 0) {
                 window.scrollTo(0.0, 0.0)
             } else if (state.pages?.containsKey(newPage) == true) {
                 scrollTo(newItem)
@@ -161,7 +167,7 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
     }
 
     private val onResize = { _: Event ->
-        val newItemsPerRow = props.itemsPerRow()
+        val newItemsPerRow = props.itemsPerRow?.invoke() ?: 1
         if (state.itemsPerRow != newItemsPerRow) {
             state.visItem?.let { scrollTo(it) }
             setState {
@@ -211,9 +217,13 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
 
     override fun RBuilder.render() {
         for (pIdx in 0..lastPage()) {
-            (state.pages?.get(pIdx) ?: emptyPage).forEach userLoop@{
+            (state.pages?.get(pIdx) ?: emptyPage).forEachIndexed userLoop@{ localIdx, it ->
+                val idx = (pIdx * props.itemsPerPage) + localIdx
                 with (props.renderElement) {
-                    this@render.invoke(it)
+                    when (this) {
+                        is InfiniteScrollElementRenderer -> this@render.invoke(it)
+                        is IndexedInfiniteScrollElementRenderer -> this@render.invoke(idx, it)
+                    }
                 }
             }
         }

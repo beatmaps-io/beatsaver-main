@@ -129,7 +129,6 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
                     child(ModLogInfiniteScroll::class) {
                         attrs.resultsKey = state.resultsKey
                         attrs.rowHeight = 48.5
-                        attrs.itemsPerRow = { 1 }
                         attrs.itemsPerPage = 30
                         attrs.container = resultsTable
                         attrs.loadPage = loadPage

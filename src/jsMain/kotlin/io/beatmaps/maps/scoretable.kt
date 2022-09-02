@@ -69,12 +69,14 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
         if (nextProps.selected != props.selected) {
             state.token.cancel.invoke("Another request started")
 
-            nextState.scores = listOf()
-            nextState.page = 1
-            nextState.loading = false
-            nextState.scroll = 0
-            nextState.uid = 0
-            nextState.token = Axios.CancelToken.source()
+            nextState.apply {
+                scores = listOf()
+                page = 1
+                loading = false
+                scroll = 0
+                uid = 0
+                token = Axios.CancelToken.source()
+            }
 
             window.setTimeout(::loadNextPage, 0)
         }
