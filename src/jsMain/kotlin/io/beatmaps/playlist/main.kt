@@ -66,18 +66,20 @@ class PlaylistFeed : RComponent<PlaylistFeedProps, PlaylistFeedState>() {
         }
     }
 
+    private fun includeIfNotNull(v: Any?, name: String) = if (v != null) "$name=${v}" else null
+
     private fun updateSearchParams(searchParamsLocal: PlaylistSearchParams?, row: Int?) {
         if (searchParamsLocal == null) return
 
         val newQuery = listOfNotNull(
             (if (searchParamsLocal.search.isNotBlank()) "q=${encodeURIComponent(searchParamsLocal.search)}" else null),
-            (if (searchParamsLocal.curated == true) "curated=true" else null),
-            (if (searchParamsLocal.verified == true) "verified=true" else null),
-            (if (searchParamsLocal.maxNps != null) "maxNps=${searchParamsLocal.maxNps}" else null),
-            (if (searchParamsLocal.minNps != null) "minNps=${searchParamsLocal.minNps}" else null),
+            includeIfNotNull(searchParamsLocal.curated, "curated"),
+            includeIfNotNull(searchParamsLocal.verified, "verified"),
+            includeIfNotNull(searchParamsLocal.maxNps, "maxNps"),
+            includeIfNotNull(searchParamsLocal.minNps, "minNps"),
             (if (searchParamsLocal.sortOrder != SearchOrder.Relevance) "order=${searchParamsLocal.sortOrder}" else null),
-            (if (searchParamsLocal.from != null) "from=${searchParamsLocal.from}" else null),
-            (if (searchParamsLocal.to != null) "to=${searchParamsLocal.to}" else null)
+            includeIfNotNull(searchParamsLocal.from, "from"),
+            includeIfNotNull(searchParamsLocal.to, "to")
         )
         val hash = row?.let { "#$it" } ?: ""
         props.history.push((if (newQuery.isEmpty()) "/playlists" else "?" + newQuery.joinToString("&")) + hash)
