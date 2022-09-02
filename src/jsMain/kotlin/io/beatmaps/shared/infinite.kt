@@ -219,7 +219,7 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
         for (pIdx in 0..lastPage()) {
             (state.pages?.get(pIdx) ?: emptyPage).forEachIndexed userLoop@{ localIdx, it ->
                 val idx = (pIdx * props.itemsPerPage) + localIdx
-                with (props.renderElement) {
+                with(props.renderElement) {
                     when (this) {
                         is InfiniteScrollElementRenderer -> this@render.invoke(it)
                         is IndexedInfiniteScrollElementRenderer -> this@render.invoke(idx, it)

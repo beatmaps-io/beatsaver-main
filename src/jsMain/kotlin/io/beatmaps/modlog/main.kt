@@ -9,7 +9,6 @@ import io.beatmaps.common.Config
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
-import kotlinx.browser.window
 import kotlinx.dom.hasClass
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType

@@ -168,7 +168,7 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                     button(type = ButtonType.submit, classes = "btn btn-primary") {
                         attrs.onClickFunction = {
                             it.preventDefault()
-                            val newState = with (props.paramsFromPage) {
+                            val newState = with(props.paramsFromPage) {
                                 this@Search.get()
                             }
 
@@ -190,7 +190,7 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                         ref = dropdownRef
                         span {
                             val filters = filterRefs.filter { state.filterMap?.get(it.key) ?: false }.map { it.key.name } +
-                                    (props.filterTexts?.invoke() ?: listOf())
+                                (props.filterTexts?.invoke() ?: listOf())
 
                             if (filters.isEmpty()) {
                                 +"Filters"
@@ -222,7 +222,7 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                                 }
                             }
 
-                            props.extraFilters?.invoke {  }
+                            props.extraFilters?.invoke { }
                         }
                     }
                 }

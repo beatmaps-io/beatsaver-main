@@ -15,9 +15,7 @@ import kotlinx.html.DIV
 import kotlinx.html.TD
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.HTMLInputElement
 import react.RProps
-import react.RReadableRef
 import react.createRef
 import react.dom.RDOMBuilder
 import react.dom.a
