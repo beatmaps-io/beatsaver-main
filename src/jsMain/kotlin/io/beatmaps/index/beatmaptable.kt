@@ -9,6 +9,7 @@ import io.beatmaps.api.SearchResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
 import io.beatmaps.common.MapTagType
+import io.beatmaps.shared.CommonParams
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import kotlinx.browser.window
@@ -40,14 +41,14 @@ external interface BeatmapTableProps : RProps {
 }
 
 data class SearchParams(
-    val search: String,
+    override val search: String,
     val automapper: Boolean?,
-    val minNps: Float?,
-    val maxNps: Float?,
+    override val minNps: Float?,
+    override val maxNps: Float?,
     val chroma: Boolean?,
-    val sortOrder: SearchOrder,
-    val from: String?,
-    val to: String?,
+    override val sortOrder: SearchOrder,
+    override val from: String?,
+    override val to: String?,
     val noodle: Boolean?,
     val ranked: Boolean?,
     val curated: Boolean?,
@@ -56,7 +57,15 @@ data class SearchParams(
     val me: Boolean?,
     val cinema: Boolean?,
     val tags: Map<Boolean, Map<MapTagType, List<String>>>
-)
+) : CommonParams {
+    fun tagsQuery() = tags.flatMap { x ->
+        x.value.map { y ->
+            y.value.joinToString(if (x.key) "|" else ",") {
+                (if (x.key) "" else "!") + it
+            }
+        }
+    }.joinToString(",")
+}
 
 external interface BeatmapTableState : RState {
     var user: UserDetail?
@@ -86,13 +95,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
             "${Config.apibase}/search/text/$page?mapper=${props.user}&automapper=true"
         } else {
             props.search?.let { search ->
-                val tagStr = search.tags.flatMap { x ->
-                    x.value.map { y ->
-                        y.value.joinToString(if (x.key) "|" else ",") {
-                            (if (x.key) "" else "!") + it
-                        }
-                    }
-                }.joinToString(",")
+                val tagStr = search.tagsQuery()
 
                 "${Config.apibase}/search/text/$page?sortOrder=${search.sortOrder}" +
                     (if (search.automapper != null) "&automapper=${search.automapper}" else "") +

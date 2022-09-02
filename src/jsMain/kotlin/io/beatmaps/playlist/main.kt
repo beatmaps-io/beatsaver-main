@@ -1,6 +1,5 @@
 package io.beatmaps.playlist
 
-import external.Moment
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SortOrderTarget
 import io.beatmaps.dateFormat
@@ -8,9 +7,8 @@ import io.beatmaps.index.encodeURIComponent
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.FilterCategory
 import io.beatmaps.shared.FilterInfo
-import io.beatmaps.shared.Search
+import io.beatmaps.shared.SearchParamGenerator
 import io.beatmaps.shared.search
-import io.beatmaps.shared.toggle
 import kotlinx.browser.window
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
@@ -18,10 +16,6 @@ import react.RComponent
 import react.RProps
 import react.RState
 import react.ReactElement
-import react.createRef
-import react.dom.div
-import react.functionComponent
-import react.ref
 import react.router.dom.RouteResultHistory
 import react.setState
 
@@ -30,7 +24,7 @@ external interface PlaylistFeedProps : RProps {
 }
 
 external interface PlaylistFeedState : RState {
-    var searchParams: PlaylistSearchParams
+    var searchParams: PlaylistSearchParams?
 }
 
 val playlistFilters = listOf<FilterInfo<PlaylistSearchParams>>(
@@ -39,8 +33,6 @@ val playlistFilters = listOf<FilterInfo<PlaylistSearchParams>>(
 )
 
 class PlaylistFeed : RComponent<PlaylistFeedProps, PlaylistFeedState>() {
-    private val searchRef = createRef<Search<PlaylistSearchParams>>()
-
     override fun componentWillMount() {
         setState {
             searchParams = fromURL()
@@ -49,26 +41,6 @@ class PlaylistFeed : RComponent<PlaylistFeedProps, PlaylistFeedState>() {
 
     override fun componentDidMount() {
         setPageTitle("Playlists")
-
-        searchRef.current?.updateUI(state.searchParams)
-    }
-
-    private fun Search<PlaylistSearchParams>.updateUI(fromParams: PlaylistSearchParams) {
-        inputRef.current?.value = fromParams.search
-        sortRef.current?.value = fromParams.sortOrder.name
-        setState {
-            filterRefs.forEach {
-                val newState = it.key.fromParams(fromParams)
-                it.value.current?.checked = newState
-                filterMap[it.key] = newState
-            }
-
-            minNps = fromParams.minNps ?: 0f
-            maxNps = fromParams.maxNps ?: props.maxNps.toFloat()
-            order = fromParams.sortOrder
-            startDate = fromParams.from?.let { Moment(it) }
-            endDate = fromParams.to?.let { Moment(it) }
-        }
     }
 
     private fun fromURL() = URLSearchParams(window.location.search).let { params ->
@@ -94,13 +66,9 @@ class PlaylistFeed : RComponent<PlaylistFeedProps, PlaylistFeedState>() {
         }
     }
 
-    override fun componentDidUpdate(prevProps: PlaylistFeedProps, prevState: PlaylistFeedState, snapshot: Any) {
-        if (prevState.searchParams != state.searchParams) {
-            searchRef.current?.updateUI(state.searchParams)
-        }
-    }
+    private fun updateSearchParams(searchParamsLocal: PlaylistSearchParams?, row: Int?) {
+        if (searchParamsLocal == null) return
 
-    private fun updateSearchParams(searchParamsLocal: PlaylistSearchParams, row: Int?) {
         val newQuery = listOfNotNull(
             (if (searchParamsLocal.search.isNotBlank()) "q=${encodeURIComponent(searchParamsLocal.search)}" else null),
             (if (searchParamsLocal.curated == true) "curated=true" else null),
@@ -121,37 +89,24 @@ class PlaylistFeed : RComponent<PlaylistFeedProps, PlaylistFeedState>() {
 
     override fun RBuilder.render() {
         search<PlaylistSearchParams> {
-            ref = searchRef
+            typedState = state.searchParams
             sortOrderTarget = SortOrderTarget.Playlist
             maxNps = 16
             filters = playlistFilters
-            filterBody = functionComponent { props ->
-                div {
-                    props.filterRefs.entries.forEach { filter ->
-                        toggle(filter.key.key, filter.key.name, filter.value) {
-                            props.setState {
-                                state.filterMap[filter.key] = it
-                            }
-                        }
-                    }
-                }
-            }
-            getSearchParams = {
+            paramsFromPage = SearchParamGenerator {
                 PlaylistSearchParams(
                     inputRef.current?.value?.trim() ?: "",
-                    if (state.minNps > 0) state.minNps else null,
-                    if (state.maxNps < props.maxNps) state.maxNps else null,
+                    if (state.minNps?.let { it > 0 } == true) state.minNps else null,
+                    if (state.maxNps?.let { it < props.maxNps } == true) state.maxNps else null,
                     state.startDate?.format(dateFormat),
                     state.endDate?.format(dateFormat),
                     null,
                     if (isFiltered("curated")) true else null,
                     if (isFiltered("verified")) true else null,
-                    state.order
+                    state.order ?: SearchOrder.Relevance
                 )
             }
-            updateSearchParams = {
-                updateSearchParams(it, null)
-            }
+            updateSearchParams = ::updateSearchParams
         }
         playlistTable {
             search = state.searchParams

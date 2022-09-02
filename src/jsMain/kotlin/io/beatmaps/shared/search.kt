@@ -4,9 +4,7 @@ import external.DateRangePicker
 import external.Moment
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SortOrderTarget
-import io.beatmaps.common.MapTag
 import kotlinx.browser.document
-import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
@@ -16,18 +14,17 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.events.Event
-import org.w3c.dom.events.KeyboardEvent
 import react.FC
 import react.RBuilder
 import react.RComponent
 import react.RProps
-import react.RReadableRef
 import react.RState
 import react.ReactElement
 import react.createRef
 import react.dom.button
 import react.dom.div
 import react.dom.form
+import react.dom.h4
 import react.dom.i
 import react.dom.input
 import react.dom.option
@@ -37,35 +34,32 @@ import react.setState
 
 data class FilterInfo<T>(val key: String, val name: String, val cat: FilterCategory, val fromParams: (T) -> Boolean)
 
-external interface FilterBodyProps<T> : RProps {
-    var filterRefs: Map<FilterInfo<T>, RReadableRef<HTMLInputElement>>
-    var tags: Map<Boolean, Set<MapTag>>?
-    var setState: (Search<T>.() -> Unit) -> Unit
-    var modifyTags: (MapTag) -> Unit
+fun interface SearchParamGenerator<T : CommonParams> {
+    fun Search<T>.get(): T
 }
 
-data class SearchProps<T> (
-    var sortOrderTarget: SortOrderTarget,
-    var maxNps: Int,
-    var filters: List<FilterInfo<T>>,
-    var filterBody: FC<FilterBodyProps<T>>,
-    var getSearchParams: Search<T>.() -> T,
-    var updateSearchParams: (T) -> Unit
-) : RProps
+external interface SearchProps<T : CommonParams> : RProps {
+    var typedState: T?
+    var sortOrderTarget: SortOrderTarget
+    var maxNps: Int
+    var filters: List<FilterInfo<T>>
+    var paramsFromPage: SearchParamGenerator<T>
+    var updateSearchParams: (T, Int?) -> Unit
+    var updateUI: ((T?) -> Unit)?
+    var filterTexts: (() -> List<String>)?
+    var extraFilters: FC<RProps>?
+}
 
-data class SearchState<T>(
-    var minNps: Float = 0f,
-    var maxNps: Float = 16f,
-    val filterMap: MutableMap<FilterInfo<T>, Boolean> = mutableMapOf(),
-    var order: SearchOrder = SearchOrder.Relevance,
-    var focusedInput: String? = null,
-    var startDate: Moment? = null,
-    var endDate: Moment? = null,
-    var filtersOpen: Boolean = false,
-    var tags: Map<Boolean, Set<MapTag>>? = null,
-    var shiftHeld: Boolean = false,
-    var altHeld: Boolean = false
-) : RState
+external interface SearchState<T> : RState {
+    var minNps: Float?
+    var maxNps: Float?
+    var filterMap: MutableMap<FilterInfo<T>, Boolean>?
+    var order: SearchOrder?
+    var focusedInput: String?
+    var startDate: Moment?
+    var endDate: Moment?
+    var filtersOpen: Boolean?
+}
 data class PresetDateRange(val startDate: Moment?, val endDate: Moment?)
 
 val presets = mapOf(
@@ -80,62 +74,84 @@ enum class FilterCategory {
     NONE, GENERAL, REQUIREMENTS
 }
 
-inline fun <T> T.applyIf(condition: Boolean, block: T.() -> T): T = if (condition) block(this) else this
+interface CommonParams {
+    val search: String
+    val sortOrder: SearchOrder
+    val minNps: Float?
+    val maxNps: Float?
+    val from: String?
+    val to: String?
+}
 
-open class Search<T>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchState<T>>(props) {
-    val filterRefs = props.filters.associateWith { createRef<HTMLInputElement>() }
+open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchState<T>>(props) {
+    private val filterRefs = props.filters.associateWith { createRef<HTMLInputElement>() }
 
     val inputRef = createRef<HTMLInputElement>()
-    val sortRef = createRef<HTMLSelectElement>()
+    private val sortRef = createRef<HTMLSelectElement>()
     private val dropdownRef = createRef<HTMLButtonElement>()
     private val dropdownDivRef = createRef<HTMLDivElement>()
-
-    init {
-        state = SearchState()
-    }
 
     override fun componentWillMount() {
         setState {
             maxNps = props.maxNps.toFloat()
+            filterMap = mutableMapOf()
         }
     }
 
     override fun componentDidMount() {
+        updateUI()
         dropdownRef.current?.addEventListener("mouseup", stopProp)
         dropdownDivRef.current?.addEventListener("mouseup", stopProp)
         document.addEventListener("mouseup", hideFilters)
-        document.addEventListener("keyup", handleShift)
-        document.addEventListener("keydown", handleShift)
+    }
+
+    override fun componentDidUpdate(prevProps: SearchProps<T>, prevState: SearchState<T>, snapshot: Any) {
+        if (prevProps.typedState != props.typedState) {
+            updateUI()
+        }
+    }
+
+    private fun updateUI() {
+        val fromParams = props.typedState
+        inputRef.current?.value = fromParams?.search ?: ""
+        sortRef.current?.selectedIndex = (fromParams?.sortOrder ?: SearchOrder.Relevance).idx
+
+        setState {
+            filterRefs.forEach {
+                val newState = fromParams?.let { params -> it.key.fromParams(params) } ?: false
+                it.value.current?.checked = newState
+                filterMap?.put(it.key, newState)
+            }
+
+            minNps = fromParams?.minNps ?: 0f
+            maxNps = fromParams?.maxNps ?: props.maxNps.toFloat()
+            order = fromParams?.sortOrder
+            startDate = fromParams?.from?.let { Moment(it) }
+            endDate = fromParams?.to?.let { Moment(it) }
+        }
+
+        props.updateUI?.invoke(fromParams)
     }
 
     private val stopProp = { it: Event ->
         it.stopPropagation()
     }
 
-    private val hideFilters = { it: Event ->
+    private val hideFilters = { _: Event ->
         setState {
             filtersOpen = false
         }
     }
 
-    private val handleShift = { it: Event ->
-        setState {
-            shiftHeld = (it as? KeyboardEvent)?.shiftKey ?: false
-            altHeld = (it as? KeyboardEvent)?.altKey ?: false
-        }
-    }
-
     override fun componentWillUnmount() {
         document.removeEventListener("mouseup", hideFilters)
-        document.removeEventListener("keyup", handleShift)
-        document.removeEventListener("keydown", handleShift)
         dropdownDivRef.current?.addEventListener("mouseup", stopProp)
         dropdownRef.current?.removeEventListener("mouseup", stopProp)
     }
 
     fun isFiltered(s: String) =
         props.filters.first { it.key == s }.let { filter ->
-            state.filterMap.getOrElse(filter) { false }
+            state.filterMap?.get(filter) ?: false
         }
 
     override fun RBuilder.render() {
@@ -152,9 +168,11 @@ open class Search<T>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchS
                     button(type = ButtonType.submit, classes = "btn btn-primary") {
                         attrs.onClickFunction = {
                             it.preventDefault()
-                            props.updateSearchParams(
-                                props.getSearchParams(this@Search)
-                            )
+                            val newState = with (props.paramsFromPage) {
+                                this@Search.get()
+                            }
+
+                            props.updateSearchParams(newState, null)
                         }
                         +"Search"
                     }
@@ -166,13 +184,13 @@ open class Search<T>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchS
                         attrs.onClickFunction = {
                             it.preventDefault()
                             setState {
-                                filtersOpen = !state.filtersOpen
+                                filtersOpen = state.filtersOpen != true
                             }
                         }
                         ref = dropdownRef
                         span {
-                            val filters = filterRefs.filter { state.filterMap.getOrElse(it.key) { false } }.map { it.key.name } +
-                                (state.tags?.flatMap { y -> y.value.map { z -> (if (y.key) "" else "!") + z.slug } } ?: listOf())
+                            val filters = filterRefs.filter { state.filterMap?.get(it.key) ?: false }.map { it.key.name } +
+                                    (props.filterTexts?.invoke() ?: listOf())
 
                             if (filters.isEmpty()) {
                                 +"Filters"
@@ -180,44 +198,35 @@ open class Search<T>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchS
                                 +filters.joinToString(", ")
                             }
                         }
-                        i("fas fa-angle-" + if (state.filtersOpen) "up" else "down") {}
+                        i("fas fa-angle-" + if (state.filtersOpen == true) "up" else "down") {}
                     }
-                    div("dropdown-menu" + if (state.filtersOpen) " show" else "") {
+                    div("dropdown-menu" + if (state.filtersOpen == true) " show" else "") {
                         ref = dropdownDivRef
 
-                        props.filterBody {
-                            attrs.filterRefs = filterRefs
-                            attrs.tags = state.tags
-                            attrs.setState = { handler ->
-                                setState {
-                                    handler()
-                                }
-                            }
-                            attrs.modifyTags = {
-                                (state.tags?.get(!state.altHeld) ?: setOf()).let { tags ->
-                                    val shouldAdd = !tags.contains(it)
-
-                                    val newTags = tags.applyIf(!state.shiftHeld) {
-                                        filterTo(hashSetOf()) { o -> o.type != it.type }
-                                    }.applyIf(shouldAdd) {
-                                        plus(it)
-                                    }.applyIf(state.shiftHeld && !shouldAdd) {
-                                        minus(it)
+                        div("d-flex") {
+                            div {
+                                filterRefs.entries.fold(FilterCategory.NONE) { cat, filter ->
+                                    if (cat != filter.key.cat) {
+                                        h4(if (cat == FilterCategory.NONE) "" else "mt-4") {
+                                            +filter.key.cat.toString()
+                                        }
                                     }
 
-                                    setState {
-                                        this.tags = mapOf(
-                                            !state.altHeld to newTags,
-                                            state.altHeld to (state.tags?.get(state.altHeld)?.let { x -> x - it } ?: setOf())
-                                        )
+                                    toggle(filter.key.key, filter.key.name, filter.value) {
+                                        setState {
+                                            filterMap?.put(filter.key, it)
+                                        }
                                     }
-                                    window.asDynamic().getSelection().removeAllRanges()
+
+                                    filter.key.cat
                                 }
                             }
+
+                            props.extraFilters?.invoke {  }
                         }
                     }
                 }
-                slider("NPS", state.minNps, state.maxNps, props.maxNps) {
+                slider("NPS", state.minNps ?: 0f, state.maxNps ?: 16f, props.maxNps) {
                     setState {
                         minNps = it[0] / 10f
                         maxNps = it[1] / 10f
@@ -274,7 +283,7 @@ open class Search<T>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchS
                         }
                         SearchOrder.values().filter { props.sortOrderTarget in it.targets }.forEach {
                             option {
-                                attrs.selected = state.order == it
+                                attrs.selected = (state.order ?: SearchOrder.Relevance) == it
                                 attrs.value = it.toString()
                                 +it.toString()
                             }
@@ -286,10 +295,10 @@ open class Search<T>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchS
     }
 }
 
-inline fun <T, reified S : Search<T>> RBuilder.searchTyped(noinline handler: SearchProps<T>.() -> Unit): ReactElement {
+inline fun <T : CommonParams, reified S : Search<T>> RBuilder.searchTyped(noinline handler: SearchProps<T>.() -> Unit): ReactElement {
     return child(S::class) {
         this.attrs(handler)
     }
 }
 
-fun <T> RBuilder.search(handler: SearchProps<T>.() -> Unit) = searchTyped(handler)
+fun <T : CommonParams> RBuilder.search(handler: SearchProps<T>.() -> Unit) = searchTyped(handler)

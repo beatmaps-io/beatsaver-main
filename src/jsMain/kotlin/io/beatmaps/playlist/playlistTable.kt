@@ -8,6 +8,7 @@ import io.beatmaps.api.PlaylistSearchResponse
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.common.Config
 import io.beatmaps.index.encodeURIComponent
+import io.beatmaps.shared.CommonParams
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import org.w3c.dom.HTMLDivElement
@@ -21,16 +22,16 @@ import react.dom.div
 import react.router.dom.RouteResultHistory
 
 data class PlaylistSearchParams(
-    val search: String,
-    val minNps: Float?,
-    val maxNps: Float?,
-    val from: String? = null,
-    val to: String? = null,
+    override val search: String,
+    override val minNps: Float?,
+    override val maxNps: Float?,
+    override val from: String? = null,
+    override val to: String? = null,
     val includeEmpty: Boolean? = null,
     val curated: Boolean? = null,
     val verified: Boolean? = null,
-    val sortOrder: SearchOrder
-)
+    override val sortOrder: SearchOrder
+) : CommonParams
 
 external interface PlaylistTableProps : RProps {
     var search: PlaylistSearchParams?

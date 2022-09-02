@@ -1,6 +1,5 @@
 package io.beatmaps.index
 
-import external.Moment
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SortOrderTarget
 import io.beatmaps.common.MapTag
@@ -10,10 +9,12 @@ import io.beatmaps.maps.mapTag
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.FilterCategory
 import io.beatmaps.shared.FilterInfo
-import io.beatmaps.shared.Search
+import io.beatmaps.shared.SearchParamGenerator
 import io.beatmaps.shared.search
-import io.beatmaps.shared.toggle
+import kotlinx.browser.document
 import kotlinx.browser.window
+import org.w3c.dom.events.Event
+import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
@@ -31,7 +32,10 @@ external interface HomePageProps : RProps {
     var history: RouteResultHistory
 }
 external interface HomePageState : RState {
-    var searchParams: SearchParams
+    var searchParams: SearchParams?
+    var tags: Map<Boolean, Set<MapTag>>?
+    var shiftHeld: Boolean?
+    var altHeld: Boolean?
 }
 
 val mapFilters = listOf<FilterInfo<SearchParams>>(
@@ -47,8 +51,9 @@ val mapFilters = listOf<FilterInfo<SearchParams>>(
     FilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true }
 )
 
+inline fun <T> T.applyIf(condition: Boolean, block: T.() -> T): T = if (condition) block(this) else this
+
 class HomePage : RComponent<HomePageProps, HomePageState>() {
-    private val searchRef = createRef<Search<SearchParams>>()
     private val modalRef = createRef<ModalComponent>()
 
     override fun componentWillMount() {
@@ -59,26 +64,28 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
 
     override fun componentDidMount() {
         setPageTitle("Home")
-
-        searchRef.current?.updateUI(state.searchParams)
+        document.addEventListener("keyup", handleShift)
+        document.addEventListener("keydown", handleShift)
     }
 
-    private fun Search<SearchParams>.updateUI(fromParams: SearchParams) {
-        inputRef.current?.value = fromParams.search
-        sortRef.current?.selectedIndex = fromParams.sortOrder.idx
-        setState {
-            filterRefs.forEach {
-                val newState = it.key.fromParams(fromParams)
-                it.value.current?.checked = newState
-                filterMap[it.key] = newState
-            }
+    override fun componentWillUnmount() {
+        document.removeEventListener("keyup", handleShift)
+        document.removeEventListener("keydown", handleShift)
+    }
 
-            minNps = fromParams.minNps ?: 0f
-            maxNps = fromParams.maxNps ?: props.maxNps.toFloat()
-            order = fromParams.sortOrder
-            startDate = fromParams.from?.let { Moment(it) }
-            endDate = fromParams.to?.let { Moment(it) }
-            tags = fromParams.tags.mapValues { it.value.flatMap { x -> x.value.mapNotNull { y -> MapTag.fromSlug(y) } }.toSet() }
+    override fun componentWillUpdate(nextProps: HomePageProps, nextState: HomePageState) {
+        if (state.searchParams == nextState.searchParams) {
+            val fromParams = fromURL()
+            if (fromParams != state.searchParams) {
+                nextState.searchParams = fromParams
+            }
+        }
+    }
+
+    private val handleShift = { it: Event ->
+        setState {
+            shiftHeld = (it as? KeyboardEvent)?.shiftKey ?: false
+            altHeld = (it as? KeyboardEvent)?.altKey ?: false
         }
     }
 
@@ -107,29 +114,10 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
         )
     }
 
-    override fun componentWillUpdate(nextProps: HomePageProps, nextState: HomePageState) {
-        if (state.searchParams == nextState.searchParams) {
-            val fromParams = fromURL()
-            if (fromParams != state.searchParams) {
-                nextState.searchParams = fromParams
-            }
-        }
-    }
+    private fun updateSearchParams(searchParamsLocal: SearchParams?, row: Int?) {
+        if (searchParamsLocal == null) return
 
-    override fun componentDidUpdate(prevProps: HomePageProps, prevState: HomePageState, snapshot: Any) {
-        if (prevState.searchParams != state.searchParams) {
-            searchRef.current?.updateUI(state.searchParams)
-        }
-    }
-
-    private fun updateSearchParams(searchParamsLocal: SearchParams, row: Int?) {
-        val tagStr = searchParamsLocal.tags.flatMap { x ->
-            x.value.map { y ->
-                y.value.joinToString(if (x.key) "|" else ",") {
-                    (if (x.key) "" else "!") + it
-                }
-            }
-        }.joinToString(",")
+        val tagStr = searchParamsLocal.tagsQuery()
 
         val newQuery = listOfNotNull(
             (if (searchParamsLocal.search.isNotBlank()) "q=${encodeURIComponent(searchParamsLocal.search)}" else null),
@@ -159,62 +147,18 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
 
     override fun RBuilder.render() {
         search<SearchParams> {
-            ref = searchRef
+            typedState = state.searchParams
             sortOrderTarget = SortOrderTarget.Map
             filters = mapFilters
-            filterBody = functionComponent { props ->
-                div("d-flex") {
-                    div {
-                        props.filterRefs.entries.fold(FilterCategory.NONE) { cat, filter ->
-                            if (cat != filter.key.cat) {
-                                h4(if (cat == FilterCategory.NONE) "" else "mt-4") {
-                                    +filter.key.cat.toString()
-                                }
-                            }
-
-                            toggle(filter.key.key, filter.key.name, filter.value) {
-                                props.setState {
-                                    state.filterMap[filter.key] = it
-                                }
-                            }
-
-                            filter.key.cat
-                        }
-                    }
-
-                    div("tags") {
-                        h4 {
-                            +"Tags"
-                        }
-
-                        MapTag.sorted.fold(MapTagType.None) { prev, it ->
-                            if (it.type != prev) div("break") {}
-
-                            if (it.type != MapTagType.None) {
-                                mapTag {
-                                    attrs.selected = props.tags?.let { tags -> tags.any { x -> x.value.contains(it) } || tags.isEmpty() } ?: false
-                                    attrs.excluded = props.tags?.get(false)?.contains(it) == true
-                                    attrs.tag = it
-
-                                    attrs.onClick = { _ ->
-                                        props.modifyTags(it)
-                                    }
-                                }
-                            }
-                            it.type
-                        }
-                    }
-                }
-            }
             maxNps = 16
-            getSearchParams = {
+            paramsFromPage = SearchParamGenerator {
                 SearchParams(
                     inputRef.current?.value?.trim() ?: "",
                     if (isFiltered("bot")) true else null,
-                    if (state.minNps > 0) state.minNps else null,
-                    if (state.maxNps < props.maxNps) state.maxNps else null,
+                    if (state.minNps?.let { it > 0 } == true) state.minNps else null,
+                    if (state.maxNps?.let { it < props.maxNps } == true) state.maxNps else null,
                     if (isFiltered("chroma")) true else null,
-                    state.order,
+                    state.order ?: SearchOrder.Relevance,
                     state.startDate?.format(dateFormat),
                     state.endDate?.format(dateFormat),
                     if (isFiltered("noodle")) true else null,
@@ -224,12 +168,58 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
                     if (isFiltered("fs")) true else null,
                     if (isFiltered("me")) true else null,
                     if (isFiltered("cinema")) true else null,
-                    state.tags?.mapValues { o -> o.value.groupBy { y -> y.type }.mapValues { y -> y.value.map { x -> x.slug } } } ?: mapOf()
+                    this@HomePage.state.tags?.mapValues { o -> o.value.groupBy { y -> y.type }.mapValues { y -> y.value.map { x -> x.slug } } } ?: mapOf()
                 )
             }
-            updateSearchParams = {
-                updateSearchParams(it, null)
+            extraFilters = functionComponent {
+                div("tags") {
+                    h4 {
+                        +"Tags"
+                    }
+
+                    MapTag.sorted.fold(MapTagType.None) { prev, it ->
+                        if (it.type != prev) div("break") {}
+
+                        if (it.type != MapTagType.None) {
+                            mapTag {
+                                attrs.selected = state.tags?.let { tags -> tags.any { x -> x.value.contains(it) } || tags.isEmpty() } ?: false
+                                attrs.excluded = state.tags?.get(false)?.contains(it) == true
+                                attrs.tag = it
+
+                                attrs.onClick = { _ ->
+                                    (state.tags?.get(state.altHeld != true) ?: setOf()).let { tags ->
+                                        val shouldAdd = !tags.contains(it)
+
+                                        val newTags = tags.applyIf(state.shiftHeld != true) {
+                                            filterTo(hashSetOf()) { o -> o.type != it.type }
+                                        }.applyIf(shouldAdd) {
+                                            plus(it)
+                                        }.applyIf(state.shiftHeld == true && !shouldAdd) {
+                                            minus(it)
+                                        }
+
+                                        setState {
+                                            this.tags = mapOf(
+                                                (state.altHeld != true) to newTags,
+                                                (state.altHeld == true) to (state.tags?.get(state.altHeld == true)?.let { x -> x - it } ?: setOf())
+                                            )
+                                        }
+                                        window.asDynamic().getSelection().removeAllRanges() as Unit
+                                    }
+                                }
+                            }
+                        }
+                        it.type
+                    }
+                }
             }
+            updateUI = { params ->
+                state.tags = params?.tags?.mapValues { it.value.flatMap { x -> x.value.mapNotNull { y -> MapTag.fromSlug(y) } }.toSet() }
+            }
+            filterTexts = {
+                (state.tags?.flatMap { y -> y.value.map { z -> (if (y.key) "" else "!") + z.slug } } ?: listOf())
+            }
+            updateSearchParams = ::updateSearchParams
         }
         modal {
             ref = modalRef
