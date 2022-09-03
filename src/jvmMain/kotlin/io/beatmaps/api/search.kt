@@ -25,8 +25,8 @@ import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
-import io.ktor.server.application.call
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.options
 import io.ktor.server.response.header
@@ -44,7 +44,6 @@ import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.lang.Integer.toHexString
-import java.math.BigDecimal
 
 @Location("/api") class SearchApi {
     @Group("Search") @Location("/search/text/{page}")

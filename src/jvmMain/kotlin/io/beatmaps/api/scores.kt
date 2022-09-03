@@ -1,8 +1,5 @@
 package io.beatmaps.api
 
-import com.fasterxml.jackson.core.JacksonException
-import com.fasterxml.jackson.databind.JsonMappingException
-import com.fasterxml.jackson.module.kotlin.readValue
 import io.beatmaps.common.Config
 import io.beatmaps.common.SSGameMode
 import io.beatmaps.common.api.EDifficulty
@@ -18,7 +15,6 @@ import io.ktor.client.plugins.cookies.AcceptAllCookiesStorage
 import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.JsonConvertException

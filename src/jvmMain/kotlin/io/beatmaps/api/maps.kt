@@ -30,8 +30,8 @@ import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.login.Session
-import io.ktor.server.application.call
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.locations.options

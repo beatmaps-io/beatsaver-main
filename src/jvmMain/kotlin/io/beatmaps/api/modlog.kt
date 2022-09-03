@@ -8,8 +8,8 @@ import io.beatmaps.common.dbo.ModLogDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.curatorAlias
-import io.ktor.server.application.call
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.response.respond

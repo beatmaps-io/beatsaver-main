@@ -5,6 +5,9 @@ import io.beatmaps.api.alertCount
 import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.apache.Apache
+import io.ktor.http.HttpMethod
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
@@ -12,11 +15,10 @@ import io.ktor.server.auth.OAuthServerSettings
 import io.ktor.server.auth.Principal
 import io.ktor.server.auth.form
 import io.ktor.server.auth.oauth
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
-import io.ktor.http.HttpMethod
 import io.ktor.server.request.uri
 import io.ktor.server.response.respondRedirect
+import io.ktor.util.StringValues
+import io.ktor.util.StringValuesBuilder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -31,7 +33,7 @@ fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
     defaultScopes = listOf("identify"),
     authorizeUrlInterceptor = {
         state?.let {
-            parameters["state"] = it
+            (parameters as StringValuesBuilder)["state"] = it
         }
     },
 )
@@ -44,7 +46,7 @@ fun Application.installDiscordOauth() {
         oauth("discord") {
             client = HttpClient(Apache)
             urlProvider = { "$baseName${request.uri.substringBefore("?")}" }
-            providerLookup = { discordProvider(request.queryParameters["state"]) }
+            providerLookup = { discordProvider((request.queryParameters as StringValues)["state"]) }
         }
         form("auth-form") {
             userParamName = "username"

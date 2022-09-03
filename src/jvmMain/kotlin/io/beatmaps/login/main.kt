@@ -41,6 +41,7 @@ import io.ktor.server.sessions.clear
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
+import io.ktor.util.StringValues
 import io.ktor.util.hex
 import kotlinx.coroutines.runBlocking
 import kotlinx.html.meta
@@ -146,7 +147,7 @@ fun Route.authRoute() {
             }
 
             call.sessions.set(Session(user.id.value, user.hash, "", discordName, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, user.hash == null, alertCount))
-            call.parameters["state"]?.let { String(hex(it)) }.orEmpty().let { query ->
+            (call.parameters as StringValues)["state"]?.let { String(hex(it)) }.orEmpty().let { query ->
                 if (query.isNotEmpty() && query.contains("client_id")) {
                     call.respondRedirect("/oauth2/authorize/success$query")
                 } else {
@@ -208,8 +209,8 @@ fun Route.authRoute() {
 
     get<Verify> {
         val query = call.request.queryParameters
-        val userId = (query["user"] ?: throw NotFoundException("User not specified")).toInt()
-        val token = query["token"] ?: ""
+        val userId = ((query as StringValues)["user"] ?: throw NotFoundException("User not specified")).toInt()
+        val token = (query as StringValues)["token"] ?: ""
 
         val valid = transaction {
             User.update({
@@ -234,7 +235,7 @@ fun Route.authRoute() {
         post<Authorize> {
             call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
                 val user = newPrincipal.user
-                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator, call.parameters["client_id"]))
+                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator, (call.parameters as StringValues)["client_id"]))
 
                 call.respondRedirect(newPrincipal.redirect)
             }
@@ -243,7 +244,7 @@ fun Route.authRoute() {
 
     get<AuthorizeSuccess> {
         call.sessions.get<Session>()?.let {
-            call.sessions.set(it.copy(oauth2ClientId = call.parameters["client_id"]))
+            call.sessions.set(it.copy(oauth2ClientId = (call.parameters as StringValues)["client_id"]))
 
             call.respondRedirect("/oauth2/authorize?" + call.request.queryString())
         }
@@ -278,7 +279,7 @@ fun Route.authRoute() {
             return@get
         }
 
-        val claimedId = call.request.queryParameters["openid.claimed_id"]
+        val claimedId = (call.request.queryParameters as StringValues)["openid.claimed_id"]
 
         if (claimedId == null) {
             val params = parametersOf(
@@ -291,7 +292,7 @@ fun Route.authRoute() {
             )
 
             val url = URLBuilder(protocol = URLProtocol.HTTPS, host = "steamcommunity.com", pathSegments = listOf("openid", "login"), parameters = params).buildString()
-            //val url = Url(URLProtocol.HTTPS, "steamcommunity.com", 0, "/openid/login", params, "", null, null, false).toString()
+            // val url = Url(URLProtocol.HTTPS, "steamcommunity.com", 0, "/openid/login", params, "", null, null, false).toString()
             call.respondRedirect(url)
         } else {
             val xml = client.submitForm(
@@ -299,9 +300,9 @@ fun Route.authRoute() {
                 formParameters = parametersOf(
                     "openid.ns" to listOf("http://specs.openid.net/auth/2.0"),
                     "openid.mode" to listOf("check_authentication"),
-                    "openid.sig" to listOf(call.request.queryParameters["openid.sig"] ?: ""),
-                    *(call.request.queryParameters["openid.signed"])?.split(",")?.map {
-                        "openid.$it" to listOf(call.request.queryParameters["openid.$it"] ?: "")
+                    "openid.sig" to listOf((call.request.queryParameters as StringValues)["openid.sig"] ?: ""),
+                    *((call.request.queryParameters as StringValues)["openid.signed"])?.split(",")?.map {
+                        "openid.$it" to listOf((call.request.queryParameters as StringValues)["openid.$it"] ?: "")
                     }?.toTypedArray() ?: arrayOf()
                 )
             ).bodyAsText()
@@ -336,7 +337,7 @@ fun Application.installOauth2() {
                 } else {
                     runBlocking {
                         call.genericPage(headerTemplate = {
-                            call.parameters["client_id"]?.let { DBClientService.getClient(it) }?.let { client ->
+                            (call.parameters as StringValues)["client_id"]?.let { DBClientService.getClient(it) }?.let { client ->
                                 meta("oauth-data", "{\"id\": \"${client.clientId}\", \"name\": \"${client.name}\"}")
                             }
                         })

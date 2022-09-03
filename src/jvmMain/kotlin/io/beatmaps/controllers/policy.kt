@@ -5,9 +5,9 @@ import io.beatmaps.pages.DMCAPageTemplate
 import io.beatmaps.pages.PrivacyPageTemplate
 import io.beatmaps.pages.TOSPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.html.respondHtmlTemplate
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.routing.Route
