@@ -82,7 +82,13 @@ class PlaylistFeed : RComponent<PlaylistFeedProps, PlaylistFeedState>() {
             includeIfNotNull(searchParamsLocal.to, "to")
         )
         val hash = row?.let { "#$it" } ?: ""
-        props.history.push((if (newQuery.isEmpty()) "/playlists" else "?" + newQuery.joinToString("&")) + hash)
+        val newUrl = (if (newQuery.isEmpty()) "/playlists" else "?" + newQuery.joinToString("&")) + hash
+
+        if (searchParamsLocal == state.searchParams) {
+            props.history.replace(newUrl)
+        } else {
+            props.history.push(newUrl)
+        }
 
         setState {
             searchParams = searchParamsLocal

@@ -140,7 +140,13 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             (if (tagStr.isNotEmpty()) "tags=$tagStr" else null)
         )
         val hash = row?.let { "#$it" } ?: ""
-        props.history.push((if (newQuery.isEmpty()) "/" else "?" + newQuery.joinToString("&")) + hash)
+        val newUrl = (if (newQuery.isEmpty()) "/" else "?" + newQuery.joinToString("&")) + hash
+
+        if (searchParamsLocal == state.searchParams) {
+            props.history.replace(newUrl)
+        } else {
+            props.history.push(newUrl)
+        }
 
         setState {
             searchParams = searchParamsLocal
