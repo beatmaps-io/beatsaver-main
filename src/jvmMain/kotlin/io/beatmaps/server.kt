@@ -62,6 +62,7 @@ import io.ktor.server.http.content.resources
 import io.ktor.server.http.content.static
 import io.ktor.server.locations.Locations
 import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.plugins.ParameterConversionException
 import io.ktor.server.plugins.conditionalheaders.ConditionalHeaders
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -85,7 +86,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.html.HEAD
-import kotlinx.serialization.StringFormat
 import org.flywaydb.core.Flyway
 import org.valiktor.ConstraintViolationException
 import org.valiktor.i18n.mapToMessage
@@ -128,13 +128,12 @@ fun main() {
 }
 
 data class ErrorResponse(val error: String)
-class NotFoundException(message: String? = "Resource not found") : Exception(message)
 
 fun Application.beatmapsio() {
     installMetrics()
 
     install(ContentNegotiation) {
-        val kotlinx = KotlinxSerializationConverter(json as StringFormat)
+        val kotlinx = KotlinxSerializationConverter(json)
         val jsConv = JacksonConverter(jackson)
 
         register(

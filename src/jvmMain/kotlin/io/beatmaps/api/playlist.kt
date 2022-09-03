@@ -15,6 +15,8 @@ import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.cleanString
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.PgConcat
+import io.beatmaps.common.db.greaterEq
+import io.beatmaps.common.db.lessEq
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
@@ -267,8 +269,8 @@ fun Route.playlistRoute() {
                                         } else q
                                     }
                                     .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
-                                    .notNull(it.minNps) { o -> Playlist.maxNps greaterEq o.toBigDecimal() }
-                                    .notNull(it.maxNps) { o -> Playlist.minNps lessEq o.toBigDecimal() }
+                                    .notNull(it.minNps) { o -> Playlist.maxNps greaterEq o }
+                                    .notNull(it.maxNps) { o -> Playlist.minNps lessEq o }
                                     .notNull(it.from) { o -> Playlist.createdAt greaterEq o.toJavaInstant() }
                                     .notNull(it.to) { o -> Playlist.createdAt lessEq o.toJavaInstant() }
                                     .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }

@@ -1,6 +1,5 @@
 package io.beatmaps.controllers
 
-import io.beatmaps.NotFoundException
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
 import io.beatmaps.common.DownloadInfo
@@ -24,6 +23,7 @@ import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.locations.options
+import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.plugins.origin
 import io.ktor.server.response.header
 import io.ktor.server.routing.Route

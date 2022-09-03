@@ -5,7 +5,6 @@ import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
-import io.beatmaps.NotFoundException
 import io.beatmaps.common.Config
 import io.beatmaps.common.UploadLimitData
 import io.beatmaps.common.api.EDifficulty
@@ -39,6 +38,7 @@ import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.locations.options
 import io.ktor.server.locations.post
+import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.request.receive
 import io.ktor.server.response.header
 import io.ktor.server.response.respond

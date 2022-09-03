@@ -34,10 +34,15 @@ import java.net.URISyntaxException
 val tagsRegex = Regex("(<([^>]+)>)")
 val scoresCookies = AcceptAllCookiesStorage()
 val scoresClient = HttpClient(Apache) {
+    expectSuccess = true
+
     install(HttpCookies) {
         storage = scoresCookies
     }
-    install(HttpTimeout)
+    install(HttpTimeout) {
+        socketTimeoutMillis = 5000
+        requestTimeoutMillis = 20000
+    }
     install(ContentNegotiation) {
         val converter = JacksonConverter(jackson)
         register(ContentType.Application.Json, converter)
@@ -135,26 +140,32 @@ fun Route.scoresRoute() {
     }
 }
 
-suspend fun getLeaderboardInfo(hash: String, diff: EDifficulty = EDifficulty.ExpertPlus, mode: SSGameMode = SSGameMode.SoloStandard) =
+suspend fun <T> ssTry(block: suspend () -> T) =
     try {
+        block()
+    } catch (e: ClientRequestException) {
+        null // 4xx response
+    } catch (e: URISyntaxException) {
+        null // Bad characters in hash, likely only locally
+    } catch (e: ServerResponseException) {
+        throw ScoreSaberServerException(e) // 5xx response
+    } catch (e: JsonConvertException) {
+        e.printStackTrace()
+        null // Bad json, scoresaber schema changed?
+    }
+
+suspend fun getLeaderboardInfo(hash: String, diff: EDifficulty = EDifficulty.ExpertPlus, mode: SSGameMode = SSGameMode.SoloStandard) =
+    ssTry {
         scoresClient.get(
             "https://scoresaber.com/api/leaderboard/by-hash/$hash/info"
         ) {
             parameter("difficulty", diff.idx)
             parameter("gameMode", mode)
         }.body<SSLeaderboardInfo>()
-    } catch (e: ClientRequestException) {
-        null
-    } catch (e: URISyntaxException) {
-        null
-    } catch (e: ServerResponseException) {
-        throw ScoreSaberServerException(e)
-    } catch (e: JsonConvertException) {
-        null
     }
 
 suspend fun getScores(hash: String, diff: EDifficulty = EDifficulty.ExpertPlus, mode: SSGameMode = SSGameMode.SoloStandard, page: Int = 1) =
-    try {
+    ssTry {
         scoresClient.get(
             "https://scoresaber.com/api/leaderboard/by-hash/$hash/scores"
         ) {
@@ -162,14 +173,6 @@ suspend fun getScores(hash: String, diff: EDifficulty = EDifficulty.ExpertPlus, 
             parameter("gameMode", mode)
             parameter("page", page)
         }.body<SSPaged>().scores
-    } catch (e: ClientRequestException) {
-        null
-    } catch (e: URISyntaxException) {
-        null
-    } catch (e: ServerResponseException) {
-        throw ScoreSaberServerException(e)
-    } catch (e: JsonConvertException) {
-        null
     }
 
 suspend fun getLeaderboard(hash: String, diff: EDifficulty = EDifficulty.ExpertPlus, mode: SSGameMode = SSGameMode.SoloStandard, page: Int = 1) =

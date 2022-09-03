@@ -11,7 +11,9 @@ import io.beatmaps.cdnPrefix
 import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.contains
 import io.beatmaps.common.db.distinctOn
+import io.beatmaps.common.db.greaterEq
 import io.beatmaps.common.db.ilike
+import io.beatmaps.common.db.lessEq
 import io.beatmaps.common.db.similar
 import io.beatmaps.common.db.unaccent
 import io.beatmaps.common.db.unaccentLiteral
@@ -221,12 +223,12 @@ fun Route.searchRoute() {
                                     .notNull(it.curated) { o -> with(Beatmap.curatedAt) { if (o) isNotNull() else isNull() } }
                                     .notNull(it.verified) { o -> User.verifiedMapper eq o }
                                     .notNull(it.fullSpread) { o -> Beatmap.fullSpread eq o }
-                                    .notNull(it.minNps) { o -> (Beatmap.maxNps greaterEq o.toBigDecimal()) and (Difficulty.nps greaterEq o.toBigDecimal()) }
-                                    .notNull(it.maxNps) { o -> (Beatmap.minNps lessEq o.toBigDecimal()) and (Difficulty.nps lessEq o.toBigDecimal()) }
+                                    .notNull(it.minNps) { o -> (Beatmap.maxNps greaterEq o) and (Difficulty.nps greaterEq o) }
+                                    .notNull(it.maxNps) { o -> (Beatmap.minNps lessEq o) and (Difficulty.nps lessEq o) }
                                     .notNull(it.minDuration) { o -> Beatmap.duration greaterEq o }
                                     .notNull(it.maxDuration) { o -> Beatmap.duration lessEq o }
-                                    .notNull(it.minRating) { o -> Beatmap.score greaterEq o.toBigDecimal() }
-                                    .notNull(it.maxRating) { o -> Beatmap.score lessEq o.toBigDecimal() }
+                                    .notNull(it.minRating) { o -> Beatmap.score greaterEq o }
+                                    .notNull(it.maxRating) { o -> Beatmap.score lessEq o }
                                     .notNull(it.minBpm) { o -> Beatmap.bpm greaterEq o }
                                     .notNull(it.maxBpm) { o -> Beatmap.bpm lessEq o }
                                     .notNull(it.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }
