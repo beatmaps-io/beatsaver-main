@@ -422,7 +422,7 @@ fun Route.userRoute() {
         val user = transaction {
             UserDao.wrapRows(
                 User.select {
-                    User.hash.eq(it.id)
+                    User.hash.eq(it.id) and User.active
                 }
             ).firstOrNull()
         }
@@ -497,7 +497,7 @@ fun Route.userRoute() {
         val (maps, user) = transaction {
             Beatmap.joinVersions().select {
                 Beatmap.uploader eq it.id and Beatmap.deletedAt.isNull()
-            }.complexToBeatmap().sortedByDescending { b -> b.uploaded } to User.select { User.id eq it.id }.firstOrNull()?.let { row -> UserDetail.from(row) }
+            }.complexToBeatmap().sortedByDescending { b -> b.uploaded } to User.select { User.id eq it.id and User.active }.firstOrNull()?.let { row -> UserDetail.from(row) }
         }
 
         if (user == null) {

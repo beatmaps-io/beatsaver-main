@@ -1,5 +1,8 @@
 package io.beatmaps.controllers
 
+import io.beatmaps.api.UserDetail
+import io.beatmaps.api.from
+import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.genericPage
@@ -12,6 +15,7 @@ import io.ktor.response.respondRedirect
 import io.ktor.routing.Route
 import io.ktor.sessions.get
 import io.ktor.sessions.sessions
+import kotlinx.html.meta
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -44,7 +48,24 @@ fun Route.userController() {
         if (it.id == null && call.sessions.get<Session>() == null) {
             call.respondRedirect("/login")
         } else {
-            genericPage()
+            genericPage(
+                headerTemplate = {
+                    if (it.id != null) {
+                        transaction {
+                            User.select {
+                                User.id eq it.id and User.active
+                            }.limit(1).map { u -> UserDetail.from(u) }.firstOrNull()
+                        }?.let { detail ->
+                            meta("og:type", "profile:${detail.name}")
+                            meta("og:site_name", "BeatSaver")
+                            meta("og:title", detail.name)
+                            meta("og:url", "${Config.basename}/profile/${detail.id}")
+                            meta("og:image", detail.avatar)
+                            meta("og:description", "${detail.name}'s BeatSaver profile")
+                        }
+                    }
+                }
+            )
         }
     }
 

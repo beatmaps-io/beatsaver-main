@@ -32,21 +32,17 @@ fun Route.playlistController() {
     get<PlaylistController.Detail> {
         genericPage(
             headerTemplate = {
-                try {
-                    transaction {
-                        Playlist.select {
-                            (Playlist.id eq it.id) and Playlist.deletedAt.isNull() and (Playlist.public eq true)
-                        }.limit(1).map { PlaylistFull.from(it, cdnPrefix()) }.firstOrNull()
-                    }?.let {
-                        meta("og:type", "website")
-                        meta("og:site_name", "BeatSaver")
-                        meta("og:title", it.name)
-                        meta("og:url", "${Config.basename}/playlists/${it.playlistId}")
-                        meta("og:description", it.description.take(400))
-                        meta("og:image", it.playlistImage)
-                    }
-                } catch (_: NumberFormatException) {
-                    // key isn't an int
+                transaction {
+                    Playlist.select {
+                        (Playlist.id eq it.id) and Playlist.deletedAt.isNull() and (Playlist.public eq true)
+                    }.limit(1).map { PlaylistFull.from(it, cdnPrefix()) }.firstOrNull()
+                }?.let {
+                    meta("og:type", "website")
+                    meta("og:site_name", "BeatSaver")
+                    meta("og:title", it.name)
+                    meta("og:url", "${Config.basename}/playlists/${it.playlistId}")
+                    meta("og:image", it.playlistImage)
+                    meta("og:description", it.description.take(400))
                 }
             }
         )

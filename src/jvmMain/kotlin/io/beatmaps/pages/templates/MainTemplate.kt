@@ -25,6 +25,7 @@ class MainTemplate(private val s: Session?, private val body: Template<BODY>) : 
     override fun HTML.apply() {
         lang = "en"
         head {
+            insert(headElements)
             title { +pageTitle }
             styleLink("/static/main.css")
             styleLink("https://use.fontawesome.com/releases/v5.15.4/css/all.css")
@@ -42,7 +43,6 @@ class MainTemplate(private val s: Session?, private val body: Template<BODY>) : 
             }
             link("/static/favicon/site.webmanifest", "manifest")
             link("/static/favicon/favicon.ico", "shortcut icon")
-            insert(headElements)
         }
         body {
             insert(HeaderTemplate(s), header)

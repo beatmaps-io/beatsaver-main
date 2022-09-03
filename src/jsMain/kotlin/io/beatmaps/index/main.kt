@@ -114,7 +114,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
         )
     }
 
-    private fun includeIfNotNull(v: Any?, name: String) = if (v != null) "$name=${v}" else null
+    private fun includeIfNotNull(v: Any?, name: String) = if (v != null) "$name=$v" else null
 
     private fun updateSearchParams(searchParamsLocal: SearchParams?, row: Int?) {
         if (searchParamsLocal == null) return

@@ -68,8 +68,8 @@ fun Route.mapController() {
                         meta("og:site_name", "BeatSaver")
                         meta("og:title", it.name)
                         meta("og:url", "${Config.basename}/maps/${it.id}")
-                        meta("og:description", it.description.take(400))
                         meta("og:image", it.publishedVersion()?.coverURL)
+                        meta("og:description", it.description.take(400))
                     }
                 } catch (_: NumberFormatException) {
                     // key isn't an int

@@ -66,7 +66,7 @@ class PlaylistFeed : RComponent<PlaylistFeedProps, PlaylistFeedState>() {
         }
     }
 
-    private fun includeIfNotNull(v: Any?, name: String) = if (v != null) "$name=${v}" else null
+    private fun includeIfNotNull(v: Any?, name: String) = if (v != null) "$name=$v" else null
 
     private fun updateSearchParams(searchParamsLocal: PlaylistSearchParams?, row: Int?) {
         if (searchParamsLocal == null) return
