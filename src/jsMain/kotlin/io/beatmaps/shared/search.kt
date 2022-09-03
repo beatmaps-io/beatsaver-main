@@ -4,6 +4,7 @@ import external.DateRangePicker
 import external.Moment
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SortOrderTarget
+import io.beatmaps.index.encodeURIComponent
 import kotlinx.browser.document
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
@@ -30,6 +31,7 @@ import react.dom.input
 import react.dom.option
 import react.dom.select
 import react.dom.span
+import react.router.dom.RouteResultHistory
 import react.setState
 
 data class FilterInfo<T>(val key: String, val name: String, val cat: FilterCategory, val fromParams: (T) -> Boolean)
@@ -82,6 +84,24 @@ interface CommonParams {
     val from: String?
     val to: String?
 }
+
+fun includeIfNotNull(v: Any?, name: String) = if (v != null) "$name=$v" else null
+fun CommonParams.queryParams() = listOfNotNull(
+    (if (search.isNotBlank()) "q=${encodeURIComponent(search)}" else null),
+    includeIfNotNull(maxNps, "maxNps"),
+    includeIfNotNull(minNps, "minNps"),
+    (if (sortOrder != SearchOrder.Relevance) "order=${sortOrder}" else null),
+    includeIfNotNull(from, "from"),
+    includeIfNotNull(to, "to")
+).toTypedArray()
+fun <T : CommonParams> T.buildURL(parts: List<String>, root: String = "", row: Int?, state: T?, history: RouteResultHistory) =
+    ((if (parts.isEmpty()) "/$root" else "?" + parts.joinToString("&")) + (row?.let { "#$it" } ?: "")).let { newUrl ->
+        if (this == state) {
+            history.replace(newUrl)
+        } else {
+            history.push(newUrl)
+        }
+    }
 
 open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchState<T>>(props) {
     private val filterRefs = props.filters.associateWith { createRef<HTMLInputElement>() }

@@ -3,11 +3,13 @@ package io.beatmaps.playlist
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SortOrderTarget
 import io.beatmaps.dateFormat
-import io.beatmaps.index.encodeURIComponent
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.FilterCategory
 import io.beatmaps.shared.FilterInfo
 import io.beatmaps.shared.SearchParamGenerator
+import io.beatmaps.shared.buildURL
+import io.beatmaps.shared.includeIfNotNull
+import io.beatmaps.shared.queryParams
 import io.beatmaps.shared.search
 import kotlinx.browser.window
 import org.w3c.dom.url.URLSearchParams
@@ -66,28 +68,17 @@ class PlaylistFeed : RComponent<PlaylistFeedProps, PlaylistFeedState>() {
         }
     }
 
-    private fun includeIfNotNull(v: Any?, name: String) = if (v != null) "$name=$v" else null
-
     private fun updateSearchParams(searchParamsLocal: PlaylistSearchParams?, row: Int?) {
         if (searchParamsLocal == null) return
 
-        val newQuery = listOfNotNull(
-            (if (searchParamsLocal.search.isNotBlank()) "q=${encodeURIComponent(searchParamsLocal.search)}" else null),
-            includeIfNotNull(searchParamsLocal.curated, "curated"),
-            includeIfNotNull(searchParamsLocal.verified, "verified"),
-            includeIfNotNull(searchParamsLocal.maxNps, "maxNps"),
-            includeIfNotNull(searchParamsLocal.minNps, "minNps"),
-            (if (searchParamsLocal.sortOrder != SearchOrder.Relevance) "order=${searchParamsLocal.sortOrder}" else null),
-            includeIfNotNull(searchParamsLocal.from, "from"),
-            includeIfNotNull(searchParamsLocal.to, "to")
-        )
-        val hash = row?.let { "#$it" } ?: ""
-        val newUrl = (if (newQuery.isEmpty()) "/playlists" else "?" + newQuery.joinToString("&")) + hash
-
-        if (searchParamsLocal == state.searchParams) {
-            props.history.replace(newUrl)
-        } else {
-            props.history.push(newUrl)
+        with(searchParamsLocal) {
+            buildURL(
+                listOfNotNull(
+                    *queryParams(),
+                    includeIfNotNull(curated, "curated"),
+                    includeIfNotNull(verified, "verified")
+                ), "playlists", row, state.searchParams, props.history
+            )
         }
 
         setState {
