@@ -239,6 +239,9 @@ fun Route.userRoute() {
                                 if (e.message?.contains("simple_username") == true) {
                                     // Username constraint -> show conflict error
                                     null to ActionResponse(false, listOf("Username taken"))
+                                } else if (e.message?.contains("uploader_pkey") == true) {
+                                    // id constraint, retry transaction
+                                    throw e
                                 } else {
                                     // Email constraint -> show success message / check your email
                                     null to null
