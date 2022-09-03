@@ -136,7 +136,8 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
                     includeIfNotNull(automapper, "auto"),
                     includeIfNotNull(fullSpread, "fullSpread"),
                     (if (tagStr.isNotEmpty()) "tags=$tagStr" else null)
-                ), "", row, state.searchParams, props.history
+                ),
+                "", row, state.searchParams, props.history
             )
         }
 

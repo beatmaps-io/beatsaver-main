@@ -77,7 +77,8 @@ class PlaylistFeed : RComponent<PlaylistFeedProps, PlaylistFeedState>() {
                     *queryParams(),
                     includeIfNotNull(curated, "curated"),
                     includeIfNotNull(verified, "verified")
-                ), "playlists", row, state.searchParams, props.history
+                ),
+                "playlists", row, state.searchParams, props.history
             )
         }
 
