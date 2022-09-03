@@ -45,39 +45,40 @@ import io.beatmaps.pages.templates.MainTemplate
 import io.beatmaps.util.playlistStats
 import io.beatmaps.util.scheduleTask
 import io.beatmaps.websockets.mapUpdateEnricher
-import io.ktor.application.Application
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.features.ConditionalHeaders
-import io.ktor.features.ContentConverter
-import io.ktor.features.ContentNegotiation
-import io.ktor.features.DataConversion
-import io.ktor.features.NotFoundException
-import io.ktor.features.ParameterConversionException
-import io.ktor.features.XForwardedHeaderSupport
-import io.ktor.html.respondHtmlTemplate
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.EntityTagVersion
-import io.ktor.http.content.defaultResource
-import io.ktor.http.content.resources
-import io.ktor.http.content.static
-import io.ktor.jackson.JacksonConverter
-import io.ktor.locations.Locations
-import io.ktor.request.ApplicationReceiveRequest
-import io.ktor.request.path
-import io.ktor.response.respond
-import io.ktor.response.respondRedirect
-import io.ktor.routing.get
-import io.ktor.routing.routing
-import io.ktor.serialization.SerializationConverter
+import io.ktor.serialization.ContentConverter
+import io.ktor.serialization.jackson.JacksonConverter
+import io.ktor.serialization.kotlinx.KotlinxSerializationConverter
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.html.respondHtmlTemplate
+import io.ktor.server.http.content.defaultResource
+import io.ktor.server.http.content.resources
+import io.ktor.server.http.content.static
+import io.ktor.server.locations.Locations
 import io.ktor.server.netty.Netty
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
+import io.ktor.server.plugins.ParameterConversionException
+import io.ktor.server.plugins.conditionalheaders.ConditionalHeaders
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.dataconversion.DataConversion
+import io.ktor.server.plugins.forwardedheaders.XForwardedHeaders
+import io.ktor.server.request.path
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondRedirect
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
 import io.ktor.util.converters.DataConversionException
 import io.ktor.util.pipeline.PipelineContext
+import io.ktor.util.reflect.TypeInfo
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.charsets.Charset
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -127,30 +128,31 @@ fun main() {
 }
 
 data class ErrorResponse(val error: String)
+class NotFoundException(message: String? = "Resource not found") : Exception(message)
 
 fun Application.beatmapsio() {
     installMetrics()
 
     install(ContentNegotiation) {
-        val kotlinx = SerializationConverter(json as StringFormat)
+        val kotlinx = KotlinxSerializationConverter(json as StringFormat)
         val jsConv = JacksonConverter(jackson)
 
         register(
             ContentType.Application.Json,
             object : ContentConverter {
-                override suspend fun convertForReceive(context: PipelineContext<ApplicationReceiveRequest, ApplicationCall>) =
+                override suspend fun deserialize(charset: Charset, typeInfo: TypeInfo, content: ByteReadChannel) =
                     try {
-                        kotlinx.convertForReceive(context)
+                        kotlinx.deserialize(charset, typeInfo, content)
                     } catch (e: Exception) {
                         null
-                    } ?: jsConv.convertForReceive(context)
+                    } ?: jsConv.deserialize(charset, typeInfo, content)
 
-                override suspend fun convertForSend(context: PipelineContext<Any, ApplicationCall>, contentType: ContentType, value: Any) =
+                override suspend fun serialize(contentType: ContentType, charset: Charset, typeInfo: TypeInfo, value: Any) =
                     try {
-                        kotlinx.convertForSend(context, contentType, value)
+                        kotlinx.serialize(contentType, charset, typeInfo, value)
                     } catch (e: Exception) {
                         null
-                    } ?: jsConv.convertForSend(context, contentType, value)
+                    } ?: jsConv.serialize(contentType, charset, typeInfo, value)
             }
         )
     }
@@ -176,7 +178,7 @@ fun Application.beatmapsio() {
         }
     }
 
-    install(XForwardedHeaderSupport)
+    install(XForwardedHeaders)
 
     install(ConditionalHeaders) {
         val md = MessageDigest.getInstance("MD5")
@@ -192,7 +194,7 @@ fun Application.beatmapsio() {
         val fx = "%0" + md.digestLength * 2 + "x"
         val etag = String.format(fx, BigInteger(1, md.digest()))
 
-        version { outgoingContent ->
+        version { _, outgoingContent ->
             when (outgoingContent.contentType?.withoutParameters()) {
                 ContentType.Text.CSS -> listOf(EntityTagVersion(etag))
                 ContentType.Text.JavaScript, ContentType.Application.JavaScript -> listOf(EntityTagVersion(etag))
@@ -202,22 +204,18 @@ fun Application.beatmapsio() {
     }
 
     install(DataConversion) {
-        convert<Instant> {
-            decode { values, _ ->
+        convert {
+            decode { values ->
                 values.singleOrNull()?.let {
                     try {
                         Instant.parse(it)
                     } catch (e: IllegalArgumentException) {
                         LocalDate.parse(it).atStartOfDayIn(TimeZone.UTC)
                     }
-                }
+                } ?: throw DataConversionException("Cannot convert $values to Instant")
             }
             encode {
-                when (it) {
-                    null -> listOf()
-                    is Instant -> listOf(it.toString())
-                    else -> throw DataConversionException("Cannot convert $it as Instant")
-                }
+                listOf(it.toString())
             }
         }
     }
@@ -264,7 +262,7 @@ fun Application.beatmapsio() {
         exception<ParameterConversionException> { cause ->
             if (cause.type == Instant::class.toString()) {
                 val now = Clock.System.now().let {
-                    it.minus(nanoseconds(it.nanosecondsOfSecond))
+                    it.minus(it.nanosecondsOfSecond.nanoseconds)
                 }
                 call.respond(HttpStatusCode.BadRequest, ErrorResponse("${cause.message}. Most likely you're missing a timezone. Example: $now"))
             } else {

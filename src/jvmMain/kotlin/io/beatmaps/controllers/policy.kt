@@ -5,14 +5,14 @@ import io.beatmaps.pages.DMCAPageTemplate
 import io.beatmaps.pages.PrivacyPageTemplate
 import io.beatmaps.pages.TOSPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
-import io.ktor.application.call
-import io.ktor.html.respondHtmlTemplate
+import io.ktor.server.application.call
+import io.ktor.server.html.respondHtmlTemplate
 import io.ktor.http.HttpStatusCode
-import io.ktor.locations.Location
-import io.ktor.locations.get
-import io.ktor.routing.Route
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
+import io.ktor.server.locations.Location
+import io.ktor.server.locations.get
+import io.ktor.server.routing.Route
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
 
 @Location("/policy") class PolicyController {
     @Location("/dmca") data class DMCA(val api: PolicyController)

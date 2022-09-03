@@ -1,36 +1,50 @@
 package io.beatmaps.api
 
 import com.fasterxml.jackson.core.JacksonException
+import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.beatmaps.common.Config
 import io.beatmaps.common.SSGameMode
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.jackson
-import io.ktor.application.call
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.engine.apache.Apache
-import io.ktor.client.features.ClientRequestException
-import io.ktor.client.features.ServerResponseException
-import io.ktor.client.features.cookies.AcceptAllCookiesStorage
-import io.ktor.client.features.cookies.HttpCookies
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.ServerResponseException
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.cookies.AcceptAllCookiesStorage
+import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.locations.Location
-import io.ktor.locations.get
-import io.ktor.locations.options
-import io.ktor.response.header
-import io.ktor.response.respond
-import io.ktor.routing.Route
+import io.ktor.serialization.JsonConvertException
+import io.ktor.serialization.jackson.JacksonConverter
+import io.ktor.server.application.call
+import io.ktor.server.locations.Location
+import io.ktor.server.locations.get
+import io.ktor.server.locations.options
+import io.ktor.server.response.header
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.datetime.Instant
+import java.net.URISyntaxException
 
 val tagsRegex = Regex("(<([^>]+)>)")
 val scoresCookies = AcceptAllCookiesStorage()
 val scoresClient = HttpClient(Apache) {
     install(HttpCookies) {
         storage = scoresCookies
+    }
+    install(HttpTimeout)
+    install(ContentNegotiation) {
+        val converter = JacksonConverter(jackson)
+        register(ContentType.Application.Json, converter)
     }
 }
 
@@ -127,40 +141,38 @@ fun Route.scoresRoute() {
 
 suspend fun getLeaderboardInfo(hash: String, diff: EDifficulty = EDifficulty.ExpertPlus, mode: SSGameMode = SSGameMode.SoloStandard) =
     try {
-        scoresClient.get<String>(
+        scoresClient.get(
             "https://scoresaber.com/api/leaderboard/by-hash/$hash/info"
         ) {
             parameter("difficulty", diff.idx)
             parameter("gameMode", mode)
-        }.run {
-            jackson.readValue<SSLeaderboardInfo>(this)
-        }
+        }.body<SSLeaderboardInfo>()
     } catch (e: ClientRequestException) {
+        null
+    } catch (e: URISyntaxException) {
         null
     } catch (e: ServerResponseException) {
         throw ScoreSaberServerException(e)
-    } catch (e: JacksonException) {
-        e.printStackTrace()
+    } catch (e: JsonConvertException) {
         null
     }
 
 suspend fun getScores(hash: String, diff: EDifficulty = EDifficulty.ExpertPlus, mode: SSGameMode = SSGameMode.SoloStandard, page: Int = 1) =
     try {
-        scoresClient.get<String>(
+        scoresClient.get(
             "https://scoresaber.com/api/leaderboard/by-hash/$hash/scores"
         ) {
             parameter("difficulty", diff.idx)
             parameter("gameMode", mode)
             parameter("page", page)
-        }.run {
-            jackson.readValue<SSPaged>(this).scores
-        }
+        }.body<SSPaged>().scores
     } catch (e: ClientRequestException) {
+        null
+    } catch (e: URISyntaxException) {
         null
     } catch (e: ServerResponseException) {
         throw ScoreSaberServerException(e)
-    } catch (e: JacksonException) {
-        e.printStackTrace()
+    } catch (e: JsonConvertException) {
         null
     }
 

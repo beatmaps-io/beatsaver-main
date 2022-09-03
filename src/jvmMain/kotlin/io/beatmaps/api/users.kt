@@ -5,6 +5,7 @@ import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
+import io.beatmaps.NotFoundException
 import io.beatmaps.common.Config
 import io.beatmaps.common.UploadLimitData
 import io.beatmaps.common.api.EDifficulty
@@ -28,23 +29,23 @@ import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import io.jsonwebtoken.security.SignatureException
-import io.ktor.application.call
-import io.ktor.client.features.timeout
+import io.ktor.client.call.body
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
-import io.ktor.features.NotFoundException
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import io.ktor.locations.Location
-import io.ktor.locations.get
-import io.ktor.locations.options
-import io.ktor.locations.post
-import io.ktor.request.receive
-import io.ktor.response.header
-import io.ktor.response.respond
-import io.ktor.routing.Route
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
-import io.ktor.sessions.set
+import io.ktor.server.application.call
+import io.ktor.server.locations.Location
+import io.ktor.server.locations.get
+import io.ktor.server.locations.options
+import io.ktor.server.locations.post
+import io.ktor.server.request.receive
+import io.ktor.server.response.header
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
+import io.ktor.server.sessions.set
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Expression
@@ -519,12 +520,12 @@ fun Route.userRoute() {
         }
 
         val imageStr = Base64.getEncoder().encodeToString(
-            client.get<ByteArray>(user.avatar) {
+            client.get(user.avatar) {
                 timeout {
                     socketTimeoutMillis = 30000
                     requestTimeoutMillis = 60000
                 }
-            }
+            }.body<ByteArray>()
         )
 
         val dateStr = formatter.format(LocalDateTime.now())

@@ -2,7 +2,7 @@ package io.beatmaps.pages.templates
 
 import io.beatmaps.common.Config
 import io.beatmaps.login.Session
-import io.ktor.html.Template
+import io.ktor.server.html.Template
 import kotlinx.html.ButtonType
 import kotlinx.html.FlowContent
 import kotlinx.html.a

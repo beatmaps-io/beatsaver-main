@@ -9,9 +9,9 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.getCountry
 import io.beatmaps.common.rabbitOptional
-import io.ktor.application.Application
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import org.jetbrains.exposed.sql.JoinType

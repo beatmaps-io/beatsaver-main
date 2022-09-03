@@ -25,13 +25,13 @@ import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
-import io.ktor.application.call
+import io.ktor.server.application.call
 import io.ktor.http.HttpStatusCode
-import io.ktor.locations.Location
-import io.ktor.locations.options
-import io.ktor.response.header
-import io.ktor.response.respond
-import io.ktor.routing.Route
+import io.ktor.server.locations.Location
+import io.ktor.server.locations.options
+import io.ktor.server.response.header
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.sql.CustomFunction
@@ -44,6 +44,7 @@ import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.lang.Integer.toHexString
+import java.math.BigDecimal
 
 @Location("/api") class SearchApi {
     @Group("Search") @Location("/search/text/{page}")
@@ -221,12 +222,12 @@ fun Route.searchRoute() {
                                     .notNull(it.curated) { o -> with(Beatmap.curatedAt) { if (o) isNotNull() else isNull() } }
                                     .notNull(it.verified) { o -> User.verifiedMapper eq o }
                                     .notNull(it.fullSpread) { o -> Beatmap.fullSpread eq o }
-                                    .notNull(it.minNps) { o -> (Beatmap.maxNps greaterEq o) and (Difficulty.nps greaterEq o) }
-                                    .notNull(it.maxNps) { o -> (Beatmap.minNps lessEq o) and (Difficulty.nps lessEq o) }
+                                    .notNull(it.minNps) { o -> (Beatmap.maxNps greaterEq o.toBigDecimal()) and (Difficulty.nps greaterEq o.toBigDecimal()) }
+                                    .notNull(it.maxNps) { o -> (Beatmap.minNps lessEq o.toBigDecimal()) and (Difficulty.nps lessEq o.toBigDecimal()) }
                                     .notNull(it.minDuration) { o -> Beatmap.duration greaterEq o }
                                     .notNull(it.maxDuration) { o -> Beatmap.duration lessEq o }
-                                    .notNull(it.minRating) { o -> Beatmap.score greaterEq o }
-                                    .notNull(it.maxRating) { o -> Beatmap.score lessEq o }
+                                    .notNull(it.minRating) { o -> Beatmap.score greaterEq o.toBigDecimal() }
+                                    .notNull(it.maxRating) { o -> Beatmap.score lessEq o.toBigDecimal() }
                                     .notNull(it.minBpm) { o -> Beatmap.bpm greaterEq o }
                                     .notNull(it.maxBpm) { o -> Beatmap.bpm lessEq o }
                                     .notNull(it.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }

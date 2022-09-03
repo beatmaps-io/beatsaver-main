@@ -10,8 +10,8 @@ import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.rabbitOptional
-import io.ktor.routing.Route
-import io.ktor.routing.application
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.application
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import pl.jutupe.ktor_rabbitmq.publish

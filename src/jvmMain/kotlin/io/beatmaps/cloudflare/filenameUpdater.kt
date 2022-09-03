@@ -9,7 +9,7 @@ import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.downloadFilename
 import io.beatmaps.common.localFolder
 import io.beatmaps.common.rabbitOptional
-import io.ktor.application.Application
+import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or

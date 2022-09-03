@@ -1,5 +1,6 @@
 package io.beatmaps
 
+import external.ReactDatesInit
 import io.beatmaps.index.HomePage
 import io.beatmaps.maps.MapPage
 import io.beatmaps.maps.MapPageProps
@@ -54,6 +55,7 @@ external interface UserData {
 val globalContext = createContext<UserData?>(null)
 
 fun main() {
+    ReactDatesInit // This actually needs to be referenced I guess
     window.onload = {
         val root = document.getElementById("root")
         render(root) {

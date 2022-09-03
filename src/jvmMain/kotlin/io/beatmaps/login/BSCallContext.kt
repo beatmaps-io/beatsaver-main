@@ -1,14 +1,14 @@
 package io.beatmaps.login
 
-import io.ktor.application.ApplicationCall
+import io.ktor.server.application.ApplicationCall
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.request.header
-import io.ktor.request.httpMethod
-import io.ktor.request.path
-import io.ktor.request.receiveParameters
-import io.ktor.response.header
-import io.ktor.response.respondText
+import io.ktor.server.request.header
+import io.ktor.server.request.httpMethod
+import io.ktor.server.request.path
+import io.ktor.server.request.receiveParameters
+import io.ktor.server.response.header
+import io.ktor.server.response.respondText
 import io.ktor.util.toMap
 import kotlinx.coroutines.runBlocking
 import nl.myndocs.oauth2.json.JsonMapper

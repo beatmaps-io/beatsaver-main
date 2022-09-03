@@ -1,7 +1,7 @@
 package io.beatmaps.pages
 
 import io.beatmaps.login.Session
-import io.ktor.html.Template
+import io.ktor.server.html.Template
 import kotlinx.html.BODY
 import kotlinx.html.div
 import kotlinx.html.id

@@ -8,7 +8,7 @@ import io.beatmaps.common.dbo.PlaylistMapDao
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.rabbitOptional
-import io.ktor.application.Application
+import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction

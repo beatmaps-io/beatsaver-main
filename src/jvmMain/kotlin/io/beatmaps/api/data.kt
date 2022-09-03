@@ -18,7 +18,7 @@ import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.countDistinct
 import org.jetbrains.exposed.sql.sum
 import java.lang.Integer.toHexString
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 val remoteCdn = System.getenv("REMOTE_CDN") != null
 fun cdnBase(prefix: String) = when (remoteCdn) {
@@ -48,7 +48,7 @@ fun MapDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(BeatmapDa
 
 fun getActualPrefixForVersion(other: VersionsDao, cdnPrefix: String) =
     // Don't use cdn servers during sync period
-    if (Clock.System.now() - other.uploaded.toKotlinInstant() < Duration.Companion.seconds(30)) {
+    if (Clock.System.now() - other.uploaded.toKotlinInstant() < 30.seconds) {
         "" to ""
     } else if (other.r2) {
         "r2" to cdnPrefix

@@ -1,7 +1,6 @@
 package io.beatmaps.api
 
 import ch.compile.recaptcha.model.SiteVerifyResponse
-import com.fasterxml.jackson.module.kotlin.readValue
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
@@ -23,36 +22,38 @@ import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
-import io.beatmaps.common.jackson
 import io.beatmaps.common.pub
 import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.login.Session
 import io.beatmaps.util.publishVersion
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.client.features.ClientRequestException
+import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.get
 import io.ktor.client.request.post
-import io.ktor.features.BadRequestException
-import io.ktor.features.origin
+import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import io.ktor.locations.Location
-import io.ktor.locations.get
-import io.ktor.locations.post
-import io.ktor.request.receive
-import io.ktor.response.respond
-import io.ktor.routing.Route
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.locations.Location
+import io.ktor.server.locations.get
+import io.ktor.server.locations.post
+import io.ktor.server.plugins.BadRequestException
+import io.ktor.server.plugins.origin
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
 import io.ktor.util.pipeline.PipelineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
@@ -198,18 +199,16 @@ fun PipelineContext<*, ApplicationCall>.getTestplayRecent(userId: Int, page: Lon
 
 suspend fun validateSteamToken(steamId: String, proof: String): Boolean {
     val clientId = System.getenv("STEAM_APIKEY") ?: ""
-    val json = client.get<String>("https://api.steampowered.com/ISteamUserAuth/AuthenticateUserTicket/v1?key=$clientId&appid=$beatsaberAppid&ticket=$proof")
-    val data = jackson.readValue<SteamAPIResponse>(json)
+    val data = client.get("https://api.steampowered.com/ISteamUserAuth/AuthenticateUserTicket/v1?key=$clientId&appid=$beatsaberAppid&ticket=$proof").body<SteamAPIResponse>()
     return !(data.response.params == null || data.response.params.result != "OK" || data.response.params.steamid.toString() != steamId)
 }
 
 val authHost = System.getenv("AUTH_HOST") ?: "http://localhost:3030"
 suspend fun validateOculusToken(oculusId: String, proof: String) = try {
-    val json = client.post<String>("$authHost/auth/oculus") {
+    val data = client.post("$authHost/auth/oculus") {
         contentType(ContentType.Application.Json)
-        body = AuthRequest(oculusId = oculusId, proof = proof)
-    }
-    val data = jackson.readValue<OculusAuthResponse>(json)
+        setBody(AuthRequest(oculusId = oculusId, proof = proof))
+    }.body<OculusAuthResponse>()
     data.success
 } catch (e: BadRequestException) {
     false
@@ -451,7 +450,7 @@ fun Route.testplayRoute() {
                     val subQuery = Versions.slice(Versions.id).select { Versions.hash eq update.hash }
 
                     if (update.captcha == null) {
-                        Testplay.update({ (Testplay.versionId eq wrapAsExpressionNotNull<Int>(subQuery)) and (Testplay.userId eq sess.userId) }) { t ->
+                        Testplay.update({ (Testplay.versionId eq wrapAsExpressionNotNull<EntityID<Int>>(subQuery)) and (Testplay.userId eq sess.userId) }) { t ->
                             t[feedbackAt] = feedbackAtNew
                             t[feedback] = update.feedback
                         }

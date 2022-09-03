@@ -6,9 +6,9 @@ import io.beatmaps.cdnPrefix
 import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.genericPage
-import io.ktor.locations.Location
-import io.ktor.locations.get
-import io.ktor.routing.Route
+import io.ktor.server.locations.Location
+import io.ktor.server.locations.get
+import io.ktor.server.routing.Route
 import kotlinx.html.meta
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select

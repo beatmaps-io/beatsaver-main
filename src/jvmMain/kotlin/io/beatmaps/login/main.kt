@@ -1,6 +1,6 @@
 package io.beatmaps.login
 
-import com.fasterxml.jackson.module.kotlin.readValue
+import io.beatmaps.NotFoundException
 import io.beatmaps.api.alertCount
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.Config
@@ -9,38 +9,38 @@ import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
-import io.beatmaps.common.jackson
 import io.beatmaps.common.localAvatarFolder
 import io.beatmaps.genericPage
-import io.ktor.application.Application
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.auth.OAuthAccessTokenResponse
-import io.ktor.auth.authenticate
-import io.ktor.auth.authentication
-import io.ktor.auth.principal
-import io.ktor.client.features.timeout
+import io.ktor.client.call.body
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.header
-import io.ktor.features.NotFoundException
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpMethod
+import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
-import io.ktor.http.Url
 import io.ktor.http.parametersOf
-import io.ktor.locations.Location
-import io.ktor.locations.get
-import io.ktor.locations.post
-import io.ktor.request.httpMethod
-import io.ktor.request.queryString
-import io.ktor.response.respondRedirect
-import io.ktor.routing.Route
-import io.ktor.routing.get
-import io.ktor.sessions.clear
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
-import io.ktor.sessions.set
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.application.install
+import io.ktor.server.auth.OAuthAccessTokenResponse
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.authentication
+import io.ktor.server.auth.principal
+import io.ktor.server.locations.Location
+import io.ktor.server.locations.get
+import io.ktor.server.locations.post
+import io.ktor.server.request.httpMethod
+import io.ktor.server.request.queryString
+import io.ktor.server.response.respondRedirect
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
+import io.ktor.server.sessions.clear
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
+import io.ktor.server.sessions.set
 import io.ktor.util.hex
 import kotlinx.coroutines.runBlocking
 import kotlinx.html.meta
@@ -105,12 +105,12 @@ data class Session(
 
 fun Route.authRoute() {
     suspend fun downloadDiscordAvatar(discordAvatar: String, discordId: Long): String {
-        val bytes = client.get<ByteArray>("https://cdn.discordapp.com/avatars/$discordId/$discordAvatar.png") {
+        val bytes = client.get("https://cdn.discordapp.com/avatars/$discordId/$discordAvatar.png") {
             timeout {
                 socketTimeoutMillis = 30000
                 requestTimeoutMillis = 60000
             }
-        }
+        }.body<ByteArray>()
         val localFile = File(localAvatarFolder(), "$discordId.png")
         localFile.writeBytes(bytes)
 
@@ -120,11 +120,9 @@ fun Route.authRoute() {
     suspend fun ApplicationCall.getDiscordData(): Map<String, Any?> {
         val principal = authentication.principal<OAuthAccessTokenResponse.OAuth2>() ?: error("No principal")
 
-        val json = client.get<String>("https://discord.com/api/users/@me") {
+        return client.get("https://discord.com/api/users/@me") {
             header("Authorization", "Bearer ${principal.accessToken}")
-        }
-
-        return jackson.readValue(json)
+        }.body()
     }
 
     authenticate("discord") {
@@ -292,11 +290,11 @@ fun Route.authRoute() {
                 "openid.claimed_id" to listOf("http://specs.openid.net/auth/2.0/identifier_select")
             )
 
-            // val url = URLBuilder(protocol = URLProtocol.HTTPS, host = "steamcommunity.com", encodedPath = "/openid/login", parameters = params).buildString()
-            val url = Url(URLProtocol.HTTPS, "steamcommunity.com", 0, "/openid/login", params, "", null, null, false).toString()
+            val url = URLBuilder(protocol = URLProtocol.HTTPS, host = "steamcommunity.com", pathSegments = listOf("openid", "login"), parameters = params).buildString()
+            //val url = Url(URLProtocol.HTTPS, "steamcommunity.com", 0, "/openid/login", params, "", null, null, false).toString()
             call.respondRedirect(url)
         } else {
-            val xml = client.submitForm<String>(
+            val xml = client.submitForm(
                 "https://steamcommunity.com/openid/login",
                 formParameters = parametersOf(
                     "openid.ns" to listOf("http://specs.openid.net/auth/2.0"),
@@ -306,7 +304,7 @@ fun Route.authRoute() {
                         "openid.$it" to listOf(call.request.queryParameters["openid.$it"] ?: "")
                     }?.toTypedArray() ?: arrayOf()
                 )
-            )
+            ).bodyAsText()
             val valid = Regex("is_valid\\s*:\\s*true", RegexOption.IGNORE_CASE).containsMatchIn(xml)
             if (!valid) {
                 throw RuntimeException("Invalid openid response 1")

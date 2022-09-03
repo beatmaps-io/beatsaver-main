@@ -5,11 +5,11 @@ import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.rabbitOptional
-import io.ktor.application.Application
+import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
-import pl.jutupe.ktor_rabbitmq.RabbitMQ
+import pl.jutupe.ktor_rabbitmq.RabbitMQInstance
 import pl.jutupe.ktor_rabbitmq.publish
 import java.sql.Timestamp
 import java.time.LocalDateTime
@@ -33,7 +33,7 @@ fun Application.scheduleTask() {
     }
 }
 
-class CheckScheduled(private val rb: RabbitMQ) : TimerTask() {
+class CheckScheduled(private val rb: RabbitMQInstance) : TimerTask() {
     override fun run() {
         try {
             transaction {

@@ -39,25 +39,25 @@ import io.beatmaps.controllers.UploadException
 import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.controllers.uploadDir
 import io.beatmaps.login.Session
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.features.origin
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
 import io.ktor.http.content.streamProvider
-import io.ktor.locations.Location
-import io.ktor.locations.get
-import io.ktor.locations.options
-import io.ktor.locations.post
-import io.ktor.request.receive
-import io.ktor.request.receiveMultipart
-import io.ktor.response.header
-import io.ktor.response.respond
-import io.ktor.routing.Route
-import io.ktor.sessions.get
-import io.ktor.sessions.sessions
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.locations.Location
+import io.ktor.server.locations.get
+import io.ktor.server.locations.options
+import io.ktor.server.locations.post
+import io.ktor.server.plugins.origin
+import io.ktor.server.request.receive
+import io.ktor.server.request.receiveMultipart
+import io.ktor.server.response.header
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
@@ -589,7 +589,9 @@ fun Route.playlistRoute() {
                 }
 
                 val localFile = File(localPlaylistCoverFolder(), "$newId.jpg")
-                Files.move(temp.toPath(), localFile.toPath())
+                withContext(Dispatchers.IO) {
+                    Files.move(temp.toPath(), localFile.toPath())
+                }
 
                 call.respond(newId.value)
             } finally {

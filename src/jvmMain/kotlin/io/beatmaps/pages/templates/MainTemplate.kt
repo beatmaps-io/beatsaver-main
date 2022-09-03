@@ -1,10 +1,10 @@
 package io.beatmaps.pages.templates
 
 import io.beatmaps.login.Session
-import io.ktor.html.Placeholder
-import io.ktor.html.Template
-import io.ktor.html.TemplatePlaceholder
-import io.ktor.html.insert
+import io.ktor.server.html.Placeholder
+import io.ktor.server.html.Template
+import io.ktor.server.html.TemplatePlaceholder
+import io.ktor.server.html.insert
 import kotlinx.html.BODY
 import kotlinx.html.HEAD
 import kotlinx.html.HTML

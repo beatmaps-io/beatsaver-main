@@ -1,5 +1,6 @@
 package io.beatmaps.controllers
 
+import io.beatmaps.NotFoundException
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
 import io.beatmaps.common.DownloadInfo
@@ -17,16 +18,15 @@ import io.beatmaps.common.localFolder
 import io.beatmaps.common.localPlaylistCoverFolder
 import io.beatmaps.common.pub
 import io.beatmaps.common.returnFile
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.features.NotFoundException
-import io.ktor.features.origin
 import io.ktor.http.HttpHeaders
-import io.ktor.locations.Location
-import io.ktor.locations.get
-import io.ktor.locations.options
-import io.ktor.response.header
-import io.ktor.routing.Route
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.locations.Location
+import io.ktor.server.locations.get
+import io.ktor.server.locations.options
+import io.ktor.server.plugins.origin
+import io.ktor.server.response.header
+import io.ktor.server.routing.Route
 import io.ktor.util.pipeline.PipelineContext
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
