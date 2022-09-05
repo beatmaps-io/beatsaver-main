@@ -210,8 +210,10 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
     }
 
     private fun scrollTo(idx: Int) {
-        val top = props.container.current?.children?.asList()?.get(idx)?.getBoundingClientRect()?.top ?: 0.0
-        val scrollTo = top + window.pageYOffset - beforeContent()
+        val scrollTo = if (idx == 0) 0.0 else {
+            val top = props.container.current?.children?.asList()?.get(idx)?.getBoundingClientRect()?.top ?: 0.0
+            top + window.pageYOffset - beforeContent()
+        }
         window.scrollTo(0.0, scrollTo)
     }
 

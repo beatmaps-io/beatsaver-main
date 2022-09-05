@@ -30,6 +30,7 @@ kotlin {
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "16"
+            kotlinOptions.freeCompilerArgs = listOf("-XXLanguage:+NewInference")
         }
         testRuns["test"].executionTask.configure {
             useJUnit()
