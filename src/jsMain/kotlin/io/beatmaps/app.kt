@@ -29,6 +29,7 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HashChangeEvent
+import org.w3c.dom.asList
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
@@ -78,12 +79,14 @@ external interface AppState : RState {
 }
 
 class App : RComponent<RProps, AppState>() {
-    private fun fixLink(id: String, history: RouteResultHistory, url: String = "", block: (HTMLAnchorElement) -> Unit = {}) {
-        (document.getElementById(id) as? HTMLAnchorElement)?.let { elem ->
-            elem.onclick = {
-                history.push("/$url")
-                block(elem)
-                it.preventDefault()
+    private fun fixLink(id: String = "", history: RouteResultHistory, element: HTMLAnchorElement? = null, block: (HTMLAnchorElement) -> Unit = {}) {
+        (element ?: document.getElementById(id) as? HTMLAnchorElement)?.let { elem ->
+            elem.getAttribute("href")?.let { href ->
+                elem.onclick = {
+                    history.push(href)
+                    block(elem)
+                    it.preventDefault()
+                }
             }
         }
     }
@@ -95,9 +98,12 @@ class App : RComponent<RProps, AppState>() {
             fixLink("home-link", history) {
                 window.dispatchEvent(HashChangeEvent("hashchange"))
             }
-            fixLink("mappers-link", history, "mappers")
-            fixLink("playlist-link", history, "playlists")
-            fixLink("modlog-link", history, "modlog")
+            document.getElementsByClassName("auto-router")
+                .asList()
+                .filterIsInstance<HTMLAnchorElement>()
+                .forEach {
+                    fixLink(element = it, history = history)
+                }
         }
 
         manageNav()

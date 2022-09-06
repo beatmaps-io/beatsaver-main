@@ -45,28 +45,25 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                     ul("navbar-nav me-auto") {
                         if (s?.testplay == true) {
                             li("nav-item") {
-                                a("/test", classes = "nav-link") {
+                                a("/test", classes = "nav-link auto-router") {
                                     +"Testplays"
                                 }
                             }
                         }
                         if (s?.admin == true) {
                             li("nav-item") {
-                                a("/modlog", classes = "nav-link") {
-                                    id = "modlog-link"
+                                a("/modlog", classes = "nav-link auto-router") {
                                     +"ModLog"
                                 }
                             }
                         }
                         li("nav-item") {
-                            a("/mappers", classes = "nav-link") {
-                                id = "mappers-link"
+                            a("/mappers", classes = "nav-link auto-router") {
                                 +"Mappers"
                             }
                         }
                         li("nav-item") {
-                            a("/playlists", classes = "nav-link") {
-                                id = "playlist-link"
+                            a("/playlists", classes = "nav-link auto-router") {
                                 +"Playlists"
                             }
                         }
@@ -108,13 +105,13 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                     ul("navbar-nav") {
                         if (s == null) {
                             li("nav-item") {
-                                a("/login", classes = "nav-link") {
+                                a("/login", classes = "nav-link auto-router") {
                                     +"Login"
                                 }
                             }
                         } else {
                             li("nav-item") {
-                                a("/alerts", classes = "nav-link") {
+                                a("/alerts", classes = "nav-link auto-router") {
                                     i("fas fa-bell")
                                     small("alert-count") {
                                         id = "alert-count"
@@ -129,11 +126,11 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                     i("fas fa-plus-square")
                                 }
                                 div("dropdown-menu") {
-                                    a("/upload", classes = "dropdown-item") {
+                                    a("/upload", classes = "dropdown-item auto-router") {
                                         +"Upload Map"
                                     }
                                     div("dropdown-divider") {}
-                                    a("/playlists/new", classes = "dropdown-item") {
+                                    a("/playlists/new", classes = "dropdown-item auto-router") {
                                         +"Create Playlist"
                                     }
                                 }
@@ -143,7 +140,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                     +(s.uniqueName ?: s.userName)
                                 }
                                 div("dropdown-menu") {
-                                    a("/profile", classes = "dropdown-item") {
+                                    a("/profile", classes = "dropdown-item auto-router") {
                                         +"Profile"
                                     }
                                     if (s.steamId == null) {
