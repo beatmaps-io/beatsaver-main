@@ -87,7 +87,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                 includeIfNotNull(read, "read"),
                 if (filters?.any() == true) "type=${filters.joinToString(",") { it.name.lowercase() }}" else null
             ),
-            "/alerts", null, null, props.history
+            "alerts", null, null, props.history
         )
     }
 
