@@ -5,7 +5,9 @@ import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.AlertDao
 import io.beatmaps.common.dbo.AlertRecipient
+import io.beatmaps.login.Session
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
@@ -15,6 +17,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
+import io.ktor.util.pipeline.PipelineContext
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
@@ -42,10 +45,6 @@ import org.jetbrains.exposed.sql.update
     @Location("/markall")
     data class MarkAll(val api: AlertsApi)
 }
-
-data class MarkAlert(val id: Int, val read: Boolean)
-
-data class MarkAllAlerts(val read: Boolean)
 
 fun alertCount(userId: Int) = AlertRecipient
     .select {
@@ -110,8 +109,18 @@ fun Route.alertsRoute() {
         }
     }
 
+    suspend fun PipelineContext<*, ApplicationCall>.respondStats(user: Session, stats: List<StatPart>?) =
+        if (stats != null) {
+            val unread = stats.filter { !it.isRead }.sumOf { it.count }.toInt()
+
+            call.sessions.set(user.copy(alerts = unread))
+            call.respond(UserAlertStats.fromParts(stats))
+        } else {
+            call.respond(HttpStatusCode.BadRequest)
+        }
+
     post<AlertsApi.Mark> {
-        val req = call.receive<MarkAlert>()
+        val req = call.receive<AlertUpdate>()
 
         requireAuthorization { user ->
             val stats = transaction {
@@ -134,23 +143,16 @@ fun Route.alertsRoute() {
                 } else null
             }
 
-            if (stats != null) {
-                val unread = stats.filter { !it.isRead }.sumOf { it.count }.toInt()
-
-                call.sessions.set(user.copy(alerts = unread))
-                call.respond(UserAlertStats.fromParts(stats))
-            } else {
-                call.respond(HttpStatusCode.BadRequest)
-            }
+            respondStats(user, stats)
         }
     }
 
     post<AlertsApi.MarkAll> {
-        val req = call.receive<MarkAllAlerts>()
+        val req = call.receive<AlertUpdateAll>()
 
         requireAuthorization { user ->
-            val result = transaction {
-                AlertRecipient.update({
+            val stats = transaction {
+                val result = AlertRecipient.update({
                     AlertRecipient.readAt.run { if (req.read) isNull() else isNotNull() } and
                         (AlertRecipient.recipientId eq user.userId)
                 }) {
@@ -160,14 +162,13 @@ fun Route.alertsRoute() {
                         it[readAt] = null
                     }
                 }
-            } > 0
 
-            if (result) {
-                call.sessions.set(user.copy(alerts = 0))
-                call.respond(HttpStatusCode.OK)
-            } else {
-                call.respond(HttpStatusCode.BadRequest)
+                if (result > 0) {
+                    getStats(user.userId)
+                } else null
             }
+
+            respondStats(user, stats)
         }
     }
 }

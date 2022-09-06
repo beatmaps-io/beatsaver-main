@@ -39,18 +39,22 @@ external interface AlertState : RState {
     var opacity: String?
 }
 
+fun updateAlertDisplay(stats: UserAlertStats) {
+    window.document.getElementById("alert-count")?.apply {
+        stats.unread.let { count ->
+            setAttribute("data-count", count.toString())
+            innerHTML = if (count < 10) count.toString() else "9+"
+        }
+    }
+}
+
 private fun markAlert(alert: UserAlert, read: Boolean, cb: (UserAlertStats) -> Unit) =
     Axios.post<UserAlertStats>(
         "${Config.apibase}/alerts/mark",
         AlertUpdate(alert.id, read),
         generateConfig<AlertUpdate, UserAlertStats>()
     ).then {
-        window.document.getElementById("alert-count")?.apply {
-            it.data.unread.let { count ->
-                setAttribute("data-count", count.toString())
-                innerHTML = if (count < 10) count.toString() else "9+"
-            }
-        }
+        updateAlertDisplay(it.data)
 
         cb(it.data)
     }.catch {

@@ -3,6 +3,7 @@ package io.beatmaps.user.alerts
 import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
+import io.beatmaps.api.AlertUpdateAll
 import io.beatmaps.api.UserAlert
 import io.beatmaps.api.UserAlertStats
 import io.beatmaps.common.Config
@@ -11,16 +12,17 @@ import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.buildURL
 import io.beatmaps.shared.includeIfNotNull
+import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLDivElement
 import react.RBuilder
 import react.RComponent
 import react.RProps
 import react.RState
 import react.createRef
+import react.dom.a
 import react.dom.div
 import react.dom.h1
 import react.dom.h6
-import react.dom.jsStyle
 import react.router.dom.RouteResultHistory
 import react.setState
 
@@ -34,6 +36,7 @@ external interface AlertsPageState : RState {
     var alertStats: UserAlertStats?
     var resultsKey: Any?
     var hiddenAlerts: List<Int>?
+    var forceHide: Boolean?
 }
 
 class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
@@ -54,6 +57,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
         setState {
             resultsKey = Any()
             hiddenAlerts = listOf()
+            forceHide = null
         }
     }
 
@@ -78,15 +82,41 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
         )
     }
 
+    private fun markAll() =
+        Axios.post<UserAlertStats>(
+            "${Config.apibase}/alerts/markall",
+            AlertUpdateAll(true),
+            generateConfig<AlertUpdateAll, UserAlertStats>()
+        ).then {
+            updateAlertDisplay(it.data)
+
+            setState {
+                alertStats = it.data
+                forceHide = true
+            }
+        }.catch {
+            // Bad request
+        }
+
     override fun RBuilder.render() {
-        h1 {
-            +"Alerts & Notifications"
+        div("row") {
+            h1("col-lg-8") {
+                +"Alerts & Notifications"
+            }
+            div("col-lg-4 d-flex") {
+                if (props.read != true && state.alertStats?.let { it.unread > 0 } == true) {
+                    a("#", classes = "mark-read") {
+                        attrs.onClickFunction = { e ->
+                            e.preventDefault()
+                            markAll()
+                        }
+                        +"Mark all as read"
+                    }
+                }
+            }
         }
         div("row") {
-            div("col-lg-4") {
-                attrs.jsStyle {
-                    padding = "6px"
-                }
+            div("col-lg-4 alert-nav") {
                 div("list-group") {
                     alertsListItem {
                         attrs.active = props.read != true
@@ -144,7 +174,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                         alert {
                             alert = it
                             read = props.read
-                            hidden = state.hiddenAlerts?.contains(it?.id)
+                            hidden = state.forceHide ?: state.hiddenAlerts?.contains(it?.id)
                             markAlert = { stats ->
                                 setState {
                                     alertStats = stats

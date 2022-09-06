@@ -35,3 +35,8 @@ data class AlertUpdate(
     val id: Int,
     val read: Boolean
 )
+
+@Serializable
+data class AlertUpdateAll(
+    val read: Boolean
+)
