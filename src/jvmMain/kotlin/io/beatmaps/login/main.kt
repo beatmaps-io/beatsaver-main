@@ -101,7 +101,10 @@ data class Session(
 @Location("/register") class Register
 @Location("/forgot") class Forgot
 @Location("/reset/{jwt}") class Reset(val jwt: String)
-@Location("/verify") class Verify
+@Location("/verify") data class Verify(
+    val user: Int?,
+    val token: String = ""
+)
 @Location("/username") class Username
 
 fun Route.authRoute() {
@@ -207,14 +210,12 @@ fun Route.authRoute() {
     get<Forgot> { genericPage() }
     get<Reset> { genericPage() }
 
-    get<Verify> {
-        val query = call.request.queryParameters
-        val userId = ((query as StringValues)["user"] ?: throw NotFoundException("User not specified")).toInt()
-        val token = (query as StringValues)["token"] ?: ""
+    get<Verify> { v ->
+        val userId = v.user ?: throw NotFoundException("User not specified")
 
         val valid = transaction {
             User.update({
-                (User.id eq userId) and (User.verifyToken eq token)
+                (User.id eq userId) and (User.verifyToken eq v.token)
             }) {
                 it[active] = true
                 it[verifyToken] = null
