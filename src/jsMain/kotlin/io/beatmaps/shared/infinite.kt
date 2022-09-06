@@ -118,7 +118,8 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
         if (state.loading == true)
             return
 
-        val toLoad = state.visiblePages?.firstOrNull { state.pages?.containsKey(it) != true } ?: return
+        // Find first visible page that isn't loaded or beyond the final page
+        val toLoad = state.visiblePages?.firstOrNull { state.finalPage?.let { f -> it < f } != false && state.pages?.containsKey(it) != true } ?: return
 
         val newToken = state.token ?: Axios.CancelToken.source()
         setState {
@@ -131,7 +132,7 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
         val shouldScroll = if (state.scroll != false) state.visItem else null
         props.loadPage(toLoad, newToken).then { page ->
             setState {
-                if (page?.isEmpty() == true && toLoad < (finalPage ?: Int.MAX_VALUE)) {
+                if (page?.size?.let { s -> s < props.itemsPerPage } == true && toLoad < (finalPage ?: Int.MAX_VALUE)) {
                     finalPage = toLoad
                 }
                 pages = if (page != null) {
