@@ -14,6 +14,23 @@ data class UserAlert(
 )
 
 @Serializable
+data class UserAlertStats(
+    val unread: Int,
+    val read: Int,
+    val byType: Map<EAlertType, Int>
+) {
+    companion object {
+        fun fromParts(statParts: List<StatPart>) = UserAlertStats(
+            statParts.filter { !it.isRead }.sumOf { it.count }.toInt(),
+            statParts.filter { it.isRead }.sumOf { it.count }.toInt(),
+            statParts.groupBy { it.type }.mapValues { it.value.sumOf { v -> v.count }.toInt() }
+        )
+    }
+}
+
+data class StatPart(val type: EAlertType, val isRead: Boolean, val count: Long)
+
+@Serializable
 data class AlertUpdate(
     val id: Int,
     val read: Boolean

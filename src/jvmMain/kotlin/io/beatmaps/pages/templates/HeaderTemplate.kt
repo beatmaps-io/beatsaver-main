@@ -114,7 +114,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                             }
                         } else {
                             li("nav-item") {
-                                a("/profile#alerts", classes = "nav-link") {
+                                a("/alerts", classes = "nav-link") {
                                     i("fas fa-bell")
                                     small("alert-count") {
                                         id = "alert-count"

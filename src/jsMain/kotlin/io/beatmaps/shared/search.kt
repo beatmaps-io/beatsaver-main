@@ -94,7 +94,7 @@ fun CommonParams.queryParams() = listOfNotNull(
     includeIfNotNull(from, "from"),
     includeIfNotNull(to, "to")
 ).toTypedArray()
-fun <T : CommonParams> T.buildURL(parts: List<String>, root: String = "", row: Int?, state: T?, history: RouteResultHistory) =
+fun <T> T.buildURL(parts: List<String>, root: String = "", row: Int?, state: T?, history: RouteResultHistory) =
     ((if (parts.isEmpty()) "/$root" else "?" + parts.joinToString("&")) + (row?.let { "#$it" } ?: "")).let { newUrl ->
         if (this == state) {
             history.replace(newUrl)

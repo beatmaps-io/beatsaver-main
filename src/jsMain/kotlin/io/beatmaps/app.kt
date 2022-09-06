@@ -1,6 +1,7 @@
 package io.beatmaps
 
 import external.ReactDatesInit
+import io.beatmaps.common.api.EAlertType
 import io.beatmaps.index.HomePage
 import io.beatmaps.maps.MapPage
 import io.beatmaps.maps.MapPageProps
@@ -16,6 +17,7 @@ import io.beatmaps.upload.UploadPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ProfilePageProps
 import io.beatmaps.user.ResetPageProps
+import io.beatmaps.user.alerts.AlertsPage
 import io.beatmaps.user.authorizePage
 import io.beatmaps.user.forgotPage
 import io.beatmaps.user.loginPage
@@ -156,6 +158,15 @@ class App : RComponent<RProps, AppState>() {
                             attrs.history = it.history
                             attrs.userData = userData
                             attrs.userId = it.match.params.userId
+                        }
+                    }
+                }
+                bsroute<RProps>("/alerts", exact = true) {
+                    child(AlertsPage::class) {
+                        attrs.history = it.history
+                        URLSearchParams(window.location.search).let { u ->
+                            attrs.read = u.get("read")?.toBoolean()
+                            attrs.filters = u.get("type")?.split(",")?.mapNotNull { EAlertType.fromLower(it) }
                         }
                     }
                 }

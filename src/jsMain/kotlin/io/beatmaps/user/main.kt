@@ -43,12 +43,11 @@ external interface ProfilePageProps : RProps {
 }
 
 external interface ProfilePageState : RState {
-    var loading: Boolean?
     var startup: Boolean?
     var userDetail: UserDetail?
-    var state: ProfileTab
+    var state: ProfileTab?
     var lastMapStateWip: Boolean?
-    var notificationCount: Map<ProfileTab, Int>
+    var notificationCount: Map<ProfileTab, Int>?
 }
 
 enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps, ProfilePageState) -> Boolean = { _, _ -> true }, val bootCondition: () -> Boolean = { false }, val onSelected: (ProfilePageProps) -> Unit = {}) {
@@ -56,8 +55,7 @@ enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps, Pro
     UNPUBLISHED("Unpublished", condition = { it, _ -> (it.userId == null) }, bootCondition = { (localStorage["profile.showwip"] == "true") }, onSelected = { if (it.userId == null) { localStorage["profile.showwip"] = "true" } }),
     PLAYLISTS("Playlists"),
     CURATED("Curated", condition = { _, it -> (it.userDetail?.curator == true) }),
-    ACCOUNT("Account", condition = { it, _ -> (it.userData?.admin == true || it.userId == null) }),
-    MODERATOR("Alerts", condition = { it, _ -> (it.userData?.admin == true || it.userId == null) })
+    ACCOUNT("Account", condition = { it, _ -> (it.userData?.admin == true || it.userId == null) })
 }
 
 class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
@@ -65,10 +63,6 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
     override fun componentWillMount() {
         setState {
-            loading = false
-            startup = false
-            userDetail = null
-            state = ProfileTab.UNPUBLISHED
             notificationCount = mapOf()
         }
     }
@@ -80,10 +74,10 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
     }
 
     override fun componentWillUnmount() {
-        window.removeEventListener("hashchange", ::onHashChange)
+        window.removeEventListener("hashchange", onHashChange)
     }
 
-    private fun onHashChange(it: Event) {
+    private val onHashChange = { _: Event? ->
         val hash = window.location.hash.substring(1)
         val newState = ProfileTab.values().firstOrNull { hash == it.tabText.lowercase() && it.condition(props, state) } ?: state.state
         setState {
@@ -92,10 +86,6 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
     }
 
     private fun loadState() {
-        setState {
-            loading = true
-        }
-
         val url = "${Config.apibase}/users" + (props.userId?.let { "/id/$it" } ?: "/me")
 
         axiosGet<UserDetail>(
@@ -104,7 +94,6 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             setPageTitle("Profile - ${it.data.name}")
             setState {
                 userDetail = it.data
-                loading = false
             }
             setupTabState()
         }.catch {
@@ -128,7 +117,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             startup = true
         }
 
-        window.addEventListener("hashchange", ::onHashChange)
+        window.addEventListener("hashchange", onHashChange)
     }
 
     override fun RBuilder.render() {
@@ -234,7 +223,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                     }
                                 }
 
-                                state.notificationCount.getOrElse(tab) { 0 }.let { notifCount ->
+                                (state.notificationCount?.get(tab) ?: 0).let { notifCount ->
                                     if (notifCount > 0) {
                                         span("badge rounded-pill badge-danger me-2") {
                                             +"$notifCount"
@@ -252,18 +241,6 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             }
         }
         val detail = state.userDetail
-        if (ProfileTab.MODERATOR.condition(props, state)) {
-            alertsPage {
-                alertCountCallback = {
-                    setState {
-                        notificationCount = notificationCount.plus(ProfileTab.MODERATOR to it)
-                    }
-                }
-                visible = state.state == ProfileTab.MODERATOR
-                userId = props.userId
-            }
-        }
-
         if (detail != null) {
             playlistTable {
                 own = props.userId == null
