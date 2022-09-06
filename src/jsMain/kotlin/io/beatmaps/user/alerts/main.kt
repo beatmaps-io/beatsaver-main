@@ -8,11 +8,13 @@ import io.beatmaps.api.UserAlert
 import io.beatmaps.api.UserAlertStats
 import io.beatmaps.common.Config
 import io.beatmaps.common.api.EAlertType
+import io.beatmaps.common.json
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.buildURL
 import io.beatmaps.shared.includeIfNotNull
 import kotlinx.html.js.onClickFunction
+import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLDivElement
 import react.RBuilder
 import react.RComponent
@@ -43,12 +45,19 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
     private val resultsColumn = createRef<HTMLDivElement>()
 
     override fun componentWillMount() {
-        Axios.get<UserAlertStats>(
+        Axios.get<String>(
             "${Config.apibase}/alerts/stats",
-            generateConfig<String, UserAlertStats>()
+            generateConfig<String, String>()
         ).then {
+            // Decode is here so that 401 actually passes to error handler
+            val data = json.decodeFromString<UserAlertStats>(it.data)
+
             setState {
-                alertStats = it.data
+                alertStats = data
+            }
+        }.catch {
+            if (it.asDynamic().response?.status == 401) {
+                props.history.push("/login")
             }
         }
     }
