@@ -33,7 +33,8 @@ fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
     defaultScopes = listOf("identify"),
     authorizeUrlInterceptor = {
         state?.let {
-            (parameters as StringValuesBuilder)["state"] = it
+            val params = parameters as StringValuesBuilder
+            params["state"] = it
         }
     },
 )
@@ -46,7 +47,10 @@ fun Application.installDiscordOauth() {
         oauth("discord") {
             client = HttpClient(Apache)
             urlProvider = { "$baseName${request.uri.substringBefore("?")}" }
-            providerLookup = { discordProvider((request.queryParameters as StringValues)["state"]) }
+            providerLookup = {
+                val queryParams = request.queryParameters as StringValues
+                discordProvider(queryParams["state"])
+            }
         }
         form("auth-form") {
             userParamName = "username"
