@@ -93,6 +93,7 @@ import pl.jutupe.ktor_rabbitmq.RabbitMQ
 import java.io.File
 import java.math.BigInteger
 import java.security.MessageDigest
+import java.util.logging.Logger
 import kotlin.time.Duration.Companion.nanoseconds
 
 suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) =
@@ -221,6 +222,8 @@ fun Application.beatmapsio() {
 
     install(Locations)
     install(StatusPagesCustom) {
+        val errorLogger = Logger.getLogger("bmio.error")
+
         status(HttpStatusCode.NotFound) {
             /*(call.attributes.allKeys.find { it.name == "SessionKey" } as? AttributeKey<Any>)?.let {
                 call.attributes.remove(it)
@@ -276,7 +279,7 @@ fun Application.beatmapsio() {
 
         exception<Throwable> { cause ->
             call.respond(HttpStatusCode.InternalServerError, "Internal Server Error")
-            throw cause
+            errorLogger.severe(cause.message)
         }
     }
 
