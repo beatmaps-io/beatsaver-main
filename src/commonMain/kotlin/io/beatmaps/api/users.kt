@@ -22,7 +22,8 @@ data class UserDetail(
     val email: String? = null,
     val uploadLimit: Int? = null,
     val curator: Boolean? = null,
-    val verifiedMapper: Boolean = false
+    val verifiedMapper: Boolean = false,
+    val following: Boolean? = null
 ) { companion object }
 @Serializable
 data class UserStats(
@@ -57,3 +58,5 @@ data class ResetRequest(val jwt: String, val password: String, val password2: St
 data class AccountRequest(val currentPassword: String? = null, val password: String? = null, val password2: String? = null)
 @Serializable
 data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val curator: Boolean, val verifiedMapper: Boolean)
+@Serializable
+data class UserFollowRequest(val userId: Int, val followed: Boolean)

@@ -2,22 +2,29 @@ package io.beatmaps.util
 
 import io.beatmaps.api.MapVersion
 import io.beatmaps.api.from
+import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
+import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.DifficultyDao
+import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
+import io.beatmaps.common.dbo.joinUploader
 import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.QueryParameter
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.update
+import java.lang.Integer.toHexString
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -53,6 +60,14 @@ fun publishVersion(mapId: Int, hash: String, additionalCallback: (Op<Boolean>) -
             }
         )
 
+        Beatmap
+            .joinUploader()
+            .select {
+                (Beatmap.id eq mapId) and (Beatmap.lastPublishedAt.isNull())
+            }.firstOrNull()?.let {
+                pushAlerts(BeatmapDao.wrapRow(it))
+            }
+
         // Set published time for sorting, but don't allow gaming the system
         Beatmap.updateReturning(
             { Beatmap.id eq mapId },
@@ -83,4 +98,20 @@ fun publishVersion(mapId: Int, hash: String, additionalCallback: (Op<Boolean>) -
             Beatmap.uploaded
         )
     }
+}
+
+fun pushAlerts(map: BeatmapDao) {
+    val recipients = Follows.select {
+        Follows.userId eq map.uploaderId
+    }.let {
+        it.map { row -> row[Follows.followerId].value }
+    }
+
+    Alert.insert(
+        "New Map Release",
+        "@${map.uploader.uniqueName} just released #${toHexString(map.id.value)}: **${map.name}**.\n" +
+            "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
+        EAlertType.MapRelease,
+        recipients
+    )
 }

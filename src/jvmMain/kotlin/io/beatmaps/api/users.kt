@@ -15,6 +15,7 @@ import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
+import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
@@ -60,6 +61,8 @@ import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.count
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.max
@@ -80,11 +83,11 @@ import java.time.temporal.ChronoUnit
 import java.util.Base64
 import java.util.Date
 
-fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null) =
+fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null, following: Boolean? = null) =
     UserDetail(
         other.id.value, other.uniqueName ?: other.name, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
         other.avatar ?: "https://www.gravatar.com/avatar/${other.hash}?d=retro", stats, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
-        curator = other.curator, verifiedMapper = other.verifiedMapper
+        curator = other.curator, verifiedMapper = other.verifiedMapper, following = following
     )
 
 fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false) = from(UserDao.wrapRow(row), roles)
@@ -123,6 +126,9 @@ class UsersApi {
 
     @Location("/list/{page}")
     data class List(val page: Long = 0, val api: UsersApi)
+
+    @Location("/follow")
+    data class Follow(val Api: UsersApi)
 }
 
 fun Route.userRoute() {
@@ -422,6 +428,28 @@ fun Route.userRoute() {
         }
     }
 
+    post<UsersApi.Follow> {
+        requireAuthorization { user ->
+            val req = call.receive<UserFollowRequest>()
+
+            val success = transaction {
+                if (req.followed) {
+                    Follows.insert { follow ->
+                        follow[userId] = req.userId
+                        follow[followerId] = user.userId
+                        follow[since] = NowExpression(since.columnType)
+                    }.insertedCount
+                } else {
+                    Follows.deleteWhere {
+                        (Follows.userId eq req.userId) and (Follows.followerId eq user.userId)
+                    }
+                }
+            } > 0
+
+            call.respond(if (success) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+        }
+    }
+
     get<UsersApi.Find> {
         val user = transaction {
             UserDao.wrapRows(
@@ -639,7 +667,16 @@ fun Route.userRoute() {
             (User.id eq it.id) and User.active
         }
 
-        val userDetail = UserDetail.from(user, stats = statsForUser(user)).let {
+        val following = call.sessions.get<Session>()?.let { sess ->
+            if (it.id == sess.userId) null
+            else transaction {
+                Follows.select {
+                    (Follows.userId eq it.id) and (Follows.followerId eq sess.userId)
+                }.count() > 0
+            }
+        }
+
+        val userDetail = UserDetail.from(user, stats = statsForUser(user), following = following).let {
             if (call.sessions.get<Session>()?.isAdmin() == true) {
                 it.copy(uploadLimit = user.uploadLimit)
             } else {

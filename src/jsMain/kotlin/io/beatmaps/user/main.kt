@@ -1,8 +1,11 @@
 package io.beatmaps.user
 
+import external.Axios
 import external.axiosGet
+import external.generateConfig
 import io.beatmaps.UserData
 import io.beatmaps.api.UserDetail
+import io.beatmaps.api.UserFollowRequest
 import io.beatmaps.common.Config
 import io.beatmaps.common.formatTime
 import io.beatmaps.index.ModalComponent
@@ -48,6 +51,7 @@ external interface ProfilePageState : RState {
     var state: ProfileTab?
     var lastMapStateWip: Boolean?
     var notificationCount: Map<ProfileTab, Int>?
+    var following: Boolean?
 }
 
 enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps, ProfilePageState) -> Boolean = { _, _ -> true }, val bootCondition: () -> Boolean = { false }, val onSelected: (ProfilePageProps) -> Unit = {}) {
@@ -94,6 +98,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             setPageTitle("Profile - ${it.data.name}")
             setState {
                 userDetail = it.data
+                following = it.data.following
             }
             setupTabState()
         }.catch {
@@ -120,6 +125,14 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         window.addEventListener("hashchange", onHashChange)
     }
 
+    private fun setFollowStatus(followed: Boolean) {
+        Axios.post<UserFollowRequest>("${Config.apibase}/users/follow", UserFollowRequest(state.userDetail?.id ?: 0, followed), generateConfig<UserFollowRequest, String>()).then({
+            setState {
+                following = followed
+            }
+        }) { }
+    }
+
     override fun RBuilder.render() {
         val loggedInLocal = props.userData?.userId
         modal {
@@ -137,6 +150,17 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                             div("mt-3") {
                                 h4 {
                                     +(state.userDetail?.name ?: "")
+
+                                    state.following?.let {
+                                        a("#", classes = "ms-2 btn btn-sm btn-" + if (it) "secondary" else "primary") {
+                                            attrs.onClickFunction = { e ->
+                                                e.preventDefault()
+                                                setFollowStatus(!it)
+                                            }
+
+                                            +if (it) "Unfollow" else "Follow"
+                                        }
+                                    }
                                 }
                                 /*p("text-muted mb-1") {
                                     +"Subheading"

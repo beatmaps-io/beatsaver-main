@@ -120,3 +120,5 @@ gradle-app.setting
 
 /db
 geolite2.mmdb
+
+kotlin-js-store/
