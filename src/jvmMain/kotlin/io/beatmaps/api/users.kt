@@ -653,9 +653,8 @@ fun Route.userRoute() {
         }
     }
 
-    fun userBy(where: SqlExpressionBuilder.() -> Op<Boolean>) = transaction {
-        UserDao.wrapRows(User.select(where)).firstOrNull()
-    } ?: throw NotFoundException()
+    fun userBy(where: SqlExpressionBuilder.() -> Op<Boolean>) =
+        UserDao.wrapRows(User.select(where)).firstOrNull() ?: throw NotFoundException()
 
     options<MapsApi.UserId> {
         call.response.header("Access-Control-Allow-Origin", "*")
@@ -663,14 +662,12 @@ fun Route.userRoute() {
     }
     get<MapsApi.UserId>("Get user info".responds(ok<UserDetail>(), notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
-        val user = userBy {
-            (User.id eq it.id) and User.active
-        }
-
-        val following = call.sessions.get<Session>()?.let { sess ->
-            if (it.id == sess.userId) null
-            else transaction {
-                Follows.select {
+        val (user, following) = transaction {
+            userBy {
+                    (User.id eq it.id) and User.active
+            } to call.sessions.get<Session>()?.let { sess ->
+                if (it.id == sess.userId) null
+                else Follows.select {
                     (Follows.userId eq it.id) and (Follows.followerId eq sess.userId)
                 }.count() > 0
             }
@@ -693,8 +690,10 @@ fun Route.userRoute() {
     }
     get<MapsApi.UserName>("Get user info by name".responds(ok<UserDetail>(), notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
-        val user = userBy {
-            (User.uniqueName eq it.name) and User.active
+        val user = transaction{
+            userBy {
+                (User.uniqueName eq it.name) and User.active
+            }
         }
 
         call.respond(UserDetail.from(user, stats = statsForUser(user)))
