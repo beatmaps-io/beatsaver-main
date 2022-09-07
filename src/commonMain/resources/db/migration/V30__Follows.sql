@@ -25,3 +25,8 @@ CREATE TABLE public.follows
 );
 
 ALTER TABLE public.follows OWNER TO beatmaps;
+
+CREATE UNIQUE INDEX follow_link
+    ON public.follows USING btree
+        ("userId" ASC NULLS LAST, "followerId" ASC NULLS LAST)
+    TABLESPACE pg_default;
