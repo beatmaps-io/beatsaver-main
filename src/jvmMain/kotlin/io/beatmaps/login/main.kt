@@ -59,7 +59,6 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.File
-import java.lang.Long.parseLong
 
 data class Session(
     val userId: Int,
@@ -95,9 +94,13 @@ data class Session(
     fun isCurator() = isAdmin() || (curator && transaction { UserDao[userId].curator })
 }
 
+@Location("/discord") class DiscordLogin(val state: String? = null)
 @Location("/login") class Login
-@Location("/oauth2/authorize") class Authorize
-@Location("/oauth2/authorize/success") class AuthorizeSuccess
+@Location("/oauth2") class Oauth2 {
+    @Location("/authorize") class Authorize(val client_id: String, val api: Oauth2)
+    @Location("/authorize/success") class AuthorizeSuccess(val client_id: String, val api: Oauth2)
+    @Location("/authorize/not-me") class NotMe(val api: Oauth2)
+}
 @Location("/register") class Register
 @Location("/forgot") class Forgot
 @Location("/reset/{jwt}") class Reset(val jwt: String)
@@ -106,6 +109,12 @@ data class Session(
     val token: String = ""
 )
 @Location("/username") class Username
+@Location("/steam") class Steam
+data class DiscordUserInfo(
+    val username: String,
+    val id: Long,
+    val avatar: String?
+)
 
 fun Route.authRoute() {
     suspend fun downloadDiscordAvatar(discordAvatar: String, discordId: Long): String {
@@ -121,7 +130,7 @@ fun Route.authRoute() {
         return "${Config.cdnbase}/avatar/$discordId.png"
     }
 
-    suspend fun ApplicationCall.getDiscordData(): Map<String, Any?> {
+    suspend fun ApplicationCall.getDiscordData(): DiscordUserInfo {
         val principal = authentication.principal<OAuthAccessTokenResponse.OAuth2>() ?: error("No principal")
 
         return client.get("https://discord.com/api/users/@me") {
@@ -130,18 +139,15 @@ fun Route.authRoute() {
     }
 
     authenticate("discord") {
-        get("/discord") {
+        get<DiscordLogin> { req ->
             val data = call.getDiscordData()
 
-            val discordName = data["username"] as String
-
-            val discordIdLocal = parseLong(data["id"] as String)
-            val avatarLocal = (data["avatar"] as String?)?.let { downloadDiscordAvatar(it, discordIdLocal) }
+            val avatarLocal = data.avatar?.let { downloadDiscordAvatar(it, data.id) }
 
             val (user, alertCount) = transaction {
                 val userId = User.upsert(User.discordId) {
-                    it[name] = discordName
-                    it[discordId] = discordIdLocal
+                    it[name] = data.username
+                    it[discordId] = data.id
                     it[avatar] = avatarLocal
                     it[active] = true
                 }.value
@@ -149,8 +155,8 @@ fun Route.authRoute() {
                 UserDao[userId] to alertCount(userId)
             }
 
-            call.sessions.set(Session(user.id.value, user.hash, "", discordName, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, user.hash == null, alertCount))
-            (call.parameters as StringValues)["state"]?.let { String(hex(it)) }.orEmpty().let { query ->
+            call.sessions.set(Session(user.id.value, user.hash, "", data.username, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, user.hash == null, alertCount))
+            req.state?.let { String(hex(it)) }.orEmpty().let { query ->
                 if (query.isNotEmpty() && query.contains("client_id")) {
                     call.respondRedirect("/oauth2/authorize/success$query")
                 } else {
@@ -165,8 +171,6 @@ fun Route.authRoute() {
             requireAuthorization { sess ->
                 val data = call.getDiscordData()
 
-                val discordIdLocal = parseLong(data["id"] as String)
-
                 newSuspendedTransaction {
                     val (existingMaps, dualAccount) = User
                         .join(Beatmap, JoinType.LEFT, User.id, Beatmap.uploader) {
@@ -174,7 +178,7 @@ fun Route.authRoute() {
                         }
                         .slice(User.discordId, User.email, Beatmap.id.count())
                         .select {
-                            (User.discordId eq discordIdLocal) and User.active
+                            (User.discordId eq data.id) and User.active
                         }
                         .groupBy(User.id)
                         .firstOrNull()?.let {
@@ -187,16 +191,16 @@ fun Route.authRoute() {
                     } else if (dualAccount == false) {
                         // Email = false means the other account is a pure discord account
                         // and as it has no maps we can set it to inactive before linking it to the current account
-                        User.update({ User.discordId eq discordIdLocal }) {
+                        User.update({ User.discordId eq data.id }) {
                             it[active] = false
                             it[discordId] = null
                         }
                     }
 
-                    val avatarLocal = (data["avatar"] as String?)?.let { downloadDiscordAvatar(it, discordIdLocal) }
+                    val avatarLocal = data.avatar?.let { downloadDiscordAvatar(it, data.id) }
 
                     User.update({ User.id eq sess.userId }) {
-                        it[discordId] = discordIdLocal
+                        it[discordId] = data.id
                         it[avatar] = avatarLocal
                     }
                 }
@@ -233,19 +237,19 @@ fun Route.authRoute() {
             }
             call.respondRedirect("/")
         }
-        post<Authorize> {
+        post<Oauth2.Authorize> {
             call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
                 val user = newPrincipal.user
-                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator, (call.parameters as StringValues)["client_id"]))
+                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator, it.client_id))
 
                 call.respondRedirect(newPrincipal.redirect)
             }
         }
     }
 
-    get<AuthorizeSuccess> {
-        call.sessions.get<Session>()?.let {
-            call.sessions.set(it.copy(oauth2ClientId = (call.parameters as StringValues)["client_id"]))
+    get<Oauth2.AuthorizeSuccess> {
+        call.sessions.get<Session>()?.let { s ->
+            call.sessions.set(s.copy(oauth2ClientId = it.client_id))
 
             call.respondRedirect("/oauth2/authorize?" + call.request.queryString())
         }
@@ -268,19 +272,20 @@ fun Route.authRoute() {
         call.respondRedirect("/")
     }
 
-    get("/oauth2/authorize/not-me") {
+    get<Oauth2.NotMe> {
         call.sessions.clear<Session>()
         call.respondRedirect("/oauth2/authorize?" + call.request.queryString())
     }
 
-    get("/steam") {
+    get<Steam> {
         val sess = call.sessions.get<Session>()
         if (sess == null) {
             call.respondRedirect("/")
             return@get
         }
 
-        val claimedId = (call.request.queryParameters as StringValues)["openid.claimed_id"]
+        val queryParams = call.request.queryParameters as StringValues
+        val claimedId = queryParams["openid.claimed_id"]
 
         if (claimedId == null) {
             val params = parametersOf(
@@ -301,9 +306,9 @@ fun Route.authRoute() {
                 formParameters = parametersOf(
                     "openid.ns" to listOf("http://specs.openid.net/auth/2.0"),
                     "openid.mode" to listOf("check_authentication"),
-                    "openid.sig" to listOf((call.request.queryParameters as StringValues)["openid.sig"] ?: ""),
-                    *((call.request.queryParameters as StringValues)["openid.signed"])?.split(",")?.map {
-                        "openid.$it" to listOf((call.request.queryParameters as StringValues)["openid.$it"] ?: "")
+                    "openid.sig" to listOf(queryParams["openid.sig"] ?: ""),
+                    *queryParams["openid.signed"]?.split(",")?.map {
+                        "openid.$it" to listOf(queryParams["openid.$it"] ?: "")
                     }?.toTypedArray() ?: arrayOf()
                 )
             ).bodyAsText()
@@ -332,13 +337,14 @@ fun Application.installOauth2() {
         authenticationCallback = { call, callRouter ->
             if (call.request.httpMethod == HttpMethod.Get) {
                 val userSession = call.sessions.get<Session>()
+                val reqClientId = (call.parameters as StringValues)["client_id"]
 
-                if (userSession?.oauth2ClientId != null) {
+                if (reqClientId != null && userSession?.oauth2ClientId == reqClientId) {
                     callRouter.route(BSCallContext(call), Credentials(userSession.userId.toString(), ""))
                 } else {
                     runBlocking {
                         call.genericPage(headerTemplate = {
-                            (call.parameters as StringValues)["client_id"]?.let { DBClientService.getClient(it) }?.let { client ->
+                            reqClientId?.let { DBClientService.getClient(it) }?.let { client ->
                                 meta("oauth-data", "{\"id\": \"${client.clientId}\", \"name\": \"${client.name}\"}")
                             }
                         })
