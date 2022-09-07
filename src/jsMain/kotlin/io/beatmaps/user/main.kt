@@ -8,6 +8,7 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserFollowRequest
 import io.beatmaps.common.Config
 import io.beatmaps.common.formatTime
+import io.beatmaps.common.json
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
@@ -16,6 +17,7 @@ import io.beatmaps.setPageTitle
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import kotlinx.html.js.onClickFunction
+import kotlinx.serialization.decodeFromString
 import org.w3c.dom.events.Event
 import org.w3c.dom.get
 import org.w3c.dom.set
@@ -92,17 +94,22 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
     private fun loadState() {
         val url = "${Config.apibase}/users" + (props.userId?.let { "/id/$it" } ?: "/me")
 
-        axiosGet<UserDetail>(
+        axiosGet<String>(
             url
         ).then {
-            setPageTitle("Profile - ${it.data.name}")
+            // Decode is here so that 401 actually passes to error handler
+            val data = json.decodeFromString<UserDetail>(it.data)
+
+            setPageTitle("Profile - ${data.name}")
             setState {
-                userDetail = it.data
-                following = it.data.following
+                userDetail = data
+                following = data.following
             }
             setupTabState()
         }.catch {
-            // Cancelled request
+            if (it.asDynamic().response?.status == 401) {
+                props.history.push("/login")
+            }
         }
     }
 

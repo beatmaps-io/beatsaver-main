@@ -31,6 +31,8 @@ import org.jetbrains.exposed.sql.update
     @Location("/username/{name}") data class RedirectName(val name: String, val api: UserController)
 }
 
+@Location("/alerts") class AlertController
+
 fun Route.userController() {
     get<UploaderController.RedirectOld> {
         transaction {
@@ -41,6 +43,14 @@ fun Route.userController() {
             call.respondRedirect("/profile/${it.id}")
         } ?: run {
             call.respondRedirect("/")
+        }
+    }
+
+    get<AlertController> {
+        if (call.sessions.get<Session>() == null) {
+            call.respondRedirect("/login")
+        } else {
+            genericPage()
         }
     }
 
