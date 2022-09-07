@@ -664,7 +664,7 @@ fun Route.userRoute() {
         call.response.header("Access-Control-Allow-Origin", "*")
         val (user, following) = transaction {
             userBy {
-                    (User.id eq it.id) and User.active
+                (User.id eq it.id) and User.active
             } to call.sessions.get<Session>()?.let { sess ->
                 if (it.id == sess.userId) null
                 else Follows.select {
@@ -690,7 +690,7 @@ fun Route.userRoute() {
     }
     get<MapsApi.UserName>("Get user info by name".responds(ok<UserDetail>(), notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
-        val user = transaction{
+        val user = transaction {
             userBy {
                 (User.uniqueName eq it.name) and User.active
             }
