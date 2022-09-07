@@ -157,17 +157,6 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                             div("mt-3") {
                                 h4 {
                                     +(state.userDetail?.name ?: "")
-
-                                    state.following?.let {
-                                        a("#", classes = "ms-2 btn btn-sm btn-" + if (it) "secondary" else "primary") {
-                                            attrs.onClickFunction = { e ->
-                                                e.preventDefault()
-                                                setFollowStatus(!it)
-                                            }
-
-                                            +if (it) "Unfollow" else "Follow"
-                                        }
-                                    }
                                 }
                                 /*p("text-muted mb-1") {
                                     +"Subheading"
@@ -190,6 +179,16 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                 routeLink("/modlog?user=${state.userDetail?.name}", className = "btn btn-secondary me-2") {
                                     i("fas fa-scroll") { }
                                     +"Mod Log"
+                                }
+                            }
+                            state.following?.let { following ->
+                                a("#", classes = "btn me-2 btn-" + if (following) "secondary" else "primary") {
+                                    attrs.onClickFunction = { e ->
+                                        e.preventDefault()
+                                        setFollowStatus(!following)
+                                    }
+
+                                    +if (following) "Unfollow" else "Follow"
                                 }
                             }
 
