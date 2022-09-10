@@ -156,7 +156,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                             attrs.active = props.filters?.contains(type) == true
                             attrs.count = count
                             attrs.icon = type.icon
-                            attrs.text = type.name
+                            attrs.text = type.readable()
                             attrs.action = {
                                 toURL(
                                     filters = if (props.filters?.contains(type) == true) {
