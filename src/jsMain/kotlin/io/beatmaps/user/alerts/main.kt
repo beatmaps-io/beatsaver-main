@@ -54,7 +54,6 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
 
             setState {
                 alertStats = data
-                hiddenAlerts = listOf()
             }
         }.catch {
             if (it.asDynamic().response?.status == 401) {
@@ -189,7 +188,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                                 setState {
                                     alertStats = stats
                                     it?.id?.let { id ->
-                                        hiddenAlerts = hiddenAlerts?.plus(id)
+                                        hiddenAlerts = (hiddenAlerts ?: emptyList()) + id
                                     }
                                 }
                             }
