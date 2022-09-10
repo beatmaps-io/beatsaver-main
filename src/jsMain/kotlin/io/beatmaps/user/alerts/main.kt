@@ -169,7 +169,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                     }
                 }
             }
-            div("col-lg-8 alerts") {
+            div("col-lg-8 vstack alerts") {
                 ref = resultsColumn
                 key = "resultsColumn"
 
