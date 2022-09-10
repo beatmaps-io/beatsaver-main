@@ -37,6 +37,7 @@ external interface AlertProps : RProps {
 external interface AlertState : RState {
     var height: String?
     var opacity: String?
+    var margin: String?
 }
 
 fun updateAlertDisplay(stats: UserAlertStats) {
@@ -68,6 +69,7 @@ class AlertElement : RComponent<AlertProps, AlertState>() {
         if (nextProps.alert == null) {
             setState {
                 height = "auto"
+                margin = "5px"
             }
         }
     }
@@ -78,11 +80,13 @@ class AlertElement : RComponent<AlertProps, AlertState>() {
                 if (props.hidden == true) {
                     height = "0px"
                     opacity = "0"
+                    margin = "-1px 5px" // -1 pixel to account for the border
                 } else if (bodyRef.current != null) {
                     val innerSize = bodyRef.current?.scrollHeight?.let { it + 49.5 } ?: 0
 
                     height = "${innerSize}px"
                     opacity = "1"
+                    margin = null
                 }
             }
         }
@@ -98,6 +102,7 @@ class AlertElement : RComponent<AlertProps, AlertState>() {
                     d.jsStyle {
                         height = state.height
                         opacity = state.opacity
+                        margin = state.margin
                     }
                 }
 

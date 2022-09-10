@@ -155,7 +155,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                             attrs.active = props.filters?.contains(type) == true
                             attrs.count = count
                             attrs.icon = type.icon
-                            attrs.text = type.name
+                            attrs.text = type.readable()
                             attrs.action = {
                                 toURL(
                                     filters = if (props.filters?.contains(type) == true) {
@@ -169,7 +169,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                     }
                 }
             }
-            div("col-lg-8 alerts") {
+            div("col-lg-8 vstack alerts") {
                 ref = resultsColumn
                 key = "resultsColumn"
 
@@ -188,7 +188,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                                 setState {
                                     alertStats = stats
                                     it?.id?.let { id ->
-                                        hiddenAlerts = hiddenAlerts?.plus(id)
+                                        hiddenAlerts = (hiddenAlerts ?: emptyList()) + id
                                     }
                                 }
                             }
