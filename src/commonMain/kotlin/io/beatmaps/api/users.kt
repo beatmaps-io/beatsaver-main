@@ -13,18 +13,30 @@ enum class AccountType {
 data class UserDetail(
     val id: Int,
     val name: String,
+    val description: String,
     val uniqueSet: Boolean = true,
     val hash: String? = null,
     val testplay: Boolean? = null,
     val avatar: String,
     val stats: UserStats? = null,
+    val followData: UserFollowData? = null,
     val type: AccountType,
     val email: String? = null,
     val uploadLimit: Int? = null,
+    val admin: Boolean? = null,
     val curator: Boolean? = null,
     val verifiedMapper: Boolean = false,
-    val following: Boolean? = null
 ) { companion object }
+@Serializable
+data class FollowerData(
+    val id: Int,
+    val name: String,
+    val avatar: String,
+    val maps: Int,
+    val admin: Boolean? = null,
+    val curator: Boolean? = null,
+    val verifiedMapper: Boolean = false,
+)
 @Serializable
 data class UserStats(
     val totalUpvotes: Int,
@@ -39,13 +51,19 @@ data class UserStats(
     val diffStats: UserDiffStats? = null
 )
 @Serializable
+data class UserFollowData(
+    val followers: Int,
+    val follows: Int?,
+    val following: Boolean?
+)
+@Serializable
 data class UserDiffStats(val total: Int, val easy: Int, val normal: Int, val hard: Int, val expert: Int, val expertPlus: Int)
 @Serializable
 data class BeatsaverLink(val linked: Boolean) { companion object }
 @Serializable
 data class BeatsaverLinkReq(val user: String, val password: String, val useOldName: Boolean = true)
 @Serializable
-data class UsernameReq(val username: String)
+data class AccountDetailReq(val textContent: String)
 @Serializable
 data class RegisterRequest(val captcha: String, val username: String, val email: String, val password: String, val password2: String)
 @Serializable

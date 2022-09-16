@@ -2,11 +2,11 @@ package io.beatmaps.user
 
 import external.Axios
 import external.generateConfig
+import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.AccountRequest
 import io.beatmaps.api.AccountType
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
-import io.beatmaps.api.UsernameReq
 import io.beatmaps.common.Config
 import io.beatmaps.upload.UploadRequestConfig
 import kotlinx.browser.window
@@ -21,6 +21,7 @@ import kotlinx.html.js.onSubmitFunction
 import kotlinx.html.role
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.files.get
 import org.w3c.xhr.FormData
 import react.RBuilder
@@ -38,6 +39,8 @@ import react.dom.hr
 import react.dom.input
 import react.dom.jsStyle
 import react.dom.label
+import react.dom.textarea
+import react.dom.value
 import react.setState
 import kotlin.collections.set
 
@@ -52,6 +55,8 @@ external interface AccountComponentState : RState {
     var errors: List<String>
     var usernameErrors: List<String>
     var username: String
+    var descriptionErrors: List<String>
+    var description: String
 }
 
 class AccountComponent : RComponent<AccountComponentProps, AccountComponentState>() {
@@ -59,6 +64,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
     private val progressBarInnerRef = createRef<HTMLElement>()
 
     private val usernameRef = createRef<HTMLInputElement>()
+    private val descriptionRef = createRef<HTMLTextAreaElement>()
 
     private val currpassRef = createRef<HTMLInputElement>()
     private val passwordRef = createRef<HTMLInputElement>()
@@ -72,6 +78,8 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             errors = listOf()
             usernameErrors = listOf()
             username = props.userDetail.name
+            descriptionErrors = listOf()
+            description = props.userDetail.description
         }
     }
 
@@ -99,12 +107,12 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                 }
             }
             div("invalid-feedback") {
-                val error = state.usernameErrors.firstOrNull()
-                if (error != null) {
+                val errors = state.usernameErrors + state.descriptionErrors
+                if (errors.isNotEmpty()) {
                     attrs.jsStyle {
                         display = "block"
                     }
-                    +error
+                    +errors.joinToString(" ")
                 }
             }
             div("mb-3") {
@@ -131,6 +139,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                             if (props.userDetail.name == state.username) {
                                 setState {
                                     usernameErrors = listOf("That's already your username!")
+                                    descriptionErrors = listOf()
                                 }
                             } else {
                                 setState {
@@ -139,14 +148,15 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
 
                                 Axios.post<ActionResponse>(
                                     "${Config.apibase}/users/username",
-                                    UsernameReq(state.username),
-                                    generateConfig<UsernameReq, ActionResponse>()
+                                    AccountDetailReq(state.username),
+                                    generateConfig<AccountDetailReq, ActionResponse>()
                                 ).then {
                                     if (it.data.success) {
                                         window.location.reload()
                                     } else {
                                         setState {
                                             usernameErrors = it.data.errors
+                                            descriptionErrors = listOf()
                                             userLoading = false
                                         }
                                     }
@@ -160,6 +170,65 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                         }
                         attrs.disabled = state.userLoading == true
                         +"Change username"
+                    }
+                }
+            }
+            div("mb-3") {
+                label("form-label") {
+                    attrs.htmlFor = "description"
+                    +"Description"
+                }
+                textarea(classes = "form-control") {
+                    key = "description"
+                    attrs.id = "description"
+                    attrs.value = state.description
+                    attrs.rows = "5"
+                    attrs.onChangeFunction = {
+                        setState {
+                            description = descriptionRef.current?.value ?: ""
+                        }
+                    }
+                    ref = descriptionRef
+                }
+                div("d-grid") {
+                    button(classes = "btn btn-success", type = ButtonType.submit) {
+                        attrs.onClickFunction = { ev ->
+                            ev.preventDefault()
+
+                            if (props.userDetail.description == state.description) {
+                                setState {
+                                    descriptionErrors = listOf("That's already your description!")
+                                    usernameErrors = listOf()
+                                }
+                            } else {
+                                setState {
+                                    userLoading = true
+                                }
+
+                                Axios.post<ActionResponse>(
+                                    "${Config.apibase}/users/description",
+                                    AccountDetailReq(state.description),
+                                    generateConfig<AccountDetailReq, ActionResponse>()
+                                ).then {
+                                    if (it.data.success) {
+                                        window.location.reload()
+                                    } else {
+                                        setState {
+                                            descriptionErrors = it.data.errors
+                                            usernameErrors = listOf()
+                                            userLoading = false
+                                        }
+                                    }
+                                }.catch {
+                                    // Cancelled request
+                                    setState {
+                                        userLoading = false
+                                    }
+                                }
+                            }
+                        }
+                        attrs.disabled = state.userLoading == true
+                        +"Change description"
                     }
                 }
             }

@@ -27,7 +27,9 @@ import react.RReadableRef
 import react.dom.RDOMBuilder
 import react.dom.a
 import react.dom.div
+import react.dom.h4
 import react.dom.i
+import react.dom.img
 import react.dom.input
 import react.dom.jsStyle
 import react.dom.label
@@ -322,6 +324,32 @@ fun RDOMBuilder<DIV>.slider(text: String, currentMin: Float, currentMax: Float, 
         p("m-0 float-end") {
             val maxStr = if (currentMax >= max) "∞" else currentMax.toString()
             +"$currentMin - $maxStr"
+        }
+    }
+}
+
+external interface UserCardProps : RProps {
+    var id: Int
+    var avatar: String
+    var username: String
+    var titles: List<String>
+}
+
+var userCard = functionComponent<UserCardProps> {
+    div("d-flex align-items-center my-2") {
+        img("Profile Image", it.avatar, classes = "rounded-circle me-3") {
+            attrs.width = "50"
+            attrs.height = "50"
+        }
+        div("d-inline") {
+            routeLink("/profile/${it.id}") {
+                h4("mb-1") {
+                    +(it.username)
+                }
+            }
+            p("text-muted mb-1") {
+                +it.titles.joinToString(", ")
+            }
         }
     }
 }

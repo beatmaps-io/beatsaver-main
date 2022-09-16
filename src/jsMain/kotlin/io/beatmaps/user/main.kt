@@ -5,18 +5,23 @@ import external.axiosGet
 import external.generateConfig
 import io.beatmaps.UserData
 import io.beatmaps.api.UserDetail
+import io.beatmaps.api.UserFollowData
 import io.beatmaps.api.UserFollowRequest
 import io.beatmaps.common.Config
-import io.beatmaps.common.formatTime
 import io.beatmaps.common.json
+import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
+import io.beatmaps.index.ModalData
 import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
 import io.beatmaps.playlist.playlistTable
 import io.beatmaps.setPageTitle
+import io.beatmaps.util.textToContent
+import io.beatmaps.util.userTitles
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import kotlinx.html.js.onClickFunction
+import kotlinx.html.title
 import kotlinx.serialization.decodeFromString
 import org.w3c.dom.events.Event
 import org.w3c.dom.get
@@ -33,8 +38,16 @@ import react.dom.div
 import react.dom.h4
 import react.dom.i
 import react.dom.img
+import react.dom.jsStyle
 import react.dom.li
+import react.dom.p
 import react.dom.span
+import react.dom.table
+import react.dom.tbody
+import react.dom.td
+import react.dom.th
+import react.dom.thead
+import react.dom.tr
 import react.dom.ul
 import react.ref
 import react.router.dom.RouteResultHistory
@@ -53,7 +66,7 @@ external interface ProfilePageState : RState {
     var state: ProfileTab?
     var lastMapStateWip: Boolean?
     var notificationCount: Map<ProfileTab, Int>?
-    var following: Boolean?
+    var followData: UserFollowData?
 }
 
 enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps, ProfilePageState) -> Boolean = { _, _ -> true }, val bootCondition: () -> Boolean = { false }, val onSelected: (ProfilePageProps) -> Unit = {}) {
@@ -103,7 +116,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             setPageTitle("Profile - ${data.name}")
             setState {
                 userDetail = data
-                following = data.following
+                followData = data.followData
             }
             setupTabState()
         }.catch {
@@ -135,9 +148,32 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
     private fun setFollowStatus(followed: Boolean) {
         Axios.post<UserFollowRequest>("${Config.apibase}/users/follow", UserFollowRequest(state.userDetail?.id ?: 0, followed), generateConfig<UserFollowRequest, String>()).then({
             setState {
-                following = followed
+                followData = UserFollowData(
+                    (followData?.followers ?: 0).let {
+                        if (followed) it + 1 else it - 1
+                    },
+                    followData?.follows ?: 0,
+                    followed
+                )
             }
         }) { }
+    }
+
+    private fun showFollows(title: String, following: Int? = null, followedBy: Int? = null) {
+        modalRef.current?.showDialog(
+            ModalData(
+                title,
+                bodyCallback = {
+                    followList {
+                        this.following = following
+                        this.followedBy = followedBy
+                    }
+                },
+                buttons = listOf(
+                    ModalButton("Close")
+                )
+            )
+        )
     }
 
     override fun RBuilder.render() {
@@ -147,124 +183,190 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         }
         div("row") {
             div("col-md-4 mb-3") {
-                div("card") {
+                div("card user-info") {
                     div("card-body") {
-                        div("d-flex flex-column align-items-center text-center") {
-                            img("Profile Image", state.userDetail?.avatar, classes = "rounded-circle") {
-                                attrs.width = "150"
-                                attrs.height = "150"
+                        div("d-flex align-items-center mb-2") {
+                            img("Profile Image", state.userDetail?.avatar, classes = "rounded-circle me-3") {
+                                attrs.width = "50"
+                                attrs.height = "50"
                             }
-                            div("mt-3") {
-                                h4 {
+                            div("d-inline") {
+                                h4("mb-1") {
                                     +(state.userDetail?.name ?: "")
                                 }
-                                /*p("text-muted mb-1") {
-                                    +"Subheading"
-                                }*/
+                                p("text-muted mb-1") {
+                                    +userTitles(state.userDetail).joinToString(", ")
+                                }
+                            }
+                        }
+                        div("mb-3") {
+                            state.followData?.followers?.let {
+                                span {
+                                    a(if (it > 0) "#" else null) {
+                                        attrs.onClickFunction = { e ->
+                                            e.preventDefault()
+                                            if (it > 0) {
+                                                showFollows("Followers", following = state.userDetail?.id)
+                                            }
+                                        }
+
+                                        +"Followed by "
+                                        b("text-warning") { +"$it" }
+                                        +(" user" + if (it != 1) "s" else "")
+                                    }
+                                }
+                            }
+                            state.followData?.follows?.let {
+                                br { }
+                                span {
+                                    a(if (it > 0) "#" else null) {
+                                        attrs.onClickFunction = { e ->
+                                            e.preventDefault()
+                                            if (it > 0) {
+                                                showFollows("Follows", followedBy = state.userDetail?.id)
+                                            }
+                                        }
+
+                                        +"Following "
+                                        b("text-warning") { +"$it" }
+                                        +(" user" + if (it != 1) "s" else "")
+                                    }
+                                }
+                            }
+                        }
+                        div {
+                            a("${Config.apibase}/users/id/${state.userDetail?.id ?: 0}/playlist", "_blank", "btn btn-secondary") {
+                                attrs.attributes["download"] = ""
+                                i("fas fa-download") { }
+                                +"Playlist"
+                            }
+                            if (props.userData?.admin == true) {
+                                routeLink("/modlog?user=${state.userDetail?.name}", className = "btn btn-secondary") {
+                                    i("fas fa-scroll") { }
+                                    +"Mod Log"
+                                }
+                            }
+                            state.followData?.following?.let { following ->
+                                a("#", classes = "btn btn-" + if (following) "secondary" else "primary") {
+                                    attrs.onClickFunction = { e ->
+                                        e.preventDefault()
+                                        setFollowStatus(!following)
+                                    }
+
+                                    if (following) {
+                                        i("fas fa-user-minus") { }
+                                        +"Unfollow"
+                                    } else {
+                                        i("fas fa-user-plus") { }
+                                        +"Follow"
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
             div("col-md-8 mb-3 position-relative") {
-                div("card user-badges") {
+                div("card user-info") {
                     div("card-body") {
+                        span {
+                            textToContent((state.userDetail?.description?.take(500) ?: ""))
+                        }
                         state.userDetail?.stats?.let {
-                            a("${Config.apibase}/users/id/${state.userDetail?.id ?: 0}/playlist", "_blank", "btn btn-secondary") {
-                                attrs.attributes["download"] = ""
-                                i("fas fa-list") { }
-                                +"Playlist"
-                            }
-                            if (props.userData?.admin == true) {
-                                routeLink("/modlog?user=${state.userDetail?.name}", className = "btn btn-secondary me-2") {
-                                    i("fas fa-scroll") { }
-                                    +"Mod Log"
-                                }
-                            }
-                            state.following?.let { following ->
-                                a("#", classes = "btn me-2 btn-" + if (following) "secondary" else "primary") {
-                                    attrs.onClickFunction = { e ->
-                                        e.preventDefault()
-                                        setFollowStatus(!following)
+                            if (it.totalMaps != 0) {
+                                table("table table-dark") {
+                                    thead {
+                                        tr {
+                                            th { +"Maps" }
+                                            th { +"Average Rating" }
+                                            th { +"Difficulty Spread" }
+                                        }
                                     }
-
-                                    +if (following) "Unfollow" else "Follow"
-                                }
-                            }
-
-                            +"Maps: ${it.totalMaps}, Upvotes: ${it.totalUpvotes}, Downvotes: ${it.totalDownvotes}"
-                            br { }
-                            +"Average BPM: ${it.avgBpm}, Average Score: ${it.avgScore}%, "
-                            +"Average Duration: ${it.avgDuration.formatTime()}"
-                            it.diffStats?.let { ds ->
-                                br { }
-                                b {
-                                    +"Easy: "
-                                }
-                                +"${ds.easy}"
-                                b {
-                                    +", Normal: "
-                                }
-                                +"${ds.normal}"
-                                b {
-                                    +", Hard: "
-                                }
-                                +"${ds.hard}"
-                                b {
-                                    +", Expert: "
-                                }
-                                +"${ds.expert}"
-                                b {
-                                    +", Expert+: "
-                                }
-                                +"${ds.expertPlus}"
-                            }
-                        }
-                        /*img("100 Maps", "https://cdn.discordapp.com/avatars/98334361564246016/01ade7513a63215bb7937d217b766da3.png", classes = "rounded-circle mx-2") {
-                            attrs.width = "75"
-                            attrs.height = "75"
-                        }
-                        img("100 Maps", "https://cdn.discordapp.com/avatars/98334361564246016/01ade7513a63215bb7937d217b766da3.png", classes = "rounded-circle mx-2") {
-                            attrs.width = "75"
-                            attrs.height = "75"
-                        }
-                        img("100 Maps", "https://cdn.discordapp.com/avatars/98334361564246016/01ade7513a63215bb7937d217b766da3.png", classes = "rounded-circle mx-2") {
-                            attrs.width = "75"
-                            attrs.height = "75"
-                        }*/
-                    }
-                }
-                ul("nav nav-tabs") {
-                    ProfileTab.values().forEach { tab ->
-                        if (!tab.condition(props, state)) return@forEach
-
-                        li("nav-item") {
-                            a("#", classes = "nav-link" + if (state.state == tab) " active" else "") {
-                                key = tab.tabText
-                                attrs.onClickFunction = {
-                                    it.preventDefault()
-
-                                    val userPart = if (props.userId != null) "/${props.userId}" else ""
-                                    props.history.push("/profile$userPart#${tab.tabText.lowercase()}")
-
-                                    tab.onSelected(props)
-                                    setState {
-                                        state = tab
-                                    }
-                                }
-
-                                (state.notificationCount?.get(tab) ?: 0).let { notifCount ->
-                                    if (notifCount > 0) {
-                                        span("badge rounded-pill badge-danger me-2") {
-                                            +"$notifCount"
+                                    tbody {
+                                        tr {
+                                            td { +"${it.totalMaps}" }
+                                            td { +"${it.avgScore}% (${it.totalUpvotes} / ${it.totalDownvotes})" }
+                                            it.diffStats?.let { ds ->
+                                                td {
+                                                    div("difficulty-spread mb-1") {
+                                                        div("badge-green") {
+                                                            attrs.jsStyle {
+                                                                flex = ds.easy
+                                                            }
+                                                            attrs.title = "${ds.easy}"
+                                                        }
+                                                        div("badge-blue") {
+                                                            attrs.jsStyle {
+                                                                flex = ds.normal
+                                                            }
+                                                            attrs.title = "${ds.normal}"
+                                                        }
+                                                        div("badge-hard") {
+                                                            attrs.jsStyle {
+                                                                flex = ds.hard
+                                                            }
+                                                            attrs.title = "${ds.hard}"
+                                                        }
+                                                        div("badge-expert") {
+                                                            attrs.jsStyle {
+                                                                flex = ds.expert
+                                                            }
+                                                            attrs.title = "${ds.expert}"
+                                                        }
+                                                        div("badge-purple") {
+                                                            attrs.jsStyle {
+                                                                flex = ds.expertPlus
+                                                            }
+                                                            attrs.title = "${ds.expertPlus}"
+                                                        }
+                                                    }
+                                                    div("legend") {
+                                                        span("legend-green") { +"Easy" }
+                                                        span("legend-blue") { +"Normal" }
+                                                        span("legend-hard") { +"Hard" }
+                                                        span("legend-expert") { +"Expert" }
+                                                        span("legend-purple") { +"Expert+" }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        ul("nav nav-pills mb-3") {
+            ProfileTab.values().forEach { tab ->
+                if (!tab.condition(props, state)) return@forEach
 
-                                span {
-                                    +tab.tabText
+                li("nav-item") {
+                    a("#", classes = "nav-link" + if (state.state == tab) " active" else "") {
+                        key = tab.tabText
+                        attrs.onClickFunction = {
+                            it.preventDefault()
+
+                            val userPart = if (props.userId != null) "/${props.userId}" else ""
+                            props.history.push("/profile$userPart#${tab.tabText.lowercase()}")
+
+                            tab.onSelected(props)
+                            setState {
+                                state = tab
+                            }
+                        }
+
+                        (state.notificationCount?.get(tab) ?: 0).let { notifCount ->
+                            if (notifCount > 0) {
+                                span("badge rounded-pill badge-danger me-2") {
+                                    +"$notifCount"
                                 }
                             }
+                        }
+
+                        span {
+                            +tab.tabText
                         }
                     }
                 }
