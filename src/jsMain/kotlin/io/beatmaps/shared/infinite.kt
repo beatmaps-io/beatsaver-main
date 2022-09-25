@@ -8,6 +8,7 @@ import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.asList
 import org.w3c.dom.events.Event
+import org.w3c.dom.get
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -40,6 +41,8 @@ external interface InfiniteScrollProps<T> : RProps {
     var loadPage: (Int, CancelTokenSource) -> Promise<List<T>?>
     var grace: Int?
     var childFilter: ((Element) -> Boolean)?
+    var scrollParent: Element?
+    var headerSize: Double?
 }
 
 external interface InfiniteScrollState<T> : RState {
@@ -67,13 +70,13 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
 
     private fun rowsPerPage() = props.itemsPerPage / (state.itemsPerRow ?: 1)
     private fun pageHeight() = props.rowHeight * rowsPerPage()
-    private val headerSize = 54.5
-    private fun beforeContent() = headerSize + (props.grace ?: 5)
+    private fun headerSize() = props.headerSize ?: 54.5
+    private fun beforeContent() = headerSize() + (props.grace ?: 5)
 
     override fun componentDidMount() {
         onHashChange(null)
 
-        window.addEventListener("scroll", onScroll)
+        (props.scrollParent ?: window).addEventListener("scroll", onScroll)
         window.addEventListener("resize", onResize)
         window.addEventListener("hashchange", onHashChange)
     }
@@ -81,7 +84,7 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
     override fun componentWillUnmount() {
         state.token?.cancel("Unmounted")
 
-        window.removeEventListener("scroll", onScroll)
+        (props.scrollParent ?: window).removeEventListener("scroll", onScroll)
         window.removeEventListener("resize", onResize)
         window.removeEventListener("hashchange", onHashChange)
     }
@@ -100,11 +103,19 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
             }
 
             window.setTimeout({
-                window.scrollTo(0.0, 0.0)
+                scrollTo(0.0, 0.0)
                 loadNextPage()
             }, 0)
         }
     }
+
+    private fun scrollTo(x: Double, y: Double) {
+        props.scrollParent?.scrollTo(x, y) ?: run {
+            window.scrollTo(x, y)
+        }
+    }
+
+    private fun innerHeight() = props.scrollParent?.clientHeight ?: window.innerHeight
 
     override fun componentDidUpdate(prevProps: InfiniteScrollProps<T>, prevState: InfiniteScrollState<T>, snapshot: Any) {
         if (state.visItem != prevState.visItem) {
@@ -160,7 +171,7 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
             scroll = hashPos != null
 
             if (newItem == 0) {
-                window.scrollTo(0.0, 0.0)
+                scrollTo(0.0, 0.0)
             } else if (state.pages?.containsKey(newPage) == true) {
                 scrollTo(newItem)
             }
@@ -190,7 +201,7 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
     }
 
     private fun InfiniteScrollState<T>.updateState(newItem: Int = currentItem()): Int {
-        val totalVisiblePages = ceil(window.innerHeight / pageHeight()).toInt()
+        val totalVisiblePages = ceil(innerHeight() / pageHeight()).toInt()
         val newPage = max(1, newItem - (state.itemsPerRow ?: 1)) / props.itemsPerPage
 
         visItem = newItem
@@ -203,7 +214,7 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
     private fun currentItem(): Int {
         props.container.current?.children?.asList()?.filter(props.childFilter ?: { true })?.forEachIndexed { idx, it ->
             val rect = it.getBoundingClientRect()
-            if (rect.top >= headerSize) {
+            if (rect.top >= headerSize()) {
                 return idx
             }
         }
@@ -212,10 +223,11 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
 
     private fun scrollTo(idx: Int) {
         val scrollTo = if (idx == 0) 0.0 else {
-            val top = props.container.current?.children?.asList()?.get(idx)?.getBoundingClientRect()?.top ?: 0.0
-            top + window.pageYOffset - beforeContent()
+            val top = props.container.current?.children?.get(idx)?.getBoundingClientRect()?.top ?: 0.0
+            val offset = props.scrollParent?.scrollTop ?: window.pageYOffset
+            top + offset - beforeContent()
         }
-        window.scrollTo(0.0, scrollTo)
+        scrollTo(0.0, scrollTo)
     }
 
     override fun RBuilder.render() {
