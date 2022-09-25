@@ -763,8 +763,15 @@ fun Route.userRoute() {
     }
 
     fun getFollowerData(page: Long, joinOn: Column<EntityID<Int>>, condition: SqlExpressionBuilder.() -> Op<Boolean>) = transaction {
-        Follows
-            .join(User, JoinType.LEFT, joinOn, User.id)
+        val followsSubquery = Follows
+            .slice(joinOn, Follows.since)
+            .select(condition)
+            .limit(page)
+            .orderBy(Follows.since, SortOrder.DESC)
+            .alias("fs")
+
+        followsSubquery
+            .join(User, JoinType.LEFT, followsSubquery[joinOn], User.id)
             .join(Beatmap, JoinType.LEFT, User.id, Beatmap.uploader) {
                 Beatmap.deletedAt.isNull()
             }
@@ -772,16 +779,9 @@ fun Route.userRoute() {
                 User.id, User.name, User.uniqueName, User.description, User.avatar, User.discordId, User.hash,
                 Beatmap.id.count(), User.admin, User.curator, User.verifiedMapper
             )
-            .select {
-                Follows.id.inSubQuery(
-                    Follows
-                        .slice(Follows.id)
-                        .select(condition)
-                        .limit(20, page)
-                        .orderBy(Follows.since, SortOrder.DESC)
-                )
-            }
-            .groupBy(Follows.id, User.id)
+            .selectAll()
+            .groupBy(User.id, followsSubquery[Follows.since])
+            .orderBy(followsSubquery[Follows.since], SortOrder.DESC)
             .map { row ->
                 UserDetail.from(UserDao.wrapRow(row), stats = UserStats(totalMaps = row[Beatmap.id.count()].toInt()))
             }
