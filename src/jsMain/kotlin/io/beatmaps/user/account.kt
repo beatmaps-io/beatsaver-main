@@ -107,12 +107,12 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                 }
             }
             div("invalid-feedback") {
-                val errors = state.usernameErrors + state.descriptionErrors
-                if (errors.isNotEmpty()) {
+                val error = state.usernameErrors.firstOrNull()
+                if (error != null) {
                     attrs.jsStyle {
                         display = "block"
                     }
-                    +errors.joinToString(" ")
+                    +error
                 }
             }
             div("mb-3") {
@@ -139,7 +139,6 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                             if (props.userDetail.name == state.username) {
                                 setState {
                                     usernameErrors = listOf("That's already your username!")
-                                    descriptionErrors = listOf()
                                 }
                             } else {
                                 setState {
@@ -156,7 +155,6 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                                     } else {
                                         setState {
                                             usernameErrors = it.data.errors
-                                            descriptionErrors = listOf()
                                             userLoading = false
                                         }
                                     }
@@ -171,6 +169,15 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                         attrs.disabled = state.userLoading == true
                         +"Change username"
                     }
+                }
+            }
+            div("invalid-feedback") {
+                val error = state.descriptionErrors.firstOrNull()
+                if (error != null) {
+                    attrs.jsStyle {
+                        display = "block"
+                    }
+                    +error
                 }
             }
             div("mb-3") {
@@ -198,7 +205,6 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                             if (props.userDetail.description == state.description) {
                                 setState {
                                     descriptionErrors = listOf("That's already your description!")
-                                    usernameErrors = listOf()
                                 }
                             } else {
                                 setState {
@@ -215,7 +221,6 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                                     } else {
                                         setState {
                                             descriptionErrors = it.data.errors
-                                            usernameErrors = listOf()
                                             userLoading = false
                                         }
                                     }
