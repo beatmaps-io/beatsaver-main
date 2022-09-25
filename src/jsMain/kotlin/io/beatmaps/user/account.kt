@@ -205,11 +205,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                         attrs.onClickFunction = { ev ->
                             ev.preventDefault()
 
-                            if (props.userDetail.description == state.description) {
-                                setState {
-                                    descriptionErrors = listOf("That's already your description!")
-                                }
-                            } else {
+                            if (props.userDetail.description != state.description) {
                                 setState {
                                     userLoading = true
                                 }
