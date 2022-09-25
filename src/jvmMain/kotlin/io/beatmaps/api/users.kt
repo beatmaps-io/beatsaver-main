@@ -58,6 +58,8 @@ import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
 import org.jetbrains.exposed.sql.Sum
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
@@ -142,19 +144,31 @@ class UsersApi {
     data class FollowedBy(val user: Int, val page: Long = 0, val api: UsersApi)
 }
 
-fun followData(uploaderId: Int, userId: Int?) = UserFollowData(
-    Follows.select {
-        (Follows.userId eq uploaderId)
-    }.count().toInt(),
-    if (userId != uploaderId) null
-    else Follows.select {
-        (Follows.followerId eq uploaderId)
-    }.count().toInt(),
-    if (userId == null || userId == uploaderId) null
-    else Follows.select {
-        (Follows.userId eq uploaderId) and (Follows.followerId eq userId)
-    }.count() > 0
-)
+fun followData(uploaderId: Int, userId: Int?): UserFollowData {
+    val userFilter = Follows.userId eq uploaderId
+    val followerFilter = Follows.followerId eq userId
+
+    val userColumn = countWithFilter(userFilter)
+    val followerColumn = if (userId != uploaderId) {
+        Op.nullOp()
+    } else {
+        countWithFilter(followerFilter)
+    }
+
+    val followingColumn = if (userId == null || userId == uploaderId) {
+        Op.nullOp()
+    } else {
+        countWithFilter(userFilter and followerFilter) greater intLiteral(0)
+    }
+
+    return Follows
+        .slice(userColumn, followerColumn, followingColumn).select {
+            userFilter or followerFilter
+        }
+        .single().let {
+            UserFollowData(it[userColumn], it[followerColumn], it[followingColumn])
+        }
+}
 
 fun Route.userRoute() {
     val usernameRegex = Regex("^[._\\-A-Za-z0-9]{3,}$")
