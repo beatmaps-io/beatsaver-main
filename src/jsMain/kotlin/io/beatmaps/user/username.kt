@@ -3,9 +3,9 @@ package io.beatmaps.user
 import external.Axios
 import external.axiosGet
 import external.generateConfig
+import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
-import io.beatmaps.api.UsernameReq
 import io.beatmaps.common.Config
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
@@ -97,8 +97,8 @@ class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
 
                     Axios.post<ActionResponse>(
                         "${Config.apibase}/users/username",
-                        UsernameReq(inputRef.current?.value ?: ""),
-                        generateConfig<UsernameReq, ActionResponse>()
+                        AccountDetailReq(inputRef.current?.value ?: ""),
+                        generateConfig<AccountDetailReq, ActionResponse>()
                     ).then {
                         if (it.data.success) {
                             props.history.push("/")
