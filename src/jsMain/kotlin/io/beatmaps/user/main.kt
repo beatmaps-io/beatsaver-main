@@ -165,6 +165,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                 title,
                 bodyCallback = {
                     followList {
+                        scrollParent = it
                         this.following = following
                         this.followedBy = followedBy
                     }

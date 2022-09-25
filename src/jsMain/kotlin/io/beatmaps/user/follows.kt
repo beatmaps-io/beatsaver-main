@@ -20,6 +20,7 @@ import react.dom.div
 import react.setState
 
 external interface FollowListProps : RProps {
+    var scrollParent: HTMLDivElement?
     var following: Int?
     var followedBy: Int?
 }
@@ -66,6 +67,8 @@ class FollowList : RComponent<FollowListProps, FollowListState>() {
                 attrs.rowHeight = 73.5
                 attrs.itemsPerPage = 20
                 attrs.container = resultRef
+                attrs.scrollParent = props.scrollParent
+                attrs.headerSize = 0.0
                 attrs.loadPage = loadPage
                 attrs.renderElement = InfiniteScrollElementRenderer { u ->
                     if (u != null) {
