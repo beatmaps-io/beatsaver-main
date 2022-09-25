@@ -890,7 +890,7 @@ div.mapstats {
     display: flex;
     flex-direction: column;
 
-    > :last-child:not(:first-child) {
+    > :last-child:not(:only-child) {
       margin: auto 0 0 0;
     }
 
