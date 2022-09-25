@@ -344,7 +344,7 @@ var userCard = functionComponent<UserCardProps> {
         div("d-inline") {
             routeLink("/profile/${it.id}") {
                 h4("mb-1") {
-                    +(it.username)
+                    +it.username
                 }
             }
             p("text-muted mb-1") {
