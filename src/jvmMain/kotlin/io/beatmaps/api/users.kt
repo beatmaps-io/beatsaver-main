@@ -770,7 +770,8 @@ fun Route.userRoute() {
             .groupBy(Follows.id, User.id)
             .map { row ->
                 FollowerData(
-                    row[User.id].value, row[User.name], row[User.avatar] ?: "https://www.gravatar.com/avatar/${row[User.hash]}?d=retro",
+                    row[User.id].value, row[User.uniqueName] ?: row[User.name],
+                    row[User.avatar] ?: "https://www.gravatar.com/avatar/${row[User.hash]}?d=retro",
                     row[Beatmap.id.count()].toInt(), row[User.admin], row[User.curator], row[User.verifiedMapper]
                 )
             }
