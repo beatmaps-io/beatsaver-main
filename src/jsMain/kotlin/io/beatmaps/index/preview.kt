@@ -26,7 +26,7 @@ import react.setState
 const val previewBaseUrl = "https://skystudioapps.com/bs-viewer/"
 
 data class ModalState(var modal: ModalData? = null) : RState
-data class ModalData(val titleText: String, val bodyText: String = "", val buttons: List<ModalButton>, val large: Boolean = false, val bodyCallback: (RDOMBuilder<DIV>.() -> Unit)? = null)
+data class ModalData(val titleText: String, val bodyText: String = "", val buttons: List<ModalButton>, val large: Boolean = false, val bodyCallback: (RDOMBuilder<DIV>.(HTMLDivElement?) -> Unit)? = null)
 data class ModalButton(val text: String, val color: String = "secondary", val callback: () -> Unit = {})
 
 class ModalComponent : RComponent<RProps, ModalState>() {
@@ -118,7 +118,7 @@ class ModalComponent : RComponent<RProps, ModalState>() {
                     }
                     div("modal-body") {
                         state.modal?.let { m ->
-                            m.bodyCallback?.invoke(this) ?: textToContent(m.bodyText)
+                            m.bodyCallback?.invoke(this, modal.current) ?: textToContent(m.bodyText)
                         }
                     }
                     div("modal-footer") {
