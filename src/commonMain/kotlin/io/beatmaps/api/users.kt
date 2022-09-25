@@ -20,7 +20,7 @@ data class UserDetail(
     val avatar: String,
     val stats: UserStats? = null,
     val followData: UserFollowData? = null,
-    val type: AccountType,
+    val type: AccountType = AccountType.SIMPLE,
     val email: String? = null,
     val uploadLimit: Int? = null,
     val admin: Boolean? = null,
@@ -28,26 +28,16 @@ data class UserDetail(
     val verifiedMapper: Boolean = false,
 ) { companion object }
 @Serializable
-data class FollowerData(
-    val id: Int,
-    val name: String,
-    val avatar: String,
-    val maps: Int,
-    val admin: Boolean? = null,
-    val curator: Boolean? = null,
-    val verifiedMapper: Boolean = false,
-)
-@Serializable
 data class UserStats(
-    val totalUpvotes: Int,
-    val totalDownvotes: Int,
-    val totalMaps: Int,
-    val rankedMaps: Int,
-    val avgBpm: Float,
-    val avgScore: Float,
-    val avgDuration: Float,
-    val firstUpload: Instant?,
-    val lastUpload: Instant?,
+    val totalUpvotes: Int = 0,
+    val totalDownvotes: Int = 0,
+    val totalMaps: Int = 0,
+    val rankedMaps: Int = 0,
+    val avgBpm: Float = 0f,
+    val avgScore: Float = 0f,
+    val avgDuration: Float = 0f,
+    val firstUpload: Instant? = null,
+    val lastUpload: Instant? = null,
     val diffStats: UserDiffStats? = null
 )
 @Serializable

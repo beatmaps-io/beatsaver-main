@@ -769,7 +769,7 @@ fun Route.userRoute() {
                 Beatmap.deletedAt.isNull()
             }
             .slice(
-                User.id, User.name, User.uniqueName, User.avatar, User.hash,
+                User.id, User.name, User.uniqueName, User.description, User.avatar, User.hash,
                 Beatmap.id.count(), User.admin, User.curator, User.verifiedMapper
             )
             .select {
@@ -783,10 +783,11 @@ fun Route.userRoute() {
             }
             .groupBy(Follows.id, User.id)
             .map { row ->
-                FollowerData(
-                    row[User.id].value, row[User.uniqueName] ?: row[User.name],
-                    row[User.avatar] ?: "https://www.gravatar.com/avatar/${row[User.hash]}?d=retro",
-                    row[Beatmap.id.count()].toInt(), row[User.admin], row[User.curator], row[User.verifiedMapper]
+                UserDetail(
+                    row[User.id].value, row[User.uniqueName] ?: row[User.name], row[User.description],
+                    avatar = row[User.avatar] ?: "https://www.gravatar.com/avatar/${row[User.hash]}?d=retro",
+                    stats = UserStats(totalMaps = row[Beatmap.id.count()].toInt()),
+                    admin = row[User.admin], curator = row[User.curator], verifiedMapper = row[User.verifiedMapper]
                 )
             }
     }

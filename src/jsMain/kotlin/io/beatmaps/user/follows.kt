@@ -3,7 +3,7 @@ package io.beatmaps.user
 import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
-import io.beatmaps.api.FollowerData
+import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
@@ -49,9 +49,9 @@ class FollowList : RComponent<FollowListProps, FollowListState>() {
     }
 
     private val loadPage = { toLoad: Int, token: CancelTokenSource ->
-        Axios.get<Array<FollowerData>>(
+        Axios.get<Array<UserDetail>>(
             getUrl(toLoad),
-            generateConfig<String, Array<FollowerData>>(token.token)
+            generateConfig<String, Array<UserDetail>>(token.token)
         ).then {
             return@then it.data.toList()
         }
@@ -82,7 +82,7 @@ class FollowList : RComponent<FollowListProps, FollowListState>() {
     }
 }
 
-class FollowerInfiniteScroll : InfiniteScroll<FollowerData>()
+class FollowerInfiniteScroll : InfiniteScroll<UserDetail>()
 
 fun RBuilder.followList(handler: FollowListProps.() -> Unit): ReactElement {
     return child(FollowList::class) {
