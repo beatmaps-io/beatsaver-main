@@ -339,7 +339,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                 }
             }
         }
-        ul("nav nav-pills mb-3") {
+        ul("nav nav-minimal mb-3") {
             ProfileTab.values().forEach { tab ->
                 if (!tab.condition(props, state)) return@forEach
 
