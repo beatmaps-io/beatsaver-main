@@ -20,7 +20,7 @@ data class UserDetail(
     val avatar: String,
     val stats: UserStats? = null,
     val followData: UserFollowData? = null,
-    val type: AccountType = AccountType.SIMPLE,
+    val type: AccountType,
     val email: String? = null,
     val uploadLimit: Int? = null,
     val admin: Boolean? = null,
