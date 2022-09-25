@@ -152,7 +152,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                     (followData?.followers ?: 0).let {
                         if (followed) it + 1 else it - 1
                     },
-                    followData?.follows ?: 0,
+                    followData?.follows,
                     followed
                 )
             }
