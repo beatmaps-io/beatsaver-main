@@ -769,7 +769,7 @@ fun Route.userRoute() {
                 Beatmap.deletedAt.isNull()
             }
             .slice(
-                User.id, User.name, User.avatar, User.hash,
+                User.id, User.name, User.uniqueName, User.avatar, User.hash,
                 Beatmap.id.count(), User.admin, User.curator, User.verifiedMapper
             )
             .select {
