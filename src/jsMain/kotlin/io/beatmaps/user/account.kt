@@ -9,7 +9,6 @@ import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
 import io.beatmaps.upload.UploadRequestConfig
-import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
 import kotlinx.html.InputType
@@ -46,6 +45,7 @@ import kotlin.collections.set
 
 external interface AccountComponentProps : RProps {
     var userDetail: UserDetail
+    var onUpdate: () -> Unit
 }
 
 external interface AccountComponentState : RState {
@@ -151,7 +151,10 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                                     generateConfig<AccountDetailReq, ActionResponse>()
                                 ).then {
                                     if (it.data.success) {
-                                        window.location.reload()
+                                        props.onUpdate()
+                                        setState {
+                                            userLoading = false
+                                        }
                                     } else {
                                         setState {
                                             usernameErrors = it.data.errors
@@ -217,7 +220,10 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                                     generateConfig<AccountDetailReq, ActionResponse>()
                                 ).then {
                                     if (it.data.success) {
-                                        window.location.reload()
+                                        props.onUpdate()
+                                        setState {
+                                            userLoading = false
+                                        }
                                     } else {
                                         setState {
                                             descriptionErrors = it.data.errors
@@ -273,7 +279,10 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                                         }
                                     ).then { r ->
                                         if (r.status == 200) {
-                                            window.location.reload()
+                                            props.onUpdate()
+                                            setState {
+                                                uploading = false
+                                            }
                                         } else {
                                             setState {
                                                 uploading = false

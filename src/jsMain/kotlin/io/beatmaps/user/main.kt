@@ -408,6 +408,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             if (props.userId == null) {
                 account {
                     userDetail = detail
+                    onUpdate = { loadState() }
                 }
             } else {
                 adminAccount {
