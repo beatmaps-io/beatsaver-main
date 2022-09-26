@@ -268,7 +268,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                 }
                             }
                             if (pl.description.isNotBlank()) {
-                                div("list-group-item ws-normal") {
+                                div("list-group-item ws-normal text-break") {
                                     +pl.description
                                 }
                             }
