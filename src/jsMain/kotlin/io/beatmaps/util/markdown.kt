@@ -31,12 +31,12 @@ fun String.parseUserReference() =
 
 fun String.parseSocialLinks() =
     listOf(
-        "(?<=^|\\s)twt@(\\w+?)(?=$|\\W)" to """<a href="https://twitter.com/$1">twt@$1</a>""",
-        "(?<=^|\\s)yt@([\\w.-]+?)(?=$|[^\\w.-])" to """<a href="https://www.youtube.com/channel/$1">yt@$1</a>""",
-        "(?<=^|\\s)ttv@(\\w+?)(?=$|\\W)" to """<a href="https://www.twitch.tv/$1">ttv@$1</a>""",
-        "(?<=^|\\s)steam@(\\d+?)(?=$|\\W)" to """<a href="https://steamcommunity.com/profiles/$1">steam@$1</a>""",
-        "(?<=^|\\s)ss@(\\d+?)(?=$|\\W)" to """<a href="https://scoresaber.com/u/$1">ss@$1</a>""",
-        "(?<=^|\\s)bl@(\\d+?)(?=$|\\W)" to """<a href="https://www.beatleader.xyz/u/$1">bl@$1</a>""",
+        "(^|\\s)twt@(\\w+?)(?=$|\\W)" to """$1<a href="https://twitter.com/$2">twt@$2</a>""",
+        "(^|\\s)yt@([\\w.-]+?)(?=$|[^\\w.-])" to """$1<a href="https://www.youtube.com/channel/$2">yt@$2</a>""",
+        "(^|\\s)ttv@(\\w+?)(?=$|\\W)" to """$1<a href="https://www.twitch.tv/$2">ttv@$2</a>""",
+        "(^|\\s)steam@(\\d+?)(?=$|\\W)" to """$1<a href="https://steamcommunity.com/profiles/$2">steam@$2</a>""",
+        "(^|\\s)ss@(\\d+?)(?=$|\\W)" to """$1<a href="https://scoresaber.com/u/$2">ss@$2</a>""",
+        "(^|\\s)bl@(\\d+?)(?=$|\\W)" to """$1<a href="https://www.beatleader.xyz/u/$2">bl@$2</a>""",
     ).fold(this) { v, it ->
         v.replace(it.first.toRegex(setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE)), it.second)
     }
