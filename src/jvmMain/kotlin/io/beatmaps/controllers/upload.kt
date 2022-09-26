@@ -265,7 +265,7 @@ fun Route.uploadController() {
                     }
 
                 insertOrUpdate().also {
-                    // How is a file here if it hasn't be uploaded before?
+                    // How is a file here if it hasn't been uploaded before?
                     if (newFile.exists()) {
                         newFile.delete()
                     }
@@ -286,6 +286,9 @@ fun Route.uploadController() {
                     newAudioFile.writeBytes(it.toByteArray())
                 } ?: throw UploadException("Internal error 3")
 
+                // Pretty much guaranteed to be set
+                val sli = extractedInfo.songLengthInfo ?: throw UploadException("Couldn't determine song length")
+
                 val newVersion = Versions.insertAndGetId {
                     it[mapId] = newMap
                     it[key64] = null
@@ -303,7 +306,7 @@ fun Route.uploadController() {
                             it[mapId] = newMap
                             it[versionId] = newVersion
 
-                            sharedInsert(it, diffInfo, bsdiff, extractedInfo.mapInfo)
+                            sharedInsert(it, diffInfo, bsdiff, extractedInfo.mapInfo, sli)
                             it[characteristic] = cLoop.key.enumValue()
                             it[difficulty] = dLoop.key.enumValue()
                         }
