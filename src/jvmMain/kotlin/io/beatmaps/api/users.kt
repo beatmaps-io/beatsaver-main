@@ -775,15 +775,16 @@ fun Route.userRoute() {
             .join(Beatmap, JoinType.LEFT, User.id, Beatmap.uploader) {
                 Beatmap.deletedAt.isNull()
             }
+            .join(Versions, JoinType.LEFT, onColumn = Beatmap.id, otherColumn = Versions.mapId, additionalConstraint = { Versions.state eq EMapState.Published })
             .slice(
                 User.id, User.name, User.uniqueName, User.description, User.avatar, User.discordId, User.hash,
-                Beatmap.id.count(), User.admin, User.curator, User.verifiedMapper
+                Versions.mapId.count(), User.admin, User.curator, User.verifiedMapper
             )
             .selectAll()
             .groupBy(User.id, followsSubquery[Follows.since])
             .orderBy(followsSubquery[Follows.since], SortOrder.DESC)
             .map { row ->
-                UserDetail.from(UserDao.wrapRow(row), stats = UserStats(totalMaps = row[Beatmap.id.count()].toInt()))
+                UserDetail.from(UserDao.wrapRow(row), stats = UserStats(totalMaps = row[Versions.mapId.count()].toInt()))
             }
     }
 
