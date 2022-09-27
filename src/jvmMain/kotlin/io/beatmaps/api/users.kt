@@ -66,8 +66,8 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.min
@@ -494,9 +494,9 @@ fun Route.userRoute() {
         requireAuthorization { user ->
             val req = call.receive<UserFollowRequest>()
 
-            val success = transaction {
+            transaction {
                 if (req.followed) {
-                    Follows.insert { follow ->
+                    Follows.insertIgnore { follow ->
                         follow[userId] = req.userId
                         follow[followerId] = user.userId
                         follow[since] = NowExpression(since.columnType)
@@ -506,9 +506,9 @@ fun Route.userRoute() {
                         (Follows.userId eq req.userId) and (Follows.followerId eq user.userId)
                     }
                 }
-            } > 0
+            }
 
-            call.respond(if (success) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+            call.respond(HttpStatusCode.OK)
         }
     }
 
