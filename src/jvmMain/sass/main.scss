@@ -1348,6 +1348,12 @@ small.alert-count {
   display: none !important;
 }
 
+#count_message {
+  float: right;
+  margin-top: -20px;
+  margin-right: 5px;
+}
+
 @include media-breakpoint-up(xl) {
   .search-results {
     img.mode {
