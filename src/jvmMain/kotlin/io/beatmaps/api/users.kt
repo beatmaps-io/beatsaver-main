@@ -210,7 +210,7 @@ fun Route.userRoute() {
             val success = transaction {
                 try {
                     User.update({ User.id eq sess.userId }) { u ->
-                        u[description] = req.textContent
+                        u[description] = req.textContent.take(500)
                     }
                 } catch (e: ExposedSQLException) {
                     0
