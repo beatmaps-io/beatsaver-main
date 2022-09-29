@@ -202,7 +202,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     }
                     ref = descriptionRef
                 }
-                span("badge badge-" + if (state.description.length > 480) "danger" else "dark")  {
+                span("badge badge-" + if (state.description.length > 480) "danger" else "dark") {
                     attrs.id = "count_message"
                     +"${state.description.length} / 500"
                 }
