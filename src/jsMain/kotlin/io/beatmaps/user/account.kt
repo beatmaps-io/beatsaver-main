@@ -79,7 +79,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             usernameErrors = listOf()
             username = props.userDetail.name
             descriptionErrors = listOf()
-            description = props.userDetail.description
+            description = props.userDetail.description ?: ""
         }
     }
 

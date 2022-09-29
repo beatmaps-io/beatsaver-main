@@ -87,9 +87,9 @@ import java.time.temporal.ChronoUnit
 import java.util.Base64
 import java.util.Date
 
-fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null) =
+fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null, description: Boolean = false) =
     UserDetail(
-        other.id.value, other.uniqueName ?: other.name, other.description, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
+        other.id.value, other.uniqueName ?: other.name, if (description) other.description else null, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
         other.avatar ?: "https://www.gravatar.com/avatar/${other.hash}?d=retro", stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
         admin = other.admin, curator = other.curator, verifiedMapper = other.verifiedMapper
     )
@@ -710,7 +710,7 @@ fun Route.userRoute() {
             val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
 
             call.respond(
-                UserDetail.from(user, stats = statsForUser(user), followData = followData).let { usr ->
+                UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true).let { usr ->
                     if (dualAccount) {
                         usr.copy(type = AccountType.DUAL, email = user.email)
                     } else {
@@ -736,7 +736,7 @@ fun Route.userRoute() {
             } to followData(it.id, call.sessions.get<Session>()?.userId)
         }
 
-        val userDetail = UserDetail.from(user, stats = statsForUser(user), followData = followData).let {
+        val userDetail = UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true).let {
             if (call.sessions.get<Session>()?.isAdmin() == true) {
                 it.copy(uploadLimit = user.uploadLimit)
             } else {
@@ -759,7 +759,7 @@ fun Route.userRoute() {
             }
         }
 
-        call.respond(UserDetail.from(user, stats = statsForUser(user)))
+        call.respond(UserDetail.from(user, stats = statsForUser(user), description = true))
     }
 
     fun getFollowerData(page: Long, joinOn: Column<EntityID<Int>>, condition: SqlExpressionBuilder.() -> Op<Boolean>) = transaction {
@@ -777,7 +777,7 @@ fun Route.userRoute() {
             }
             .join(Versions, JoinType.LEFT, onColumn = Beatmap.id, otherColumn = Versions.mapId, additionalConstraint = { Versions.state eq EMapState.Published })
             .slice(
-                User.id, User.name, User.uniqueName, User.description, User.avatar, User.discordId, User.hash,
+                User.id, User.name, User.uniqueName, User.avatar, User.discordId, User.hash,
                 Versions.mapId.count(), User.admin, User.curator, User.verifiedMapper
             )
             .selectAll()
