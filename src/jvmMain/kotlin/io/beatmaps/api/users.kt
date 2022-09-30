@@ -87,10 +87,17 @@ import java.time.temporal.ChronoUnit
 import java.util.Base64
 import java.util.Date
 
+fun md5(input:String): String {
+    val md = MessageDigest.getInstance("MD5")
+    return BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
+}
+
+fun UserDetail.Companion.getAvatar(other: UserDao) = other.avatar ?: "https://www.gravatar.com/avatar/${other.hash ?: md5(other.uniqueName ?: other.name)}?d=retro"
+
 fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null, description: Boolean = false) =
     UserDetail(
         other.id.value, other.uniqueName ?: other.name, if (description) other.description else null, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
-        other.avatar ?: "https://www.gravatar.com/avatar/${other.hash}?d=retro", stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
+        getAvatar(other), stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
         admin = other.admin, curator = other.curator, verifiedMapper = other.verifiedMapper
     )
 
@@ -542,6 +549,7 @@ fun Route.userRoute() {
                 .slice(
                     Beatmap.uploader,
                     Beatmap.id.count(),
+                    userAlias[User.id],
                     userAlias[User.upvotes],
                     userAlias[User.name],
                     userAlias[User.uniqueName],
@@ -558,19 +566,21 @@ fun Route.userRoute() {
                     Beatmap.uploaded.max()
                 )
                 .selectAll()
-                .groupBy(Beatmap.uploader, userAlias[User.upvotes], userAlias[User.name], userAlias[User.uniqueName], userAlias[User.description], userAlias[User.avatar], userAlias[User.hash], userAlias[User.discordId])
+                .groupBy(Beatmap.uploader, userAlias[User.id], userAlias[User.upvotes], userAlias[User.name], userAlias[User.uniqueName], userAlias[User.description], userAlias[User.avatar], userAlias[User.hash], userAlias[User.discordId])
                 .orderBy(userAlias[User.upvotes], SortOrder.DESC)
 
             query.toList().map {
-                val uniqueName = it[userAlias[User.uniqueName]]
+                val dao = UserDao.wrapRow(it, userAlias)
+
+                val uniqueName = dao.uniqueName
                 UserDetail(
                     it[Beatmap.uploader].value,
-                    uniqueName ?: it[userAlias[User.name]],
-                    it[userAlias[User.description]],
+                    uniqueName ?: dao.name,
+                    dao.description,
                     uniqueName != null,
-                    avatar = it[userAlias[User.avatar]] ?: "https://www.gravatar.com/avatar/${it[userAlias[User.hash]]}?d=retro",
+                    avatar = UserDetail.getAvatar(dao),
                     stats = UserStats(
-                        it[userAlias[User.upvotes]],
+                        dao.upvotes,
                         it[Beatmap.downVotesInt.sum()] ?: 0,
                         it[Beatmap.id.count()].toInt(),
                         it[countWithFilter(Beatmap.ranked)],
@@ -580,7 +590,7 @@ fun Route.userRoute() {
                         it[Beatmap.uploaded.min()]?.toKotlinInstant(),
                         it[Beatmap.uploaded.max()]?.toKotlinInstant()
                     ),
-                    type = if (it[userAlias[User.discordId]] != null) AccountType.DISCORD else AccountType.SIMPLE
+                    type = if (dao.discordId != null) AccountType.DISCORD else AccountType.SIMPLE
                 )
             }
         }
