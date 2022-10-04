@@ -17,9 +17,6 @@ class BeatLeaderScores : RemoteScores {
             ).body<BLPaged>()
         }.let {
             val firstScore = it?.data?.firstOrNull()
-            // null -> false
-            // 0.0 -> false
-            // 1.0 -> true
             LeaderboardData(
                 firstScore?.pp?.let { pp -> pp > 0.0 } == true,
                 firstScore?.leaderboardId,
