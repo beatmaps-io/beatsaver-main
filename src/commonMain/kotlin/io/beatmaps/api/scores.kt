@@ -2,10 +2,20 @@ package io.beatmaps.api
 
 import kotlinx.serialization.Serializable
 
-@Serializable
-data class LeaderboardData(val ranked: Boolean, val uid: Int, val scores: List<LeaderboardScore>, val mods: Boolean, val valid: Boolean) {
+enum class LeaderboardType(val url: String) {
+    ScoreSaber("https://scoresaber.com/leaderboard/"),
+    BeatLeader("https://www.beatleader.xyz/leaderboard/global/");
+
     companion object {
-        val EMPTY = LeaderboardData(false, 0, listOf(), false, valid = false)
+        private val map = LeaderboardType.values().associateBy(LeaderboardType::name)
+        fun fromName(name: String?) = map[name]
+    }
+}
+
+@Serializable
+data class LeaderboardData(val ranked: Boolean, val uid: String? = null, val scores: List<LeaderboardScore>, val mods: Boolean, val valid: Boolean) {
+    companion object {
+        val EMPTY = LeaderboardData(false, null, listOf(), false, valid = false)
     }
 }
 @Serializable

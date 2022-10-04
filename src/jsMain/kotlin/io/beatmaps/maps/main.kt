@@ -1,6 +1,7 @@
 package io.beatmaps.maps
 
 import external.axiosGet
+import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.Config
@@ -9,7 +10,10 @@ import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
 import io.beatmaps.maps.testplay.testplay
 import io.beatmaps.setPageTitle
+import kotlinx.browser.localStorage
 import kotlinx.browser.window
+import org.w3c.dom.get
+import org.w3c.dom.set
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -20,6 +24,8 @@ import react.ref
 import react.router.dom.RouteResultHistory
 import react.setState
 
+const val COMMENTS_ENABLED = false
+
 external interface MapPageProps : RProps {
     var history: RouteResultHistory
     var mapKey: String
@@ -29,6 +35,8 @@ external interface MapPageProps : RProps {
 external interface MapPageState : RState {
     var map: MapDetail?
     var selectedDiff: MapDifficulty?
+    var type: LeaderboardType?
+    var comments: Boolean?
 }
 
 class MapPage : RComponent<MapPageProps, MapPageState>() {
@@ -104,7 +112,29 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                         }
                     }
                     div("row mt-3") {
+                        val leaderBoardType = state.type ?: LeaderboardType.fromName(localStorage["maps.leaderboardType"]) ?: LeaderboardType.ScoreSaber
+                        val showComments = COMMENTS_ENABLED && state.comments ?: (localStorage["maps.showComments"] == "true")
                         div("col-lg-4 text-nowrap") {
+                            mapPageNav {
+                                attrs.map = it
+                                attrs.comments = showComments
+                                attrs.setComments = {
+                                    localStorage["maps.showComments"] = "true"
+                                    setState {
+                                        comments = true
+                                    }
+                                }
+                                attrs.type = leaderBoardType
+                                attrs.setType = { lt ->
+                                    localStorage["maps.leaderboardType"] = lt.name
+                                    localStorage["maps.showComments"] = "false"
+                                    setState {
+                                        type = lt
+                                        comments = false
+                                    }
+                                }
+                            }
+
                             infoTable {
                                 map = it
                                 selected = state.selectedDiff
@@ -115,10 +145,13 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                                 }
                             }
                         }
-                        if (version != null && it.deletedAt == null) {
+                        if (showComments) {
+                            +"Coming soon"
+                        } else if (version != null && it.deletedAt == null) {
                             scoreTable {
                                 mapKey = version.hash
                                 selected = state.selectedDiff
+                                type = leaderBoardType
                             }
                         }
                     }

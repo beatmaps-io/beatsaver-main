@@ -1053,6 +1053,14 @@ li.KeyboardShortcutRow {
     box-shadow: 0 0 0 0.25rem rgba($light, 0.5);
   }
 }
+.nav-btn-group {
+  .btn {
+    flex: 1 1 0;
+    margin-left: 0 !important;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+}
 #beatsage-no + label {
   width: 45%;
 }
