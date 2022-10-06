@@ -2,6 +2,7 @@ package io.beatmaps.maps
 
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDetail
+import io.beatmaps.api.ReviewConstants
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
@@ -65,7 +66,7 @@ val mapPageNav = functionComponent<MapPageNavProps> {
                 +"BeatLeader"
             }
 
-            if (COMMENTS_ENABLED) {
+            if (ReviewConstants.COMMENTS_ENABLED) {
                 input(InputType.radio, name = "nav", classes = "btn-check") {
                     attrs.checked = rvChecked
                     attrs.id = "nav-rv"

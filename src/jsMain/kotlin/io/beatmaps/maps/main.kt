@@ -4,6 +4,7 @@ import external.axiosGet
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
+import io.beatmaps.api.ReviewConstants
 import io.beatmaps.common.Config
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalComponent
@@ -23,8 +24,6 @@ import react.dom.div
 import react.ref
 import react.router.dom.RouteResultHistory
 import react.setState
-
-const val COMMENTS_ENABLED = false
 
 external interface MapPageProps : RProps {
     var history: RouteResultHistory
@@ -113,7 +112,7 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                     }
                     div("row mt-3") {
                         val leaderBoardType = state.type ?: LeaderboardType.fromName(localStorage["maps.leaderboardType"]) ?: LeaderboardType.ScoreSaber
-                        val showComments = COMMENTS_ENABLED && state.comments ?: (localStorage["maps.showComments"] == "true")
+                        val showComments = ReviewConstants.COMMENTS_ENABLED && state.comments ?: (localStorage["maps.showComments"] == "true")
                         div("col-lg-4 text-nowrap") {
                             mapPageNav {
                                 attrs.map = it

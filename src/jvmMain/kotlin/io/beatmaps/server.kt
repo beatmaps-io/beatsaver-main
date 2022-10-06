@@ -10,6 +10,7 @@ import io.beatmaps.api.alertsRoute
 import io.beatmaps.api.mapDetailRoute
 import io.beatmaps.api.modLogRoute
 import io.beatmaps.api.playlistRoute
+import io.beatmaps.api.reviewRoute
 import io.beatmaps.api.scores.ScoreSaberServerException
 import io.beatmaps.api.scoresRoute
 import io.beatmaps.api.searchRoute
@@ -344,6 +345,7 @@ fun Application.beatmapsio() {
         playlistRoute()
         alertsRoute()
         modLogRoute()
+        reviewRoute()
 
         mapController()
         userController()
