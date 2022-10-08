@@ -22,7 +22,6 @@ import react.ReactElement
 import react.dom.div
 import react.dom.i
 import react.dom.img
-import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
 

@@ -17,7 +17,6 @@ import react.dom.a
 import react.dom.div
 import react.dom.i
 import react.dom.img
-import react.dom.jsStyle
 import react.dom.span
 import react.router.dom.routeLink
 
