@@ -124,6 +124,33 @@ table.search-results {
     width: 43px;
   }
 }
+.reviews {
+  .review-card {
+    &.loading {
+      background: #262626;
+      border: 5px solid transparent;
+      border-radius: calc(0.25rem - 1px + 5px);
+      background-clip: padding-box;
+    }
+
+    .card-header a {
+      padding: 0;
+      &:hover {
+        background-color: unset;
+      }
+    }
+
+    time {
+      font-size: 10px;
+    }
+
+    width: 100%;
+    height: 106px;
+    margin-bottom: 10px;
+    transition: height 0.2s;
+    overflow: hidden;
+  }
+}
 .search-results, .playlist {
   .beatmap.loading, .playlist-card.loading {
     background: #262626;

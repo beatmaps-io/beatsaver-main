@@ -197,7 +197,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                 attrs.container = resultsTable
                 attrs.renderElement = InfiniteScrollElementRenderer { it ->
                     beatmapInfo {
-                        map = it
+                        obj = it
                         version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
                         modal = props.modal
                     }

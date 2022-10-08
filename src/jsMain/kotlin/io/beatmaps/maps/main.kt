@@ -9,6 +9,7 @@ import io.beatmaps.common.Config
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
+import io.beatmaps.maps.review.reviewTable
 import io.beatmaps.maps.testplay.testplay
 import io.beatmaps.setPageTitle
 import kotlinx.browser.localStorage
@@ -144,8 +145,11 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                                 }
                             }
                         }
+
                         if (showComments) {
-                            +"Coming soon"
+                            reviewTable {
+                                map = it.id
+                            }
                         } else if (version != null && it.deletedAt == null) {
                             scoreTable {
                                 mapKey = version.hash

@@ -317,7 +317,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                 state.maps?.mapIndexed { idx, it ->
                                     dragable(it.map.id, idx) {
                                         beatmapInfo {
-                                            map = it.map
+                                            obj = it.map
                                             version = it.map.publishedVersion()
                                             modal = modalRef
                                         }
@@ -329,7 +329,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                         div("playlist") {
                             state.maps?.map { it ->
                                 beatmapInfo {
-                                    map = it.map
+                                    obj = it.map
                                     version = it.map.publishedVersion()
                                     modal = modalRef
                                 }

@@ -12,7 +12,8 @@ class ReviewConstants {
 @Serializable
 data class ReviewDetail(
     val id: Int,
-    val creator: UserDetail,
+    val creator: UserDetail? = null,
+    val map: MapDetail? = null,
     val text: String,
     val sentiment: ReviewSentiment,
     val createdAt: Instant,
@@ -21,6 +22,9 @@ data class ReviewDetail(
 ) {
     companion object
 }
+
+@Serializable
+data class ReviewsResponse(val docs: List<ReviewDetail>)
 
 enum class ReviewSentiment {
     POSITIVE, NEGATIVE, NEUTRAL;

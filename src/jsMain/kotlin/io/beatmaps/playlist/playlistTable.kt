@@ -97,7 +97,7 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
                 attrs.container = resultsTable
                 attrs.renderElement = InfiniteScrollElementRenderer { pl ->
                     playlistInfo {
-                        playlist = pl
+                        obj = pl
                     }
                 }
                 attrs.updateScrollIndex = props.updateScrollIndex

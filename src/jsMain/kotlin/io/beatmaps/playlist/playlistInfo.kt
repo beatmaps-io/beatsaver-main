@@ -7,15 +7,12 @@ import io.beatmaps.common.formatTime
 import io.beatmaps.shared.coloredCard
 import io.beatmaps.shared.playlistOwner
 import io.beatmaps.shared.rating
-import kotlinx.browser.window
+import io.beatmaps.util.AutoSizeComponent
+import io.beatmaps.util.AutoSizeComponentProps
+import io.beatmaps.util.AutoSizeComponentState
 import kotlinx.html.title
-import org.w3c.dom.HTMLDivElement
 import react.RBuilder
-import react.RComponent
-import react.RProps
-import react.RState
 import react.ReactElement
-import react.createRef
 import react.dom.a
 import react.dom.div
 import react.dom.i
@@ -23,50 +20,13 @@ import react.dom.img
 import react.dom.jsStyle
 import react.dom.span
 import react.router.dom.routeLink
-import react.setState
 
-external interface PlaylistInfoProps : RProps {
-    var playlist: PlaylistFull?
-}
+external interface PlaylistInfoProps : AutoSizeComponentProps<PlaylistFull>
+external interface PlaylistInfoState : AutoSizeComponentState
 
-external interface PlaylistInfoState : RState {
-    var loaded: Boolean?
-    var height: String
-}
-
-class PlaylistInfo : RComponent<PlaylistInfoProps, PlaylistInfoState>() {
-    private val divRef = createRef<HTMLDivElement>()
-
-    override fun componentDidMount() {
-        setState {
-            height = ""
-            loaded = false
-        }
-    }
-
-    override fun componentDidUpdate(prevProps: PlaylistInfoProps, prevState: PlaylistInfoState, snapshot: Any) {
-        if (state.loaded != true && props.playlist != null) {
-            val innerSize = divRef.current?.scrollHeight?.let { it + 12 } ?: 0
-            setState {
-                loaded = true
-                height = "${innerSize}px"
-            }
-
-            window.setTimeout({
-                setState {
-                    height = "auto"
-                }
-            }, 200)
-        } else if (state.loaded == true && props.playlist == null) {
-            setState {
-                height = ""
-                loaded = false
-            }
-        }
-    }
-
+class PlaylistInfo : AutoSizeComponent<PlaylistFull, PlaylistInfoProps, PlaylistInfoState>(12) {
     override fun RBuilder.render() {
-        props.playlist?.let { pl ->
+        props.obj?.let { pl ->
             val plAttrs = listOfNotNull(
                 if (pl.curator != null) {
                     MapAttr.Curated
@@ -78,9 +38,7 @@ class PlaylistInfo : RComponent<PlaylistInfoProps, PlaylistInfoState>() {
             )
 
             div("playlist-card") {
-                attrs.jsStyle {
-                    height = state.height
-                }
+                style(this)
 
                 coloredCard {
                     attrs.color = plAttrs.joinToString(" ") { it.color }

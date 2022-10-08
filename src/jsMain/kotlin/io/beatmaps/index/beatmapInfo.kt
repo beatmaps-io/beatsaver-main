@@ -13,67 +13,29 @@ import io.beatmaps.shared.links
 import io.beatmaps.shared.mapTitle
 import io.beatmaps.shared.rating
 import io.beatmaps.shared.uploader
-import kotlinx.browser.window
-import org.w3c.dom.HTMLDivElement
+import io.beatmaps.util.AutoSizeComponent
+import io.beatmaps.util.AutoSizeComponentProps
+import io.beatmaps.util.AutoSizeComponentState
 import react.RBuilder
-import react.RComponent
-import react.RProps
 import react.RReadableRef
-import react.RState
 import react.ReactElement
-import react.createRef
 import react.dom.div
 import react.dom.i
 import react.dom.img
 import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
-import react.setState
 
-external interface BeatmapInfoProps : RProps {
-    var map: MapDetail?
+external interface BeatmapInfoProps : AutoSizeComponentProps<MapDetail> {
     var version: MapVersion?
     var modal: RReadableRef<ModalComponent>
 }
 
-external interface BeatMapInfoState : RState {
-    var loaded: Boolean?
-    var height: String
-}
+external interface BeatMapInfoState : AutoSizeComponentState
 
-class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
-    private val divRef = createRef<HTMLDivElement>()
-
-    override fun componentDidMount() {
-        setState {
-            height = ""
-            loaded = false
-        }
-    }
-
-    override fun componentDidUpdate(prevProps: BeatmapInfoProps, prevState: BeatMapInfoState, snapshot: Any) {
-        if (state.loaded != true && props.map != null) {
-            val innerSize = divRef.current?.scrollHeight?.let { it + 30 } ?: 0
-            setState {
-                loaded = true
-                height = "${innerSize}px"
-            }
-
-            window.setTimeout({
-                setState {
-                    height = "auto"
-                }
-            }, 200)
-        } else if (state.loaded == true && props.map == null) {
-            setState {
-                height = ""
-                loaded = false
-            }
-        }
-    }
-
+class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoState>(30) {
     override fun RBuilder.render() {
-        props.map?.let { map ->
+        props.obj?.let { map ->
             val mapAttrs = listOfNotNull(
                 if (map.ranked) MapAttr.Ranked else null,
                 if (map.qualified && !map.ranked) MapAttr.Qualified else null,
@@ -85,9 +47,7 @@ class BeatmapInfo : RComponent<BeatmapInfoProps, BeatMapInfoState>() {
             }
 
             div("beatmap") {
-                attrs.jsStyle {
-                    height = state.height
-                }
+                style(this)
 
                 coloredCard {
                     attrs.color = mapAttrs.joinToString(" ") { it.color }
