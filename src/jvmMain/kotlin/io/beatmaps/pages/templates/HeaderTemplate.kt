@@ -126,10 +126,12 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                     i("fas fa-plus-square")
                                 }
                                 div("dropdown-menu") {
-                                    a("/upload", classes = "dropdown-item auto-router") {
-                                        +"Upload Map"
+                                    if (!s.suspended) {
+                                        a("/upload", classes = "dropdown-item auto-router") {
+                                            +"Upload Map"
+                                        }
+                                        div("dropdown-divider") {}
                                     }
-                                    div("dropdown-divider") {}
                                     a("/playlists/new", classes = "dropdown-item auto-router") {
                                         +"Create Playlist"
                                     }
