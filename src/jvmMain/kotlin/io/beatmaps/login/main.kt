@@ -73,7 +73,8 @@ data class Session(
     val canLink: Boolean = false,
     val alerts: Int? = null,
     val curator: Boolean = false,
-    val oauth2ClientId: String? = null
+    val oauth2ClientId: String? = null,
+    val suspended: Boolean = false
 ) {
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?, curator: Boolean) :
         this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, curator, null)
@@ -233,14 +234,14 @@ fun Route.authRoute() {
         post<Login> {
             call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
                 val user = newPrincipal.user
-                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator))
+                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator, suspended = user.suspendedAt != null))
             }
             call.respondRedirect("/")
         }
         post<Oauth2.Authorize> {
             call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
                 val user = newPrincipal.user
-                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator, it.client_id))
+                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator, it.client_id, user.suspendedAt != null))
 
                 call.respondRedirect(newPrincipal.redirect)
             }

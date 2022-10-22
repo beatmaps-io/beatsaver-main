@@ -6,6 +6,7 @@ import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.common.Config
+import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UploadLimitData
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
@@ -91,7 +92,7 @@ fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: Use
     UserDetail(
         other.id.value, other.uniqueName ?: other.name, other.description, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
         other.avatar ?: "https://www.gravatar.com/avatar/${other.hash}?d=retro", stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
-        admin = other.admin, curator = other.curator, verifiedMapper = other.verifiedMapper
+        admin = other.admin, curator = other.curator, verifiedMapper = other.verifiedMapper, suspendedAt = other.suspendedAt?.toKotlinInstant()
     )
 
 fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false) = from(UserDao.wrapRow(row), roles)
@@ -109,6 +110,9 @@ class UsersApi {
 
     @Location("/admin")
     data class Admin(val api: UsersApi)
+
+    @Location("/suspend")
+    data class Suspend(val api: UsersApi)
 
     @Location("/register")
     data class Register(val api: UsersApi)
@@ -263,6 +267,44 @@ fun Route.userRoute() {
                     }
                 } else {
                     ActionResponse(false, listOf("Upload size not allowed"))
+                }
+            }.let {
+                call.respond(it)
+            }
+        }
+    }
+
+    post<UsersApi.Suspend> {
+        requireAuthorization { sess ->
+            if (!sess.isAdmin()) {
+                ActionResponse(false, listOf("Not an admin"))
+            } else {
+                val req = call.receive<UserSuspendRequest>()
+                transaction {
+                    fun runUpdate() =
+                        User.update({
+                            User.id eq req.userId
+                        }) { u ->
+                            if (req.suspended) u[suspendedAt] = NowExpression(suspendedAt.columnType)
+                            else u[suspendedAt] = null
+                        } > 0
+
+                    runUpdate().also {
+                        if (it) {
+                            ModLog.insert(
+                                sess.userId,
+                                null,
+                                SuspendData(req.suspended, req.reason),
+                                req.userId
+                            )
+                        }
+                    }
+                }.let { success ->
+                    if (success) {
+                        ActionResponse(true, listOf())
+                    } else {
+                        ActionResponse(false, listOf("User not found"))
+                    }
                 }
             }.let {
                 call.respond(it)
@@ -705,7 +747,7 @@ fun Route.userRoute() {
                 )
             }
 
-            call.sessions.set(it.copy(testplay = user.testplay, curator = user.curator, admin = user.admin, alerts = alertCount, uniqueName = user.uniqueName))
+            call.sessions.set(it.copy(testplay = user.testplay, curator = user.curator, admin = user.admin, alerts = alertCount, uniqueName = user.uniqueName, suspended = user.suspendedAt != null))
 
             val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
 
@@ -777,7 +819,7 @@ fun Route.userRoute() {
             }
             .slice(
                 User.id, User.name, User.uniqueName, User.description, User.avatar, User.discordId, User.hash,
-                Beatmap.id.count(), User.admin, User.curator, User.verifiedMapper
+                Beatmap.id.count(), User.admin, User.curator, User.verifiedMapper, User.suspendedAt
             )
             .selectAll()
             .groupBy(User.id, followsSubquery[Follows.since])

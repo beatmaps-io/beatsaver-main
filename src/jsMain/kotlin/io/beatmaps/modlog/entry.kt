@@ -7,6 +7,7 @@ import io.beatmaps.common.DeletedData
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.InfoEditData
+import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.UploadLimitData
 import io.beatmaps.maps.mapTag
@@ -190,6 +191,16 @@ val modLogEntryRenderer = functionComponent<ModLogEntryProps> {
                                 it.action.verifiedMapper?.let { vm ->
                                     br {}
                                     +"Verified Mapper: $vm"
+                                }
+                            }
+                        }
+
+                        is SuspendData -> {
+                            p("card-text") {
+                                +"Suspended: ${it.action.suspended}"
+                                it.action.reason?.let { reason ->
+                                    br {}
+                                    +"Reason: $reason"
                                 }
                             }
                         }
