@@ -8,6 +8,7 @@ import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
 import io.beatmaps.common.Config
+import io.beatmaps.globalContext
 import io.beatmaps.setPageTitle
 import io.beatmaps.upload.UploadRequestConfig
 import kotlinx.browser.window
@@ -117,135 +118,139 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
 
     override fun RBuilder.render() {
         if (state.init == true) {
-            div("card border-dark") {
-                div("card-header") {
-                    +((if (props.id == null) "Create" else "Edit") + " playlist")
-                }
-                form(classes = "card-body") {
-                    attrs.onSubmitFunction = { ev ->
-                        ev.preventDefault()
+            globalContext.Consumer { userData ->
+                div("card border-dark") {
+                    div("card-header") {
+                        +((if (props.id == null) "Create" else "Edit") + " playlist")
+                    }
+                    form(classes = "card-body") {
+                        attrs.onSubmitFunction = { ev ->
+                            ev.preventDefault()
 
-                        setState {
-                            loading = true
-                        }
-
-                        fun sendForm(data: FormData) {
-                            data.append("name", nameRef.current?.value ?: "")
-                            data.append("description", descriptionRef.current?.value ?: "")
-                            data.append("public", (publicRef.current?.checked ?: false).toString())
-                            val file = coverRef.current?.files?.let { it[0] }
-                            if (file != null) {
-                                data.asDynamic().append("file", file) // Kotlin doesn't have an equivalent method to this js
+                            setState {
+                                loading = true
                             }
 
-                            Axios.post<dynamic>(
-                                Config.apibase + "/playlists" + if (props.id == null) "/create" else "/id/${props.id}/edit", data,
-                                UploadRequestConfig { }
-                            ).then { r ->
-                                if (r.status == 200) {
-                                    props.history.push("/playlists/${props.id ?: r.data}")
-                                } else {
-                                    captchaRef.current?.reset()
-                                    val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)
+                            fun sendForm(data: FormData) {
+                                data.append("name", nameRef.current?.value ?: "")
+                                data.append("description", descriptionRef.current?.value ?: "")
+                                data.append("public", (publicRef.current?.checked ?: false).toString())
+                                val file = coverRef.current?.files?.let { it[0] }
+                                if (file != null) {
+                                    data.asDynamic().append("file", file) // Kotlin doesn't have an equivalent method to this js
+                                }
+
+                                Axios.post<dynamic>(
+                                    Config.apibase + "/playlists" + if (props.id == null) "/create" else "/id/${props.id}/edit", data,
+                                    UploadRequestConfig { }
+                                ).then { r ->
+                                    if (r.status == 200) {
+                                        props.history.push("/playlists/${props.id ?: r.data}")
+                                    } else {
+                                        captchaRef.current?.reset()
+                                        val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)
+                                        setState {
+                                            errors = failedResponse.errors
+                                            loading = false
+                                            success = failedResponse.success
+                                        }
+                                    }
+                                }.catch {
                                     setState {
-                                        errors = failedResponse.errors
+                                        errors = listOf("Internal server error")
                                         loading = false
-                                        success = failedResponse.success
+                                        success = false
                                     }
                                 }
-                            }.catch {
-                                setState {
-                                    errors = listOf("Internal server error")
-                                    loading = false
-                                    success = false
-                                }
                             }
-                        }
 
-                        val data = FormData()
-                        captchaRef.current?.executeAsync()?.then {
-                            data.append("recaptcha", it)
-                            sendForm(data)
-                        } ?: run {
-                            sendForm(data)
-                        }
-                    }
-                    div("mb-3") {
-                        label("form-label") {
-                            attrs.htmlFor = "name"
-                            +"Name"
-                        }
-                        input(type = InputType.text, classes = "form-control") {
-                            key = "name"
-                            ref = nameRef
-                            attrs.id = "name"
-                            attrs.placeholder = "Name"
-                            attrs.disabled = state.loading == true
-                            attrs.required = true
-                            attrs.autoFocus = true
-                        }
-                    }
-                    div("mb-3") {
-                        label("form-label") {
-                            attrs.htmlFor = "description"
-                            +"Description"
-                        }
-                        textarea("10", classes = "form-control") {
-                            attrs.id = "description"
-                            attrs.disabled = state.loading == true
-                            ref = descriptionRef
-                        }
-                    }
-                    div("form-check form-switch mb-3") {
-                        input(InputType.checkBox, classes = "form-check-input") {
-                            attrs.id = "public"
-                            attrs.disabled = state.loading == true
-                            ref = publicRef
-                        }
-                        label("form-check-label") {
-                            attrs.htmlFor = "public"
-                            +"Public"
-                        }
-                    }
-                    div("mb-3 w-25") {
-                        label("form-label") {
-                            attrs.htmlFor = "cover"
-                            div("text-truncate") {
-                                +"Cover image"
+                            val data = FormData()
+                            captchaRef.current?.executeAsync()?.then {
+                                data.append("recaptcha", it)
+                                sendForm(data)
+                            } ?: run {
+                                sendForm(data)
                             }
                         }
-                        input(InputType.file, classes = "form-control") {
-                            attrs.onChangeFunction = {
-                                val file = coverRef.current?.files?.let { it[0] }
-                                setState {
-                                    filename = file?.name
+                        div("mb-3") {
+                            label("form-label") {
+                                attrs.htmlFor = "name"
+                                +"Name"
+                            }
+                            input(type = InputType.text, classes = "form-control") {
+                                key = "name"
+                                ref = nameRef
+                                attrs.id = "name"
+                                attrs.placeholder = "Name"
+                                attrs.disabled = state.loading == true
+                                attrs.required = true
+                                attrs.autoFocus = true
+                            }
+                        }
+                        div("mb-3") {
+                            label("form-label") {
+                                attrs.htmlFor = "description"
+                                +"Description"
+                            }
+                            textarea("10", classes = "form-control") {
+                                attrs.id = "description"
+                                attrs.disabled = state.loading == true
+                                ref = descriptionRef
+                            }
+                        }
+                        if (userData?.suspended == false) {
+                            div("form-check form-switch mb-3") {
+                                input(InputType.checkBox, classes = "form-check-input") {
+                                    attrs.id = "public"
+                                    attrs.disabled = state.loading == true
+                                    ref = publicRef
+                                }
+                                label("form-check-label") {
+                                    attrs.htmlFor = "public"
+                                    +"Public"
                                 }
                             }
-                            key = "cover"
-                            attrs.id = "cover"
-                            ref = coverRef
-                            attrs.hidden = state.loading == true
                         }
-                    }
-                    state.errors?.forEach {
-                        div("invalid-feedback") {
-                            attrs.jsStyle {
-                                display = "block"
+                        div("mb-3 w-25") {
+                            label("form-label") {
+                                attrs.htmlFor = "cover"
+                                div("text-truncate") {
+                                    +"Cover image"
+                                }
                             }
-                            +it
+                            input(InputType.file, classes = "form-control") {
+                                attrs.onChangeFunction = {
+                                    val file = coverRef.current?.files?.let { it[0] }
+                                    setState {
+                                        filename = file?.name
+                                    }
+                                }
+                                key = "cover"
+                                attrs.id = "cover"
+                                ref = coverRef
+                                attrs.hidden = state.loading == true
+                            }
                         }
-                    }
-                    div("btn-group w-100 mt-5") {
-                        routeLink(props.id?.let { "/playlists/$it" } ?: "/", className = "btn btn-secondary") {
-                            +"Cancel"
+                        state.errors?.forEach {
+                            div("invalid-feedback") {
+                                attrs.jsStyle {
+                                    display = "block"
+                                }
+                                +it
+                            }
                         }
-                        if (props.id == null) {
-                            // Middle element otherwise the button corners don't round properly
-                            recaptcha(captchaRef)
-                        }
-                        button(classes = "btn btn-success", type = ButtonType.submit) {
-                            attrs.disabled = state.loading == true
-                            +(if (props.id == null) "Create" else "Save")
+                        div("btn-group w-100 mt-5") {
+                            routeLink(props.id?.let { "/playlists/$it" } ?: "/", className = "btn btn-secondary") {
+                                +"Cancel"
+                            }
+                            if (props.id == null) {
+                                // Middle element otherwise the button corners don't round properly
+                                recaptcha(captchaRef)
+                            }
+                            button(classes = "btn btn-success", type = ButtonType.submit) {
+                                attrs.disabled = state.loading == true
+                                +(if (props.id == null) "Create" else "Save")
+                            }
                         }
                     }
                 }

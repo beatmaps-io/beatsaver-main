@@ -18,6 +18,7 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.ModLog
+import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
@@ -297,6 +298,14 @@ fun Route.userRoute() {
                                 SuspendData(req.suspended, req.reason),
                                 req.userId
                             )
+                        }
+
+                        if (req.suspended) {
+                            Playlist.update({
+                                Playlist.owner eq req.userId
+                            }) { p ->
+                                p[public] = false
+                            }
                         }
                     }
                 }.let { success ->
