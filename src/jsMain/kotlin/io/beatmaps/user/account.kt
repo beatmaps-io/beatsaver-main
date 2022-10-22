@@ -38,6 +38,7 @@ import react.dom.hr
 import react.dom.input
 import react.dom.jsStyle
 import react.dom.label
+import react.dom.span
 import react.dom.textarea
 import react.dom.value
 import react.setState
@@ -79,7 +80,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             usernameErrors = listOf()
             username = props.userDetail.name
             descriptionErrors = listOf()
-            description = props.userDetail.description
+            description = props.userDetail.description ?: ""
         }
     }
 
@@ -193,12 +194,17 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     attrs.id = "description"
                     attrs.value = state.description
                     attrs.rows = "5"
+                    attrs.maxLength = "500"
                     attrs.onChangeFunction = {
                         setState {
                             description = descriptionRef.current?.value ?: ""
                         }
                     }
                     ref = descriptionRef
+                }
+                span("badge badge-" + if (state.description.length > 480) "danger" else "dark") {
+                    attrs.id = "count_message"
+                    +"${state.description.length} / 500"
                 }
                 div("d-grid") {
                     button(classes = "btn btn-success", type = ButtonType.submit) {

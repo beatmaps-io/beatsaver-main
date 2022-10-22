@@ -6,11 +6,12 @@ import de.nielsfalk.ktor.swagger.version.shared.Contact
 import de.nielsfalk.ktor.swagger.version.shared.Information
 import de.nielsfalk.ktor.swagger.version.v2.Swagger
 import io.beatmaps.api.FailedUploadResponse
-import io.beatmaps.api.ScoreSaberServerException
 import io.beatmaps.api.alertsRoute
 import io.beatmaps.api.mapDetailRoute
 import io.beatmaps.api.modLogRoute
 import io.beatmaps.api.playlistRoute
+import io.beatmaps.api.reviewRoute
+import io.beatmaps.api.scores.ScoreSaberServerException
 import io.beatmaps.api.scoresRoute
 import io.beatmaps.api.searchRoute
 import io.beatmaps.api.testplayRoute
@@ -344,6 +345,7 @@ fun Application.beatmapsio() {
         playlistRoute()
         alertsRoute()
         modLogRoute()
+        reviewRoute()
 
         mapController()
         userController()

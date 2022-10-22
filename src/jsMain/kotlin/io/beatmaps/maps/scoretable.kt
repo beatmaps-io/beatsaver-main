@@ -6,6 +6,7 @@ import external.generateConfig
 import external.invoke
 import io.beatmaps.api.LeaderboardData
 import io.beatmaps.api.LeaderboardScore
+import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.Config
 import io.beatmaps.common.fixedStr
@@ -33,14 +34,15 @@ import react.setState
 external interface ScoreTableProps : RProps {
     var mapKey: String
     var selected: MapDifficulty?
+    var type: LeaderboardType
 }
 
 external interface ScoreTableState : RState {
     var page: Int
-    var loading: Boolean
+    var loading: Boolean?
     var scores: List<LeaderboardScore>
     var scroll: Int
-    var uid: Int
+    var uid: String?
     var token: CancelTokenSource
 }
 
@@ -51,10 +53,8 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
     override fun componentWillMount() {
         setState {
             page = 1
-            loading = false
             scores = listOf()
             scroll = 0
-            uid = 0
             token = Axios.CancelToken.source()
         }
     }
@@ -66,7 +66,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
     }
 
     override fun componentWillUpdate(nextProps: ScoreTableProps, nextState: ScoreTableState) {
-        if (nextProps.selected != props.selected) {
+        if (nextProps.selected != props.selected || nextProps.type != props.type) {
             state.token.cancel.invoke("Another request started")
 
             nextState.apply {
@@ -74,7 +74,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
                 page = 1
                 loading = false
                 scroll = 0
-                uid = 0
+                uid = null
                 token = Axios.CancelToken.source()
             }
 
@@ -83,7 +83,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
     }
 
     private fun loadNextPage() {
-        if (state.loading)
+        if (state.loading == true)
             return
 
         setState {
@@ -91,7 +91,8 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
         }
 
         Axios.get<LeaderboardData>(
-            "${Config.apibase}/scores/${props.mapKey}/${state.page}?difficulty=${props.selected?.difficulty?.idx ?: 9}&gameMode=${props.selected?.characteristic?.ordinal ?: 0}",
+            "${Config.apibase}/scores/${props.mapKey}/${state.page}?difficulty=${props.selected?.difficulty?.idx ?: 9}" +
+                "&gameMode=${props.selected?.characteristic?.ordinal ?: 0}&type=${props.type}",
             generateConfig<String, LeaderboardData>(state.token.token)
         ).then {
             val newScores = it.data
@@ -127,9 +128,9 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
                         th(scope = ThScope.col) { +"%" }
                         th(scope = ThScope.col) { +"PP" }
                         th(scope = ThScope.col) {
-                            if (state.uid > 0) {
-                                a("https://scoresaber.com/leaderboard/${state.uid}", "_blank") {
-                                    img("ScoreSaber", src = "/static/scoresaber.svg") { }
+                            state.uid?.let { uid ->
+                                a("${props.type.url}$uid", "_blank") {
+                                    img(props.type.name, src = "/static/${props.type.name.lowercase()}.svg") { }
                                 }
                             }
                         }

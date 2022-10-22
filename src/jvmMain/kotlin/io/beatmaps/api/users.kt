@@ -68,8 +68,8 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.min
@@ -89,10 +89,17 @@ import java.time.temporal.ChronoUnit
 import java.util.Base64
 import java.util.Date
 
-fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null) =
+fun md5(input: String): String {
+    val md = MessageDigest.getInstance("MD5")
+    return BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
+}
+
+fun UserDetail.Companion.getAvatar(other: UserDao) = other.avatar ?: "https://www.gravatar.com/avatar/${other.hash ?: md5(other.uniqueName ?: other.name)}?d=retro"
+
+fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null, description: Boolean = false) =
     UserDetail(
-        other.id.value, other.uniqueName ?: other.name, other.description, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
-        other.avatar ?: "https://www.gravatar.com/avatar/${other.hash}?d=retro", stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
+        other.id.value, other.uniqueName ?: other.name, if (description) other.description else null, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
+        getAvatar(other), stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
         admin = other.admin, curator = other.curator, verifiedMapper = other.verifiedMapper, suspendedAt = other.suspendedAt?.toKotlinInstant()
     )
 
@@ -215,7 +222,7 @@ fun Route.userRoute() {
             val success = transaction {
                 try {
                     User.update({ User.id eq sess.userId }) { u ->
-                        u[description] = req.textContent
+                        u[description] = req.textContent.take(500)
                     }
                 } catch (e: ExposedSQLException) {
                     0
@@ -545,9 +552,9 @@ fun Route.userRoute() {
         requireAuthorization { user ->
             val req = call.receive<UserFollowRequest>()
 
-            val success = transaction {
+            transaction {
                 if (req.followed) {
-                    Follows.insert { follow ->
+                    Follows.insertIgnore { follow ->
                         follow[userId] = req.userId
                         follow[followerId] = user.userId
                         follow[since] = NowExpression(since.columnType)
@@ -557,9 +564,9 @@ fun Route.userRoute() {
                         (Follows.userId eq req.userId) and (Follows.followerId eq user.userId)
                     }
                 }
-            } > 0
+            }
 
-            call.respond(if (success) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+            call.respond(HttpStatusCode.OK)
         }
     }
 
@@ -593,6 +600,7 @@ fun Route.userRoute() {
                 .slice(
                     Beatmap.uploader,
                     Beatmap.id.count(),
+                    userAlias[User.id],
                     userAlias[User.upvotes],
                     userAlias[User.name],
                     userAlias[User.uniqueName],
@@ -609,19 +617,21 @@ fun Route.userRoute() {
                     Beatmap.uploaded.max()
                 )
                 .selectAll()
-                .groupBy(Beatmap.uploader, userAlias[User.upvotes], userAlias[User.name], userAlias[User.uniqueName], userAlias[User.description], userAlias[User.avatar], userAlias[User.hash], userAlias[User.discordId])
+                .groupBy(Beatmap.uploader, userAlias[User.id], userAlias[User.upvotes], userAlias[User.name], userAlias[User.uniqueName], userAlias[User.description], userAlias[User.avatar], userAlias[User.hash], userAlias[User.discordId])
                 .orderBy(userAlias[User.upvotes], SortOrder.DESC)
 
             query.toList().map {
-                val uniqueName = it[userAlias[User.uniqueName]]
+                val dao = UserDao.wrapRow(it, userAlias)
+
+                val uniqueName = dao.uniqueName
                 UserDetail(
                     it[Beatmap.uploader].value,
-                    uniqueName ?: it[userAlias[User.name]],
-                    it[userAlias[User.description]],
+                    uniqueName ?: dao.name,
+                    dao.description,
                     uniqueName != null,
-                    avatar = it[userAlias[User.avatar]] ?: "https://www.gravatar.com/avatar/${it[userAlias[User.hash]]}?d=retro",
+                    avatar = UserDetail.getAvatar(dao),
                     stats = UserStats(
-                        it[userAlias[User.upvotes]],
+                        dao.upvotes,
                         it[Beatmap.downVotesInt.sum()] ?: 0,
                         it[Beatmap.id.count()].toInt(),
                         it[countWithFilter(Beatmap.ranked)],
@@ -631,7 +641,7 @@ fun Route.userRoute() {
                         it[Beatmap.uploaded.min()]?.toKotlinInstant(),
                         it[Beatmap.uploaded.max()]?.toKotlinInstant()
                     ),
-                    type = if (it[userAlias[User.discordId]] != null) AccountType.DISCORD else AccountType.SIMPLE
+                    type = if (dao.discordId != null) AccountType.DISCORD else AccountType.SIMPLE
                 )
             }
         }
@@ -761,7 +771,7 @@ fun Route.userRoute() {
             val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
 
             call.respond(
-                UserDetail.from(user, stats = statsForUser(user), followData = followData).let { usr ->
+                UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true).let { usr ->
                     if (dualAccount) {
                         usr.copy(type = AccountType.DUAL, email = user.email)
                     } else {
@@ -787,7 +797,7 @@ fun Route.userRoute() {
             } to followData(it.id, call.sessions.get<Session>()?.userId)
         }
 
-        val userDetail = UserDetail.from(user, stats = statsForUser(user), followData = followData).let {
+        val userDetail = UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true).let {
             if (call.sessions.get<Session>()?.isAdmin() == true) {
                 it.copy(uploadLimit = user.uploadLimit)
             } else {
@@ -810,7 +820,7 @@ fun Route.userRoute() {
             }
         }
 
-        call.respond(UserDetail.from(user, stats = statsForUser(user)))
+        call.respond(UserDetail.from(user, stats = statsForUser(user), description = true))
     }
 
     fun getFollowerData(page: Long, joinOn: Column<EntityID<Int>>, condition: SqlExpressionBuilder.() -> Op<Boolean>) = transaction {
@@ -826,15 +836,16 @@ fun Route.userRoute() {
             .join(Beatmap, JoinType.LEFT, User.id, Beatmap.uploader) {
                 Beatmap.deletedAt.isNull()
             }
+            .join(Versions, JoinType.LEFT, onColumn = Beatmap.id, otherColumn = Versions.mapId, additionalConstraint = { Versions.state eq EMapState.Published })
             .slice(
-                User.id, User.name, User.uniqueName, User.description, User.avatar, User.discordId, User.hash,
-                Beatmap.id.count(), User.admin, User.curator, User.verifiedMapper, User.suspendedAt
+                User.id, User.name, User.uniqueName, User.avatar, User.discordId, User.hash,
+                Versions.mapId.count(), User.admin, User.curator, User.verifiedMapper, User.suspendedAt
             )
             .selectAll()
             .groupBy(User.id, followsSubquery[Follows.since])
             .orderBy(followsSubquery[Follows.since], SortOrder.DESC)
             .map { row ->
-                UserDetail.from(UserDao.wrapRow(row), stats = UserStats(totalMaps = row[Beatmap.id.count()].toInt()))
+                UserDetail.from(UserDao.wrapRow(row), stats = UserStats(totalMaps = row[Versions.mapId.count()].toInt()))
             }
     }
 

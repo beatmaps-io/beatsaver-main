@@ -44,20 +44,8 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
 
     override fun RBuilder.render() {
         val publishedVersion = if (props.map.deletedAt == null) props.map.publishedVersion() else null
-        val mapAttributes = listOfNotNull(
-            if (props.map.ranked) "ranked" else null,
-            if (props.map.qualified && !props.map.ranked) "qualified" else null,
-            if (props.map.curator != null) "curated" else null,
-            if (!props.map.ranked && !props.map.qualified && props.map.curator == null && props.map.uploader.verifiedMapper) "verified" else null
-        )
 
-        val classes = mapAttributes.plus("list-group").joinToString(" ")
-
-        div(classes + if (props.horizontal == true) " list-group-horizontal row m-4" else "") {
-            div("color") {
-                attrs.title = mapAttributes.joinToString(" + ")
-            }
-
+        div("list-group" + if (props.horizontal == true) " list-group-horizontal row m-4" else "") {
             infoItem("Mapper", "${props.map.uploader.name} (${props.map.metadata.levelAuthorName})", "/profile/${props.map.uploader.id}")
             val score = publishedVersion?.sageScore ?: 0
             if (score < -4 || props.map.automapper) {
