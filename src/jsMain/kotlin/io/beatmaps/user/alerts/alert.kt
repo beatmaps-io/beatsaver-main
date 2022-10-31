@@ -119,7 +119,7 @@ class AlertElement : RComponent<AlertProps, AlertState>() {
                     props.markAlert?.let { ma ->
                         div("ms-auto flex-shrink-0") {
                             a("#") {
-                                attrs.title = "Mark as read"
+                                attrs.title = if (props.read != true) "Mark as read" else "Mark as unread"
                                 attrs.onClickFunction = { ev ->
                                     ev.preventDefault()
                                     markAlert(alert, props.read != true, ma)
