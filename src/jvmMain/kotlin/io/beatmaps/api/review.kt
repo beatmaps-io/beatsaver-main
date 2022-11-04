@@ -1,6 +1,7 @@
 package io.beatmaps.api
 
 import io.beatmaps.cdnPrefix
+import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.Review
@@ -14,15 +15,20 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
+import io.ktor.server.locations.put
+import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import kotlinx.datetime.toKotlinInstant
+import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
+import java.time.Instant
 
 fun ReviewDetail.Companion.from(other: ReviewDao, cdnPrefix: String, beatmap: Boolean) =
     ReviewDetail(
@@ -31,7 +37,7 @@ fun ReviewDetail.Companion.from(other: ReviewDao, cdnPrefix: String, beatmap: Bo
         if (beatmap) MapDetail.from(other.map, cdnPrefix) else null,
         other.text,
         ReviewSentiment.fromInt(other.sentiment),
-        other.createdAt.toKotlinInstant(), other.curatedAt?.toKotlinInstant(), other.deletedAt?.toKotlinInstant()
+        other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.curatedAt?.toKotlinInstant(), other.deletedAt?.toKotlinInstant()
     )
 
 fun ReviewDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(ReviewDao.wrapRow(row), cdnPrefix, row.hasValue(Beatmap.id))
@@ -43,6 +49,9 @@ class ReviewApi {
 
     @Location("/user/{id}/{page?}")
     data class ByUser(val id: Int, val page: Long = 0, val api: ReviewApi)
+
+    @Location("/single/{mapId}/{userId}")
+    data class Single(val mapId: String, val userId: Int, val api: ReviewApi)
 }
 
 fun Route.reviewRoute() {
@@ -111,6 +120,67 @@ fun Route.reviewRoute() {
             call.respond(HttpStatusCode.NotFound)
         } else {
             call.respond(ReviewsResponse(reviews))
+        }
+    }
+
+    get<ReviewApi.Single> {
+        val review = transaction {
+            try {
+                Review
+                    .join(User, JoinType.INNER, Review.userId, User.id)
+                    .select {
+                        Review.mapId eq it.mapId.toInt(16) and (Review.userId eq it.userId) and Review.deletedAt.isNull()
+                    }
+                    .singleOrNull()
+                    ?.let { row ->
+                        UserDao.wrapRow(row)
+                        ReviewDetail.from(row, cdnPrefix())
+                    }
+            } catch (_: NumberFormatException) {
+                null
+            }
+        }
+
+        if (review == null) {
+            call.respond(HttpStatusCode.NotFound)
+        } else {
+            call.respond(review)
+        }
+    }
+
+    put<ReviewApi.Single> { single ->
+        requireAuthorization { sess ->
+            val update = call.receive<PutReview>()
+
+            if (single.userId != sess.userId) {
+                call.respond(HttpStatusCode.Forbidden)
+                return@requireAuthorization
+            }
+
+            captchaIfPresent(update.captcha) {
+                val reviewAtNew = Instant.now()
+
+                transaction {
+                    if (update.captcha == null) {
+                        Review.update({ Review.mapId eq single.mapId.toInt(16) and (Review.userId eq sess.userId) and Review.deletedAt.isNull() }) { r ->
+                            r[updatedAt] = reviewAtNew
+                            r[text] = update.text.take(ReviewConstants.MAX_LENGTH)
+                            r[sentiment] = update.sentiment.dbValue
+                        }
+                    } else {
+                        Review.upsert(conflictIndex = Index(listOf(Review.mapId, Review.userId), true, "review_unique")) { r ->
+                            r[mapId] = single.mapId.toInt(16)
+                            r[userId] = sess.userId
+                            r[text] = update.text.take(ReviewConstants.MAX_LENGTH)
+                            r[sentiment] = update.sentiment.dbValue
+                            r[createdAt] = reviewAtNew
+                            r[updatedAt] = reviewAtNew
+                        }
+                    }
+                }
+
+                call.respond(HttpStatusCode.OK)
+            }
         }
     }
 }

@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 class ReviewConstants {
     companion object {
         const val COMMENTS_ENABLED = false
+        const val MAX_LENGTH = 2000
     }
 }
 
@@ -17,6 +18,7 @@ data class ReviewDetail(
     val text: String,
     val sentiment: ReviewSentiment,
     val createdAt: Instant,
+    val updatedAt: Instant,
     val curatedAt: Instant? = null,
     val deletedAt: Instant? = null
 ) {
@@ -26,14 +28,16 @@ data class ReviewDetail(
 @Serializable
 data class ReviewsResponse(val docs: List<ReviewDetail>)
 
-enum class ReviewSentiment {
-    POSITIVE, NEGATIVE, NEUTRAL;
+@Serializable data class PutReview(val text: String, val sentiment: ReviewSentiment, val captcha: String? = null)
+
+enum class ReviewSentiment(val dbValue: Int) {
+    POSITIVE(1), NEGATIVE(-1), NEUTRAL(0);
 
     companion object {
         fun fromInt(x: Int) =
             when (x) {
-                1 -> POSITIVE
-                -1 -> NEGATIVE
+                POSITIVE.dbValue -> POSITIVE
+                NEGATIVE.dbValue -> NEGATIVE
                 else -> NEUTRAL
             }
     }
