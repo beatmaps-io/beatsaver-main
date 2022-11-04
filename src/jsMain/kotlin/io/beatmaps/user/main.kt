@@ -270,8 +270,14 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             div("col-md-8 mb-3 position-relative") {
                 div("card user-info") {
                     div("card-body") {
-                        span {
-                            textToContent((state.userDetail?.description?.take(500) ?: ""))
+                        if (state.userDetail?.suspendedAt != null) {
+                            span("text-danger") {
+                                +"This user has been suspended."
+                            }
+                        } else {
+                            span {
+                                textToContent((state.userDetail?.description?.take(500) ?: ""))
+                            }
                         }
                         state.userDetail?.stats?.let {
                             if (it.totalMaps != 0) {
@@ -414,6 +420,8 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             } else {
                 adminAccount {
                     userDetail = detail
+                    modal = modalRef
+                    onUpdate = { loadState() }
                 }
             }
         }

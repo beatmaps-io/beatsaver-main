@@ -5,7 +5,11 @@ import external.generateConfig
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserAdminRequest
 import io.beatmaps.api.UserDetail
+import io.beatmaps.api.UserSuspendRequest
 import io.beatmaps.common.Config
+import io.beatmaps.index.ModalButton
+import io.beatmaps.index.ModalComponent
+import io.beatmaps.index.ModalData
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
@@ -13,12 +17,15 @@ import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
+import org.w3c.dom.HTMLTextAreaElement
 import react.RBuilder
 import react.RComponent
 import react.RProps
+import react.RReadableRef
 import react.RState
 import react.ReactElement
 import react.createRef
+import react.dom.a
 import react.dom.button
 import react.dom.div
 import react.dom.h5
@@ -27,11 +34,15 @@ import react.dom.input
 import react.dom.jsStyle
 import react.dom.label
 import react.dom.option
+import react.dom.p
 import react.dom.select
+import react.dom.textarea
 import react.setState
 
 external interface AdminAccountComponentProps : RProps {
     var userDetail: UserDetail
+    var modal: RReadableRef<ModalComponent>
+    var onUpdate: () -> Unit
 }
 
 external interface AdminAccountComponentState : RState {
@@ -45,6 +56,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
     private val maxUploadRef = createRef<HTMLSelectElement>()
     private val curatorRef = createRef<HTMLInputElement>()
     private val verifiedMapperRef = createRef<HTMLInputElement>()
+    private val reasonRef = createRef<HTMLTextAreaElement>()
 
     override fun componentWillMount() {
         setState {
@@ -58,6 +70,27 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
     override fun componentDidMount() {
         curatorRef.current?.checked = props.userDetail.curator == true
         verifiedMapperRef.current?.checked = props.userDetail.verifiedMapper
+    }
+
+    private fun suspend(suspended: Boolean, reason: String? = null) {
+        Axios.post<ActionResponse>(
+            "${Config.apibase}/users/suspend",
+            UserSuspendRequest(props.userDetail.id, suspended, reason),
+            generateConfig<UserSuspendRequest, ActionResponse>()
+        ).then {
+            props.onUpdate()
+            setState {
+                errors = it.data.errors
+                loading = false
+                success = it.data.success
+            }
+        }.catch {
+            // Cancelled request
+            setState {
+                loading = false
+                success = false
+            }
+        }
     }
 
     override fun RBuilder.render() {
@@ -133,6 +166,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                                 UserAdminRequest(props.userDetail.id, state.uploadLimit, curatorRef.current?.checked ?: false, verifiedMapperRef.current?.checked ?: false),
                                 generateConfig<UserAdminRequest, ActionResponse>()
                             ).then {
+                                props.onUpdate()
                                 setState {
                                     errors = it.data.errors
                                     loading = false
@@ -148,6 +182,52 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                         }
                         attrs.disabled = state.loading == true
                         +"Save"
+                    }
+                    if (props.userDetail.suspendedAt != null) {
+                        a("#", classes = "btn btn-info mt-2") {
+                            attrs.onClickFunction = { ev ->
+                                ev.preventDefault()
+
+                                setState {
+                                    loading = true
+                                }
+
+                                suspend(false)
+                            }
+                            +"Revoke Suspension"
+                        }
+                    } else {
+                        a("#", classes = "btn btn-danger mt-2") {
+                            attrs.onClickFunction = { ev ->
+                                ev.preventDefault()
+
+                                setState {
+                                    loading = true
+                                }
+
+                                props.modal.current?.showDialog(
+                                    ModalData(
+                                        "Suspend user",
+                                        bodyCallback = {
+                                            p {
+                                                +"Suspend this user so they can't upload maps, publish playlists, or post reviews?"
+                                            }
+                                            p {
+                                                +"Reason for action:"
+                                            }
+                                            textarea(classes = "form-control") {
+                                                ref = reasonRef
+                                            }
+                                        },
+                                        buttons = listOf(
+                                            ModalButton("Suspend", "primary") { suspend(true, reasonRef.current?.value) },
+                                            ModalButton("Cancel")
+                                        )
+                                    )
+                                )
+                            }
+                            +"Suspend"
+                        }
                     }
                 }
             }

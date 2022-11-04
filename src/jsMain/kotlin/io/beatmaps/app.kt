@@ -53,6 +53,7 @@ external interface UserData {
     val userId: Int
     val admin: Boolean
     val curator: Boolean
+    val suspended: Boolean
 }
 
 val globalContext = createContext<UserData?>(null)

@@ -87,7 +87,7 @@ private val uploadLogger = Logger.getLogger("bmio.Upload")
 
 fun Route.uploadController() {
     get<UploadMap> {
-        if (call.sessions.get<Session>() == null) {
+        if (call.sessions.get<Session>().let { it == null || it.suspended }) {
             call.respondRedirect("/")
         } else {
             genericPage()
@@ -140,6 +140,8 @@ fun Route.uploadController() {
 
         // Throw error if user is missing a username
         nameSet || throw UploadException("Please pick a username to complete your account")
+
+        !session.suspended || throw UploadException("Suspended account")
 
         val file = File(
             uploadDir,

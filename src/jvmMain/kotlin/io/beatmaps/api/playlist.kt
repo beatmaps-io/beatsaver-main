@@ -570,7 +570,7 @@ fun Route.playlistRoute() {
                     0,
                     "",
                     multipart.dataMap["name"] ?: "",
-                    multipart.dataMap["public"].toBoolean(),
+                    !sess.suspended && multipart.dataMap["public"].toBoolean(),
                     sess.userId
                 )
 
@@ -634,7 +634,7 @@ fun Route.playlistRoute() {
             val toCreate = PlaylistBasic(
                 0, "",
                 multipart.dataMap["name"] ?: "",
-                multipart.dataMap["public"].toBoolean(),
+                !sess.suspended && multipart.dataMap["public"].toBoolean(),
                 sess.userId
             )
 
