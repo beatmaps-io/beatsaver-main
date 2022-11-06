@@ -17,6 +17,7 @@ external interface AutoSizeComponentProps<T> : RProps {
 external interface AutoSizeComponentState : RState {
     var loaded: Boolean?
     var height: String
+    var margin: String?
 }
 
 abstract class AutoSizeComponent<T, U : AutoSizeComponentProps<T>, V : AutoSizeComponentState>(private val padding: Int) : RComponent<U, V>() {
@@ -25,8 +26,27 @@ abstract class AutoSizeComponent<T, U : AutoSizeComponentProps<T>, V : AutoSizeC
     fun style(builder: RDOMBuilder<*>) {
         builder.attrs.jsStyle {
             height = state.height
+            state.margin?.let {
+                margin = it
+            }
         }
     }
+
+    fun hide() {
+        // Set current size so animation works
+        setState {
+            height = "${autoSize() + 10}px"
+            margin = "0px"
+        }
+
+        window.setTimeout({
+            setState {
+                height = "0px"
+            }
+        }, 10)
+    }
+
+    private fun autoSize() = divRef.current?.scrollHeight?.let { it + padding } ?: 0
 
     override fun componentDidMount() {
         setState {
@@ -37,10 +57,9 @@ abstract class AutoSizeComponent<T, U : AutoSizeComponentProps<T>, V : AutoSizeC
 
     override fun componentDidUpdate(prevProps: U, prevState: V, snapshot: Any) {
         if (state.loaded != true && props.obj != null) {
-            val innerSize = divRef.current?.scrollHeight?.let { it + padding } ?: 0
             setState {
                 loaded = true
-                height = "${innerSize}px"
+                height = "${autoSize()}px"
             }
 
             window.setTimeout({
@@ -52,6 +71,7 @@ abstract class AutoSizeComponent<T, U : AutoSizeComponentProps<T>, V : AutoSizeC
             setState {
                 height = ""
                 loaded = false
+                margin = null
             }
         }
     }

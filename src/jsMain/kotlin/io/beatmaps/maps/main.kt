@@ -149,6 +149,7 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                         if (showComments) {
                             reviewTable {
                                 map = it.id
+                                modal = modalRef
                             }
                         } else if (version != null && it.deletedAt == null) {
                             scoreTable {

@@ -9,6 +9,7 @@ import io.beatmaps.api.ReviewSentiment
 import io.beatmaps.api.ReviewsResponse
 import io.beatmaps.common.Config
 import io.beatmaps.globalContext
+import io.beatmaps.index.ModalComponent
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import kotlinx.html.id
@@ -21,6 +22,7 @@ import org.w3c.dom.HTMLTextAreaElement
 import react.RBuilder
 import react.RComponent
 import react.RProps
+import react.RReadableRef
 import react.RState
 import react.ReactElement
 import react.createRef
@@ -36,6 +38,7 @@ import react.setState
 
 external interface ReviewTableProps : RProps {
     var map: String
+    var modal: RReadableRef<ModalComponent>
 }
 
 external interface ReviewTableState : RState {
@@ -172,6 +175,9 @@ class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
                 attrs.renderElement = InfiniteScrollElementRenderer { rv ->
                     reviewItem {
                         obj = rv
+                        mapId = props.map
+                        userId = rv?.creator?.id ?: -1
+                        modal = props.modal
                     }
                 }
                 attrs.loadPage = loadPage

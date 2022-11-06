@@ -1,12 +1,17 @@
 package io.beatmaps.maps.review
 
 import external.Axios
+import external.axiosDelete
 import external.generateConfig
 import io.beatmaps.api.CurateReview
+import io.beatmaps.api.DeleteReview
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewSentiment
 import io.beatmaps.common.Config
 import io.beatmaps.globalContext
+import io.beatmaps.index.ModalButton
+import io.beatmaps.index.ModalComponent
+import io.beatmaps.index.ModalData
 import io.beatmaps.shared.playlistOwner
 import io.beatmaps.util.AutoSizeComponent
 import io.beatmaps.util.AutoSizeComponentProps
@@ -17,24 +22,48 @@ import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.HTMLTextAreaElement
 import react.RBuilder
+import react.RReadableRef
 import react.ReactElement
+import react.createRef
 import react.dom.a
 import react.dom.div
 import react.dom.i
 import react.dom.input
 import react.dom.label
+import react.dom.p
+import react.dom.textarea
 import react.setState
 
-external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail>
+external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
+    var userId: Int
+    var mapId: String
+    var modal: RReadableRef<ModalComponent>
+}
 external interface ReviewItemState : AutoSizeComponentState {
     var featured: Boolean?
 }
 
 class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemState>(2) {
+    private val reasonRef = createRef<HTMLTextAreaElement>()
+
     private fun curate(id: Int, curated: Boolean = true) {
+        setState {
+            featured = curated
+        }
+
         Axios.post<String>("${Config.apibase}/review/curate", CurateReview(id, curated), generateConfig<CurateReview, String>()).then({
-            // TODO: Update loaded reviews (maybe don't reorder?)
+            // Nothing
+        }) { }
+    }
+
+    private fun delete() {
+        val reason = reasonRef.current?.value ?: ""
+        reasonRef.current?.value = ""
+
+        axiosDelete("${Config.apibase}/review/single/${props.mapId}/${props.userId}", DeleteReview(reason)).then({
+            hide()
         }) { }
     }
 
@@ -75,9 +104,6 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                                 attrs.id = "featured-${rv.id}"
                                                 attrs.onChangeFunction = {
                                                     val current = (it.currentTarget as HTMLInputElement).checked
-                                                    setState {
-                                                        featured = current
-                                                    }
                                                     curate(rv.id, current)
                                                 }
                                             }
@@ -96,16 +122,32 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                         }
                                         i("fas fa-pen text-warning") { }
                                     }
-                                    if (userData?.curator == true) {
-                                        a("#") {
-                                            attrs.title = "Delete"
-                                            attrs.attributes["aria-label"] = "Delete"
-                                            attrs.onClickFunction = {
-                                                it.preventDefault()
-                                                // TODO: Delete review
-                                            }
-                                            i("fas fa-trash text-danger") { }
+                                    a("#") {
+                                        attrs.title = "Delete"
+                                        attrs.attributes["aria-label"] = "Delete"
+                                        attrs.onClickFunction = {
+                                            it.preventDefault()
+                                            props.modal.current?.showDialog(
+                                                ModalData(
+                                                    "Delete review",
+                                                    bodyCallback = {
+                                                        p {
+                                                            +"Are you sure? This action cannot be reversed."
+                                                        }
+                                                        if (userData?.curator == true) {
+                                                            p {
+                                                                +"Reason for action:"
+                                                            }
+                                                            textarea(classes = "form-control") {
+                                                                ref = reasonRef
+                                                            }
+                                                        }
+                                                    },
+                                                    buttons = listOf(ModalButton("YES, DELETE", "danger", ::delete), ModalButton("Cancel"))
+                                                )
+                                            )
                                         }
+                                        i("fas fa-trash text-danger") { }
                                     }
                                 }
                             }

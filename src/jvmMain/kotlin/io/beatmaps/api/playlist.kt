@@ -686,15 +686,15 @@ fun Route.playlistRoute() {
             if (!user.isCurator()) {
                 call.respond(HttpStatusCode.BadRequest)
             } else {
-                val mapUpdate = call.receive<CurateMap>()
+                val playlistUpdate = call.receive<CuratePlaylist>()
 
                 val result = transaction {
                     Playlist.updateReturning(
                         {
-                            (Playlist.id eq mapUpdate.id)
+                            (Playlist.id eq playlistUpdate.id) and (if (playlistUpdate.curated) Playlist.curatedAt.isNull() else Playlist.curatedAt.isNotNull()) and Playlist.deletedAt.isNull()
                         },
                         {
-                            if (mapUpdate.curated) {
+                            if (playlistUpdate.curated) {
                                 it[curatedAt] = NowExpression(curatedAt.columnType)
                                 it[curator] = EntityID(user.userId, User)
                             } else {

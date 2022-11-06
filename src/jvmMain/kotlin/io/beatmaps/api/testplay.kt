@@ -8,6 +8,7 @@ import io.beatmaps.cdnPrefix
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.client
+import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.isFalse
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
@@ -444,21 +445,19 @@ fun Route.testplayRoute() {
             val update = call.receive<FeedbackUpdate>()
 
             captchaIfPresent(update.captcha) {
-                val feedbackAtNew = Instant.now()
-
                 transaction {
                     val subQuery = Versions.slice(Versions.id).select { Versions.hash eq update.hash }
 
                     if (update.captcha == null) {
                         Testplay.update({ (Testplay.versionId eq wrapAsExpressionNotNull<EntityID<Int>>(subQuery)) and (Testplay.userId eq sess.userId) }) { t ->
-                            t[feedbackAt] = feedbackAtNew
+                            t[feedbackAt] = NowExpression(feedbackAt.columnType)
                             t[feedback] = update.feedback
                         }
                     } else {
                         Testplay.upsert(conflictIndex = Index(listOf(Testplay.versionId, Testplay.userId), true, "user_version_unique")) { t ->
                             t[versionId] = wrapAsExpressionNotNull<Int>(subQuery)
                             t[userId] = sess.userId
-                            t[feedbackAt] = feedbackAtNew
+                            t[feedbackAt] = NowExpression(feedbackAt.columnType)
                             t[feedback] = update.feedback
                         }
                     }

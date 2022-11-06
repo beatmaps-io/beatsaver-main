@@ -15,6 +15,7 @@ import io.beatmaps.common.dbo.joinUploader
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
+import io.ktor.server.locations.delete
 import io.ktor.server.locations.get
 import io.ktor.server.locations.post
 import io.ktor.server.locations.put
@@ -30,7 +31,6 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
-import java.time.Instant
 
 fun ReviewDetail.Companion.from(other: ReviewDao, cdnPrefix: String, beatmap: Boolean) =
     ReviewDetail(
@@ -157,18 +157,16 @@ fun Route.reviewRoute() {
         requireAuthorization { sess ->
             val update = call.receive<PutReview>()
 
-            if (single.userId != sess.userId) {
+            if (single.userId != sess.userId && !sess.isCurator()) {
                 call.respond(HttpStatusCode.Forbidden)
                 return@requireAuthorization
             }
 
             captchaIfPresent(update.captcha) {
-                val reviewAtNew = Instant.now()
-
                 transaction {
                     if (update.captcha == null) {
                         Review.update({ Review.mapId eq single.mapId.toInt(16) and (Review.userId eq sess.userId) and Review.deletedAt.isNull() }) { r ->
-                            r[updatedAt] = reviewAtNew
+                            r[updatedAt] = NowExpression(updatedAt.columnType)
                             r[text] = update.text.take(ReviewConstants.MAX_LENGTH)
                             r[sentiment] = update.sentiment.dbValue
                         }
@@ -178,14 +176,34 @@ fun Route.reviewRoute() {
                             r[userId] = sess.userId
                             r[text] = update.text.take(ReviewConstants.MAX_LENGTH)
                             r[sentiment] = update.sentiment.dbValue
-                            r[createdAt] = reviewAtNew
-                            r[updatedAt] = reviewAtNew
+                            r[createdAt] = NowExpression(createdAt.columnType)
+                            r[updatedAt] = NowExpression(updatedAt.columnType)
                         }
                     }
                 }
 
                 call.respond(HttpStatusCode.OK)
             }
+        }
+    }
+
+    delete<ReviewApi.Single> { single ->
+        requireAuthorization { sess ->
+            val deleteReview = call.receive<DeleteReview>()
+
+            if (single.userId != sess.userId && !sess.isCurator()) {
+                call.respond(HttpStatusCode.Forbidden)
+                return@requireAuthorization
+            }
+
+            transaction {
+                Review.update({ Review.mapId eq single.mapId.toInt(16) and (Review.userId eq sess.userId) and Review.deletedAt.isNull() }) { r ->
+                    r[deletedAt] = NowExpression(deletedAt.columnType)
+                }
+            }
+            // TODO: Add to modlog
+
+            call.respond(HttpStatusCode.OK)
         }
     }
 
@@ -199,7 +217,7 @@ fun Route.reviewRoute() {
                 transaction {
                     fun curateReview() =
                         Review.update({
-                            (Review.id eq reviewUpdate.id) and (if (reviewUpdate.curated) Review.curatedAt.isNull() else Review.curatedAt.isNotNull())
+                            (Review.id eq reviewUpdate.id) and (if (reviewUpdate.curated) Review.curatedAt.isNull() else Review.curatedAt.isNotNull()) and Review.deletedAt.isNull()
                         }) {
                             if (reviewUpdate.curated) {
                                 it[curatedAt] = NowExpression(curatedAt.columnType)

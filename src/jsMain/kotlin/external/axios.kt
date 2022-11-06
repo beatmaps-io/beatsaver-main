@@ -131,16 +131,7 @@ external val Axios: AxiosStatic = definedExternally
 inline fun <reified T, reified U> generateConfig(ct: CancelToken? = null) = object : AxiosRequestConfig {
     override var cancelToken = ct
     override var transformRequest: Array<(T, dynamic) -> String> = arrayOf(
-        { data, headers ->
-            when {
-                data === undefined -> ""
-                data is String -> data
-                else -> {
-                    headers["Content-Type"] = "application/json"
-                    json.encodeToString(data)
-                }
-            }
-        }
+        { data, headers -> transformRequest(data, headers) }
     )
     override var transformResponse: (String) -> U = {
         if (it is U) {
@@ -150,5 +141,25 @@ inline fun <reified T, reified U> generateConfig(ct: CancelToken? = null) = obje
         }
     }
 }
+
+inline fun <reified T> axiosDelete(url: String, body: T) = Axios.delete(
+    url,
+    object : AxiosRequestConfig {
+        override var data: Any? = body
+        override var transformRequest: Array<(T, dynamic) -> String> = arrayOf(
+            { data, headers -> transformRequest(data, headers) }
+        )
+    }
+)
+
+inline fun <reified T> transformRequest(data: T, headers: dynamic) =
+    when {
+        data === undefined -> ""
+        data is String -> data
+        else -> {
+            headers["Content-Type"] = "application/json"
+            json.encodeToString(data)
+        }
+    }
 
 inline fun <reified T> axiosGet(url: String) = Axios.get<T>(url, generateConfig<String, T>())
