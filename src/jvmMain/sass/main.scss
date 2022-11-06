@@ -134,7 +134,7 @@ table.search-results {
       background-clip: padding-box;
     }
 
-    .card-header a {
+    .card-header .owner a {
       padding: 0;
       &:hover {
         background-color: unset;

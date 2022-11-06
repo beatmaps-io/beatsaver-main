@@ -1,6 +1,7 @@
 package io.beatmaps.api
 
 import io.beatmaps.cdnPrefix
+import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
@@ -15,6 +16,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
+import io.ktor.server.locations.post
 import io.ktor.server.locations.put
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
@@ -52,6 +54,9 @@ class ReviewApi {
 
     @Location("/single/{mapId}/{userId}")
     data class Single(val mapId: String, val userId: Int, val api: ReviewApi)
+
+    @Location("/curate")
+    data class Curate(val api: ReviewApi)
 }
 
 fun Route.reviewRoute() {
@@ -177,6 +182,33 @@ fun Route.reviewRoute() {
                             r[updatedAt] = reviewAtNew
                         }
                     }
+                }
+
+                call.respond(HttpStatusCode.OK)
+            }
+        }
+    }
+
+    post<ReviewApi.Curate> {
+        requireAuthorization { user ->
+            if (!user.isCurator()) {
+                call.respond(HttpStatusCode.BadRequest)
+            } else {
+                val reviewUpdate = call.receive<CurateReview>()
+
+                transaction {
+                    fun curateReview() =
+                        Review.update({
+                            (Review.id eq reviewUpdate.id) and (if (reviewUpdate.curated) Review.curatedAt.isNull() else Review.curatedAt.isNotNull())
+                        }) {
+                            if (reviewUpdate.curated) {
+                                it[curatedAt] = NowExpression(curatedAt.columnType)
+                            } else {
+                                it[curatedAt] = null
+                            }
+                        }
+
+                    curateReview()
                 }
 
                 call.respond(HttpStatusCode.OK)
