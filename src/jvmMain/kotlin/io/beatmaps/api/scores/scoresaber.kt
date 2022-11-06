@@ -59,7 +59,7 @@ data class SSLeaderboardPlayer(
     val profilePicture: String,
     val country: String,
     val permissions: Int,
-    val badges: String,
+    val badges: String?,
     val role: String?
 )
 
