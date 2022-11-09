@@ -5,6 +5,7 @@ import external.axiosDelete
 import external.generateConfig
 import io.beatmaps.api.CurateReview
 import io.beatmaps.api.DeleteReview
+import io.beatmaps.api.PutReview
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewSentiment
 import io.beatmaps.common.Config
@@ -16,6 +17,7 @@ import io.beatmaps.shared.playlistOwner
 import io.beatmaps.util.AutoSizeComponent
 import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.AutoSizeComponentState
+import io.beatmaps.util.textToContent
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
@@ -40,12 +42,18 @@ external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
     var userId: Int
     var mapId: String
     var modal: RReadableRef<ModalComponent>
+    var setExistingReview: ((Boolean) -> Unit)?
 }
 external interface ReviewItemState : AutoSizeComponentState {
     var featured: Boolean?
+    var text: String?
+
+    var editing: Boolean?
+    var loading: Boolean?
 }
 
 class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemState>(2) {
+    private val textareaRef = createRef<HTMLTextAreaElement>()
     private val reasonRef = createRef<HTMLTextAreaElement>()
 
     private fun curate(id: Int, curated: Boolean = true) {
@@ -58,12 +66,14 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
         }) { }
     }
 
-    private fun delete() {
+    private fun delete(currentUser: Boolean) {
         val reason = reasonRef.current?.value ?: ""
         reasonRef.current?.value = ""
 
         axiosDelete("${Config.apibase}/review/single/${props.mapId}/${props.userId}", DeleteReview(reason)).then({
             hide()
+
+            if (currentUser) props.setExistingReview?.invoke(false)
         }) { }
     }
 
@@ -94,10 +104,10 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                         }
                         globalContext.Consumer { userData ->
                             // Show tools if commenter or curator
-                            if (rv.creator?.id == userData?.userId || userData?.curator == true) {
+                            if (userData != null && (props.userId == userData.userId || userData.curator)) {
                                 div("ms-auto flex-shrink-0") {
                                     // Admin gets to feature and delete
-                                    if (userData?.curator == true) {
+                                    if (userData.curator) {
                                         div("form-check form-switch d-inline-block me-2") {
                                             input(InputType.checkBox, classes = "form-check-input") {
                                                 attrs.checked = featLocal
@@ -118,7 +128,9 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                         attrs.attributes["aria-label"] = "Edit"
                                         attrs.onClickFunction = {
                                             it.preventDefault()
-                                            // TODO: Edit review
+                                            setState {
+                                                editing = editing != true
+                                            }
                                         }
                                         i("fas fa-pen text-warning") { }
                                     }
@@ -134,7 +146,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                                         p {
                                                             +"Are you sure? This action cannot be reversed."
                                                         }
-                                                        if (userData?.curator == true) {
+                                                        if (userData.curator) {
                                                             p {
                                                                 +"Reason for action:"
                                                             }
@@ -143,7 +155,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                                             }
                                                         }
                                                     },
-                                                    buttons = listOf(ModalButton("YES, DELETE", "danger", ::delete), ModalButton("Cancel"))
+                                                    buttons = listOf(ModalButton("YES, DELETE", "danger") { delete(userData.userId == props.userId) }, ModalButton("Cancel"))
                                                 )
                                             )
                                         }
@@ -154,7 +166,39 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                         }
                     }
                     div("card-body") {
-                        +rv.text
+                        if (state.editing == true) {
+                            textarea("10", classes = "form-control m-2") {
+                                attrs.id = "review"
+                                attrs.disabled = state.loading == true
+                                +(state.text ?: rv.text)
+                                ref = textareaRef
+                            }
+
+                            a(classes = "btn btn-primary m-1 float-end") {
+                                attrs.onClickFunction = {
+                                    val newReview = textareaRef.current?.asDynamic().value as String
+
+                                    setState {
+                                        loading = true
+                                    }
+
+                                    Axios.put<String>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, rv.sentiment), generateConfig<PutReview, String>()).then({
+                                        setState {
+                                            loading = false
+                                            editing = false
+                                            text = newReview
+                                        }
+                                    }) {
+                                        setState {
+                                            loading = false
+                                        }
+                                    }
+                                }
+                                +"Save"
+                            }
+                        } else {
+                            textToContent(state.text ?: rv.text)
+                        }
                     }
                 }
             }

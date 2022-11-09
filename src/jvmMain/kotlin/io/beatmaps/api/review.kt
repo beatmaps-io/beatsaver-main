@@ -178,6 +178,7 @@ fun Route.reviewRoute() {
                             r[sentiment] = update.sentiment.dbValue
                             r[createdAt] = NowExpression(createdAt.columnType)
                             r[updatedAt] = NowExpression(updatedAt.columnType)
+                            r[deletedAt] = null
                         }
                     }
                 }
@@ -197,7 +198,7 @@ fun Route.reviewRoute() {
             }
 
             transaction {
-                Review.update({ Review.mapId eq single.mapId.toInt(16) and (Review.userId eq sess.userId) and Review.deletedAt.isNull() }) { r ->
+                Review.update({ Review.mapId eq single.mapId.toInt(16) and (Review.userId eq single.userId) and Review.deletedAt.isNull() }) { r ->
                     r[deletedAt] = NowExpression(deletedAt.columnType)
                 }
             }
