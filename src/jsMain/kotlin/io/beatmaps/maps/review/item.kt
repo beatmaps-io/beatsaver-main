@@ -46,6 +46,8 @@ external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
 }
 external interface ReviewItemState : AutoSizeComponentState {
     var featured: Boolean?
+    var sentiment: ReviewSentiment?
+    var newSentiment: ReviewSentiment?
     var text: String?
 
     var editing: Boolean?
@@ -80,6 +82,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
     override fun RBuilder.render() {
         props.obj?.let { rv ->
             val featLocal = state.featured ?: (rv.curatedAt != null)
+            val sentimentLocal = state.sentiment ?: rv.sentiment
             div("review-card") {
                 style(this)
 
@@ -88,7 +91,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
 
                     div("card-header d-flex") {
                         val commonSentimentStyles = "fs-4 align-middle me-2"
-                        when (rv.sentiment) {
+                        when (sentimentLocal) {
                             ReviewSentiment.POSITIVE ->
                                 i("fas fa-heart text-success $commonSentimentStyles") {}
                             ReviewSentiment.NEGATIVE ->
@@ -167,6 +170,15 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                     }
                     div("card-body") {
                         if (state.editing == true) {
+                            sentimentPicker {
+                                attrs.sentiment = state.newSentiment ?: sentimentLocal
+                                attrs.updateSentiment = {
+                                    setState {
+                                        newSentiment = it
+                                    }
+                                }
+                            }
+
                             textarea("10", classes = "form-control m-2") {
                                 attrs.id = "review"
                                 attrs.disabled = state.loading == true
@@ -177,16 +189,18 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                             a(classes = "btn btn-primary m-1 float-end") {
                                 attrs.onClickFunction = {
                                     val newReview = textareaRef.current?.asDynamic().value as String
+                                    val newSentiment = state.newSentiment ?: sentimentLocal
 
                                     setState {
                                         loading = true
                                     }
 
-                                    Axios.put<String>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, rv.sentiment), generateConfig<PutReview, String>()).then({
+                                    Axios.put<String>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, String>()).then({
                                         setState {
                                             loading = false
                                             editing = false
                                             text = newReview
+                                            sentiment = newSentiment
                                         }
                                     }) {
                                         setState {

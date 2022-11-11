@@ -65,30 +65,13 @@ class NewReview : RComponent<NewReviewProps, NewReviewState>() {
         if (props.existingReview == false) {
             div("card mb-2") {
                 div("card-body") {
-                    val commonClasses = "btn btn-sm me-2 "
-                    button(classes = commonClasses + if (state.sentiment == ReviewSentiment.POSITIVE) "btn-success" else "btn-outline-success") {
-                        attrs.onClickFunction = {
+                    sentimentPicker {
+                        attrs.sentiment = state.sentiment
+                        attrs.updateSentiment = {
                             setState {
-                                sentiment = ReviewSentiment.POSITIVE
+                                sentiment = it
                             }
                         }
-                        +"I recommend this map"
-                    }
-                    button(classes = commonClasses + if (state.sentiment == ReviewSentiment.NEUTRAL) "btn-warning" else "btn-outline-warning") {
-                        attrs.onClickFunction = {
-                            setState {
-                                sentiment = ReviewSentiment.NEUTRAL
-                            }
-                        }
-                        +"I have mixed feelings about this map"
-                    }
-                    button(classes = commonClasses + if (state.sentiment == ReviewSentiment.NEGATIVE) "btn-danger" else "btn-outline-danger") {
-                        attrs.onClickFunction = {
-                            setState {
-                                sentiment = ReviewSentiment.NEGATIVE
-                            }
-                        }
-                        +"I don't recommend this map"
                     }
                     state.sentiment?.let { currentSentiment ->
                         p("my-2") {
