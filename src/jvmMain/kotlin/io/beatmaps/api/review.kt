@@ -1,10 +1,14 @@
 package io.beatmaps.api
 
 import io.beatmaps.cdnPrefix
+import io.beatmaps.common.ReviewDeleteData
+import io.beatmaps.common.ReviewModerationData
+import io.beatmaps.common.UploadLimitData
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
+import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Review
 import io.beatmaps.common.dbo.ReviewDao
 import io.beatmaps.common.dbo.User
@@ -156,6 +160,8 @@ fun Route.reviewRoute() {
     put<ReviewApi.Single> { single ->
         requireAuthorization { sess ->
             val update = call.receive<PutReview>()
+            val updateMapId = single.mapId.toInt(16)
+            val newText = update.text.take(ReviewConstants.MAX_LENGTH)
 
             if (single.userId != sess.userId && !sess.isCurator()) {
                 call.respond(HttpStatusCode.Forbidden)
@@ -164,22 +170,37 @@ fun Route.reviewRoute() {
 
             captchaIfPresent(update.captcha) {
                 transaction {
+                    val oldData = if (single.userId != sess.userId) {
+                        ReviewDao.wrapRow(Review.select { Review.mapId eq updateMapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }.single())
+                    } else {
+                        null
+                    }
+
                     if (update.captcha == null) {
-                        Review.update({ Review.mapId eq single.mapId.toInt(16) and (Review.userId eq sess.userId) and Review.deletedAt.isNull() }) { r ->
+                        Review.update({ Review.mapId eq updateMapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }) { r ->
                             r[updatedAt] = NowExpression(updatedAt.columnType)
-                            r[text] = update.text.take(ReviewConstants.MAX_LENGTH)
+                            r[text] = newText
                             r[sentiment] = update.sentiment.dbValue
                         }
                     } else {
                         Review.upsert(conflictIndex = Index(listOf(Review.mapId, Review.userId), true, "review_unique")) { r ->
-                            r[mapId] = single.mapId.toInt(16)
-                            r[userId] = sess.userId
-                            r[text] = update.text.take(ReviewConstants.MAX_LENGTH)
+                            r[mapId] = updateMapId
+                            r[userId] = single.userId
+                            r[text] = newText
                             r[sentiment] = update.sentiment.dbValue
                             r[createdAt] = NowExpression(createdAt.columnType)
                             r[updatedAt] = NowExpression(updatedAt.columnType)
                             r[deletedAt] = null
                         }
+                    }
+
+                    if (single.userId != sess.userId && oldData != null) {
+                        ModLog.insert(
+                            sess.userId,
+                            updateMapId,
+                            ReviewModerationData(oldData.sentiment, update.sentiment.dbValue, oldData.text, newText),
+                            single.userId
+                        )
                     }
                 }
 
@@ -191,6 +212,7 @@ fun Route.reviewRoute() {
     delete<ReviewApi.Single> { single ->
         requireAuthorization { sess ->
             val deleteReview = call.receive<DeleteReview>()
+            val mapId = single.mapId.toInt(16)
 
             if (single.userId != sess.userId && !sess.isCurator()) {
                 call.respond(HttpStatusCode.Forbidden)
@@ -198,11 +220,19 @@ fun Route.reviewRoute() {
             }
 
             transaction {
-                Review.update({ Review.mapId eq single.mapId.toInt(16) and (Review.userId eq single.userId) and Review.deletedAt.isNull() }) { r ->
+                val result = Review.update({ Review.mapId eq mapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }) { r ->
                     r[deletedAt] = NowExpression(deletedAt.columnType)
+                } > 0
+
+                if (result && single.userId != sess.userId) {
+                    ModLog.insert(
+                        sess.userId,
+                        mapId,
+                        ReviewDeleteData(deleteReview.reason),
+                        single.userId
+                    )
                 }
             }
-            // TODO: Add to modlog
 
             call.respond(HttpStatusCode.OK)
         }

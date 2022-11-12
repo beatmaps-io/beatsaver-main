@@ -2,11 +2,14 @@ package io.beatmaps.modlog
 
 import external.TimeAgo
 import io.beatmaps.api.ModLogEntry
+import io.beatmaps.api.ReviewSentiment
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.InfoEditData
+import io.beatmaps.common.ReviewDeleteData
+import io.beatmaps.common.ReviewModerationData
 import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.UploadLimitData
@@ -78,10 +81,10 @@ val modLogEntryRenderer = functionComponent<ModLogEntryProps> {
         it.entry?.let {
             attrs.onClickFunction = {
                 localRef.current?.let { localRow ->
-                    if (localRow.className.contains("expand")) {
-                        localRow.className = ""
+                    if (localRow.classList.contains("expand")) {
+                        localRow.classList.remove("expand")
                     } else {
-                        localRow.className = "expand"
+                        localRow.classList.add("expand")
                     }
                 }
             }
@@ -113,7 +116,7 @@ val modLogEntryRenderer = functionComponent<ModLogEntryProps> {
         td {
             attrs.colSpan = "5"
             it.entry?.let {
-                div {
+                div("text-wrap") {
                     ref = localRef
 
                     when (it.action) {
@@ -203,6 +206,20 @@ val modLogEntryRenderer = functionComponent<ModLogEntryProps> {
                                     +"Reason: $reason"
                                 }
                             }
+                        }
+
+                        is ReviewDeleteData -> {
+                            p("card-text") {
+                                +"Deleted review"
+                            }
+                            p("card-text") {
+                                +"Reason: ${it.action.reason}"
+                            }
+                        }
+
+                        is ReviewModerationData -> {
+                            diffText("text", it.action.oldText, it.action.newText)
+                            diffText("sentiment", ReviewSentiment.fromInt(it.action.oldSentiment).name, ReviewSentiment.fromInt(it.action.newSentiment).name)
                         }
                     }
                 }
