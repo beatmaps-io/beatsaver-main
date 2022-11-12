@@ -3,7 +3,6 @@ package io.beatmaps.api
 import io.beatmaps.cdnPrefix
 import io.beatmaps.common.ReviewDeleteData
 import io.beatmaps.common.ReviewModerationData
-import io.beatmaps.common.UploadLimitData
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
