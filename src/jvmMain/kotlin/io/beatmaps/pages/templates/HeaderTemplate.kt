@@ -50,10 +50,20 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 }
                             }
                         }
-                        if (s?.admin == true) {
-                            li("nav-item") {
-                                a("/modlog", classes = "nav-link auto-router") {
-                                    +"ModLog"
+                        if (s?.admin == true || s?.curator == true) {
+                            li("nav-item dropdown") {
+                                a("#", classes = "nav-link dropdown-toggle") {
+                                    +"Mod"
+                                }
+                                div("dropdown-menu") {
+                                    if (s.admin) {
+                                        a("/modlog", classes = "dropdown-item auto-router") {
+                                            +"ModLog"
+                                        }
+                                    }
+                                    a("/modreview", classes = "dropdown-item auto-router") {
+                                        +"Reviews"
+                                    }
                                 }
                             }
                         }

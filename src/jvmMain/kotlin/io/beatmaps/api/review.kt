@@ -15,6 +15,7 @@ import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.dbo.reviewerAlias
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -25,6 +26,8 @@ import io.ktor.server.locations.put
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import kotlinx.datetime.Instant
+import kotlinx.datetime.toJavaInstant
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.JoinType
@@ -35,17 +38,17 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-fun ReviewDetail.Companion.from(other: ReviewDao, cdnPrefix: String, beatmap: Boolean) =
+fun ReviewDetail.Companion.from(other: ReviewDao, cdnPrefix: String, beatmap: Boolean, user: Boolean) =
     ReviewDetail(
         other.id.value,
-        if (beatmap) null else UserDetail.from(other.user),
+        if (user) UserDetail.from(other.user) else null,
         if (beatmap) MapDetail.from(other.map, cdnPrefix) else null,
         other.text,
         ReviewSentiment.fromInt(other.sentiment),
         other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.curatedAt?.toKotlinInstant(), other.deletedAt?.toKotlinInstant()
     )
 
-fun ReviewDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(ReviewDao.wrapRow(row), cdnPrefix, row.hasValue(Beatmap.id))
+fun ReviewDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(ReviewDao.wrapRow(row), cdnPrefix, row.hasValue(Beatmap.id), row.hasValue(reviewerAlias[User.id]))
 
 @Location("/api/review")
 class ReviewApi {
@@ -58,6 +61,9 @@ class ReviewApi {
     @Location("/single/{mapId}/{userId}")
     data class Single(val mapId: String, val userId: Int, val api: ReviewApi)
 
+    @Location("/latest/{page}")
+    data class ByDate(val before: Instant? = null, val user: String? = null, val page: Long = 0, val api: ReviewApi)
+
     @Location("/curate")
     data class Curate(val api: ReviewApi)
 }
@@ -65,11 +71,52 @@ class ReviewApi {
 fun Route.reviewRoute() {
     if (!ReviewConstants.COMMENTS_ENABLED) return
 
+    fun reviewToComplex(row: ResultRow, prefix: String): ReviewDetail {
+        if (row.hasValue(reviewerAlias[User.id])) UserDao.wrapRow(row, reviewerAlias)
+        if (row.hasValue(User.id)) UserDao.wrapRow(row)
+        if (row.hasValue(curatorAlias[User.id]) && row[Beatmap.curator] != null) UserDao.wrapRow(row, curatorAlias)
+        if (row.hasValue(Beatmap.id)) BeatmapDao.wrapRow(row)
+
+        return ReviewDetail.from(row, prefix)
+    }
+
+    get<ReviewApi.ByDate> {
+        val reviews = transaction {
+            try {
+                Review
+                    .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
+                    .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                    .joinUploader()
+                    .joinCurator()
+                    .select {
+                        Review.deletedAt.isNull()
+                            .notNull(it.before) { o -> Review.createdAt less o.toJavaInstant() }
+                            .notNull(it.user) { u -> reviewerAlias[User.uniqueName] eq u }
+                    }
+                    .orderBy(
+                        Review.createdAt to SortOrder.DESC
+                    )
+                    .limit(it.page)
+                    .map { row ->
+                        reviewToComplex(row, cdnPrefix())
+                    }
+            } catch (_: NumberFormatException) {
+                null
+            }
+        }
+
+        if (reviews == null) {
+            call.respond(HttpStatusCode.NotFound)
+        } else {
+            call.respond(ReviewsResponse(reviews))
+        }
+    }
+
     get<ReviewApi.ByMap> {
         val reviews = transaction {
             try {
                 Review
-                    .join(User, JoinType.INNER, Review.userId, User.id)
+                    .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
                     .select {
                         Review.mapId eq it.id.toInt(16) and Review.deletedAt.isNull()
                     }
@@ -79,8 +126,7 @@ fun Route.reviewRoute() {
                     )
                     .limit(it.page)
                     .map {
-                        UserDao.wrapRow(it)
-                        ReviewDetail.from(it, cdnPrefix())
+                        reviewToComplex(it, cdnPrefix())
                     }
             } catch (_: NumberFormatException) {
                 null
@@ -109,15 +155,7 @@ fun Route.reviewRoute() {
                     )
                     .limit(it.page)
                     .map { row ->
-                        if (row.hasValue(User.id)) {
-                            UserDao.wrapRow(row)
-                        }
-                        if (row.hasValue(curatorAlias[User.id]) && row[Beatmap.curator] != null) {
-                            UserDao.wrapRow(row, curatorAlias)
-                        }
-
-                        BeatmapDao.wrapRow(row)
-                        ReviewDetail.from(row, cdnPrefix())
+                        reviewToComplex(row, cdnPrefix())
                     }
             } catch (_: NumberFormatException) {
                 null
@@ -141,8 +179,7 @@ fun Route.reviewRoute() {
                     }
                     .singleOrNull()
                     ?.let { row ->
-                        UserDao.wrapRow(row)
-                        ReviewDetail.from(row, cdnPrefix())
+                        reviewToComplex(row, cdnPrefix())
                     }
             } catch (_: NumberFormatException) {
                 null

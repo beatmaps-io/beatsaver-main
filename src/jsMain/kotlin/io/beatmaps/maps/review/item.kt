@@ -26,6 +26,7 @@ import kotlinx.html.title
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 import react.RBuilder
+import react.RProps
 import react.RReadableRef
 import react.ReactElement
 import react.createRef
@@ -36,6 +37,7 @@ import react.dom.input
 import react.dom.label
 import react.dom.p
 import react.dom.textarea
+import react.functionComponent
 import react.setState
 
 external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
@@ -52,6 +54,22 @@ external interface ReviewItemState : AutoSizeComponentState {
 
     var editing: Boolean?
     var loading: Boolean?
+}
+
+external interface SentimentIconProps : RProps {
+    var sentiment: ReviewSentiment
+}
+
+val sentimentIcon = functionComponent<SentimentIconProps> {
+    val commonSentimentStyles = "fs-4 align-middle me-2"
+    when (it.sentiment) {
+        ReviewSentiment.POSITIVE ->
+            i("fas fa-heart text-success $commonSentimentStyles") {}
+        ReviewSentiment.NEGATIVE ->
+            i("fas fa-heart-broken text-danger $commonSentimentStyles") {}
+        ReviewSentiment.NEUTRAL ->
+            i("far fa-heart text-warning $commonSentimentStyles") {}
+    }
 }
 
 class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemState>(2) {
@@ -90,14 +108,8 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                     ref = divRef
 
                     div("card-header d-flex") {
-                        val commonSentimentStyles = "fs-4 align-middle me-2"
-                        when (sentimentLocal) {
-                            ReviewSentiment.POSITIVE ->
-                                i("fas fa-heart text-success $commonSentimentStyles") {}
-                            ReviewSentiment.NEGATIVE ->
-                                i("fas fa-heart-broken text-danger $commonSentimentStyles") {}
-                            ReviewSentiment.NEUTRAL ->
-                                i("far fa-heart text-warning $commonSentimentStyles") {}
+                        sentimentIcon {
+                            attrs.sentiment = sentimentLocal
                         }
                         div(classes = "owner") {
                             playlistOwner {
