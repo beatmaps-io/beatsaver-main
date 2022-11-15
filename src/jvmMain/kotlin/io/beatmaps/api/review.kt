@@ -204,13 +204,19 @@ fun Route.reviewRoute() {
             val updateMapId = single.mapId.toInt(16)
             val newText = update.text.take(ReviewConstants.MAX_LENGTH)
 
-            if (single.userId != sess.userId && !sess.isCurator()) {
-                call.respond(HttpStatusCode.Forbidden)
-                return@requireAuthorization
-            }
-
             captchaIfPresent(update.captcha) {
                 val success = newSuspendedTransaction {
+                    if (single.userId != sess.userId && !sess.isCurator()) {
+                        call.respond(HttpStatusCode.Forbidden)
+                        return@newSuspendedTransaction false
+                    }
+
+                    if (sess.suspended || UserDao[sess.userId].suspendedAt != null) {
+                        // User is suspended
+                        call.respond(ActionResponse(false, listOf("Suspended account")))
+                        return@newSuspendedTransaction false
+                    }
+
                     val oldData = if (single.userId != sess.userId) {
                         ReviewDao.wrapRow(Review.select { Review.mapId eq updateMapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }.single())
                     } else {
@@ -224,11 +230,9 @@ fun Route.reviewRoute() {
                             r[sentiment] = update.sentiment.dbValue
                         }
                     } else {
-                        val beatmapData = BeatmapDao.wrapRow(Beatmap.select { Beatmap.id eq updateMapId }.single())
-
-                        if (beatmapData.uploaderId.value == single.userId) {
+                        if (BeatmapDao[updateMapId].uploaderId.value == single.userId) {
                             // Can't review your own map
-                            call.respond(HttpStatusCode.BadRequest)
+                            call.respond(ActionResponse(false, listOf("Own map")))
                             return@newSuspendedTransaction false
                         }
 
@@ -257,7 +261,7 @@ fun Route.reviewRoute() {
 
                 if (success) {
                     call.pub("beatmaps", "reviews.$updateMapId.updated", null, ReviewUpdateInfo(updateMapId, single.userId))
-                    call.respond(HttpStatusCode.OK)
+                    call.respond(ActionResponse(true, listOf()))
                 }
             }
         }

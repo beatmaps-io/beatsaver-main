@@ -60,7 +60,7 @@ class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
             key = "resultsTable"
 
             globalContext.Consumer { userData ->
-                if (userData != null && userData.userId != props.mapUploaderId) {
+                if (userData != null && !userData.suspended && userData.userId != props.mapUploaderId) {
                     newReview {
                         mapId = props.map
                         userId = userData.userId

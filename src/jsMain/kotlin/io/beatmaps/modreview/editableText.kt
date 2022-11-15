@@ -18,7 +18,7 @@ external interface EditableTextProps : RProps {
     var text: String?
     var renderText: Boolean?
     var editing: Boolean?
-    var saveText: ((String) -> Promise<*>)?
+    var saveText: ((String) -> Promise<Boolean>)?
     var stopEditing: (() -> Unit)?
 }
 
@@ -45,6 +45,8 @@ val editableText = functionComponent<EditableTextProps> { props ->
 
                 props.saveText?.invoke(newReview)?.then({
                     setLoading(false)
+
+                    if (!it) return@then
                     props.stopEditing?.invoke()
                     setText(newReview)
                 }) {

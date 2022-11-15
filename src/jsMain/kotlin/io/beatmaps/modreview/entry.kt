@@ -4,6 +4,7 @@ import external.Axios
 import external.TimeAgo
 import external.axiosDelete
 import external.generateConfig
+import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.DeleteReview
 import io.beatmaps.api.PutReview
 import io.beatmaps.api.ReviewDetail
@@ -159,8 +160,10 @@ val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
                                 attrs.editing = editing
                                 attrs.saveText = { newReview ->
                                     val newSentimentLocal = newSentiment ?: sentiment ?: review.sentiment
-                                    Axios.put<String>("${Config.apibase}/review/single/${review.map?.id}/${review.creator?.id}", PutReview(newReview, newSentimentLocal), generateConfig<PutReview, String>()).then {
-                                        setSentiment(newSentimentLocal)
+                                    Axios.put<ActionResponse>("${Config.apibase}/review/single/${review.map?.id}/${review.creator?.id}", PutReview(newReview, newSentimentLocal), generateConfig<PutReview, ActionResponse>()).then { r ->
+                                        if (r.data.success) setSentiment(newSentimentLocal)
+
+                                        r.data.success
                                     }
                                 }
                                 attrs.stopEditing = {

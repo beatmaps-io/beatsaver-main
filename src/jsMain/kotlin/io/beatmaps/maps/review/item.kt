@@ -3,6 +3,7 @@ package io.beatmaps.maps.review
 import external.Axios
 import external.axiosDelete
 import external.generateConfig
+import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.CurateReview
 import io.beatmaps.api.DeleteReview
 import io.beatmaps.api.PutReview
@@ -118,7 +119,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                         }
                         globalContext.Consumer { userData ->
                             // Show tools if commenter or curator
-                            if (userData != null && (props.userId == userData.userId || userData.curator)) {
+                            if (userData != null && !userData.suspended && (props.userId == userData.userId || userData.curator)) {
                                 div("ms-auto flex-shrink-0") {
                                     // Admin gets to feature and delete
                                     if (userData.curator) {
@@ -196,10 +197,14 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                             attrs.renderText = true
                             attrs.saveText = { newReview ->
                                 val newSentiment = state.newSentiment ?: sentimentLocal
-                                Axios.put<String>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, String>()).then {
+                                Axios.put<ActionResponse>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->
+                                    if (!r.data.success) return@then false
+
                                     setState {
                                         sentiment = newSentiment
                                     }
+
+                                    true
                                 }
                             }
                             attrs.stopEditing = {

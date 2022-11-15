@@ -5,6 +5,7 @@ import external.ReCAPTCHA
 import external.axiosGet
 import external.generateConfig
 import external.recaptcha
+import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.PutReview
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewSentiment
@@ -133,14 +134,19 @@ class NewReview : RComponent<NewReviewProps, NewReviewState>() {
                                 }
 
                                 captchaRef.current?.executeAsync()?.then { captcha ->
-                                    Axios.put<String>(
+                                    Axios.put<ActionResponse>(
                                         "${Config.apibase}/review/single/${props.mapId}/${props.userId}",
                                         PutReview(newReview, currentSentiment, captcha),
-                                        generateConfig<PutReview, String>()
+                                        generateConfig<PutReview, ActionResponse>()
                                     )
-                                }?.then({
+                                }?.then({ r ->
                                     setState {
                                         loading = false
+                                    }
+
+                                    if (!r.data.success) return@then
+
+                                    setState {
                                         sentiment = null
                                         reviewLength = null
                                     }

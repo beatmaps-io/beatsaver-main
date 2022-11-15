@@ -133,15 +133,15 @@ fun Route.uploadController() {
 
     post<UploadMap> {
         val session = call.sessions.get<Session>() ?: throw UploadException("Not logged in")
-        val (currentLimit, nameSet) = transaction {
+        val (currentLimit, nameSet, suspended) = transaction {
             val user = UserDao[session.userId]
-            user.uploadLimit to (user.active && user.uniqueName != null)
+            Triple(user.uploadLimit, (user.active && user.uniqueName != null), user.suspendedAt != null)
         }
 
         // Throw error if user is missing a username
         nameSet || throw UploadException("Please pick a username to complete your account")
 
-        !session.suspended || throw UploadException("Suspended account")
+        !suspended || throw UploadException("Suspended account")
 
         val file = File(
             uploadDir,
