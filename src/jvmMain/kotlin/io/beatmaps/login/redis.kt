@@ -42,7 +42,7 @@ fun Application.installSessions() {
 }
 
 class RedisSessionStorage(private val redisClient: RedisCoroutinesCommands<String, String>) : SessionStorage {
-    override suspend fun read(id: String) = redisClient.get(id) ?: ""
+    override suspend fun read(id: String) = redisClient.get(id) ?: throw NoSuchElementException()
 
     override suspend fun write(id: String, value: String) {
         redisClient.set(id, value, SetArgs.Builder.ex(7 * 24 * 3600L))
