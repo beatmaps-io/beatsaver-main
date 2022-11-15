@@ -1,6 +1,7 @@
 package io.beatmaps.modreview
 
 import external.Axios
+import external.AxiosPromise
 import external.TimeAgo
 import external.axiosDelete
 import external.generateConfig
@@ -48,6 +49,7 @@ val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
     val (editing, setEditing) = useState(false)
     val (sentiment, setSentiment) = useState(null as ReviewSentiment?)
     val (newSentiment, setNewSentiment) = useState(null as ReviewSentiment?)
+    val (text, setText) = useState(null as String?)
 
     fun delete() {
         val reason = reasonRef.current?.value ?: ""
@@ -156,17 +158,18 @@ val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
                                 }
                             }
                             editableText {
-                                attrs.text = review.text
-                                attrs.editing = editing
-                                attrs.saveText = { newReview ->
+                                this.text = text ?: review.text
+                                this.editing = editing
+                                saveText = { newReview ->
                                     val newSentimentLocal = newSentiment ?: sentiment ?: review.sentiment
                                     Axios.put<ActionResponse>("${Config.apibase}/review/single/${review.map?.id}/${review.creator?.id}", PutReview(newReview, newSentimentLocal), generateConfig<PutReview, ActionResponse>()).then { r ->
                                         if (r.data.success) setSentiment(newSentimentLocal)
 
-                                        r.data.success
+                                        r
                                     }
                                 }
-                                attrs.stopEditing = {
+                                stopEditing = { t ->
+                                    setText(t)
                                     setEditing(false)
                                 }
                             }
