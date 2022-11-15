@@ -5,6 +5,7 @@ import io.beatmaps.common.CountryInfo
 import io.beatmaps.common.DownloadInfo
 import io.beatmaps.common.DownloadType
 import io.beatmaps.common.consumeAck
+import io.beatmaps.common.db.countAsInt
 import io.beatmaps.common.db.incrementBy
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Review
@@ -16,10 +17,13 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
+import org.jetbrains.exposed.sql.ExpressionWithColumnType
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
+import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.avg
-import org.jetbrains.exposed.sql.count
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.decimalLiteral
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.math.BigDecimal
@@ -77,21 +81,18 @@ fun Application.downloadsThread() {
             }
         }
 
+        val avg = Review.sentiment.avg(3).alias("sentiment")
+        val count = countAsInt(Review.sentiment).alias("reviews")
+        val reviewSubquery = Review.slice(avg, count, Review.mapId).selectAll().groupBy(Review.mapId).alias("r")
+
         consumeAck("bm.sentiment", ReviewUpdateInfo::class) { _, r ->
             transaction {
-                val avg = Review.sentiment.avg(3)
-                val count = Review.sentiment.count()
-
-                val stats = Review.slice(avg, count).select {
-                    Review.mapId eq r.mapId
-                }.singleOrNull().let {
-                    (it?.getOrNull(count)?.toInt() ?: 0) to (it?.getOrNull(avg) ?: BigDecimal.ZERO)
-                }
-
-                Beatmap.update({ Beatmap.id eq r.mapId }) {
-                    it[sentiment] = stats.second
-                    it[reviews] = stats.first
-                }
+                Beatmap
+                    .join(reviewSubquery, JoinType.INNER, Beatmap.id, reviewSubquery[Review.mapId])
+                    .update({ Beatmap.id eq r.mapId }) {
+                        it[Beatmap.sentiment] = coalesce(reviewSubquery[avg] as ExpressionWithColumnType<BigDecimal?>, decimalLiteral(BigDecimal.ZERO))
+                        it[Beatmap.reviews] = reviewSubquery[count]
+                    }
             }
         }
     }

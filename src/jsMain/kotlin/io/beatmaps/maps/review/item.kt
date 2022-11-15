@@ -13,11 +13,11 @@ import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
+import io.beatmaps.modreview.editableText
 import io.beatmaps.shared.playlistOwner
 import io.beatmaps.util.AutoSizeComponent
 import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.AutoSizeComponentState
-import io.beatmaps.util.textToContent
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
@@ -73,7 +73,6 @@ val sentimentIcon = functionComponent<SentimentIconProps> {
 }
 
 class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemState>(2) {
-    private val textareaRef = createRef<HTMLTextAreaElement>()
     private val reasonRef = createRef<HTMLTextAreaElement>()
 
     private fun curate(id: Int, curated: Boolean = true) {
@@ -190,40 +189,24 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                     }
                                 }
                             }
-
-                            textarea("10", classes = "form-control m-2") {
-                                attrs.id = "review"
-                                attrs.disabled = state.loading == true
-                                +(state.text ?: rv.text)
-                                ref = textareaRef
-                            }
-
-                            a(classes = "btn btn-primary m-1 float-end") {
-                                attrs.onClickFunction = {
-                                    val newReview = textareaRef.current?.asDynamic().value as String
-                                    val newSentiment = state.newSentiment ?: sentimentLocal
-
+                        }
+                        editableText {
+                            attrs.text = rv.text
+                            attrs.editing = state.editing
+                            attrs.renderText = true
+                            attrs.saveText = { newReview ->
+                                val newSentiment = state.newSentiment ?: sentimentLocal
+                                Axios.put<String>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, String>()).then {
                                     setState {
-                                        loading = true
-                                    }
-
-                                    Axios.put<String>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, String>()).then({
-                                        setState {
-                                            loading = false
-                                            editing = false
-                                            text = newReview
-                                            sentiment = newSentiment
-                                        }
-                                    }) {
-                                        setState {
-                                            loading = false
-                                        }
+                                        sentiment = newSentiment
                                     }
                                 }
-                                +"Save"
                             }
-                        } else {
-                            textToContent(state.text ?: rv.text)
+                            attrs.stopEditing = {
+                                setState {
+                                    editing = false
+                                }
+                            }
                         }
                     }
                 }

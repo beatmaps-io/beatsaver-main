@@ -14,7 +14,8 @@ external interface SentimentProps : RProps {
 val sentimentPicker = functionComponent<SentimentProps> {
     fun renderSentiment(sentiment: ReviewSentiment, text: String, color: String) =
         button(classes = "btn btn-sm me-2 " + if (it.sentiment == sentiment) "btn-$color" else "btn-outline-$color") {
-            attrs.onClickFunction = { _ ->
+            attrs.onClickFunction = { e ->
+                e.preventDefault()
                 it.updateSentiment?.invoke(sentiment)
             }
             +text

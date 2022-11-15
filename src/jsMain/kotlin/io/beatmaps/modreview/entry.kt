@@ -1,15 +1,20 @@
 package io.beatmaps.modreview
 
+import external.Axios
 import external.TimeAgo
 import external.axiosDelete
+import external.generateConfig
 import io.beatmaps.api.DeleteReview
+import io.beatmaps.api.PutReview
 import io.beatmaps.api.ReviewDetail
+import io.beatmaps.api.ReviewSentiment
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.maps.review.sentimentIcon
+import io.beatmaps.maps.review.sentimentPicker
 import io.beatmaps.shared.mapTitle
 import kotlinx.html.TD
 import kotlinx.html.js.onClickFunction
@@ -39,6 +44,9 @@ external interface ModReviewEntryProps : RProps {
 val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
     val reasonRef = createRef<HTMLTextAreaElement>()
     val (hidden, setHidden) = useState(false)
+    val (editing, setEditing) = useState(false)
+    val (sentiment, setSentiment) = useState(null as ReviewSentiment?)
+    val (newSentiment, setNewSentiment) = useState(null as ReviewSentiment?)
 
     fun delete() {
         val reason = reasonRef.current?.value ?: ""
@@ -79,9 +87,9 @@ val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
                 }
                 td {
                     sentimentIcon {
-                        attrs.sentiment = review.sentiment
+                        attrs.sentiment = sentiment ?: review.sentiment
                     }
-                    +review.sentiment.name
+                    +(sentiment ?: review.sentiment).name
                 }
                 td {
                     TimeAgo.default {
@@ -89,30 +97,41 @@ val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
                     }
                 }
                 td("action-cell") {
-                    a("#") {
-                        attrs.title = "Delete"
-                        attrs.attributes["aria-label"] = "Delete"
-                        attrs.onClickFunction = { e ->
-                            e.preventDefault()
-                            it.modal.current?.showDialog(
-                                ModalData(
-                                    "Delete review",
-                                    bodyCallback = {
-                                        p {
-                                            +"Are you sure? This action cannot be reversed."
-                                        }
-                                        p {
-                                            +"Reason for action:"
-                                        }
-                                        textarea(classes = "form-control") {
-                                            ref = reasonRef
-                                        }
-                                    },
-                                    buttons = listOf(ModalButton("YES, DELETE", "danger", ::delete), ModalButton("Cancel"))
-                                )
-                            )
+                    div("d-flex") {
+                        a("#") {
+                            attrs.title = "Edit"
+                            attrs.attributes["aria-label"] = "Edit"
+                            attrs.onClickFunction = { e ->
+                                e.preventDefault()
+                                setEditing(!editing)
+                            }
+                            i("fas fa-pen text-warning") { }
                         }
-                        i("fas fa-trash text-danger") { }
+                        a("#") {
+                            attrs.title = "Delete"
+                            attrs.attributes["aria-label"] = "Delete"
+                            attrs.onClickFunction = { e ->
+                                e.preventDefault()
+                                it.modal.current?.showDialog(
+                                    ModalData(
+                                        "Delete review",
+                                        bodyCallback = {
+                                            p {
+                                                +"Are you sure? This action cannot be reversed."
+                                            }
+                                            p {
+                                                +"Reason for action:"
+                                            }
+                                            textarea(classes = "form-control") {
+                                                ref = reasonRef
+                                            }
+                                        },
+                                        buttons = listOf(ModalButton("YES, DELETE", "danger", ::delete), ModalButton("Cancel"))
+                                    )
+                                )
+                            }
+                            i("fas fa-trash text-danger") { }
+                        }
                     }
                 }
             } ?: run {
@@ -124,10 +143,30 @@ val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
         tr("hiddenRow") {
             td {
                 attrs.colSpan = "5"
-                it.entry?.let {
+                it.entry?.let { review ->
                     div("text-wrap expand") {
                         p("card-text") {
-                            +it.text
+                            if (editing) {
+                                sentimentPicker {
+                                    attrs.sentiment = newSentiment ?: sentiment ?: review.sentiment
+                                    attrs.updateSentiment = { newSentiment ->
+                                        setNewSentiment(newSentiment)
+                                    }
+                                }
+                            }
+                            editableText {
+                                attrs.text = review.text
+                                attrs.editing = editing
+                                attrs.saveText = { newReview ->
+                                    val newSentimentLocal = newSentiment ?: sentiment ?: review.sentiment
+                                    Axios.put<String>("${Config.apibase}/review/single/${review.map?.id}/${review.creator?.id}", PutReview(newReview, newSentimentLocal), generateConfig<PutReview, String>()).then {
+                                        setSentiment(newSentimentLocal)
+                                    }
+                                }
+                                attrs.stopEditing = {
+                                    setEditing(false)
+                                }
+                            }
                         }
                     }
                 }

@@ -526,6 +526,10 @@ table.modreview {
     width: 40px;
   }
 }
+.action-cell {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
 .card-header, .action-cell {
   a {
     padding: 14px 10px;
