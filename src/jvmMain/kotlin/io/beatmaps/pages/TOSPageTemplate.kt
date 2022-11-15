@@ -85,6 +85,26 @@ class TOSPageTemplate : Template<BODY> {
                         +"Do not distribute viruses, malware, or phish others by any means such as exploits or links."
                     }
                 }
+                p {
+                    +"The following apply to the content in user-generated reviews:"
+                }
+                ul {
+                    li {
+                        +"Reviews exist to help other users find content that might appeal to them. They should be well-intentioned and constructive with the recommendation selection generally matching the body of the review."
+                    }
+                    li {
+                        +"Do not leave reviews on your own maps (self-reviews) or maps that you have not played"
+                    }
+                    li {
+                        +"Do not use personal attacks and/or harassment against mappers or other community members. Remember that there are real people on the other side of the maps on this site."
+                    }
+                    li {
+                        +"Reviews that only reference the song audio and not the map (\"This song is terrible\", \"I hate anime\"), where it's clear that the reviewer was attempting a map that was too difficult for their skill level, or that only include random characters/keyboard spam will be removed."
+                    }
+                }
+                p {
+                    +"Reviews that violate these terms will be edited or removed and repeated violation may result in the suspension of review privileges or account access."
+                }
                 hr("my-4") {}
                 h3 {
                     +"Limits"
@@ -177,7 +197,7 @@ class TOSPageTemplate : Template<BODY> {
                 }
                 hr("my-4") {}
                 p("text-muted") {
-                    +"This document was last updated on January 19, 2022"
+                    +"This document was last updated on November 15, 2022"
                 }
             }
         }
