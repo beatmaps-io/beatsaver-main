@@ -1,11 +1,13 @@
 package io.beatmaps
 
+import io.beatmaps.api.ReviewUpdateInfo
 import io.beatmaps.common.CountryInfo
 import io.beatmaps.common.DownloadInfo
 import io.beatmaps.common.DownloadType
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.incrementBy
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Review
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.getCountry
 import io.beatmaps.common.rabbitOptional
@@ -15,8 +17,12 @@ import io.ktor.server.application.call
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.avg
+import org.jetbrains.exposed.sql.count
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import java.math.BigDecimal
 
 val cdnPrefixes = mapOf(
     "AF" to "",
@@ -68,6 +74,24 @@ fun Application.downloadsThread() {
                 }
             } catch (_: NumberFormatException) {
                 // Ignore
+            }
+        }
+
+        consumeAck("bm.sentiment", ReviewUpdateInfo::class) { _, r ->
+            transaction {
+                val avg = Review.sentiment.avg(3)
+                val count = Review.sentiment.count()
+
+                val stats = Review.slice(avg, count).select {
+                    Review.mapId eq r.mapId
+                }.singleOrNull().let {
+                    (it?.getOrNull(count)?.toInt() ?: 0) to (it?.getOrNull(avg) ?: BigDecimal.ZERO)
+                }
+
+                Beatmap.update({ Beatmap.id eq r.mapId }) {
+                    it[sentiment] = stats.second
+                    it[reviews] = stats.first
+                }
             }
         }
     }

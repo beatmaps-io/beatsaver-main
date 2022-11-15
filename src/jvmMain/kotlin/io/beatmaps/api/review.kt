@@ -4,6 +4,7 @@ import io.beatmaps.cdnPrefix
 import io.beatmaps.common.ReviewDeleteData
 import io.beatmaps.common.ReviewModerationData
 import io.beatmaps.common.db.NowExpression
+import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
@@ -16,6 +17,7 @@ import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.reviewerAlias
+import io.beatmaps.common.pub
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -35,6 +37,7 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
@@ -67,6 +70,8 @@ class ReviewApi {
     @Location("/curate")
     data class Curate(val api: ReviewApi)
 }
+
+data class ReviewUpdateInfo(val mapId: Int, val userId: Int)
 
 fun Route.reviewRoute() {
     if (!ReviewConstants.COMMENTS_ENABLED) return
@@ -205,7 +210,7 @@ fun Route.reviewRoute() {
             }
 
             captchaIfPresent(update.captcha) {
-                transaction {
+                val success = newSuspendedTransaction {
                     val oldData = if (single.userId != sess.userId) {
                         ReviewDao.wrapRow(Review.select { Review.mapId eq updateMapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }.single())
                     } else {
@@ -219,6 +224,14 @@ fun Route.reviewRoute() {
                             r[sentiment] = update.sentiment.dbValue
                         }
                     } else {
+                        val beatmapData = BeatmapDao.wrapRow(Beatmap.select { Beatmap.id eq updateMapId }.single())
+
+                        if (beatmapData.uploaderId.value == single.userId) {
+                            // Can't review your own map
+                            call.respond(HttpStatusCode.BadRequest)
+                            return@newSuspendedTransaction false
+                        }
+
                         Review.upsert(conflictIndex = Index(listOf(Review.mapId, Review.userId), true, "review_unique")) { r ->
                             r[mapId] = updateMapId
                             r[userId] = single.userId
@@ -238,9 +251,14 @@ fun Route.reviewRoute() {
                             single.userId
                         )
                     }
+
+                    true
                 }
 
-                call.respond(HttpStatusCode.OK)
+                if (success) {
+                    call.pub("beatmaps", "reviews.$updateMapId.updated", null, ReviewUpdateInfo(updateMapId, single.userId))
+                    call.respond(HttpStatusCode.OK)
+                }
             }
         }
     }
@@ -270,6 +288,7 @@ fun Route.reviewRoute() {
                 }
             }
 
+            call.pub("beatmaps", "reviews.$mapId.deleted", null, ReviewUpdateInfo(mapId, single.userId))
             call.respond(HttpStatusCode.OK)
         }
     }
@@ -283,17 +302,21 @@ fun Route.reviewRoute() {
 
                 transaction {
                     fun curateReview() =
-                        Review.update({
+                        Review.updateReturning({
                             (Review.id eq reviewUpdate.id) and (if (reviewUpdate.curated) Review.curatedAt.isNull() else Review.curatedAt.isNotNull()) and Review.deletedAt.isNull()
-                        }) {
+                        }, {
                             if (reviewUpdate.curated) {
                                 it[curatedAt] = NowExpression(curatedAt.columnType)
                             } else {
                                 it[curatedAt] = null
                             }
-                        }
+                        }, Review.mapId, Review.userId)
+                            ?.singleOrNull()
+                            ?.let { ReviewUpdateInfo(it[Review.mapId].value, it[Review.userId].value) }
 
                     curateReview()
+                }?.let {
+                    call.pub("beatmaps", "reviews.${it.mapId}.curated", null, it)
                 }
 
                 call.respond(HttpStatusCode.OK)

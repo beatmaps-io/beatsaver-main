@@ -78,7 +78,24 @@ fun MapParitySummary.Companion.from(other: DifficultyDao) = MapParitySummary(oth
 
 fun MapDetailMetadata.Companion.from(other: BeatmapDao) = MapDetailMetadata(other.bpm, other.duration, other.songName, other.songSubName, other.songAuthorName, other.levelAuthorName)
 
-fun MapStats.Companion.from(other: BeatmapDao) = MapStats(other.plays, 0, other.upVotesInt, other.downVotesInt, other.score.toFloat())
+fun MapStats.Companion.from(other: BeatmapDao) = MapStats(
+    other.plays,
+    0,
+    other.upVotesInt,
+    other.downVotesInt,
+    other.score.toFloat(),
+    other.reviews,
+    other.sentiment.toDouble().let { sentiment ->
+        when {
+            other.reviews < ReviewConstants.MINIMUM_REVIEWS -> UserSentiment.PENDING
+            sentiment < -0.6 -> UserSentiment.VERY_NEGATIVE
+            sentiment < -0.2 -> UserSentiment.MOSTLY_NEGATIVE
+            sentiment > 0.6 -> UserSentiment.VERY_POSITIVE
+            sentiment > 0.2 -> UserSentiment.MOSTLY_POSITIVE
+            else -> UserSentiment.MIXED
+        }
+    }
+)
 
 fun MapTestplay.Companion.from(other: TestplayDao) = MapTestplay(other.feedback, other.video, UserDetail.from(other.user), other.createdAt.toKotlinInstant(), other.feedbackAt?.toKotlinInstant())
 

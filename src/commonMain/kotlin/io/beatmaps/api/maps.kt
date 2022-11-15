@@ -51,6 +51,15 @@ data class MapDetail(
     companion object
 }
 
+enum class UserSentiment(val human: String, val color: String) {
+    PENDING("Pending", "light"),
+    VERY_NEGATIVE("Very Negative", "danger"),
+    MOSTLY_NEGATIVE("Mostly Negative", "warning"),
+    MIXED("Mixed", "light"),
+    MOSTLY_POSITIVE("Mostly Positive", "info"),
+    VERY_POSITIVE("Very Positive", "success");
+}
+
 @Serializable
 data class MapVersion(
     val hash: String,
@@ -104,7 +113,15 @@ data class MapDetailMetadata(
 ) { companion object }
 
 @Serializable
-data class MapStats(val plays: Int, val downloads: Int, val upvotes: Int, val downvotes: Int, val score: Float) {
+data class MapStats(
+    val plays: Int = 0,
+    val downloads: Int = 0,
+    val upvotes: Int,
+    val downvotes: Int,
+    val score: Float,
+    val reviews: Int = 0,
+    val sentiment: UserSentiment = UserSentiment.PENDING
+) {
     val scoreOneDP by lazy { (score * 100).fixed(1) }
     companion object
 }

@@ -3,6 +3,7 @@ package io.beatmaps.maps
 import external.TimeAgo
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
+import io.beatmaps.api.ReviewConstants
 import io.beatmaps.common.fixedStr
 import io.beatmaps.common.formatTime
 import kotlinx.html.DIV
@@ -92,6 +93,18 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
 
             props.map.stats.let { stats ->
                 infoItem("Rating", "${stats.upvotes} / ${stats.downvotes} (${stats.scoreOneDP}%)")
+
+                if (ReviewConstants.COMMENTS_ENABLED) {
+                    div(itemClasses) {
+                        +"Reviews"
+                        span("text-truncate ms-4") {
+                            span("text-" + stats.sentiment.color) {
+                                +stats.sentiment.human
+                            }
+                            +" (${stats.reviews} reviews)"
+                        }
+                    }
+                }
             }
         }
 

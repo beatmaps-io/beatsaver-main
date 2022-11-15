@@ -317,6 +317,10 @@ fun Application.beatmapsio() {
 
                 queueDeclare("email", true, false, false, genericQueueConfig)
                 queueBind("email", "beatmaps", "email")
+
+                queueDeclare("bm.sentiment", true, false, false, genericQueueConfig)
+                queueBind("bm.sentiment", "beatmaps", "reviews.*.updated")
+                queueBind("bm.sentiment", "beatmaps", "reviews.*.deleted")
             }
         }
         downloadsThread()

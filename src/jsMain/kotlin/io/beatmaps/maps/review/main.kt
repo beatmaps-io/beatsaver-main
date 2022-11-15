@@ -23,6 +23,7 @@ import react.setState
 
 external interface ReviewTableProps : RProps {
     var map: String
+    var mapUploaderId: Int
     var modal: RReadableRef<ModalComponent>
 }
 
@@ -59,7 +60,7 @@ class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
             key = "resultsTable"
 
             globalContext.Consumer { userData ->
-                if (userData != null) {
+                if (userData != null && userData.userId != props.mapUploaderId) {
                     newReview {
                         mapId = props.map
                         userId = userData.userId
