@@ -8,6 +8,7 @@ import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
 import io.beatmaps.common.Config
+import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.globalContext
 import io.beatmaps.setPageTitle
 import io.beatmaps.upload.UploadRequestConfig
@@ -101,7 +102,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                 {
                     nameRef.current?.value = it.data.playlist?.name ?: ""
                     descriptionRef.current?.value = it.data.playlist?.description ?: ""
-                    publicRef.current?.checked = it.data.playlist?.public ?: false
+                    publicRef.current?.checked = it.data.playlist?.type == EPlaylistType.Public
                 },
                 1
             )
@@ -134,7 +135,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                             fun sendForm(data: FormData) {
                                 data.append("name", nameRef.current?.value ?: "")
                                 data.append("description", descriptionRef.current?.value ?: "")
-                                data.append("public", (publicRef.current?.checked ?: false).toString())
+                                data.append("type", if (publicRef.current?.checked == true) "Public" else "Private")
                                 val file = coverRef.current?.files?.let { it[0] }
                                 if (file != null) {
                                     data.asDynamic().append("file", file) // Kotlin doesn't have an equivalent method to this js

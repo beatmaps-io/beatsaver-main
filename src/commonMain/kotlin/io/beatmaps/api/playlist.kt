@@ -1,6 +1,7 @@
 package io.beatmaps.api
 
 import io.beatmaps.common.Config
+import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.fixed
 import kotlinx.datetime.Instant
 import kotlinx.serialization.EncodeDefault
@@ -23,7 +24,7 @@ data class PlaylistSong(val key: String?, val hash: String, val songName: String
 data class PlaylistCustomData(val syncURL: String)
 
 @Serializable
-data class PlaylistBasic(val playlistId: Int, val playlistImage: String, val name: String, val public: Boolean, val owner: Int)
+data class PlaylistBasic(val playlistId: Int, val playlistImage: String, val name: String, val type: EPlaylistType, val owner: Int)
 
 @Serializable
 data class PlaylistFull(
@@ -31,7 +32,6 @@ data class PlaylistFull(
     val name: String,
     val description: String,
     val playlistImage: String,
-    val public: Boolean,
     val owner: UserDetail,
     val curator: UserDetail? = null,
     val stats: PlaylistStats? = null,
@@ -39,7 +39,8 @@ data class PlaylistFull(
     val updatedAt: Instant,
     val songsChangedAt: Instant?,
     val curatedAt: Instant? = null,
-    val deletedAt: Instant? = null
+    val deletedAt: Instant? = null,
+    val type: EPlaylistType
 ) {
     @EncodeDefault(EncodeDefault.Mode.ALWAYS)
     val downloadURL = "${Config.apiremotebase}/playlists/id/$playlistId/download"

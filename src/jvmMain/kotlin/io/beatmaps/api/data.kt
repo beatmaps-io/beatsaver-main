@@ -105,18 +105,19 @@ fun Query.limit(page: Long?, pageSize: Int = 20): Query {
 }
 
 fun PlaylistBasic.Companion.from(other: PlaylistDao, cdnPrefix: String) = PlaylistBasic(
-    other.id.value, "${cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.name, other.public, other.ownerId.value
+    other.id.value, "${cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.name, other.type, other.ownerId.value
 )
 fun PlaylistBasic.Companion.from(row: ResultRow, cdnPrefix: String) = from(PlaylistDao.wrapRow(row), cdnPrefix)
 
 fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPrefix: String) = PlaylistFull(
-    other.id.value, other.name, other.description, "${cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.public, UserDetail.from(other.owner),
+    other.id.value, other.name, other.description, "${cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", UserDetail.from(other.owner),
     other.curator?.let {
         UserDetail.from(it)
     },
     stats,
     other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.songsChangedAt?.toKotlinInstant(), other.curatedAt?.toKotlinInstant(),
-    other.deletedAt?.toKotlinInstant()
+    other.deletedAt?.toKotlinInstant(),
+    other.type
 )
 fun PlaylistFull.Companion.from(row: ResultRow, cdnPrefix: String) = from(
     PlaylistDao.wrapRow(row),
