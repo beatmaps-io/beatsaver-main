@@ -14,6 +14,7 @@ import io.ktor.server.locations.get
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import kotlinx.html.meta
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -61,7 +62,7 @@ fun Route.mapController() {
                 try {
                     transaction {
                         Beatmap.joinVersions().select {
-                            Beatmap.id eq it.key.toInt(16)
+                            Beatmap.id eq it.key.toInt(16) and Beatmap.deletedAt.isNull()
                         }.limit(1).complexToBeatmap().map { MapDetail.from(it, cdnPrefix()) }.firstOrNull()
                     }?.let {
                         meta("og:type", "website")
