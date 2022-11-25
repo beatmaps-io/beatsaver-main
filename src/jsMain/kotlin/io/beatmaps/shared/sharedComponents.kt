@@ -197,12 +197,13 @@ val uploader = functionComponent<UploaderProps> { props ->
 
 external interface PlaylistOwnerProps : RProps {
     var owner: UserDetail?
+    var tab: String?
     var time: Instant
 }
 
 val playlistOwner = functionComponent<PlaylistOwnerProps> { props ->
     props.owner?.let { owner ->
-        routeLink("/profile/${owner.id}#playlists") {
+        routeLink("/profile/${owner.id}" + (props.tab?.let { "#$it" } ?: "")) {
             +owner.name
         }
         +" - "
