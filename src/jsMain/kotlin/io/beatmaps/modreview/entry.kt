@@ -1,7 +1,6 @@
 package io.beatmaps.modreview
 
 import external.Axios
-import external.AxiosPromise
 import external.TimeAgo
 import external.axiosDelete
 import external.generateConfig
