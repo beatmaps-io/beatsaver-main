@@ -161,7 +161,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                                         p {
                                                             +"Are you sure? This action cannot be reversed."
                                                         }
-                                                        if (userData.curator) {
+                                                        if (props.userId != userData.userId) {
                                                             p {
                                                                 +"Reason for action:"
                                                             }
