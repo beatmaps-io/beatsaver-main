@@ -11,10 +11,8 @@ import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewSentiment
 import io.beatmaps.common.Config
 import kotlinx.html.id
-import kotlinx.html.js.onBlurFunction
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
-import kotlinx.html.js.onFocusFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.RBuilder
 import react.RComponent
@@ -78,14 +76,9 @@ class NewReview : RComponent<NewReviewProps, NewReviewState>() {
                         p("my-2") {
                             +"Comment (required)"
                             button(classes = "ms-1 fas fa-info-circle fa-button") {
-                                attrs.onFocusFunction = {
+                                attrs.onClickFunction = {
                                     setState {
-                                        focusIcon = true
-                                    }
-                                }
-                                attrs.onBlurFunction = {
-                                    setState {
-                                        focusIcon = false
+                                        focusIcon = focusIcon != true
                                     }
                                 }
                             }
@@ -93,7 +86,7 @@ class NewReview : RComponent<NewReviewProps, NewReviewState>() {
                                 div("tooltip-arrow") {}
                                 div("tooltip-inner") {
                                     +"Learn how to provide constructive map feedback "
-                                    a("#") {
+                                    a("https://bsaber.com/how-to-write-constructive-map-reviews/", target = "_blank") {
                                         +"here"
                                     }
                                     +"."
