@@ -48,7 +48,7 @@ data class BLLeaderboardScore(
     val fullCombo: Boolean,
     val platform: String,
     val hmd: Int,
-    val leaderboardId: String,
+    val leaderboardId: String?,
     val timeset: String,
     val timepost: Long,
     val replaysWatched: Int,
