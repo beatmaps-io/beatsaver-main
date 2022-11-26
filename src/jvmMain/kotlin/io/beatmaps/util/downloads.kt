@@ -23,7 +23,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.decimalLiteral
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.math.BigDecimal
@@ -83,7 +83,7 @@ fun Application.downloadsThread() {
 
         val avg = Review.sentiment.avg(3).alias("sentiment")
         val count = countAsInt(Review.sentiment).alias("reviews")
-        val reviewSubquery = Review.slice(avg, count, Review.mapId).selectAll().groupBy(Review.mapId).alias("r")
+        val reviewSubquery = Review.slice(avg, count, Review.mapId).select { Review.deletedAt.isNull() }.groupBy(Review.mapId).alias("r")
 
         consumeAck("bm.sentiment", ReviewUpdateInfo::class) { _, r ->
             transaction {
