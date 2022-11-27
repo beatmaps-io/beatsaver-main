@@ -52,6 +52,8 @@ class CDN {
     data class BSAudio(val file: String, val api: CDN)
     @Location("/playlist/{file}.jpg")
     data class PlaylistCover(val file: String, val api: CDN)
+    @Location("/playlist/{size}/{file}.jpg")
+    data class PlaylistCoverSized(val file: String, val size: Int, val api: CDN)
 }
 
 fun Route.cdnRoute() {
@@ -160,6 +162,14 @@ fun Route.cdnRoute() {
         }
 
         returnFile(File(localPlaylistCoverFolder(), "${it.file}.jpg"))
+    }
+
+    get<CDN.PlaylistCoverSized> {
+        if (it.file.isBlank()) {
+            throw NotFoundException()
+        }
+
+        returnFile(File(localPlaylistCoverFolder(it.size), "${it.file}.jpg"))
     }
 
     get<CDN.Avatar> {

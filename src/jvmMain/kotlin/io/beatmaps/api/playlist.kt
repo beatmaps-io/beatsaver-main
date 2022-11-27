@@ -13,6 +13,7 @@ import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.cleanString
+import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.greaterEq
@@ -89,6 +90,7 @@ import org.valiktor.constraints.NotBlank
 import org.valiktor.functions.hasSize
 import org.valiktor.functions.isNotBlank
 import org.valiktor.validate
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
 import java.util.Base64
@@ -602,10 +604,9 @@ fun Route.playlistRoute() {
         }
     }
 
+    val thumbnailSizes = listOf(256, 512)
     post<PlaylistApi.Edit> { req ->
         requireAuthorization { sess ->
-            val localFile = File(localPlaylistCoverFolder(), "${req.id}.jpg")
-
             val query = (Playlist.id eq req.id and Playlist.deletedAt.isNull()).let { q ->
                 if (sess.isAdmin()) {
                     q
@@ -620,12 +621,19 @@ fun Route.playlistRoute() {
 
             val multipart = call.handleMultipart { part ->
                 part.streamProvider().use { its ->
-                    Thumbnails
-                        .of(its)
-                        .size(256, 256)
-                        .outputFormat("JPEG")
-                        .outputQuality(0.8)
-                        .toFile(localFile)
+                    val tmp = ByteArrayOutputStream()
+                    its.copyToSuspend(tmp, sizeLimit = 10 * 1024 * 1024)
+
+                    thumbnailSizes.forEach { s ->
+                        val localFile = File(localPlaylistCoverFolder(s), "${req.id}.jpg")
+
+                        Thumbnails
+                            .of(tmp.toByteArray().inputStream())
+                            .size(s, s)
+                            .outputFormat("JPEG")
+                            .outputQuality(0.8)
+                            .toFile(localFile)
+                    }
                 }
             }
 

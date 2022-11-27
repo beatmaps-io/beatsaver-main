@@ -31,6 +31,7 @@ data class PlaylistFull(
     val name: String,
     val description: String,
     val playlistImage: String,
+    val playlistImage512: String? = null,
     val public: Boolean,
     val owner: UserDetail,
     val curator: UserDetail? = null,

@@ -239,7 +239,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                             }
                         }
                         div("list-group") {
-                            img("Cover", pl.playlistImage) { }
+                            img("Cover", pl.playlistImage512 ?: pl.playlistImage) { }
                             div("list-group-item d-flex justify-content-between") {
                                 +"Name"
                                 span("text-truncate ms-4") {

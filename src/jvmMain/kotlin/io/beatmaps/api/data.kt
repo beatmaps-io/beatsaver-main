@@ -10,6 +10,7 @@ import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.TestplayDao
 import io.beatmaps.common.dbo.VersionsDao
+import io.beatmaps.common.localPlaylistCoverFolder
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.Query
@@ -17,6 +18,7 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.countDistinct
 import org.jetbrains.exposed.sql.sum
+import java.io.File
 import java.lang.Integer.toHexString
 import kotlin.time.Duration.Companion.seconds
 
@@ -110,7 +112,9 @@ fun PlaylistBasic.Companion.from(other: PlaylistDao, cdnPrefix: String) = Playli
 fun PlaylistBasic.Companion.from(row: ResultRow, cdnPrefix: String) = from(PlaylistDao.wrapRow(row), cdnPrefix)
 
 fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPrefix: String) = PlaylistFull(
-    other.id.value, other.name, other.description, "${cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.public, UserDetail.from(other.owner),
+    other.id.value, other.name, other.description, "${cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg",
+    if (File(localPlaylistCoverFolder(512), "${other.id.value}.jpg").exists()) "${cdnBase(cdnPrefix)}/playlist/512/${other.id.value}.jpg" else null,
+    other.public, UserDetail.from(other.owner),
     other.curator?.let {
         UserDetail.from(it)
     },
