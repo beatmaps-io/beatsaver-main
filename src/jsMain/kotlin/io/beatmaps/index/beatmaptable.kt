@@ -170,7 +170,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         if (props.visible == false) return
 
         state.user?.let {
-            routeLink("/profile/${it.id}", className = "card border-dark user-suggestion-card") {
+            routeLink(it.profileLink(), className = "card border-dark user-suggestion-card") {
                 div("card-body") {
                     h4("card-title") {
                         +"Were you looking for:"

@@ -99,7 +99,7 @@ class UserList : RComponent<UserListProps, RState>() {
                                     }
                                 }
                                 td {
-                                    routeLink("/profile/${u.id}") {
+                                    routeLink(u.profileLink()) {
                                         +u.name
                                     }
                                 }

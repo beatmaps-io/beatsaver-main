@@ -180,7 +180,7 @@ external interface UploaderProps : RProps {
 }
 
 val uploader = functionComponent<UploaderProps> { props ->
-    routeLink("/profile/${props.map.uploader.id}") {
+    routeLink(props.map.uploader.profileLink()) {
         +props.map.uploader.name
     }
     botInfo {
@@ -203,7 +203,7 @@ external interface PlaylistOwnerProps : RProps {
 
 val playlistOwner = functionComponent<PlaylistOwnerProps> { props ->
     props.owner?.let { owner ->
-        routeLink("/profile/${owner.id}" + (props.tab?.let { "#$it" } ?: "")) {
+        routeLink(owner.profileLink(props.tab)) {
             +owner.name
         }
         +" - "

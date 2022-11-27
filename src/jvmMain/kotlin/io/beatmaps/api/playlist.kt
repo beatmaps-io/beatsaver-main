@@ -8,7 +8,7 @@ import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
-import io.beatmaps.cdnPrefix
+import io.beatmaps.util.cdnPrefix
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.api.EMapState
@@ -16,8 +16,8 @@ import io.beatmaps.common.cleanString
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.PgConcat
-import io.beatmaps.common.db.greaterEq
-import io.beatmaps.common.db.lessEq
+import io.beatmaps.common.db.greaterEqF
+import io.beatmaps.common.db.lessEqF
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
@@ -271,8 +271,8 @@ fun Route.playlistRoute() {
                                         } else q
                                     }
                                     .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
-                                    .notNull(it.minNps) { o -> Playlist.maxNps greaterEq o }
-                                    .notNull(it.maxNps) { o -> Playlist.minNps lessEq o }
+                                    .notNull(it.minNps) { o -> Playlist.maxNps greaterEqF o }
+                                    .notNull(it.maxNps) { o -> Playlist.minNps lessEqF o }
                                     .notNull(it.from) { o -> Playlist.createdAt greaterEq o.toJavaInstant() }
                                     .notNull(it.to) { o -> Playlist.createdAt lessEq o.toJavaInstant() }
                                     .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }

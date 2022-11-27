@@ -70,7 +70,7 @@ val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
             }
             +userDetail.name
         }
-        routeLink("/profile/${userDetail.id}") {
+        routeLink(userDetail.profileLink()) {
             i("fas fa-external-link-alt") {}
         }
     }

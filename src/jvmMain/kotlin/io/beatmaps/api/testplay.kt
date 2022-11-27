@@ -4,7 +4,7 @@ import ch.compile.recaptcha.model.SiteVerifyResponse
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
-import io.beatmaps.cdnPrefix
+import io.beatmaps.util.cdnPrefix
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.client

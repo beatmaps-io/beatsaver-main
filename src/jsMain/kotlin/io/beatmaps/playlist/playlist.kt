@@ -158,7 +158,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
             UploadRequestConfig { }
         ).then { r ->
             if (r.status == 200) {
-                props.history.push(state.playlist?.let { "/profile/${it.owner.id}#playlists" } ?: "/")
+                props.history.push(state.playlist?.owner?.profileLink("playlists") ?: "/")
             } else {
                 setState {
                     loading = false
@@ -246,7 +246,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                     +pl.name
                                 }
                             }
-                            routeLink("/profile/${pl.owner.id}", className = "list-group-item d-flex justify-content-between") {
+                            routeLink(pl.owner.profileLink(), className = "list-group-item d-flex justify-content-between") {
                                 +"Created by"
                                 span("text-truncate ms-4") {
                                     attrs.title = pl.owner.name
@@ -294,7 +294,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                             if (idx > 0) {
                                                 +", "
                                             }
-                                            routeLink("/profile/${it.second.id}") {
+                                            routeLink(it.second.profileLink()) {
                                                 +it.second.name
                                             }
                                         }

@@ -69,7 +69,7 @@ fun Route.userController() {
                             meta("og:type", "profile:${detail.name}")
                             meta("og:site_name", "BeatSaver")
                             meta("og:title", detail.name)
-                            meta("og:url", "${Config.basename}/profile/${detail.id}")
+                            meta("og:url", detail.profileLink(absolute = true))
                             meta("og:image", detail.avatar)
                             meta("og:description", "${detail.name}'s BeatSaver profile")
                         }

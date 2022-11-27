@@ -1,6 +1,6 @@
 package io.beatmaps.api
 
-import io.beatmaps.cdnPrefix
+import io.beatmaps.util.cdnPrefix
 import io.beatmaps.common.ReviewDeleteData
 import io.beatmaps.common.ReviewModerationData
 import io.beatmaps.common.db.NowExpression
@@ -35,6 +35,7 @@ import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -73,17 +74,17 @@ class ReviewApi {
 
 data class ReviewUpdateInfo(val mapId: Int, val userId: Int)
 
+fun reviewToComplex(row: ResultRow, prefix: String): ReviewDetail {
+    if (row.hasValue(reviewerAlias[User.id])) UserDao.wrapRow(row, reviewerAlias)
+    if (row.hasValue(User.id)) UserDao.wrapRow(row)
+    if (row.hasValue(curatorAlias[User.id]) && row[Beatmap.curator] != null) UserDao.wrapRow(row, curatorAlias)
+    if (row.hasValue(Beatmap.id)) BeatmapDao.wrapRow(row)
+
+    return ReviewDetail.from(row, prefix)
+}
+
 fun Route.reviewRoute() {
     if (!ReviewConstants.COMMENTS_ENABLED) return
-
-    fun reviewToComplex(row: ResultRow, prefix: String): ReviewDetail {
-        if (row.hasValue(reviewerAlias[User.id])) UserDao.wrapRow(row, reviewerAlias)
-        if (row.hasValue(User.id)) UserDao.wrapRow(row)
-        if (row.hasValue(curatorAlias[User.id]) && row[Beatmap.curator] != null) UserDao.wrapRow(row, curatorAlias)
-        if (row.hasValue(Beatmap.id)) BeatmapDao.wrapRow(row)
-
-        return ReviewDetail.from(row, prefix)
-    }
 
     get<ReviewApi.ByDate> {
         val reviews = transaction {
@@ -241,7 +242,7 @@ fun Route.reviewRoute() {
                             r[userId] = single.userId
                             r[text] = newText
                             r[sentiment] = update.sentiment.dbValue
-                            r[createdAt] = NowExpression(createdAt.columnType)
+                            r[createdAt] = coalesce(createdAt, NowExpression<java.time.Instant?>(createdAt.columnType))
                             r[updatedAt] = NowExpression(updatedAt.columnType)
                             r[deletedAt] = null
                         }
@@ -260,7 +261,8 @@ fun Route.reviewRoute() {
                 }
 
                 if (success) {
-                    call.pub("beatmaps", "reviews.$updateMapId.updated", null, ReviewUpdateInfo(updateMapId, single.userId))
+                    val updateType = if (update.captcha == null) "updated" else "created"
+                    call.pub("beatmaps", "reviews.$updateMapId.$updateType", null, ReviewUpdateInfo(updateMapId, single.userId))
                     call.respond(ActionResponse(true, listOf()))
                 }
             }

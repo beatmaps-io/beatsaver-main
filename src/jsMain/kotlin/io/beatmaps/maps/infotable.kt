@@ -47,7 +47,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
         val publishedVersion = if (props.map.deletedAt == null) props.map.publishedVersion() else null
 
         div("list-group" + if (props.horizontal == true) " list-group-horizontal row m-4" else "") {
-            infoItem("Mapper", "${props.map.uploader.name} (${props.map.metadata.levelAuthorName})", "/profile/${props.map.uploader.id}")
+            infoItem("Mapper", "${props.map.uploader.name} (${props.map.metadata.levelAuthorName})", props.map.uploader.profileLink())
             val score = publishedVersion?.sageScore ?: 0
             if (score < -4 || props.map.automapper) {
                 infoItem("AI", if (score < -4) "Bot" else "Unsure")
@@ -65,7 +65,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
             }
 
             props.map.curator?.let { curator ->
-                infoItem("Curated by", curator.name, "/profile/${curator.id}#curated")
+                infoItem("Curated by", curator.name, curator.profileLink("curated"))
             }
 
             if (props.map.tags.isNotEmpty()) {
