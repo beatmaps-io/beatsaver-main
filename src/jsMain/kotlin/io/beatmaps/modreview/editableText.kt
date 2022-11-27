@@ -4,6 +4,7 @@ import external.AxiosResponse
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.util.textToContent
 import kotlinx.html.id
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.RBuilder
@@ -14,6 +15,7 @@ import react.ReactElement
 import react.createRef
 import react.dom.a
 import react.dom.div
+import react.dom.span
 import react.dom.textarea
 import react.setState
 import kotlin.js.Promise
@@ -25,14 +27,22 @@ external interface EditableTextProps : RProps {
     var editing: Boolean?
     var saveText: ((String) -> Promise<AxiosResponse<ActionResponse>>)?
     var stopEditing: ((String) -> Unit)?
+    var maxLength: Int?
 }
 
 external interface EditableTextState : RState {
     var loading: Boolean?
+    var textLength: Int?
 }
 
 class EditableText : RComponent<EditableTextProps, EditableTextState>() {
     private val textareaRef = createRef<HTMLTextAreaElement>()
+
+    override fun componentWillMount() {
+        setState {
+            textLength = props.text?.length
+        }
+    }
 
     private fun endLoading(e: Throwable) {
         setState {
@@ -44,14 +54,29 @@ class EditableText : RComponent<EditableTextProps, EditableTextState>() {
         val displayText = (props.text ?: "")
 
         if (props.editing == true) {
-            textarea("10", classes = "form-control m-2") {
+            textarea("10", classes = "form-control mt-2") {
                 attrs.id = "review"
                 attrs.disabled = state.loading == true
                 +displayText
                 ref = textareaRef
+                props.maxLength?.let { max ->
+                    attrs.maxLength = "$max"
+                }
+                attrs.onChangeFunction = {
+                    setState {
+                        textLength = (it.target as HTMLTextAreaElement).value.length
+                    }
+                }
+            }
+            props.maxLength?.let {
+                val currentLength = state.textLength ?: 0
+                span("badge badge-" + if (currentLength > it - 20) "danger" else "dark") {
+                    attrs.id = "count_message"
+                    +"$currentLength / $it"
+                }
             }
 
-            a(classes = "btn btn-primary m-1 float-end") {
+            a(classes = "btn btn-primary mt-1 float-end") {
                 attrs.onClickFunction = {
                     val newReview = textareaRef.current?.asDynamic().value as String
 

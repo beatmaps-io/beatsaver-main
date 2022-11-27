@@ -7,6 +7,7 @@ import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.CurateReview
 import io.beatmaps.api.DeleteReview
 import io.beatmaps.api.PutReview
+import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewSentiment
 import io.beatmaps.common.Config
@@ -195,6 +196,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                             text = state.text ?: rv.text
                             editing = state.editing
                             renderText = true
+                            maxLength = ReviewConstants.MAX_LENGTH
                             saveText = { newReview ->
                                 val newSentiment = state.newSentiment ?: sentimentLocal
                                 Axios.put<ActionResponse>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->

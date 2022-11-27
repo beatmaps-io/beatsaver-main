@@ -7,6 +7,7 @@ import external.generateConfig
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.DeleteReview
 import io.beatmaps.api.PutReview
+import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewSentiment
 import io.beatmaps.api.UserDetail
@@ -159,6 +160,7 @@ val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
                             editableText {
                                 this.text = text ?: review.text
                                 this.editing = editing
+                                maxLength = ReviewConstants.MAX_LENGTH
                                 saveText = { newReview ->
                                     val newSentimentLocal = newSentiment ?: sentiment ?: review.sentiment
                                     Axios.put<ActionResponse>("${Config.apibase}/review/single/${review.map?.id}/${review.creator?.id}", PutReview(newReview, newSentimentLocal), generateConfig<PutReview, ActionResponse>()).then { r ->
