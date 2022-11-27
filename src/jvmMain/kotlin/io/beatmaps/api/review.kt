@@ -280,7 +280,7 @@ fun Route.reviewRoute() {
             transaction {
                 val result = Review.updateReturning({ Review.mapId eq mapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }, { r ->
                     r[deletedAt] = NowExpression(deletedAt.columnType)
-                }, Review.text,  Review.sentiment)
+                }, Review.text, Review.sentiment)
 
                 if (!result.isNullOrEmpty() && single.userId != sess.userId) {
                     val info = result.first().let {
