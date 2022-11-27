@@ -57,7 +57,7 @@ data class DiscordEmbed(
 ) {
     data class Footer(
         val text: String? = null,
-        val iconUrl: String? = null
+        val icon_url: String? = null
     )
     data class HasUrl(
         val url: String? = null
@@ -65,7 +65,7 @@ data class DiscordEmbed(
     data class Author(
         val name: String? = null,
         val url: String? = null,
-        val iconUrl: String? = null
+        val icon_url: String? = null
     ) {
         constructor(user: UserDetail) : this(user.name, user.profileLink(absolute = true), user.avatar)
     }
