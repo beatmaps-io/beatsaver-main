@@ -242,7 +242,7 @@ fun Route.reviewRoute() {
                             r[userId] = single.userId
                             r[text] = newText
                             r[sentiment] = update.sentiment.dbValue
-                            r[createdAt] = coalesce(createdAt, NowExpression<java.time.Instant?>(createdAt.columnType))
+                            r[createdAt] = NowExpression(createdAt.columnType)
                             r[updatedAt] = NowExpression(updatedAt.columnType)
                             r[deletedAt] = null
                         }
