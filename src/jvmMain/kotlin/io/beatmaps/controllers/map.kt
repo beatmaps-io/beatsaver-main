@@ -2,12 +2,12 @@ package io.beatmaps.controllers
 
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
-import io.beatmaps.util.cdnPrefix
 import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.genericPage
+import io.beatmaps.util.cdnPrefix
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get

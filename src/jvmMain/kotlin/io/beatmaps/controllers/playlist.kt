@@ -2,10 +2,10 @@ package io.beatmaps.controllers
 
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.from
-import io.beatmaps.util.cdnPrefix
 import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.genericPage
+import io.beatmaps.util.cdnPrefix
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.routing.Route

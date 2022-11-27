@@ -1,6 +1,5 @@
 package io.beatmaps.api
 
-import io.beatmaps.util.cdnPrefix
 import io.beatmaps.common.ReviewDeleteData
 import io.beatmaps.common.ReviewModerationData
 import io.beatmaps.common.db.NowExpression
@@ -18,6 +17,7 @@ import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.reviewerAlias
 import io.beatmaps.common.pub
+import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location

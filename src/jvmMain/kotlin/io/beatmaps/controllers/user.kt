@@ -2,7 +2,6 @@ package io.beatmaps.controllers
 
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.from
-import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.genericPage
