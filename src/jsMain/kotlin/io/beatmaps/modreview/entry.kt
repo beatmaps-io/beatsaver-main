@@ -147,7 +147,7 @@ val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
             td {
                 attrs.colSpan = "5"
                 it.entry?.let { review ->
-                    div("text-wrap expand") {
+                    div("text-break expand") {
                         p("card-text") {
                             if (editing) {
                                 sentimentPicker {

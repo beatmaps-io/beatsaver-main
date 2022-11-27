@@ -116,7 +116,7 @@ val modLogEntryRenderer = functionComponent<ModLogEntryProps> {
         td {
             attrs.colSpan = "5"
             it.entry?.let {
-                div("text-wrap") {
+                div("text-break") {
                     ref = localRef
 
                     when (it.action) {
