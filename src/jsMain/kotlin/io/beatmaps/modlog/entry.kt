@@ -214,6 +214,14 @@ val modLogEntryRenderer = functionComponent<ModLogEntryProps> {
                             }
                             p("card-text") {
                                 +"Reason: ${it.action.reason}"
+                                it.action.text?.let { t ->
+                                    br {}
+                                    +"Text: $t"
+                                }
+                                it.action.sentiment?.let { s ->
+                                    br {}
+                                    +"Sentiment: ${ReviewSentiment.fromInt(s).name}"
+                                }
                             }
                         }
 

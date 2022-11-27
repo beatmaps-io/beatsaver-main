@@ -278,15 +278,19 @@ fun Route.reviewRoute() {
             }
 
             transaction {
-                val result = Review.update({ Review.mapId eq mapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }) { r ->
+                val result = Review.updateReturning({ Review.mapId eq mapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }, { r ->
                     r[deletedAt] = NowExpression(deletedAt.columnType)
-                } > 0
+                }, Review.text,  Review.sentiment)
 
-                if (result && single.userId != sess.userId) {
+                if (!result.isNullOrEmpty() && single.userId != sess.userId) {
+                    val info = result.first().let {
+                        it[Review.text] to it[Review.sentiment]
+                    }
+
                     ModLog.insert(
                         sess.userId,
                         mapId,
-                        ReviewDeleteData(deleteReview.reason),
+                        ReviewDeleteData(deleteReview.reason, info.first, info.second),
                         single.userId
                     )
                 }
