@@ -548,21 +548,27 @@ fun Route.playlistRoute() {
         }
     }
 
+    val thumbnailSizes = listOf(256, 512)
     post<PlaylistApi.Create> {
         requireAuthorization { sess ->
-            val temp = File(
-                uploadDir,
-                "upload-${System.currentTimeMillis()}-${sess.userId.hashCode()}.jpg"
-            )
+            val files = mutableMapOf<Int, File>()
+
             try {
                 val multipart = call.handleMultipart { part ->
                     part.streamProvider().use { its ->
-                        Thumbnails
-                            .of(its)
-                            .size(256, 256)
-                            .outputFormat("JPEG")
-                            .outputQuality(0.8)
-                            .toFile(temp)
+                        val tmp = ByteArrayOutputStream()
+                        its.copyToSuspend(tmp, sizeLimit = 10 * 1024 * 1024)
+
+                        thumbnailSizes.forEach { s ->
+                            files[s] = File(uploadDir, "upload-${System.currentTimeMillis()}-${sess.userId.hashCode()}-$s.jpg").also { localFile ->
+                                Thumbnails
+                                    .of(tmp.toByteArray().inputStream())
+                                    .size(s, s)
+                                    .outputFormat("JPEG")
+                                    .outputQuality(0.8)
+                                    .toFile(localFile)
+                            }
+                        }
                     }
                 }
 
@@ -579,7 +585,7 @@ fun Route.playlistRoute() {
                 validate(toCreate) {
                     validate(PlaylistBasic::name).isNotBlank().hasSize(3, 255)
                     validate(PlaylistBasic::playlistImage).validate(NotBlank) {
-                        temp.exists()
+                        files.isNotEmpty()
                     }
                 }
 
@@ -592,19 +598,20 @@ fun Route.playlistRoute() {
                     }
                 }
 
-                val localFile = File(localPlaylistCoverFolder(), "$newId.jpg")
-                withContext(Dispatchers.IO) {
+                files.forEach { (s, temp) ->
+                    val localFile = File(localPlaylistCoverFolder(s), "$newId.jpg")
                     Files.move(temp.toPath(), localFile.toPath())
                 }
 
                 call.respond(newId.value)
             } finally {
-                temp.delete()
+                files.values.forEach { temp ->
+                    temp.delete()
+                }
             }
         }
     }
 
-    val thumbnailSizes = listOf(256, 512)
     post<PlaylistApi.Edit> { req ->
         requireAuthorization { sess ->
             val query = (Playlist.id eq req.id and Playlist.deletedAt.isNull()).let { q ->
