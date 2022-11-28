@@ -138,7 +138,7 @@ fun Application.reviewListeners() {
                                             ),
                                             DiscordEmbed.Field(
                                                 "Sentiment",
-                                                review.sentiment.name,
+                                                review.sentiment.let { s -> "${s.emoji} ${s.name}" },
                                                 true
                                             )
                                         ),
