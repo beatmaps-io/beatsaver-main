@@ -3,6 +3,7 @@ package io.beatmaps.controllers
 import ch.compile.recaptcha.ReCaptchaVerify
 import com.fasterxml.jackson.databind.ObjectWriter
 import io.beatmaps.api.FailedUploadResponse
+import io.beatmaps.api.cdnBase
 import io.beatmaps.api.handleMultipart
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.BSPrettyPrinter
@@ -117,7 +118,7 @@ fun Route.uploadController() {
 
                             transaction {
                                 User.update({ User.id eq sess.userId }) {
-                                    it[avatar] = "${Config.cdnbase}/avatar/$filename"
+                                    it[avatar] = "${cdnBase("", true)}/avatar/$filename"
                                 }
                             }
                         }
