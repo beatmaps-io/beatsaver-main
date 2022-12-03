@@ -2,8 +2,9 @@ package io.beatmaps.util
 
 import io.beatmaps.api.ReviewUpdateInfo
 import io.beatmaps.api.UserDetail
+import io.beatmaps.api.baseName
+import io.beatmaps.api.cdnBase
 import io.beatmaps.api.reviewToComplex
-import io.beatmaps.common.Config
 import io.beatmaps.common.client
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.avgWithFilter
@@ -78,6 +79,11 @@ data class DiscordEmbed(
 
 val discordWebhookUrl: String? = System.getenv("DISCORD_WEBHOOK_URL")
 
+fun truncateWithEllipsis(text: String, maxLength: Int, ellipsis: String = "...") =
+    if (text.length > maxLength) {
+        text.take(maxLength - ellipsis.length) + ellipsis
+    } else text
+
 fun Application.reviewListeners() {
     rabbitOptional {
         val avg = Review.sentiment.avgWithFilter(Review.deletedAt.isNull(), 3).alias("sentiment")
@@ -95,7 +101,8 @@ fun Application.reviewListeners() {
             }
         }
 
-        val maxTitleLen = 100
+        val maxTitleLen = 100 // 256 max
+        val maxReviewLen = 1024 // 1024 max
         discordWebhookUrl?.let { webhookUrl ->
             consumeAck("bm.reviewDiscordHook", ReviewUpdateInfo::class) { _, r ->
                 transaction {
@@ -123,18 +130,16 @@ fun Application.reviewListeners() {
                                     DiscordEmbed(
                                         author = review.creator?.let { user -> DiscordEmbed.Author(user) },
                                         title = review.map?.name?.let {
-                                            if (it.length > maxTitleLen + 3) {
-                                                it.take(maxTitleLen) + "..."
-                                            } else it
+                                            truncateWithEllipsis(it, maxTitleLen)
                                         },
                                         url = review.map?.let {
-                                            "${Config.basename}/maps/${it.id}"
+                                            "$baseName/maps/${it.id}"
                                         },
-                                        thumbnail = DiscordEmbed.HasUrl("${Config.cdnbase}/${version.hash}.jpg"),
+                                        thumbnail = DiscordEmbed.HasUrl( "${cdnBase("", true)}/${version.hash}.jpg"),
                                         fields = listOf(
                                             DiscordEmbed.Field(
                                                 "Review",
-                                                review.text
+                                                truncateWithEllipsis(review.text, maxReviewLen)
                                             ),
                                             DiscordEmbed.Field(
                                                 "Sentiment",

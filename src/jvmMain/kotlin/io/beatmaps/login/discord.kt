@@ -2,6 +2,7 @@ package io.beatmaps.login
 
 import com.toxicbakery.bcrypt.Bcrypt
 import io.beatmaps.api.alertCount
+import io.beatmaps.api.baseName
 import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
@@ -42,7 +43,6 @@ fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
 class SimpleUserPrincipal(val user: UserDao, val alertCount: Int, val redirect: String) : Principal
 
 fun Application.installDiscordOauth() {
-    val baseName = System.getenv("BASE_URL") ?: Config.basename
     install(Authentication) {
         oauth("discord") {
             client = HttpClient(Apache)

@@ -22,10 +22,11 @@ import java.io.File
 import java.lang.Integer.toHexString
 import kotlin.time.Duration.Companion.seconds
 
+val baseName = System.getenv("BASE_URL") ?: Config.basename
 val remoteCdn = System.getenv("REMOTE_CDN") != null
-fun cdnBase(prefix: String) = when (remoteCdn) {
+fun cdnBase(prefix: String, absolute: Boolean = false) = when (remoteCdn) {
     true -> Config.cdnBase(prefix)
-    false -> "/cdn"
+    false -> (if (absolute) baseName else "") + "/cdn"
 }
 
 fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
