@@ -30,7 +30,6 @@ import react.dom.input
 import react.dom.label
 import react.functionComponent
 import react.setState
-import react.useState
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext

@@ -14,6 +14,7 @@ import io.beatmaps.shared.CommonParams
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import kotlinx.browser.window
+import org.w3c.dom.Audio
 import org.w3c.dom.HTMLDivElement
 import react.Props
 import react.RBuilder
@@ -165,6 +166,14 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         }
     }
 
+    private val audio = Audio().also {
+        it.volume = 0.4
+    }
+
+    override fun componentWillUnmount() {
+        audio.pause()
+    }
+
     override fun RBuilder.render() {
         if (props.visible == false) return
 
@@ -199,6 +208,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                         obj = it
                         version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
                         modal = props.modal
+                        audio = this@BeatmapTable.audio
                     }
                 }
                 attrs.updateScrollIndex = props.updateScrollIndex

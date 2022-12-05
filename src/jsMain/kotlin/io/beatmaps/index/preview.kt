@@ -24,7 +24,7 @@ import react.setState
 
 const val previewBaseUrl = "https://skystudioapps.com/bs-viewer/"
 
-external  interface ModalState : State {
+external interface ModalState : State {
     var modal: ModalData?
 }
 

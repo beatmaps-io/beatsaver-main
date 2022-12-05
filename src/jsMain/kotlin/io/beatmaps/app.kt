@@ -27,7 +27,6 @@ import kotlinx.browser.window
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.asList
-import org.w3c.dom.url.URLSearchParams
 import react.Component
 import react.Props
 import react.RBuilder

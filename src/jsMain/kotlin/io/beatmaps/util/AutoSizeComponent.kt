@@ -18,11 +18,11 @@ external interface AutoSizeComponentState : State {
     var loaded: Boolean?
     var height: String
     var margin: String?
+    var autoSizeHandle: Int?
 }
 
 abstract class AutoSizeComponent<T, U : AutoSizeComponentProps<T>, V : AutoSizeComponentState>(private val padding: Int) : RComponent<U, V>() {
     protected val divRef = createRef<HTMLDivElement>()
-    private var handle: Int? = null
 
     fun style(builder: RDOMBuilder<*>) {
         builder.attrs.jsStyle {
@@ -34,17 +34,18 @@ abstract class AutoSizeComponent<T, U : AutoSizeComponentProps<T>, V : AutoSizeC
     }
 
     fun hide() {
-        // Set current size so animation works
-        setState {
-            height = "${autoSize() + 10}px"
-            margin = "0px"
-        }
-
-        handle = window.setTimeout({
+        val handleLocal = window.setTimeout({
             setState {
                 height = "0px"
             }
         }, 10)
+
+        // Set current size so animation works
+        setState {
+            height = "${autoSize() + 10}px"
+            margin = "0px"
+            autoSizeHandle = handleLocal
+        }
     }
 
     private fun autoSize() = divRef.current?.scrollHeight?.let { it + padding } ?: 0
@@ -57,21 +58,22 @@ abstract class AutoSizeComponent<T, U : AutoSizeComponentProps<T>, V : AutoSizeC
     }
 
     override fun componentWillUnmount() {
-        handle?.let { window.clearTimeout(it) }
+        state.autoSizeHandle?.let { window.clearTimeout(it) }
     }
 
     override fun componentDidUpdate(prevProps: U, prevState: V, snapshot: Any) {
         if (state.loaded != true && props.obj != null) {
-            setState {
-                loaded = true
-                height = "${autoSize()}px"
-            }
-
-            handle = window.setTimeout({
+            val handleLocal = window.setTimeout({
                 setState {
                     height = "auto"
                 }
             }, 200)
+
+            setState {
+                loaded = true
+                height = "${autoSize()}px"
+                autoSizeHandle = handleLocal
+            }
         } else if (state.loaded == true && props.obj == null) {
             setState {
                 height = ""
