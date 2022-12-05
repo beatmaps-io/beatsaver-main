@@ -15,11 +15,11 @@ import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTableSectionElement
+import org.w3c.dom.url.URLSearchParams
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.button
 import react.dom.form
@@ -30,18 +30,20 @@ import react.dom.td
 import react.dom.th
 import react.dom.thead
 import react.dom.tr
-import react.router.dom.RouteResultHistory
+import react.router.dom.History
+import react.router.dom.Location
 import react.setState
 
-external interface ModLogProps : RProps {
-    var history: RouteResultHistory
+external interface ModLogProps : Props {
+    var history: History
     var userData: UserData?
-    var mod: String?
-    var user: String?
+    var location: Location
 }
 
-external interface ModLogState : RState {
+external interface ModLogState : State {
     var resultsKey: Any
+    var mod: String?
+    var user: String?
 }
 
 class ModLog : RComponent<ModLogProps, ModLogState>() {
@@ -56,17 +58,20 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
         if (props.userData?.admin != true) {
             props.history.push("/")
         }
-
-        modRef.current?.value = props.mod ?: ""
-        userRef.current?.value = props.user ?: ""
     }
 
     override fun componentWillReceiveProps(nextProps: ModLogProps) {
-        modRef.current?.value = nextProps.mod ?: ""
-        userRef.current?.value = nextProps.user ?: ""
+        val (mod, user) = URLSearchParams(props.location.search).let { u ->
+            (u.get("mod") ?: "") to (u.get("user") ?: "")
+        }
 
-        if (props.mod != nextProps.mod || props.user != nextProps.user) {
+        modRef.current?.value = mod
+        userRef.current?.value = user
+
+        if (mod != state.mod || user != state.user) {
             setState {
+                this.mod = mod
+                this.user = user
                 resultsKey = Any()
             }
         }
@@ -162,8 +167,7 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
 
 class ModLogInfiniteScroll : InfiniteScroll<ModLogEntry>()
 
-fun RBuilder.modlog(handler: ModLogProps.() -> Unit): ReactElement {
-    return child(ModLog::class) {
+fun RBuilder.modlog(handler: ModLogProps.() -> Unit) =
+    child(ModLog::class) {
         this.attrs(handler)
     }
-}

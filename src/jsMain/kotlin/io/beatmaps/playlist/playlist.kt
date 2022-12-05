@@ -2,9 +2,10 @@ package io.beatmaps.playlist
 
 import external.Axios
 import external.DragAndDrop.DragDropContext
-import external.dragable
+import external.draggable
 import external.droppable
 import external.generateConfig
+import external.routeLink
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetailWithOrder
 import io.beatmaps.api.PlaylistFull
@@ -26,11 +27,10 @@ import kotlinx.html.title
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.Event
 import org.w3c.xhr.FormData
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.div
@@ -39,17 +39,21 @@ import react.dom.p
 import react.dom.span
 import react.dom.textarea
 import react.ref
-import react.router.dom.RouteResultHistory
-import react.router.dom.routeLink
+import react.router.dom.History
+import react.router.dom.Match
 import react.setState
 import kotlin.math.ceil
 
-external interface PlaylistProps : RProps {
-    var id: Int
-    var history: RouteResultHistory
+external interface PlaylistProps : Props {
+    var match: Match
+    var history: History
 }
 
-data class PlaylistState(var loading: Boolean?, var playlist: PlaylistFull?, var maps: List<MapDetailWithOrder>?) : RState
+external interface PlaylistState : State {
+    var loading: Boolean?
+    var playlist: PlaylistFull?
+    var maps: List<MapDetailWithOrder>?
+}
 
 var CommonAttributeGroupFacade.onTransitionEndFunction: (Event) -> Unit
     get() = throw UnsupportedOperationException("You can't read variable onTransitionEnd")
@@ -76,12 +80,13 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
         if (state.loading == true)
             return
 
+        val id = props.match.params["id"]
         setState {
             loading = true
         }
 
         Axios.get<PlaylistPage>(
-            "${Config.apibase}/playlists/id/${props.id}/$page",
+            "${Config.apibase}/playlists/id/$id/$page",
             generateConfig<String, PlaylistPage>()
         ).then {
             setPageTitle("Playlist - ${it.data.playlist?.name}")
@@ -89,7 +94,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                 loading = false
                 playlist = it.data.playlist
                 it.data.maps?.let { newMaps ->
-                    maps = maps?.plus(newMaps)
+                    maps = maps?.plus(newMaps)?.sortedBy { m -> m.order }
                 }
             }
             if ((it.data.maps?.size ?: 0) >= itemsPerPage) {
@@ -101,8 +106,9 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
     }
 
     private fun updateOrder(mapId: String, order: Float) {
+        val id = props.match.params["id"]
         Axios.post<String>(
-            "${Config.apibase}/playlists/id/${props.id}/add",
+            "${Config.apibase}/playlists/id/$id/add",
             PlaylistMapRequest(mapId, true, order),
             generateConfig<PlaylistMapRequest, String>()
         )
@@ -145,6 +151,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
     }
 
     private fun delete() {
+        val id = props.match.params["id"]
         setState {
             loading = true
         }
@@ -154,7 +161,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
         data.append("reason", reasonRef.current?.value ?: "")
 
         Axios.post<dynamic>(
-            "${Config.apibase}/playlists/id/${props.id}/edit", data,
+            "${Config.apibase}/playlists/id/$id/edit", data,
             UploadRequestConfig { }
         ).then { r ->
             if (r.status == 200) {
@@ -315,7 +322,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                             droppable("playlist") {
                                 attrs.classes = setOf("playlist")
                                 state.maps?.mapIndexed { idx, it ->
-                                    dragable(it.map.id, idx) {
+                                    draggable(it.map.id, idx) {
                                         beatmapInfo {
                                             obj = it.map
                                             version = it.map.publishedVersion()
@@ -327,7 +334,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                         }
                     } else {
                         div("playlist") {
-                            state.maps?.map { it ->
+                            state.maps?.map {
                                 beatmapInfo {
                                     obj = it.map
                                     version = it.map.publishedVersion()
@@ -342,8 +349,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
     }
 }
 
-fun RBuilder.playlist(handler: PlaylistProps.() -> Unit): ReactElement {
-    return child(Playlist::class) {
+fun RBuilder.playlist(handler: PlaylistProps.() -> Unit) =
+    child(Playlist::class) {
         this.attrs(handler)
     }
-}

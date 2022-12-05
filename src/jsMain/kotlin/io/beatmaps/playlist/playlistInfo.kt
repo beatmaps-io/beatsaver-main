@@ -1,5 +1,6 @@
 package io.beatmaps.playlist
 
+import external.routeLink
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.common.Config
 import io.beatmaps.common.api.MapAttr
@@ -12,13 +13,11 @@ import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.AutoSizeComponentState
 import kotlinx.html.title
 import react.RBuilder
-import react.ReactElement
 import react.dom.a
 import react.dom.div
 import react.dom.i
 import react.dom.img
 import react.dom.span
-import react.router.dom.routeLink
 
 external interface PlaylistInfoProps : AutoSizeComponentProps<PlaylistFull>
 external interface PlaylistInfoState : AutoSizeComponentState
@@ -131,8 +130,7 @@ class PlaylistInfo : AutoSizeComponent<PlaylistFull, PlaylistInfoProps, Playlist
     }
 }
 
-fun RBuilder.playlistInfo(handler: PlaylistInfoProps.() -> Unit): ReactElement {
-    return child(PlaylistInfo::class) {
+fun RBuilder.playlistInfo(handler: PlaylistInfoProps.() -> Unit) =
+    child(PlaylistInfo::class) {
         this.attrs(handler)
     }
-}

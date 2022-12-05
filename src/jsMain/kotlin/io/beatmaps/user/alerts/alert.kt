@@ -13,11 +13,10 @@ import kotlinx.browser.window
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLDivElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.b
@@ -27,14 +26,14 @@ import react.dom.jsStyle
 import react.dom.span
 import react.setState
 
-external interface AlertProps : RProps {
+external interface AlertProps : Props {
     var alert: UserAlert?
     var read: Boolean?
     var hidden: Boolean?
     var markAlert: ((UserAlertStats) -> Unit)?
 }
 
-external interface AlertState : RState {
+external interface AlertState : State {
     var height: String?
     var opacity: String?
     var margin: String?
@@ -145,8 +144,7 @@ class AlertElement : RComponent<AlertProps, AlertState>() {
     }
 }
 
-fun RBuilder.alert(handler: AlertProps.() -> Unit): ReactElement {
-    return child(AlertElement::class) {
+fun RBuilder.alert(handler: AlertProps.() -> Unit) =
+    child(AlertElement::class) {
         this.attrs(handler)
     }
-}

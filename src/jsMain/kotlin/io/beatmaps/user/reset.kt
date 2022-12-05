@@ -10,26 +10,26 @@ import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.button
 import react.dom.div
 import react.dom.form
 import react.dom.input
 import react.dom.jsStyle
-import react.router.dom.RouteResultHistory
+import react.router.dom.History
+import react.router.dom.Match
 import react.setState
 
-external interface ResetPageProps : RProps {
-    var jwt: String
-    var history: RouteResultHistory
+external interface ResetPageProps : Props {
+    var match: Match
+    var history: History
 }
 
-external interface ResetPageState : RState {
+external interface ResetPageState : State {
     var errors: List<String>
     var loading: Boolean
 }
@@ -46,7 +46,7 @@ class ResetPage : RComponent<ResetPageProps, ResetPageState>() {
     }
 
     override fun componentDidMount() {
-        setPageTitle("Reset password")
+        setPageTitle("Reset password") // TODO: Add to new pages
     }
 
     override fun RBuilder.render() {
@@ -65,7 +65,7 @@ class ResetPage : RComponent<ResetPageProps, ResetPageState>() {
                     Axios.post<ActionResponse>(
                         "${Config.apibase}/users/reset",
                         ResetRequest(
-                            props.jwt,
+                            props.match.params["jwt"] ?: "",
                             passwordRef.current?.value ?: "",
                             password2Ref.current?.value ?: "",
                         ),
@@ -120,8 +120,7 @@ class ResetPage : RComponent<ResetPageProps, ResetPageState>() {
     }
 }
 
-fun RBuilder.resetPage(handler: ResetPageProps.() -> Unit): ReactElement {
-    return child(ResetPage::class) {
+fun RBuilder.resetPage(handler: ResetPageProps.() -> Unit) =
+    child(ResetPage::class) {
         this.attrs(handler)
     }
-}

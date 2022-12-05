@@ -7,11 +7,10 @@ import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.div
@@ -20,7 +19,7 @@ import react.dom.textarea
 import react.setState
 import kotlin.js.Promise
 
-external interface EditableTextProps : RProps {
+external interface EditableTextProps : Props {
     var buttonText: String?
     var text: String?
     var renderText: Boolean?
@@ -30,7 +29,7 @@ external interface EditableTextProps : RProps {
     var maxLength: Int?
 }
 
-external interface EditableTextState : RState {
+external interface EditableTextState : State {
     var loading: Boolean?
     var textLength: Int?
 }
@@ -106,8 +105,7 @@ class EditableText : RComponent<EditableTextProps, EditableTextState>() {
     }
 }
 
-fun RBuilder.editableText(handler: EditableTextProps.() -> Unit): ReactElement {
-    return child(EditableText::class) {
+fun RBuilder.editableText(handler: EditableTextProps.() -> Unit) =
+    child(EditableText::class) {
         this.attrs(handler)
     }
-}

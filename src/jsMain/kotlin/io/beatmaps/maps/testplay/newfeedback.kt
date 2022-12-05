@@ -8,41 +8,42 @@ import io.beatmaps.common.Config
 import kotlinx.datetime.internal.JSJoda.Instant
 import kotlinx.html.TEXTAREA
 import kotlinx.html.js.onClickFunction
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RReadableRef
-import react.RState
-import react.ReactElement
+import react.RefObject
+import react.State
 import react.createRef
 import react.dom.article
 import react.dom.button
 import react.dom.div
 import react.dom.i
 import react.dom.textarea
+import react.dom.value
 import react.setState
 
-external interface NewFeedbackProps : RProps {
+external interface NewFeedbackProps : Props {
     var hash: String
-    var captcha: RReadableRef<ReCAPTCHA>
+    var captcha: RefObject<ReCAPTCHA>
 }
 
-data class NewFeedbackState(var loading: Boolean = false, var done: Boolean = false, var time: String = "", var text: String = "") : RState
+external interface NewFeedbackState : State {
+    var loading: Boolean?
+    var done: Boolean?
+    var time: String?
+    var text: String?
+}
 
 class NewFeedback : RComponent<NewFeedbackProps, NewFeedbackState>() {
     private val textareaRef = createRef<TEXTAREA>()
 
-    init {
-        state = NewFeedbackState()
-    }
-
     override fun RBuilder.render() {
-        if (state.done) {
+        if (state.done == true) {
             feedback {
                 hash = props.hash
                 name = ""
-                feedback = state.text
-                time = state.time
+                feedback = state.text ?: ""
+                time = state.time ?: ""
                 isOwner = true
             }
         } else {
@@ -52,13 +53,13 @@ class NewFeedback : RComponent<NewFeedbackProps, NewFeedbackState>() {
                 }
                 div("card-body") {
                     textarea("10", classes = "form-control") {
-                        attrs.disabled = state.loading
+                        attrs.disabled = state.loading == true
                         ref = textareaRef
                     }
                     div("float-end") {
                         button(classes = "btn btn-info mt-3") {
                             attrs.onClickFunction = {
-                                val newText = textareaRef.current?.asDynamic().value as String
+                                val newText = textareaRef.current?.value ?: ""
 
                                 setState {
                                     loading = true
@@ -78,7 +79,7 @@ class NewFeedback : RComponent<NewFeedbackProps, NewFeedbackState>() {
                                     }
                                 }
                             }
-                            attrs.disabled = state.loading
+                            attrs.disabled = state.loading == true
                             +"Leave feedback"
                         }
                     }
@@ -88,8 +89,7 @@ class NewFeedback : RComponent<NewFeedbackProps, NewFeedbackState>() {
     }
 }
 
-fun RBuilder.newFeedback(handler: NewFeedbackProps.() -> Unit): ReactElement {
-    return child(NewFeedback::class) {
+fun RBuilder.newFeedback(handler: NewFeedbackProps.() -> Unit) =
+    child(NewFeedback::class) {
         this.attrs(handler)
     }
-}

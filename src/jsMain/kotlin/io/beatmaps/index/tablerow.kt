@@ -1,30 +1,29 @@
 package io.beatmaps.index
 
+import external.routeLink
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
 import io.beatmaps.shared.diffIcons
 import io.beatmaps.shared.links
 import io.beatmaps.shared.uploader
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RReadableRef
-import react.RState
-import react.ReactElement
+import react.RefObject
+import react.State
 import react.dom.img
 import react.dom.p
 import react.dom.small
 import react.dom.td
 import react.dom.tr
-import react.router.dom.routeLink
 
-external interface TableRowProps : RProps {
+external interface TableRowProps : Props {
     var map: MapDetail
     var version: MapVersion?
-    var modal: RReadableRef<ModalComponent>
+    var modal: RefObject<ModalComponent>
 }
 
-class TableRow : RComponent<TableRowProps, RState>() {
+class TableRow : RComponent<TableRowProps, State>() {
     override fun RBuilder.render() {
         tr {
             td {
@@ -63,8 +62,7 @@ class TableRow : RComponent<TableRowProps, RState>() {
     }
 }
 
-fun RBuilder.beatmapTableRow(handler: TableRowProps.() -> Unit): ReactElement {
-    return child(TableRow::class) {
+fun RBuilder.beatmapTableRow(handler: TableRowProps.() -> Unit) =
+    child(TableRow::class) {
         this.attrs(handler)
     }
-}

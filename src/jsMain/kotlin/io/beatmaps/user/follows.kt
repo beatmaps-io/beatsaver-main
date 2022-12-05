@@ -10,22 +10,21 @@ import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.userCard
 import io.beatmaps.util.userTitles
 import org.w3c.dom.HTMLDivElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.div
 import react.setState
 
-external interface FollowListProps : RProps {
+external interface FollowListProps : Props {
     var scrollParent: HTMLDivElement?
     var following: Int?
     var followedBy: Int?
 }
 
-external interface FollowListState : RState {
+external interface FollowListState : State {
     var resultsKey: Any
 }
 
@@ -87,8 +86,7 @@ class FollowList : RComponent<FollowListProps, FollowListState>() {
 
 class FollowerInfiniteScroll : InfiniteScroll<UserDetail>()
 
-fun RBuilder.followList(handler: FollowListProps.() -> Unit): ReactElement {
-    return child(FollowList::class) {
+fun RBuilder.followList(handler: FollowListProps.() -> Unit) =
+    child(FollowList::class) {
         this.attrs(handler)
     }
-}

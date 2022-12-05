@@ -1,50 +1,49 @@
 package io.beatmaps
 
 import external.ReactDatesInit
-import io.beatmaps.common.api.EAlertType
 import io.beatmaps.index.HomePage
 import io.beatmaps.maps.MapPage
-import io.beatmaps.maps.MapPageProps
 import io.beatmaps.maps.recent.recentTestplays
-import io.beatmaps.modlog.modlog
-import io.beatmaps.modreview.modreview
+import io.beatmaps.modlog.ModLog
+import io.beatmaps.modreview.ModReview
 import io.beatmaps.nav.manageNav
 import io.beatmaps.nav.viewportMinWidthPolyfill
-import io.beatmaps.playlist.PlaylistProps
-import io.beatmaps.playlist.editPlaylist
-import io.beatmaps.playlist.playlist
-import io.beatmaps.playlist.playlistFeed
+import io.beatmaps.playlist.EditPlaylist
+import io.beatmaps.playlist.Playlist
+import io.beatmaps.playlist.PlaylistFeed
 import io.beatmaps.upload.UploadPage
+import io.beatmaps.user.PickUsernamePage
 import io.beatmaps.user.ProfilePage
-import io.beatmaps.user.ProfilePageProps
-import io.beatmaps.user.ResetPageProps
+import io.beatmaps.user.ResetPage
+import io.beatmaps.user.UserList
 import io.beatmaps.user.alerts.AlertsPage
 import io.beatmaps.user.authorizePage
 import io.beatmaps.user.forgotPage
 import io.beatmaps.user.loginPage
-import io.beatmaps.user.pickUsernamePage
-import io.beatmaps.user.resetPage
 import io.beatmaps.user.signupPage
-import io.beatmaps.user.userList
+import kotlinext.js.jso
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.asList
 import org.w3c.dom.url.URLSearchParams
+import react.Component
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
+import react.State
 import react.createContext
 import react.dom.div
 import react.dom.render
-import react.router.dom.RouteResultHistory
-import react.router.dom.RouteResultProps
-import react.router.dom.browserRouter
-import react.router.dom.route
-import react.router.dom.switch
-import react.setState
+import react.fc
+import react.router.dom.BrowserRouter
+import react.router.dom.History
+import react.router.dom.Route
+import react.router.dom.Switch
+import react.router.dom.useHistory
+import react.router.dom.withRouter
+import kotlin.reflect.KClass
 
 fun setPageTitle(page: String) {
     document.title = "BeatSaver - $page"
@@ -76,12 +75,10 @@ fun main() {
 
 const val dateFormat = "YYYY-MM-DD"
 
-external interface AppState : RState {
-    var init: Boolean?
-}
+class App : RComponent<Props, State>() {
+    var init = false
 
-class App : RComponent<RProps, AppState>() {
-    private fun fixLink(id: String = "", history: RouteResultHistory, element: HTMLAnchorElement? = null, block: (HTMLAnchorElement) -> Unit = {}) {
+    private fun fixLink(id: String = "", history: History, element: HTMLAnchorElement? = null, block: (HTMLAnchorElement) -> Unit = {}) {
         (element ?: document.getElementById(id) as? HTMLAnchorElement)?.let { elem ->
             elem.getAttribute("href")?.let { href ->
                 elem.onclick = {
@@ -93,8 +90,8 @@ class App : RComponent<RProps, AppState>() {
         }
     }
 
-    private fun initWithHistory(history: RouteResultHistory, replaceHomelink: Boolean = true) {
-        if (state.init == true) return
+    private fun initWithHistory(history: History, replaceHomelink: Boolean = true) {
+        if (init) return
 
         if (replaceHomelink) {
             fixLink("home-link", history) {
@@ -109,162 +106,124 @@ class App : RComponent<RProps, AppState>() {
         }
 
         manageNav()
-
-        setState {
-            init = true
-        }
+        init = true
     }
 
-    override fun componentWillMount() {
+    override fun componentDidMount() {
         viewportMinWidthPolyfill()
     }
 
-    fun <T : RProps> RBuilder.bsroute(
-        path: String,
+    fun <P : Props> RBuilder.bsroute(
+        vararg path: String,
+        klazz: KClass<out Component<P, *>>,
+        handler: (P.() -> Unit)? = null
+    ) {
+        bsroute(*path, exact = true) {
+            child(
+                withRouter(klazz),
+                jso {
+                    handler?.invoke(this)
+                }
+            )
+        }
+    }
+
+    fun RBuilder.bsroute(
+        vararg path: String,
         exact: Boolean = false,
         strict: Boolean = false,
         replaceHomelink: Boolean = true,
-        render: RBuilder.(RouteResultProps<T>) -> Unit
+        render: RBuilder.() -> Unit
     ) {
-        route<T>(path, exact = exact, strict = strict) {
-            initWithHistory(it.history, replaceHomelink)
-            render(it)
+        Route {
+            attrs.exact = exact
+            attrs.strict = strict
+            attrs.path = path
+
+            // Create a dummy functional component that manages fixing the headers
+            child(
+                fc {
+                    initWithHistory(useHistory(), replaceHomelink)
+                    render()
+                }
+            )
         }
     }
 
     override fun RBuilder.render() {
-        browserRouter {
-            switch {
-                bsroute<RProps>("/", exact = true) {
-                    child(HomePage::class) {
-                        attrs.history = it.history
+        BrowserRouter {
+            Switch {
+                bsroute("/", klazz = HomePage::class)
+                bsroute("/beatsaver/:mapKey", klazz = MapPage::class) {
+                    beatsaver = true
+                }
+                bsroute("/maps/:mapKey", klazz = MapPage::class) {
+                    beatsaver = false
+                }
+                bsroute("/upload", klazz = UploadPage::class)
+                bsroute("/profile/:userId?", exact = true) {
+                    globalContext.Consumer { user ->
+                        child(
+                            withRouter(ProfilePage::class),
+                            jso {
+                                userData = user
+                            }
+                        )
                     }
                 }
-                bsroute<MapPageProps>("/beatsaver/:mapKey", exact = true) {
-                    child(MapPage::class) {
-                        attrs.history = it.history
-                        attrs.mapKey = it.match.params.mapKey
-                        attrs.beatsaver = true
-                    }
-                }
-                bsroute<MapPageProps>("/maps/:mapKey", exact = true) {
-                    child(MapPage::class) {
-                        attrs.history = it.history
-                        attrs.mapKey = it.match.params.mapKey
-                        attrs.beatsaver = false
-                    }
-                }
-                bsroute<RProps>("/upload", exact = true) {
-                    child(UploadPage::class) {
-                        attrs.history = it.history
-                    }
-                }
-                bsroute<ProfilePageProps>("/profile/:userId?", exact = true) {
-                    globalContext.Consumer { userData ->
-                        child(ProfilePage::class) {
-                            key = "profile-${it.match.params.userId}"
-                            attrs.history = it.history
-                            attrs.userData = userData
-                            attrs.userId = it.match.params.userId
-                        }
-                    }
-                }
-                bsroute<RProps>("/alerts", exact = true) {
-                    child(AlertsPage::class) {
-                        attrs.history = it.history
-                        URLSearchParams(window.location.search).let { u ->
-                            attrs.read = u.get("read")?.toBoolean()
-                            attrs.filters = u.get("type")?.split(",")?.mapNotNull { EAlertType.fromLower(it) }
-                        }
-                    }
-                }
-                bsroute<RProps>("/playlists", exact = true) {
-                    playlistFeed {
-                        history = it.history
-                    }
-                }
-                bsroute<RProps>("/playlists/new", exact = true) {
-                    editPlaylist {
-                        id = null
-                        history = it.history
-                    }
-                }
-                bsroute<PlaylistProps>("/playlists/:id", exact = true) {
-                    playlist {
-                        id = it.match.params.id
-                        history = it.history
-                    }
-                }
-                bsroute<PlaylistProps>("/playlists/:id/edit", exact = true) {
-                    editPlaylist {
-                        id = it.match.params.id
-                        history = it.history
-                    }
-                }
-                bsroute<RProps>("/test", exact = true) {
+                bsroute("/alerts", klazz = AlertsPage::class)
+                bsroute("/playlists", klazz = PlaylistFeed::class)
+                bsroute("/playlists/new", klazz = EditPlaylist::class)
+                bsroute("/playlists/:id", klazz = Playlist::class)
+                bsroute("/playlists/:id/edit", klazz = EditPlaylist::class)
+                bsroute("/test", exact = true) {
                     recentTestplays { }
                 }
-                bsroute<RProps>("/modlog", exact = true) {
+                bsroute("/modlog", exact = true) {
                     globalContext.Consumer { user ->
-                        modlog {
-                            history = it.history
-                            userData = user
-                            URLSearchParams(window.location.search).let { u ->
-                                mod = u.get("mod") ?: ""
-                                this.user = u.get("user") ?: ""
+                        child(
+                            withRouter(ModLog::class),
+                            jso {
+                                userData = user
                             }
-                        }
+                        )
                     }
                 }
-                bsroute<RProps>("/modreview", exact = true) {
+                bsroute("/modreview", exact = true) {
                     globalContext.Consumer { user ->
-                        modreview {
-                            history = it.history
-                            userData = user
-                            URLSearchParams(window.location.search).let { u ->
-                                this.user = u.get("user") ?: ""
+                        child(
+                            withRouter(ModReview::class),
+                            jso {
+                                userData = user
                             }
-                        }
+                        )
                     }
                 }
-                bsroute<RProps>("/policy/dmca", exact = true, replaceHomelink = false) {
+                bsroute("/policy/dmca", exact = true, replaceHomelink = false) {
                     div {}
                 }
-                bsroute<RProps>("/policy/tos", exact = true, replaceHomelink = false) {
+                bsroute("/policy/tos", exact = true, replaceHomelink = false) {
                     div {}
                 }
-                bsroute<RProps>("/policy/privacy", exact = true, replaceHomelink = false) {
+                bsroute("/policy/privacy", exact = true, replaceHomelink = false) {
                     div {}
                 }
-                bsroute<RProps>("/mappers", exact = true) {
-                    userList {
-                        history = it.history
-                    }
-                }
-                bsroute<RProps>("/login", exact = true) {
+                bsroute("/mappers", klazz = UserList::class)
+                bsroute("/login", exact = true) {
                     loginPage { }
                 }
-                bsroute<RProps>("/oauth2/authorize", exact = true) {
+                bsroute("/oauth2/authorize", exact = true) {
                     authorizePage { }
                 }
-                bsroute<RProps>("/register", exact = true) {
+                bsroute("/register", exact = true) {
                     signupPage { }
                 }
-                bsroute<RProps>("/forgot", exact = true) {
+                bsroute("/forgot", exact = true) {
                     forgotPage { }
                 }
-                bsroute<ResetPageProps>("/reset/:jwt", exact = true) {
-                    resetPage {
-                        jwt = it.match.params.jwt
-                        history = it.history
-                    }
-                }
-                bsroute<RProps>("/username", exact = true) {
-                    pickUsernamePage {
-                        history = it.history
-                    }
-                }
-                bsroute<RProps>("*") {
+                bsroute("/reset/:jwt", klazz = ResetPage::class)
+                bsroute("/username", klazz = PickUsernamePage::class)
+                bsroute("*") {
                     notFound { }
                 }
             }

@@ -11,11 +11,10 @@ import kotlinx.html.FormMethod
 import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLMetaElement
 import org.w3c.dom.url.URLSearchParams
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.dom.a
 import react.dom.b
 import react.dom.br
@@ -27,8 +26,8 @@ import react.dom.jsStyle
 import react.dom.span
 import react.setState
 
-external interface AuthorizePageState : RState {
-    var loading: Boolean
+external interface AuthorizePageState : State {
+    var loading: Boolean?
     var username: String?
     var avatar: String?
 }
@@ -38,13 +37,7 @@ external interface OauthData {
     val name: String
 }
 
-class AuthorizePage : RComponent<RProps, AuthorizePageState>() {
-    override fun componentWillMount() {
-        setState {
-            loading = false
-            username = null
-        }
-    }
+class AuthorizePage : RComponent<Props, AuthorizePageState>() {
     override fun componentDidMount() {
         setPageTitle("Login with BeatSaver")
 
@@ -125,7 +118,7 @@ class AuthorizePage : RComponent<RProps, AuthorizePageState>() {
                     }
                 }
             }
-            if (state.loading) {
+            if (state.loading == true) {
                 div("card-body") {
                     span { +"Loading..." }
                 }
@@ -162,8 +155,7 @@ class AuthorizePage : RComponent<RProps, AuthorizePageState>() {
     }
 }
 
-fun RBuilder.authorizePage(handler: RProps.() -> Unit): ReactElement {
-    return child(AuthorizePage::class) {
+fun RBuilder.authorizePage(handler: Props.() -> Unit) =
+    child(AuthorizePage::class) {
         this.attrs(handler)
     }
-}

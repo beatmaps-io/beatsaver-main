@@ -1,13 +1,13 @@
 package io.beatmaps.user.alerts
 
 import kotlinx.html.js.onClickFunction
-import react.RProps
+import react.Props
 import react.dom.a
 import react.dom.i
 import react.dom.span
 import react.functionComponent
 
-external interface AlertListItemProps : RProps {
+external interface AlertListItemProps : Props {
     var active: Boolean?
     var icon: String?
     var text: String?

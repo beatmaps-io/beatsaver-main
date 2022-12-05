@@ -9,11 +9,10 @@ import io.beatmaps.util.textToContent
 import kotlinx.datetime.internal.JSJoda.Instant
 import kotlinx.html.TEXTAREA
 import kotlinx.html.js.onClickFunction
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.article
 import react.dom.button
@@ -24,7 +23,7 @@ import react.dom.small
 import react.dom.textarea
 import react.setState
 
-external interface FeedbackProps : RProps {
+external interface FeedbackProps : Props {
     var hash: String
     var name: String
     var feedback: String
@@ -32,14 +31,15 @@ external interface FeedbackProps : RProps {
     var isOwner: Boolean
 }
 
-data class FeedbackState(var editing: Boolean = false, var loading: Boolean = false, var text: String = "", var time: String = "") : RState
+external interface FeedbackState : State {
+    var editing: Boolean?
+    var loading: Boolean?
+    var text: String?
+    var time: String?
+}
 
 class Feedback : RComponent<FeedbackProps, FeedbackState>() {
     private val textareaRef = createRef<TEXTAREA>()
-
-    init {
-        state = FeedbackState()
-    }
 
     override fun componentWillMount() {
         setState {
@@ -56,7 +56,7 @@ class Feedback : RComponent<FeedbackProps, FeedbackState>() {
             div("card-header") {
                 if (props.isOwner) {
                     div("float-end") {
-                        if (state.editing) {
+                        if (state.editing == true) {
                             button(classes = "btn btn-success m-1") {
                                 attrs.onClickFunction = {
                                     val newText = textareaRef.current?.asDynamic().value as String
@@ -78,18 +78,18 @@ class Feedback : RComponent<FeedbackProps, FeedbackState>() {
                                         }
                                     }
                                 }
-                                attrs.disabled = state.loading
+                                attrs.disabled = state.loading == true
                                 +"Save"
                             }
                         }
                         button(classes = "btn btn-info m-1") {
                             attrs.onClickFunction = {
                                 setState {
-                                    editing = !state.editing
+                                    editing = state.editing != true
                                 }
                             }
-                            attrs.disabled = state.loading
-                            +(if (state.editing) "Cancel" else "Edit")
+                            attrs.disabled = state.loading == true
+                            +(if (state.editing == true) "Cancel" else "Edit")
                         }
                     }
                 }
@@ -105,21 +105,21 @@ class Feedback : RComponent<FeedbackProps, FeedbackState>() {
                 }
             }
             div("card-body") {
-                if (state.editing) {
+                if (state.editing == true) {
                     textarea("10", classes = "form-control") {
                         ref = textareaRef
-                        attrs.disabled = state.loading
-                        +state.text
+                        attrs.disabled = state.loading == true
+                        +(state.text ?: "")
                     }
                 } else {
-                    textToContent(state.text)
+                    textToContent(state.text ?: "")
                 }
             }
             div("card-footer") {
                 small {
                     TimeAgo.default {
                         key = state.time
-                        attrs.date = state.time
+                        attrs.date = state.time ?: ""
                     }
                 }
             }
@@ -127,8 +127,7 @@ class Feedback : RComponent<FeedbackProps, FeedbackState>() {
     }
 }
 
-fun RBuilder.feedback(handler: FeedbackProps.() -> Unit): ReactElement {
-    return child(Feedback::class) {
+fun RBuilder.feedback(handler: FeedbackProps.() -> Unit) =
+    child(Feedback::class) {
         this.attrs(handler)
     }
-}

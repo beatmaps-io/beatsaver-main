@@ -27,12 +27,11 @@ import kotlinx.html.title
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.Event
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RReadableRef
-import react.RState
-import react.ReactElement
+import react.RefObject
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.div
@@ -48,7 +47,7 @@ import react.functionComponent
 import react.setState
 import kotlin.collections.set
 
-external interface MapTagProps : RProps {
+external interface MapTagProps : Props {
     var selected: Boolean
     var excluded: Boolean
     var margins: String?
@@ -69,16 +68,16 @@ val mapTag = functionComponent<MapTagProps> { props ->
     }
 }
 
-external interface MapInfoProps : RProps {
+external interface MapInfoProps : Props {
     var mapInfo: MapDetail
     var isOwner: Boolean
-    var modal: RReadableRef<ModalComponent>
+    var modal: RefObject<ModalComponent>
     var reloadMap: () -> Unit
     var deleteMap: () -> Unit
     var updateMapinfo: (MapDetail) -> Unit
 }
 
-external interface MapInfoState : RState {
+external interface MapInfoState : State {
     var loading: Boolean?
     var editing: Boolean?
     var tags: Set<MapTag>?
@@ -391,8 +390,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     }
 }
 
-fun RBuilder.mapInfo(handler: MapInfoProps.() -> Unit): ReactElement {
-    return child(MapInfo::class) {
+fun RBuilder.mapInfo(handler: MapInfoProps.() -> Unit) =
+    child(MapInfo::class) {
         this.attrs(handler)
     }
-}

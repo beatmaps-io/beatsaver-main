@@ -4,6 +4,7 @@ import external.AxiosProgress
 import external.AxiosRequestConfig
 import external.Dropzone
 import external.ReCAPTCHA
+import external.reactFor
 import external.recaptcha
 import io.beatmaps.setPageTitle
 import kotlinx.html.InputType
@@ -11,11 +12,12 @@ import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.events.Event
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.buildElement
+import react.Ref
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.br
@@ -31,15 +33,36 @@ import react.dom.p
 import react.dom.strong
 import react.dom.textarea
 import react.dom.ul
-import react.router.dom.RouteResultHistory
+import react.router.dom.History
 import react.setState
 
-external interface DropInfo {
-    val getRootProps: () -> dynamic
-    val getInputProps: () -> dynamic
+external interface DropInfo : Props {
+    var getRootProps: () -> DropRootProps
+    var getInputProps: () -> DropInputProps
 }
-fun <P> RBuilder.renderChild(rc: RBuilder.(P) -> Unit) {
-    childList += { p: P -> buildElement { rc(p) } }
+
+external interface DropRootProps : Props {
+    var ref: Ref<*>
+    var onKeyDown: (Event) -> Unit
+    var onFocus: (Event) -> Unit
+    var onBlur: (Event) -> Unit
+    var onClick: (Event) -> Unit
+    var onDragEnter: (Event) -> Unit
+    var onDragOver: (Event) -> Unit
+    var onDragLeave: (Event) -> Unit
+    var onDrop: (Event) -> Unit
+    var tabIndex: Int?
+}
+
+external interface DropInputProps : Props {
+    var ref: Ref<*>
+    var accept: String?
+    var type: String
+    var multiple: Boolean
+    var onChange: (Event) -> Unit
+    var onClick: (Event) -> Unit
+    var autoComplete: String?
+    var tabIndex: Int
 }
 
 class UploadRequestConfig(block: (AxiosProgress) -> Unit) : AxiosRequestConfig {
@@ -49,11 +72,15 @@ class UploadRequestConfig(block: (AxiosProgress) -> Unit) : AxiosRequestConfig {
     }
 }
 
-external interface UploadPageProps : RProps {
-    var history: RouteResultHistory
+external interface UploadPageProps : Props {
+    var history: History
 }
 
-data class UploadPageState(var errors: List<String> = listOf(), var loading: Boolean = false, var beatsage: Boolean? = null) : RState
+external interface UploadPageState : State {
+    var errors: List<String>?
+    var loading: Boolean?
+    var beatsage: Boolean?
+}
 
 class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
     private val captchaRef = createRef<ReCAPTCHA>()
@@ -61,10 +88,6 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
     private val descrRef = createRef<HTMLInputElement>()
     private val beatsageRef = createRef<HTMLInputElement>()
     private val progressBarInnerRef = createRef<HTMLElement>()
-
-    init {
-        state = UploadPageState()
-    }
 
     override fun componentDidMount() {
         setPageTitle("Upload")
@@ -80,24 +103,24 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                     fieldset {
                         div("mb-3") {
                             label("form-label") {
-                                attrs.htmlFor = "name"
+                                attrs.reactFor = "name"
                                 +"Title"
                             }
                             input(InputType.text, classes = "form-control") {
                                 attrs.id = "name"
-                                attrs.disabled = state.loading
+                                attrs.disabled = state.loading == true
                                 ref = titleRef
                             }
                         }
 
                         div("mb-3") {
                             label("form-label") {
-                                attrs.htmlFor = "description"
+                                attrs.reactFor = "description"
                                 +"Description"
                             }
                             textarea("10", classes = "form-control") {
                                 attrs.id = "description"
-                                attrs.disabled = state.loading
+                                attrs.disabled = state.loading == true
                                 ref = descrRef
                             }
                         }
@@ -114,7 +137,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                 }
                             }
                             label("btn btn-outline-light") {
-                                attrs.htmlFor = "beatsage-no"
+                                attrs.reactFor = "beatsage-no"
                                 +"I made this map myself with no"
                                 br {}
                                 +"AI assistance"
@@ -132,7 +155,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                 }
                             }
                             label("btn btn-outline-light") {
-                                attrs.htmlFor = "beatsage-yes"
+                                attrs.reactFor = "beatsage-yes"
                                 +"BeatSage or another AI mapping tool was used to create this map"
                             }
                         }
@@ -140,7 +163,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                         if (state.beatsage != null) {
                             Dropzone.default {
                                 simple(
-                                    props.history, state.loading, state.errors.isNotEmpty(), progressBarInnerRef,
+                                    props.history, state.loading == true, state.errors?.isNotEmpty() == true, progressBarInnerRef,
                                     "Drag and drop some files here, or click to select files", captchaRef,
                                     {
                                         setState {
@@ -164,8 +187,8 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                             }
                         }
 
-                        if (!state.loading) {
-                            state.errors.forEach {
+                        if (state.loading != true) {
+                            state.errors?.forEach {
                                 div("invalid-feedback") {
                                     +it
                                 }

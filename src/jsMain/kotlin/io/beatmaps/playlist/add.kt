@@ -3,6 +3,8 @@ package io.beatmaps.playlist
 import external.Axios
 import external.axiosGet
 import external.generateConfig
+import external.reactFor
+import external.routeLink
 import io.beatmaps.api.InPlaylist
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.PlaylistMapRequest
@@ -16,19 +18,17 @@ import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLInputElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RReadableRef
-import react.RState
-import react.ReactElement
+import react.RefObject
+import react.State
 import react.dom.a
 import react.dom.div
 import react.dom.i
 import react.dom.input
 import react.dom.label
 import react.functionComponent
-import react.router.dom.routeLink
 import react.setState
 import react.useState
 import kotlin.coroutines.Continuation
@@ -40,12 +40,14 @@ import kotlin.coroutines.startCoroutine
 import kotlin.coroutines.suspendCoroutine
 import kotlin.js.Promise
 
-external interface AddToPlaylistProps : RProps {
+external interface AddToPlaylistProps : Props {
     var map: MapDetail
-    var modal: RReadableRef<ModalComponent>
+    var modal: RefObject<ModalComponent>
 }
 
-data class AddToPlaylistState(var loading: Boolean?) : RState
+external interface AddToPlaylistState : State {
+    var loading: Boolean?
+}
 
 suspend fun <T> Promise<T>.await(): T = suspendCoroutine { cont ->
     then({ cont.resume(it) }, { cont.resumeWithException(it) })
@@ -62,7 +64,7 @@ fun launch(block: suspend () -> Unit) {
     })
 }
 
-external interface AddModalProps : RProps {
+external interface AddModalProps : Props {
     var changes: MutableMap<Int, Boolean>
     var inPlaylists: Array<InPlaylist>
 }
@@ -90,16 +92,14 @@ class AddToPlaylist : RComponent<AddToPlaylistProps, AddToPlaylistState>() {
             }
         }
         props.inPlaylists.map { ip ->
-            val (checked, setChecked) = useState(ip.inPlaylist)
-
             div("form-check mb-2") {
                 val id = "in-playlist-${ip.playlist.playlistId}"
                 input(InputType.checkBox, classes = "form-check-input") {
                     attrs.id = id
-                    attrs.checked = checked
+                    attrs.defaultChecked = ip.inPlaylist
                     attrs.onChangeFunction = {
                         val current = (it.currentTarget as HTMLInputElement).checked
-                        setChecked(current)
+
                         if (ip.inPlaylist == current) {
                             props.changes.remove(ip.playlist.playlistId)
                         } else {
@@ -108,7 +108,7 @@ class AddToPlaylist : RComponent<AddToPlaylistProps, AddToPlaylistState>() {
                     }
                 }
                 label("w-100 form-check-label") {
-                    attrs.htmlFor = id
+                    attrs.reactFor = id
                     +ip.playlist.name
                 }
             }
@@ -168,8 +168,7 @@ class AddToPlaylist : RComponent<AddToPlaylistProps, AddToPlaylistState>() {
     }
 }
 
-fun RBuilder.addToPlaylist(handler: AddToPlaylistProps.() -> Unit): ReactElement {
-    return child(AddToPlaylist::class) {
+fun RBuilder.addToPlaylist(handler: AddToPlaylistProps.() -> Unit) =
+    child(AddToPlaylist::class) {
         this.attrs(handler)
     }
-}

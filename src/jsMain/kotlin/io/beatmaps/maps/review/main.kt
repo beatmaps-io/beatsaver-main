@@ -11,23 +11,22 @@ import io.beatmaps.index.ModalComponent
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import org.w3c.dom.HTMLDivElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RReadableRef
-import react.RState
-import react.ReactElement
+import react.RefObject
+import react.State
 import react.createRef
 import react.dom.div
 import react.setState
 
-external interface ReviewTableProps : RProps {
+external interface ReviewTableProps : Props {
     var map: String
     var mapUploaderId: Int
-    var modal: RReadableRef<ModalComponent>
+    var modal: RefObject<ModalComponent>
 }
 
-external interface ReviewTableState : RState {
+external interface ReviewTableState : State {
     var resultsKey: Any
     var existingReview: Boolean?
 }
@@ -105,8 +104,7 @@ class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
 
 class CommentsInfiniteScroll : InfiniteScroll<ReviewDetail>()
 
-fun RBuilder.reviewTable(handler: ReviewTableProps.() -> Unit): ReactElement {
-    return child(ReviewTable::class) {
+fun RBuilder.reviewTable(handler: ReviewTableProps.() -> Unit) =
+    child(ReviewTable::class) {
         this.attrs(handler)
     }
-}

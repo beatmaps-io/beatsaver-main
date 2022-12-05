@@ -1,6 +1,7 @@
 package io.beatmaps.maps
 
 import external.TimeAgo
+import external.routeLink
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.ReviewConstants
@@ -10,20 +11,18 @@ import kotlinx.html.DIV
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.role
 import kotlinx.html.title
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.dom.RDOMBuilder
 import react.dom.a
 import react.dom.div
 import react.dom.i
 import react.dom.img
 import react.dom.span
-import react.router.dom.routeLink
 
-external interface InfoTableProps : RProps {
+external interface InfoTableProps : Props {
     var map: MapDetail
     var horizontal: Boolean?
     var selected: MapDifficulty?
@@ -40,7 +39,7 @@ fun RDOMBuilder<*>.diffImg(diff: MapDifficulty) {
     }
 }
 
-class InfoTable : RComponent<InfoTableProps, RState>() {
+class InfoTable : RComponent<InfoTableProps, State>() {
     private val itemClasses by lazy { "list-group-item d-flex justify-content-between" + if (props.horizontal == true) " col-lg" else "" }
 
     override fun RBuilder.render() {
@@ -184,8 +183,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
             } else null
 }
 
-fun RBuilder.infoTable(handler: InfoTableProps.() -> Unit): ReactElement {
-    return child(InfoTable::class) {
+fun RBuilder.infoTable(handler: InfoTableProps.() -> Unit) =
+    child(InfoTable::class) {
         this.attrs(handler)
     }
-}

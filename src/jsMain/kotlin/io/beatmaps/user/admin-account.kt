@@ -2,6 +2,7 @@ package io.beatmaps.user
 
 import external.Axios
 import external.generateConfig
+import external.reactFor
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserAdminRequest
 import io.beatmaps.api.UserDetail
@@ -18,12 +19,11 @@ import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.HTMLTextAreaElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RReadableRef
-import react.RState
-import react.ReactElement
+import react.RefObject
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.button
@@ -39,13 +39,13 @@ import react.dom.select
 import react.dom.textarea
 import react.setState
 
-external interface AdminAccountComponentProps : RProps {
+external interface AdminAccountComponentProps : Props {
     var userDetail: UserDetail
-    var modal: RReadableRef<ModalComponent>
+    var modal: RefObject<ModalComponent>
     var onUpdate: () -> Unit
 }
 
-external interface AdminAccountComponentState : RState {
+external interface AdminAccountComponentState : State {
     var loading: Boolean?
     var success: Boolean?
     var errors: List<String>
@@ -110,17 +110,17 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                 }
 
                 label("form-label") {
-                    attrs.htmlFor = "name"
+                    attrs.reactFor = "name"
                     +"Max upload size"
                 }
                 select("form-select") {
                     arrayOf(0, 15, 30).forEach {
                         option {
-                            attrs.selected = state.uploadLimit == it
                             +"$it"
                         }
                     }
 
+                    attrs.value = state.uploadLimit.toString()
                     attrs.onChangeFunction = {
                         setState {
                             uploadLimit = maxUploadRef.current?.value?.toInt() ?: 15
@@ -136,7 +136,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                         ref = curatorRef
                     }
                     label("form-check-label") {
-                        attrs.htmlFor = "curator"
+                        attrs.reactFor = "curator"
                         +"Curator"
                     }
                 }
@@ -148,7 +148,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                         ref = verifiedMapperRef
                     }
                     label("form-check-label") {
-                        attrs.htmlFor = "verifiedMapper"
+                        attrs.reactFor = "verifiedMapper"
                         +"Verified Mapper"
                     }
                 }
@@ -235,8 +235,7 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
     }
 }
 
-fun RBuilder.adminAccount(handler: AdminAccountComponentProps.() -> Unit): ReactElement {
-    return child(AdminAccountComponent::class) {
+fun RBuilder.adminAccount(handler: AdminAccountComponentProps.() -> Unit) =
+    child(AdminAccountComponent::class) {
         this.attrs(handler)
     }
-}

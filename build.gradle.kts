@@ -159,10 +159,10 @@ kotlin {
             languageSettings.optIn("kotlin.time.ExperimentalTime")
             languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
             dependencies {
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-extensions:1.0.1-pre.218-kotlin-1.5.21")
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-react:17.0.2-pre.218-kotlin-1.5.21")
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom:17.0.2-pre.218-kotlin-1.5.21")
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:5.2.0-pre.218-kotlin-1.5.21")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-extensions:1.0.1-pre.267-kotlin-1.6.0")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react:17.0.2-pre.267-kotlin-1.6.0")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom:17.0.2-pre.267-kotlin-1.6.0")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:5.3.0-pre.267-kotlin-1.6.0")
                 implementation(npm("react-timeago", "5.2.0"))
                 implementation(npm("react-dropzone", "11.2.4"))
                 implementation(npm("react-beautiful-dnd", "13.1.0"))
@@ -213,6 +213,7 @@ tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
     outputFileName = "output.js"
     sourceMaps = true
     report = true
+    mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
 }
 
 tasks.withType<AbstractCopyTask> {

@@ -11,17 +11,18 @@ import io.beatmaps.index.modal
 import io.beatmaps.maps.review.CommentsInfiniteScroll
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScrollElementRenderer
+import kotlinx.browser.window
 import kotlinx.dom.hasClass
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTableSectionElement
+import org.w3c.dom.url.URLSearchParams
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.button
 import react.dom.form
@@ -33,17 +34,17 @@ import react.dom.th
 import react.dom.thead
 import react.dom.tr
 import react.ref
-import react.router.dom.RouteResultHistory
+import react.router.dom.History
 import react.setState
 
-external interface ModReviewProps : RProps {
-    var history: RouteResultHistory
+external interface ModReviewProps : Props {
+    var history: History
     var userData: UserData?
-    var user: String?
 }
 
-external interface ModReviewState : RState {
+external interface ModReviewState : State {
     var resultsKey: Any
+    var user: String?
 }
 
 class ModReview : RComponent<ModReviewProps, ModReviewState>() {
@@ -57,15 +58,18 @@ class ModReview : RComponent<ModReviewProps, ModReviewState>() {
         if (props.userData?.curator != true) {
             props.history.push("/")
         }
-
-        userRef.current?.value = props.user ?: ""
     }
 
     override fun componentWillReceiveProps(nextProps: ModReviewProps) {
-        userRef.current?.value = nextProps.user ?: ""
+        val user = URLSearchParams(window.location.search).let { u ->
+            u.get("user") ?: ""
+        }
 
-        if (props.user != nextProps.user) {
+        userRef.current?.value = user
+
+        if (user != state.user) {
             setState {
+                this.user = user
                 resultsKey = Any()
             }
         }
@@ -155,8 +159,7 @@ class ModReview : RComponent<ModReviewProps, ModReviewState>() {
     }
 }
 
-fun RBuilder.modreview(handler: ModReviewProps.() -> Unit): ReactElement {
-    return child(ModReview::class) {
+fun RBuilder.modreview(handler: ModReviewProps.() -> Unit) =
+    child(ModReview::class) {
         this.attrs(handler)
     }
-}

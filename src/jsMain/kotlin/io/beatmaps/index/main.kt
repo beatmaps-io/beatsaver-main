@@ -19,22 +19,23 @@ import kotlinx.browser.window
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.url.URLSearchParams
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
+import react.State
 import react.createRef
 import react.dom.div
 import react.dom.h4
 import react.functionComponent
 import react.ref
-import react.router.dom.RouteResultHistory
+import react.router.dom.History
 import react.setState
 
-external interface HomePageProps : RProps {
-    var history: RouteResultHistory
+external interface HomePageProps : Props {
+    var history: History
 }
-external interface HomePageState : RState {
+
+external interface HomePageState : State {
     var searchParams: SearchParams?
     var tags: Map<Boolean, Set<MapTag>>?
     var shiftHeld: Boolean?

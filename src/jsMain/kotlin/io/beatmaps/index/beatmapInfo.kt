@@ -17,8 +17,7 @@ import io.beatmaps.util.AutoSizeComponent
 import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.AutoSizeComponentState
 import react.RBuilder
-import react.RReadableRef
-import react.ReactElement
+import react.RefObject
 import react.dom.div
 import react.dom.i
 import react.dom.img
@@ -27,7 +26,7 @@ import react.dom.span
 
 external interface BeatmapInfoProps : AutoSizeComponentProps<MapDetail> {
     var version: MapVersion?
-    var modal: RReadableRef<ModalComponent>
+    var modal: RefObject<ModalComponent>
 }
 
 external interface BeatMapInfoState : AutoSizeComponentState
@@ -126,8 +125,7 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
     }
 }
 
-fun RBuilder.beatmapInfo(handler: BeatmapInfoProps.() -> Unit): ReactElement {
-    return child(BeatmapInfo::class) {
+fun RBuilder.beatmapInfo(handler: BeatmapInfoProps.() -> Unit) =
+    child(BeatmapInfo::class) {
         this.attrs(handler)
     }
-}

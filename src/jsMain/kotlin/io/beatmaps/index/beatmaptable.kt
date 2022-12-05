@@ -3,6 +3,7 @@ package io.beatmaps.index
 import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
+import external.routeLink
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SearchResponse
@@ -14,28 +15,26 @@ import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import kotlinx.browser.window
 import org.w3c.dom.HTMLDivElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RReadableRef
-import react.RState
-import react.ReactElement
+import react.RefObject
+import react.State
 import react.createRef
 import react.dom.div
 import react.dom.h4
 import react.dom.img
 import react.dom.p
-import react.router.dom.RouteResultHistory
-import react.router.dom.routeLink
+import react.router.dom.History
 import react.setState
 
-external interface BeatmapTableProps : RProps {
+external interface BeatmapTableProps : Props {
     var search: SearchParams?
     var user: Int?
     var curated: Boolean?
     var wip: Boolean?
-    var modal: RReadableRef<ModalComponent>
-    var history: RouteResultHistory
+    var modal: RefObject<ModalComponent>
+    var history: History
     var updateScrollIndex: ((Int) -> Unit)?
     var visible: Boolean?
 }
@@ -67,7 +66,7 @@ data class SearchParams(
     }.joinToString(",")
 }
 
-external interface BeatmapTableState : RState {
+external interface BeatmapTableState : State {
     var user: UserDetail?
     var resultsKey: Any
 }
@@ -211,8 +210,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
 
 class MapDetailInfiniteScroll : InfiniteScroll<MapDetail>()
 
-fun RBuilder.beatmapTable(handler: BeatmapTableProps.() -> Unit): ReactElement {
-    return child(BeatmapTable::class) {
+fun RBuilder.beatmapTable(handler: BeatmapTableProps.() -> Unit) =
+    child(BeatmapTable::class) {
         this.attrs(handler)
     }
-}

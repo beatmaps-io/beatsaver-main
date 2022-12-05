@@ -12,14 +12,13 @@ import io.beatmaps.shared.CommonParams
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import org.w3c.dom.HTMLDivElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.div
-import react.router.dom.RouteResultHistory
+import react.router.dom.History
 
 data class PlaylistSearchParams(
     override val search: String,
@@ -33,16 +32,16 @@ data class PlaylistSearchParams(
     override val sortOrder: SearchOrder
 ) : CommonParams
 
-external interface PlaylistTableProps : RProps {
+external interface PlaylistTableProps : Props {
     var search: PlaylistSearchParams?
     var userId: Int?
     var own: Boolean?
-    var history: RouteResultHistory
+    var history: History
     var visible: Boolean?
     var updateScrollIndex: ((Int) -> Unit)?
 }
 
-external interface PlaylistTableState : RState {
+external interface PlaylistTableState : State {
     var resultsKey: Any
 }
 
@@ -109,8 +108,7 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
 
 class PlaylistInfiniteScroll : InfiniteScroll<PlaylistFull>()
 
-fun RBuilder.playlistTable(handler: PlaylistTableProps.() -> Unit): ReactElement {
-    return child(PlaylistTable::class) {
+fun RBuilder.playlistTable(handler: PlaylistTableProps.() -> Unit) =
+    child(PlaylistTable::class) {
         this.attrs(handler)
     }
-}

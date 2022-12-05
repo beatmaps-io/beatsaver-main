@@ -14,11 +14,10 @@ import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.br
@@ -29,7 +28,7 @@ import react.dom.span
 import react.dom.textarea
 import react.setState
 
-external interface NewReviewProps : RProps {
+external interface NewReviewProps : Props {
     var mapId: String
     var userId: Int
     var existingReview: Boolean?
@@ -37,7 +36,7 @@ external interface NewReviewProps : RProps {
     var reloadList: (() -> Unit)?
 }
 
-external interface NewReviewState : RState {
+external interface NewReviewState : State {
     var reviewLength: Int?
     var sentiment: ReviewSentiment?
     var focusIcon: Boolean?
@@ -160,8 +159,7 @@ class NewReview : RComponent<NewReviewProps, NewReviewState>() {
     }
 }
 
-fun RBuilder.newReview(handler: NewReviewProps.() -> Unit): ReactElement {
-    return child(NewReview::class) {
+fun RBuilder.newReview(handler: NewReviewProps.() -> Unit) =
+    child(NewReview::class) {
         this.attrs(handler)
     }
-}

@@ -16,12 +16,13 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.events.Event
 import react.FC
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
+import react.createElement
 import react.createRef
+import react.dom.attrs
 import react.dom.button
 import react.dom.div
 import react.dom.form
@@ -31,7 +32,7 @@ import react.dom.input
 import react.dom.option
 import react.dom.select
 import react.dom.span
-import react.router.dom.RouteResultHistory
+import react.router.dom.History
 import react.setState
 
 data class FilterInfo<T>(val key: String, val name: String, val cat: FilterCategory, val fromParams: (T) -> Boolean)
@@ -40,7 +41,7 @@ fun interface SearchParamGenerator<T : CommonParams> {
     fun Search<T>.get(): T
 }
 
-external interface SearchProps<T : CommonParams> : RProps {
+external interface SearchProps<T : CommonParams> : Props {
     var typedState: T?
     var sortOrderTarget: SortOrderTarget
     var maxNps: Int
@@ -49,10 +50,10 @@ external interface SearchProps<T : CommonParams> : RProps {
     var updateSearchParams: (T, Int?) -> Unit
     var updateUI: ((T?) -> Unit)?
     var filterTexts: (() -> List<String>)?
-    var extraFilters: FC<RProps>?
+    var extraFilters: FC<Props>?
 }
 
-external interface SearchState<T> : RState {
+external interface SearchState<T> : State {
     var minNps: Float?
     var maxNps: Float?
     var filterMap: MutableMap<FilterInfo<T>, Boolean>?
@@ -94,7 +95,7 @@ fun CommonParams.queryParams() = listOfNotNull(
     includeIfNotNull(from, "from"),
     includeIfNotNull(to, "to")
 ).toTypedArray()
-fun <T> T.buildURL(parts: List<String>, root: String = "", row: Int?, state: T?, history: RouteResultHistory) =
+fun <T> T.buildURL(parts: List<String>, root: String = "", row: Int?, state: T?, history: History) =
     ((if (parts.isEmpty()) "/$root" else "?" + parts.joinToString("&")) + (row?.let { "#$it" } ?: "")).let { newUrl ->
         if (this == state) {
             history.replace(newUrl)
@@ -275,17 +276,19 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                         attrs.small = true
                         attrs.numberOfMonths = 1
                         attrs.renderCalendarInfo = {
-                            div("presets") {
-                                presets.forEach { preset ->
-                                    button {
-                                        attrs.onClickFunction = {
-                                            it.preventDefault()
-                                            setState {
-                                                startDate = preset.value.startDate
-                                                endDate = preset.value.endDate
+                            createElement {
+                                div("presets") {
+                                    presets.forEach { preset ->
+                                        button {
+                                            attrs.onClickFunction = {
+                                                it.preventDefault()
+                                                setState {
+                                                    startDate = preset.value.startDate
+                                                    endDate = preset.value.endDate
+                                                }
                                             }
+                                            +preset.key
                                         }
-                                        +preset.key
                                     }
                                 }
                             }
@@ -295,15 +298,17 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                 div("mb-3 col-sm-3") {
                     select("form-select") {
                         ref = sortRef
-                        attrs.attributes["aria-label"] = "Sort by"
-                        attrs.onChangeFunction = {
-                            setState {
-                                order = SearchOrder.fromString(sortRef.current?.value ?: "") ?: SearchOrder.Relevance
+                        attrs {
+                            attributes["aria-label"] = "Sort by"
+                            onChangeFunction = {
+                                setState {
+                                    order = SearchOrder.fromString(sortRef.current?.value ?: "") ?: SearchOrder.Relevance
+                                }
                             }
+                            value = state.order.toString()
                         }
                         SearchOrder.values().filter { props.sortOrderTarget in it.targets }.forEach {
                             option {
-                                attrs.selected = (state.order ?: SearchOrder.Relevance) == it
                                 attrs.value = it.toString()
                                 +it.toString()
                             }
@@ -315,10 +320,9 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
     }
 }
 
-inline fun <T : CommonParams, reified S : Search<T>> RBuilder.searchTyped(noinline handler: SearchProps<T>.() -> Unit): ReactElement {
-    return child(S::class) {
+inline fun <T : CommonParams, reified S : Search<T>> RBuilder.searchTyped(noinline handler: SearchProps<T>.() -> Unit) =
+    child(S::class) {
         this.attrs(handler)
     }
-}
 
 fun <T : CommonParams> RBuilder.search(handler: SearchProps<T>.() -> Unit) = searchTyped(handler)

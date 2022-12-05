@@ -4,6 +4,7 @@ import external.Axios
 import external.CancelTokenSource
 import external.Moment
 import external.generateConfig
+import external.routeLink
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.Config
 import io.beatmaps.common.fixedStr
@@ -15,11 +16,10 @@ import io.beatmaps.shared.InfiniteScroll
 import kotlinx.datetime.Clock
 import kotlinx.html.title
 import org.w3c.dom.HTMLTableSectionElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.i
@@ -30,14 +30,13 @@ import react.dom.td
 import react.dom.th
 import react.dom.thead
 import react.dom.tr
-import react.router.dom.RouteResultHistory
-import react.router.dom.routeLink
+import react.router.dom.History
 
-external interface UserListProps : RProps {
-    var history: RouteResultHistory
+external interface UserListProps : Props {
+    var history: History
 }
 
-class UserList : RComponent<UserListProps, RState>() {
+class UserList : RComponent<UserListProps, State>() {
     private val resultsTable = createRef<HTMLTableSectionElement>()
 
     override fun componentDidMount() {
@@ -170,8 +169,7 @@ class UserList : RComponent<UserListProps, RState>() {
 
 class UserInfiniteScroll : InfiniteScroll<UserDetail>()
 
-fun RBuilder.userList(handler: UserListProps.() -> Unit): ReactElement {
-    return child(UserList::class) {
+fun RBuilder.userList(handler: UserListProps.() -> Unit) =
+    child(UserList::class) {
         this.attrs(handler)
     }
-}

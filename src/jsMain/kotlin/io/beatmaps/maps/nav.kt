@@ -1,5 +1,6 @@
 package io.beatmaps.maps
 
+import external.reactFor
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.ReviewConstants
@@ -7,13 +8,13 @@ import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
-import react.RProps
+import react.Props
 import react.dom.div
 import react.dom.input
 import react.dom.label
 import react.functionComponent
 
-external interface MapPageNavProps : RProps {
+external interface MapPageNavProps : Props {
     var map: MapDetail
     var comments: Boolean?
     var setComments: (() -> Unit)?
@@ -41,7 +42,6 @@ val mapPageNav = functionComponent<MapPageNavProps> {
             val rvChecked = it.comments == true
 
             input(InputType.radio, name = "nav", classes = "btn-check") {
-                attrs.checked = ssChecked
                 attrs.id = "nav-ss"
             }
             label("btn btn-" + if (ssChecked) "primary" else "secondary") {
@@ -49,12 +49,11 @@ val mapPageNav = functionComponent<MapPageNavProps> {
                     e.preventDefault()
                     it.setType?.invoke(LeaderboardType.ScoreSaber)
                 }
-                attrs.htmlFor = "nav-ss"
+                attrs.reactFor = "nav-ss"
                 +"ScoreSaber"
             }
 
             input(InputType.radio, name = "nav", classes = "btn-check") {
-                attrs.checked = blChecked
                 attrs.id = "nav-bl"
             }
             label("btn btn-" + if (blChecked) "primary" else "secondary") {
@@ -62,13 +61,12 @@ val mapPageNav = functionComponent<MapPageNavProps> {
                     e.preventDefault()
                     it.setType?.invoke(LeaderboardType.BeatLeader)
                 }
-                attrs.htmlFor = "nav-bl"
+                attrs.reactFor = "nav-bl"
                 +"BeatLeader"
             }
 
             if (ReviewConstants.COMMENTS_ENABLED) {
                 input(InputType.radio, name = "nav", classes = "btn-check") {
-                    attrs.checked = rvChecked
                     attrs.id = "nav-rv"
                 }
                 label("btn btn-" + if (rvChecked) "primary" else "secondary") {
@@ -76,7 +74,7 @@ val mapPageNav = functionComponent<MapPageNavProps> {
                         e.preventDefault()
                         it.setComments?.invoke()
                     }
-                    attrs.htmlFor = "nav-rv"
+                    attrs.reactFor = "nav-rv"
                     +"Reviews"
                 }
             }

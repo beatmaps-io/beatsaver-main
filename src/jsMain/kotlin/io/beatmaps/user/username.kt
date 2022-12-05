@@ -14,11 +14,10 @@ import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
 import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLInputElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.button
 import react.dom.div
@@ -28,14 +27,14 @@ import react.dom.input
 import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
-import react.router.dom.RouteResultHistory
+import react.router.dom.History
 import react.setState
 
-external interface PickUsernameProps : RProps {
-    var history: RouteResultHistory
+external interface PickUsernameProps : Props {
+    var history: History
 }
 
-external interface PickUsernameState : RState {
+external interface PickUsernameState : State {
     var errors: List<String>
     var loading: Boolean
     var submitted: Boolean
@@ -44,15 +43,13 @@ external interface PickUsernameState : RState {
 class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
     private val inputRef = createRef<HTMLInputElement>()
 
-    override fun componentWillMount() {
+    override fun componentDidMount() {
         setState {
             errors = listOf()
             loading = false
             submitted = false
         }
-    }
 
-    override fun componentDidMount() {
         setPageTitle("Set username")
 
         loadState()
@@ -161,8 +158,7 @@ class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
     }
 }
 
-fun RBuilder.pickUsernamePage(handler: PickUsernameProps.() -> Unit): ReactElement {
-    return child(PickUsernamePage::class) {
+fun RBuilder.pickUsernamePage(handler: PickUsernameProps.() -> Unit) =
+    child(PickUsernamePage::class) {
         this.attrs(handler)
     }
-}

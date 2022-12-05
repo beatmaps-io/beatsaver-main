@@ -2,18 +2,26 @@ package io.beatmaps.maps
 
 import io.beatmaps.common.fixedStr
 import kotlinx.html.ThScope
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.dom.td
 import react.dom.th
 import react.dom.tr
 
-data class ScoreProps(var position: Int, var playerId: Long, var name: String, var pp: Double, var score: Int, var scoreColor: String, var percentage: String, var mods: List<String>) : RProps
+external interface ScoreProps : Props {
+    var position: Int
+    var playerId: Long
+    var name: String
+    var pp: Double
+    var score: Int
+    var scoreColor: String
+    var percentage: String
+    var mods: List<String>
+}
 
-class Score : RComponent<ScoreProps, RState>() {
+class Score : RComponent<ScoreProps, State>() {
     override fun RBuilder.render() {
         tr {
             th(scope = ThScope.row) {
@@ -42,8 +50,7 @@ class Score : RComponent<ScoreProps, RState>() {
     }
 }
 
-fun RBuilder.score(handler: ScoreProps.() -> Unit): ReactElement {
-    return child(Score::class) {
+fun RBuilder.score(handler: ScoreProps.() -> Unit) =
+    child(Score::class) {
         this.attrs(handler)
     }
-}

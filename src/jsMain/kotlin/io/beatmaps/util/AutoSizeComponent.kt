@@ -2,19 +2,19 @@ package io.beatmaps.util
 
 import kotlinx.browser.window
 import org.w3c.dom.HTMLDivElement
+import react.Props
 import react.RComponent
-import react.RProps
-import react.RState
+import react.State
 import react.createRef
 import react.dom.RDOMBuilder
 import react.dom.jsStyle
 import react.setState
 
-external interface AutoSizeComponentProps<T> : RProps {
+external interface AutoSizeComponentProps<T> : Props {
     var obj: T?
 }
 
-external interface AutoSizeComponentState : RState {
+external interface AutoSizeComponentState : State {
     var loaded: Boolean?
     var height: String
     var margin: String?
@@ -22,6 +22,7 @@ external interface AutoSizeComponentState : RState {
 
 abstract class AutoSizeComponent<T, U : AutoSizeComponentProps<T>, V : AutoSizeComponentState>(private val padding: Int) : RComponent<U, V>() {
     protected val divRef = createRef<HTMLDivElement>()
+    private var handle: Int? = null
 
     fun style(builder: RDOMBuilder<*>) {
         builder.attrs.jsStyle {
@@ -39,7 +40,7 @@ abstract class AutoSizeComponent<T, U : AutoSizeComponentProps<T>, V : AutoSizeC
             margin = "0px"
         }
 
-        window.setTimeout({
+        handle = window.setTimeout({
             setState {
                 height = "0px"
             }
@@ -55,6 +56,10 @@ abstract class AutoSizeComponent<T, U : AutoSizeComponentProps<T>, V : AutoSizeC
         }
     }
 
+    override fun componentWillUnmount() {
+        handle?.let { window.clearTimeout(it) }
+    }
+
     override fun componentDidUpdate(prevProps: U, prevState: V, snapshot: Any) {
         if (state.loaded != true && props.obj != null) {
             setState {
@@ -62,7 +67,7 @@ abstract class AutoSizeComponent<T, U : AutoSizeComponentProps<T>, V : AutoSizeC
                 height = "${autoSize()}px"
             }
 
-            window.setTimeout({
+            handle = window.setTimeout({
                 setState {
                     height = "auto"
                 }

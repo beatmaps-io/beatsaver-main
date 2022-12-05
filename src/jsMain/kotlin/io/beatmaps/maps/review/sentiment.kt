@@ -2,11 +2,11 @@ package io.beatmaps.maps.review
 
 import io.beatmaps.api.ReviewSentiment
 import kotlinx.html.js.onClickFunction
-import react.RProps
+import react.Props
 import react.dom.button
 import react.functionComponent
 
-external interface SentimentProps : RProps {
+external interface SentimentProps : Props {
     var sentiment: ReviewSentiment?
     var updateSentiment: ((ReviewSentiment) -> Unit)?
 }

@@ -16,23 +16,24 @@ import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import org.w3c.dom.get
 import org.w3c.dom.set
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
+import react.State
 import react.createRef
 import react.dom.div
 import react.ref
-import react.router.dom.RouteResultHistory
+import react.router.dom.History
+import react.router.dom.Match
 import react.setState
 
-external interface MapPageProps : RProps {
-    var history: RouteResultHistory
-    var mapKey: String
+external interface MapPageProps : Props {
+    var match: Match
     var beatsaver: Boolean
+    var history: History
 }
 
-external interface MapPageState : RState {
+external interface MapPageState : State {
     var map: MapDetail?
     var selectedDiff: MapDifficulty?
     var type: LeaderboardType?
@@ -49,6 +50,7 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
     }
 
     private fun loadMap() {
+        val mapKey = props.match.params["mapKey"]
         val subPath = if (props.beatsaver) {
             "beatsaver"
         } else {
@@ -56,7 +58,7 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
         }
 
         axiosGet<MapDetail>(
-            "${Config.apibase}/maps/$subPath/${props.mapKey}",
+            "${Config.apibase}/maps/$subPath/$mapKey",
         ).then {
             val mapLocal = it.data
             setPageTitle("Map - " + mapLocal.name)

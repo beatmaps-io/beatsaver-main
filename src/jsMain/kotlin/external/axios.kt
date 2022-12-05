@@ -1,4 +1,4 @@
-@file:Suppress("INTERFACE_WITH_SUPERCLASS")
+@file:Suppress("INTERFACE_WITH_SUPEComponentClass")
 package external
 
 import io.beatmaps.common.json
@@ -73,7 +73,7 @@ external interface AxiosError : Error {
     var request: Any? get() = definedExternally; set(value) = definedExternally
     var response: AxiosResponse<Any>? get() = definedExternally; set(value) = definedExternally
 }
-external interface AxiosPromise<T> : Promise<AxiosResponse<T>>
+external class AxiosPromise<T> : Promise<AxiosResponse<T>>
 external interface CancelStatic
 external interface Cancel {
     var message: String

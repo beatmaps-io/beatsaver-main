@@ -4,6 +4,7 @@ import external.Axios
 import external.TimeAgo
 import external.axiosDelete
 import external.generateConfig
+import external.routeLink
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.DeleteReview
 import io.beatmaps.api.PutReview
@@ -22,8 +23,8 @@ import kotlinx.html.TD
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLTextAreaElement
-import react.RProps
-import react.RReadableRef
+import react.Props
+import react.RefObject
 import react.createRef
 import react.dom.RDOMBuilder
 import react.dom.a
@@ -34,11 +35,10 @@ import react.dom.td
 import react.dom.textarea
 import react.dom.tr
 import react.functionComponent
-import react.router.dom.routeLink
 import react.useState
 
-external interface ModReviewEntryProps : RProps {
-    var modal: RReadableRef<ModalComponent>
+external interface ModReviewEntryProps : Props {
+    var modal: RefObject<ModalComponent>
     var entry: ReviewDetail?
     var setUser: (String) -> Unit
 }

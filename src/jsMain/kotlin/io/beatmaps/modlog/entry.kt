@@ -1,6 +1,7 @@
 package io.beatmaps.modlog
 
 import external.TimeAgo
+import external.routeLink
 import io.beatmaps.api.ModLogEntry
 import io.beatmaps.api.ReviewSentiment
 import io.beatmaps.api.UserDetail
@@ -19,7 +20,7 @@ import kotlinx.html.DIV
 import kotlinx.html.TD
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLDivElement
-import react.RProps
+import react.Props
 import react.createRef
 import react.dom.RDOMBuilder
 import react.dom.a
@@ -31,9 +32,8 @@ import react.dom.span
 import react.dom.td
 import react.dom.tr
 import react.functionComponent
-import react.router.dom.routeLink
 
-external interface ModLogEntryProps : RProps {
+external interface ModLogEntryProps : Props {
     var entry: ModLogEntry?
     var setUser: (String, String) -> Unit
 }
