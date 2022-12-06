@@ -9,6 +9,7 @@ import io.beatmaps.api.UserAlertStats
 import io.beatmaps.common.Config
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.json
+import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.buildURL
@@ -46,6 +47,10 @@ external interface AlertsPageState : State {
 
 class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
     private val resultsColumn = createRef<HTMLDivElement>()
+
+    override fun componentDidMount() {
+        setPageTitle("Alerts")
+    }
 
     override fun componentWillMount() {
         Axios.get<String>(

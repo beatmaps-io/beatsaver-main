@@ -65,9 +65,8 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
     private val publicRef = createRef<HTMLInputElement>()
 
     override fun componentDidMount() {
-        setPageTitle("Playlist")
-
         if (props.match.params["id"] == null) {
+            setPageTitle("Create Playlist")
             setState {
                 loading = false
                 init = true
@@ -80,6 +79,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                 1
             )
         } else {
+            setPageTitle("Edit Playlist")
             loadData()
         }
     }
@@ -97,7 +97,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
             "${Config.apibase}/playlists/id/$id",
             generateConfig<String, PlaylistPage>()
         ).then {
-            setPageTitle("Playlist - ${it.data.playlist?.name}")
+            setPageTitle("Edit Playlist - ${it.data.playlist?.name}")
 
             window.setTimeout(
                 {

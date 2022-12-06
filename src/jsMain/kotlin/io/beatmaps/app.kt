@@ -25,6 +25,7 @@ import kotlinext.js.jso
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLAnchorElement
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.asList
 import react.Component
@@ -91,6 +92,15 @@ class App : RComponent<Props, State>() {
 
     private fun initWithHistory(history: History, replaceHomelink: Boolean = true) {
         if (init) return
+
+        (document.getElementById("root") as? HTMLElement)?.addEventListener("click", { e ->
+            (e.target as HTMLElement).closest("a")?.let { link ->
+                if (link.getAttribute("data-bs") == "local") {
+                    e.preventDefault()
+                    history.push(link.getAttribute("href") ?: "")
+                }
+            }
+        })
 
         if (replaceHomelink) {
             fixLink("home-link", history) {

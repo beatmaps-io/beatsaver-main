@@ -49,6 +49,13 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
         loadMap()
     }
 
+    override fun componentDidUpdate(prevProps: MapPageProps, prevState: MapPageState, snapshot: Any) {
+        if (prevProps.match.path != props.match.path || prevProps.match.params["mapKey"] != props.match.params["mapKey"]) {
+            // Load new map
+            loadMap()
+        }
+    }
+
     private fun loadMap() {
         val mapKey = props.match.params["mapKey"]
         val subPath = if (props.beatsaver) {

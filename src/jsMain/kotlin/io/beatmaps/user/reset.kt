@@ -46,7 +46,7 @@ class ResetPage : RComponent<ResetPageProps, ResetPageState>() {
     }
 
     override fun componentDidMount() {
-        setPageTitle("Reset password") // TODO: Add to new pages
+        setPageTitle("Reset password")
     }
 
     override fun RBuilder.render() {

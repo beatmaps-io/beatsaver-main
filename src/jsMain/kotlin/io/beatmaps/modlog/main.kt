@@ -58,9 +58,15 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
         if (props.userData?.admin != true) {
             props.history.push("/")
         }
+
+        updateFromURL()
     }
 
-    override fun componentWillReceiveProps(nextProps: ModLogProps) {
+    override fun componentDidUpdate(prevProps: ModLogProps, prevState: ModLogState, snapshot: Any) {
+        updateFromURL()
+    }
+
+    private fun updateFromURL() {
         val (mod, user) = URLSearchParams(props.location.search).let { u ->
             (u.get("mod") ?: "") to (u.get("user") ?: "")
         }

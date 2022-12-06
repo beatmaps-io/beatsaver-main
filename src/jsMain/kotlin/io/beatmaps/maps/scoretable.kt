@@ -86,7 +86,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
         }
 
         Axios.get<LeaderboardData>(
-            "${Config.apibase}/scores/${props.mapKey}/${state.page}?difficulty=${props.selected?.difficulty?.idx ?: 9}" +
+            "${Config.apibase}/scores/${props.mapKey}/${state.page ?: 1}?difficulty=${props.selected?.difficulty?.idx ?: 9}" +
                 "&gameMode=${props.selected?.characteristic?.ordinal ?: 0}&type=${props.type}",
             generateConfig<String, LeaderboardData>(state.token?.token)
         ).then {

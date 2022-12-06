@@ -58,9 +58,15 @@ class ModReview : RComponent<ModReviewProps, ModReviewState>() {
         if (props.userData?.curator != true) {
             props.history.push("/")
         }
+
+        updateFromURL()
     }
 
-    override fun componentWillReceiveProps(nextProps: ModReviewProps) {
+    override fun componentDidUpdate(prevProps: ModReviewProps, prevState: ModReviewState, snapshot: Any) {
+        updateFromURL()
+    }
+
+    private fun updateFromURL() {
         val user = URLSearchParams(window.location.search).let { u ->
             u.get("user") ?: ""
         }
