@@ -368,10 +368,26 @@ table.search-results {
   img.cover {
     width: 100px;
     height: 100px;
+    display: inline-block;
+    position: relative;
+    font-size: 0;
+
+    &:after {
+      content: attr(alt);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #222;
+      text-align: center;
+      font-size: var(--bs-body-font-size);
+    }
   }
   img.mode {
     width: 16px;
     height: 16px;
+    display: inline-block;
     vertical-align: top;
     margin-top: 2px;
   }
