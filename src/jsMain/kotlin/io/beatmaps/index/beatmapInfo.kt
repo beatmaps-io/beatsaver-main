@@ -61,7 +61,7 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
     private val timeUpdate = { _: Any ->
         props.version?.previewURL?.let { ourSrc ->
             props.audio?.let { audio ->
-                if (audio.src == ourSrc && !audio.paused) {
+                if (audio.getAttribute("src") == ourSrc && !audio.paused) {
                     updateView(audio.currentTime / audio.duration)
                 } else {
                     if (state.handle != null) {
@@ -89,7 +89,7 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
     private val toggleAudio: (Any) -> Unit = { _: Any ->
         props.version?.previewURL?.let { newSrc ->
             props.audio?.let { audio ->
-                if (audio.src != newSrc) {
+                if (audio.getAttribute("src") != newSrc) {
                     audio.src = newSrc
                     audio.currentTime = 0.0
                     play(audio)

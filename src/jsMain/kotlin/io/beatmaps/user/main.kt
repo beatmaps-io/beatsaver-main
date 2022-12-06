@@ -120,6 +120,12 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         val userId = props.match.params["userId"]?.toIntOrNull()
         val url = "${Config.apibase}/users" + (userId?.let { "/id/$it" } ?: "/me")
 
+        setState {
+            userDetail = null
+            followData = null
+            startup = false
+        }
+
         axiosGet<String>(
             url
         ).then {

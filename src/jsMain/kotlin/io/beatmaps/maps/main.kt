@@ -64,6 +64,13 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
             "id"
         }
 
+        setState {
+            map = null
+            selectedDiff = null
+            type = null
+            comments = null
+        }
+
         axiosGet<MapDetail>(
             "${Config.apibase}/maps/$subPath/$mapKey",
         ).then {
