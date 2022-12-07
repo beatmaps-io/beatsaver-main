@@ -9,7 +9,7 @@ import io.beatmaps.api.UserAlertStats
 import io.beatmaps.common.Config
 import io.beatmaps.shared.coloredCard
 import io.beatmaps.util.textToContent
-import kotlinx.browser.window
+import kotlinx.browser.document
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLDivElement
@@ -40,7 +40,7 @@ external interface AlertState : State {
 }
 
 fun updateAlertDisplay(stats: UserAlertStats) {
-    window.document.getElementById("alert-count")?.apply {
+    document.getElementById("alert-count")?.apply {
         stats.unread.let { count ->
             setAttribute("data-count", count.toString())
             innerHTML = if (count < 10) count.toString() else "9+"

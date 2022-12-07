@@ -59,6 +59,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
         ).then {
             // Decode is here so that 401 actually passes to error handler
             val data = json.decodeFromString<UserAlertStats>(it.data)
+            updateAlertDisplay(data)
 
             setState {
                 alertStats = data
