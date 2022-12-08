@@ -100,7 +100,7 @@ class InfoTable : RComponent<InfoTableProps, State>() {
                             span("text-" + stats.sentiment.color) {
                                 +stats.sentiment.human
                             }
-                            +" (${stats.reviews} reviews)"
+                            +" (${stats.reviews} ${if (stats.reviews == 1) "review" else "reviews"})"
                         }
                     }
                 }
