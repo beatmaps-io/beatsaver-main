@@ -24,6 +24,7 @@ import kotlinx.html.CommonAttributeGroupFacade
 import kotlinx.html.classes
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
+import org.w3c.dom.Audio
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.Event
 import org.w3c.xhr.FormData
@@ -186,6 +187,14 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
         }) { }
     }
 
+    private val audio = Audio().also {
+        it.volume = 0.4
+    }
+
+    override fun componentWillUnmount() {
+        audio.pause()
+    }
+
     override fun RBuilder.render() {
         modal {
             ref = modalRef
@@ -329,6 +338,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                             obj = it.map
                                             version = it.map.publishedVersion()
                                             modal = modalRef
+                                            audio = this@Playlist.audio
                                         }
                                     }
                                 }
@@ -341,6 +351,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                     obj = it.map
                                     version = it.map.publishedVersion()
                                     modal = modalRef
+                                    audio = this@Playlist.audio
                                 }
                             }
                         }
