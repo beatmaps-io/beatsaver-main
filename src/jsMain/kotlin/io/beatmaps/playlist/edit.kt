@@ -6,10 +6,10 @@ import external.generateConfig
 import external.reactFor
 import external.recaptcha
 import external.routeLink
+import io.beatmaps.Config
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
-import io.beatmaps.common.Config
 import io.beatmaps.globalContext
 import io.beatmaps.setPageTitle
 import io.beatmaps.upload.UploadRequestConfig

@@ -1,10 +1,10 @@
 package io.beatmaps.maps.recent
 
 import external.axiosGet
+import io.beatmaps.Config
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapTestplay
 import io.beatmaps.api.MapVersion
-import io.beatmaps.common.Config
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
 import react.Props

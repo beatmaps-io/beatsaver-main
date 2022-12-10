@@ -5,8 +5,8 @@ import external.CancelTokenSource
 import external.Moment
 import external.generateConfig
 import external.routeLink
+import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.Config
 import io.beatmaps.common.fixedStr
 import io.beatmaps.common.formatTime
 import io.beatmaps.dateFormat

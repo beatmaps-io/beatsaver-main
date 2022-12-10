@@ -32,7 +32,7 @@ fun Route.scoresRoute() {
     )
 
     options<ScoresApi.Leaderboard> {
-        call.response.header("Access-Control-Allow-Origin", Config.basename)
+        call.response.header("Access-Control-Allow-Origin", Config.siteBase())
         call.respond(HttpStatusCode.OK)
     }
 

@@ -3,9 +3,9 @@ package io.beatmaps.maps.review
 import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewsResponse
-import io.beatmaps.common.Config
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.shared.InfiniteScroll

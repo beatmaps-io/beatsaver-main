@@ -2,9 +2,9 @@ package io.beatmaps.user
 
 import external.Axios
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ResetRequest
-import io.beatmaps.common.Config
 import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType

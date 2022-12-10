@@ -3,8 +3,8 @@ package io.beatmaps.maps.testplay
 import external.Axios
 import external.TimeAgo
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.api.FeedbackUpdate
-import io.beatmaps.common.Config
 import io.beatmaps.util.textToContent
 import kotlinx.datetime.internal.JSJoda.Instant
 import kotlinx.html.TEXTAREA

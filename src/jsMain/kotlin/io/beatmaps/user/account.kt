@@ -3,12 +3,12 @@ package io.beatmaps.user
 import external.Axios
 import external.generateConfig
 import external.reactFor
+import io.beatmaps.Config
 import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.AccountRequest
 import io.beatmaps.api.AccountType
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.Config
 import io.beatmaps.upload.UploadRequestConfig
 import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod

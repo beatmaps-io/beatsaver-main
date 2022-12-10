@@ -5,10 +5,10 @@ import external.Moment
 import external.TimeAgo
 import external.generateConfig
 import external.reactFor
+import io.beatmaps.Config
 import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.StateUpdate
-import io.beatmaps.common.Config
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
@@ -48,6 +48,7 @@ import react.useState
 external interface VersionProps : Props {
     var mapId: Int
     var hash: String
+    var downloadUrl: String?
     var diffs: List<MapDifficulty>?
     var firstVersion: Boolean
     var feedback: String
@@ -298,7 +299,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                 textToContent(
                                     "Some of your difficulties have a high percentage of parity errors\n\n" +
                                         "You can read more about parity on the BSMG wiki:\nhttps://bsmg.wiki/mapping/basic-mapping.html#do-mapping-with-flow\n\n" +
-                                        "To check these errors yourself visit the parity checker here:\nhttps://galaxymaster2.github.io/bs-parity?url=${Config.cdnbase}/${props.hash}.zip"
+                                        "To check these errors yourself visit the parity checker here:\nhttps://galaxymaster2.github.io/bs-parity?url=${props.downloadUrl}"
                                 )
                             }
                         }

@@ -3,10 +3,10 @@ package io.beatmaps.user.alerts
 import external.Axios
 import external.TimeAgo
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.api.AlertUpdate
 import io.beatmaps.api.UserAlert
 import io.beatmaps.api.UserAlertStats
-import io.beatmaps.common.Config
 import io.beatmaps.shared.coloredCard
 import io.beatmaps.util.textToContent
 import kotlinx.browser.document

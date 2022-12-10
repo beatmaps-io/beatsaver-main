@@ -146,6 +146,7 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                         val version = props.mapInfo.versions.find { v -> v.hash == it.hash }
                         version {
                             hash = it.hash
+                            downloadUrl = version?.downloadURL
                             diffs = version?.diffs
                             isOwner = props.isOwner
                             feedback = it.body

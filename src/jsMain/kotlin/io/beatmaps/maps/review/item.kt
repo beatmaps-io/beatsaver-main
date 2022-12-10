@@ -4,6 +4,7 @@ import external.Axios
 import external.axiosDelete
 import external.generateConfig
 import external.reactFor
+import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.CurateReview
 import io.beatmaps.api.DeleteReview
@@ -11,7 +12,6 @@ import io.beatmaps.api.PutReview
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewSentiment
-import io.beatmaps.common.Config
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent

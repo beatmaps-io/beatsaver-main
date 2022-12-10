@@ -3,8 +3,8 @@ package io.beatmaps.user
 import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.Config
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.userCard

@@ -1,8 +1,8 @@
 package io.beatmaps.playlist
 
 import external.routeLink
+import io.beatmaps.Config
 import io.beatmaps.api.PlaylistFull
-import io.beatmaps.common.Config
 import io.beatmaps.common.api.MapAttr
 import io.beatmaps.common.formatTime
 import io.beatmaps.shared.coloredCard
@@ -110,12 +110,12 @@ class PlaylistInfo : AutoSizeComponent<PlaylistFull, PlaylistInfoProps, Playlist
                             }
                         }
                         div("buttons") {
-                            a("${Config.apiremotebase}/playlists/id/${pl.playlistId}/download") {
+                            a(pl.downloadURL) {
                                 attrs.title = "Download"
                                 attrs.attributes["aria-label"] = "Download"
                                 i("fas fa-download text-info") { }
                             }
-                            a("bsplaylist://playlist/${Config.apiremotebase}/playlists/id/${pl.playlistId}/download/beatsaver-${pl.playlistId}.bplist") {
+                            a("bsplaylist://playlist/${pl.downloadURL}/beatsaver-${pl.playlistId}.bplist") {
                                 attrs.title = "One-Click"
                                 attrs.attributes["aria-label"] = "One-Click"
                                 i("fas fa-cloud-download-alt text-info") { }

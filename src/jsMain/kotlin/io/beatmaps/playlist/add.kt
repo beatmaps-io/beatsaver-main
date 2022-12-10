@@ -5,10 +5,10 @@ import external.axiosGet
 import external.generateConfig
 import external.reactFor
 import external.routeLink
+import io.beatmaps.Config
 import io.beatmaps.api.InPlaylist
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.PlaylistMapRequest
-import io.beatmaps.common.Config
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData

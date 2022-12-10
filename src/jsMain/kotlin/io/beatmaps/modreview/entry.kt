@@ -5,6 +5,7 @@ import external.TimeAgo
 import external.axiosDelete
 import external.generateConfig
 import external.routeLink
+import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.DeleteReview
 import io.beatmaps.api.PutReview
@@ -12,7 +13,6 @@ import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewSentiment
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.Config
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData

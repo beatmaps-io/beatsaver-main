@@ -40,7 +40,7 @@ fun Route.playlistController() {
                     meta("og:type", "website")
                     meta("og:site_name", "BeatSaver")
                     meta("og:title", it.name)
-                    meta("og:url", "${Config.basename}/playlists/${it.playlistId}")
+                    meta("og:url", "${Config.siteBase()}/playlists/${it.playlistId}")
                     meta("og:image", it.playlistImage)
                     meta("og:description", it.description.take(400))
                 }

@@ -2,13 +2,13 @@ package io.beatmaps.maps
 
 import external.Axios
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.SimpleMapInfoUpdate
 import io.beatmaps.api.StateUpdate
 import io.beatmaps.api.ValidateMap
-import io.beatmaps.common.Config
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.MapTagType
 import io.beatmaps.common.api.EMapState

@@ -106,7 +106,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 a("https://github.com/beatmaps-io/beatsaver-main", classes = "dropdown-item") {
                                     +"GitHub"
                                 }
-                                a("${Config.apiremotebase}/docs/", classes = "dropdown-item") {
+                                a("${Config.apiBase(true)}/docs/", classes = "dropdown-item") {
                                     +"API Docs"
                                 }
                             }

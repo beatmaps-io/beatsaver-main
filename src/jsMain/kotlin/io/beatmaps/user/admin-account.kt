@@ -3,11 +3,11 @@ package io.beatmaps.user
 import external.Axios
 import external.generateConfig
 import external.reactFor
+import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserAdminRequest
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserSuspendRequest
-import io.beatmaps.common.Config
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData

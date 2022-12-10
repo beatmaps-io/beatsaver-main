@@ -5,11 +5,11 @@ import external.ReCAPTCHA
 import external.axiosGet
 import external.generateConfig
 import external.recaptcha
+import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.PutReview
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewSentiment
-import io.beatmaps.common.Config
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction

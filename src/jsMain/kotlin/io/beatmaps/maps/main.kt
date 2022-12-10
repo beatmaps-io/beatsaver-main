@@ -1,11 +1,11 @@
 package io.beatmaps.maps
 
 import external.axiosGet
+import io.beatmaps.Config
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.ReviewConstants
-import io.beatmaps.common.Config
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal

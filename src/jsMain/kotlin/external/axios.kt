@@ -1,4 +1,3 @@
-@file:Suppress("INTERFACE_WITH_SUPEComponentClass")
 package external
 
 import io.beatmaps.common.json

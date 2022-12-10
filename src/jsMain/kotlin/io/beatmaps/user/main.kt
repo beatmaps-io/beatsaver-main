@@ -4,11 +4,11 @@ import external.Axios
 import external.axiosGet
 import external.generateConfig
 import external.routeLink
+import io.beatmaps.Config
 import io.beatmaps.UserData
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserFollowData
 import io.beatmaps.api.UserFollowRequest
-import io.beatmaps.common.Config
 import io.beatmaps.common.json
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
@@ -256,10 +256,18 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                             }
                         }
                         div {
-                            a("${Config.apibase}/users/id/${state.userDetail?.id ?: 0}/playlist", "_blank", "btn btn-secondary") {
-                                attrs.attributes["download"] = ""
-                                i("fas fa-download") { }
-                                +"Playlist"
+                            state.userDetail?.playlistUrl?.let { url ->
+                                div("btn-group") {
+                                    a(url, "_blank", "btn btn-secondary") {
+                                        attrs.attributes["download"] = ""
+                                        i("fas fa-download") { }
+                                        +"Playlist"
+                                    }
+                                    a("bsplaylist://playlist/${url}/beatsaver-user-${state.userDetail?.id}.bplist", classes = "btn btn-primary") {
+                                        attrs.attributes["aria-label"] = "One-Click"
+                                        i("fas fa-cloud-download-alt") { }
+                                    }
+                                }
                             }
                             if (props.userData?.admin == true) {
                                 routeLink("/modlog?user=${state.userDetail?.name}", className = "btn btn-secondary") {

@@ -3,9 +3,9 @@ package io.beatmaps.modlog
 import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.UserData
 import io.beatmaps.api.ModLogEntry
-import io.beatmaps.common.Config
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer

@@ -58,6 +58,10 @@ external interface UserData {
 
 val globalContext = createContext<UserData?>(null)
 
+object Config {
+    const val apibase = "/api"
+}
+
 fun main() {
     ReactDatesInit // This actually needs to be referenced I guess
     window.onload = {

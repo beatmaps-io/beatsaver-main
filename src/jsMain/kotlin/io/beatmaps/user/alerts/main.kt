@@ -3,10 +3,10 @@ package io.beatmaps.user.alerts
 import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.api.AlertUpdateAll
 import io.beatmaps.api.UserAlert
 import io.beatmaps.api.UserAlertStats
-import io.beatmaps.common.Config
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle

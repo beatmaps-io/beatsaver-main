@@ -3,10 +3,10 @@ package io.beatmaps.playlist
 import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistSearchResponse
 import io.beatmaps.api.SearchOrder
-import io.beatmaps.common.Config
 import io.beatmaps.index.encodeURIComponent
 import io.beatmaps.shared.CommonParams
 import io.beatmaps.shared.InfiniteScroll

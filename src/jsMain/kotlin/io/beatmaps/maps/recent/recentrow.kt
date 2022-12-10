@@ -2,10 +2,10 @@ package io.beatmaps.maps.recent
 
 import external.Axios
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
-import io.beatmaps.common.Config
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.beatmapTableRow
 import io.beatmaps.util.textToContent

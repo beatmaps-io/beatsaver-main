@@ -68,7 +68,7 @@ fun Route.mapController() {
                         meta("og:type", "website")
                         meta("og:site_name", "BeatSaver")
                         meta("og:title", it.name)
-                        meta("og:url", "${Config.basename}/maps/${it.id}")
+                        meta("og:url", "${Config.siteBase()}/maps/${it.id}")
                         meta("og:image", it.publishedVersion()?.coverURL)
                         meta("og:description", it.description.take(400))
                     }

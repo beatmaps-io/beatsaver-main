@@ -3,10 +3,10 @@ package io.beatmaps.user
 import external.Axios
 import external.axiosGet
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.Config
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType

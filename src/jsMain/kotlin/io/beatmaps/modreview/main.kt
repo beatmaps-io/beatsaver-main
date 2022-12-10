@@ -3,9 +3,9 @@ package io.beatmaps.modreview
 import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.UserData
 import io.beatmaps.api.ReviewsResponse
-import io.beatmaps.common.Config
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
 import io.beatmaps.maps.review.CommentsInfiniteScroll

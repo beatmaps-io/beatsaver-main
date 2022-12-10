@@ -130,7 +130,7 @@ fun Route.authRoute() {
         val localFile = File(localAvatarFolder(), "$discordId.png")
         localFile.writeBytes(bytes)
 
-        return "${Config.cdnbase}/avatar/$discordId.png"
+        return "${Config.cdnBase("", true)}/avatar/$discordId.png"
     }
 
     suspend fun ApplicationCall.getDiscordData(): DiscordUserInfo {
@@ -294,8 +294,8 @@ fun Route.authRoute() {
             val params = parametersOf(
                 "openid.ns" to listOf("http://specs.openid.net/auth/2.0"),
                 "openid.mode" to listOf("checkid_setup"),
-                "openid.return_to" to listOf("${Config.basename}/steam"),
-                "openid.realm" to listOf(Config.basename),
+                "openid.return_to" to listOf("${Config.siteBase()}/steam"),
+                "openid.realm" to listOf(Config.siteBase()),
                 "openid.identity" to listOf("http://specs.openid.net/auth/2.0/identifier_select"),
                 "openid.claimed_id" to listOf("http://specs.openid.net/auth/2.0/identifier_select")
             )

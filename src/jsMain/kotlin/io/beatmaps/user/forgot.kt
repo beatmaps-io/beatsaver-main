@@ -5,9 +5,9 @@ import external.ReCAPTCHA
 import external.generateConfig
 import external.recaptcha
 import external.routeLink
+import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ForgotRequest
-import io.beatmaps.common.Config
 import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType

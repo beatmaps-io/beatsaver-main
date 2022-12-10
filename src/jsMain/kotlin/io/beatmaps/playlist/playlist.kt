@@ -6,12 +6,12 @@ import external.draggable
 import external.droppable
 import external.generateConfig
 import external.routeLink
+import io.beatmaps.Config
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetailWithOrder
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistMapRequest
 import io.beatmaps.api.PlaylistPage
-import io.beatmaps.common.Config
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
@@ -281,10 +281,10 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                             }
                         }
                         div("btn-group d-flex") {
-                            a("${Config.apiremotebase}/playlists/id/${pl.playlistId}/download", classes = "btn btn-success") {
+                            a(pl.downloadURL, classes = "btn btn-success") {
                                 +"Download"
                             }
-                            a("bsplaylist://playlist/${Config.apiremotebase}/playlists/id/${pl.playlistId}/download/beatsaver-${pl.playlistId}.bplist", classes = "btn btn-info") {
+                            a("bsplaylist://playlist/${pl.downloadURL}/beatsaver-${pl.playlistId}.bplist", classes = "btn btn-info") {
                                 +"One-Click"
                             }
                         }

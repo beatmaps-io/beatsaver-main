@@ -2,7 +2,7 @@ package io.beatmaps.login
 
 import com.toxicbakery.bcrypt.Bcrypt
 import io.beatmaps.api.alertCount
-import io.beatmaps.api.baseName
+import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.ktor.client.HttpClient
@@ -45,7 +45,7 @@ fun Application.installDiscordOauth() {
     install(Authentication) {
         oauth("discord") {
             client = HttpClient(Apache)
-            urlProvider = { "$baseName${request.uri.substringBefore("?")}" }
+            urlProvider = { "${Config.siteBase()}${request.uri.substringBefore("?")}" }
             providerLookup = {
                 val queryParams = request.queryParameters as StringValues
                 discordProvider(queryParams["state"])

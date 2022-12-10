@@ -1,7 +1,6 @@
 @file:UseSerializers(InstantAsStringSerializer::class)
 package io.beatmaps.api
 
-import io.beatmaps.common.Config
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
@@ -27,11 +26,16 @@ data class UserDetail(
     val admin: Boolean? = null,
     val curator: Boolean? = null,
     val verifiedMapper: Boolean = false,
-    val suspendedAt: Instant? = null
+    val suspendedAt: Instant? = null,
+    val playlistUrl: String? = null
 ) {
-    fun profileLink(tab: String? = null, absolute: Boolean = false) = (if (absolute) Config.basename else "") + "/profile/$id" + (tab?.let { "#$it" } ?: "")
+    fun profileLink(tab: String? = null, absolute: Boolean = false) = UserDetailHelper.profileLink(this, tab, absolute)
     companion object
 }
+expect object UserDetailHelper {
+    fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean): String
+}
+
 @Serializable
 data class UserStats(
     val totalUpvotes: Int = 0,

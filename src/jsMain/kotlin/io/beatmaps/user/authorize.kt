@@ -1,8 +1,8 @@
 package io.beatmaps.user
 
 import external.axiosGet
+import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.Config
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
 import kotlinx.browser.document

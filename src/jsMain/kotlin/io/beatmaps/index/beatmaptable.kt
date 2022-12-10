@@ -4,11 +4,11 @@ import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
 import external.routeLink
+import io.beatmaps.Config
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SearchResponse
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.Config
 import io.beatmaps.common.MapTagType
 import io.beatmaps.shared.CommonParams
 import io.beatmaps.shared.InfiniteScroll

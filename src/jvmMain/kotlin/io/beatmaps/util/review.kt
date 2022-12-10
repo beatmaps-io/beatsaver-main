@@ -2,9 +2,8 @@ package io.beatmaps.util
 
 import io.beatmaps.api.ReviewUpdateInfo
 import io.beatmaps.api.UserDetail
-import io.beatmaps.api.baseName
-import io.beatmaps.api.cdnBase
 import io.beatmaps.api.reviewToComplex
+import io.beatmaps.common.Config
 import io.beatmaps.common.client
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.avgWithFilter
@@ -133,9 +132,9 @@ fun Application.reviewListeners() {
                                             truncateWithEllipsis(it, maxTitleLen)
                                         },
                                         url = review.map?.let {
-                                            "$baseName/maps/${it.id}"
+                                            "${Config.siteBase()}/maps/${it.id}"
                                         },
-                                        thumbnail = DiscordEmbed.HasUrl("${cdnBase("", true)}/${version.hash}.jpg"),
+                                        thumbnail = DiscordEmbed.HasUrl("${Config.cdnBase("", true)}/${version.hash}.jpg"),
                                         fields = listOf(
                                             DiscordEmbed.Field(
                                                 "Review",

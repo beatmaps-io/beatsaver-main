@@ -4,11 +4,11 @@ import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
 import external.invoke
+import io.beatmaps.Config
 import io.beatmaps.api.LeaderboardData
 import io.beatmaps.api.LeaderboardScore
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDifficulty
-import io.beatmaps.common.Config
 import io.beatmaps.common.fixedStr
 import kotlinx.browser.window
 import kotlinx.html.TBODY
