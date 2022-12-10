@@ -263,7 +263,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                         i("fas fa-download") { }
                                         +"Playlist"
                                     }
-                                    a("bsplaylist://playlist/${url}/beatsaver-user-${state.userDetail?.id}.bplist", classes = "btn btn-primary") {
+                                    a("bsplaylist://playlist/$url/beatsaver-user-${state.userDetail?.id}.bplist", classes = "btn btn-primary") {
                                         attrs.attributes["aria-label"] = "One-Click"
                                         i("fas fa-cloud-download-alt") { }
                                     }

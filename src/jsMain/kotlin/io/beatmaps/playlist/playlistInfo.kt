@@ -1,7 +1,6 @@
 package io.beatmaps.playlist
 
 import external.routeLink
-import io.beatmaps.Config
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.common.api.MapAttr
 import io.beatmaps.common.formatTime
