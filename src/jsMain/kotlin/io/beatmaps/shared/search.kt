@@ -305,11 +305,11 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                                     order = SearchOrder.fromString(sortRef.current?.value ?: "") ?: SearchOrder.Relevance
                                 }
                             }
-                            value = state.order.toString()
                         }
                         SearchOrder.values().filter { props.sortOrderTarget in it.targets }.forEach {
                             option {
                                 attrs.value = it.toString()
+                                attrs.selected = state.order == it
                                 +it.toString()
                             }
                         }
