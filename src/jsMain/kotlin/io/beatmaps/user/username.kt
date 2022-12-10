@@ -35,21 +35,15 @@ external interface PickUsernameProps : Props {
 }
 
 external interface PickUsernameState : State {
-    var errors: List<String>
-    var loading: Boolean
-    var submitted: Boolean
+    var errors: List<String>?
+    var loading: Boolean?
+    var submitted: Boolean?
 }
 
 class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
     private val inputRef = createRef<HTMLInputElement>()
 
     override fun componentDidMount() {
-        setState {
-            errors = listOf()
-            loading = false
-            submitted = false
-        }
-
         setPageTitle("Set username")
 
         loadState()
@@ -130,7 +124,7 @@ class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
                         +". _ -"
                     }
                 }
-                state.errors.forEach {
+                state.errors?.forEach {
                     div("invalid-feedback") {
                         attrs.jsStyle {
                             display = "block"
@@ -148,7 +142,7 @@ class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
                 }
                 div("d-grid") {
                     button(classes = "btn btn-success", type = ButtonType.submit) {
-                        attrs.disabled = state.submitted
+                        attrs.disabled = state.submitted == true
                         i("fas fa-check") {}
                         +" Continue"
                     }
