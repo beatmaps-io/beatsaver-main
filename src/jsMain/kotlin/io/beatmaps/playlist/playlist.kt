@@ -323,6 +323,8 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                 attrs.classes = setOf("playlist")
                                 state.maps?.mapIndexed { idx, it ->
                                     draggable(it.map.id, idx) {
+                                        attrs.classes = setOf("drag-beatmap")
+
                                         beatmapInfo {
                                             obj = it.map
                                             version = it.map.publishedVersion()
