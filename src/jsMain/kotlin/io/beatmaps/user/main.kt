@@ -270,24 +270,28 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                 }
                             }
                             if (props.userData?.admin == true) {
-                                routeLink("/modlog?user=${state.userDetail?.name}", className = "btn btn-secondary") {
-                                    i("fas fa-scroll") { }
-                                    +"Mod Log"
+                                div("btn-group") {
+                                    routeLink("/modlog?user=${state.userDetail?.name}", className = "btn btn-secondary") {
+                                        i("fas fa-scroll") { }
+                                        +"Mod Log"
+                                    }
                                 }
                             }
                             state.followData?.following?.let { following ->
-                                a("#", classes = "btn btn-" + if (following) "secondary" else "primary") {
-                                    attrs.onClickFunction = { e ->
-                                        e.preventDefault()
-                                        setFollowStatus(!following)
-                                    }
+                                div("btn-group") {
+                                    a("#", classes = "btn btn-" + if (following) "secondary" else "primary") {
+                                        attrs.onClickFunction = { e ->
+                                            e.preventDefault()
+                                            setFollowStatus(!following)
+                                        }
 
-                                    if (following) {
-                                        i("fas fa-user-minus") { }
-                                        +"Unfollow"
-                                    } else {
-                                        i("fas fa-user-plus") { }
-                                        +"Follow"
+                                        if (following) {
+                                            i("fas fa-user-minus") { }
+                                            +"Unfollow"
+                                        } else {
+                                            i("fas fa-user-plus") { }
+                                            +"Follow"
+                                        }
                                     }
                                 }
                             }
