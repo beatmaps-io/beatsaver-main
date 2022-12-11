@@ -34,9 +34,12 @@ class History(private val navigation: NavigateFunction) {
     fun replace(location: String) = go(location, true)
 
     private fun go(location: String, replace: Boolean) {
-        navigation.invoke(location, jso {
-            this.replace = replace
-        })
+        navigation.invoke(
+            location,
+            jso {
+                this.replace = replace
+            }
+        )
     }
 }
 

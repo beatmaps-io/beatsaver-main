@@ -17,7 +17,6 @@ import io.beatmaps.shared.InfiniteScroll
 import kotlinx.datetime.Clock
 import kotlinx.html.title
 import org.w3c.dom.HTMLTableSectionElement
-import react.Props
 import react.RBuilder
 import react.RComponent
 import react.State

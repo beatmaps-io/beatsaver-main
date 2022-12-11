@@ -4,7 +4,6 @@ import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
 import io.beatmaps.Config
-import io.beatmaps.History
 import io.beatmaps.UserData
 import io.beatmaps.WithRouterProps
 import io.beatmaps.api.ReviewsResponse
@@ -21,7 +20,6 @@ import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTableSectionElement
 import org.w3c.dom.url.URLSearchParams
-import react.Props
 import react.RBuilder
 import react.RComponent
 import react.State
