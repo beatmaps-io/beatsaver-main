@@ -12,7 +12,7 @@ import react.Props
 import react.dom.div
 import react.dom.input
 import react.dom.label
-import react.functionComponent
+import react.fc
 
 external interface MapPageNavProps : Props {
     var map: MapDetail
@@ -22,7 +22,7 @@ external interface MapPageNavProps : Props {
     var setType: ((LeaderboardType) -> Unit)?
 }
 
-val mapPageNav = functionComponent<MapPageNavProps> {
+val mapPageNav = fc<MapPageNavProps> {
     val mapAttributes = listOfNotNull(
         if (it.map.ranked) "ranked" else null,
         if (it.map.qualified && !it.map.ranked) "qualified" else null,

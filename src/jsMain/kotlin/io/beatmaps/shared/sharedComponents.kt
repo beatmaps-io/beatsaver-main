@@ -39,7 +39,7 @@ import react.dom.label
 import react.dom.p
 import react.dom.small
 import react.dom.span
-import react.functionComponent
+import react.fc
 import kotlin.collections.set
 import kotlin.math.log
 import kotlin.math.pow
@@ -50,7 +50,7 @@ external interface BotInfoProps : Props {
     var marginLeft: Boolean?
 }
 
-val botInfo = functionComponent<BotInfoProps> { props ->
+val botInfo = fc<BotInfoProps> { props ->
     val score = (props.version?.sageScore ?: 0)
     val margin = if (props.marginLeft != false) "ms-2" else "me-2"
 
@@ -71,7 +71,7 @@ external interface DiffIconsProps : Props {
     var diffs: List<MapDifficulty>?
 }
 
-val diffIcons = functionComponent<DiffIconsProps> { props ->
+val diffIcons = fc<DiffIconsProps> { props ->
     props.diffs?.forEach { d ->
         span("badge rounded-pill badge-${d.difficulty.color}") {
             diffImg(d)
@@ -85,7 +85,7 @@ external interface DownloadProps : Props {
     var version: MapVersion
 }
 
-val downloadZip = functionComponent<DownloadProps> { props ->
+val downloadZip = fc<DownloadProps> { props ->
     a(props.version.downloadURL) {
         attrs.rel = "noopener"
         attrs.title = "Download zip"
@@ -100,7 +100,7 @@ external interface CopyBSProps : Props {
     var map: MapDetail
 }
 
-val copyBsr = functionComponent<CopyBSProps> { props ->
+val copyBsr = fc<CopyBSProps> { props ->
     a("#") {
         attrs.title = "Copy BSR"
         attrs.attributes["aria-label"] = "Copy BSR"
@@ -134,7 +134,7 @@ external interface LinksProps : Props {
     var modal: RefObject<ModalComponent>
 }
 
-val links = functionComponent<LinksProps> { props ->
+val links = fc<LinksProps> { props ->
     copyBsr {
         attrs.map = props.map
     }
@@ -181,7 +181,7 @@ external interface UploadeProps : Props {
     var version: MapVersion?
 }
 
-val uploader = functionComponent<UploadeProps> { props ->
+val uploader = fc<UploadeProps> { props ->
     routeLink(props.map.uploader.profileLink()) {
         +props.map.uploader.name
     }
@@ -203,7 +203,7 @@ external interface PlaylistOwneProps : Props {
     var time: Instant
 }
 
-val playlistOwner = functionComponent<PlaylistOwneProps> { props ->
+val playlistOwner = fc<PlaylistOwneProps> { props ->
     props.owner?.let { owner ->
         routeLink(owner.profileLink(props.tab)) {
             +owner.name
@@ -222,7 +222,7 @@ external interface ColoredCardProps : PropsWithChildren {
     var extra: ((DIV) -> Unit)?
 }
 
-val coloredCard = functionComponent<ColoredCardProps> {
+val coloredCard = fc<ColoredCardProps> {
     div("card colored") {
         it.extra?.invoke(attrs)
 
@@ -248,7 +248,7 @@ external interface MapTitleProps : Props {
     var mapKey: String
 }
 
-val mapTitle = functionComponent<MapTitleProps> {
+val mapTitle = fc<MapTitleProps> {
     routeLink("/maps/${it.mapKey}") {
         +it.title.ifBlank {
             "<NO NAME>"
@@ -262,7 +262,7 @@ external interface RatingProps : Props {
     var rating: Float
 }
 
-val rating = functionComponent<RatingProps> {
+val rating = fc<RatingProps> {
     val totalVotes = (it.up + it.down).toDouble()
     var uncertainty = 2.0.pow(-log(totalVotes / 2 + 1, 3.0))
     val weightedRange = 25.0
@@ -340,7 +340,7 @@ external interface UserCardProps : Props {
     var titles: List<String>
 }
 
-var userCard = functionComponent<UserCardProps> {
+var userCard = fc<UserCardProps> {
     div("d-flex align-items-center my-2") {
         img("Profile Image", it.avatar, classes = "rounded-circle me-3") {
             attrs.width = "50"

@@ -14,6 +14,7 @@ import kotlinx.dom.hasClass
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTableSectionElement
 import org.w3c.dom.url.URLSearchParams
@@ -43,7 +44,7 @@ external interface ModLogState : State {
 }
 
 class ModLog : RComponent<ModLogProps, ModLogState>() {
-    private val resultsTable = createRef<HTMLTableSectionElement>()
+    private val resultsTable = createRef<HTMLElement>()
 
     private val modRef = createRef<HTMLInputElement>()
     private val userRef = createRef<HTMLInputElement>()

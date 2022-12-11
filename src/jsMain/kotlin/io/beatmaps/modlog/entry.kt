@@ -31,7 +31,7 @@ import react.dom.p
 import react.dom.span
 import react.dom.td
 import react.dom.tr
-import react.functionComponent
+import react.fc
 
 external interface ModLogEntryProps : Props {
     var entry: ModLogEntry?
@@ -59,7 +59,7 @@ private fun RDOMBuilder<DIV>.diffText(human: String, old: String, new: String) {
     }
 }
 
-val modLogEntryRenderer = functionComponent<ModLogEntryProps> {
+val modLogEntryRenderer = fc<ModLogEntryProps> {
     fun RDOMBuilder<TD>.linkUser(mod: Boolean, userDetail: UserDetail) {
         a("#", classes = "me-1") {
             attrs.onClickFunction = { ev ->

@@ -17,6 +17,7 @@ import io.beatmaps.shared.InfiniteScrollElementRenderer
 import kotlinx.browser.window
 import org.w3c.dom.Audio
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HTMLElement
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -75,7 +76,7 @@ external interface BeatmapTableState : State {
 external fun encodeURIComponent(uri: String): String
 
 class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
-    private val resultsTable = createRef<HTMLDivElement>()
+    private val resultsTable = createRef<HTMLElement>()
 
     override fun componentWillUpdate(nextProps: BeatmapTableProps, nextState: BeatmapTableState) {
         if (props.user != nextProps.user || props.wip != nextProps.wip || props.curated != nextProps.curated || props.search !== nextProps.search) {

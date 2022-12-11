@@ -43,7 +43,7 @@ import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
 import react.dom.textarea
-import react.functionComponent
+import react.fc
 import react.setState
 import kotlin.collections.set
 
@@ -55,7 +55,7 @@ external interface MapTagProps : Props {
     var onClick: (Event) -> Unit
 }
 
-val mapTag = functionComponent<MapTagProps> { props ->
+val mapTag = fc<MapTagProps> { props ->
     val dark = !props.selected && !props.excluded
     val margins = props.margins ?: "me-2 mb-2"
     span("badge badge-${if (props.excluded) "danger" else props.tag.type.color} $margins") {

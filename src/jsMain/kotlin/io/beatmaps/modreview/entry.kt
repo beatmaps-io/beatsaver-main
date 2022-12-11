@@ -34,7 +34,7 @@ import react.dom.p
 import react.dom.td
 import react.dom.textarea
 import react.dom.tr
-import react.functionComponent
+import react.fc
 import react.useState
 
 external interface ModReviewEntryProps : Props {
@@ -43,7 +43,7 @@ external interface ModReviewEntryProps : Props {
     var setUser: (String) -> Unit
 }
 
-val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
+val modReviewEntryRenderer = fc<ModReviewEntryProps> {
     val reasonRef = createRef<HTMLTextAreaElement>()
     val (hidden, setHidden) = useState(false)
     val (editing, setEditing) = useState(false)

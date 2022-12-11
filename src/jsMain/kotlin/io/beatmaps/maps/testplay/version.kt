@@ -41,7 +41,7 @@ import react.dom.label
 import react.dom.p
 import react.dom.small
 import react.dom.strong
-import react.functionComponent
+import react.fc
 import react.setState
 import react.useState
 
@@ -114,7 +114,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
         }
     }
 
-    val publishModal = functionComponent<Props> {
+    val publishModal = fc<Props> {
         val (publishType, setPublishType) = useState(false)
 
         p {

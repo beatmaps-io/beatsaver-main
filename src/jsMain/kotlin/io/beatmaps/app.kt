@@ -53,13 +53,14 @@ object Config {
 fun main() {
     ReactDatesInit // This actually needs to be referenced I guess
     window.onload = {
-        val root = document.getElementById("root")
-        render(root) {
-            globalContext.Provider {
-                attrs.value = document.getElementById("user-data")?.let {
-                    JSON.parse<UserData>(it.textContent ?: "")
+        document.getElementById("root")?.let { root ->
+            render(root) {
+                globalContext.Provider {
+                    attrs.value = document.getElementById("user-data")?.let {
+                        JSON.parse<UserData>(it.textContent ?: "")
+                    }
+                    child(App::class) { }
                 }
-                child(App::class) { }
             }
         }
     }

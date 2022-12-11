@@ -28,7 +28,7 @@ import react.dom.div
 import react.dom.i
 import react.dom.input
 import react.dom.label
-import react.functionComponent
+import react.fc
 import react.setState
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
@@ -81,7 +81,7 @@ class AddToPlaylist : RComponent<AddToPlaylistProps, AddToPlaylistState>() {
         }
     }
 
-    val addModal = functionComponent<AddModalProps> { props ->
+    val addModal = fc<AddModalProps> { props ->
         if (props.inPlaylists.isEmpty()) {
             div {
                 +"You don't have any playlists yet!"

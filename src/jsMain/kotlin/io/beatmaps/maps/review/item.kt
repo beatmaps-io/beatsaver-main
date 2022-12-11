@@ -39,7 +39,7 @@ import react.dom.input
 import react.dom.label
 import react.dom.p
 import react.dom.textarea
-import react.functionComponent
+import react.fc
 import react.setState
 
 external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
@@ -62,7 +62,7 @@ external interface SentimentIconProps : Props {
     var sentiment: ReviewSentiment
 }
 
-val sentimentIcon = functionComponent<SentimentIconProps> {
+val sentimentIcon = fc<SentimentIconProps> {
     val commonSentimentStyles = "fs-4 align-middle me-2"
     when (it.sentiment) {
         ReviewSentiment.POSITIVE ->

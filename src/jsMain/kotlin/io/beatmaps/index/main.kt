@@ -26,7 +26,7 @@ import react.State
 import react.createRef
 import react.dom.div
 import react.dom.h4
-import react.functionComponent
+import react.fc
 import react.ref
 import react.setState
 
@@ -170,7 +170,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
                     this@HomePage.state.tags?.mapValues { o -> o.value.groupBy { y -> y.type }.mapValues { y -> y.value.map { x -> x.slug } } } ?: mapOf()
                 )
             }
-            extraFilters = functionComponent {
+            extraFilters = fc {
                 div("tags") {
                     h4 {
                         +"Tags"

@@ -16,6 +16,7 @@ import io.beatmaps.shared.IndexedInfiniteScrollElementRenderer
 import io.beatmaps.shared.InfiniteScroll
 import kotlinx.datetime.Clock
 import kotlinx.html.title
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLTableSectionElement
 import react.RBuilder
 import react.RComponent
@@ -34,7 +35,7 @@ import react.dom.tr
 external interface UserListProps : WithRouterProps
 
 class UserList : RComponent<UserListProps, State>() {
-    private val resultsTable = createRef<HTMLTableSectionElement>()
+    private val resultsTable = createRef<HTMLElement>()
 
     override fun componentDidMount() {
         setPageTitle("Mappers")

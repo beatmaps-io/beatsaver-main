@@ -18,6 +18,7 @@ import io.beatmaps.shared.includeIfNotNull
 import kotlinx.html.js.onClickFunction
 import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
@@ -41,7 +42,7 @@ external interface AlertsPageState : State {
 }
 
 class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
-    private val resultsColumn = createRef<HTMLDivElement>()
+    private val resultsColumn = createRef<HTMLElement>()
 
     override fun componentDidMount() {
         setPageTitle("Alerts")

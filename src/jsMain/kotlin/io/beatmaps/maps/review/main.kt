@@ -11,6 +11,7 @@ import io.beatmaps.index.ModalComponent
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HTMLElement
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -32,7 +33,7 @@ external interface ReviewTableState : State {
 }
 
 class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
-    private val resultsTable = createRef<HTMLDivElement>()
+    private val resultsTable = createRef<HTMLElement>()
 
     override fun componentWillUpdate(nextProps: ReviewTableProps, nextState: ReviewTableState) {
         if (props.map != nextProps.map) {

@@ -10,6 +10,7 @@ import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.userCard
 import io.beatmaps.util.userTitles
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HTMLElement
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -29,7 +30,7 @@ external interface FollowListState : State {
 }
 
 class FollowList : RComponent<FollowListProps, FollowListState>() {
-    private val resultRef = createRef<HTMLDivElement>()
+    private val resultRef = createRef<HTMLElement>()
 
     override fun componentWillUpdate(nextProps: FollowListProps, nextState: FollowListState) {
         if (props.following != nextProps.following || props.followedBy != nextProps.followedBy) {

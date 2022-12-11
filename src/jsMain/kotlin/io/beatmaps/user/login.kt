@@ -22,14 +22,14 @@ import react.dom.input
 import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
-import react.functionComponent
+import react.fc
 
 external interface LoginFormProps : PropsWithChildren {
     var buttonText: String
     var discordLink: String?
 }
 
-val loginForm = functionComponent<LoginFormProps> { props ->
+val loginForm = fc<LoginFormProps> { props ->
     a(href = props.discordLink ?: "/discord", classes = "btn discord-btn") {
         span {
             i("fab fa-discord") {}
