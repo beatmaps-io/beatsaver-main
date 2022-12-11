@@ -43,7 +43,7 @@ class History(private val navigation: NavigateFunction) {
     }
 }
 
-fun <P : WithRouterProps> RBuilder.withRouter(klazz: KClass<out Component<P, *>>, block: P.() -> Unit) {
+fun <P : WithRouterProps> RBuilder.withRouter(klazz: KClass<out Component<P, *>>, block: P.() -> Unit) =
     child(
         klazz.react,
         jso {
@@ -53,7 +53,6 @@ fun <P : WithRouterProps> RBuilder.withRouter(klazz: KClass<out Component<P, *>>
             block(this)
         }
     )
-}
 
 fun <P : WithRouterProps> RBuilder.bsroute(
     path: String,
@@ -91,15 +90,12 @@ fun RBuilder.bsroute(
         attrs.path = path
 
         // Create a dummy functional component that manages fixing the headers
-        attrs.element = createElement {
-            child(
-                fc {
-                    initWithHistory(History(useNavigate()), replaceHomelink)
-                    console.log("bsroute", useLocation())
-                    render()
-                }
-            )
-        }
+        attrs.element = createElement(
+            fc {
+                initWithHistory(History(useNavigate()), replaceHomelink)
+                render()
+            }
+        )
     }
 }
 
