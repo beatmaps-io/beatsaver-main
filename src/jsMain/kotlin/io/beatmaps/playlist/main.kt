@@ -1,5 +1,6 @@
 package io.beatmaps.playlist
 
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SortOrderTarget
 import io.beatmaps.dateFormat
@@ -13,16 +14,12 @@ import io.beatmaps.shared.queryParams
 import io.beatmaps.shared.search
 import kotlinx.browser.window
 import org.w3c.dom.url.URLSearchParams
-import react.Props
 import react.RBuilder
 import react.RComponent
 import react.State
-import react.router.dom.History
 import react.setState
 
-external interface PlaylistFeedProps : Props {
-    var history: History
-}
+external interface PlaylistFeedProps : WithRouterProps
 
 external interface PlaylistFeedState : State {
     var searchParams: PlaylistSearchParams?

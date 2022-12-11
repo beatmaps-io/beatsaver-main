@@ -1,5 +1,6 @@
 package io.beatmaps.maps.testplay
 
+import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
@@ -11,7 +12,6 @@ import react.RComponent
 import react.State
 import react.createRef
 import react.ref
-import react.router.dom.History
 
 external interface TestplayProps : Props {
     var mapInfo: MapDetail

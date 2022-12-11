@@ -1,5 +1,6 @@
 package io.beatmaps.index
 
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SortOrderTarget
 import io.beatmaps.common.MapTag
@@ -19,7 +20,6 @@ import kotlinx.browser.window
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.url.URLSearchParams
-import react.Props
 import react.RBuilder
 import react.RComponent
 import react.State
@@ -28,12 +28,9 @@ import react.dom.div
 import react.dom.h4
 import react.functionComponent
 import react.ref
-import react.router.dom.History
 import react.setState
 
-external interface HomePageProps : Props {
-    var history: History
-}
+external interface HomePageProps : WithRouterProps
 
 external interface HomePageState : State {
     var searchParams: SearchParams?

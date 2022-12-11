@@ -6,6 +6,7 @@ import external.Moment
 import external.generateConfig
 import external.routeLink
 import io.beatmaps.Config
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.fixedStr
 import io.beatmaps.common.formatTime
@@ -30,11 +31,8 @@ import react.dom.td
 import react.dom.th
 import react.dom.thead
 import react.dom.tr
-import react.router.dom.History
 
-external interface UserListProps : Props {
-    var history: History
-}
+external interface UserListProps : WithRouterProps
 
 class UserList : RComponent<UserListProps, State>() {
     private val resultsTable = createRef<HTMLTableSectionElement>()

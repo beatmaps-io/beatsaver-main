@@ -4,6 +4,7 @@ import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
 import io.beatmaps.Config
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.AlertUpdateAll
 import io.beatmaps.api.UserAlert
 import io.beatmaps.api.UserAlertStats
@@ -18,7 +19,6 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.url.URLSearchParams
-import react.Props
 import react.RBuilder
 import react.RComponent
 import react.State
@@ -27,14 +27,9 @@ import react.dom.a
 import react.dom.div
 import react.dom.h1
 import react.dom.h6
-import react.router.dom.History
-import react.router.dom.Location
 import react.setState
 
-external interface AlertsPageProps : Props {
-    var history: History
-    var location: Location
-}
+external interface AlertsPageProps : WithRouterProps
 
 external interface AlertsPageState : State {
     var read: Boolean?

@@ -4,7 +4,9 @@ import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
 import io.beatmaps.Config
+import io.beatmaps.History
 import io.beatmaps.UserData
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.ReviewsResponse
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
@@ -34,11 +36,9 @@ import react.dom.th
 import react.dom.thead
 import react.dom.tr
 import react.ref
-import react.router.dom.History
 import react.setState
 
-external interface ModReviewProps : Props {
-    var history: History
+external interface ModReviewProps : WithRouterProps {
     var userData: UserData?
 }
 

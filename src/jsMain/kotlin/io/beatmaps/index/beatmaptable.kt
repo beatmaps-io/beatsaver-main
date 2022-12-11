@@ -5,6 +5,7 @@ import external.CancelTokenSource
 import external.generateConfig
 import external.routeLink
 import io.beatmaps.Config
+import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SearchResponse
@@ -26,7 +27,6 @@ import react.dom.div
 import react.dom.h4
 import react.dom.img
 import react.dom.p
-import react.router.dom.History
 import react.setState
 
 external interface BeatmapTableProps : Props {

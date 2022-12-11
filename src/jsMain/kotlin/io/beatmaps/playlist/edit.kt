@@ -7,6 +7,7 @@ import external.reactFor
 import external.recaptcha
 import external.routeLink
 import io.beatmaps.Config
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
@@ -26,7 +27,6 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.files.get
 import org.w3c.xhr.FormData
-import react.Props
 import react.RBuilder
 import react.RComponent
 import react.State
@@ -38,14 +38,9 @@ import react.dom.input
 import react.dom.jsStyle
 import react.dom.label
 import react.dom.textarea
-import react.router.dom.History
-import react.router.dom.Match
 import react.setState
 
-external interface PlaylistEditProps : Props {
-    var match: Match
-    var history: History
-}
+external interface PlaylistEditProps : WithRouterProps
 
 external interface PlaylistEditState : State {
     var init: Boolean?
@@ -65,7 +60,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
     private val publicRef = createRef<HTMLInputElement>()
 
     override fun componentDidMount() {
-        if (props.match.params["id"] == null) {
+        if (props.params["id"] == null) {
             setPageTitle("Create Playlist")
             setState {
                 loading = false
@@ -88,7 +83,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
         if (state.loading == true)
             return
 
-        val id = props.match.params["id"]
+        val id = props.params["id"]
         setState {
             loading = true
         }
@@ -120,7 +115,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
 
     override fun RBuilder.render() {
         if (state.init == true) {
-            val id = props.match.params["id"]
+            val id = props.params["id"]
             globalContext.Consumer { userData ->
                 div("card border-dark") {
                     div("card-header") {

@@ -6,6 +6,7 @@ import external.generateConfig
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.UserData
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserFollowData
 import io.beatmaps.api.UserFollowRequest
@@ -27,7 +28,6 @@ import kotlinx.serialization.decodeFromString
 import org.w3c.dom.events.Event
 import org.w3c.dom.get
 import org.w3c.dom.set
-import react.Props
 import react.RBuilder
 import react.RComponent
 import react.State
@@ -52,14 +52,10 @@ import react.dom.tr
 import react.dom.ul
 import react.key
 import react.ref
-import react.router.dom.History
-import react.router.dom.Match
 import react.setState
 
-external interface ProfilePageProps : Props {
+external interface ProfilePageProps : WithRouterProps {
     var userData: UserData?
-    var history: History
-    var match: Match
 }
 
 data class TabContext(val userId: Int?)
@@ -96,7 +92,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
     }
 
     override fun componentDidUpdate(prevProps: ProfilePageProps, prevState: ProfilePageState, snapshot: Any) {
-        if (prevProps.match.path != props.match.path || prevProps.match.params["userId"] != props.match.params["userId"]) {
+        if (prevProps.location.pathname != props.location.pathname || prevProps.params["userId"] != props.params["userId"]) {
             // Load new user
             loadState()
         }
@@ -108,7 +104,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
     private val onHashChange = { _: Event? ->
         val hash = window.location.hash.substring(1)
-        val tabContext = TabContext(props.match.params["userId"]?.toIntOrNull())
+        val tabContext = TabContext(props.params["userId"]?.toIntOrNull())
         val newState = ProfileTab.values().firstOrNull { hash == it.tabText.lowercase() && it.condition(props, tabContext, state) } ?: state.state
         setState {
             state = newState
@@ -117,7 +113,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
     private fun loadState() {
         modalRef.current?.hide()
-        val userId = props.match.params["userId"]?.toIntOrNull()
+        val userId = props.params["userId"]?.toIntOrNull()
         val url = "${Config.apibase}/users" + (userId?.let { "/id/$it" } ?: "/me")
 
         setState {
@@ -147,7 +143,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
     private fun setupTabState() {
         val hash = window.location.hash.substring(1)
-        val tabContext = TabContext(props.match.params["userId"]?.toIntOrNull())
+        val tabContext = TabContext(props.params["userId"]?.toIntOrNull())
         setState {
             state = ProfileTab.values().firstOrNull {
                 hash == it.tabText.lowercase() && it.condition(props, tabContext, this)
@@ -377,7 +373,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                 }
             }
         }
-        val userId = props.match.params["userId"]?.toIntOrNull()
+        val userId = props.params["userId"]?.toIntOrNull()
         ul("nav nav-minimal mb-3") {
             val tabContext = TabContext(userId)
             ProfileTab.values().forEach { tab ->

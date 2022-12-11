@@ -5,6 +5,7 @@ import external.CancelTokenSource
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.UserData
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.ModLogEntry
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScroll
@@ -16,7 +17,6 @@ import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTableSectionElement
 import org.w3c.dom.url.URLSearchParams
-import react.Props
 import react.RBuilder
 import react.RComponent
 import react.State
@@ -30,14 +30,10 @@ import react.dom.td
 import react.dom.th
 import react.dom.thead
 import react.dom.tr
-import react.router.dom.History
-import react.router.dom.Location
 import react.setState
 
-external interface ModLogProps : Props {
-    var history: History
+external interface ModLogProps : WithRouterProps {
     var userData: UserData?
-    var location: Location
 }
 
 external interface ModLogState : State {

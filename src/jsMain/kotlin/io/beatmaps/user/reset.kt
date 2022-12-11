@@ -3,6 +3,7 @@ package io.beatmaps.user
 import external.Axios
 import external.generateConfig
 import io.beatmaps.Config
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ResetRequest
 import io.beatmaps.setPageTitle
@@ -10,7 +11,6 @@ import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
-import react.Props
 import react.RBuilder
 import react.RComponent
 import react.State
@@ -20,14 +20,9 @@ import react.dom.div
 import react.dom.form
 import react.dom.input
 import react.dom.jsStyle
-import react.router.dom.History
-import react.router.dom.Match
 import react.setState
 
-external interface ResetPageProps : Props {
-    var match: Match
-    var history: History
-}
+external interface ResetPageProps : WithRouterProps
 
 external interface ResetPageState : State {
     var errors: List<String>
@@ -65,7 +60,7 @@ class ResetPage : RComponent<ResetPageProps, ResetPageState>() {
                     Axios.post<ActionResponse>(
                         "${Config.apibase}/users/reset",
                         ResetRequest(
-                            props.match.params["jwt"] ?: "",
+                            props.params["jwt"] ?: "",
                             passwordRef.current?.value ?: "",
                             password2Ref.current?.value ?: "",
                         ),

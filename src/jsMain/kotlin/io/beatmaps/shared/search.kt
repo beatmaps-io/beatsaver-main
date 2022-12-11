@@ -2,6 +2,7 @@ package io.beatmaps.shared
 
 import external.DateRangePicker
 import external.Moment
+import io.beatmaps.History
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SortOrderTarget
 import io.beatmaps.index.encodeURIComponent
@@ -32,7 +33,6 @@ import react.dom.input
 import react.dom.option
 import react.dom.select
 import react.dom.span
-import react.router.dom.History
 import react.setState
 
 data class FilterInfo<T>(val key: String, val name: String, val cat: FilterCategory, val fromParams: (T) -> Boolean)

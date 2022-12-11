@@ -4,6 +4,7 @@ import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
 import io.beatmaps.Config
+import io.beatmaps.History
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistSearchResponse
 import io.beatmaps.api.SearchOrder
@@ -18,7 +19,6 @@ import react.RComponent
 import react.State
 import react.createRef
 import react.dom.div
-import react.router.dom.History
 
 data class PlaylistSearchParams(
     override val search: String,

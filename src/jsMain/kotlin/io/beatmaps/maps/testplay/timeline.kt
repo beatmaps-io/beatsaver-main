@@ -4,6 +4,7 @@ import external.Dropzone
 import external.ReCAPTCHA
 import external.TimeAgo
 import external.recaptcha
+import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalComponent
@@ -23,7 +24,6 @@ import react.dom.div
 import react.dom.i
 import react.dom.small
 import react.dom.strong
-import react.router.dom.History
 import react.setState
 
 enum class EventType {

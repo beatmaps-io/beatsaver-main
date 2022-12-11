@@ -2,6 +2,7 @@ package io.beatmaps.maps
 
 import external.axiosGet
 import io.beatmaps.Config
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
@@ -23,14 +24,10 @@ import react.State
 import react.createRef
 import react.dom.div
 import react.ref
-import react.router.dom.History
-import react.router.dom.Match
 import react.setState
 
-external interface MapPageProps : Props {
-    var match: Match
+external interface MapPageProps : Props, WithRouterProps {
     var beatsaver: Boolean
-    var history: History
 }
 
 external interface MapPageState : State {
@@ -50,14 +47,14 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
     }
 
     override fun componentDidUpdate(prevProps: MapPageProps, prevState: MapPageState, snapshot: Any) {
-        if (prevProps.match.path != props.match.path || prevProps.match.params["mapKey"] != props.match.params["mapKey"]) {
+        if (prevProps.location.pathname != props.location.pathname || prevProps.params["mapKey"] != props.params["mapKey"]) {
             // Load new map
             loadMap()
         }
     }
 
     private fun loadMap() {
-        val mapKey = props.match.params["mapKey"]
+        val mapKey = props.params["mapKey"]
         val subPath = if (props.beatsaver) {
             "beatsaver"
         } else {

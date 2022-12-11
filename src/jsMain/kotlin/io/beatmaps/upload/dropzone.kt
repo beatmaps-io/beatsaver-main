@@ -4,6 +4,7 @@ import external.Axios
 import external.AxiosResponse
 import external.DropzoneProps
 import external.ReCAPTCHA
+import io.beatmaps.History
 import io.beatmaps.api.FailedUploadResponse
 import kotlinx.html.InputType
 import kotlinx.html.hidden
@@ -31,7 +32,6 @@ import react.dom.i
 import react.dom.input
 import react.dom.p
 import react.dom.small
-import react.router.dom.History
 
 fun RElementBuilder<DropzoneProps>.simple(
     history: History,

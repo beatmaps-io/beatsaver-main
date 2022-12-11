@@ -7,6 +7,7 @@ import external.droppable
 import external.generateConfig
 import external.routeLink
 import io.beatmaps.Config
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetailWithOrder
 import io.beatmaps.api.PlaylistFull
@@ -28,7 +29,6 @@ import org.w3c.dom.Audio
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.Event
 import org.w3c.xhr.FormData
-import react.Props
 import react.RBuilder
 import react.RComponent
 import react.State
@@ -40,15 +40,10 @@ import react.dom.p
 import react.dom.span
 import react.dom.textarea
 import react.ref
-import react.router.dom.History
-import react.router.dom.Match
 import react.setState
 import kotlin.math.ceil
 
-external interface PlaylistProps : Props {
-    var match: Match
-    var history: History
-}
+external interface PlaylistProps : WithRouterProps
 
 external interface PlaylistState : State {
     var loading: Boolean?
@@ -81,7 +76,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
         if (state.loading == true)
             return
 
-        val id = props.match.params["id"]
+        val id = props.params["id"]
         setState {
             loading = true
         }
@@ -107,7 +102,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
     }
 
     private fun updateOrder(mapId: String, order: Float) {
-        val id = props.match.params["id"]
+        val id = props.params["id"]
         Axios.post<String>(
             "${Config.apibase}/playlists/id/$id/add",
             PlaylistMapRequest(mapId, true, order),
@@ -152,7 +147,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
     }
 
     private fun delete() {
-        val id = props.match.params["id"]
+        val id = props.params["id"]
         setState {
             loading = true
         }

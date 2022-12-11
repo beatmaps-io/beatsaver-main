@@ -6,6 +6,7 @@ import external.Dropzone
 import external.ReCAPTCHA
 import external.reactFor
 import external.recaptcha
+import io.beatmaps.WithRouterProps
 import io.beatmaps.setPageTitle
 import kotlinx.html.InputType
 import kotlinx.html.id
@@ -33,7 +34,6 @@ import react.dom.p
 import react.dom.strong
 import react.dom.textarea
 import react.dom.ul
-import react.router.dom.History
 import react.setState
 
 external interface DropInfo : Props {
@@ -72,9 +72,7 @@ class UploadRequestConfig(block: (AxiosProgress) -> Unit) : AxiosRequestConfig {
     }
 }
 
-external interface UploadPageProps : Props {
-    var history: History
-}
+external interface UploadPageProps : WithRouterProps
 
 external interface UploadPageState : State {
     var errors: List<String>?

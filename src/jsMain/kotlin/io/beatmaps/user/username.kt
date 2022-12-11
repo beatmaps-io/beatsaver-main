@@ -4,6 +4,7 @@ import external.Axios
 import external.axiosGet
 import external.generateConfig
 import io.beatmaps.Config
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
@@ -14,7 +15,6 @@ import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
 import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLInputElement
-import react.Props
 import react.RBuilder
 import react.RComponent
 import react.State
@@ -27,12 +27,9 @@ import react.dom.input
 import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
-import react.router.dom.History
 import react.setState
 
-external interface PickUsernameProps : Props {
-    var history: History
-}
+external interface PickUsernameProps : WithRouterProps
 
 external interface PickUsernameState : State {
     var errors: List<String>?
