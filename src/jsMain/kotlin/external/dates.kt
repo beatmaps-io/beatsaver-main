@@ -14,7 +14,7 @@ external interface DateRangePickeProps : Props {
     var onDatesChange: (DateRange) -> Unit
     var focusedInput: String?
     var isOutsideRange: (Moment) -> Boolean
-    var renderCalendarInfo: () -> ReactElement?
+    var renderCalendarInfo: () -> ReactElement<*>?
     var displayFormat: String
     var small: Boolean
     var numberOfMonths: Int

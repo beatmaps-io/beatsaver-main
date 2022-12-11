@@ -9,7 +9,7 @@ import react.ReactElement
 external interface DropzoneProps : Props {
     var onDrop: (Array<File>) -> Unit
     var multiple: Boolean
-    var children: (DropInfo) -> ReactElement?
+    var children: (DropInfo) -> ReactElement<*>?
 }
 
 @JsModule("react-dropzone")

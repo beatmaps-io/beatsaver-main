@@ -21,12 +21,12 @@ import react.dom.jsStyle
 external interface DroppableProvided {
     var droppableProps: Any
     var innerRef: RefObject<*>
-    var placeholder: ReactElement
+    var placeholder: ReactElement<*>
 }
 
 external interface DroppableProps : Props {
     var droppableId: String
-    var children: (DroppableProvided) -> ReactElement?
+    var children: (DroppableProvided) -> ReactElement<*>?
 }
 
 external interface DraggableProvidedProps {
@@ -47,7 +47,7 @@ external interface DraggableProvided {
 external interface DraggableProps : Props {
     var draggableId: String
     var index: Int
-    var children: (DraggableProvided) -> ReactElement?
+    var children: (DraggableProvided) -> ReactElement<*>?
 }
 
 fun RBuilder.draggable(id: String, idx: Int, cb: RDOMBuilder<DIV>.() -> Unit) {
@@ -85,7 +85,7 @@ fun RDOMBuilder<*>.copyProps(obj: Any) {
 
 fun RElementBuilder<DraggableProps>.draggableContainer(cb: RDOMBuilder<DIV>.() -> Unit) {
     attrs.children = { dragProvided ->
-        createElement {
+        createElement<Props> {
             div {
                 ref = dragProvided.innerRef
 
@@ -105,7 +105,7 @@ fun RElementBuilder<DraggableProps>.draggableContainer(cb: RDOMBuilder<DIV>.() -
 
 fun RElementBuilder<DroppableProps>.droppableContainer(cb: RDOMBuilder<DIV>.() -> Unit) {
     attrs.children = { provided ->
-        createElement {
+        createElement<Props> {
             div {
                 ref = provided.innerRef
 

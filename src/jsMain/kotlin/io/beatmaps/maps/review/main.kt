@@ -10,7 +10,6 @@ import io.beatmaps.globalContext
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
-import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.RBuilder

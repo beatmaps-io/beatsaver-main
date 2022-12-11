@@ -276,7 +276,7 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                         attrs.small = true
                         attrs.numberOfMonths = 1
                         attrs.renderCalendarInfo = {
-                            createElement {
+                            createElement<Props> {
                                 div("presets") {
                                     presets.forEach { preset ->
                                         button {

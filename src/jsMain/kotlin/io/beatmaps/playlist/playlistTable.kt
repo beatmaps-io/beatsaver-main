@@ -12,7 +12,6 @@ import io.beatmaps.index.encodeURIComponent
 import io.beatmaps.shared.CommonParams
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
-import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.RBuilder

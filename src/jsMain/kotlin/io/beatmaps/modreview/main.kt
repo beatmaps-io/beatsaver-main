@@ -19,7 +19,6 @@ import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLTableSectionElement
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent

@@ -2,9 +2,9 @@ package io.beatmaps
 
 import history.Location
 import io.beatmaps.nav.manageNav
-import kotlinext.js.jso
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.js.jso
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HashChangeEvent

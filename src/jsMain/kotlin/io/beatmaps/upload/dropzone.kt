@@ -23,6 +23,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromDynamic
 import org.w3c.dom.HTMLElement
 import org.w3c.xhr.FormData
+import react.Props
 import react.RElementBuilder
 import react.RefObject
 import react.createElement
@@ -77,7 +78,7 @@ fun RElementBuilder<DropzoneProps>.simple(
         }
     }
     attrs.children = { info ->
-        createElement {
+        createElement<Props> {
             div("dropzone" + (if (errors) " is-invalid" else "")) {
                 val rootProps = info.getRootProps()
                 val props = info.getInputProps()

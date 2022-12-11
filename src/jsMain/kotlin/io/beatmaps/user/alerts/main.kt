@@ -17,7 +17,6 @@ import io.beatmaps.shared.buildURL
 import io.beatmaps.shared.includeIfNotNull
 import kotlinx.html.js.onClickFunction
 import kotlinx.serialization.decodeFromString
-import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder

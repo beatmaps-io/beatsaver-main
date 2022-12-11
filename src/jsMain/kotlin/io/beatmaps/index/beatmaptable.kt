@@ -16,7 +16,6 @@ import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import kotlinx.browser.window
 import org.w3c.dom.Audio
-import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.RBuilder
