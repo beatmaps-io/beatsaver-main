@@ -1043,7 +1043,7 @@ div.mapstats {
 .DateRangePicker {
   left: 50%;
   transform: translate(-50%, 0);
-  z-index: 10;
+  z-index: 20;
 }
 .DateRangePicker_picker, .DayPicker, .CalendarMonth, .CalendarDay:not(.CalendarDay__selected):not(.CalendarDay__selected_span):not(.CalendarDay__hovered_span),
 .CalendarMonthGrid, .DayPickerNavigation_button__default {
