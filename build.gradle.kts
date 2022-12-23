@@ -19,13 +19,12 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
-    maven { url = uri("https://jitpack.io") }
     maven { url = uri("https://artifactory.kirkstall.top-cat.me") }
 }
 
 kotlin {
     jvmToolchain {
-        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(16))
+        languageVersion.set(JavaLanguageVersion.of(16))
     }
     jvm {
         compilations.all {
@@ -104,7 +103,7 @@ kotlin {
                 // Helpful
                 implementation("org.valiktor:valiktor-core:0.12.0")
                 implementation("io.github.keetraxx:recaptcha:0.5")
-                implementation("de.nielsfalk.ktor:ktor-swagger:0.8.14")
+                implementation("de.nielsfalk.ktor:ktor-swagger:0.8.16")
                 implementation("org.bouncycastle:bcprov-jdk15:1.46")
 
                 // Database library
@@ -118,7 +117,7 @@ kotlin {
                 // Database drivers
                 implementation("org.postgresql:postgresql:42.5.0")
                 implementation("io.lettuce:lettuce-core:6.0.1.RELEASE")
-                implementation("com.github.JUtupe:ktor-rabbitmq:0.4.0")
+                implementation("pl.jutupe:ktor-rabbitmq:0.4.5")
                 implementation("com.rabbitmq:amqp-client:5.9.0")
 
                 // Serialization
