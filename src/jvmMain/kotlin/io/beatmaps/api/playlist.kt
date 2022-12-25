@@ -168,6 +168,14 @@ suspend fun ApplicationCall.handleMultipart(cb: suspend (PartData.FileItem) -> U
     return MultipartRequest(dataMap, recaptchaSuccess)
 }
 
+fun getMaxMap(id: Int) = PlaylistMap
+    .select {
+        PlaylistMap.playlistId eq id
+    }
+    .orderBy(PlaylistMap.order, SortOrder.DESC)
+    .limit(1)
+    .firstOrNull()?.let { PlaylistMapDao.wrapRow(it) }
+
 val playlistStats = listOf(
     Beatmap.uploader.countDistinct(),
     Beatmap.duration.sum(),
@@ -392,7 +400,7 @@ fun Route.playlistRoute() {
                                 .select {
                                     ((Playlist.owner eq req.userId) and Playlist.deletedAt.isNull()).let {
                                         if (req.userId == sess?.userId) {
-                                            it
+                                            it and (Playlist.type neq EPlaylistType.System)
                                         } else {
                                             it and (Playlist.type eq EPlaylistType.Public)
                                         }
@@ -492,14 +500,6 @@ fun Route.playlistRoute() {
             val pmr = call.receive<PlaylistMapRequest>()
             try {
                 transaction {
-                    fun getMaxMap() = PlaylistMap
-                        .select {
-                            PlaylistMap.playlistId eq req.id
-                        }
-                        .orderBy(PlaylistMap.order, SortOrder.DESC)
-                        .limit(1)
-                        .firstOrNull()?.let { PlaylistMapDao.wrapRow(it) }
-
                     Playlist
                         .updateReturning(
                             {
@@ -511,7 +511,7 @@ fun Route.playlistRoute() {
                             *Playlist.columns.toTypedArray()
                         )?.firstOrNull()?.let { row ->
                             val playlist = PlaylistDao.wrapRow(row)
-                            val newOrder = pmr.order ?: getMaxMap()?.let { it.order + 1 } ?: 1.0f
+                            val newOrder = pmr.order ?: getMaxMap(req.id)?.let { it.order + 1 } ?: 1.0f
 
                             // Only perform these operations once we've verified the owner is logged in
                             // and the playlist exists (as above)

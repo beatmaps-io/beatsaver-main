@@ -26,7 +26,7 @@ fun cdnBase(prefix: String) = when (remoteCdn) {
     false -> "/cdn"
 }
 
-fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
+fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String, bookmarked: Boolean? = null) = MapDetail(
     toHexString(other.id.value), other.name, other.description,
     UserDetail.from(other.uploader), MapDetailMetadata.from(other), MapStats.from(other), other.uploaded?.toKotlinInstant(), other.automapper, other.ranked, other.qualified,
     other.versions.values.map { MapVersion.from(it, cdnPrefix) }.partition { it.state == EMapState.Published }.let {
@@ -42,7 +42,8 @@ fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
     other.deletedAt?.toKotlinInstant(),
     other.tags?.mapNotNull {
         MapTag.fromSlug(it)
-    } ?: listOf()
+    } ?: listOf(),
+    bookmarked
 )
 fun MapDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(BeatmapDao.wrapRow(row), cdnPrefix)
 

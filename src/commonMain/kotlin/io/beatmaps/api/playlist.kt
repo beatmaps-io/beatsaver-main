@@ -80,3 +80,6 @@ data class PlaylistPage(val playlist: PlaylistFull? = null, val maps: List<MapDe
 data class PlaylistSearchResponse(val docs: List<PlaylistFull>)
 @Serializable
 data class CuratePlaylist(val id: Int, val curated: Boolean = false)
+
+@Serializable
+data class BookmarkRequest(val mapId: Int)

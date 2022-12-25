@@ -7,6 +7,7 @@ import de.nielsfalk.ktor.swagger.version.shared.Information
 import de.nielsfalk.ktor.swagger.version.v2.Swagger
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.alertsRoute
+import io.beatmaps.api.bookmarkRoute
 import io.beatmaps.api.mapDetailRoute
 import io.beatmaps.api.modLogRoute
 import io.beatmaps.api.playlistRoute
@@ -350,6 +351,7 @@ fun Application.beatmapsio() {
         alertsRoute()
         modLogRoute()
         reviewRoute()
+        bookmarkRoute()
 
         mapController()
         userController()

@@ -333,7 +333,7 @@ fun Route.mapDetailRoute() {
                     .firstOrNull()
                     ?.enrichTestplays()
                     ?.run {
-                        MapDetail.from(this, cdnPrefix())
+                        MapDetail.from(this, cdnPrefix(), sess?.userId?.let { isBookMarked(this.id.value, it) })
                     }
             }
         } catch (_: NumberFormatException) {

@@ -2,6 +2,7 @@ package io.beatmaps.maps
 
 import external.Axios
 import external.generateConfig
+import io.beatmaps.api.BookmarkRequest
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
@@ -130,6 +131,12 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
         }) { }
     }
 
+    private fun bookmark(bookmarked: Boolean) {
+        Axios.post<String>("${Config.apibase}/bookmarks/" + if (bookmarked) "add" else "remove", BookmarkRequest(props.mapInfo.intId()), generateConfig<BookmarkRequest, String>()).then({
+            props.reloadMap()
+        }) { }
+    }
+
     override fun RBuilder.render() {
         val deleted = props.mapInfo.deletedAt != null
         globalContext.Consumer { userData ->
@@ -147,6 +154,18 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                     addToPlaylist {
                                         map = props.mapInfo
                                         modal = props.modal
+                                    }
+
+                                    a("#") {
+                                        val bm = props.mapInfo.bookmarked == true
+                                        val title = if (bm) "Remove Bookmark" else "Add Bookmark"
+                                        attrs.title = title
+                                        attrs.attributes["aria-label"] = title
+                                        attrs.onClickFunction = {
+                                            it.preventDefault()
+                                            bookmark(!bm)
+                                        }
+                                        i((if (bm) "fas" else "far") + " fa-bookmark text-warning") { }
                                     }
                                 }
 
