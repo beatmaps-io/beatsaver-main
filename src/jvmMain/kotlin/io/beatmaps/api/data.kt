@@ -3,6 +3,7 @@ package io.beatmaps.api
 import io.beatmaps.common.Config
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.DifficultyDao
@@ -111,7 +112,9 @@ fun PlaylistBasic.Companion.from(other: PlaylistDao, cdnPrefix: String) = Playli
 fun PlaylistBasic.Companion.from(row: ResultRow, cdnPrefix: String) = from(PlaylistDao.wrapRow(row), cdnPrefix)
 
 fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPrefix: String) = PlaylistFull(
-    other.id.value, other.name, other.description, "${cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", UserDetail.from(other.owner),
+    other.id.value, other.name, other.description,
+    if (other.type == EPlaylistType.System) "/static/favicon/android-chrome-512x512.png" else "${cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg",
+    UserDetail.from(other.owner),
     other.curator?.let {
         UserDetail.from(it)
     },
