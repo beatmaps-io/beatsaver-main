@@ -471,7 +471,7 @@ fun Route.mapDetailRoute() {
     }
 
     get<MapsApi.WIP> { r ->
-        requireAuthorization {
+        requireAuthorization { sess ->
             val beatmaps = transaction {
                 Beatmap
                     .joinVersions(true, null)
@@ -489,7 +489,7 @@ fun Route.mapDetailRoute() {
                                 )
                                 .slice(Beatmap.id)
                                 .select {
-                                    Beatmap.uploader.eq(it.userId) and Beatmap.deletedAt.isNull() and Versions.mapId.isNull()
+                                    Beatmap.uploader.eq(sess.userId) and Beatmap.deletedAt.isNull() and Versions.mapId.isNull()
                                 }
                                 .groupBy(Beatmap.id)
                                 .orderBy(Beatmap.uploaded to SortOrder.DESC)
@@ -497,8 +497,8 @@ fun Route.mapDetailRoute() {
                         )
                     }
                     .complexToBeatmap()
-                    .map {
-                        MapDetail.from(it, cdnPrefix())
+                    .map { map ->
+                        MapDetail.from(map, cdnPrefix(), isBookMarked(map.id.value, sess.userId))
                     }
                     .sortedByDescending { it.uploaded }
             }
@@ -508,6 +508,7 @@ fun Route.mapDetailRoute() {
     }
 
     get<MapsApi.ByUploader>("Get maps by a user".responds(ok<SearchResponse>())) {
+        val sess = call.sessions.get<Session>()
         call.response.header("Access-Control-Allow-Origin", "*")
         val beatmaps = transaction {
             Beatmap
@@ -527,8 +528,8 @@ fun Route.mapDetailRoute() {
                     )
                 }
                 .complexToBeatmap()
-                .map {
-                    MapDetail.from(it, cdnPrefix())
+                .map { map ->
+                    MapDetail.from(map, cdnPrefix(), sess?.userId?.let { isBookMarked(map.id.value, it) })
                 }
                 .sortedByDescending { it.uploaded }
         }
@@ -541,6 +542,7 @@ fun Route.mapDetailRoute() {
             ok<SearchResponse>()
         )
     ) {
+        val sess = call.sessions.get<Session>()
         call.response.header("Access-Control-Allow-Origin", "*")
 
         val sortField = when (it.sort) {
@@ -587,7 +589,7 @@ fun Route.mapDetailRoute() {
                     }
                 }
                 .map { map ->
-                    MapDetail.from(map, cdnPrefix())
+                    MapDetail.from(map, cdnPrefix(), sess?.userId?.let { u -> isBookMarked(map.id.value, u) })
                 }
         }
 

@@ -18,6 +18,7 @@ import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.playlist.addToPlaylist
+import io.beatmaps.shared.bookmarkButton
 import io.beatmaps.shared.links
 import io.beatmaps.util.textToContent
 import kotlinx.browser.window
@@ -155,17 +156,12 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                         map = props.mapInfo
                                         modal = props.modal
                                     }
-
-                                    a("#") {
-                                        val bm = props.mapInfo.bookmarked == true
-                                        val title = if (bm) "Remove Bookmark" else "Add Bookmark"
-                                        attrs.title = title
-                                        attrs.attributes["aria-label"] = title
-                                        attrs.onClickFunction = {
-                                            it.preventDefault()
+                                    bookmarkButton {
+                                        attrs.bookmarked = props.mapInfo.bookmarked == true
+                                        attrs.onClick = { e, bm ->
+                                            e.preventDefault()
                                             bookmark(!bm)
                                         }
-                                        i((if (bm) "fas" else "far") + " fa-bookmark text-warning") { }
                                     }
                                 }
 

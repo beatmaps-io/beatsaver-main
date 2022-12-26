@@ -22,6 +22,7 @@ import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.events.Event
 import react.RProps
 import react.RReadableRef
 import react.dom.RDOMBuilder
@@ -354,5 +355,23 @@ var userCard = functionComponent<UserCardProps> {
                 +it.titles.joinToString(", ")
             }
         }
+    }
+}
+
+external interface BookmarkButtonProps : RProps {
+    var bookmarked: Boolean
+    var onClick: (Event, Boolean) -> Unit
+}
+
+var bookmarkButton = functionComponent<BookmarkButtonProps> { props ->
+    a("#", classes = "text-warning me-1") {
+        val title = if (props.bookmarked) "Remove Bookmark" else "Add Bookmark"
+        attrs.title = title
+        attrs.attributes["aria-label"] = title
+        attrs.onClickFunction = {
+            it.preventDefault()
+            props.onClick(it, props.bookmarked)
+        }
+        i((if (props.bookmarked) "fas" else "far") + " fa-bookmark text-warning") { }
     }
 }

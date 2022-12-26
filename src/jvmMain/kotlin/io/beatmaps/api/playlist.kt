@@ -348,7 +348,7 @@ fun Route.playlistRoute() {
                         orderList.add(it[mapsSubQuery[PlaylistMap.order]])
                     }
                     .map {
-                        MapDetail.from(it, cdnPrefix)
+                        MapDetail.from(it, cdnPrefix, userId?.let { u -> isBookMarked(it.id.value, u) })
                     }
                 maps.zip(orderList).map { MapDetailWithOrder(it.first, it.second) }
             }

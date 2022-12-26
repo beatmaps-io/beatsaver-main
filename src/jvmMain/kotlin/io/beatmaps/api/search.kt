@@ -27,6 +27,7 @@ import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.login.Session
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -34,6 +35,8 @@ import io.ktor.server.locations.options
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.sql.CustomFunction
@@ -160,6 +163,7 @@ fun Route.searchRoute() {
 
     get<SearchApi.Text>("Search for maps".responds(ok<SearchResponse>())) {
         call.response.header("Access-Control-Allow-Origin", "*")
+        val sess = call.sessions.get<Session>()
 
         val needsDiff = it.minNps != null || it.maxNps != null
         val searchFields = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
@@ -255,7 +259,7 @@ fun Route.searchRoute() {
                 }
                 .orderBy(*sortArgs)
                 .complexToBeatmap()
-                .map { m -> MapDetail.from(m, cdnPrefix()) }
+                .map { m -> MapDetail.from(m, cdnPrefix(), sess?.userId?.let { u -> isBookMarked(m.id.value, u) }) }
 
             call.respond(SearchResponse(beatmaps))
         }

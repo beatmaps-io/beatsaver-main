@@ -189,21 +189,13 @@ table.search-results {
     }
 
     &:hover {
-      .additional {
-        margin-left: 5px;
-      }
       .additional, .links {
         a {
           background: #444;
-          width: 32px;
         }
       }
     }
 
-    .additional {
-      transition: margin-left 0.2s;
-      margin-left: 17px;
-    }
     .links {
       margin-left: 5px;
     }
@@ -214,8 +206,9 @@ table.search-results {
       align-items: flex-end;
 
       a {
+        display: inline-block;
         padding: 3px 0;
-        width: 20px;
+        width: 25px;
         border-radius: 9px;
         text-align: center;
         transition: background-color 0.2s, width 0.2s;
