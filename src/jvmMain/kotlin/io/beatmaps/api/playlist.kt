@@ -400,17 +400,23 @@ fun Route.playlistRoute() {
                                 .select {
                                     ((Playlist.owner eq req.userId) and Playlist.deletedAt.isNull()).let {
                                         if (req.userId == sess?.userId) {
-                                            it and (Playlist.type neq EPlaylistType.System)
+                                            it
                                         } else {
                                             it and (Playlist.type eq EPlaylistType.Public)
                                         }
                                     }
                                 }
-                                .orderBy(Playlist.createdAt, SortOrder.DESC)
+                                .orderBy(
+                                    (Playlist.type neq EPlaylistType.System) to SortOrder.ASC,
+                                    Playlist.createdAt to SortOrder.DESC
+                                )
                                 .limit(req.page, 20)
                         )
                     }
-                    .orderBy(Playlist.createdAt, SortOrder.DESC)
+                    .orderBy(
+                        (Playlist.type neq EPlaylistType.System) to SortOrder.ASC,
+                        Playlist.createdAt to SortOrder.DESC
+                    )
                     .groupBy(*groupBy)
                     .handleOwner()
                     .handleCurator()

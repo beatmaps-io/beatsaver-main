@@ -217,10 +217,11 @@ external interface ColoredCardProps : RProps {
     var icon: String?
     var title: String?
     var extra: ((DIV) -> Unit)?
+    var classes: String?
 }
 
 val coloredCard = functionComponent<ColoredCardProps> {
-    div("card colored") {
+    div("card colored " + (it.classes ?: "")) {
         it.extra?.invoke(attrs)
 
         div("color ${it.color}") {
