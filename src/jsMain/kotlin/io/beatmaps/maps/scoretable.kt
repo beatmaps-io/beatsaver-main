@@ -4,22 +4,21 @@ import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
 import external.invoke
+import io.beatmaps.Config
 import io.beatmaps.api.LeaderboardData
 import io.beatmaps.api.LeaderboardScore
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDifficulty
-import io.beatmaps.common.Config
 import io.beatmaps.common.fixedStr
 import kotlinx.browser.window
 import kotlinx.html.TBODY
 import kotlinx.html.ThScope
 import kotlinx.html.js.onScrollFunction
 import org.w3c.dom.events.Event
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.div
@@ -31,30 +30,26 @@ import react.dom.thead
 import react.dom.tr
 import react.setState
 
-external interface ScoreTableProps : RProps {
+external interface ScoreTableProps : Props {
     var mapKey: String
     var selected: MapDifficulty?
     var type: LeaderboardType
 }
 
-external interface ScoreTableState : RState {
-    var page: Int
+external interface ScoreTableState : State {
+    var page: Int?
     var loading: Boolean?
-    var scores: List<LeaderboardScore>
-    var scroll: Int
+    var scores: List<LeaderboardScore>?
+    var scroll: Int?
     var uid: String?
-    var token: CancelTokenSource
+    var token: CancelTokenSource?
 }
 
 class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
-
     private val myRef = createRef<TBODY>()
 
     override fun componentWillMount() {
         setState {
-            page = 1
-            scores = listOf()
-            scroll = 0
             token = Axios.CancelToken.source()
         }
     }
@@ -67,7 +62,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
 
     override fun componentWillUpdate(nextProps: ScoreTableProps, nextState: ScoreTableState) {
         if (nextProps.selected != props.selected || nextProps.type != props.type) {
-            state.token.cancel.invoke("Another request started")
+            state.token?.let { it.cancel("Another request started") }
 
             nextState.apply {
                 scores = listOf()
@@ -91,23 +86,23 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
         }
 
         Axios.get<LeaderboardData>(
-            "${Config.apibase}/scores/${props.mapKey}/${state.page}?difficulty=${props.selected?.difficulty?.idx ?: 9}" +
+            "${Config.apibase}/scores/${props.mapKey}/${state.page ?: 1}?difficulty=${props.selected?.difficulty?.idx ?: 9}" +
                 "&gameMode=${props.selected?.characteristic?.ordinal ?: 0}&type=${props.type}",
-            generateConfig<String, LeaderboardData>(state.token.token)
+            generateConfig<String, LeaderboardData>(state.token?.token)
         ).then {
             val newScores = it.data
 
             if (newScores.scores.isNotEmpty()) {
                 setState {
-                    page += 1
+                    page = (page ?: 1) + 1
                     loading = false
-                    scores = scores.plus(newScores.scores)
+                    scores = (scores ?: listOf()).plus(newScores.scores)
                     uid = newScores.uid
                 }
 
                 myRef.current?.asDynamic().scrollTop = state.scroll
 
-                if (state.page < 3) {
+                if (state.page?.let { p -> p < 3 } != false) {
                     loadNextPage()
                 }
             }
@@ -139,7 +134,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
                 tbody {
                     ref = myRef
                     attrs.onScrollFunction = handleScroll
-                    state.scores.forEachIndexed { idx, it ->
+                    state.scores?.forEachIndexed { idx, it ->
                         val maxScore = props.selected?.maxScore ?: 0
                         score {
                             key = idx.toString()
@@ -191,8 +186,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
         }
 }
 
-fun RBuilder.scoreTable(handler: ScoreTableProps.() -> Unit): ReactElement {
-    return child(ScoreTable::class) {
+fun RBuilder.scoreTable(handler: ScoreTableProps.() -> Unit) =
+    child(ScoreTable::class) {
         this.attrs(handler)
     }
-}

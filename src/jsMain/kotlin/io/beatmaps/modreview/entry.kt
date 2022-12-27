@@ -1,17 +1,18 @@
 package io.beatmaps.modreview
 
 import external.Axios
-import external.AxiosPromise
 import external.TimeAgo
 import external.axiosDelete
 import external.generateConfig
+import external.routeLink
+import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.DeleteReview
 import io.beatmaps.api.PutReview
+import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewSentiment
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.Config
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
@@ -22,8 +23,8 @@ import kotlinx.html.TD
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLTextAreaElement
-import react.RProps
-import react.RReadableRef
+import react.Props
+import react.RefObject
 import react.createRef
 import react.dom.RDOMBuilder
 import react.dom.a
@@ -33,17 +34,16 @@ import react.dom.p
 import react.dom.td
 import react.dom.textarea
 import react.dom.tr
-import react.functionComponent
-import react.router.dom.routeLink
+import react.fc
 import react.useState
 
-external interface ModReviewEntryProps : RProps {
-    var modal: RReadableRef<ModalComponent>
+external interface ModReviewEntryProps : Props {
+    var modal: RefObject<ModalComponent>
     var entry: ReviewDetail?
     var setUser: (String) -> Unit
 }
 
-val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
+val modReviewEntryRenderer = fc<ModReviewEntryProps> {
     val reasonRef = createRef<HTMLTextAreaElement>()
     val (hidden, setHidden) = useState(false)
     val (editing, setEditing) = useState(false)
@@ -71,7 +71,7 @@ val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
             }
             +userDetail.name
         }
-        routeLink("/profile/${userDetail.id}") {
+        routeLink(userDetail.profileLink()) {
             i("fas fa-external-link-alt") {}
         }
     }
@@ -147,7 +147,7 @@ val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
             td {
                 attrs.colSpan = "5"
                 it.entry?.let { review ->
-                    div("text-wrap expand") {
+                    div("text-wrap text-break expand") {
                         p("card-text") {
                             if (editing) {
                                 sentimentPicker {
@@ -160,6 +160,7 @@ val modReviewEntryRenderer = functionComponent<ModReviewEntryProps> {
                             editableText {
                                 this.text = text ?: review.text
                                 this.editing = editing
+                                maxLength = ReviewConstants.MAX_LENGTH
                                 saveText = { newReview ->
                                     val newSentimentLocal = newSentiment ?: sentiment ?: review.sentiment
                                     Axios.put<ActionResponse>("${Config.apibase}/review/single/${review.map?.id}/${review.creator?.id}", PutReview(newReview, newSentimentLocal), generateConfig<PutReview, ActionResponse>()).then { r ->

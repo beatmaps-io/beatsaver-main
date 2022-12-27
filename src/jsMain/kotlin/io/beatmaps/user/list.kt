@@ -4,8 +4,10 @@ import external.Axios
 import external.CancelTokenSource
 import external.Moment
 import external.generateConfig
+import external.routeLink
+import io.beatmaps.Config
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.Config
 import io.beatmaps.common.fixedStr
 import io.beatmaps.common.formatTime
 import io.beatmaps.dateFormat
@@ -14,12 +16,10 @@ import io.beatmaps.shared.IndexedInfiniteScrollElementRenderer
 import io.beatmaps.shared.InfiniteScroll
 import kotlinx.datetime.Clock
 import kotlinx.html.title
-import org.w3c.dom.HTMLTableSectionElement
+import org.w3c.dom.HTMLElement
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.i
@@ -30,15 +30,11 @@ import react.dom.td
 import react.dom.th
 import react.dom.thead
 import react.dom.tr
-import react.router.dom.RouteResultHistory
-import react.router.dom.routeLink
 
-external interface UserListProps : RProps {
-    var history: RouteResultHistory
-}
+external interface UserListProps : WithRouterProps
 
-class UserList : RComponent<UserListProps, RState>() {
-    private val resultsTable = createRef<HTMLTableSectionElement>()
+class UserList : RComponent<UserListProps, State>() {
+    private val resultsTable = createRef<HTMLElement>()
 
     override fun componentDidMount() {
         setPageTitle("Mappers")
@@ -99,7 +95,7 @@ class UserList : RComponent<UserListProps, RState>() {
                                     }
                                 }
                                 td {
-                                    routeLink("/profile/${u.id}") {
+                                    routeLink(u.profileLink()) {
                                         +u.name
                                     }
                                 }
@@ -170,8 +166,7 @@ class UserList : RComponent<UserListProps, RState>() {
 
 class UserInfiniteScroll : InfiniteScroll<UserDetail>()
 
-fun RBuilder.userList(handler: UserListProps.() -> Unit): ReactElement {
-    return child(UserList::class) {
+fun RBuilder.userList(handler: UserListProps.() -> Unit) =
+    child(UserList::class) {
         this.attrs(handler)
     }
-}

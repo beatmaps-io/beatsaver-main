@@ -1,6 +1,5 @@
 package io.beatmaps.api
 
-import io.beatmaps.cdnPrefix
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.ModLog
@@ -20,6 +19,7 @@ import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.lang.Integer.toHexString
 
 @Location("/api") class ModLogApi {
     @Location("/modlog/{page}") data class ModLog(
@@ -58,7 +58,9 @@ fun Route.modLogRoute() {
                                 ModLogEntry(
                                     UserDetail.from(entry.opBy),
                                     UserDetail.from(entry.targetUser),
-                                    entry.opOn?.let { mapId -> MapDetail.from(mapId, cdnPrefix()) },
+                                    entry.opOn?.let { dao ->
+                                        ModLogMapDetail(toHexString(dao.id.value), dao.name)
+                                    },
                                     entry.realType(),
                                     entry.opAt.toKotlinInstant(),
                                     entry.realAction()

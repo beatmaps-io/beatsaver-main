@@ -8,7 +8,6 @@ import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
-import io.beatmaps.cdnPrefix
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.MapTag
@@ -30,6 +29,7 @@ import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.login.Session
+import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location

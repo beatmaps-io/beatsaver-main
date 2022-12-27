@@ -3,13 +3,13 @@ package io.beatmaps.maps
 import external.Axios
 import external.generateConfig
 import io.beatmaps.api.BookmarkRequest
+import io.beatmaps.Config
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.SimpleMapInfoUpdate
 import io.beatmaps.api.StateUpdate
 import io.beatmaps.api.ValidateMap
-import io.beatmaps.common.Config
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.MapTagType
 import io.beatmaps.common.api.EMapState
@@ -29,12 +29,11 @@ import kotlinx.html.title
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.Event
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RReadableRef
-import react.RState
-import react.ReactElement
+import react.RefObject
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.div
@@ -46,11 +45,11 @@ import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
 import react.dom.textarea
-import react.functionComponent
+import react.fc
 import react.setState
 import kotlin.collections.set
 
-external interface MapTagProps : RProps {
+external interface MapTagProps : Props {
     var selected: Boolean
     var excluded: Boolean
     var margins: String?
@@ -58,7 +57,7 @@ external interface MapTagProps : RProps {
     var onClick: (Event) -> Unit
 }
 
-val mapTag = functionComponent<MapTagProps> { props ->
+val mapTag = fc<MapTagProps> { props ->
     val dark = !props.selected && !props.excluded
     val margins = props.margins ?: "me-2 mb-2"
     span("badge badge-${if (props.excluded) "danger" else props.tag.type.color} $margins") {
@@ -71,16 +70,16 @@ val mapTag = functionComponent<MapTagProps> { props ->
     }
 }
 
-external interface MapInfoProps : RProps {
+external interface MapInfoProps : Props {
     var mapInfo: MapDetail
     var isOwner: Boolean
-    var modal: RReadableRef<ModalComponent>
+    var modal: RefObject<ModalComponent>
     var reloadMap: () -> Unit
     var deleteMap: () -> Unit
     var updateMapinfo: (MapDetail) -> Unit
 }
 
-external interface MapInfoState : RState {
+external interface MapInfoState : State {
     var loading: Boolean?
     var editing: Boolean?
     var tags: Set<MapTag>?
@@ -406,8 +405,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     }
 }
 
-fun RBuilder.mapInfo(handler: MapInfoProps.() -> Unit): ReactElement {
-    return child(MapInfo::class) {
+fun RBuilder.mapInfo(handler: MapInfoProps.() -> Unit) =
+    child(MapInfo::class) {
         this.attrs(handler)
     }
-}

@@ -1,6 +1,7 @@
 package io.beatmaps.maps
 
 import external.TimeAgo
+import external.routeLink
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.ReviewConstants
@@ -10,20 +11,18 @@ import kotlinx.html.DIV
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.role
 import kotlinx.html.title
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.dom.RDOMBuilder
 import react.dom.a
 import react.dom.div
 import react.dom.i
 import react.dom.img
 import react.dom.span
-import react.router.dom.routeLink
 
-external interface InfoTableProps : RProps {
+external interface InfoTableProps : Props {
     var map: MapDetail
     var horizontal: Boolean?
     var selected: MapDifficulty?
@@ -40,14 +39,14 @@ fun RDOMBuilder<*>.diffImg(diff: MapDifficulty) {
     }
 }
 
-class InfoTable : RComponent<InfoTableProps, RState>() {
+class InfoTable : RComponent<InfoTableProps, State>() {
     private val itemClasses by lazy { "list-group-item d-flex justify-content-between" + if (props.horizontal == true) " col-lg" else "" }
 
     override fun RBuilder.render() {
         val publishedVersion = if (props.map.deletedAt == null) props.map.publishedVersion() else null
 
         div("list-group" + if (props.horizontal == true) " list-group-horizontal row m-4" else "") {
-            infoItem("Mapper", "${props.map.uploader.name} (${props.map.metadata.levelAuthorName})", "/profile/${props.map.uploader.id}")
+            infoItem("Mapper", "${props.map.uploader.name} (${props.map.metadata.levelAuthorName})", props.map.uploader.profileLink())
             val score = publishedVersion?.sageScore ?: 0
             if (score < -4 || props.map.automapper) {
                 infoItem("AI", if (score < -4) "Bot" else "Unsure")
@@ -65,7 +64,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
             }
 
             props.map.curator?.let { curator ->
-                infoItem("Curated by", curator.name, "/profile/${curator.id}#curated")
+                infoItem("Curated by", curator.name, curator.profileLink("curated"))
             }
 
             if (props.map.tags.isNotEmpty()) {
@@ -101,7 +100,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
                             span("text-" + stats.sentiment.color) {
                                 +stats.sentiment.human
                             }
-                            +" (${stats.reviews} reviews)"
+                            +" (${stats.reviews} ${if (stats.reviews == 1) "review" else "reviews"})"
                         }
                     }
                 }
@@ -184,8 +183,7 @@ class InfoTable : RComponent<InfoTableProps, RState>() {
             } else null
 }
 
-fun RBuilder.infoTable(handler: InfoTableProps.() -> Unit): ReactElement {
-    return child(InfoTable::class) {
+fun RBuilder.infoTable(handler: InfoTableProps.() -> Unit) =
+    child(InfoTable::class) {
         this.attrs(handler)
     }
-}

@@ -3,38 +3,37 @@ package io.beatmaps.user.alerts
 import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
+import io.beatmaps.Config
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.AlertUpdateAll
 import io.beatmaps.api.UserAlert
 import io.beatmaps.api.UserAlertStats
-import io.beatmaps.common.Config
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.json
+import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.buildURL
 import io.beatmaps.shared.includeIfNotNull
 import kotlinx.html.js.onClickFunction
 import kotlinx.serialization.decodeFromString
-import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HTMLElement
+import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.div
 import react.dom.h1
 import react.dom.h6
-import react.router.dom.RouteResultHistory
 import react.setState
 
-external interface AlertsPageProps : RProps {
-    var history: RouteResultHistory
+external interface AlertsPageProps : WithRouterProps
+
+external interface AlertsPageState : State {
     var read: Boolean?
     var filters: List<EAlertType>?
-}
-
-external interface AlertsPageState : RState {
     var alertStats: UserAlertStats?
     var resultsKey: Any?
     var hiddenAlerts: List<Int>?
@@ -42,7 +41,11 @@ external interface AlertsPageState : RState {
 }
 
 class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
-    private val resultsColumn = createRef<HTMLDivElement>()
+    private val resultsColumn = createRef<HTMLElement>()
+
+    override fun componentDidMount() {
+        setPageTitle("Alerts")
+    }
 
     override fun componentWillMount() {
         Axios.get<String>(
@@ -51,6 +54,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
         ).then {
             // Decode is here so that 401 actually passes to error handler
             val data = json.decodeFromString<UserAlertStats>(it.data)
+            updateAlertDisplay(data)
 
             setState {
                 alertStats = data
@@ -64,6 +68,11 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
 
     override fun componentWillReceiveProps(nextProps: AlertsPageProps) {
         setState {
+            URLSearchParams(nextProps.location.search).let { u ->
+                read = u.get("read")?.toBoolean()
+                filters = u.get("type")?.split(",")?.mapNotNull { EAlertType.fromLower(it) }
+            }
+
             resultsKey = Any()
             hiddenAlerts = listOf()
             forceHide = null
@@ -71,8 +80,8 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
     }
 
     private val loadPage = { toLoad: Int, token: CancelTokenSource ->
-        val type = if (props.read == true) "read" else "unread"
-        val typeFilter = if (props.filters?.any() == true) "?type=${props.filters?.joinToString(",") { it.name.lowercase() }}" else ""
+        val type = if (state.read == true) "read" else "unread"
+        val typeFilter = if (state.filters?.any() == true) "?type=${state.filters?.joinToString(",") { it.name.lowercase() }}" else ""
         Axios.get<List<UserAlert>>(
             "${Config.apibase}/alerts/$type/$toLoad$typeFilter",
             generateConfig<String, List<UserAlert>>(token.token)
@@ -81,7 +90,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
         }
     }
 
-    private fun toURL(read: Boolean? = props.read, filters: List<EAlertType>? = props.filters) {
+    private fun toURL(read: Boolean? = state.read, filters: List<EAlertType>? = state.filters) {
         buildURL(
             listOfNotNull(
                 includeIfNotNull(read, "read"),
@@ -113,7 +122,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                 +"Alerts & Notifications"
             }
             div("col-lg-4 d-flex") {
-                if (props.read != true && state.alertStats?.let { it.unread > 0 } == true) {
+                if (state.read != true && state.alertStats?.let { it.unread > 0 } == true) {
                     a("#", classes = "mark-read") {
                         attrs.onClickFunction = { e ->
                             e.preventDefault()
@@ -128,7 +137,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
             div("col-lg-4 alert-nav") {
                 div("list-group") {
                     alertsListItem {
-                        attrs.active = props.read != true
+                        attrs.active = state.read != true
                         attrs.count = state.alertStats?.unread
                         attrs.icon = "fa-envelope"
                         attrs.text = "Unread"
@@ -137,7 +146,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                         }
                     }
                     alertsListItem {
-                        attrs.active = props.read == true
+                        attrs.active = state.read == true
                         attrs.count = state.alertStats?.read
                         attrs.icon = "fa-envelope-open"
                         attrs.text = "Read"
@@ -152,16 +161,16 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                 div("list-group") {
                     state.alertStats?.byType?.forEach { (type, count) ->
                         alertsListItem {
-                            attrs.active = props.filters?.contains(type) == true
+                            attrs.active = state.filters?.contains(type) == true
                             attrs.count = count
                             attrs.icon = type.icon
                             attrs.text = type.readable()
                             attrs.action = {
                                 toURL(
-                                    filters = if (props.filters?.contains(type) == true) {
-                                        props.filters?.minus(type)
+                                    filters = if (state.filters?.contains(type) == true) {
+                                        state.filters?.minus(type)
                                     } else {
-                                        (props.filters ?: emptyList()).plus(type)
+                                        (state.filters ?: emptyList()).plus(type)
                                     }
                                 )
                             }
@@ -182,7 +191,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                     attrs.renderElement = InfiniteScrollElementRenderer {
                         alert {
                             alert = it
-                            read = props.read
+                            read = state.read
                             hidden = state.forceHide ?: state.hiddenAlerts?.contains(it?.id)
                             markAlert = { stats ->
                                 setState {

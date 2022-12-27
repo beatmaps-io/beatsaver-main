@@ -101,10 +101,14 @@ fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: Use
     UserDetail(
         other.id.value, other.uniqueName ?: other.name, if (description) other.description else null, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
         getAvatar(other), stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
-        admin = other.admin, curator = other.curator, verifiedMapper = other.verifiedMapper, suspendedAt = other.suspendedAt?.toKotlinInstant()
+        admin = other.admin, curator = other.curator, verifiedMapper = other.verifiedMapper, suspendedAt = other.suspendedAt?.toKotlinInstant(),
+        playlistUrl = "${Config.apiBase(true)}/users/id/${other.id.value}/playlist"
     )
 
 fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false) = from(UserDao.wrapRow(row), roles)
+actual object UserDetailHelper {
+    actual fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean) = Config.siteBase(absolute) + "/profile/${userDetail.id}" + (tab?.let { "#$it" } ?: "")
+}
 
 @Location("/api/users")
 class UsersApi {
@@ -135,8 +139,8 @@ class UsersApi {
     @Location("/id/{id}/stats")
     data class UserStats(val id: Int, val api: UsersApi)
 
-    @Location("/id/{id}/playlist")
-    data class UserPlaylist(val id: Int, val api: UsersApi)
+    @Location("/id/{id}/playlist/{filename?}")
+    data class UserPlaylist(val id: Int, val filename: String? = null, val api: UsersApi)
 
     @Location("/find/{id}")
     data class Find(val id: String, val api: UsersApi)
@@ -383,7 +387,7 @@ fun Route.userRoute() {
                             sendEmail(
                                 req.email,
                                 "BeatSaver Account Verification",
-                                "${req.username}\n\nTo verify your account, please click the link below:\n${Config.basename}/verify?user=$it&token=$token"
+                                "${req.username}\n\nTo verify your account, please click the link below:\n${Config.siteBase()}/verify?user=$it&token=$token"
                             )
 
                             ActionResponse(true)
@@ -391,7 +395,7 @@ fun Route.userRoute() {
                             sendEmail(
                                 req.email,
                                 "BeatSaver Account",
-                                "Someone just tried to create a new account at ${Config.basename} with this email address but an account using this email already exists.\n\n" +
+                                "Someone just tried to create a new account at ${Config.siteBase()} with this email address but an account using this email already exists.\n\n" +
                                     "If this wasn't you then you can safely ignore this email otherwise please use a different email"
                             )
 
@@ -430,7 +434,7 @@ fun Route.userRoute() {
                     sendEmail(
                         req.email,
                         "BeatSaver Password Reset",
-                        "You can reset your password for the account `${user.uniqueName}` by clicking here: ${Config.basename}/reset/$jwt\n\n" +
+                        "You can reset your password for the account `${user.uniqueName}` by clicking here: ${Config.siteBase()}/reset/$jwt\n\n" +
                             "If this wasn't you then you can safely ignore this email."
                     )
                 }
@@ -684,14 +688,14 @@ fun Route.userRoute() {
 
         val dateStr = formatter.format(LocalDateTime.now())
 
-        call.response.headers.append(HttpHeaders.ContentDisposition, "filename=\"${user.name}-$dateStr.bplist\"")
+        call.response.headers.append(HttpHeaders.ContentDisposition, "attachment; filename=\"${user.name}-$dateStr.bplist\"")
         call.respond(
             Playlist(
                 "Maps by ${user.name} (${playlistSongs.size} Total)",
                 user.name,
                 "All maps by ${user.name} ($dateStr)",
                 imageStr,
-                PlaylistCustomData("${Config.apiremotebase}/users/id/${it.id}/playlist"),
+                PlaylistCustomData("${Config.apiBase(true)}/users/id/${it.id}/playlist"),
                 playlistSongs
             )
         )

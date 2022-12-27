@@ -3,10 +3,11 @@ package io.beatmaps.user
 import external.Axios
 import external.axiosGet
 import external.generateConfig
+import io.beatmaps.Config
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.Config
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
@@ -16,9 +17,7 @@ import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLInputElement
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.button
 import react.dom.div
@@ -28,29 +27,18 @@ import react.dom.input
 import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
-import react.router.dom.RouteResultHistory
 import react.setState
 
-external interface PickUsernameProps : RProps {
-    var history: RouteResultHistory
-}
+external interface PickUsernameProps : WithRouterProps
 
-external interface PickUsernameState : RState {
-    var errors: List<String>
-    var loading: Boolean
-    var submitted: Boolean
+external interface PickUsernameState : State {
+    var errors: List<String>?
+    var loading: Boolean?
+    var submitted: Boolean?
 }
 
 class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
     private val inputRef = createRef<HTMLInputElement>()
-
-    override fun componentWillMount() {
-        setState {
-            errors = listOf()
-            loading = false
-            submitted = false
-        }
-    }
 
     override fun componentDidMount() {
         setPageTitle("Set username")
@@ -133,7 +121,7 @@ class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
                         +". _ -"
                     }
                 }
-                state.errors.forEach {
+                state.errors?.forEach {
                     div("invalid-feedback") {
                         attrs.jsStyle {
                             display = "block"
@@ -151,7 +139,7 @@ class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
                 }
                 div("d-grid") {
                     button(classes = "btn btn-success", type = ButtonType.submit) {
-                        attrs.disabled = state.submitted
+                        attrs.disabled = state.submitted == true
                         i("fas fa-check") {}
                         +" Continue"
                     }
@@ -161,8 +149,7 @@ class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
     }
 }
 
-fun RBuilder.pickUsernamePage(handler: PickUsernameProps.() -> Unit): ReactElement {
-    return child(PickUsernamePage::class) {
+fun RBuilder.pickUsernamePage(handler: PickUsernameProps.() -> Unit) =
+    child(PickUsernamePage::class) {
         this.attrs(handler)
     }
-}

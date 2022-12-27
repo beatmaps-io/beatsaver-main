@@ -10,11 +10,10 @@ import kotlinx.html.hidden
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLIFrameElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.RDOMBuilder
 import react.dom.button
@@ -25,11 +24,14 @@ import react.setState
 
 const val previewBaseUrl = "https://skystudioapps.com/bs-viewer/"
 
-data class ModalState(var modal: ModalData? = null) : RState
+external interface ModalState : State {
+    var modal: ModalData?
+}
+
 data class ModalData(val titleText: String, val bodyText: String = "", val buttons: List<ModalButton>, val large: Boolean = false, val bodyCallback: (RDOMBuilder<DIV>.(HTMLDivElement?) -> Unit)? = null)
 data class ModalButton(val text: String, val color: String = "secondary", val callback: () -> Unit = {})
 
-class ModalComponent : RComponent<RProps, ModalState>() {
+class ModalComponent : RComponent<Props, ModalState>() {
     private val backdrop = createRef<HTMLDivElement>()
     private val modal = createRef<HTMLDivElement>()
     private val iframe = createRef<HTMLIFrameElement>()
@@ -69,7 +71,7 @@ class ModalComponent : RComponent<RProps, ModalState>() {
         }
     }
 
-    private fun hide() {
+    fun hide() {
         iframe.current?.src = "about:blank"
         modal.current?.let { md ->
             backdrop.current?.let { bd ->
@@ -138,8 +140,7 @@ class ModalComponent : RComponent<RProps, ModalState>() {
     }
 }
 
-fun RBuilder.modal(handler: RProps.() -> Unit): ReactElement {
-    return child(ModalComponent::class) {
+fun RBuilder.modal(handler: Props.() -> Unit) =
+    child(ModalComponent::class) {
         this.attrs(handler)
     }
-}

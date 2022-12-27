@@ -9,11 +9,11 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.asList
 import org.w3c.dom.events.Event
 import org.w3c.dom.get
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RReadableRef
-import react.RState
+import react.RefObject
+import react.State
 import react.setState
 import kotlin.js.Promise
 import kotlin.math.ceil
@@ -30,12 +30,12 @@ fun interface IndexedInfiniteScrollElementRenderer<T> : ElementRenderer<T> {
     fun RBuilder.invoke(idx: Int, it: T?)
 }
 
-external interface InfiniteScrollProps<T> : RProps {
+external interface InfiniteScrollProps<T> : Props {
     var resultsKey: Any?
     var rowHeight: Double
     var itemsPerRow: (() -> Int)?
     var itemsPerPage: Int
-    var container: RReadableRef<HTMLElement>
+    var container: RefObject<HTMLElement>
     var renderElement: ElementRenderer<T>
     var updateScrollIndex: ((Int) -> Unit)?
     var loadPage: (Int, CancelTokenSource) -> Promise<List<T>?>
@@ -45,7 +45,7 @@ external interface InfiniteScrollProps<T> : RProps {
     var headerSize: Double?
 }
 
-external interface InfiniteScrollState<T> : RState {
+external interface InfiniteScrollState<T> : State {
     var itemsPerRow: Int?
     var visiblePages: IntRange?
     var visItem: Int?

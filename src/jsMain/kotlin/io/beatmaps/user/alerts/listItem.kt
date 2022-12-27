@@ -1,13 +1,13 @@
 package io.beatmaps.user.alerts
 
 import kotlinx.html.js.onClickFunction
-import react.RProps
+import react.Props
 import react.dom.a
 import react.dom.i
 import react.dom.span
-import react.functionComponent
+import react.fc
 
-external interface AlertListItemProps : RProps {
+external interface AlertListItemProps : Props {
     var active: Boolean?
     var icon: String?
     var text: String?
@@ -15,7 +15,7 @@ external interface AlertListItemProps : RProps {
     var action: (() -> Unit)?
 }
 
-val alertsListItem = functionComponent<AlertListItemProps> {
+val alertsListItem = fc<AlertListItemProps> {
     a("#", classes = "list-group-item list-group-item-action d-flex justify-content-between align-items-center" + if (it.active == true) " active" else "") {
         attrs.onClickFunction = { ev ->
             ev.preventDefault()

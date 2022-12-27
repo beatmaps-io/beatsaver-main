@@ -2,15 +2,17 @@ package io.beatmaps.playlist
 
 import external.Axios
 import external.DragAndDrop.DragDropContext
-import external.dragable
+import external.draggable
 import external.droppable
 import external.generateConfig
+import external.routeLink
+import io.beatmaps.Config
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetailWithOrder
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistMapRequest
 import io.beatmaps.api.PlaylistPage
-import io.beatmaps.common.Config
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
@@ -24,14 +26,13 @@ import kotlinx.html.CommonAttributeGroupFacade
 import kotlinx.html.classes
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
+import org.w3c.dom.Audio
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.Event
 import org.w3c.xhr.FormData
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.div
@@ -40,17 +41,16 @@ import react.dom.p
 import react.dom.span
 import react.dom.textarea
 import react.ref
-import react.router.dom.RouteResultHistory
-import react.router.dom.routeLink
 import react.setState
 import kotlin.math.ceil
 
-external interface PlaylistProps : RProps {
-    var id: Int
-    var history: RouteResultHistory
-}
+external interface PlaylistProps : WithRouterProps
 
-data class PlaylistState(var loading: Boolean?, var playlist: PlaylistFull?, var maps: List<MapDetailWithOrder>?) : RState
+external interface PlaylistState : State {
+    var loading: Boolean?
+    var playlist: PlaylistFull?
+    var maps: List<MapDetailWithOrder>?
+}
 
 var CommonAttributeGroupFacade.onTransitionEndFunction: (Event) -> Unit
     get() = throw UnsupportedOperationException("You can't read variable onTransitionEnd")
@@ -77,12 +77,13 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
         if (state.loading == true)
             return
 
+        val id = props.params["id"]
         setState {
             loading = true
         }
 
         Axios.get<PlaylistPage>(
-            "${Config.apibase}/playlists/id/${props.id}/$page",
+            "${Config.apibase}/playlists/id/$id/$page",
             generateConfig<String, PlaylistPage>()
         ).then {
             setPageTitle("Playlist - ${it.data.playlist?.name}")
@@ -90,7 +91,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                 loading = false
                 playlist = it.data.playlist
                 it.data.maps?.let { newMaps ->
-                    maps = maps?.plus(newMaps)
+                    maps = maps?.plus(newMaps)?.sortedBy { m -> m.order }
                 }
             }
             if ((it.data.maps?.size ?: 0) >= itemsPerPage) {
@@ -102,8 +103,9 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
     }
 
     private fun updateOrder(mapId: String, order: Float) {
+        val id = props.params["id"]
         Axios.post<String>(
-            "${Config.apibase}/playlists/id/${props.id}/add",
+            "${Config.apibase}/playlists/id/$id/add",
             PlaylistMapRequest(mapId, true, order),
             generateConfig<PlaylistMapRequest, String>()
         )
@@ -146,6 +148,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
     }
 
     private fun delete() {
+        val id = props.params["id"]
         setState {
             loading = true
         }
@@ -155,11 +158,11 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
         data.append("reason", reasonRef.current?.value ?: "")
 
         Axios.post<dynamic>(
-            "${Config.apibase}/playlists/id/${props.id}/edit", data,
+            "${Config.apibase}/playlists/id/$id/edit", data,
             UploadRequestConfig { }
         ).then { r ->
             if (r.status == 200) {
-                props.history.push(state.playlist?.let { "/profile/${it.owner.id}#playlists" } ?: "/")
+                props.history.push(state.playlist?.owner?.profileLink("playlists") ?: "/")
             } else {
                 setState {
                     loading = false
@@ -178,6 +181,14 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                 playlist = it.data
             }
         }) { }
+    }
+
+    private val audio = Audio().also {
+        it.volume = 0.4
+    }
+
+    override fun componentWillUnmount() {
+        audio.pause()
     }
 
     override fun RBuilder.render() {
@@ -240,14 +251,14 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                             }
                         }
                         div("list-group") {
-                            img("Cover", pl.playlistImage) { }
+                            img("Cover", pl.playlistImage512 ?: pl.playlistImage) { }
                             div("list-group-item d-flex justify-content-between") {
                                 +"Name"
                                 span("text-truncate ms-4") {
                                     +pl.name
                                 }
                             }
-                            routeLink("/profile/${pl.owner.id}", className = "list-group-item d-flex justify-content-between") {
+                            routeLink(pl.owner.profileLink(), className = "list-group-item d-flex justify-content-between") {
                                 +"Created by"
                                 span("text-truncate ms-4") {
                                     attrs.title = pl.owner.name
@@ -275,10 +286,10 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                             }
                         }
                         div("btn-group d-flex") {
-                            a("${Config.apiremotebase}/playlists/id/${pl.playlistId}/download", classes = "btn btn-success") {
+                            a(pl.downloadURL, classes = "btn btn-success") {
                                 +"Download"
                             }
-                            a("bsplaylist://playlist/${Config.apiremotebase}/playlists/id/${pl.playlistId}/download/beatsaver-${pl.playlistId}.bplist", classes = "btn btn-info") {
+                            a("bsplaylist://playlist/${pl.downloadURL}/beatsaver-${pl.playlistId}.bplist", classes = "btn btn-info") {
                                 +"One-Click"
                             }
                         }
@@ -295,7 +306,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                             if (idx > 0) {
                                                 +", "
                                             }
-                                            routeLink("/profile/${it.second.id}") {
+                                            routeLink(it.second.profileLink()) {
                                                 +it.second.name
                                             }
                                         }
@@ -316,11 +327,14 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                             droppable("playlist") {
                                 attrs.classes = setOf("playlist")
                                 state.maps?.mapIndexed { idx, it ->
-                                    dragable(it.map.id, idx) {
+                                    draggable(it.map.id, idx) {
+                                        attrs.classes = setOf("drag-beatmap")
+
                                         beatmapInfo {
                                             obj = it.map
                                             version = it.map.publishedVersion()
                                             modal = modalRef
+                                            audio = this@Playlist.audio
                                         }
                                     }
                                 }
@@ -328,11 +342,12 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                         }
                     } else {
                         div("playlist") {
-                            state.maps?.map { it ->
+                            state.maps?.map {
                                 beatmapInfo {
                                     obj = it.map
                                     version = it.map.publishedVersion()
                                     modal = modalRef
+                                    audio = this@Playlist.audio
                                 }
                             }
                         }
@@ -343,8 +358,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
     }
 }
 
-fun RBuilder.playlist(handler: PlaylistProps.() -> Unit): ReactElement {
-    return child(Playlist::class) {
+fun RBuilder.playlist(handler: PlaylistProps.() -> Unit) =
+    child(Playlist::class) {
         this.attrs(handler)
     }
-}

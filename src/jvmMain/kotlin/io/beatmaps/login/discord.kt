@@ -42,11 +42,10 @@ fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
 class SimpleUserPrincipal(val user: UserDao, val alertCount: Int, val redirect: String) : Principal
 
 fun Application.installDiscordOauth() {
-    val baseName = System.getenv("BASE_URL") ?: Config.basename
     install(Authentication) {
         oauth("discord") {
             client = HttpClient(Apache)
-            urlProvider = { "$baseName${request.uri.substringBefore("?")}" }
+            urlProvider = { "${Config.siteBase()}${request.uri.substringBefore("?")}" }
             providerLookup = {
                 val queryParams = request.queryParameters as StringValues
                 discordProvider(queryParams["state"])

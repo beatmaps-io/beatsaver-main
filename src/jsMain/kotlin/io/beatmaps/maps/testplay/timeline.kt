@@ -4,6 +4,7 @@ import external.Dropzone
 import external.ReCAPTCHA
 import external.TimeAgo
 import external.recaptcha
+import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalComponent
@@ -11,12 +12,11 @@ import io.beatmaps.upload.simple
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.w3c.dom.HTMLElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RReadableRef
-import react.RState
-import react.ReactElement
+import react.RefObject
+import react.State
 import react.createRef
 import react.dom.article
 import react.dom.br
@@ -24,7 +24,6 @@ import react.dom.div
 import react.dom.i
 import react.dom.small
 import react.dom.strong
-import react.router.dom.RouteResultHistory
 import react.setState
 
 enum class EventType {
@@ -32,16 +31,16 @@ enum class EventType {
 }
 data class Event(val type: EventType, val state: EMapState?, val title: String, val body: String, val time: Instant, val hash: String, val userId: Int? = null, val secondaryTime: Instant? = null)
 
-external interface TimelineProps : RProps {
+external interface TimelineProps : Props {
     var mapInfo: MapDetail
     var isOwner: Boolean
     var loggedInId: Int?
     var reloadMap: () -> Unit
-    var history: RouteResultHistory
-    var modal: RReadableRef<ModalComponent>
+    var history: History
+    var modal: RefObject<ModalComponent>
 }
 
-external interface TimelineState : RState {
+external interface TimelineState : State {
     var errors: List<String>
     var loading: Boolean
 }
@@ -147,6 +146,7 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                         val version = props.mapInfo.versions.find { v -> v.hash == it.hash }
                         version {
                             hash = it.hash
+                            downloadUrl = version?.downloadURL
                             diffs = version?.diffs
                             isOwner = props.isOwner
                             feedback = it.body
@@ -197,8 +197,7 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
     }
 }
 
-fun RBuilder.timeline(handler: TimelineProps.() -> Unit): ReactElement {
-    return child(Timeline::class) {
+fun RBuilder.timeline(handler: TimelineProps.() -> Unit) =
+    child(Timeline::class) {
         this.attrs(handler)
     }
-}

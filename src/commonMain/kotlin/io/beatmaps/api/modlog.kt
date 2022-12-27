@@ -10,8 +10,14 @@ import kotlinx.serialization.Serializable
 data class ModLogEntry(
     val moderator: UserDetail,
     val user: UserDetail,
-    val map: MapDetail?,
+    val map: ModLogMapDetail?,
     val type: ModLogOpType,
     val time: Instant,
     val action: IModLogOpAction
+)
+
+@Serializable
+data class ModLogMapDetail(
+    val id: String,
+    val name: String
 )

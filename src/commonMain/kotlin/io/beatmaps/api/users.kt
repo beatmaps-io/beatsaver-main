@@ -26,8 +26,16 @@ data class UserDetail(
     val admin: Boolean? = null,
     val curator: Boolean? = null,
     val verifiedMapper: Boolean = false,
-    val suspendedAt: Instant? = null
-) { companion object }
+    val suspendedAt: Instant? = null,
+    val playlistUrl: String? = null
+) {
+    fun profileLink(tab: String? = null, absolute: Boolean = false) = UserDetailHelper.profileLink(this, tab, absolute)
+    companion object
+}
+expect object UserDetailHelper {
+    fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean): String
+}
+
 @Serializable
 data class UserStats(
     val totalUpvotes: Int = 0,

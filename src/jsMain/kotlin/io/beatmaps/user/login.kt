@@ -1,16 +1,17 @@
 package io.beatmaps.user
 
+import external.routeLink
 import io.beatmaps.setPageTitle
 import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
 import kotlinx.html.InputType
 import org.w3c.dom.url.URLSearchParams
+import react.Props
+import react.PropsWithChildren
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.dom.a
 import react.dom.button
 import react.dom.div
@@ -21,15 +22,14 @@ import react.dom.input
 import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
-import react.functionComponent
-import react.router.dom.routeLink
+import react.fc
 
-external interface LoginFormProps : RProps {
+external interface LoginFormProps : PropsWithChildren {
     var buttonText: String
     var discordLink: String?
 }
 
-val loginForm = functionComponent<LoginFormProps> { props ->
+val loginForm = fc<LoginFormProps> { props ->
     a(href = props.discordLink ?: "/discord", classes = "btn discord-btn") {
         span {
             i("fab fa-discord") {}
@@ -63,7 +63,7 @@ val loginForm = functionComponent<LoginFormProps> { props ->
     }
 }
 
-class LoginPage : RComponent<RProps, RState>() {
+class LoginPage : RComponent<Props, State>() {
     override fun componentDidMount() {
         setPageTitle("Login")
     }
@@ -116,8 +116,7 @@ class LoginPage : RComponent<RProps, RState>() {
     }
 }
 
-fun RBuilder.loginPage(handler: RProps.() -> Unit): ReactElement {
-    return child(LoginPage::class) {
+fun RBuilder.loginPage(handler: Props.() -> Unit) =
+    child(LoginPage::class) {
         this.attrs(handler)
     }
-}

@@ -2,7 +2,6 @@ package io.beatmaps.controllers
 
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.from
-import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.genericPage
@@ -69,7 +68,7 @@ fun Route.userController() {
                             meta("og:type", "profile:${detail.name}")
                             meta("og:site_name", "BeatSaver")
                             meta("og:title", detail.name)
-                            meta("og:url", "${Config.basename}/profile/${detail.id}")
+                            meta("og:url", detail.profileLink(absolute = true))
                             meta("og:image", detail.avatar)
                             meta("og:description", "${detail.name}'s BeatSaver profile")
                         }

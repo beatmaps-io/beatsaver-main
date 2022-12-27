@@ -8,14 +8,16 @@ import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
-import io.beatmaps.cdnPrefix
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.cleanString
+import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.PgConcat
+import io.beatmaps.common.db.greaterEqF
+import io.beatmaps.common.db.lessEqF
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
@@ -40,6 +42,7 @@ import io.beatmaps.controllers.UploadException
 import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.controllers.uploadDir
 import io.beatmaps.login.Session
+import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
@@ -89,6 +92,7 @@ import org.valiktor.constraints.NotBlank
 import org.valiktor.functions.hasSize
 import org.valiktor.functions.isNotBlank
 import org.valiktor.validate
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
 import java.util.Base64
@@ -277,8 +281,8 @@ fun Route.playlistRoute() {
                                         } else q
                                     }
                                     .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
-                                    .notNull(it.minNps) { o -> Playlist.maxNps greaterEq o }
-                                    .notNull(it.maxNps) { o -> Playlist.minNps lessEq o }
+                                    .notNull(it.minNps) { o -> Playlist.maxNps greaterEqF o }
+                                    .notNull(it.maxNps) { o -> Playlist.minNps lessEqF o }
                                     .notNull(it.from) { o -> Playlist.createdAt greaterEq o.toJavaInstant() }
                                     .notNull(it.to) { o -> Playlist.createdAt lessEq o.toJavaInstant() }
                                     .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }
@@ -552,21 +556,27 @@ fun Route.playlistRoute() {
         }
     }
 
+    val thumbnailSizes = listOf(256, 512)
     post<PlaylistApi.Create> {
         requireAuthorization { sess ->
-            val temp = File(
-                uploadDir,
-                "upload-${System.currentTimeMillis()}-${sess.userId.hashCode()}.jpg"
-            )
+            val files = mutableMapOf<Int, File>()
+
             try {
                 val multipart = call.handleMultipart { part ->
                     part.streamProvider().use { its ->
-                        Thumbnails
-                            .of(its)
-                            .size(256, 256)
-                            .outputFormat("JPEG")
-                            .outputQuality(0.8)
-                            .toFile(temp)
+                        val tmp = ByteArrayOutputStream()
+                        its.copyToSuspend(tmp, sizeLimit = 10 * 1024 * 1024)
+
+                        thumbnailSizes.forEach { s ->
+                            files[s] = File(uploadDir, "upload-${System.currentTimeMillis()}-${sess.userId.hashCode()}-$s.jpg").also { localFile ->
+                                Thumbnails
+                                    .of(tmp.toByteArray().inputStream())
+                                    .size(s, s)
+                                    .outputFormat("JPEG")
+                                    .outputQuality(0.8)
+                                    .toFile(localFile)
+                            }
+                        }
                     }
                 }
 
@@ -584,7 +594,7 @@ fun Route.playlistRoute() {
                 validate(toCreate) {
                     validate(PlaylistBasic::name).isNotBlank().hasSize(3, 255)
                     validate(PlaylistBasic::playlistImage).validate(NotBlank) {
-                        temp.exists()
+                        files.isNotEmpty()
                     }
                 }
 
@@ -597,22 +607,22 @@ fun Route.playlistRoute() {
                     }
                 }
 
-                val localFile = File(localPlaylistCoverFolder(), "$newId.jpg")
-                withContext(Dispatchers.IO) {
+                files.forEach { (s, temp) ->
+                    val localFile = File(localPlaylistCoverFolder(s), "$newId.jpg")
                     Files.move(temp.toPath(), localFile.toPath())
                 }
 
                 call.respond(newId.value)
             } finally {
-                temp.delete()
+                files.values.forEach { temp ->
+                    temp.delete()
+                }
             }
         }
     }
 
     post<PlaylistApi.Edit> { req ->
         requireAuthorization { sess ->
-            val localFile = File(localPlaylistCoverFolder(), "${req.id}.jpg")
-
             val query = (Playlist.id eq req.id and Playlist.deletedAt.isNull()).let { q ->
                 if (sess.isAdmin()) {
                     q
@@ -627,12 +637,19 @@ fun Route.playlistRoute() {
 
             val multipart = call.handleMultipart { part ->
                 part.streamProvider().use { its ->
-                    Thumbnails
-                        .of(its)
-                        .size(256, 256)
-                        .outputFormat("JPEG")
-                        .outputQuality(0.8)
-                        .toFile(localFile)
+                    val tmp = ByteArrayOutputStream()
+                    its.copyToSuspend(tmp, sizeLimit = 10 * 1024 * 1024)
+
+                    thumbnailSizes.forEach { s ->
+                        val localFile = File(localPlaylistCoverFolder(s), "${req.id}.jpg")
+
+                        Thumbnails
+                            .of(tmp.toByteArray().inputStream())
+                            .size(s, s)
+                            .outputFormat("JPEG")
+                            .outputQuality(0.8)
+                            .toFile(localFile)
+                    }
                 }
             }
 

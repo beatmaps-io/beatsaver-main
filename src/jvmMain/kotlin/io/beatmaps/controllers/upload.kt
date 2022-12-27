@@ -117,7 +117,7 @@ fun Route.uploadController() {
 
                             transaction {
                                 User.update({ User.id eq sess.userId }) {
-                                    it[avatar] = "${Config.cdnbase}/avatar/$filename"
+                                    it[avatar] = "${Config.cdnBase("", true)}/avatar/$filename"
                                 }
                             }
                         }

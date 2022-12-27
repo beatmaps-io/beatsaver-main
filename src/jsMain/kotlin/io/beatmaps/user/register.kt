@@ -4,19 +4,19 @@ import external.Axios
 import external.ReCAPTCHA
 import external.generateConfig
 import external.recaptcha
+import external.routeLink
+import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.RegisterRequest
-import io.beatmaps.common.Config
 import io.beatmaps.setPageTitle
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.button
@@ -28,16 +28,15 @@ import react.dom.input
 import react.dom.jsStyle
 import react.dom.p
 import react.dom.small
-import react.router.dom.routeLink
 import react.setState
 
-external interface SignupPageState : RState {
+external interface SignupPageState : State {
     var errors: List<String>
     var loading: Boolean
     var complete: Boolean
 }
 
-class SignupPage : RComponent<RProps, SignupPageState>() {
+class SignupPage : RComponent<Props, SignupPageState>() {
     private val usernameRef = createRef<HTMLInputElement>()
     private val emailRef = createRef<HTMLInputElement>()
     private val passwordRef = createRef<HTMLInputElement>()
@@ -175,8 +174,7 @@ class SignupPage : RComponent<RProps, SignupPageState>() {
     }
 }
 
-fun RBuilder.signupPage(handler: RProps.() -> Unit): ReactElement {
-    return child(SignupPage::class) {
+fun RBuilder.signupPage(handler: Props.() -> Unit) =
+    child(SignupPage::class) {
         this.attrs(handler)
     }
-}

@@ -1,11 +1,11 @@
 package external
 
+import react.ComponentClass
 import react.Context
-import react.RClass
-import react.RProps
+import react.Props
 import react.ReactElement
 
-external interface DateRangePickerProps : RProps {
+external interface DateRangePickeProps : Props {
     var startDate: Moment?
     var startDateId: String
     var endDate: Moment?
@@ -14,7 +14,7 @@ external interface DateRangePickerProps : RProps {
     var onDatesChange: (DateRange) -> Unit
     var focusedInput: String?
     var isOutsideRange: (Moment) -> Boolean
-    var renderCalendarInfo: () -> ReactElement
+    var renderCalendarInfo: () -> ReactElement<*>?
     var displayFormat: String
     var small: Boolean
     var numberOfMonths: Int
@@ -32,7 +32,7 @@ external object ReactDatesInit
 @JsModule("react-dates/lib/components/DateRangePicker")
 @JsNonModule
 external object DateRangePicker {
-    val default: RClass<DateRangePickerProps>
+    val default: ComponentClass<DateRangePickeProps>
 }
 
 @JsModule("react-dates/lib/theme/DefaultTheme")

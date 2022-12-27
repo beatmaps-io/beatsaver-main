@@ -1,6 +1,5 @@
 package io.beatmaps.api
 
-import io.beatmaps.cdnPrefix
 import io.beatmaps.common.ReviewDeleteData
 import io.beatmaps.common.ReviewModerationData
 import io.beatmaps.common.db.NowExpression
@@ -18,6 +17,7 @@ import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.reviewerAlias
 import io.beatmaps.common.pub
+import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -73,17 +73,17 @@ class ReviewApi {
 
 data class ReviewUpdateInfo(val mapId: Int, val userId: Int)
 
+fun reviewToComplex(row: ResultRow, prefix: String): ReviewDetail {
+    if (row.hasValue(reviewerAlias[User.id])) UserDao.wrapRow(row, reviewerAlias)
+    if (row.hasValue(User.id)) UserDao.wrapRow(row)
+    if (row.hasValue(curatorAlias[User.id]) && row[Beatmap.curator] != null) UserDao.wrapRow(row, curatorAlias)
+    if (row.hasValue(Beatmap.id)) BeatmapDao.wrapRow(row)
+
+    return ReviewDetail.from(row, prefix)
+}
+
 fun Route.reviewRoute() {
     if (!ReviewConstants.COMMENTS_ENABLED) return
-
-    fun reviewToComplex(row: ResultRow, prefix: String): ReviewDetail {
-        if (row.hasValue(reviewerAlias[User.id])) UserDao.wrapRow(row, reviewerAlias)
-        if (row.hasValue(User.id)) UserDao.wrapRow(row)
-        if (row.hasValue(curatorAlias[User.id]) && row[Beatmap.curator] != null) UserDao.wrapRow(row, curatorAlias)
-        if (row.hasValue(Beatmap.id)) BeatmapDao.wrapRow(row)
-
-        return ReviewDetail.from(row, prefix)
-    }
 
     get<ReviewApi.ByDate> {
         val reviews = transaction {
@@ -260,7 +260,8 @@ fun Route.reviewRoute() {
                 }
 
                 if (success) {
-                    call.pub("beatmaps", "reviews.$updateMapId.updated", null, ReviewUpdateInfo(updateMapId, single.userId))
+                    val updateType = if (update.captcha == null) "updated" else "created"
+                    call.pub("beatmaps", "reviews.$updateMapId.$updateType", null, ReviewUpdateInfo(updateMapId, single.userId))
                     call.respond(ActionResponse(true, listOf()))
                 }
             }
@@ -278,15 +279,19 @@ fun Route.reviewRoute() {
             }
 
             transaction {
-                val result = Review.update({ Review.mapId eq mapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }) { r ->
+                val result = Review.updateReturning({ Review.mapId eq mapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }, { r ->
                     r[deletedAt] = NowExpression(deletedAt.columnType)
-                } > 0
+                }, Review.text, Review.sentiment)
 
-                if (result && single.userId != sess.userId) {
+                if (!result.isNullOrEmpty() && single.userId != sess.userId) {
+                    val info = result.first().let {
+                        it[Review.text] to it[Review.sentiment]
+                    }
+
                     ModLog.insert(
                         sess.userId,
                         mapId,
-                        ReviewDeleteData(deleteReview.reason),
+                        ReviewDeleteData(deleteReview.reason, info.first, info.second),
                         single.userId
                     )
                 }

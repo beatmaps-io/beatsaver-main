@@ -4,10 +4,11 @@ import external.Axios
 import external.Moment
 import external.TimeAgo
 import external.generateConfig
+import external.reactFor
+import io.beatmaps.Config
 import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.StateUpdate
-import io.beatmaps.common.Config
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
@@ -21,12 +22,11 @@ import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RReadableRef
-import react.RState
-import react.ReactElement
+import react.RefObject
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.article
@@ -41,13 +41,14 @@ import react.dom.label
 import react.dom.p
 import react.dom.small
 import react.dom.strong
-import react.functionComponent
+import react.fc
 import react.setState
 import react.useState
 
-external interface VersionProps : RProps {
+external interface VersionProps : Props {
     var mapId: Int
     var hash: String
+    var downloadUrl: String?
     var diffs: List<MapDifficulty>?
     var firstVersion: Boolean
     var feedback: String
@@ -56,11 +57,11 @@ external interface VersionProps : RProps {
     var state: EMapState?
     var scheduledAt: Instant?
     var reloadMap: () -> Unit
-    var modal: RReadableRef<ModalComponent>
+    var modal: RefObject<ModalComponent>
     var allowPublish: Boolean?
 }
 
-external interface VersionState : RState {
+external interface VersionState : State {
     var state: EMapState?
     var loading: Boolean?
     var loadingState: Boolean?
@@ -74,16 +75,6 @@ private const val testplayEnabled = false
 
 class VersionComponent : RComponent<VersionProps, VersionState>() {
     private val textareaRef = createRef<TEXTAREA>()
-
-    init {
-        setState {
-            state = null
-            loading = false
-            loadingState = false
-            text = ""
-            time = ""
-        }
-    }
 
     override fun componentWillMount() {
         setState {
@@ -123,7 +114,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
         }
     }
 
-    val publishModal = functionComponent<RProps> {
+    val publishModal = fc<Props> {
         val (publishType, setPublishType) = useState(false)
 
         p {
@@ -163,7 +154,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
 
             div("form-check check-border") {
                 label("form-check-label") {
-                    attrs.htmlFor = "publishTypeSchedule"
+                    attrs.reactFor = "publishTypeSchedule"
                     input(InputType.radio, classes = "form-check-input") {
                         attrs.name = "publishType"
                         attrs.id = "publishTypeSchedule"
@@ -308,7 +299,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                                 textToContent(
                                     "Some of your difficulties have a high percentage of parity errors\n\n" +
                                         "You can read more about parity on the BSMG wiki:\nhttps://bsmg.wiki/mapping/basic-mapping.html#do-mapping-with-flow\n\n" +
-                                        "To check these errors yourself visit the parity checker here:\nhttps://galaxymaster2.github.io/bs-parity?url=${Config.cdnbase}/${props.hash}.zip"
+                                        "To check these errors yourself visit the parity checker here:\nhttps://galaxymaster2.github.io/bs-parity?url=${props.downloadUrl}"
                                 )
                             }
                         }
@@ -369,8 +360,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
     }
 }
 
-fun RBuilder.version(handler: VersionProps.() -> Unit): ReactElement {
-    return child(VersionComponent::class) {
+fun RBuilder.version(handler: VersionProps.() -> Unit) =
+    child(VersionComponent::class) {
         this.attrs(handler)
     }
-}

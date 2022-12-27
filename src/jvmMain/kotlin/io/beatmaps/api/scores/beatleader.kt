@@ -10,10 +10,8 @@ import io.ktor.client.request.get
 class BeatLeaderScores : RemoteScores {
     override suspend fun getLeaderboard(hash: String, diff: EDifficulty, mode: SSGameMode, page: Int) =
         ssTry {
-            val context = "Standard" // Standard, Modifiers
-            val scope = "Global" // Global, Friends, Country
             scoresClient.get(
-                "https://api.beatleader.xyz/v3/scores/$hash/${diff.enumName()}/${mode.characteristic.enumName()}/$context/$scope/page?page=$page&count=12"
+                "https://api.beatleader.xyz/v4/scores/$hash/${diff.enumName()}/${mode.characteristic.enumName()}?page=$page&count=12"
             ).body<BLPaged>()
         }.let {
             val firstScore = it?.data?.firstOrNull()
@@ -33,70 +31,20 @@ data class BLLeaderboardScore(
     val baseScore: Int,
     val modifiedScore: Int,
     val accuracy: Float,
-    val playerId: String,
     val pp: Double,
-    val bonusPp: Double,
     val rank: Int,
-    val countryRank: Int,
-    val replay: String,
     val modifiers: String,
-    val badCuts: Int,
-    val missedNotes: Int,
-    val bombCuts: Int,
-    val wallsHit: Int,
-    val pauses: Int,
-    val fullCombo: Boolean,
-    val platform: String,
-    val hmd: Int,
-    val leaderboardId: String,
+    val leaderboardId: String?,
     val timeset: String,
     val timepost: Long,
-    val replaysWatched: Int,
-    val player: BLLeaderboardPlayer,
-    val scoreImprovement: BLLeaderboardImprovement?,
-    val rankVoting: Any?,
-    val metadata: Any?
+    val player: String
 ) {
     fun toLeaderboardScore() = LeaderboardScore(
-        playerId.toLong(),
-        player.name,
+        0L,
+        player,
         rank,
         modifiedScore,
         pp,
         modifiers.split(',').filter { it.isNotEmpty() }
     )
 }
-data class BLLeaderboardPlayer(
-    val id: String,
-    val name: String,
-    val platform: String,
-    val avatar: String,
-    val country: String,
-    val pp: Double,
-    val rank: Int,
-    val countryRank: Int,
-    val role: String,
-    val socials: List<Any>,
-    val patreonFeatures: Any?,
-    val profileSettings: Any?,
-    val clans: List<Any>
-)
-data class BLLeaderboardImprovement(
-    val id: Long,
-    val timeset: String,
-    val score: Int,
-    val accuracy: Float,
-    val pp: Double,
-    val bonusPp: Double,
-    val rank: Int,
-    val accRight: Float,
-    val accLeft: Float,
-    val averageRankedAccuracy: Float,
-    val totalPp: Double,
-    val totalRank: Int,
-    val badCuts: Int,
-    val missedNotes: Int,
-    val bombCuts: Int,
-    val wallsHit: Int,
-    val pauses: Int
-)

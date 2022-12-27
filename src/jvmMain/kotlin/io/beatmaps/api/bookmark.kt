@@ -7,13 +7,13 @@ import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
-import io.beatmaps.cdnPrefix
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location

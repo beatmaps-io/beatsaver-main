@@ -1,14 +1,14 @@
 package external
 
-import react.RClass
-import react.RProps
+import react.ComponentClass
+import react.Props
 
-external interface TimeAgoProps : RProps {
+external interface TimeAgoProps : Props {
     var date: String
 }
 
 @JsModule("react-timeago")
 @JsNonModule
 external object TimeAgo {
-    val default: RClass<TimeAgoProps>
+    val default: ComponentClass<TimeAgoProps>
 }

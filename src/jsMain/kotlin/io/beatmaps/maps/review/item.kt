@@ -3,13 +3,15 @@ package io.beatmaps.maps.review
 import external.Axios
 import external.axiosDelete
 import external.generateConfig
+import external.reactFor
+import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.CurateReview
 import io.beatmaps.api.DeleteReview
 import io.beatmaps.api.PutReview
+import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewSentiment
-import io.beatmaps.common.Config
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
@@ -26,10 +28,9 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
+import react.Props
 import react.RBuilder
-import react.RProps
-import react.RReadableRef
-import react.ReactElement
+import react.RefObject
 import react.createRef
 import react.dom.a
 import react.dom.div
@@ -38,13 +39,13 @@ import react.dom.input
 import react.dom.label
 import react.dom.p
 import react.dom.textarea
-import react.functionComponent
+import react.fc
 import react.setState
 
 external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
     var userId: Int
     var mapId: String
-    var modal: RReadableRef<ModalComponent>
+    var modal: RefObject<ModalComponent>
     var setExistingReview: ((Boolean) -> Unit)?
 }
 external interface ReviewItemState : AutoSizeComponentState {
@@ -57,11 +58,11 @@ external interface ReviewItemState : AutoSizeComponentState {
     var loading: Boolean?
 }
 
-external interface SentimentIconProps : RProps {
+external interface SentimentIconProps : Props {
     var sentiment: ReviewSentiment
 }
 
-val sentimentIcon = functionComponent<SentimentIconProps> {
+val sentimentIcon = fc<SentimentIconProps> {
     val commonSentimentStyles = "fs-4 align-middle me-2"
     when (it.sentiment) {
         ReviewSentiment.POSITIVE ->
@@ -133,7 +134,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                                 }
                                             }
                                             label("form-check-label") {
-                                                attrs.htmlFor = "featured-${rv.id}"
+                                                attrs.reactFor = "featured-${rv.id}"
                                                 +"Featured"
                                             }
                                         }
@@ -161,7 +162,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                                         p {
                                                             +"Are you sure? This action cannot be reversed."
                                                         }
-                                                        if (userData.curator) {
+                                                        if (props.userId != userData.userId) {
                                                             p {
                                                                 +"Reason for action:"
                                                             }
@@ -195,6 +196,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                             text = state.text ?: rv.text
                             editing = state.editing
                             renderText = true
+                            maxLength = ReviewConstants.MAX_LENGTH
                             saveText = { newReview ->
                                 val newSentiment = state.newSentiment ?: sentimentLocal
                                 Axios.put<ActionResponse>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->
@@ -223,8 +225,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
     }
 }
 
-fun RBuilder.reviewItem(handler: ReviewItemProps.() -> Unit): ReactElement {
-    return child(ReviewItem::class) {
+fun RBuilder.reviewItem(handler: ReviewItemProps.() -> Unit) =
+    child(ReviewItem::class) {
         this.attrs(handler)
     }
-}

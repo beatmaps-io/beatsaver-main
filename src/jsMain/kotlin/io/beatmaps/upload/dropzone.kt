@@ -4,6 +4,7 @@ import external.Axios
 import external.AxiosResponse
 import external.DropzoneProps
 import external.ReCAPTCHA
+import io.beatmaps.History
 import io.beatmaps.api.FailedUploadResponse
 import kotlinx.html.InputType
 import kotlinx.html.hidden
@@ -21,26 +22,25 @@ import kotlinx.html.tabIndex
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromDynamic
 import org.w3c.dom.HTMLElement
-import org.w3c.dom.events.Event
 import org.w3c.xhr.FormData
+import react.Props
 import react.RElementBuilder
-import react.RReadableRef
+import react.RefObject
+import react.createElement
 import react.dom.attrs
 import react.dom.div
-import react.dom.findDOMNode
 import react.dom.i
 import react.dom.input
 import react.dom.p
 import react.dom.small
-import react.router.dom.RouteResultHistory
 
 fun RElementBuilder<DropzoneProps>.simple(
-    history: RouteResultHistory,
+    history: History,
     loading: Boolean,
     errors: Boolean,
-    progressBarInnerRef: RReadableRef<HTMLElement>,
+    progressBarInnerRef: RefObject<HTMLElement>,
     dropText: String,
-    captchaRef: RReadableRef<ReCAPTCHA>,
+    captchaRef: RefObject<ReCAPTCHA>,
     block: (FormData) -> Unit,
     errorsBlock: (List<String>) -> Unit,
     extraInfo: List<String> = emptyList(),
@@ -77,60 +77,57 @@ fun RElementBuilder<DropzoneProps>.simple(
             }
         }
     }
-    renderChild { info: DropInfo ->
-        div("dropzone" + (if (errors) " is-invalid" else "")) {
-            val rootProps = info.getRootProps()
-            val props = info.getInputProps()
-            attrs {
-                onKeyDownFunction = rootProps.onKeyDown as (Event) -> Unit
-                onFocusFunction = rootProps.onFocus as (Event) -> Unit
-                onBlurFunction = rootProps.onBlur as (Event) -> Unit
-                onClickFunction = rootProps.onClick as (Event) -> Unit
-                onDragEnterFunction = rootProps.onDragEnter as (Event) -> Unit
-                onDragOverFunction = rootProps.onDragOver as (Event) -> Unit
-                onDragLeaveFunction = rootProps.onDragLeave as (Event) -> Unit
-                onDropFunction = rootProps.onDrop as (Event) -> Unit
-                tabIndex = (rootProps.tabIndex as Int? ?: 0).toString()
-            }
-            ref {
-                rootProps.ref.current = findDOMNode(it)
-            }
-
-            input(InputType.valueOf(props.type as String), classes = "d-none") {
+    attrs.children = { info ->
+        createElement<Props> {
+            div("dropzone" + (if (errors) " is-invalid" else "")) {
+                val rootProps = info.getRootProps()
+                val props = info.getInputProps()
                 attrs {
-                    accept = props.accept ?: ""
-                    multiple = props.multiple as Boolean
-                    onChangeFunction = props.onChange as (Event) -> Unit
-                    onClickFunction = props.onClick as (Event) -> Unit
-                    autoComplete = (props.autoComplete as String) == "on"
-                    tabIndex = (props.tabIndex as Int).toString()
+                    onKeyDownFunction = rootProps.onKeyDown
+                    onFocusFunction = rootProps.onFocus
+                    onBlurFunction = rootProps.onBlur
+                    onClickFunction = rootProps.onClick
+                    onDragEnterFunction = rootProps.onDragEnter
+                    onDragOverFunction = rootProps.onDragOver
+                    onDragLeaveFunction = rootProps.onDragLeave
+                    onDropFunction = rootProps.onDrop
+                    tabIndex = (rootProps.tabIndex ?: 0).toString()
+                }
+                ref = rootProps.ref
+
+                input(InputType.valueOf(props.type), classes = "d-none") {
+                    attrs {
+                        accept = props.accept ?: ""
+                        multiple = props.multiple
+                        onChangeFunction = props.onChange
+                        onClickFunction = props.onClick
+                        autoComplete = props.autoComplete == "on"
+                        tabIndex = props.tabIndex.toString()
+                    }
+                    ref = props.ref
                 }
 
-                ref {
-                    props.ref.current = findDOMNode(it)
+                div("progress") {
+                    attrs.hidden = !loading
+                    div("progress-bar progress-bar-striped progress-bar-animated bg-info") {
+                        attrs.role = "progressbar"
+                        ref = progressBarInnerRef
+                    }
                 }
-            }
 
-            div("progress") {
-                attrs.hidden = !loading
-                div("progress-bar progress-bar-striped progress-bar-animated bg-info") {
-                    attrs.role = "progressbar"
-                    ref = progressBarInnerRef
-                }
-            }
-
-            div {
-                attrs.hidden = loading
-                i("fas fa-upload") {}
-                p {
-                    +dropText
-                }
-                small {
-                    +"Max file size: 15MiB"
-                }
-                extraInfo.forEach {
+                div {
+                    attrs.hidden = loading
+                    i("fas fa-upload") {}
+                    p {
+                        +dropText
+                    }
                     small {
-                        +it
+                        +"Max file size: 15MiB"
+                    }
+                    extraInfo.forEach {
+                        small {
+                            +it
+                        }
                     }
                 }
             }

@@ -3,39 +3,39 @@ package io.beatmaps.index
 import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
+import external.routeLink
+import io.beatmaps.Config
+import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SearchResponse
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.Config
 import io.beatmaps.common.MapTagType
 import io.beatmaps.shared.CommonParams
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import kotlinx.browser.window
-import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.Audio
+import org.w3c.dom.HTMLElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RReadableRef
-import react.RState
-import react.ReactElement
+import react.RefObject
+import react.State
 import react.createRef
 import react.dom.div
 import react.dom.h4
 import react.dom.img
 import react.dom.p
-import react.router.dom.RouteResultHistory
-import react.router.dom.routeLink
 import react.setState
 
-external interface BeatmapTableProps : RProps {
+external interface BeatmapTableProps : Props {
     var search: SearchParams?
     var user: Int?
     var curated: Boolean?
     var wip: Boolean?
-    var modal: RReadableRef<ModalComponent>
-    var history: RouteResultHistory
+    var modal: RefObject<ModalComponent>
+    var history: History
     var updateScrollIndex: ((Int) -> Unit)?
     var visible: Boolean?
 }
@@ -67,7 +67,7 @@ data class SearchParams(
     }.joinToString(",")
 }
 
-external interface BeatmapTableState : RState {
+external interface BeatmapTableState : State {
     var user: UserDetail?
     var resultsKey: Any
 }
@@ -75,7 +75,7 @@ external interface BeatmapTableState : RState {
 external fun encodeURIComponent(uri: String): String
 
 class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
-    private val resultsTable = createRef<HTMLDivElement>()
+    private val resultsTable = createRef<HTMLElement>()
 
     override fun componentWillUpdate(nextProps: BeatmapTableProps, nextState: BeatmapTableState) {
         if (props.user != nextProps.user || props.wip != nextProps.wip || props.curated != nextProps.curated || props.search !== nextProps.search) {
@@ -166,11 +166,19 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         }
     }
 
+    private val audio = Audio().also {
+        it.volume = 0.4
+    }
+
+    override fun componentWillUnmount() {
+        audio.pause()
+    }
+
     override fun RBuilder.render() {
         if (props.visible == false) return
 
         state.user?.let {
-            routeLink("/profile/${it.id}", className = "card border-dark user-suggestion-card") {
+            routeLink(it.profileLink(), className = "card border-dark user-suggestion-card") {
                 div("card-body") {
                     h4("card-title") {
                         +"Were you looking for:"
@@ -200,6 +208,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                         obj = it
                         version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
                         modal = props.modal
+                        audio = this@BeatmapTable.audio
                     }
                 }
                 attrs.updateScrollIndex = props.updateScrollIndex
@@ -211,8 +220,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
 
 class MapDetailInfiniteScroll : InfiniteScroll<MapDetail>()
 
-fun RBuilder.beatmapTable(handler: BeatmapTableProps.() -> Unit): ReactElement {
-    return child(BeatmapTable::class) {
+fun RBuilder.beatmapTable(handler: BeatmapTableProps.() -> Unit) =
+    child(BeatmapTable::class) {
         this.attrs(handler)
     }
-}

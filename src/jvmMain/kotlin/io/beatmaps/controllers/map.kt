@@ -2,18 +2,19 @@ package io.beatmaps.controllers
 
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
-import io.beatmaps.cdnPrefix
 import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.genericPage
+import io.beatmaps.util.cdnPrefix
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import kotlinx.html.meta
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -61,13 +62,13 @@ fun Route.mapController() {
                 try {
                     transaction {
                         Beatmap.joinVersions().select {
-                            Beatmap.id eq it.key.toInt(16)
+                            Beatmap.id eq it.key.toInt(16) and Beatmap.deletedAt.isNull()
                         }.limit(1).complexToBeatmap().map { MapDetail.from(it, cdnPrefix()) }.firstOrNull()
                     }?.let {
                         meta("og:type", "website")
                         meta("og:site_name", "BeatSaver")
                         meta("og:title", it.name)
-                        meta("og:url", "${Config.basename}/maps/${it.id}")
+                        meta("og:url", "${Config.siteBase()}/maps/${it.id}")
                         meta("og:image", it.publishedVersion()?.coverURL)
                         meta("og:description", it.description.take(400))
                     }

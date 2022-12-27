@@ -1,6 +1,7 @@
 package io.beatmaps.modlog
 
 import external.TimeAgo
+import external.routeLink
 import io.beatmaps.api.ModLogEntry
 import io.beatmaps.api.ReviewSentiment
 import io.beatmaps.api.UserDetail
@@ -19,7 +20,7 @@ import kotlinx.html.DIV
 import kotlinx.html.TD
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLDivElement
-import react.RProps
+import react.Props
 import react.createRef
 import react.dom.RDOMBuilder
 import react.dom.a
@@ -30,10 +31,9 @@ import react.dom.p
 import react.dom.span
 import react.dom.td
 import react.dom.tr
-import react.functionComponent
-import react.router.dom.routeLink
+import react.fc
 
-external interface ModLogEntryProps : RProps {
+external interface ModLogEntryProps : Props {
     var entry: ModLogEntry?
     var setUser: (String, String) -> Unit
 }
@@ -59,7 +59,7 @@ private fun RDOMBuilder<DIV>.diffText(human: String, old: String, new: String) {
     }
 }
 
-val modLogEntryRenderer = functionComponent<ModLogEntryProps> {
+val modLogEntryRenderer = fc<ModLogEntryProps> {
     fun RDOMBuilder<TD>.linkUser(mod: Boolean, userDetail: UserDetail) {
         a("#", classes = "me-1") {
             attrs.onClickFunction = { ev ->
@@ -71,7 +71,7 @@ val modLogEntryRenderer = functionComponent<ModLogEntryProps> {
             }
             +userDetail.name
         }
-        routeLink("/profile/${userDetail.id}") {
+        routeLink(userDetail.profileLink()) {
             i("fas fa-external-link-alt") {}
         }
     }
@@ -116,7 +116,7 @@ val modLogEntryRenderer = functionComponent<ModLogEntryProps> {
         td {
             attrs.colSpan = "5"
             it.entry?.let {
-                div("text-wrap") {
+                div("text-wrap text-break") {
                     ref = localRef
 
                     when (it.action) {
@@ -214,6 +214,14 @@ val modLogEntryRenderer = functionComponent<ModLogEntryProps> {
                             }
                             p("card-text") {
                                 +"Reason: ${it.action.reason}"
+                                it.action.text?.let { t ->
+                                    br {}
+                                    +"Text: $t"
+                                }
+                                it.action.sentiment?.let { s ->
+                                    br {}
+                                    +"Sentiment: ${ReviewSentiment.fromInt(s).name}"
+                                }
                             }
                         }
 

@@ -21,7 +21,7 @@ fun String.parseItalicMarkdown() =
 
 fun String.parseMapReference() =
     replace("(^|\\s)#([\\da-f]+?)($|[^\\da-z])".toRegex(setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))) {
-        """${it.groupValues[1]}<a href="/maps/${it.groupValues[2].lowercase()}">#${it.groupValues[2]}</a>${it.groupValues[3]}"""
+        """${it.groupValues[1]}<a data-bs="local" href="/maps/${it.groupValues[2].lowercase()}">#${it.groupValues[2]}</a>${it.groupValues[3]}"""
     }
 
 fun String.parseUserReference() =

@@ -3,11 +3,14 @@ package io.beatmaps.playlist
 import external.Axios
 import external.ReCAPTCHA
 import external.generateConfig
+import external.reactFor
 import external.recaptcha
+import external.routeLink
+import io.beatmaps.Config
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
-import io.beatmaps.common.Config
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.globalContext
 import io.beatmaps.setPageTitle
@@ -27,9 +30,7 @@ import org.w3c.files.get
 import org.w3c.xhr.FormData
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.button
 import react.dom.div
@@ -38,16 +39,11 @@ import react.dom.input
 import react.dom.jsStyle
 import react.dom.label
 import react.dom.textarea
-import react.router.dom.RouteResultHistory
-import react.router.dom.routeLink
 import react.setState
 
-external interface PlaylistEditProps : RProps {
-    var id: Int?
-    var history: RouteResultHistory
-}
+external interface PlaylistEditProps : WithRouterProps
 
-external interface PlaylistEditState : RState {
+external interface PlaylistEditState : State {
     var init: Boolean?
     var playlist: PlaylistFull?
     var loading: Boolean?
@@ -65,9 +61,8 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
     private val publicRef = createRef<HTMLInputElement>()
 
     override fun componentDidMount() {
-        setPageTitle("Playlist")
-
-        if (props.id == null) {
+        if (props.params["id"] == null) {
+            setPageTitle("Create Playlist")
             setState {
                 loading = false
                 init = true
@@ -80,6 +75,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                 1
             )
         } else {
+            setPageTitle("Edit Playlist")
             loadData()
         }
     }
@@ -88,15 +84,16 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
         if (state.loading == true)
             return
 
+        val id = props.params["id"]
         setState {
             loading = true
         }
 
         Axios.get<PlaylistPage>(
-            "${Config.apibase}/playlists/id/${props.id}",
+            "${Config.apibase}/playlists/id/$id",
             generateConfig<String, PlaylistPage>()
         ).then {
-            setPageTitle("Playlist - ${it.data.playlist?.name}")
+            setPageTitle("Edit Playlist - ${it.data.playlist?.name}")
 
             window.setTimeout(
                 {
@@ -119,10 +116,11 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
 
     override fun RBuilder.render() {
         if (state.init == true) {
+            val id = props.params["id"]
             globalContext.Consumer { userData ->
                 div("card border-dark") {
                     div("card-header") {
-                        +((if (props.id == null) "Create" else "Edit") + " playlist")
+                        +((if (id == null) "Create" else "Edit") + " playlist")
                     }
                     form(classes = "card-body") {
                         attrs.onSubmitFunction = { ev ->
@@ -142,11 +140,11 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                                 }
 
                                 Axios.post<dynamic>(
-                                    Config.apibase + "/playlists" + if (props.id == null) "/create" else "/id/${props.id}/edit", data,
+                                    Config.apibase + "/playlists" + if (id == null) "/create" else "/id/$id/edit", data,
                                     UploadRequestConfig { }
                                 ).then { r ->
                                     if (r.status == 200) {
-                                        props.history.push("/playlists/${props.id ?: r.data}")
+                                        props.history.push("/playlists/${id ?: r.data}")
                                     } else {
                                         captchaRef.current?.reset()
                                         val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)
@@ -175,7 +173,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                         }
                         div("mb-3") {
                             label("form-label") {
-                                attrs.htmlFor = "name"
+                                attrs.reactFor = "name"
                                 +"Name"
                             }
                             input(type = InputType.text, classes = "form-control") {
@@ -190,7 +188,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                         }
                         div("mb-3") {
                             label("form-label") {
-                                attrs.htmlFor = "description"
+                                attrs.reactFor = "description"
                                 +"Description"
                             }
                             textarea("10", classes = "form-control") {
@@ -207,14 +205,14 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                                     ref = publicRef
                                 }
                                 label("form-check-label") {
-                                    attrs.htmlFor = "public"
+                                    attrs.reactFor = "public"
                                     +"Public"
                                 }
                             }
                         }
                         div("mb-3 w-25") {
                             label("form-label") {
-                                attrs.htmlFor = "cover"
+                                attrs.reactFor = "cover"
                                 div("text-truncate") {
                                     +"Cover image"
                                 }
@@ -241,16 +239,16 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                             }
                         }
                         div("btn-group w-100 mt-5") {
-                            routeLink(props.id?.let { "/playlists/$it" } ?: "/", className = "btn btn-secondary") {
+                            routeLink(id?.let { "/playlists/$it" } ?: "/", className = "btn btn-secondary") {
                                 +"Cancel"
                             }
-                            if (props.id == null) {
+                            if (id == null) {
                                 // Middle element otherwise the button corners don't round properly
                                 recaptcha(captchaRef)
                             }
                             button(classes = "btn btn-success", type = ButtonType.submit) {
                                 attrs.disabled = state.loading == true
-                                +(if (props.id == null) "Create" else "Save")
+                                +(if (id == null) "Create" else "Save")
                             }
                         }
                     }
@@ -260,8 +258,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
     }
 }
 
-fun RBuilder.editPlaylist(handler: PlaylistEditProps.() -> Unit): ReactElement {
-    return child(EditPlaylist::class) {
+fun RBuilder.editPlaylist(handler: PlaylistEditProps.() -> Unit) =
+    child(EditPlaylist::class) {
         this.attrs(handler)
     }
-}

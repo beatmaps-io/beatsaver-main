@@ -4,7 +4,6 @@ import ch.compile.recaptcha.model.SiteVerifyResponse
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
-import io.beatmaps.cdnPrefix
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.client
@@ -26,6 +25,7 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.login.Session
+import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.publishVersion
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys

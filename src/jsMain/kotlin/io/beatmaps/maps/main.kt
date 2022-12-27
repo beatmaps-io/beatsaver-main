@@ -1,11 +1,12 @@
 package io.beatmaps.maps
 
 import external.axiosGet
+import io.beatmaps.Config
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.ReviewConstants
-import io.beatmaps.common.Config
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
@@ -16,23 +17,20 @@ import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import org.w3c.dom.get
 import org.w3c.dom.set
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
+import react.State
 import react.createRef
 import react.dom.div
 import react.ref
-import react.router.dom.RouteResultHistory
 import react.setState
 
-external interface MapPageProps : RProps {
-    var history: RouteResultHistory
-    var mapKey: String
+external interface MapPageProps : Props, WithRouterProps {
     var beatsaver: Boolean
 }
 
-external interface MapPageState : RState {
+external interface MapPageState : State {
     var map: MapDetail?
     var selectedDiff: MapDifficulty?
     var type: LeaderboardType?
@@ -48,15 +46,30 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
         loadMap()
     }
 
+    override fun componentDidUpdate(prevProps: MapPageProps, prevState: MapPageState, snapshot: Any) {
+        if (prevProps.location.pathname != props.location.pathname || prevProps.params["mapKey"] != props.params["mapKey"]) {
+            // Load new map
+            loadMap()
+        }
+    }
+
     private fun loadMap() {
+        val mapKey = props.params["mapKey"]
         val subPath = if (props.beatsaver) {
             "beatsaver"
         } else {
             "id"
         }
 
+        setState {
+            map = null
+            selectedDiff = null
+            type = null
+            comments = null
+        }
+
         axiosGet<MapDetail>(
-            "${Config.apibase}/maps/$subPath/${props.mapKey}",
+            "${Config.apibase}/maps/$subPath/$mapKey",
         ).then {
             val mapLocal = it.data
             setPageTitle("Map - " + mapLocal.name)

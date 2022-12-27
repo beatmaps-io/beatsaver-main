@@ -2,12 +2,13 @@ package io.beatmaps.user
 
 import external.Axios
 import external.generateConfig
+import external.reactFor
+import io.beatmaps.Config
 import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.AccountRequest
 import io.beatmaps.api.AccountType
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.Config
 import io.beatmaps.upload.UploadRequestConfig
 import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
@@ -23,11 +24,10 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.files.get
 import org.w3c.xhr.FormData
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.button
@@ -44,12 +44,12 @@ import react.dom.value
 import react.setState
 import kotlin.collections.set
 
-external interface AccountComponentProps : RProps {
+external interface AccountComponentProps : Props {
     var userDetail: UserDetail
     var onUpdate: () -> Unit
 }
 
-external interface AccountComponentState : RState {
+external interface AccountComponentState : State {
     var loading: Boolean?
     var userLoading: Boolean?
     var uploading: Boolean?
@@ -94,7 +94,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             if (props.userDetail.type != AccountType.DISCORD) {
                 div("mb-3 row") {
                     label("col-sm-2 col-form-label") {
-                        attrs.htmlFor = "email"
+                        attrs.reactFor = "email"
                         +"Email"
                     }
                     div("col-sm-10") {
@@ -118,7 +118,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             }
             div("mb-3") {
                 label("form-label") {
-                    attrs.htmlFor = "name"
+                    attrs.reactFor = "name"
                     +"Username"
                 }
                 input(InputType.text, classes = "form-control") {
@@ -186,7 +186,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             }
             div("mb-3") {
                 label("form-label") {
-                    attrs.htmlFor = "description"
+                    attrs.reactFor = "description"
                     +"Description"
                 }
                 textarea(classes = "form-control") {
@@ -369,7 +369,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                 }
                 div("mb-3") {
                     label("form-label") {
-                        attrs.htmlFor = "current-password"
+                        attrs.reactFor = "current-password"
                         +"Current Password"
                     }
                     input(InputType.password, classes = "form-control") {
@@ -383,7 +383,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                 }
                 div("mb-3") {
                     label("form-label") {
-                        attrs.htmlFor = "new-password"
+                        attrs.reactFor = "new-password"
                         +"New Password"
                     }
                     input(InputType.password, classes = "form-control") {
@@ -440,8 +440,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
     }
 }
 
-fun RBuilder.account(handler: AccountComponentProps.() -> Unit): ReactElement {
-    return child(AccountComponent::class) {
+fun RBuilder.account(handler: AccountComponentProps.() -> Unit) =
+    child(AccountComponent::class) {
         this.attrs(handler)
     }
-}

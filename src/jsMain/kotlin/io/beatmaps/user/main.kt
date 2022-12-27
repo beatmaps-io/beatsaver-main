@@ -3,11 +3,13 @@ package io.beatmaps.user
 import external.Axios
 import external.axiosGet
 import external.generateConfig
+import external.routeLink
+import io.beatmaps.Config
 import io.beatmaps.UserData
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserFollowData
 import io.beatmaps.api.UserFollowRequest
-import io.beatmaps.common.Config
 import io.beatmaps.common.json
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
@@ -28,8 +30,7 @@ import org.w3c.dom.get
 import org.w3c.dom.set
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.b
@@ -49,32 +50,30 @@ import react.dom.th
 import react.dom.thead
 import react.dom.tr
 import react.dom.ul
+import react.key
 import react.ref
-import react.router.dom.RouteResultHistory
-import react.router.dom.routeLink
 import react.setState
 
-external interface ProfilePageProps : RProps {
+external interface ProfilePageProps : WithRouterProps {
     var userData: UserData?
-    var history: RouteResultHistory
-    var userId: Int?
 }
 
-external interface ProfilePageState : RState {
+data class TabContext(val userId: Int?)
+
+external interface ProfilePageState : State {
     var startup: Boolean?
     var userDetail: UserDetail?
     var state: ProfileTab?
-    var lastMapStateWip: Boolean?
     var notificationCount: Map<ProfileTab, Int>?
     var followData: UserFollowData?
 }
 
-enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps, ProfilePageState) -> Boolean = { _, _ -> true }, val bootCondition: () -> Boolean = { false }, val onSelected: (ProfilePageProps) -> Unit = {}) {
+enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps, TabContext, ProfilePageState) -> Boolean = { _, _, _ -> true }, val bootCondition: () -> Boolean = { false }, val onSelected: (TabContext) -> Unit = {}) {
     PUBLISHED("Published", bootCondition = { (localStorage["profile.showwip"] == "false") }, onSelected = { if (it.userId == null) { localStorage["profile.showwip"] = "false" } }),
-    UNPUBLISHED("Unpublished", condition = { it, _ -> (it.userId == null) }, bootCondition = { (localStorage["profile.showwip"] == "true") }, onSelected = { if (it.userId == null) { localStorage["profile.showwip"] = "true" } }),
+    UNPUBLISHED("Unpublished", condition = { _, c, _ -> (c.userId == null) }, bootCondition = { (localStorage["profile.showwip"] == "true") }, onSelected = { if (it.userId == null) { localStorage["profile.showwip"] = "true" } }),
     PLAYLISTS("Playlists"),
-    CURATED("Curated", condition = { _, it -> (it.userDetail?.curator == true) }),
-    ACCOUNT("Account", condition = { it, _ -> (it.userData?.admin == true || it.userId == null) })
+    CURATED("Curated", condition = { _, _, it -> (it.userDetail?.curator == true) }),
+    ACCOUNT("Account", condition = { it, c, _ -> (it.userData?.admin == true || c.userId == null) })
 }
 
 class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
@@ -92,20 +91,36 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         loadState()
     }
 
+    override fun componentDidUpdate(prevProps: ProfilePageProps, prevState: ProfilePageState, snapshot: Any) {
+        if (prevProps.location.pathname != props.location.pathname || prevProps.params["userId"] != props.params["userId"]) {
+            // Load new user
+            loadState()
+        }
+    }
+
     override fun componentWillUnmount() {
         window.removeEventListener("hashchange", onHashChange)
     }
 
     private val onHashChange = { _: Event? ->
         val hash = window.location.hash.substring(1)
-        val newState = ProfileTab.values().firstOrNull { hash == it.tabText.lowercase() && it.condition(props, state) } ?: state.state
+        val tabContext = TabContext(props.params["userId"]?.toIntOrNull())
+        val newState = ProfileTab.values().firstOrNull { hash == it.tabText.lowercase() && it.condition(props, tabContext, state) } ?: state.state
         setState {
             state = newState
         }
     }
 
     private fun loadState() {
-        val url = "${Config.apibase}/users" + (props.userId?.let { "/id/$it" } ?: "/me")
+        modalRef.current?.hide()
+        val userId = props.params["userId"]?.toIntOrNull()
+        val url = "${Config.apibase}/users" + (userId?.let { "/id/$it" } ?: "/me")
+
+        setState {
+            userDetail = null
+            followData = null
+            startup = false
+        }
 
         axiosGet<String>(
             url
@@ -128,11 +143,12 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
     private fun setupTabState() {
         val hash = window.location.hash.substring(1)
+        val tabContext = TabContext(props.params["userId"]?.toIntOrNull())
         setState {
             state = ProfileTab.values().firstOrNull {
-                hash == it.tabText.lowercase() && it.condition(props, this)
-            } ?: ProfileTab.values().firstOrNull { it.bootCondition() && it.condition(props, this) } ?: run {
-                if (ProfileTab.UNPUBLISHED.condition(props, this)) {
+                hash == it.tabText.lowercase() && it.condition(props, tabContext, this)
+            } ?: ProfileTab.values().firstOrNull { it.bootCondition() && it.condition(props, tabContext, this) } ?: run {
+                if (ProfileTab.UNPUBLISHED.condition(props, tabContext, this)) {
                     ProfileTab.UNPUBLISHED
                 } else {
                     ProfileTab.PUBLISHED
@@ -236,30 +252,42 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                             }
                         }
                         div {
-                            a("${Config.apibase}/users/id/${state.userDetail?.id ?: 0}/playlist", "_blank", "btn btn-secondary") {
-                                attrs.attributes["download"] = ""
-                                i("fas fa-download") { }
-                                +"Playlist"
+                            state.userDetail?.playlistUrl?.let { url ->
+                                div("btn-group") {
+                                    a(url, "_blank", "btn btn-secondary") {
+                                        attrs.attributes["download"] = ""
+                                        i("fas fa-download") { }
+                                        +"Playlist"
+                                    }
+                                    a("bsplaylist://playlist/$url/beatsaver-user-${state.userDetail?.id}.bplist", classes = "btn btn-primary") {
+                                        attrs.attributes["aria-label"] = "One-Click"
+                                        i("fas fa-cloud-download-alt") { }
+                                    }
+                                }
                             }
                             if (props.userData?.admin == true) {
-                                routeLink("/modlog?user=${state.userDetail?.name}", className = "btn btn-secondary") {
-                                    i("fas fa-scroll") { }
-                                    +"Mod Log"
+                                div("btn-group") {
+                                    routeLink("/modlog?user=${state.userDetail?.name}", className = "btn btn-secondary") {
+                                        i("fas fa-scroll") { }
+                                        +"Mod Log"
+                                    }
                                 }
                             }
                             state.followData?.following?.let { following ->
-                                a("#", classes = "btn btn-" + if (following) "secondary" else "primary") {
-                                    attrs.onClickFunction = { e ->
-                                        e.preventDefault()
-                                        setFollowStatus(!following)
-                                    }
+                                div("btn-group") {
+                                    a("#", classes = "btn btn-" + if (following) "secondary" else "primary") {
+                                        attrs.onClickFunction = { e ->
+                                            e.preventDefault()
+                                            setFollowStatus(!following)
+                                        }
 
-                                    if (following) {
-                                        i("fas fa-user-minus") { }
-                                        +"Unfollow"
-                                    } else {
-                                        i("fas fa-user-plus") { }
-                                        +"Follow"
+                                        if (following) {
+                                            i("fas fa-user-minus") { }
+                                            +"Unfollow"
+                                        } else {
+                                            i("fas fa-user-plus") { }
+                                            +"Follow"
+                                        }
                                     }
                                 }
                             }
@@ -345,9 +373,11 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                 }
             }
         }
+        val userId = props.params["userId"]?.toIntOrNull()
         ul("nav nav-minimal mb-3") {
+            val tabContext = TabContext(userId)
             ProfileTab.values().forEach { tab ->
-                if (!tab.condition(props, state)) return@forEach
+                if (!tab.condition(props, tabContext, state)) return@forEach
 
                 li("nav-item") {
                     a("#", classes = "nav-link" + if (state.state == tab) " active" else "") {
@@ -355,10 +385,10 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                         attrs.onClickFunction = {
                             it.preventDefault()
 
-                            val userPart = if (props.userId != null) "/${props.userId}" else ""
+                            val userPart = if (userId != null) "/$userId" else ""
                             props.history.push("/profile$userPart#${tab.tabText.lowercase()}")
 
-                            tab.onSelected(props)
+                            tab.onSelected(tabContext)
                             setState {
                                 state = tab
                             }
@@ -382,28 +412,17 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         val detail = state.userDetail
         if (detail != null) {
             playlistTable {
-                own = props.userId == null
-                userId = detail.id
+                own = userId == null
+                this.userId = detail.id
                 history = props.history
                 visible = state.state == ProfileTab.PLAYLISTS
             }
             if (state.startup == true) {
-                when (state.state) {
-                    ProfileTab.UNPUBLISHED -> true
-                    ProfileTab.PUBLISHED -> false
-                    else -> null
-                }?.let {
-                    if (state.lastMapStateWip != it) {
-                        setState {
-                            lastMapStateWip = it
-                        }
-                    }
-                }
-
                 beatmapTable {
-                    user = props.userId ?: loggedInLocal ?: 0
+                    key = "maps-${state.state}"
+                    user = userId ?: loggedInLocal ?: 0
                     modal = modalRef
-                    wip = state.lastMapStateWip == true
+                    wip = state.state == ProfileTab.UNPUBLISHED
                     curated = state.state == ProfileTab.CURATED
                     history = props.history
                     visible = state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED || state.state == ProfileTab.CURATED
@@ -412,7 +431,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         }
 
         if (state.state == ProfileTab.ACCOUNT && detail != null) {
-            if (props.userId == null) {
+            if (userId == null) {
                 account {
                     userDetail = detail
                     onUpdate = { loadState() }

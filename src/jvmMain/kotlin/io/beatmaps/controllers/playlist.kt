@@ -2,11 +2,11 @@ package io.beatmaps.controllers
 
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.from
-import io.beatmaps.cdnPrefix
 import io.beatmaps.common.Config
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.genericPage
+import io.beatmaps.util.cdnPrefix
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.routing.Route
@@ -41,7 +41,7 @@ fun Route.playlistController() {
                     meta("og:type", "website")
                     meta("og:site_name", "BeatSaver")
                     meta("og:title", it.name)
-                    meta("og:url", "${Config.basename}/playlists/${it.playlistId}")
+                    meta("og:url", "${Config.siteBase()}/playlists/${it.playlistId}")
                     meta("og:image", it.playlistImage)
                     meta("og:description", it.description.take(400))
                 }

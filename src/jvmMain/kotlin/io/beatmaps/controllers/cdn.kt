@@ -52,10 +52,16 @@ class CDN {
     data class BSAudio(val file: String, val api: CDN)
     @Location("/playlist/{file}.jpg")
     data class PlaylistCover(val file: String, val api: CDN)
+    @Location("/playlist/{size}/{file}.jpg")
+    data class PlaylistCoverSized(val file: String, val size: Int, val api: CDN)
 }
 
 fun Route.cdnRoute() {
     options<CDN.Zip> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+    }
+
+    options<CDN.Cover> {
         call.response.header("Access-Control-Allow-Origin", "*")
     }
 
@@ -151,6 +157,7 @@ fun Route.cdnRoute() {
             throw NotFoundException()
         }
 
+        call.response.header("Access-Control-Allow-Origin", "*")
         returnFile(File(localCoverFolder(it.file), "${it.file}.jpg"))
     }
 
@@ -160,6 +167,14 @@ fun Route.cdnRoute() {
         }
 
         returnFile(File(localPlaylistCoverFolder(), "${it.file}.jpg"))
+    }
+
+    get<CDN.PlaylistCoverSized> {
+        if (it.file.isBlank()) {
+            throw NotFoundException()
+        }
+
+        returnFile(File(localPlaylistCoverFolder(it.size), "${it.file}.jpg"))
     }
 
     get<CDN.Avatar> {

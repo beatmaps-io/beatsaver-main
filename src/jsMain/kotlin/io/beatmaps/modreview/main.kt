@@ -3,25 +3,26 @@ package io.beatmaps.modreview
 import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.UserData
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.ReviewsResponse
-import io.beatmaps.common.Config
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
 import io.beatmaps.maps.review.CommentsInfiniteScroll
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScrollElementRenderer
+import kotlinx.browser.window
 import kotlinx.dom.hasClass
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLTableSectionElement
+import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.button
 import react.dom.form
@@ -33,21 +34,19 @@ import react.dom.th
 import react.dom.thead
 import react.dom.tr
 import react.ref
-import react.router.dom.RouteResultHistory
 import react.setState
 
-external interface ModReviewProps : RProps {
-    var history: RouteResultHistory
+external interface ModReviewProps : WithRouterProps {
     var userData: UserData?
+}
+
+external interface ModReviewState : State {
+    var resultsKey: Any
     var user: String?
 }
 
-external interface ModReviewState : RState {
-    var resultsKey: Any
-}
-
 class ModReview : RComponent<ModReviewProps, ModReviewState>() {
-    private val resultsTable = createRef<HTMLTableSectionElement>()
+    private val resultsTable = createRef<HTMLElement>()
     private val modalRef = createRef<ModalComponent>()
     private val userRef = createRef<HTMLInputElement>()
 
@@ -58,14 +57,23 @@ class ModReview : RComponent<ModReviewProps, ModReviewState>() {
             props.history.push("/")
         }
 
-        userRef.current?.value = props.user ?: ""
+        updateFromURL()
     }
 
-    override fun componentWillReceiveProps(nextProps: ModReviewProps) {
-        userRef.current?.value = nextProps.user ?: ""
+    override fun componentDidUpdate(prevProps: ModReviewProps, prevState: ModReviewState, snapshot: Any) {
+        updateFromURL()
+    }
 
-        if (props.user != nextProps.user) {
+    private fun updateFromURL() {
+        val user = URLSearchParams(window.location.search).let { u ->
+            u.get("user") ?: ""
+        }
+
+        userRef.current?.value = user
+
+        if (user != state.user) {
             setState {
+                this.user = user
                 resultsKey = Any()
             }
         }
@@ -155,8 +163,7 @@ class ModReview : RComponent<ModReviewProps, ModReviewState>() {
     }
 }
 
-fun RBuilder.modreview(handler: ModReviewProps.() -> Unit): ReactElement {
-    return child(ModReview::class) {
+fun RBuilder.modreview(handler: ModReviewProps.() -> Unit) =
+    child(ModReview::class) {
         this.attrs(handler)
     }
-}

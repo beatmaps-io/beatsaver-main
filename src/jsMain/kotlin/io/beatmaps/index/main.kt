@@ -1,5 +1,6 @@
 package io.beatmaps.index
 
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SortOrderTarget
 import io.beatmaps.common.MapTag
@@ -21,20 +22,17 @@ import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
+import react.State
 import react.createRef
 import react.dom.div
 import react.dom.h4
-import react.functionComponent
+import react.fc
 import react.ref
-import react.router.dom.RouteResultHistory
 import react.setState
 
-external interface HomePageProps : RProps {
-    var history: RouteResultHistory
-}
-external interface HomePageState : RState {
+external interface HomePageProps : WithRouterProps
+
+external interface HomePageState : State {
     var searchParams: SearchParams?
     var tags: Map<Boolean, Set<MapTag>>?
     var shiftHeld: Boolean?
@@ -172,7 +170,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
                     this@HomePage.state.tags?.mapValues { o -> o.value.groupBy { y -> y.type }.mapValues { y -> y.value.map { x -> x.slug } } } ?: mapOf()
                 )
             }
-            extraFilters = functionComponent {
+            extraFilters = fc {
                 div("tags") {
                     h4 {
                         +"Tags"

@@ -115,8 +115,8 @@ data class MapDetailMetadata(
 
 @Serializable
 data class MapStats(
-    val plays: Int = 0,
-    val downloads: Int = 0,
+    val plays: Int,
+    val downloads: Int,
     val upvotes: Int,
     val downvotes: Int,
     val score: Float,

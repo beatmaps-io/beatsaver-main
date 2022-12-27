@@ -1,29 +1,28 @@
 package io.beatmaps.maps.testplay
 
+import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
 import io.beatmaps.maps.infoTable
 import io.beatmaps.maps.mapInfo
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.ref
-import react.router.dom.RouteResultHistory
 
-external interface TestplayProps : RProps {
+external interface TestplayProps : Props {
     var mapInfo: MapDetail
     var isOwner: Boolean
     var loggedInId: Int?
     var refreshPage: () -> Unit
-    var history: RouteResultHistory
+    var history: History
     var updateMapinfo: (MapDetail) -> Unit
 }
 
-class Testplay : RComponent<TestplayProps, RState>() {
+class Testplay : RComponent<TestplayProps, State>() {
     private val modalRef = createRef<ModalComponent>()
 
     override fun RBuilder.render() {
@@ -57,8 +56,7 @@ class Testplay : RComponent<TestplayProps, RState>() {
     }
 }
 
-fun RBuilder.testplay(handler: TestplayProps.() -> Unit): ReactElement {
-    return child(Testplay::class) {
+fun RBuilder.testplay(handler: TestplayProps.() -> Unit) =
+    child(Testplay::class) {
         this.attrs(handler)
     }
-}

@@ -1,9 +1,9 @@
 package external
 
-import react.RClass
-import react.RProps
+import react.ComponentClass
+import react.Props
 
-external interface ReactSliderProps : RProps {
+external interface ReactSlideProps : Props {
     var min: Int
     var max: Int
     var step: Int
@@ -40,5 +40,5 @@ external interface ThumbState {
 @JsModule("react-slider")
 @JsNonModule
 external object ReactSlider {
-    val default: RClass<ReactSliderProps>
+    val default: ComponentClass<ReactSlideProps>
 }

@@ -3,37 +3,36 @@ package io.beatmaps.maps.review
 import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewsResponse
-import io.beatmaps.common.Config
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
-import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HTMLElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RReadableRef
-import react.RState
-import react.ReactElement
+import react.RefObject
+import react.State
 import react.createRef
 import react.dom.div
 import react.setState
 
-external interface ReviewTableProps : RProps {
+external interface ReviewTableProps : Props {
     var map: String
     var mapUploaderId: Int
-    var modal: RReadableRef<ModalComponent>
+    var modal: RefObject<ModalComponent>
 }
 
-external interface ReviewTableState : RState {
+external interface ReviewTableState : State {
     var resultsKey: Any
     var existingReview: Boolean?
 }
 
 class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
-    private val resultsTable = createRef<HTMLDivElement>()
+    private val resultsTable = createRef<HTMLElement>()
 
     override fun componentWillUpdate(nextProps: ReviewTableProps, nextState: ReviewTableState) {
         if (props.map != nextProps.map) {
@@ -105,8 +104,7 @@ class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
 
 class CommentsInfiniteScroll : InfiniteScroll<ReviewDetail>()
 
-fun RBuilder.reviewTable(handler: ReviewTableProps.() -> Unit): ReactElement {
-    return child(ReviewTable::class) {
+fun RBuilder.reviewTable(handler: ReviewTableProps.() -> Unit) =
+    child(ReviewTable::class) {
         this.attrs(handler)
     }
-}

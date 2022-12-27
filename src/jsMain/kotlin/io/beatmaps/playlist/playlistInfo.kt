@@ -1,7 +1,7 @@
 package io.beatmaps.playlist
 
+import external.routeLink
 import io.beatmaps.api.PlaylistFull
-import io.beatmaps.common.Config
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.api.MapAttr
 import io.beatmaps.common.formatTime
@@ -13,13 +13,11 @@ import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.AutoSizeComponentState
 import kotlinx.html.title
 import react.RBuilder
-import react.ReactElement
 import react.dom.a
 import react.dom.div
 import react.dom.i
 import react.dom.img
 import react.dom.span
-import react.router.dom.routeLink
 
 external interface PlaylistInfoProps : AutoSizeComponentProps<PlaylistFull>
 external interface PlaylistInfoState : AutoSizeComponentState
@@ -58,6 +56,7 @@ class PlaylistInfo : AutoSizeComponent<PlaylistFull, PlaylistInfoProps, Playlist
                             playlistOwner {
                                 attrs.owner = pl.owner
                                 attrs.time = pl.createdAt
+                                attrs.tab = "playlists"
                             }
                         }
                     }
@@ -112,12 +111,12 @@ class PlaylistInfo : AutoSizeComponent<PlaylistFull, PlaylistInfoProps, Playlist
                             }
                         }
                         div("buttons") {
-                            a("${Config.apiremotebase}/playlists/id/${pl.playlistId}/download") {
+                            a(pl.downloadURL) {
                                 attrs.title = "Download"
                                 attrs.attributes["aria-label"] = "Download"
                                 i("fas fa-download text-info") { }
                             }
-                            a("bsplaylist://playlist/${Config.apiremotebase}/playlists/id/${pl.playlistId}/download/beatsaver-${pl.playlistId}.bplist") {
+                            a("bsplaylist://playlist/${pl.downloadURL}/beatsaver-${pl.playlistId}.bplist") {
                                 attrs.title = "One-Click"
                                 attrs.attributes["aria-label"] = "One-Click"
                                 i("fas fa-cloud-download-alt text-info") { }
@@ -132,8 +131,7 @@ class PlaylistInfo : AutoSizeComponent<PlaylistFull, PlaylistInfoProps, Playlist
     }
 }
 
-fun RBuilder.playlistInfo(handler: PlaylistInfoProps.() -> Unit): ReactElement {
-    return child(PlaylistInfo::class) {
+fun RBuilder.playlistInfo(handler: PlaylistInfoProps.() -> Unit) =
+    child(PlaylistInfo::class) {
         this.attrs(handler)
     }
-}

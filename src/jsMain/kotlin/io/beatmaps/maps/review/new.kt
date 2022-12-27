@@ -5,22 +5,19 @@ import external.ReCAPTCHA
 import external.axiosGet
 import external.generateConfig
 import external.recaptcha
+import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.PutReview
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewSentiment
-import io.beatmaps.common.Config
 import kotlinx.html.id
-import kotlinx.html.js.onBlurFunction
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
-import kotlinx.html.js.onFocusFunction
 import org.w3c.dom.HTMLTextAreaElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.br
@@ -31,7 +28,7 @@ import react.dom.span
 import react.dom.textarea
 import react.setState
 
-external interface NewReviewProps : RProps {
+external interface NewReviewProps : Props {
     var mapId: String
     var userId: Int
     var existingReview: Boolean?
@@ -39,7 +36,7 @@ external interface NewReviewProps : RProps {
     var reloadList: (() -> Unit)?
 }
 
-external interface NewReviewState : RState {
+external interface NewReviewState : State {
     var reviewLength: Int?
     var sentiment: ReviewSentiment?
     var focusIcon: Boolean?
@@ -78,14 +75,9 @@ class NewReview : RComponent<NewReviewProps, NewReviewState>() {
                         p("my-2") {
                             +"Comment (required)"
                             button(classes = "ms-1 fas fa-info-circle fa-button") {
-                                attrs.onFocusFunction = {
+                                attrs.onClickFunction = {
                                     setState {
-                                        focusIcon = true
-                                    }
-                                }
-                                attrs.onBlurFunction = {
-                                    setState {
-                                        focusIcon = false
+                                        focusIcon = focusIcon != true
                                     }
                                 }
                             }
@@ -93,7 +85,7 @@ class NewReview : RComponent<NewReviewProps, NewReviewState>() {
                                 div("tooltip-arrow") {}
                                 div("tooltip-inner") {
                                     +"Learn how to provide constructive map feedback "
-                                    a("#") {
+                                    a("https://bsaber.com/how-to-write-constructive-map-reviews/", target = "_blank") {
                                         +"here"
                                     }
                                     +"."
@@ -167,8 +159,7 @@ class NewReview : RComponent<NewReviewProps, NewReviewState>() {
     }
 }
 
-fun RBuilder.newReview(handler: NewReviewProps.() -> Unit): ReactElement {
-    return child(NewReview::class) {
+fun RBuilder.newReview(handler: NewReviewProps.() -> Unit) =
+    child(NewReview::class) {
         this.attrs(handler)
     }
-}

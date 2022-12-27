@@ -2,6 +2,8 @@ package io.beatmaps.shared
 
 import external.ReactSlider
 import external.TimeAgo
+import external.reactFor
+import external.routeLink
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.MapVersion
@@ -23,8 +25,9 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
-import react.RProps
-import react.RReadableRef
+import react.Props
+import react.PropsWithChildren
+import react.RefObject
 import react.dom.RDOMBuilder
 import react.dom.a
 import react.dom.div
@@ -37,19 +40,18 @@ import react.dom.label
 import react.dom.p
 import react.dom.small
 import react.dom.span
-import react.functionComponent
-import react.router.dom.routeLink
+import react.fc
 import kotlin.collections.set
 import kotlin.math.log
 import kotlin.math.pow
 
-external interface BotInfoProps : RProps {
+external interface BotInfoProps : Props {
     var automapper: Boolean?
     var version: MapVersion?
     var marginLeft: Boolean?
 }
 
-val botInfo = functionComponent<BotInfoProps> { props ->
+val botInfo = fc<BotInfoProps> { props ->
     val score = (props.version?.sageScore ?: 0)
     val margin = if (props.marginLeft != false) "ms-2" else "me-2"
 
@@ -66,11 +68,11 @@ val botInfo = functionComponent<BotInfoProps> { props ->
     }
 }
 
-external interface DiffIconsProps : RProps {
+external interface DiffIconsProps : Props {
     var diffs: List<MapDifficulty>?
 }
 
-val diffIcons = functionComponent<DiffIconsProps> { props ->
+val diffIcons = fc<DiffIconsProps> { props ->
     props.diffs?.forEach { d ->
         span("badge rounded-pill badge-${d.difficulty.color}") {
             diffImg(d)
@@ -79,12 +81,12 @@ val diffIcons = functionComponent<DiffIconsProps> { props ->
     }
 }
 
-external interface DownloadProps : RProps {
+external interface DownloadProps : Props {
     var map: MapDetail
     var version: MapVersion
 }
 
-val downloadZip = functionComponent<DownloadProps> { props ->
+val downloadZip = fc<DownloadProps> { props ->
     a(props.version.downloadURL) {
         attrs.rel = "noopener"
         attrs.title = "Download zip"
@@ -95,11 +97,11 @@ val downloadZip = functionComponent<DownloadProps> { props ->
     }
 }
 
-external interface CopyBSRProps : RProps {
+external interface CopyBSProps : Props {
     var map: MapDetail
 }
 
-val copyBsr = functionComponent<CopyBSRProps> { props ->
+val copyBsr = fc<CopyBSProps> { props ->
     a("#") {
         attrs.title = "Copy BSR"
         attrs.attributes["aria-label"] = "Copy BSR"
@@ -127,13 +129,13 @@ fun setClipboard(str: String) {
     window.document.body?.removeChild(tempElement)
 }
 
-external interface LinksProps : RProps {
+external interface LinksProps : Props {
     var map: MapDetail
     var version: MapVersion?
-    var modal: RReadableRef<ModalComponent>
+    var modal: RefObject<ModalComponent>
 }
 
-val links = functionComponent<LinksProps> { props ->
+val links = fc<LinksProps> { props ->
     copyBsr {
         attrs.map = props.map
     }
@@ -175,13 +177,13 @@ val links = functionComponent<LinksProps> { props ->
     }
 }
 
-external interface UploaderProps : RProps {
+external interface UploadeProps : Props {
     var map: MapDetail
     var version: MapVersion?
 }
 
-val uploader = functionComponent<UploaderProps> { props ->
-    routeLink("/profile/${props.map.uploader.id}") {
+val uploader = fc<UploadeProps> { props ->
+    routeLink(props.map.uploader.profileLink()) {
         +props.map.uploader.name
     }
     botInfo {
@@ -196,14 +198,15 @@ val uploader = functionComponent<UploaderProps> { props ->
     }
 }
 
-external interface PlaylistOwnerProps : RProps {
+external interface PlaylistOwnerProps : Props {
     var owner: UserDetail?
+    var tab: String?
     var time: Instant
 }
 
-val playlistOwner = functionComponent<PlaylistOwnerProps> { props ->
+val playlistOwner = fc<PlaylistOwnerProps> { props ->
     props.owner?.let { owner ->
-        routeLink("/profile/${owner.id}#playlists") {
+        routeLink(owner.profileLink(props.tab)) {
             +owner.name
         }
         +" - "
@@ -213,7 +216,7 @@ val playlistOwner = functionComponent<PlaylistOwnerProps> { props ->
     }
 }
 
-external interface ColoredCardProps : RProps {
+external interface ColoredCardProps : PropsWithChildren {
     var color: String
     var icon: String?
     var title: String?
@@ -221,7 +224,7 @@ external interface ColoredCardProps : RProps {
     var classes: String?
 }
 
-val coloredCard = functionComponent<ColoredCardProps> {
+val coloredCard = fc<ColoredCardProps> {
     div("card colored " + (it.classes ?: "")) {
         it.extra?.invoke(attrs)
 
@@ -242,12 +245,12 @@ val coloredCard = functionComponent<ColoredCardProps> {
     }
 }
 
-external interface MapTitleProps : RProps {
+external interface MapTitleProps : Props {
     var title: String
     var mapKey: String
 }
 
-val mapTitle = functionComponent<MapTitleProps> {
+val mapTitle = fc<MapTitleProps> {
     routeLink("/maps/${it.mapKey}") {
         +it.title.ifBlank {
             "<NO NAME>"
@@ -255,13 +258,13 @@ val mapTitle = functionComponent<MapTitleProps> {
     }
 }
 
-external interface RatingProps : RProps {
+external interface RatingProps : Props {
     var up: Int
     var down: Int
     var rating: Float
 }
 
-val rating = functionComponent<RatingProps> {
+val rating = fc<RatingProps> {
     val totalVotes = (it.up + it.down).toDouble()
     var uncertainty = 2.0.pow(-log(totalVotes / 2 + 1, 3.0))
     val weightedRange = 25.0
@@ -295,7 +298,7 @@ val rating = functionComponent<RatingProps> {
     }
 }
 
-fun RDOMBuilder<DIV>.toggle(id: String, text: String, localRef: RReadableRef<HTMLInputElement>, block: (Boolean) -> Unit) {
+fun RDOMBuilder<DIV>.toggle(id: String, text: String, localRef: RefObject<HTMLInputElement>, block: (Boolean) -> Unit) {
     div("form-check form-switch") {
         input(InputType.checkBox, classes = "form-check-input") {
             attrs.id = id
@@ -305,7 +308,7 @@ fun RDOMBuilder<DIV>.toggle(id: String, text: String, localRef: RReadableRef<HTM
             }
         }
         label("form-check-label") {
-            attrs.htmlFor = id
+            attrs.reactFor = id
             +text
         }
     }
@@ -332,14 +335,14 @@ fun RDOMBuilder<DIV>.slider(text: String, currentMin: Float, currentMax: Float, 
     }
 }
 
-external interface UserCardProps : RProps {
+external interface UserCardProps : Props {
     var id: Int
     var avatar: String
     var username: String
     var titles: List<String>
 }
 
-var userCard = functionComponent<UserCardProps> {
+var userCard = fc<UserCardProps> {
     div("d-flex align-items-center my-2") {
         img("Profile Image", it.avatar, classes = "rounded-circle me-3") {
             attrs.width = "50"
@@ -358,12 +361,12 @@ var userCard = functionComponent<UserCardProps> {
     }
 }
 
-external interface BookmarkButtonProps : RProps {
+external interface BookmarkButtonProps : Props {
     var bookmarked: Boolean
     var onClick: (Event, Boolean) -> Unit
 }
 
-var bookmarkButton = functionComponent<BookmarkButtonProps> { props ->
+var bookmarkButton = fc<BookmarkButtonProps> { props ->
     a("#", classes = "text-warning me-1") {
         val title = if (props.bookmarked) "Remove Bookmark" else "Add Bookmark"
         attrs.title = title

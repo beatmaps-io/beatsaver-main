@@ -2,16 +2,16 @@ package io.beatmaps.maps.review
 
 import io.beatmaps.api.ReviewSentiment
 import kotlinx.html.js.onClickFunction
-import react.RProps
+import react.Props
 import react.dom.button
-import react.functionComponent
+import react.fc
 
-external interface SentimentProps : RProps {
+external interface SentimentProps : Props {
     var sentiment: ReviewSentiment?
     var updateSentiment: ((ReviewSentiment) -> Unit)?
 }
 
-val sentimentPicker = functionComponent<SentimentProps> {
+val sentimentPicker = fc<SentimentProps> {
     fun renderSentiment(sentiment: ReviewSentiment, text: String, color: String) =
         button(classes = "btn btn-sm me-2 " + if (it.sentiment == sentiment) "btn-$color" else "btn-outline-$color") {
             attrs.onClickFunction = { e ->

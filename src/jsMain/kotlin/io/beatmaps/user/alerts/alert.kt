@@ -3,21 +3,20 @@ package io.beatmaps.user.alerts
 import external.Axios
 import external.TimeAgo
 import external.generateConfig
+import io.beatmaps.Config
 import io.beatmaps.api.AlertUpdate
 import io.beatmaps.api.UserAlert
 import io.beatmaps.api.UserAlertStats
-import io.beatmaps.common.Config
 import io.beatmaps.shared.coloredCard
 import io.beatmaps.util.textToContent
-import kotlinx.browser.window
+import kotlinx.browser.document
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLDivElement
+import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.b
@@ -27,21 +26,21 @@ import react.dom.jsStyle
 import react.dom.span
 import react.setState
 
-external interface AlertProps : RProps {
+external interface AlertProps : Props {
     var alert: UserAlert?
     var read: Boolean?
     var hidden: Boolean?
     var markAlert: ((UserAlertStats) -> Unit)?
 }
 
-external interface AlertState : RState {
+external interface AlertState : State {
     var height: String?
     var opacity: String?
     var margin: String?
 }
 
 fun updateAlertDisplay(stats: UserAlertStats) {
-    window.document.getElementById("alert-count")?.apply {
+    document.getElementById("alert-count")?.apply {
         stats.unread.let { count ->
             setAttribute("data-count", count.toString())
             innerHTML = if (count < 10) count.toString() else "9+"
@@ -145,8 +144,7 @@ class AlertElement : RComponent<AlertProps, AlertState>() {
     }
 }
 
-fun RBuilder.alert(handler: AlertProps.() -> Unit): ReactElement {
-    return child(AlertElement::class) {
+fun RBuilder.alert(handler: AlertProps.() -> Unit) =
+    child(AlertElement::class) {
         this.attrs(handler)
     }
-}

@@ -44,7 +44,9 @@ import io.beatmaps.login.installOauth2
 import io.beatmaps.login.installSessions
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
+import io.beatmaps.util.downloadsThread
 import io.beatmaps.util.playlistStats
+import io.beatmaps.util.reviewListeners
 import io.beatmaps.util.scheduleTask
 import io.beatmaps.websockets.mapUpdateEnricher
 import io.ktor.http.ContentType
@@ -320,12 +322,17 @@ fun Application.beatmapsio() {
                 queueBind("email", "beatmaps", "email")
 
                 queueDeclare("bm.sentiment", true, false, false, genericQueueConfig)
+                queueBind("bm.sentiment", "beatmaps", "reviews.*.created")
                 queueBind("bm.sentiment", "beatmaps", "reviews.*.updated")
                 queueBind("bm.sentiment", "beatmaps", "reviews.*.deleted")
+
+                queueDeclare("bm.reviewDiscordHook", true, false, false, genericQueueConfig)
+                queueBind("bm.reviewDiscordHook", "beatmaps", "reviews.*.created")
             }
         }
         downloadsThread()
         filenameUpdater()
+        reviewListeners()
     }
     installOauth2()
 

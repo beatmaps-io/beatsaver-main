@@ -11,6 +11,7 @@ import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.TestplayDao
 import io.beatmaps.common.dbo.VersionsDao
+import io.beatmaps.common.localPlaylistCoverFolder
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.Query
@@ -18,14 +19,9 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.countDistinct
 import org.jetbrains.exposed.sql.sum
+import java.io.File
 import java.lang.Integer.toHexString
 import kotlin.time.Duration.Companion.seconds
-
-val remoteCdn = System.getenv("REMOTE_CDN") != null
-fun cdnBase(prefix: String) = when (remoteCdn) {
-    true -> Config.cdnBase(prefix)
-    false -> "/cdn"
-}
 
 fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String, bookmarked: Boolean? = null) = MapDetail(
     toHexString(other.id.value), other.name, other.description,
@@ -63,8 +59,8 @@ fun MapVersion.Companion.from(other: VersionsDao, cdnPrefix: String) =
             other.hash, other.key64, other.state, other.uploaded.toKotlinInstant(), other.sageScore,
             other.difficulties.values.map { MapDifficulty.from(it) }.sortedWith(compareBy(MapDifficulty::characteristic, MapDifficulty::difficulty)), other.feedback,
             other.testplayAt?.toKotlinInstant(), if (other.testplays.isEmpty()) null else other.testplays.values.map { MapTestplay.from(it) },
-            "${cdnBase(zipPrefix)}/${other.hash}.zip", "${cdnBase(actualPrefix)}/${other.hash}.jpg",
-            "${cdnBase(actualPrefix)}/${other.hash}.mp3",
+            "${Config.cdnBase(zipPrefix, true)}/${other.hash}.zip", "${Config.cdnBase(actualPrefix, true)}/${other.hash}.jpg",
+            "${Config.cdnBase(actualPrefix, true)}/${other.hash}.mp3",
             other.scheduledAt?.toKotlinInstant()
         )
     }
@@ -107,13 +103,14 @@ fun Query.limit(page: Long?, pageSize: Int = 20): Query {
 }
 
 fun PlaylistBasic.Companion.from(other: PlaylistDao, cdnPrefix: String) = PlaylistBasic(
-    other.id.value, "${cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.name, other.type, other.ownerId.value
+    other.id.value, "${Config.cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.name, other.type, other.ownerId.value
 )
 fun PlaylistBasic.Companion.from(row: ResultRow, cdnPrefix: String) = from(PlaylistDao.wrapRow(row), cdnPrefix)
 
 fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPrefix: String) = PlaylistFull(
     other.id.value, other.name, other.description,
-    if (other.type == EPlaylistType.System) "/static/favicon/android-chrome-512x512.png" else "${cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg",
+    if (other.type == EPlaylistType.System) "/static/favicon/android-chrome-512x512.png" else "${Config.cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg",
+    if (File(localPlaylistCoverFolder(512), "${other.id.value}.jpg").exists()) "${Config.cdnBase(cdnPrefix)}/playlist/512/${other.id.value}.jpg" else null,
     UserDetail.from(other.owner),
     other.curator?.let {
         UserDetail.from(it)
@@ -121,6 +118,7 @@ fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPr
     stats,
     other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.songsChangedAt?.toKotlinInstant(), other.curatedAt?.toKotlinInstant(),
     other.deletedAt?.toKotlinInstant(),
+    "${Config.apiBase(true)}/playlists/id/${other.id.value}/download",
     other.type
 )
 fun PlaylistFull.Companion.from(row: ResultRow, cdnPrefix: String) = from(

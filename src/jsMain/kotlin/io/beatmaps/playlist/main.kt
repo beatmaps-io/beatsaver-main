@@ -1,5 +1,6 @@
 package io.beatmaps.playlist
 
+import io.beatmaps.WithRouterProps
 import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SortOrderTarget
 import io.beatmaps.dateFormat
@@ -15,17 +16,12 @@ import kotlinx.browser.window
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
-import react.RProps
-import react.RState
-import react.ReactElement
-import react.router.dom.RouteResultHistory
+import react.State
 import react.setState
 
-external interface PlaylistFeedProps : RProps {
-    var history: RouteResultHistory
-}
+external interface PlaylistFeedProps : WithRouterProps
 
-external interface PlaylistFeedState : RState {
+external interface PlaylistFeedState : State {
     var searchParams: PlaylistSearchParams?
 }
 
@@ -120,8 +116,7 @@ class PlaylistFeed : RComponent<PlaylistFeedProps, PlaylistFeedState>() {
     }
 }
 
-fun RBuilder.playlistFeed(handler: PlaylistFeedProps.() -> Unit): ReactElement {
-    return child(PlaylistFeed::class) {
+fun RBuilder.playlistFeed(handler: PlaylistFeedProps.() -> Unit) =
+    child(PlaylistFeed::class) {
         this.attrs(handler)
     }
-}
