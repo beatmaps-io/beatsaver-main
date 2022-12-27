@@ -246,6 +246,7 @@ fun Application.beatmapsio() {
                 HttpStatusCode.BadRequest,
                 FailedUploadResponse(
                     e.constraintViolations
+                        .take(1000)
                         .mapToMessage("messages")
                         .map { "${it.property}: ${it.message}" }
                 )
