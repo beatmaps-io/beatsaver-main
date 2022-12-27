@@ -1,12 +1,16 @@
 package io.beatmaps.api
 
+import io.beatmaps.cdnPrefix
 import io.beatmaps.common.api.EPlaylistType
+import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
+import io.beatmaps.common.dbo.complexToBeatmap
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
+import io.ktor.server.locations.get
 import io.ktor.server.locations.post
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
@@ -22,6 +26,7 @@ import org.jetbrains.exposed.sql.update
 @Location("/api/bookmarks") class BookmarksApi {
     @Location("/add") data class Add(val api: BookmarksApi)
     @Location("/remove") data class Remove(val api: BookmarksApi)
+    @Location("/{page}") data class Bookmarks(val api: BookmarksApi, val page: Long = 0)
 }
 
 fun getBookmarksId(userId: Int): Int {
@@ -98,6 +103,24 @@ fun Route.bookmarkRoute() {
             }
 
             call.respond(if (removed) HttpStatusCode.OK else HttpStatusCode.NotModified)
+        }
+    }
+
+    get<BookmarksApi.Bookmarks> {
+        requireAuthorization { sess ->
+            val maps = transaction {
+                Playlist
+                    .joinMaps()
+                    .slice(Beatmap.columns)
+                    .select { Playlist.id eq getBookmarksId(sess.userId) }
+                    .limit(it.page)
+                    .complexToBeatmap()
+                    .map {
+                        MapDetail.from(it, cdnPrefix())
+                    }
+            }
+
+            call.respond(BookmarkResponse(maps))
         }
     }
 }

@@ -83,3 +83,6 @@ data class CuratePlaylist(val id: Int, val curated: Boolean = false)
 
 @Serializable
 data class BookmarkRequest(val mapId: Int)
+
+@Serializable
+data class BookmarkResponse(val docs: List<MapDetail>)
