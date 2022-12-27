@@ -1,5 +1,12 @@
 package io.beatmaps.api
 
+import de.nielsfalk.ktor.swagger.DefaultValue
+import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.get
+import de.nielsfalk.ktor.swagger.ok
+import de.nielsfalk.ktor.swagger.post
+import de.nielsfalk.ktor.swagger.responds
+import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.cdnPrefix
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.dbo.Beatmap
@@ -10,9 +17,8 @@ import io.beatmaps.common.dbo.complexToBeatmap
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
-import io.ktor.server.locations.post
-import io.ktor.server.request.receive
+import io.ktor.server.locations.options
+import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import org.jetbrains.exposed.sql.and
@@ -23,10 +29,14 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-@Location("/api/bookmarks") class BookmarksApi {
-    @Location("/add") data class Add(val api: BookmarksApi)
-    @Location("/remove") data class Remove(val api: BookmarksApi)
-    @Location("/{page}") data class Bookmarks(val api: BookmarksApi, val page: Long = 0)
+@Location("/api")
+class BookmarksApi {
+    @Group("Bookmarks") @Location("/bookmarks/add")
+    data class Add(@Ignore val api: BookmarksApi)
+    @Group("Bookmarks") @Location("/bookmarks/remove")
+    data class Remove(@Ignore val api: BookmarksApi)
+    @Group("Bookmarks") @Location("/bookmarks/{page}")
+    data class Bookmarks(@Ignore val api: BookmarksApi, @DefaultValue("0") val page: Long = 0)
 }
 
 fun getBookmarksId(userId: Int): Int {
@@ -60,9 +70,16 @@ fun isBookMarked(mapId: Int, userId: Int): Boolean {
 }
 
 fun Route.bookmarkRoute() {
-    post<BookmarksApi.Add> {
+    options<BookmarksApi.Add> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
+    }
+
+    post<BookmarksApi.Add, BookmarkRequest>("Add a bookmark".responds(ok<BookmarkUpdateResponse>())) { _, req ->
+        call.response.header("Access-Control-Allow-Origin", "*")
+
         requireAuthorization { sess ->
-            val mapId = call.receive<BookmarkRequest>().mapId
+            val mapId = req.mapId
 
             val added = transaction {
                 val exists = isBookMarked(mapId, sess.userId)
@@ -80,13 +97,20 @@ fun Route.bookmarkRoute() {
                 !exists
             }
 
-            call.respond(if (added) HttpStatusCode.OK else HttpStatusCode.NotModified)
+            call.respond(BookmarkUpdateResponse(added))
         }
     }
 
-    post<BookmarksApi.Remove> {
+    options<BookmarksApi.Remove> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
+    }
+
+    post<BookmarksApi.Remove, BookmarkRequest>("Remove a bookmark".responds(ok<BookmarkUpdateResponse>())) { _, req ->
+        call.response.header("Access-Control-Allow-Origin", "*")
+
         requireAuthorization { sess ->
-            val mapId = call.receive<BookmarkRequest>().mapId
+            val mapId = req.mapId
 
             val removed = transaction {
                 val exists = isBookMarked(mapId, sess.userId)
@@ -102,11 +126,18 @@ fun Route.bookmarkRoute() {
                 exists
             }
 
-            call.respond(if (removed) HttpStatusCode.OK else HttpStatusCode.NotModified)
+            call.respond(BookmarkUpdateResponse(removed))
         }
     }
 
-    get<BookmarksApi.Bookmarks> {
+    options<BookmarksApi.Bookmarks> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
+    }
+
+    get<BookmarksApi.Bookmarks>("Get bookmarks from the logged-in user".responds(ok<BookmarkResponse>())) {
+        call.response.header("Access-Control-Allow-Origin", "*")
+
         requireAuthorization { sess ->
             val maps = transaction {
                 Playlist
