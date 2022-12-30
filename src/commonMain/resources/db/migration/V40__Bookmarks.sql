@@ -11,10 +11,6 @@ ALTER TABLE public.playlist
 ADD COLUMN type playlistType NOT NULL DEFAULT 'Public';
 
 UPDATE public.playlist
-SET type = 'Public'
-WHERE public;
-
-UPDATE public.playlist
 SET type = 'Private'
 WHERE NOT public;
 
