@@ -133,7 +133,13 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                             fun sendForm(data: FormData) {
                                 data.append("name", nameRef.current?.value ?: "")
                                 data.append("description", descriptionRef.current?.value ?: "")
-                                data.append("type", if (publicRef.current?.checked == true) "Public" else "Private")
+                                data.append(
+                                    "type",
+                                    if (publicRef.current?.checked == true)
+                                        EPlaylistType.Public.name
+                                    else
+                                        EPlaylistType.Private.name
+                                )
                                 val file = coverRef.current?.files?.let { it[0] }
                                 if (file != null) {
                                     data.asDynamic().append("file", file) // Kotlin doesn't have an equivalent method to this js
