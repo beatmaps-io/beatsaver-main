@@ -259,7 +259,7 @@ fun Route.searchRoute() {
                 }
                 .orderBy(*sortArgs)
                 .complexToBeatmap()
-                .map { m -> MapDetail.from(m, cdnPrefix(), sess?.userId?.let { u -> isBookMarked(m.id.value, u) }) }
+                .map { m -> MapDetail.from(m, cdnPrefix(), sess?.userId?.let { u -> isBookmarked(m.id.value, u) }) }
 
             call.respond(SearchResponse(beatmaps))
         }

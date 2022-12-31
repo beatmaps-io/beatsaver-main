@@ -59,7 +59,7 @@ fun getNewId(userId: Int): Int? {
     }
 }
 
-fun isBookMarked(mapId: Int, userId: Int): Boolean {
+fun isBookmarked(mapId: Int, userId: Int): Boolean {
     return User
         .join(PlaylistMap, JoinType.LEFT, User.bookmarksId, PlaylistMap.playlistId)
         .select { (User.id eq userId) and (PlaylistMap.mapId eq mapId) }

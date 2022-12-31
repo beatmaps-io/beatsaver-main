@@ -333,7 +333,7 @@ fun Route.mapDetailRoute() {
                     .firstOrNull()
                     ?.enrichTestplays()
                     ?.run {
-                        MapDetail.from(this, cdnPrefix(), sess?.userId?.let { isBookMarked(this.id.value, it) })
+                        MapDetail.from(this, cdnPrefix(), sess?.userId?.let { isBookmarked(this.id.value, it) })
                     }
             }
         } catch (_: NumberFormatException) {
@@ -498,7 +498,7 @@ fun Route.mapDetailRoute() {
                     }
                     .complexToBeatmap()
                     .map { map ->
-                        MapDetail.from(map, cdnPrefix(), isBookMarked(map.id.value, sess.userId))
+                        MapDetail.from(map, cdnPrefix(), isBookmarked(map.id.value, sess.userId))
                     }
                     .sortedByDescending { it.uploaded }
             }
@@ -529,7 +529,7 @@ fun Route.mapDetailRoute() {
                 }
                 .complexToBeatmap()
                 .map { map ->
-                    MapDetail.from(map, cdnPrefix(), sess?.userId?.let { isBookMarked(map.id.value, it) })
+                    MapDetail.from(map, cdnPrefix(), sess?.userId?.let { isBookmarked(map.id.value, it) })
                 }
                 .sortedByDescending { it.uploaded }
         }
@@ -589,7 +589,7 @@ fun Route.mapDetailRoute() {
                     }
                 }
                 .map { map ->
-                    MapDetail.from(map, cdnPrefix(), sess?.userId?.let { u -> isBookMarked(map.id.value, u) })
+                    MapDetail.from(map, cdnPrefix(), sess?.userId?.let { u -> isBookmarked(map.id.value, u) })
                 }
         }
 
