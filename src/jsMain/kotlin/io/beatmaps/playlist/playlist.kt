@@ -21,6 +21,7 @@ import io.beatmaps.index.beatmapInfo
 import io.beatmaps.index.modal
 import io.beatmaps.setPageTitle
 import io.beatmaps.upload.UploadRequestConfig
+import io.beatmaps.util.textToContent
 import kotlinx.html.CommonAttributeGroupFacade
 import kotlinx.html.classes
 import kotlinx.html.js.onClickFunction
@@ -280,7 +281,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                             }
                             if (pl.description.isNotBlank()) {
                                 div("list-group-item ws-normal text-break") {
-                                    +pl.description
+                                    textToContent(pl.description)
                                 }
                             }
                         }
