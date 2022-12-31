@@ -177,7 +177,7 @@ suspend fun ApplicationCall.handleMultipart(cb: suspend (PartData.FileItem) -> U
 
 fun getMaxMapForUser(userId: Int) = wrapAsExpressionNotNull<Float>(
     PlaylistMap
-        .join(User, JoinType.FULL, User.bookmarksId, PlaylistMap.playlistId)
+        .join(User, JoinType.RIGHT, User.bookmarksId, PlaylistMap.playlistId)
         .slice(Coalesce(PlaylistMap.order.plus(1f), floatLiteral(1f)))
         .select {
             User.id eq userId
