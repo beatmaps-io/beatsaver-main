@@ -8,6 +8,7 @@ import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.api.EPlaylistType
+import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistMap
@@ -21,51 +22,47 @@ import io.ktor.server.locations.options
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.insertIgnore
+import org.jetbrains.exposed.sql.insertIgnoreAndGetId
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
 @Location("/api")
 class BookmarksApi {
-    @Group("Bookmarks") @Location("/bookmarks/add")
+    @Group("Bookmarks")
+    @Location("/bookmarks/add")
     data class Add(@Ignore val api: BookmarksApi)
-    @Group("Bookmarks") @Location("/bookmarks/remove")
+
+    @Group("Bookmarks")
+    @Location("/bookmarks/remove")
     data class Remove(@Ignore val api: BookmarksApi)
-    @Group("Bookmarks") @Location("/bookmarks/{page}")
+
+    @Group("Bookmarks")
+    @Location("/bookmarks/{page}")
     data class Bookmarks(@Ignore val api: BookmarksApi, @DefaultValue("0") val page: Long = 0)
 }
 
-fun getBookmarksId(userId: Int): Int {
-    var id = User
-        .slice(User.bookmarksId)
-        .select { User.id eq userId }
-        .first()[User.bookmarksId]?.value
-
-    if (id == null) {
-        id = Playlist.insertAndGetId {
-            it[type] = EPlaylistType.System
-            it[name] = "Bookmarks"
-            it[description] = "Maps you've bookmarked, automatically updated."
-            it[owner] = userId
-        }.value
-
+fun getNewId(userId: Int): Int? {
+    return Playlist.insertIgnoreAndGetId {
+        it[type] = EPlaylistType.System
+        it[name] = "Bookmarks"
+        it[description] = "Maps you've bookmarked, automatically updated."
+        it[owner] = userId
+    }?.value?.also { pl ->
         User.update({ User.id eq userId }) {
-            it[bookmarksId] = id
+            it[bookmarksId] = pl
         }
     }
-
-    return id
 }
 
 fun isBookMarked(mapId: Int, userId: Int): Boolean {
-    val bookmarksId = getBookmarksId(userId)
-
-    return PlaylistMap
-        .select { (PlaylistMap.mapId eq mapId) and (PlaylistMap.playlistId eq bookmarksId) }
+    return User
+        .join(PlaylistMap, JoinType.LEFT, User.bookmarksId, PlaylistMap.playlistId)
+        .select { (User.id eq userId) and (PlaylistMap.mapId eq mapId) }
         .count() > 0
 }
 
@@ -82,19 +79,23 @@ fun Route.bookmarkRoute() {
             val mapId = req.mapId
 
             val added = transaction {
-                val exists = isBookMarked(mapId, sess.userId)
+                val newId = getNewId(sess.userId)
 
-                if (!exists) {
-                    val bookmarksId = getBookmarksId(sess.userId)
+                PlaylistMap.insertIgnore {
+                    it[this.mapId] = mapId
+                    it[order] = getMaxMapForUser(sess.userId)
 
-                    PlaylistMap.insert {
-                        it[this.mapId] = mapId
-                        it[playlistId] = bookmarksId
-                        it[order] = getMaxMap(bookmarksId)?.order?.plus(1) ?: 1.0f
+                    if (newId != null) {
+                        it[playlistId] = newId
+                    } else {
+                        it[playlistId] = wrapAsExpressionNotNull<Int>(
+                            User
+                                .slice(User.bookmarksId)
+                                .select { User.id eq sess.userId }
+                                .limit(1)
+                        )
                     }
-                }
-
-                !exists
+                }.insertedCount > 0
             }
 
             call.respond(BookmarkUpdateResponse(added))
@@ -113,17 +114,16 @@ fun Route.bookmarkRoute() {
             val mapId = req.mapId
 
             val removed = transaction {
-                val exists = isBookMarked(mapId, sess.userId)
-
-                if (exists) {
-                    val bookmarksId = getBookmarksId(sess.userId)
-
-                    PlaylistMap.deleteWhere {
-                        (PlaylistMap.mapId eq mapId) and (PlaylistMap.playlistId eq bookmarksId)
-                    }
-                }
-
-                exists
+                PlaylistMap.deleteWhere {
+                    (PlaylistMap.mapId eq mapId) and (
+                        PlaylistMap.playlistId eqSubQuery
+                            User
+                                .slice(User.bookmarksId)
+                                .select {
+                                    User.id eq sess.userId
+                                }
+                        )
+                } > 0
             }
 
             call.respond(BookmarkUpdateResponse(removed))
@@ -140,10 +140,11 @@ fun Route.bookmarkRoute() {
 
         requireAuthorization { sess ->
             val maps = transaction {
-                Playlist
-                    .joinMaps()
+                PlaylistMap
+                    .join(User, JoinType.LEFT, PlaylistMap.playlistId, User.bookmarksId)
+                    .join(Beatmap, JoinType.LEFT, PlaylistMap.mapId, Beatmap.id)
                     .slice(Beatmap.columns)
-                    .select { Playlist.id eq getBookmarksId(sess.userId) }
+                    .select { User.id eq sess.userId }
                     .limit(it.page)
                     .complexToBeatmap()
                     .map {

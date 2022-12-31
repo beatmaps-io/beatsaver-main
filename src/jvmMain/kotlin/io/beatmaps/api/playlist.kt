@@ -20,12 +20,12 @@ import io.beatmaps.common.db.greaterEqF
 import io.beatmaps.common.db.lessEqF
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
+import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.PlaylistMap
-import io.beatmaps.common.dbo.PlaylistMapDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
@@ -68,6 +68,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import net.coobird.thumbnailator.Thumbnails
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.Coalesce
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.FieldSet
 import org.jetbrains.exposed.sql.JoinType
@@ -76,11 +77,13 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.countDistinct
 import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.floatLiteral
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
@@ -172,13 +175,26 @@ suspend fun ApplicationCall.handleMultipart(cb: suspend (PartData.FileItem) -> U
     return MultipartRequest(dataMap, recaptchaSuccess)
 }
 
-fun getMaxMap(id: Int) = PlaylistMap
-    .select {
-        PlaylistMap.playlistId eq id
-    }
-    .orderBy(PlaylistMap.order, SortOrder.DESC)
-    .limit(1)
-    .firstOrNull()?.let { PlaylistMapDao.wrapRow(it) }
+fun getMaxMapForUser(userId: Int) = wrapAsExpressionNotNull<Float>(
+    PlaylistMap
+        .join(User, JoinType.FULL, User.bookmarksId, PlaylistMap.playlistId)
+        .slice(Coalesce(PlaylistMap.order.plus(1f), floatLiteral(1f)))
+        .select {
+            User.id eq userId
+        }
+        .orderBy(PlaylistMap.order, SortOrder.DESC)
+        .limit(1)
+)
+
+fun getMaxMap(id: Int) = wrapAsExpressionNotNull<Float>(
+    PlaylistMap
+        .slice(Coalesce(PlaylistMap.order.plus(1f), floatLiteral(1f)))
+        .select {
+            PlaylistMap.playlistId eq id
+        }
+        .orderBy(PlaylistMap.order, SortOrder.DESC)
+        .limit(1)
+)
 
 val playlistStats = listOf(
     Beatmap.uploader.countDistinct(),
@@ -521,7 +537,7 @@ fun Route.playlistRoute() {
                             *Playlist.columns.toTypedArray()
                         )?.firstOrNull()?.let { row ->
                             val playlist = PlaylistDao.wrapRow(row)
-                            val newOrder = pmr.order ?: getMaxMap(req.id)?.let { it.order + 1 } ?: 1.0f
+                            val newOrder = pmr.order
 
                             // Only perform these operations once we've verified the owner is logged in
                             // and the playlist exists (as above)
@@ -530,7 +546,11 @@ fun Route.playlistRoute() {
                                 PlaylistMap.upsert(conflictIndex = PlaylistMap.link) {
                                     it[playlistId] = playlist.id
                                     it[mapId] = pmr.mapId.toInt(16)
-                                    it[order] = newOrder
+                                    if (newOrder != null) {
+                                        it[order] = newOrder
+                                    } else {
+                                        it[order] = getMaxMap(req.id)
+                                    }
                                 }
 
                                 playlist.id.value
