@@ -1317,6 +1317,17 @@ small.alert-count {
   outline: inherit;
 }
 
+#site-notice {
+  top: -15px;
+  transition: opacity 0.4s;
+  display: none;
+  opacity: 1;
+
+  .navbar-text {
+    padding: 0 10px;
+  }
+}
+
 @include media-breakpoint-up(sm) {
   .filter-dropdown {
     width: 100%;

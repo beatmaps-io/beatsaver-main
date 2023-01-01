@@ -19,6 +19,8 @@ import kotlinx.html.span
 import kotlinx.html.title
 import kotlinx.html.ul
 
+val bannerEnabled = System.getenv("BANNER_ENABLED") == "true"
+
 class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
     override fun FlowContent.apply() {
         nav("navbar navbar-expand-lg fixed-top navbar-dark bg-primary") {
@@ -169,6 +171,20 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                             }
                         }
                     }
+                }
+            }
+        }
+        if (bannerEnabled) {
+            div("navbar navbar-expand-lg navbar-light bg-warning") {
+                id = "site-notice"
+                div("container flex-nowrap") {
+                    div("navbar-text flex-grow-1 text-center") {
+                        +"VOTE NOW for 2022 BeastSaber Mapping Award winners! Voting is open from January 1-14. "
+                        a("https://forms.gle/PuTdd2SWGYCgYFp67", target = "_blank") {
+                            +"https://forms.gle/PuTdd2SWGYCgYFp67"
+                        }
+                    }
+                    button(type = ButtonType.button, classes = "btn-close btn-close-white") { }
                 }
             }
         }
