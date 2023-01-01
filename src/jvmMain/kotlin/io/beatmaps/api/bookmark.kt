@@ -59,13 +59,6 @@ fun getNewId(userId: Int): Int? {
     }
 }
 
-fun isBookmarked(mapId: Int, userId: Int): Boolean {
-    return User
-        .join(PlaylistMap, JoinType.LEFT, User.bookmarksId, PlaylistMap.playlistId)
-        .select { (User.id eq userId) and (PlaylistMap.mapId eq mapId) }
-        .count() > 0
-}
-
 fun Route.bookmarkRoute() {
     options<BookmarksApi.Add> {
         call.response.header("Access-Control-Allow-Origin", "*")

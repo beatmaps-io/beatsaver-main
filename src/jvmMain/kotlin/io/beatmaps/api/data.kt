@@ -23,7 +23,7 @@ import java.io.File
 import java.lang.Integer.toHexString
 import kotlin.time.Duration.Companion.seconds
 
-fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String, bookmarked: Boolean? = null) = MapDetail(
+fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
     toHexString(other.id.value), other.name, other.description,
     UserDetail.from(other.uploader), MapDetailMetadata.from(other), MapStats.from(other), other.uploaded?.toKotlinInstant(), other.automapper, other.ranked, other.qualified,
     other.versions.values.map { MapVersion.from(it, cdnPrefix) }.partition { it.state == EMapState.Published }.let {
@@ -40,7 +40,7 @@ fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String, bookmarked: B
     other.tags?.mapNotNull {
         MapTag.fromSlug(it)
     } ?: listOf(),
-    bookmarked
+    other.bookmarked
 )
 fun MapDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(BeatmapDao.wrapRow(row), cdnPrefix)
 

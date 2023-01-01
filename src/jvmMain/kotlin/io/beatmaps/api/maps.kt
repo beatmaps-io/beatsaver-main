@@ -24,6 +24,7 @@ import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.joinBookmarked
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
@@ -320,6 +321,7 @@ fun Route.mapDetailRoute() {
                     .joinVersions(true, null) // Allow returning non-published versions
                     .joinUploader()
                     .joinCurator()
+                    .joinBookmarked(sess?.userId)
                     .select {
                         (Beatmap.id eq it.id.toInt(16)).let {
                             if (isAdmin) {
@@ -333,7 +335,7 @@ fun Route.mapDetailRoute() {
                     .firstOrNull()
                     ?.enrichTestplays()
                     ?.run {
-                        MapDetail.from(this, cdnPrefix(), sess?.userId?.let { isBookmarked(this.id.value, it) })
+                        MapDetail.from(this, cdnPrefix())
                     }
             }
         } catch (_: NumberFormatException) {
@@ -477,6 +479,7 @@ fun Route.mapDetailRoute() {
                     .joinVersions(true, null)
                     .joinUploader()
                     .joinCurator()
+                    .joinBookmarked(sess.userId)
                     .select {
                         Beatmap.id.inSubQuery(
                             Beatmap
@@ -498,7 +501,7 @@ fun Route.mapDetailRoute() {
                     }
                     .complexToBeatmap()
                     .map { map ->
-                        MapDetail.from(map, cdnPrefix(), isBookmarked(map.id.value, sess.userId))
+                        MapDetail.from(map, cdnPrefix())
                     }
                     .sortedByDescending { it.uploaded }
             }
@@ -515,6 +518,7 @@ fun Route.mapDetailRoute() {
                 .joinVersions(true)
                 .joinUploader()
                 .joinCurator()
+                .joinBookmarked(sess?.userId)
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
@@ -529,7 +533,7 @@ fun Route.mapDetailRoute() {
                 }
                 .complexToBeatmap()
                 .map { map ->
-                    MapDetail.from(map, cdnPrefix(), sess?.userId?.let { isBookmarked(map.id.value, it) })
+                    MapDetail.from(map, cdnPrefix())
                 }
                 .sortedByDescending { it.uploaded }
         }
@@ -558,6 +562,7 @@ fun Route.mapDetailRoute() {
                 .joinVersions(true)
                 .joinUploader()
                 .joinCurator()
+                .joinBookmarked(sess?.userId)
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
@@ -589,7 +594,7 @@ fun Route.mapDetailRoute() {
                     }
                 }
                 .map { map ->
-                    MapDetail.from(map, cdnPrefix(), sess?.userId?.let { u -> isBookmarked(map.id.value, u) })
+                    MapDetail.from(map, cdnPrefix())
                 }
         }
 

@@ -31,6 +31,7 @@ import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.handleCurator
 import io.beatmaps.common.dbo.handleOwner
+import io.beatmaps.common.dbo.joinBookmarked
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinPlaylistCurator
@@ -361,6 +362,7 @@ fun Route.playlistRoute() {
                     .joinVersions(true)
                     .joinUploader()
                     .joinCurator()
+                    .joinBookmarked(userId)
                     .select {
                         (Beatmap.deletedAt.isNull())
                     }
@@ -368,7 +370,7 @@ fun Route.playlistRoute() {
                         orderList.add(it[mapsSubQuery[PlaylistMap.order]])
                     }
                     .map {
-                        MapDetail.from(it, cdnPrefix, userId?.let { u -> isBookmarked(it.id.value, u) })
+                        MapDetail.from(it, cdnPrefix)
                     }
                 maps.zip(orderList).map { MapDetailWithOrder(it.first, it.second) }
             }

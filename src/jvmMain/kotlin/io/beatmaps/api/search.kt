@@ -21,8 +21,10 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
+import io.beatmaps.common.dbo.bookmark
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
+import io.beatmaps.common.dbo.joinBookmarked
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
@@ -193,7 +195,8 @@ fun Route.searchRoute() {
                 .joinVersions(true)
                 .joinUploader()
                 .joinCurator()
-                .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) + Beatmap.columns + Versions.columns + Difficulty.columns + User.columns + curatorAlias.columns)
+                .joinBookmarked(sess?.userId)
+                .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) + Beatmap.columns + Versions.columns + Difficulty.columns + User.columns + curatorAlias.columns + bookmark.columns)
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
@@ -259,7 +262,7 @@ fun Route.searchRoute() {
                 }
                 .orderBy(*sortArgs)
                 .complexToBeatmap()
-                .map { m -> MapDetail.from(m, cdnPrefix(), sess?.userId?.let { u -> isBookmarked(m.id.value, u) }) }
+                .map { m -> MapDetail.from(m, cdnPrefix()) }
 
             call.respond(SearchResponse(beatmaps))
         }
