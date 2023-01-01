@@ -181,7 +181,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                     div("navbar-text flex-grow-1 text-center") {
                         +"VOTE NOW for 2022 BeastSaber Mapping Award winners! Voting is open from January 1-14. "
                         a("https://forms.gle/PuTdd2SWGYCgYFp67", target = "_blank") {
-                            +"https://forms.gle/PuTdd2SWGYCgYFp67"
+                            +"Vote here"
                         }
                     }
                     button(type = ButtonType.button, classes = "btn-close btn-close-white") { }
