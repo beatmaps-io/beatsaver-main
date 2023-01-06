@@ -2,8 +2,8 @@ package io.beatmaps.maps
 
 import external.Axios
 import external.generateConfig
-import io.beatmaps.api.BookmarkRequest
 import io.beatmaps.Config
+import io.beatmaps.api.BookmarkRequest
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
