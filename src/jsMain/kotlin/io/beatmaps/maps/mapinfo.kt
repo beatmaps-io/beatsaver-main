@@ -132,7 +132,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     }
 
     private fun bookmark(bookmarked: Boolean) {
-        Axios.post<String>("${Config.apibase}/bookmarks/" + if (bookmarked) "add" else "remove", BookmarkRequest(props.mapInfo.intId()), generateConfig<BookmarkRequest, String>()).then({
+        Axios.post<String>("${Config.apibase}/bookmark", BookmarkRequest(props.mapInfo.intId(), bookmarked), generateConfig<BookmarkRequest, String>()).then({
             props.reloadMap()
         }) { }
     }
