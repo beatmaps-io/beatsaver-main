@@ -10,6 +10,7 @@ import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UploadLimitData
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.client
 import io.beatmaps.common.db.DateMinusDays
 import io.beatmaps.common.db.NowExpression
@@ -315,7 +316,7 @@ fun Route.userRoute() {
                             Playlist.update({
                                 Playlist.owner eq req.userId
                             }) { p ->
-                                p[public] = false
+                                p[type] = EPlaylistType.Private
                             }
                         }
                     }

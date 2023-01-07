@@ -3,6 +3,7 @@ package io.beatmaps.api
 import io.beatmaps.common.Config
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.DifficultyDao
@@ -38,7 +39,8 @@ fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
     other.deletedAt?.toKotlinInstant(),
     other.tags?.mapNotNull {
         MapTag.fromSlug(it)
-    } ?: listOf()
+    } ?: listOf(),
+    other.bookmarked
 )
 fun MapDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(BeatmapDao.wrapRow(row), cdnPrefix)
 
@@ -101,21 +103,23 @@ fun Query.limit(page: Long?, pageSize: Int = 20): Query {
 }
 
 fun PlaylistBasic.Companion.from(other: PlaylistDao, cdnPrefix: String) = PlaylistBasic(
-    other.id.value, "${Config.cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.name, other.public, other.ownerId.value
+    other.id.value, "${Config.cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg", other.name, other.type, other.ownerId.value
 )
 fun PlaylistBasic.Companion.from(row: ResultRow, cdnPrefix: String) = from(PlaylistDao.wrapRow(row), cdnPrefix)
 
 fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPrefix: String) = PlaylistFull(
-    other.id.value, other.name, other.description, "${Config.cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg",
+    other.id.value, other.name, other.description,
+    if (other.type == EPlaylistType.System) "/static/favicon/android-chrome-512x512.png" else "${Config.cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg",
     if (File(localPlaylistCoverFolder(512), "${other.id.value}.jpg").exists()) "${Config.cdnBase(cdnPrefix)}/playlist/512/${other.id.value}.jpg" else null,
-    other.public, UserDetail.from(other.owner),
+    UserDetail.from(other.owner),
     other.curator?.let {
         UserDetail.from(it)
     },
     stats,
     other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.songsChangedAt?.toKotlinInstant(), other.curatedAt?.toKotlinInstant(),
     other.deletedAt?.toKotlinInstant(),
-    "${Config.apiBase(true)}/playlists/id/${other.id.value}/download"
+    "${Config.apiBase(true)}/playlists/id/${other.id.value}/download",
+    other.type
 )
 fun PlaylistFull.Companion.from(row: ResultRow, cdnPrefix: String) = from(
     PlaylistDao.wrapRow(row),

@@ -2,6 +2,7 @@ package io.beatmaps.playlist
 
 import external.routeLink
 import io.beatmaps.api.PlaylistFull
+import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.api.MapAttr
 import io.beatmaps.common.formatTime
 import io.beatmaps.shared.coloredCard
@@ -40,6 +41,7 @@ class PlaylistInfo : AutoSizeComponent<PlaylistFull, PlaylistInfoProps, Playlist
                 coloredCard {
                     attrs.color = plAttrs.joinToString(" ") { it.color }
                     attrs.title = plAttrs.joinToString(" + ") { it.name }
+                    attrs.classes = if (pl.type == EPlaylistType.System) "border-warning" else ""
 
                     div("info") {
                         ref = divRef

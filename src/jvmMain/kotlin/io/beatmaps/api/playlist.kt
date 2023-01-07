@@ -11,6 +11,7 @@ import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.cleanString
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
@@ -19,17 +20,18 @@ import io.beatmaps.common.db.greaterEqF
 import io.beatmaps.common.db.lessEqF
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
+import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.PlaylistMap
-import io.beatmaps.common.dbo.PlaylistMapDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.handleCurator
 import io.beatmaps.common.dbo.handleOwner
+import io.beatmaps.common.dbo.joinBookmarked
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinPlaylistCurator
@@ -67,6 +69,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import net.coobird.thumbnailator.Thumbnails
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.Coalesce
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.FieldSet
 import org.jetbrains.exposed.sql.JoinType
@@ -74,11 +77,14 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.countDistinct
 import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.floatLiteral
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
@@ -170,6 +176,27 @@ suspend fun ApplicationCall.handleMultipart(cb: suspend (PartData.FileItem) -> U
     return MultipartRequest(dataMap, recaptchaSuccess)
 }
 
+fun getMaxMapForUser(userId: Int) = wrapAsExpressionNotNull<Float>(
+    PlaylistMap
+        .join(User, JoinType.RIGHT, User.bookmarksId, PlaylistMap.playlistId)
+        .slice(Coalesce(PlaylistMap.order.plus(1f), floatLiteral(1f)))
+        .select {
+            User.id eq userId
+        }
+        .orderBy(PlaylistMap.order, SortOrder.DESC)
+        .limit(1)
+)
+
+fun getMaxMap(id: Int) = wrapAsExpressionNotNull<Float>(
+    PlaylistMap
+        .slice(Coalesce(PlaylistMap.order.plus(1f), floatLiteral(1f)))
+        .select {
+            PlaylistMap.playlistId eq id
+        }
+        .orderBy(PlaylistMap.order, SortOrder.DESC)
+        .limit(1)
+)
+
 val playlistStats = listOf(
     Beatmap.uploader.countDistinct(),
     Beatmap.duration.sum(),
@@ -205,7 +232,7 @@ fun Route.playlistRoute() {
                         Playlist
                             .slice(Playlist.id)
                             .select {
-                                (Playlist.deletedAt.isNull() and (sess?.let { s -> Playlist.owner eq s.userId or Playlist.public } ?: Playlist.public))
+                                (Playlist.deletedAt.isNull() and (sess?.let { s -> Playlist.owner eq s.userId or (Playlist.type eq EPlaylistType.Public) } ?: (Playlist.type eq EPlaylistType.Public)))
                                     .notNull(it.before) { o -> sortField less o.toJavaInstant() }
                                     .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
                             }
@@ -263,7 +290,7 @@ fun Route.playlistRoute() {
                             .joinOwner()
                             .slice(Playlist.id)
                             .select {
-                                (Playlist.deletedAt.isNull() and Playlist.public)
+                                (Playlist.deletedAt.isNull() and (Playlist.type eq EPlaylistType.Public))
                                     .let { q -> searchInfo.applyQuery(q) }
                                     .let { q ->
                                         if (it.includeEmpty != true) {
@@ -335,6 +362,7 @@ fun Route.playlistRoute() {
                     .joinVersions(true)
                     .joinUploader()
                     .joinCurator()
+                    .joinBookmarked(userId)
                     .select {
                         (Beatmap.deletedAt.isNull())
                     }
@@ -350,7 +378,7 @@ fun Route.playlistRoute() {
             PlaylistPage(playlist, mapsWithOrder)
         }
 
-        return if (detailPage.playlist != null && (detailPage.playlist.public || detailPage.playlist.owner.id == userId || isAdmin)) {
+        return if (detailPage.playlist != null && (detailPage.playlist.type == EPlaylistType.Public || detailPage.playlist.owner.id == userId || isAdmin)) {
             detailPage
         } else {
             null
@@ -396,15 +424,21 @@ fun Route.playlistRoute() {
                                         if (req.userId == sess?.userId) {
                                             it
                                         } else {
-                                            it.and(Playlist.public)
+                                            it and (Playlist.type eq EPlaylistType.Public)
                                         }
                                     }
                                 }
-                                .orderBy(Playlist.createdAt, SortOrder.DESC)
+                                .orderBy(
+                                    (Playlist.type neq EPlaylistType.System) to SortOrder.ASC,
+                                    Playlist.createdAt to SortOrder.DESC
+                                )
                                 .limit(req.page, 20)
                         )
                     }
-                    .orderBy(Playlist.createdAt, SortOrder.DESC)
+                    .orderBy(
+                        (Playlist.type neq EPlaylistType.System) to SortOrder.ASC,
+                        Playlist.createdAt to SortOrder.DESC
+                    )
                     .groupBy(*groupBy)
                     .handleOwner()
                     .handleCurator()
@@ -468,7 +502,7 @@ fun Route.playlistRoute() {
             getPlaylist() to getMapsInPlaylist()
         }
 
-        if (playlist != null && (playlist.public || playlist.owner.id == call.sessions.get<Session>()?.userId)) {
+        if (playlist != null && (playlist.type == EPlaylistType.Public || playlist.owner.id == call.sessions.get<Session>()?.userId)) {
             val localFile = File(localPlaylistCoverFolder(), "${playlist.playlistId}.jpg")
             val imageStr = Base64.getEncoder().encodeToString(localFile.readBytes())
 
@@ -494,14 +528,6 @@ fun Route.playlistRoute() {
             val pmr = call.receive<PlaylistMapRequest>()
             try {
                 transaction {
-                    fun getMaxMap() = PlaylistMap
-                        .select {
-                            PlaylistMap.playlistId eq req.id
-                        }
-                        .orderBy(PlaylistMap.order, SortOrder.DESC)
-                        .limit(1)
-                        .firstOrNull()?.let { PlaylistMapDao.wrapRow(it) }
-
                     Playlist
                         .updateReturning(
                             {
@@ -513,7 +539,7 @@ fun Route.playlistRoute() {
                             *Playlist.columns.toTypedArray()
                         )?.firstOrNull()?.let { row ->
                             val playlist = PlaylistDao.wrapRow(row)
-                            val newOrder = pmr.order ?: getMaxMap()?.let { it.order + 1 } ?: 1.0f
+                            val newOrder = pmr.order
 
                             // Only perform these operations once we've verified the owner is logged in
                             // and the playlist exists (as above)
@@ -522,7 +548,11 @@ fun Route.playlistRoute() {
                                 PlaylistMap.upsert(conflictIndex = PlaylistMap.link) {
                                     it[playlistId] = playlist.id
                                     it[mapId] = pmr.mapId.toInt(16)
-                                    it[order] = newOrder
+                                    if (newOrder != null) {
+                                        it[order] = newOrder
+                                    } else {
+                                        it[order] = getMaxMap(req.id)
+                                    }
                                 }
 
                                 playlist.id.value
@@ -578,7 +608,8 @@ fun Route.playlistRoute() {
                     0,
                     "",
                     multipart.dataMap["name"] ?: "",
-                    !sess.suspended && multipart.dataMap["public"].toBoolean(),
+                    if (sess.suspended || multipart.dataMap["type"] == "Private") EPlaylistType.Private
+                    else EPlaylistType.Public,
                     sess.userId
                 )
 
@@ -594,7 +625,7 @@ fun Route.playlistRoute() {
                         it[name] = toCreate.name
                         it[description] = multipart.dataMap["description"] ?: ""
                         it[owner] = toCreate.owner
-                        it[public] = toCreate.public
+                        it[type] = toCreate.type
                     }
                 }
 
@@ -619,7 +650,7 @@ fun Route.playlistRoute() {
                     q
                 } else {
                     q.and(Playlist.owner eq sess.userId)
-                }
+                } and (Playlist.type neq EPlaylistType.System)
             }
 
             val beforePlaylist = transaction {
@@ -649,7 +680,8 @@ fun Route.playlistRoute() {
             val toCreate = PlaylistBasic(
                 0, "",
                 multipart.dataMap["name"] ?: "",
-                !sess.suspended && multipart.dataMap["public"].toBoolean(),
+                if (sess.suspended || multipart.dataMap["type"] == "Private") EPlaylistType.Private
+                else EPlaylistType.Public,
                 sess.userId
             )
 
@@ -669,7 +701,7 @@ fun Route.playlistRoute() {
                         } else {
                             it[name] = toCreate.name
                             it[description] = newDescription
-                            it[public] = toCreate.public
+                            it[type] = toCreate.type
                         }
                         it[updatedAt] = NowExpression(updatedAt.columnType)
                     } > 0 || throw UploadException("Update failed")
@@ -683,7 +715,11 @@ fun Route.playlistRoute() {
                             if (shouldDelete) {
                                 DeletedPlaylistData(req.id, multipart.dataMap["reason"] ?: "")
                             } else {
-                                EditPlaylistData(req.id, beforePlaylist.name, beforePlaylist.description, beforePlaylist.public, toCreate.name, newDescription, toCreate.public)
+                                EditPlaylistData(
+                                    req.id,
+                                    beforePlaylist.name, beforePlaylist.description, beforePlaylist.type == EPlaylistType.Public,
+                                    toCreate.name, newDescription, toCreate.type == EPlaylistType.Public
+                                )
                             },
                             beforePlaylist.owner.id
                         )

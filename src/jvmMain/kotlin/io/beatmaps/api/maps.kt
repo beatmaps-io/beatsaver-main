@@ -24,6 +24,7 @@ import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.joinBookmarked
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
@@ -320,6 +321,7 @@ fun Route.mapDetailRoute() {
                     .joinVersions(true, null) // Allow returning non-published versions
                     .joinUploader()
                     .joinCurator()
+                    .joinBookmarked(sess?.userId)
                     .select {
                         (Beatmap.id eq it.id.toInt(16)).let {
                             if (isAdmin) {
@@ -471,12 +473,13 @@ fun Route.mapDetailRoute() {
     }
 
     get<MapsApi.WIP> { r ->
-        requireAuthorization {
+        requireAuthorization { sess ->
             val beatmaps = transaction {
                 Beatmap
                     .joinVersions(true, null)
                     .joinUploader()
                     .joinCurator()
+                    .joinBookmarked(sess.userId)
                     .select {
                         Beatmap.id.inSubQuery(
                             Beatmap
@@ -489,7 +492,7 @@ fun Route.mapDetailRoute() {
                                 )
                                 .slice(Beatmap.id)
                                 .select {
-                                    Beatmap.uploader.eq(it.userId) and Beatmap.deletedAt.isNull() and Versions.mapId.isNull()
+                                    Beatmap.uploader.eq(sess.userId) and Beatmap.deletedAt.isNull() and Versions.mapId.isNull()
                                 }
                                 .groupBy(Beatmap.id)
                                 .orderBy(Beatmap.uploaded to SortOrder.DESC)
@@ -497,8 +500,8 @@ fun Route.mapDetailRoute() {
                         )
                     }
                     .complexToBeatmap()
-                    .map {
-                        MapDetail.from(it, cdnPrefix())
+                    .map { map ->
+                        MapDetail.from(map, cdnPrefix())
                     }
                     .sortedByDescending { it.uploaded }
             }
@@ -508,12 +511,14 @@ fun Route.mapDetailRoute() {
     }
 
     get<MapsApi.ByUploader>("Get maps by a user".responds(ok<SearchResponse>())) {
+        val sess = call.sessions.get<Session>()
         call.response.header("Access-Control-Allow-Origin", "*")
         val beatmaps = transaction {
             Beatmap
                 .joinVersions(true)
                 .joinUploader()
                 .joinCurator()
+                .joinBookmarked(sess?.userId)
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
@@ -527,8 +532,8 @@ fun Route.mapDetailRoute() {
                     )
                 }
                 .complexToBeatmap()
-                .map {
-                    MapDetail.from(it, cdnPrefix())
+                .map { map ->
+                    MapDetail.from(map, cdnPrefix())
                 }
                 .sortedByDescending { it.uploaded }
         }
@@ -541,6 +546,7 @@ fun Route.mapDetailRoute() {
             ok<SearchResponse>()
         )
     ) {
+        val sess = call.sessions.get<Session>()
         call.response.header("Access-Control-Allow-Origin", "*")
 
         val sortField = when (it.sort) {
@@ -556,6 +562,7 @@ fun Route.mapDetailRoute() {
                 .joinVersions(true)
                 .joinUploader()
                 .joinCurator()
+                .joinBookmarked(sess?.userId)
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap

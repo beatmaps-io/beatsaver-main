@@ -3,6 +3,7 @@ package io.beatmaps.maps
 import external.Axios
 import external.generateConfig
 import io.beatmaps.Config
+import io.beatmaps.api.BookmarkRequest
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
@@ -17,6 +18,7 @@ import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.playlist.addToPlaylist
+import io.beatmaps.shared.bookmarkButton
 import io.beatmaps.shared.links
 import io.beatmaps.util.textToContent
 import kotlinx.browser.window
@@ -129,6 +131,12 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
         }) { }
     }
 
+    private fun bookmark(bookmarked: Boolean) {
+        Axios.post<String>("${Config.apibase}/bookmark", BookmarkRequest(props.mapInfo.intId(), bookmarked), generateConfig<BookmarkRequest, String>()).then({
+            props.reloadMap()
+        }) { }
+    }
+
     override fun RBuilder.render() {
         val deleted = props.mapInfo.deletedAt != null
         globalContext.Consumer { userData ->
@@ -146,6 +154,13 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                     addToPlaylist {
                                         map = props.mapInfo
                                         modal = props.modal
+                                    }
+                                    bookmarkButton {
+                                        attrs.bookmarked = props.mapInfo.bookmarked == true
+                                        attrs.onClick = { e, bm ->
+                                            e.preventDefault()
+                                            bookmark(!bm)
+                                        }
                                     }
                                 }
 

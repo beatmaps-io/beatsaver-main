@@ -24,6 +24,7 @@ import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.events.Event
 import react.Props
 import react.PropsWithChildren
 import react.RefObject
@@ -197,13 +198,13 @@ val uploader = fc<UploadeProps> { props ->
     }
 }
 
-external interface PlaylistOwneProps : Props {
+external interface PlaylistOwnerProps : Props {
     var owner: UserDetail?
     var tab: String?
     var time: Instant
 }
 
-val playlistOwner = fc<PlaylistOwneProps> { props ->
+val playlistOwner = fc<PlaylistOwnerProps> { props ->
     props.owner?.let { owner ->
         routeLink(owner.profileLink(props.tab)) {
             +owner.name
@@ -220,10 +221,11 @@ external interface ColoredCardProps : PropsWithChildren {
     var icon: String?
     var title: String?
     var extra: ((DIV) -> Unit)?
+    var classes: String?
 }
 
 val coloredCard = fc<ColoredCardProps> {
-    div("card colored") {
+    div("card colored " + (it.classes ?: "")) {
         it.extra?.invoke(attrs)
 
         div("color ${it.color}") {
@@ -356,5 +358,23 @@ var userCard = fc<UserCardProps> {
                 +it.titles.joinToString(", ")
             }
         }
+    }
+}
+
+external interface BookmarkButtonProps : Props {
+    var bookmarked: Boolean
+    var onClick: (Event, Boolean) -> Unit
+}
+
+var bookmarkButton = fc<BookmarkButtonProps> { props ->
+    a("#", classes = "text-warning me-1") {
+        val title = if (props.bookmarked) "Remove Bookmark" else "Add Bookmark"
+        attrs.title = title
+        attrs.attributes["aria-label"] = title
+        attrs.onClickFunction = {
+            it.preventDefault()
+            props.onClick(it, props.bookmarked)
+        }
+        i((if (props.bookmarked) "fas" else "far") + " fa-bookmark text-warning") { }
     }
 }

@@ -1,5 +1,9 @@
 package io.beatmaps.index
 
+import external.Axios
+import external.generateConfig
+import io.beatmaps.Config
+import io.beatmaps.api.BookmarkRequest
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
 import io.beatmaps.common.api.MapAttr
@@ -7,6 +11,7 @@ import io.beatmaps.common.fixed
 import io.beatmaps.common.formatTime
 import io.beatmaps.globalContext
 import io.beatmaps.playlist.addToPlaylist
+import io.beatmaps.shared.bookmarkButton
 import io.beatmaps.shared.coloredCard
 import io.beatmaps.shared.diffIcons
 import io.beatmaps.shared.links
@@ -38,6 +43,7 @@ external interface BeatmapInfoProps : AutoSizeComponentProps<MapDetail> {
 
 external interface BeatMapInfoState : AutoSizeComponentState {
     var handle: Int?
+    var bookmarked: Boolean?
 }
 
 class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoState>(30) {
@@ -102,6 +108,9 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
             }
         }
     }
+
+    private fun bookmark(bookmarked: Boolean) =
+        Axios.post<String>("${Config.apibase}/bookmark", BookmarkRequest(props.obj?.intId() ?: 0, bookmarked), generateConfig<BookmarkRequest, String>())
 
     override fun RBuilder.render() {
         props.obj?.let { map ->
@@ -188,9 +197,21 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
                         }
                         globalContext.Consumer { userData ->
                             if (userData != null) {
-                                addToPlaylist {
-                                    this.map = map
-                                    modal = props.modal
+                                div {
+                                    bookmarkButton {
+                                        attrs.bookmarked = state.bookmarked ?: (map.bookmarked == true)
+                                        attrs.onClick = { e, bm ->
+                                            e.preventDefault()
+                                            setState {
+                                                bookmarked = !bm
+                                            }
+                                            bookmark(!bm)
+                                        }
+                                    }
+                                    addToPlaylist {
+                                        this.map = map
+                                        modal = props.modal
+                                    }
                                 }
                             }
                         }

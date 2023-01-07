@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.fixed
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
@@ -21,7 +22,7 @@ data class PlaylistSong(val key: String?, val hash: String, val songName: String
 data class PlaylistCustomData(val syncURL: String)
 
 @Serializable
-data class PlaylistBasic(val playlistId: Int, val playlistImage: String, val name: String, val public: Boolean, val owner: Int)
+data class PlaylistBasic(val playlistId: Int, val playlistImage: String, val name: String, val type: EPlaylistType, val owner: Int)
 
 @Serializable
 data class PlaylistFull(
@@ -30,7 +31,6 @@ data class PlaylistFull(
     val description: String,
     val playlistImage: String,
     val playlistImage512: String? = null,
-    val public: Boolean,
     val owner: UserDetail,
     val curator: UserDetail? = null,
     val stats: PlaylistStats? = null,
@@ -39,7 +39,8 @@ data class PlaylistFull(
     val songsChangedAt: Instant?,
     val curatedAt: Instant? = null,
     val deletedAt: Instant? = null,
-    val downloadURL: String
+    val downloadURL: String,
+    val type: EPlaylistType
 ) {
     companion object
 }
@@ -77,3 +78,12 @@ data class PlaylistPage(val playlist: PlaylistFull? = null, val maps: List<MapDe
 data class PlaylistSearchResponse(val docs: List<PlaylistFull>)
 @Serializable
 data class CuratePlaylist(val id: Int, val curated: Boolean = false)
+
+@Serializable
+data class BookmarkRequest(val mapId: Int, val bookmarked: Boolean)
+
+@Serializable
+data class BookmarkUpdateResponse(val updated: Boolean)
+
+@Serializable
+data class BookmarkResponse(val docs: List<MapDetail>)

@@ -3,6 +3,7 @@ package io.beatmaps.controllers
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.from
 import io.beatmaps.common.Config
+import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.genericPage
 import io.beatmaps.util.cdnPrefix
@@ -34,7 +35,7 @@ fun Route.playlistController() {
             headerTemplate = {
                 transaction {
                     Playlist.select {
-                        (Playlist.id eq it.id) and Playlist.deletedAt.isNull() and (Playlist.public eq true)
+                        (Playlist.id eq it.id) and Playlist.deletedAt.isNull() and (Playlist.type eq EPlaylistType.Public)
                     }.limit(1).map { PlaylistFull.from(it, cdnPrefix()) }.firstOrNull()
                 }?.let {
                     meta("og:type", "website")

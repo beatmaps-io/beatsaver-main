@@ -13,6 +13,7 @@ import io.beatmaps.api.MapDetailWithOrder
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistMapRequest
 import io.beatmaps.api.PlaylistPage
+import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
@@ -203,7 +204,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                             div("alert alert-danger text-center") {
                                 +"DELETED"
                             }
-                        } else if (state.playlist?.owner?.id == userData?.userId || userData?.admin == true) {
+                        } else if (pl.type != EPlaylistType.System && (state.playlist?.owner?.id == userData?.userId || userData?.admin == true)) {
                             div("btn-group") {
                                 routeLink("/playlists/${pl.playlistId}/edit", className = "btn btn-primary") {
                                     +"Edit"
@@ -235,7 +236,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                 }
                             }
                         }
-                        if (pl.deletedAt == null && userData?.curator == true) {
+                        if (pl.type != EPlaylistType.System && pl.deletedAt == null && userData?.curator == true) {
                             div("break") {}
                             div("btn-group") {
                                 a("#", classes = "btn " + if (pl.curatedAt == null) "btn-green" else "btn-expert") {
