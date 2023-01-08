@@ -50,7 +50,8 @@ import nl.myndocs.oauth2.client.Client
 import nl.myndocs.oauth2.identity.Identity
 import nl.myndocs.oauth2.identity.IdentityService
 import nl.myndocs.oauth2.ktor.feature.Oauth2ServerFeature
-import nl.myndocs.oauth2.tokenstore.inmemory.InMemoryTokenStore
+import nl.myndocs.oauth2.token.RefreshToken
+import nl.myndocs.oauth2.token.converter.RefreshTokenConverter
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.count
@@ -59,6 +60,8 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.File
+import java.time.Instant
+import java.util.UUID
 
 data class Session(
     val userId: Int,
@@ -95,6 +98,10 @@ data class Session(
 
     fun isAdmin() = admin && transaction { UserDao[userId].admin }
     fun isCurator() = isAdmin() || (curator && transaction { UserDao[userId].curator })
+
+    companion object {
+        fun fromUser(user: UserDao, alertCount: Int? = null, oauth2ClientId: String? = null) = Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, alertCount, user.curator, oauth2ClientId, user.suspendedAt != null)
+    }
 }
 
 @Location("/discord") class DiscordLogin(val state: String? = null)
@@ -392,6 +399,29 @@ fun Application.installOauth2() {
         }
 
         clientService = DBClientService
-        tokenStore = InMemoryTokenStore()
+        tokenStore = DBTokenStore
+
+        // Refresh tokens will last 45 days, will refresh after 15 days (30 left)
+        refreshTokenConverter = object : RefreshTokenConverter {
+            val validTime = 45 * 86400L
+            val refreshAfter = 30 * 86400L
+
+            override fun convertToToken(refreshToken: RefreshToken) =
+                if (refreshToken.expiresIn() < refreshAfter) {
+                    convertToToken(refreshToken.identity, refreshToken.clientId, refreshToken.scopes)
+                } else {
+                    refreshToken
+                }
+
+            override fun convertToToken(identity: Identity?, clientId: String, requestedScopes: Set<String>): RefreshToken {
+                return RefreshToken(
+                    UUID.randomUUID().toString(),
+                    Instant.now().plusSeconds(validTime),
+                    identity,
+                    clientId,
+                    requestedScopes
+                )
+            }
+        }
     }
 }

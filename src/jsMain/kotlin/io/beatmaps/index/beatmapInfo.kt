@@ -110,7 +110,7 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
     }
 
     private fun bookmark(bookmarked: Boolean) =
-        Axios.post<String>("${Config.apibase}/bookmark", BookmarkRequest(props.obj?.intId() ?: 0, bookmarked), generateConfig<BookmarkRequest, String>())
+        Axios.post<String>("${Config.apibase}/bookmark", BookmarkRequest(props.obj?.id, bookmarked = bookmarked), generateConfig<BookmarkRequest, String>())
 
     override fun RBuilder.render() {
         props.obj?.let { map ->

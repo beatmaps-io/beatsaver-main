@@ -10,11 +10,21 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object DBClientService : ClientService {
-    fun getClient(clientId: String) = transaction {
-        OauthClient.select { OauthClient.clientId eq clientId }.firstOrNull()?.let { client -> OauthClientDao.wrapRow(client) }
+    fun getClient(clientId: String, clientSecret: String? = null) = transaction {
+        OauthClient.select {
+            (OauthClient.clientId eq clientId).let { q ->
+                if (clientSecret != null) {
+                    q and (OauthClient.secret eq clientSecret)
+                } else q
+            }
+        }.firstOrNull()?.let { client -> OauthClientDao.wrapRow(client) }
     }
 
-    override fun clientOf(clientId: String) = getClient(clientId)?.let { client ->
+    override fun clientOf(clientId: String) = getClient(clientId)?.let { client -> convertToClient(client) }
+
+    override fun clientOf(clientId: String, clientSecret: String) = getClient(clientId, clientSecret)?.let { client -> convertToClient(client) }
+
+    fun convertToClient(client: OauthClientDao) =
         Client(
             client.clientId,
             client.scopes?.split(",")?.toSet() ?: emptySet(),
@@ -24,7 +34,6 @@ object DBClientService : ClientService {
                 AuthorizedGrantType.REFRESH_TOKEN
             )
         )
-    }
 
     override fun validClient(client: Client, clientSecret: String): Boolean {
         return transaction {

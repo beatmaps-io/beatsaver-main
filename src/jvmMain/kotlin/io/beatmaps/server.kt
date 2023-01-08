@@ -90,6 +90,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.html.HEAD
+import nl.myndocs.oauth2.exception.InvalidGrantException
 import org.flywaydb.core.Flyway
 import org.valiktor.ConstraintViolationException
 import org.valiktor.i18n.mapToMessage
@@ -280,6 +281,10 @@ fun Application.beatmapsio() {
 
         exception<NotFoundException> {
             call.respond(HttpStatusCode.NotFound, ErrorResponse("Not Found"))
+        }
+
+        exception<InvalidGrantException> {
+            call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
         }
 
         exception<Throwable> { cause ->

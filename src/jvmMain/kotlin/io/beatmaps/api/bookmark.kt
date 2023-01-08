@@ -8,7 +8,12 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
+import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.joinCurator
+import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.common.dbo.reviewerAlias
 import io.beatmaps.util.cdnPrefix
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -17,7 +22,10 @@ import io.ktor.server.locations.post
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.ExpressionWithColumnType
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.LiteralOp
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertIgnore
@@ -48,7 +56,7 @@ fun getNewId(userId: Int): Int? {
     }
 }
 
-fun addBookmark(mapId: Int, userId: Int) = transaction {
+fun addBookmark(mapId: ExpressionWithColumnType<EntityID<Int>>, userId: Int) = transaction {
     val newId = getNewId(userId)
 
     PlaylistMap.insertIgnore {
@@ -68,7 +76,7 @@ fun addBookmark(mapId: Int, userId: Int) = transaction {
     }.insertedCount
 }
 
-fun removeBookmark(mapId: Int, userId: Int) = transaction {
+fun removeBookmark(mapId: ExpressionWithColumnType<EntityID<Int>>, userId: Int) = transaction {
     PlaylistMap.deleteWhere {
         (PlaylistMap.mapId eq mapId) and (
             PlaylistMap.playlistId eqSubQuery
@@ -85,26 +93,36 @@ fun Route.bookmarkRoute() {
     post<BookmarksApi.Bookmark> {
         val req = call.receive<BookmarkRequest>()
 
-        requireAuthorization { sess ->
-            val mapId = req.mapId
+        requireAuthorization("bookmarks") { sess ->
+            val mapId = req.key?.toInt(16)
+            val mapIdLiteral = mapId?.let { LiteralOp(PlaylistMap.id.columnType, EntityID(it, PlaylistMap)) }
+            val mapIdOrSubquery = mapIdLiteral ?: req.hash?.let {
+                wrapAsExpressionNotNull(Versions.slice(Versions.mapId).select { Versions.hash eq it }, PlaylistMap.id.columnType)
+            }
 
-            val updateCount = if (req.bookmarked)
-                addBookmark(mapId, sess.userId)
-            else
-                removeBookmark(req.mapId, sess.userId)
+            val updateCount =
+                mapIdOrSubquery?.let { mapIdExp ->
+                    if (req.bookmarked) {
+                        addBookmark(mapIdExp, sess.userId)
+                    } else {
+                        removeBookmark(mapIdExp, sess.userId)
+                    }
+                } ?: 0
 
             call.respond(BookmarkUpdateResponse(updateCount > 0))
         }
     }
 
     get<BookmarksApi.Bookmarks> {
-        requireAuthorization { sess ->
+        requireAuthorization("bookmarks") { sess ->
             val maps = transaction {
                 PlaylistMap
-                    .join(User, JoinType.LEFT, PlaylistMap.playlistId, User.bookmarksId)
+                    .join(reviewerAlias, JoinType.LEFT, PlaylistMap.playlistId, reviewerAlias[User.bookmarksId])
                     .join(Beatmap, JoinType.LEFT, PlaylistMap.mapId, Beatmap.id)
-                    .slice(Beatmap.columns)
-                    .select { User.id eq sess.userId }
+                    .joinVersions(false)
+                    .joinUploader()
+                    .joinCurator()
+                    .select { reviewerAlias[User.id] eq sess.userId }
                     .limit(it.page)
                     .complexToBeatmap()
                     .map {
