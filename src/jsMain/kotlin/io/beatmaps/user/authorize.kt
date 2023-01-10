@@ -69,13 +69,18 @@ class AuthorizePage : RComponent<Props, AuthorizePageState>() {
         }
     }
 
+    private val descriptions = mapOf(
+        "identity" to "Access your id, username and avatar",
+        "bookmarks" to "Read and update your bookmarks"
+    )
+
     override fun RBuilder.render() {
         val params = URLSearchParams(window.location.search)
         val oauth = (document.querySelector("meta[name=\"oauth-data\"]") as? HTMLMetaElement)?.let {
             JSON.parse<OauthData>(it.content)
         }
         val clientName = oauth?.name ?: "An unknown application"
-        val scopes = (params.get("scope") ?: "").split(",")
+        val scopes = (params.get("scope") ?: "").split(" ")
 
         div("login-form card border-dark") {
             div("card-header") {
@@ -108,12 +113,11 @@ class AuthorizePage : RComponent<Props, AuthorizePageState>() {
 
                 for (scope in scopes) {
                     div("scope") {
-                        when (scope) {
-                            "identity" -> {
-                                i("fas fa-user-check") {}
-                                span { b { +"  Access your id, username and avatar" } }
-                            }
-                            else -> span { b { +"  Replace all your maps with RickRoll" } }
+                        descriptions[scope]?.let {
+                            i("fas fa-user-check") {}
+                            span { b { +"  $it" } }
+                        } ?: run {
+                            span { b { +"  Replace all your maps with RickRoll" } }
                         }
                     }
                 }
