@@ -26,10 +26,12 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.ExpressionWithColumnType
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.LiteralOp
+import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.insertIgnoreAndGetId
+import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -56,7 +58,7 @@ fun getNewId(userId: Int): Int? {
     }
 }
 
-fun addBookmark(mapId: ExpressionWithColumnType<EntityID<Int>>, userId: Int) = transaction {
+fun addBookmark(mapId: Int, userId: Int) = transaction {
     val newId = getNewId(userId)
 
     PlaylistMap.insertIgnore {
@@ -76,6 +78,27 @@ fun addBookmark(mapId: ExpressionWithColumnType<EntityID<Int>>, userId: Int) = t
     }.insertedCount
 }
 
+fun addBookmark(hash: String, userId: Int) = transaction {
+    val newId = getNewId(userId)?.let { intLiteral(it) }
+    val maxMap = getMaxMapForUser(userId).alias("maxMap")
+    val userBookmarkIdExp = wrapAsExpressionNotNull<Int>(
+        User
+            .slice(User.bookmarksId)
+            .select { User.id eq userId }
+            .limit(1)
+    )
+
+    PlaylistMap.insertIgnore(
+        Versions
+            .slice(Versions.mapId, maxMap, newId ?: userBookmarkIdExp)
+            .select { Versions.hash eq hash.lowercase() },
+        columns = listOf(PlaylistMap.mapId, PlaylistMap.order, PlaylistMap.playlistId)
+    ) ?: 0
+}
+
+fun removeBookmark(mapId: Int, userId: Int) = removeBookmark(LiteralOp(PlaylistMap.id.columnType, EntityID(mapId, PlaylistMap)), userId)
+fun removeBookmark(hash: String, userId: Int) = removeBookmark(wrapAsExpressionNotNull(Versions.slice(Versions.mapId).select { Versions.hash eq hash.lowercase() }, PlaylistMap.id.columnType), userId)
+
 fun removeBookmark(mapId: ExpressionWithColumnType<EntityID<Int>>, userId: Int) = transaction {
     PlaylistMap.deleteWhere {
         (PlaylistMap.mapId eq mapId) and (
@@ -94,20 +117,22 @@ fun Route.bookmarkRoute() {
         val req = call.receive<BookmarkRequest>()
 
         requireAuthorization("bookmarks") { sess ->
-            val mapId = req.key?.toInt(16)
-            val mapIdLiteral = mapId?.let { LiteralOp(PlaylistMap.id.columnType, EntityID(it, PlaylistMap)) }
-            val mapIdOrSubquery = mapIdLiteral ?: req.hash?.let {
-                wrapAsExpressionNotNull(Versions.slice(Versions.mapId).select { Versions.hash eq it }, PlaylistMap.id.columnType)
-            }
+            val mapId = req.key?.toIntOrNull(16)
 
             val updateCount =
-                mapIdOrSubquery?.let { mapIdExp ->
-                    if (req.bookmarked) {
-                        addBookmark(mapIdExp, sess.userId)
-                    } else {
-                        removeBookmark(mapIdExp, sess.userId)
-                    }
-                } ?: 0
+                if (req.bookmarked) {
+                    if (mapId != null) {
+                        addBookmark(mapId, sess.userId)
+                    } else if (req.hash != null) {
+                        addBookmark(req.hash, sess.userId)
+                    } else 0
+                } else {
+                    if (mapId != null) {
+                        removeBookmark(mapId, sess.userId)
+                    } else if (req.hash != null) {
+                        removeBookmark(req.hash, sess.userId)
+                    } else 0
+                }
 
             call.respond(BookmarkUpdateResponse(updateCount > 0))
         }
