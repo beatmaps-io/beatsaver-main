@@ -19,13 +19,11 @@ import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.locations.post
+import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.sql.ExpressionWithColumnType
 import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.LiteralOp
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
@@ -59,24 +57,27 @@ fun getNewId(userId: Int): Int? {
 }
 
 fun addBookmark(mapId: Int, userId: Int) = transaction {
-    val newId = getNewId(userId)
+    val newId = getNewId(userId)?.let { intLiteral(it) }
 
     PlaylistMap.insertIgnore {
         it[this.mapId] = mapId
         it[order] = getMaxMapForUser(userId)
 
-        if (newId != null) {
-            it[playlistId] = newId
-        } else {
-            it[playlistId] = wrapAsExpressionNotNull<Int>(
-                User
-                    .slice(User.bookmarksId)
-                    .select { User.id eq userId }
-                    .limit(1)
-            )
-        }
+        it[playlistId] = newId ?: wrapAsExpressionNotNull(
+            User
+                .slice(User.bookmarksId)
+                .select { User.id eq userId }
+                .limit(1)
+        )
     }.insertedCount
 }
+
+fun mapIdForHash(hash: String) =
+    Beatmap.joinVersions(false).slice(Beatmap.id).select {
+        Beatmap.deletedAt.isNull() and (Versions.hash eq hash)
+    }.firstOrNull()?.let {
+        it[Versions.mapId].value
+    } ?: throw NotFoundException()
 
 fun addBookmark(hash: String, userId: Int) = transaction {
     val newId = getNewId(userId)?.let { intLiteral(it) }
@@ -88,18 +89,14 @@ fun addBookmark(hash: String, userId: Int) = transaction {
             .limit(1)
     )
 
-    PlaylistMap.insertIgnore(
-        Versions
-            .slice(Versions.mapId, maxMap, newId ?: userBookmarkIdExp)
-            .select { Versions.hash eq hash.lowercase() },
-        columns = listOf(PlaylistMap.mapId, PlaylistMap.order, PlaylistMap.playlistId)
-    ) ?: 0
+    PlaylistMap.insertIgnore {
+        it[this.mapId] = mapIdForHash(hash)
+        it[order] = maxMap
+        it[playlistId] = newId ?: userBookmarkIdExp
+    }.insertedCount
 }
 
-fun removeBookmark(mapId: Int, userId: Int) = removeBookmark(LiteralOp(PlaylistMap.id.columnType, EntityID(mapId, PlaylistMap)), userId)
-fun removeBookmark(hash: String, userId: Int) = removeBookmark(wrapAsExpressionNotNull(Versions.slice(Versions.mapId).select { Versions.hash eq hash.lowercase() }, PlaylistMap.id.columnType), userId)
-
-fun removeBookmark(mapId: ExpressionWithColumnType<EntityID<Int>>, userId: Int) = transaction {
+fun removeBookmark(mapId: Int, userId: Int) = transaction {
     PlaylistMap.deleteWhere {
         (PlaylistMap.mapId eq mapId) and (
             PlaylistMap.playlistId eqSubQuery
@@ -111,6 +108,7 @@ fun removeBookmark(mapId: ExpressionWithColumnType<EntityID<Int>>, userId: Int) 
             )
     }
 }
+fun removeBookmark(hash: String, userId: Int) = removeBookmark(mapIdForHash(hash), userId)
 
 fun Route.bookmarkRoute() {
     post<BookmarksApi.Bookmark> {
