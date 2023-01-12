@@ -136,8 +136,6 @@ fun main() {
 data class ErrorResponse(val error: String)
 
 fun Application.beatmapsio() {
-    installMetrics()
-
     install(ContentNegotiation) {
         val kotlinx = KotlinxSerializationConverter(json)
         val jsConv = JacksonConverter(jackson)
@@ -293,6 +291,7 @@ fun Application.beatmapsio() {
         }
     }
 
+    installMetrics()
     installSessions()
     installDiscordOauth()
     if (rabbitHost.isNotEmpty()) {
