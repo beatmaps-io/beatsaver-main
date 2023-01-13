@@ -59,7 +59,7 @@ fun mapIdForHash(hash: String) =
     Beatmap.joinVersions(false).slice(Beatmap.id).select {
         Beatmap.deletedAt.isNull() and (Versions.hash eq hash.lowercase())
     }.firstOrNull()?.let {
-        it[Versions.mapId].value
+        it[Beatmap.id].value
     } ?: throw NotFoundException()
 
 fun addBookmark(mapId: Int, userId: Int) = run {
