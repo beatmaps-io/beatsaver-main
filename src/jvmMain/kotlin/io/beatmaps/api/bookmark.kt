@@ -56,7 +56,14 @@ fun getNewId(userId: Int): Int? {
     }
 }
 
-fun addBookmark(mapId: Int, userId: Int) {
+fun mapIdForHash(hash: String) =
+    Beatmap.joinVersions(false).slice(Beatmap.id).select {
+        Beatmap.deletedAt.isNull() and (Versions.hash eq hash)
+    }.firstOrNull()?.let {
+        it[Versions.mapId].value
+    } ?: throw NotFoundException()
+
+fun addBookmark(mapId: Int, userId: Int) = run {
     val newId = getNewId(userId)?.let { intLiteral(it) }
 
     PlaylistMap.insertIgnore {
@@ -72,31 +79,9 @@ fun addBookmark(mapId: Int, userId: Int) {
     }.insertedCount
 }
 
-fun mapIdForHash(hash: String) =
-    Beatmap.joinVersions(false).slice(Beatmap.id).select {
-        Beatmap.deletedAt.isNull() and (Versions.hash eq hash)
-    }.firstOrNull()?.let {
-        it[Versions.mapId].value
-    } ?: throw NotFoundException()
+fun addBookmark(hash: String, userId: Int) = addBookmark(mapIdForHash(hash), userId)
 
-fun addBookmark(hash: String, userId: Int) {
-    val newId = getNewId(userId)?.let { intLiteral(it) }
-    val maxMap = getMaxMapForUser(userId).alias("maxMap")
-    val userBookmarkIdExp = wrapAsExpressionNotNull<Int>(
-        User
-            .slice(User.bookmarksId)
-            .select { User.id eq userId }
-            .limit(1)
-    )
-
-    PlaylistMap.insertIgnore {
-        it[this.mapId] = mapIdForHash(hash)
-        it[order] = maxMap
-        it[playlistId] = newId ?: userBookmarkIdExp
-    }.insertedCount
-}
-
-fun removeBookmark(mapId: Int, userId: Int) {
+fun removeBookmark(mapId: Int, userId: Int) = run {
     PlaylistMap.deleteWhere {
         (PlaylistMap.mapId eq mapId) and (
             PlaylistMap.playlistId eqSubQuery
