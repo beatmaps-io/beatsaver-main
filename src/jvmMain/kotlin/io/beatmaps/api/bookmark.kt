@@ -56,7 +56,7 @@ fun getNewId(userId: Int): Int? {
     }
 }
 
-fun addBookmark(mapId: Int, userId: Int) = transaction {
+fun addBookmark(mapId: Int, userId: Int) {
     val newId = getNewId(userId)?.let { intLiteral(it) }
 
     PlaylistMap.insertIgnore {
@@ -79,7 +79,7 @@ fun mapIdForHash(hash: String) =
         it[Versions.mapId].value
     } ?: throw NotFoundException()
 
-fun addBookmark(hash: String, userId: Int) = transaction {
+fun addBookmark(hash: String, userId: Int) {
     val newId = getNewId(userId)?.let { intLiteral(it) }
     val maxMap = getMaxMapForUser(userId).alias("maxMap")
     val userBookmarkIdExp = wrapAsExpressionNotNull<Int>(
@@ -96,7 +96,7 @@ fun addBookmark(hash: String, userId: Int) = transaction {
     }.insertedCount
 }
 
-fun removeBookmark(mapId: Int, userId: Int) = transaction {
+fun removeBookmark(mapId: Int, userId: Int) {
     PlaylistMap.deleteWhere {
         (PlaylistMap.mapId eq mapId) and (
             PlaylistMap.playlistId eqSubQuery
@@ -117,7 +117,7 @@ fun Route.bookmarkRoute() {
         requireAuthorization("bookmarks") { sess ->
             val mapId = req.key?.toIntOrNull(16)
 
-            val updateCount =
+            val updateCount = transaction {
                 if (req.bookmarked) {
                     if (mapId != null) {
                         addBookmark(mapId, sess.userId)
@@ -131,6 +131,7 @@ fun Route.bookmarkRoute() {
                         removeBookmark(req.hash, sess.userId)
                     } else 0
                 }
+            }
 
             call.respond(BookmarkUpdateResponse(updateCount > 0))
         }

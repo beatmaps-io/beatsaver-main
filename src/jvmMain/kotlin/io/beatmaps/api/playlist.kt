@@ -548,7 +548,7 @@ fun Route.playlistRoute() {
                                 PlaylistMap.upsert(conflictIndex = PlaylistMap.link) {
                                     it[playlistId] = playlist.id
                                     it[mapId] = pmr.mapId.toInt(16)
-                                    it[order] = newOrder?.let { floatLiteral(it) } ?: getMaxMap(req.id)
+                                    it[order] = newOrder?.let { no -> floatLiteral(no) } ?: getMaxMap(req.id)
                                 }
 
                                 playlist.id.value
