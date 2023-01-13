@@ -57,7 +57,7 @@ fun getNewId(userId: Int): Int? {
 
 fun mapIdForHash(hash: String) =
     Beatmap.joinVersions(false).slice(Beatmap.id).select {
-        Beatmap.deletedAt.isNull() and (Versions.hash eq hash)
+        Beatmap.deletedAt.isNull() and (Versions.hash eq hash.lowercase())
     }.firstOrNull()?.let {
         it[Versions.mapId].value
     } ?: throw NotFoundException()
