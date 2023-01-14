@@ -163,7 +163,7 @@ fun Route.voteRoute() {
         newSuspendedTransaction {
             try {
                 val mapIdArr = Versions.slice(Versions.mapId).select {
-                    Versions.hash eq req.hash
+                    Versions.hash eq req.hash.lowercase()
                 }.limit(1).toList()
 
                 if (mapIdArr.isEmpty()) {

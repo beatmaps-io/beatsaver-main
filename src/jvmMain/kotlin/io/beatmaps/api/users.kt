@@ -188,7 +188,7 @@ fun followData(uploaderId: Int, userId: Int?): UserFollowData {
 }
 
 fun Route.userRoute() {
-    val usernameRegex = Regex("^[._\\-A-Za-z0-9]{3,}$")
+    val usernameRegex = Regex("^[._\\-A-Za-z0-9]{3,50}$")
     post<UsersApi.Username> {
         requireAuthorization { sess ->
             val req = call.receive<AccountDetailReq>()

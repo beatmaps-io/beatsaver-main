@@ -3,12 +3,16 @@ package io.beatmaps
 import history.Location
 import io.beatmaps.nav.manageNav
 import kotlinx.browser.document
+import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import kotlinx.js.jso
+import kotlinx.js.timers.setTimeout
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.asList
+import org.w3c.dom.get
+import org.w3c.dom.set
 import react.Component
 import react.Props
 import react.RBuilder
@@ -125,6 +129,22 @@ private fun initWithHistory(history: History, replaceHomelink: Boolean = true) {
             }
         }
     })
+
+    (document.getElementById("site-notice") as? HTMLElement)?.let { banner ->
+        if (localStorage["banner"] != "1") {
+            banner.style.display = "block"
+
+            val closeButton = banner.getElementsByTagName("button")[0]
+            closeButton?.addEventListener("click", {
+                banner.style.opacity = "0"
+                localStorage["banner"] = "1"
+
+                setTimeout({
+                    banner.style.display = "none"
+                }, 400)
+            })
+        }
+    }
 
     if (replaceHomelink) {
         fixLink("home-link", history) {

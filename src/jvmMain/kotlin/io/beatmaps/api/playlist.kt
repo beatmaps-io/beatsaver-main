@@ -548,11 +548,7 @@ fun Route.playlistRoute() {
                                 PlaylistMap.upsert(conflictIndex = PlaylistMap.link) {
                                     it[playlistId] = playlist.id
                                     it[mapId] = pmr.mapId.toInt(16)
-                                    if (newOrder != null) {
-                                        it[order] = newOrder
-                                    } else {
-                                        it[order] = getMaxMap(req.id)
-                                    }
+                                    it[order] = newOrder?.let { no -> floatLiteral(no) } ?: getMaxMap(req.id)
                                 }
 
                                 playlist.id.value
@@ -577,6 +573,11 @@ fun Route.playlistRoute() {
             }
         }
     }
+
+    fun typeFromReq(multipart: MultipartRequest, sess: Session) =
+        EPlaylistType.fromString(multipart.dataMap["type"])?.let { newType ->
+            if (sess.suspended || newType == EPlaylistType.System) null else newType
+        } ?: EPlaylistType.Private
 
     val thumbnailSizes = listOf(256, 512)
     post<PlaylistApi.Create> {
@@ -608,8 +609,7 @@ fun Route.playlistRoute() {
                     0,
                     "",
                     multipart.dataMap["name"] ?: "",
-                    if (sess.suspended || multipart.dataMap["type"] == "Private") EPlaylistType.Private
-                    else EPlaylistType.Public,
+                    typeFromReq(multipart, sess),
                     sess.userId
                 )
 
@@ -680,8 +680,7 @@ fun Route.playlistRoute() {
             val toCreate = PlaylistBasic(
                 0, "",
                 multipart.dataMap["name"] ?: "",
-                if (sess.suspended || multipart.dataMap["type"] == "Private") EPlaylistType.Private
-                else EPlaylistType.Public,
+                typeFromReq(multipart, sess),
                 sess.userId
             )
 

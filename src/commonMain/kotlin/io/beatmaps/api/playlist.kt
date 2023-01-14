@@ -80,7 +80,7 @@ data class PlaylistSearchResponse(val docs: List<PlaylistFull>)
 data class CuratePlaylist(val id: Int, val curated: Boolean = false)
 
 @Serializable
-data class BookmarkRequest(val mapId: Int, val bookmarked: Boolean)
+data class BookmarkRequest(val key: String? = null, val hash: String? = null, val bookmarked: Boolean)
 
 @Serializable
 data class BookmarkUpdateResponse(val updated: Boolean)

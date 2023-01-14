@@ -24,6 +24,7 @@ import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.controllers.reCaptchaVerify
+import io.beatmaps.login.DBTokenStore
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.publishVersion
@@ -36,9 +37,11 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.auth.HttpAuthHeader
 import io.ktor.http.contentType
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
+import io.ktor.server.auth.parseAuthorizationHeader
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.locations.post
@@ -86,10 +89,32 @@ import kotlin.random.Random
 
 private val pipelineLogger = Logger.getLogger("bmio.Pipeline")
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.requireAuthorization(block: suspend PipelineContext<*, ApplicationCall>.(Session) -> T) =
-    call.sessions.get<Session>()?.let {
-        block(it)
-    } ?: run { call.respond(HttpStatusCode.Unauthorized); null }
+suspend fun <T> PipelineContext<*, ApplicationCall>.requireAuthorization(scope: String? = null, block: suspend PipelineContext<*, ApplicationCall>.(Session) -> T) {
+    checkOauthHeader(scope)?.let { u ->
+        (u.identity?.metadata?.get("object") as? UserDao)?.let { block(Session.fromUser(it)) }.let { true }
+    } ?: run {
+        call.sessions.get<Session>()?.let {
+            block(it)
+        }
+    } ?: call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
+}
+
+fun PipelineContext<*, ApplicationCall>.checkOauthHeader(scope: String? = null) =
+    call.request.parseAuthorizationHeader().let { authHeader ->
+        if (authHeader is HttpAuthHeader.Single) {
+            val token = DBTokenStore.accessToken(authHeader.blob)
+
+            when (token?.expired()) {
+                true -> DBTokenStore.revokeAccessToken(token.accessToken).let { null }
+                false -> {
+                    if (token.scopes.contains(scope)) {
+                        token
+                    } else null
+                }
+                null -> null
+            }
+        } else null
+    }
 
 suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(captcha: String, block: suspend PipelineContext<*, ApplicationCall>.() -> T, error: (suspend PipelineContext<*, ApplicationCall>.(SiteVerifyResponse) -> T)? = null) =
     if (reCaptchaVerify == null) {

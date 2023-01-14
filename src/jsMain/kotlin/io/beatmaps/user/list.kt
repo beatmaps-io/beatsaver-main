@@ -77,6 +77,7 @@ class UserList : RComponent<UserListProps, State>() {
                 child(UserInfiniteScroll::class) {
                     attrs.rowHeight = 54.0
                     attrs.itemsPerPage = 20
+                    attrs.headerSize = 94.0
                     attrs.container = resultsTable
                     attrs.loadPage = loadPage
                     attrs.updateScrollIndex = {
