@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.ModLog
@@ -26,7 +27,8 @@ import java.lang.Integer.toHexString
         val page: Long = 0,
         val api: ModLogApi,
         val mod: String? = null,
-        val user: String? = null
+        val user: String? = null,
+        val type: String? = null
     )
 }
 
@@ -45,6 +47,7 @@ fun Route.modLogRoute() {
                             Op.TRUE
                                 .notNull(it.mod) { m -> curatorAlias[User.uniqueName] eq m }
                                 .notNull(it.user) { u -> User.uniqueName eq u }
+                                .notNull(it.type) { t -> ModLogOpType.fromName(t)?.let { ModLog.type eq it.ordinal } ?: Op.FALSE }
                         }
                         .orderBy(ModLog.opAt, SortOrder.DESC)
                         .limit(it.page, 30)
