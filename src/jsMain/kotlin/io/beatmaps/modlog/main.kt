@@ -85,10 +85,6 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
                 resultsKey = Any()
             }
         }
-
-        if (type != state.type) {
-            typeRef.current?.value = type?.name ?: ""
-        }
     }
 
     private val loadPage = { toLoad: Int, token: CancelTokenSource ->
