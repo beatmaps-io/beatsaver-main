@@ -1,6 +1,7 @@
 package io.beatmaps.api
 
 import de.nielsfalk.ktor.swagger.DefaultValue
+import de.nielsfalk.ktor.swagger.Description
 import de.nielsfalk.ktor.swagger.Ignore
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.db.wrapAsExpressionNotNull
@@ -39,7 +40,12 @@ class BookmarksApi {
     data class Bookmark(@Ignore val api: BookmarksApi)
 
     @Location("/bookmarks/{page}")
-    data class Bookmarks(@Ignore val api: BookmarksApi, @DefaultValue("0") val page: Long = 0)
+    data class Bookmarks(
+        @Ignore val api: BookmarksApi,
+        @DefaultValue("0") val page: Long = 0,
+        @Description("Allowed values between 1 and 100")
+        @DefaultValue("20") val pageSize: Int = 20
+    )
 }
 
 fun getNewId(userId: Int): Int? {
@@ -131,7 +137,8 @@ fun Route.bookmarkRoute() {
                     .joinUploader()
                     .joinCurator()
                     .select { reviewerAlias[User.id] eq sess.userId }
-                    .limit(it.page)
+                    .orderBy(PlaylistMap.order)
+                    .limit(it.page, it.pageSize.coerceIn(1, 100))
                     .complexToBeatmap()
                     .map {
                         MapDetail.from(it, cdnPrefix())
