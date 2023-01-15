@@ -7,6 +7,7 @@ import io.beatmaps.Config
 import io.beatmaps.UserData
 import io.beatmaps.WithRouterProps
 import io.beatmaps.api.ModLogEntry
+import io.beatmaps.common.ModLogOpType
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
@@ -16,6 +17,7 @@ import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
@@ -24,6 +26,8 @@ import react.createRef
 import react.dom.button
 import react.dom.form
 import react.dom.input
+import react.dom.option
+import react.dom.select
 import react.dom.table
 import react.dom.tbody
 import react.dom.td
@@ -40,6 +44,7 @@ external interface ModLogState : State {
     var resultsKey: Any
     var mod: String?
     var user: String?
+    var type: ModLogOpType?
 }
 
 class ModLog : RComponent<ModLogProps, ModLogState>() {
@@ -47,6 +52,7 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
 
     private val modRef = createRef<HTMLInputElement>()
     private val userRef = createRef<HTMLInputElement>()
+    private val typeRef = createRef<HTMLSelectElement>()
 
     override fun componentDidMount() {
         setPageTitle("ModLog")
@@ -63,17 +69,19 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
     }
 
     private fun updateFromURL() {
-        val (mod, user) = URLSearchParams(props.location.search).let { u ->
-            (u.get("mod") ?: "") to (u.get("user") ?: "")
+        val (mod, user, type) = URLSearchParams(props.location.search).let { u ->
+            Triple(u.get("mod") ?: "", u.get("user") ?: "", ModLogOpType.fromName(u.get("type") ?: ""))
         }
 
         modRef.current?.value = mod
         userRef.current?.value = user
+        typeRef.current?.value = type?.name ?: ""
 
-        if (mod != state.mod || user != state.user) {
+        if (mod != state.mod || user != state.user || type != state.type) {
             setState {
                 this.mod = mod
                 this.user = user
+                this.type = type
                 resultsKey = Any()
             }
         }
@@ -114,8 +122,27 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
                                 ref = userRef
                             }
                         }
+                        td { }
                         td {
-                            attrs.colSpan = "3"
+                            select("form-select") {
+                                attrs.attributes["aria-label"] = "Type"
+                                ref = typeRef
+
+                                ModLogOpType.values().forEach {
+                                    option {
+                                        attrs.value = it.toString()
+                                        attrs.selected = state.type == it
+                                        +it.toString()
+                                    }
+                                }
+                                option {
+                                    attrs.value = ""
+                                    attrs.selected = state.type == null
+                                    +"All"
+                                }
+                            }
+                        }
+                        td {
                             button(type = ButtonType.submit, classes = "btn btn-primary") {
                                 attrs.onClickFunction = {
                                     it.preventDefault()
@@ -160,7 +187,8 @@ class ModLog : RComponent<ModLogProps, ModLogState>() {
     private fun urlExtension(): String {
         val params = listOfNotNull(
             modRef.current?.value?.let { if (it.isNotBlank()) "mod=$it" else null },
-            userRef.current?.value?.let { if (it.isNotBlank()) "user=$it" else null }
+            userRef.current?.value?.let { if (it.isNotBlank()) "user=$it" else null },
+            typeRef.current?.value?.let { if (it.isNotBlank()) "type=$it" else null }
         )
 
         return if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
