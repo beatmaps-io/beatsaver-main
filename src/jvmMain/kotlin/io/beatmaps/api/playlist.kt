@@ -176,25 +176,33 @@ suspend fun ApplicationCall.handleMultipart(cb: suspend (PartData.FileItem) -> U
     return MultipartRequest(dataMap, recaptchaSuccess)
 }
 
-fun getMaxMapForUser(userId: Int) = wrapAsExpressionNotNull<Float>(
-    PlaylistMap
-        .join(User, JoinType.RIGHT, User.bookmarksId, PlaylistMap.playlistId)
-        .slice(Coalesce(PlaylistMap.order.plus(1f), floatLiteral(1f)))
-        .select {
-            User.id eq userId
-        }
-        .orderBy(PlaylistMap.order, SortOrder.DESC)
-        .limit(1)
+fun getMaxMapForUser(userId: Int) = Coalesce(
+    wrapAsExpressionNotNull(
+        PlaylistMap
+            .join(User, JoinType.RIGHT, User.bookmarksId, PlaylistMap.playlistId)
+            .slice(PlaylistMap.order.plus(1f))
+            .select {
+                User.id eq userId
+            }
+            .orderBy(PlaylistMap.order, SortOrder.DESC)
+            .limit(1),
+        PlaylistMap.order.columnType
+    ),
+    floatLiteral(1f)
 )
 
-fun getMaxMap(id: Int) = wrapAsExpressionNotNull<Float>(
-    PlaylistMap
-        .slice(Coalesce(PlaylistMap.order.plus(1f), floatLiteral(1f)))
-        .select {
-            PlaylistMap.playlistId eq id
-        }
-        .orderBy(PlaylistMap.order, SortOrder.DESC)
-        .limit(1)
+fun getMaxMap(id: Int) = Coalesce(
+    wrapAsExpressionNotNull(
+        PlaylistMap
+            .slice(PlaylistMap.order.plus(1f))
+            .select {
+                PlaylistMap.playlistId eq id
+            }
+            .orderBy(PlaylistMap.order, SortOrder.DESC)
+            .limit(1),
+        PlaylistMap.order.columnType
+    ),
+    floatLiteral(1f)
 )
 
 val playlistStats = listOf(
