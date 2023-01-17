@@ -15,6 +15,7 @@ import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
+import io.beatmaps.common.pub
 import io.beatmaps.util.cdnPrefix
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -122,6 +123,9 @@ fun Route.bookmarkRoute() {
                     } else 0
                 }
             }
+
+            if (updateCount > 0)
+                call.pub("beatmaps", "bookmarks.${sess.userId}.updated", null, sess.userId)
 
             call.respond(BookmarkUpdateResponse(updateCount > 0))
         }
