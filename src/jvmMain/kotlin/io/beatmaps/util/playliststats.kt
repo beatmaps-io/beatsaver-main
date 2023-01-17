@@ -5,13 +5,11 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.PlaylistMapDao
-import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.rabbitOptional
 import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -54,19 +52,6 @@ fun Application.playlistStats() {
                     it[minNps] = minNpsVal
                     it[maxNps] = maxNpsVal
                 }
-            }
-        }
-
-        consumeAck("bm.bookmarkStats", Int::class) { _, userId ->
-            transaction {
-                User
-                    .slice(User.bookmarksId)
-                    .select { User.id eq userId }
-                    .singleOrNull()?.let {
-                        it[User.bookmarksId]?.value
-                    }?.let {
-                        publish("beatmaps", "playlists.$it.stats", null, it)
-                    }
             }
         }
     }

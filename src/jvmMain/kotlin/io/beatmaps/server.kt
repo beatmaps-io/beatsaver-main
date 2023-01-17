@@ -317,9 +317,6 @@ fun Application.beatmapsio() {
                 queueBind("bm.playlistStats", "beatmaps", "playlists.*.updated")
                 queueBind("bm.playlistStats", "beatmaps", "playlists.*.stats")
 
-                queueDeclare("bm.bookmarkStats", true, false, false, genericQueueConfig)
-                queueBind("bm.bookmarkStats", "beatmaps", "bookmarks.*.updated")
-
                 queueDeclare("bm.downloadCount", true, false, false, genericQueueConfig)
                 queueBind("bm.downloadCount", "beatmaps", "download.#")
 

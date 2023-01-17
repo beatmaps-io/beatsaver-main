@@ -4,7 +4,9 @@ import de.nielsfalk.ktor.swagger.DefaultValue
 import de.nielsfalk.ktor.swagger.Description
 import de.nielsfalk.ktor.swagger.Ignore
 import io.beatmaps.common.api.EPlaylistType
-import io.beatmaps.common.db.wrapAsExpressionNotNull
+import io.beatmaps.common.db.ConflictType
+import io.beatmaps.common.db.NowExpression
+import io.beatmaps.common.db.upsertCustom
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistMap
@@ -25,12 +27,11 @@ import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertIgnore
-import org.jetbrains.exposed.sql.insertIgnoreAndGetId
-import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -49,18 +50,37 @@ class BookmarksApi {
     )
 }
 
-fun getNewId(userId: Int): Int? {
-    return Playlist.insertIgnoreAndGetId {
-        it[type] = EPlaylistType.System
-        it[name] = "Bookmarks"
-        it[description] = "Maps you've bookmarked, automatically updated."
-        it[owner] = userId
-    }?.value?.also { pl ->
-        User.update({ User.id eq userId }) {
-            it[bookmarksId] = pl
+object BookmarksConflict : ConflictType {
+    override fun StringBuilder.prepareSQL() {
+        append(" ON CONFLICT(\"")
+        append(Playlist.owner.name)
+        append("\") WHERE ")
+        append(Playlist.type.name)
+        append(" = 'System'")
+    }
+
+    override fun shouldUpdate(column: Column<*>) = column == Playlist.songsChangedAt
+
+    override val returning: List<Column<*>>
+        get() = listOf(Playlist.id)
+}
+
+fun getNewId(userId: Int) =
+    with(
+        Playlist.upsertCustom(BookmarksConflict) {
+            it[type] = EPlaylistType.System
+            it[name] = "Bookmarks"
+            it[description] = "Maps you've bookmarked, automatically updated."
+            it[owner] = userId
+            it[songsChangedAt] = NowExpression(songsChangedAt.columnType)
+        }
+    ) {
+        get(Playlist.id).value.also { playlistId ->
+            User.update({ User.id eq userId }) {
+                it[bookmarksId] = playlistId
+            }
         }
     }
-}
 
 fun mapIdForHash(hash: String) =
     Beatmap.joinVersions(false).slice(Beatmap.id).select {
@@ -69,63 +89,39 @@ fun mapIdForHash(hash: String) =
         it[Beatmap.id].value
     } ?: throw NotFoundException()
 
-fun addBookmark(mapId: Int, userId: Int) = run {
-    val newId = getNewId(userId)?.let { intLiteral(it) }
-
+fun addBookmark(mapId: Int, userId: Int, playlist: Int) =
     PlaylistMap.insertIgnore {
         it[this.mapId] = mapId
         it[order] = getMaxMapForUser(userId)
 
-        it[playlistId] = newId ?: wrapAsExpressionNotNull(
-            User
-                .slice(User.bookmarksId)
-                .select { User.id eq userId }
-                .limit(1)
-        )
+        it[playlistId] = playlist
     }.insertedCount
-}
 
-fun addBookmark(hash: String, userId: Int) = addBookmark(mapIdForHash(hash), userId)
-
-fun removeBookmark(mapId: Int, userId: Int) = run {
+fun removeBookmark(mapId: Int, playlistId: Int) =
     PlaylistMap.deleteWhere {
-        (PlaylistMap.mapId eq mapId) and (
-            PlaylistMap.playlistId eqSubQuery
-                User
-                    .slice(User.bookmarksId)
-                    .select {
-                        User.id eq userId
-                    }
-            )
+        (PlaylistMap.mapId eq mapId) and (PlaylistMap.playlistId eq playlistId)
     }
-}
-fun removeBookmark(hash: String, userId: Int) = removeBookmark(mapIdForHash(hash), userId)
 
 fun Route.bookmarkRoute() {
     post<BookmarksApi.Bookmark> {
         val req = call.receive<BookmarkRequest>()
 
         requireAuthorization("bookmarks") { sess ->
-            val mapId = req.key?.toIntOrNull(16)
 
-            val updateCount = transaction {
-                if (req.bookmarked) {
-                    if (mapId != null) {
-                        addBookmark(mapId, sess.userId)
-                    } else if (req.hash != null) {
-                        addBookmark(req.hash, sess.userId)
-                    } else 0
-                } else {
-                    if (mapId != null) {
-                        removeBookmark(mapId, sess.userId)
-                    } else if (req.hash != null) {
-                        removeBookmark(req.hash, sess.userId)
-                    } else 0
+            val (updateCount, playlistId) = (req.key?.toIntOrNull(16) ?: req.hash?.let { mapIdForHash(it) })?.let { mapId ->
+                transaction {
+                    val playlistId = getNewId(sess.userId)
+
+                    if (req.bookmarked) {
+                        addBookmark(mapId, sess.userId, playlistId)
+                    } else {
+                        removeBookmark(mapId, playlistId)
+                    } to playlistId
                 }
-            }
+            } ?: (0 to null)
 
-            if (updateCount > 0)
-                call.pub("beatmaps", "bookmarks.${sess.userId}.updated", null, sess.userId)
+            if (playlistId != null)
+                call.pub("beatmaps", "playlists.$playlistId.updated", null, playlistId)
 
             call.respond(BookmarkUpdateResponse(updateCount > 0))
         }
