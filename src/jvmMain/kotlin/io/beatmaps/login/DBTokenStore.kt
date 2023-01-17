@@ -159,4 +159,18 @@ object DBTokenStore : TokenStore {
                     )
                 }
         }
+
+    fun deleteForUser(userId: Int) {
+        transaction {
+            AccessTokenTable
+                .deleteWhere {
+                    AccessTokenTable.userName eq userId
+                }
+
+            RefreshTokenTable
+                .deleteWhere {
+                    RefreshTokenTable.userName eq userId
+                }
+        }
+    }
 }

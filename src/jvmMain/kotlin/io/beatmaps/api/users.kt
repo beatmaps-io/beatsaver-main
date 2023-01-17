@@ -26,6 +26,7 @@ import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.sendEmail
+import io.beatmaps.login.DBTokenStore
 import io.beatmaps.login.Session
 import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.JwtException
@@ -486,6 +487,8 @@ fun Route.userRoute() {
                                 } > 0
 
                                 if (success) {
+                                    DBTokenStore.deleteForUser(userId)
+
                                     ActionResponse(true)
                                 } else {
                                     ActionResponse(false, listOf("Failed to update password"))
@@ -538,6 +541,7 @@ fun Route.userRoute() {
                                 }) {
                                     it[password] = bcrypt
                                 }
+                                DBTokenStore.deleteForUser(sess.userId)
                                 ActionResponse(true)
                             } else {
                                 ActionResponse(false, listOf("Current password incorrect"))
