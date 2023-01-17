@@ -355,7 +355,7 @@ fun Application.installOauth2() {
                     runBlocking {
                         call.genericPage(headerTemplate = {
                             reqClientId?.let { DBClientService.getClient(it) }?.let { client ->
-                                meta("oauth-data", "{\"id\": \"${client.clientId}\", \"name\": \"${client.name}\"}")
+                                meta("oauth-data", "{\"id\": \"${client.clientId}\", \"name\": \"${client.name}\", \"icon\": \"${client.iconUrl}\"}")
                             }
                         })
                     }
@@ -364,10 +364,11 @@ fun Application.installOauth2() {
         }
 
         tokenInfoCallback = {
+            val user = it.identity?.metadata?.get("object") as UserDao
             mapOf(
                 "id" to it.identity?.username,
-                "name" to it.identity?.metadata?.get("name"),
-                "avatar" to it.identity?.metadata?.get("avatar"),
+                "name" to user.uniqueName,
+                "avatar" to user.avatar,
                 "scopes" to it.scopes
             )
         }
@@ -379,18 +380,7 @@ fun Application.installOauth2() {
         identityService = object : IdentityService {
             override fun allowedScopes(forClient: Client, identity: Identity, scopes: Set<String>) = scopes
 
-            override fun identityOf(forClient: Client, username: String) =
-                transaction {
-                    User.select { (User.id eq username.toInt()) and User.active }.firstOrNull()?.let {
-                        Identity(
-                            username,
-                            mapOf(
-                                "name" to it[User.name],
-                                "avatar" to (it[User.avatar] ?: "")
-                            )
-                        )
-                    }
-                }
+            override fun identityOf(forClient: Client, username: String) = Identity(username)
 
             override fun validCredentials(forClient: Client, identity: Identity, password: String) =
                 transaction {

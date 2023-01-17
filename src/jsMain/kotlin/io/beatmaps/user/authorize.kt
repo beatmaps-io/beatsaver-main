@@ -8,6 +8,7 @@ import io.beatmaps.setPageTitle
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.html.FormMethod
+import kotlinx.html.title
 import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLMetaElement
 import org.w3c.dom.url.URLSearchParams
@@ -35,6 +36,7 @@ external interface AuthorizePageState : State {
 external interface OauthData {
     val id: String
     val name: String
+    val icon: String
 }
 
 class AuthorizePage : RComponent<Props, AuthorizePageState>() {
@@ -84,6 +86,13 @@ class AuthorizePage : RComponent<Props, AuthorizePageState>() {
 
         div("login-form card border-dark") {
             div("card-header") {
+                oauth?.icon?.let {
+                    if (it != "null") {
+                        img("Icon", it, "oauthicon") {
+                            attrs.title = clientName
+                        }
+                    }
+                }
                 b {
                     +clientName
                 }

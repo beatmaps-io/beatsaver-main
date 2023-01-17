@@ -1482,7 +1482,12 @@ small.alert-count {
     }
   }
 }
-
+.oauthicon {
+  width: 50px;
+  display: block;
+  margin: 0 auto 5px;
+  border-radius: 25px;
+}
 .audio-progress {
   background: rgba(0, 0, 0, 0);
   position: absolute;
