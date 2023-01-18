@@ -25,8 +25,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 object DBTokenStore : TokenStore {
     private val codes = mutableMapOf<String, CodeToken>()
 
-    private fun createIdentity(username: Int?, metadata: String, user: UserDao) =
-        Identity(username.toString(), jackson.readValue<Map<String, Any>>(metadata).plus("object" to user))
+    private fun createIdentity(username: Int?, user: UserDao) =
+        Identity(username.toString(), mapOf("object" to user))
 
     override fun accessToken(token: String) =
         transaction {
@@ -49,7 +49,7 @@ object DBTokenStore : TokenStore {
             row[AccessTokenTable.id].value,
             row[AccessTokenTable.type],
             row[AccessTokenTable.expiration],
-            createIdentity(row[AccessTokenTable.userName], row[AccessTokenTable.metadata], UserDao.wrapRow(row)),
+            createIdentity(row[AccessTokenTable.userName], UserDao.wrapRow(row)),
             row[AccessTokenTable.clientId],
             row[AccessTokenTable.scope].split(",").toSet(),
             refreshToken(row)
@@ -83,7 +83,7 @@ object DBTokenStore : TokenStore {
     private fun refreshToken(row: ResultRow) = RefreshToken(
         row[RefreshTokenTable.id].value,
         row[RefreshTokenTable.expiration],
-        createIdentity(row[RefreshTokenTable.userName], row[RefreshTokenTable.metadata], UserDao.wrapRow(row)),
+        createIdentity(row[RefreshTokenTable.userName], UserDao.wrapRow(row)),
         row[RefreshTokenTable.clientId],
         row[RefreshTokenTable.scope].split(",").toSet(),
     )
@@ -112,7 +112,6 @@ object DBTokenStore : TokenStore {
                 it[expiration] = accessToken.expireTime
                 it[scope] = accessToken.scopes.joinToString(",")
                 it[userName] = accessToken.identity?.username?.toIntOrNull()
-                it[metadata] = jackson.writeValueAsString(accessToken.identity?.metadata?.minus("object"))
                 it[clientId] = accessToken.clientId
                 it[refreshToken] = accessToken.refreshToken?.refreshToken
             }
@@ -134,7 +133,6 @@ object DBTokenStore : TokenStore {
                 it[expiration] = refreshToken.expireTime
                 it[scope] = refreshToken.scopes.joinToString(",")
                 it[userName] = refreshToken.identity?.username?.toIntOrNull()
-                it[metadata] = jackson.writeValueAsString(refreshToken.identity?.metadata?.minus("object"))
                 it[clientId] = refreshToken.clientId
             }
         }
