@@ -1,6 +1,5 @@
 package io.beatmaps.login
 
-import com.fasterxml.jackson.module.kotlin.readValue
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.AccessTokenTable
 import io.beatmaps.common.dbo.OauthClient
@@ -8,7 +7,6 @@ import io.beatmaps.common.dbo.OauthClientDao
 import io.beatmaps.common.dbo.RefreshTokenTable
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
-import io.beatmaps.common.jackson
 import nl.myndocs.oauth2.identity.Identity
 import nl.myndocs.oauth2.identity.TokenInfo
 import nl.myndocs.oauth2.token.AccessToken
