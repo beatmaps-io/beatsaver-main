@@ -2,9 +2,11 @@ package io.beatmaps.api
 
 import io.beatmaps.common.ReviewDeleteData
 import io.beatmaps.common.ReviewModerationData
+import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
+import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.ModLog
@@ -40,6 +42,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import java.lang.Integer.toHexString
 
 fun ReviewDetail.Companion.from(other: ReviewDao, cdnPrefix: String, beatmap: Boolean, user: Boolean) =
     ReviewDetail(
@@ -292,6 +295,14 @@ fun Route.reviewRoute() {
                         sess.userId,
                         mapId,
                         ReviewDeleteData(deleteReview.reason, info.first, info.second),
+                        single.userId
+                    )
+
+                    Alert.insert(
+                        "Your review was deleted",
+                        "A moderator deleted your review on #${toHexString(mapId)}.\n" +
+                            "Reason: *\"${deleteReview.reason}\"*",
+                        EAlertType.ReviewDeletion,
                         single.userId
                     )
                 }
