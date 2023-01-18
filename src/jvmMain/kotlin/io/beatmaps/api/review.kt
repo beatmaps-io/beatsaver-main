@@ -299,7 +299,7 @@ fun Route.reviewRoute() {
 
                     Alert.insert(
                         "Your review was deleted",
-                        "A moderator deleted your review on #$mapId.\n" +
+                        "A moderator deleted your review on #${mapId.toString(16)}.\n" +
                             "Reason: *\"${deleteReview.reason}\"*",
                         EAlertType.ReviewDeletion,
                         single.userId
