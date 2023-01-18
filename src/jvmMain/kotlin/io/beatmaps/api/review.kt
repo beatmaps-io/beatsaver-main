@@ -42,6 +42,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import java.lang.Integer.toHexString
 
 fun ReviewDetail.Companion.from(other: ReviewDao, cdnPrefix: String, beatmap: Boolean, user: Boolean) =
     ReviewDetail(
@@ -299,7 +300,7 @@ fun Route.reviewRoute() {
 
                     Alert.insert(
                         "Your review was deleted",
-                        "A moderator deleted your review on #${mapId.toString(16)}.\n" +
+                        "A moderator deleted your review on #${toHexString(mapId)}.\n" +
                             "Reason: *\"${deleteReview.reason}\"*",
                         EAlertType.ReviewDeletion,
                         single.userId
