@@ -475,7 +475,7 @@ fun Route.playlistRoute() {
         }
     }
 
-    val bookmarksIcon = File(javaClass.classLoader.getResource("favicon/android-chrome-512x512.png")!!.toURI())
+    val bookmarksIcon = javaClass.classLoader.getResourceAsStream("favicon/android-chrome-512x512.png")!!.readAllBytes()
     get<PlaylistApi.Download> { req ->
         val (playlist, playlistSongs) = transaction {
             fun getPlaylist() =
@@ -514,9 +514,9 @@ fun Route.playlistRoute() {
         if (playlist != null && (playlist.type == EPlaylistType.Public || playlist.owner.id == call.sessions.get<Session>()?.userId)) {
             val localFile = when (playlist.type) {
                 EPlaylistType.System -> bookmarksIcon
-                else -> File(localPlaylistCoverFolder(), "${playlist.playlistId}.jpg")
+                else -> File(localPlaylistCoverFolder(), "${playlist.playlistId}.jpg").readBytes()
             }
-            val imageStr = Base64.getEncoder().encodeToString(localFile.readBytes())
+            val imageStr = Base64.getEncoder().encodeToString(localFile)
 
             val cleanName = cleanString("BeatSaver - ${playlist.name}.bplist")
             call.response.headers.append(HttpHeaders.ContentDisposition, "attachment; filename=\"${cleanName}\"")
