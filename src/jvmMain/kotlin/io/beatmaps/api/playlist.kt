@@ -8,6 +8,7 @@ import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
+import io.beatmaps.common.Config
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.api.EMapState
@@ -475,6 +476,7 @@ fun Route.playlistRoute() {
         }
     }
 
+    val bookmarksIcon = File(javaClass.classLoader.getResource("favicon/android-chrome-512x512.png")!!.toURI())
     get<PlaylistApi.Download> { req ->
         val (playlist, playlistSongs) = transaction {
             fun getPlaylist() =
@@ -511,7 +513,10 @@ fun Route.playlistRoute() {
         }
 
         if (playlist != null && (playlist.type == EPlaylistType.Public || playlist.owner.id == call.sessions.get<Session>()?.userId)) {
-            val localFile = File(localPlaylistCoverFolder(), "${playlist.playlistId}.jpg")
+            val localFile = when (playlist.type) {
+                EPlaylistType.System -> bookmarksIcon
+                else -> File(localPlaylistCoverFolder(), "${playlist.playlistId}.jpg")
+            }
             val imageStr = Base64.getEncoder().encodeToString(localFile.readBytes())
 
             val cleanName = cleanString("BeatSaver - ${playlist.name}.bplist")
