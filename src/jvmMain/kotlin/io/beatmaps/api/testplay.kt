@@ -28,8 +28,6 @@ import io.beatmaps.login.DBTokenStore
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.publishVersion
-import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.security.Keys
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.get
@@ -57,12 +55,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
-import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertIgnore
@@ -70,11 +65,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
-import java.time.temporal.ChronoUnit
-import java.util.Date
 import java.util.logging.Logger
-import javax.crypto.SecretKey
-import kotlin.random.Random
 
 @Location("/api/testplay") class TestplayApi {
     @Location("/queue/{page}") data class Queue(val page: Long = 0, val includePlayed: Boolean = true, val api: TestplayApi)
@@ -142,11 +133,7 @@ suspend fun <T> PipelineContext<*, ApplicationCall>.captchaIfPresent(captcha: St
 @Serializable
 data class AuthRequest(val steamId: String? = null, val oculusId: String? = null, val proof: String)
 @Serializable
-data class CheckRequest(val jwt: String)
-@Serializable
-data class AuthResponse(val jwt: String, val user: UserDetail)
-@Serializable
-data class MarkRequest(val jwt: String, val hash: String, val markPlayed: Boolean = true, val removeFromQueue: Boolean = false, val addToQueue: Boolean = false)
+data class MarkRequest(val hash: String, val markPlayed: Boolean = true, val removeFromQueue: Boolean = false, val addToQueue: Boolean = false)
 @Serializable
 data class VerifyResponse(val success: Boolean, val error: String? = null)
 
@@ -158,13 +145,6 @@ data class SteamAPIResponseParams(val result: String, val steamid: Long, val own
 data class OculusAuthResponse(val success: Boolean, val error: String? = null)
 
 const val beatsaberAppid = 620980
-val privateKey = System.getenv("JWT_KEY") ?: String(Random.nextBytes(32))
-val key: SecretKey = Keys.hmacShaKeyFor(privateKey.toByteArray())
-
-suspend fun PipelineContext<*, ApplicationCall>.validateJWT(jwt: String, block: suspend PipelineContext<*, ApplicationCall>.(Int) -> Unit) =
-    Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(jwt).body.subject.toInt().let {
-        this.block(it)
-    }
 
 fun PipelineContext<*, ApplicationCall>.getTestplayQueue(userId: Int?, includePlayed: Boolean, page: Long?) = transaction {
     Beatmap
@@ -244,22 +224,14 @@ suspend fun validateOculusToken(oculusId: String, proof: String) = try {
 
 fun Route.testplayRoute() {
     post<TestplayApi.Queue> { req ->
-        val jwt = call.receive<CheckRequest>()
-        validateJWT(jwt.jwt) { userId ->
-            call.respond(getTestplayQueue(userId, false, req.page))
+        requireAuthorization("testplay") { sess ->
+            call.respond(getTestplayQueue(sess.userId, false, req.page))
         }
     }
 
     get<TestplayApi.Queue> { req ->
         val sess = call.sessions.get<Session>()
         call.respond(getTestplayQueue(sess?.userId, req.includePlayed, req.page))
-    }
-
-    post<TestplayApi.Recent> { req ->
-        val jwt = call.receive<CheckRequest>()
-        validateJWT(jwt.jwt) { userId ->
-            call.respond(getTestplayRecent(userId, req.page))
-        }
     }
 
     get<TestplayApi.Recent> { req ->
@@ -326,7 +298,7 @@ fun Route.testplayRoute() {
     }
 
     post<TestplayApi.Version> {
-        requireAuthorization { sess ->
+        requireAuthorization("testplay") { sess ->
             val update = call.receive<FeedbackUpdate>()
 
             val valid = transaction {
@@ -339,45 +311,6 @@ fun Route.testplayRoute() {
 
             call.respond(if (valid) HttpStatusCode.OK else HttpStatusCode.BadRequest)
         }
-    }
-
-    post<TestplayApi.Auth> {
-        val auth = call.receive<AuthRequest>()
-
-        val builder = Jwts.builder().setExpiration(Date.from(Instant.now().plus(3L, ChronoUnit.DAYS)))
-
-        fun validateUser(where: SqlExpressionBuilder.() -> Op<Boolean>) = transaction {
-            val userIdQuery = User
-                .select(where).limit(1).toList()
-
-            if (userIdQuery.isEmpty()) error("Could not find registered user")
-
-            UserDetail.from(userIdQuery[0], true)
-        }
-
-        auth.steamId?.let { steamId ->
-            if (!validateSteamToken(steamId, auth.proof)) {
-                error("Could not validate steam token")
-            }
-
-            val user = validateUser {
-                User.steamId eq steamId.toLong()
-            }
-
-            val jwt = builder.setSubject(user.id.toString()).signWith(key).compact()
-            call.respond(AuthResponse(jwt, user))
-        } ?: auth.oculusId?.let { oculusId ->
-            if (!validateOculusToken(oculusId, auth.proof)) {
-                error("Could not validate oculus token")
-            }
-
-            val user = validateUser {
-                User.oculusId eq oculusId.toLong()
-            }
-
-            val jwt = builder.setSubject(user.id.toString()).signWith(key).compact()
-            call.respond(AuthResponse(jwt, user))
-        } ?: error("No user identifier provided")
     }
 
     post<MapsApi.Verify, AuthRequest>("Verify user tokens".responds(ok<VerifyResponse>())) { _, auth ->
@@ -398,38 +331,12 @@ fun Route.testplayRoute() {
         )
     }
 
-    post<TestplayApi.Check> {
-        val check = call.receive<CheckRequest>()
-        validateJWT(check.jwt) { userId ->
-            // If we made it here the jwt is valid
-            val user = transaction {
-                UserDao.wrapRows(
-                    User.select {
-                        User.id eq userId
-                    }.limit(1)
-                ).firstOrNull()
-            }
-
-            if (user == null) {
-                call.respond(HttpStatusCode.Unauthorized)
-            } else {
-                call.respond(UserDetail.from(user, true))
-            }
-        }
-    }
-
     post<TestplayApi.Mark> {
-        val mark = call.receive<MarkRequest>()
-        validateJWT(mark.jwt) { jwtUserId ->
-            transaction {
-                // Lazily perform this request
-                fun canTestPlay() = UserDao.wrapRows(
-                    User.select {
-                        User.id eq jwtUserId
-                    }.limit(1)
-                ).firstOrNull()?.testplay == true
+        requireAuthorization("testplay") { sess ->
+            val mark = call.receive<MarkRequest>()
 
-                val versionIdVal = if ((mark.removeFromQueue || mark.addToQueue) && canTestPlay()) {
+            transaction {
+                val versionIdVal = if ((mark.removeFromQueue || mark.addToQueue) && sess.testplay) {
                     val urResult = Versions.updateReturning(
                         {
                             Versions.hash eq mark.hash and (Versions.state neq EMapState.Published)
@@ -457,7 +364,7 @@ fun Route.testplayRoute() {
                                 }.limit(1)
                             )
                         }
-                        t[userId] = jwtUserId
+                        t[userId] = sess.userId
                     }
                 }
             }
@@ -466,7 +373,7 @@ fun Route.testplayRoute() {
     }
 
     post<TestplayApi.Feedback> {
-        requireAuthorization { sess ->
+        requireAuthorization("testplay") { sess ->
             val update = call.receive<FeedbackUpdate>()
 
             captchaIfPresent(update.captcha) {
@@ -474,7 +381,7 @@ fun Route.testplayRoute() {
                     val subQuery = Versions.slice(Versions.id).select { Versions.hash eq update.hash }
 
                     if (update.captcha == null) {
-                        Testplay.update({ (Testplay.versionId eq wrapAsExpressionNotNull<EntityID<Int>>(subQuery)) and (Testplay.userId eq sess.userId) }) { t ->
+                        Testplay.update({ (Testplay.versionId eq wrapAsExpressionNotNull(subQuery)) and (Testplay.userId eq sess.userId) }) { t ->
                             t[feedbackAt] = NowExpression(feedbackAt.columnType)
                             t[feedback] = update.feedback
                         }
