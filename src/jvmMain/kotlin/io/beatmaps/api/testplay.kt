@@ -73,8 +73,6 @@ import java.util.logging.Logger
     @Location("/feedback") data class Feedback(val api: TestplayApi)
     @Location("/state") data class State(val api: TestplayApi)
     @Location("/version") data class Version(val api: TestplayApi)
-    @Location("/auth") data class Auth(val api: TestplayApi)
-    @Location("/check") data class Check(val api: TestplayApi)
     @Location("/mark") data class Mark(val api: TestplayApi)
 }
 
@@ -82,7 +80,7 @@ private val pipelineLogger = Logger.getLogger("bmio.Pipeline")
 
 suspend fun <T> PipelineContext<*, ApplicationCall>.requireAuthorization(scope: String? = null, block: suspend PipelineContext<*, ApplicationCall>.(Session) -> T) {
     checkOauthHeader(scope)?.let { u ->
-        (u.identity?.metadata?.get("object") as? UserDao)?.let { block(Session.fromUser(it)) }.let { true }
+        (u.identity?.metadata?.get("object") as? UserDao)?.let { block(Session.fromUser(it)) }?.let { true }
     } ?: run {
         call.sessions.get<Session>()?.let {
             block(it)
@@ -230,12 +228,15 @@ fun Route.testplayRoute() {
     }
 
     get<TestplayApi.Queue> { req ->
-        val sess = call.sessions.get<Session>()
-        call.respond(getTestplayQueue(sess?.userId, req.includePlayed, req.page))
+        val userId = checkOauthHeader("testplay")?.let { u ->
+            u.identity?.username?.toIntOrNull()
+        } ?: call.sessions.get<Session>()?.userId
+
+        call.respond(getTestplayQueue(userId, req.includePlayed, req.page))
     }
 
     get<TestplayApi.Recent> { req ->
-        requireAuthorization { sess ->
+        requireAuthorization("testplay") { sess ->
             call.respond(getTestplayRecent(sess.userId, req.page))
         }
     }

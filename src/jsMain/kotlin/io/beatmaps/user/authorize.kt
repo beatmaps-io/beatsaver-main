@@ -74,7 +74,9 @@ class AuthorizePage : RComponent<Props, AuthorizePageState>() {
     private val descriptions = mapOf(
         "identity" to "Access your id, username and avatar",
         "bookmarks" to "Read and update your bookmarks",
-        "testplay" to "Submit testplay feedback on your behalf"
+        "testplay" to "Submit testplay feedback on your behalf",
+        "alerts" to "Read your alerts",
+        "alerts.mark" to "Mark your alerts as read/unread"
     )
 
     override fun RBuilder.render() {
