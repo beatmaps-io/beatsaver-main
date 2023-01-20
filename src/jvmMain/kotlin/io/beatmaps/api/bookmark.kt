@@ -108,8 +108,8 @@ fun Route.bookmarkRoute() {
 
         requireAuthorization("bookmarks") { sess ->
 
-            val (updateCount, playlistId) = (req.key?.toIntOrNull(16) ?: req.hash?.let { mapIdForHash(it) })?.let { mapId ->
-                transaction {
+            val (updateCount, playlistId) = transaction {
+                (req.key?.toIntOrNull(16) ?: req.hash?.let { mapIdForHash(it) })?.let { mapId ->
                     val playlistId = getNewId(sess.userId)
 
                     if (req.bookmarked) {
@@ -117,8 +117,8 @@ fun Route.bookmarkRoute() {
                     } else {
                         removeBookmark(mapId, playlistId)
                     } to playlistId
-                }
-            } ?: (0 to null)
+                } ?: (0 to null)
+            }
 
             if (playlistId != null)
                 call.pub("beatmaps", "playlists.$playlistId.updated", null, playlistId)
