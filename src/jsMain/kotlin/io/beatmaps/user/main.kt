@@ -252,41 +252,54 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                             }
                         }
                         div {
-                            state.userDetail?.playlistUrl?.let { url ->
-                                div("btn-group") {
-                                    a(url, "_blank", "btn btn-secondary") {
-                                        attrs.attributes["download"] = ""
-                                        i("fas fa-download") { }
-                                        +"Playlist"
-                                    }
-                                    a("bsplaylist://playlist/$url/beatsaver-user-${state.userDetail?.id}.bplist", classes = "btn btn-primary") {
-                                        attrs.attributes["aria-label"] = "One-Click"
-                                        i("fas fa-cloud-download-alt") { }
-                                    }
-                                }
-                            }
-                            if (props.userData?.admin == true) {
-                                div("btn-group") {
-                                    routeLink("/modlog?user=${state.userDetail?.name}", className = "btn btn-secondary") {
-                                        i("fas fa-scroll") { }
-                                        +"Mod Log"
-                                    }
-                                }
-                            }
-                            state.followData?.following?.let { following ->
-                                div("btn-group") {
-                                    a("#", classes = "btn btn-" + if (following) "secondary" else "primary") {
-                                        attrs.onClickFunction = { e ->
-                                            e.preventDefault()
-                                            setFollowStatus(!following)
+                            div {
+                                state.userDetail?.playlistUrl?.let { url ->
+                                    div("btn-group") {
+                                        a(url, "_blank", "btn btn-secondary") {
+                                            attrs.attributes["download"] = ""
+                                            i("fas fa-download") { }
+                                            +"Playlist"
                                         }
+                                        a(
+                                            "bsplaylist://playlist/$url/beatsaver-user-${state.userDetail?.id}.bplist",
+                                            classes = "btn btn-primary"
+                                        ) {
+                                            attrs.attributes["aria-label"] = "One-Click"
+                                            i("fas fa-cloud-download-alt m-0") { }
+                                        }
+                                    }
+                                }
+                                state.followData?.following?.let { following ->
+                                    div("btn-group") {
+                                        a("#", classes = "btn btn-" + if (following) "secondary" else "primary") {
+                                            attrs.onClickFunction = { e ->
+                                                e.preventDefault()
+                                                setFollowStatus(!following)
+                                            }
 
-                                        if (following) {
-                                            i("fas fa-user-minus") { }
-                                            +"Unfollow"
-                                        } else {
-                                            i("fas fa-user-plus") { }
-                                            +"Follow"
+                                            if (following) {
+                                                i("fas fa-user-minus") { }
+                                                +"Unfollow"
+                                            } else {
+                                                i("fas fa-user-plus") { }
+                                                +"Follow"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            if (props.userData?.admin == true || props.userData?.curator == true) {
+                                div("mt-2") {
+                                    div("btn-group") {
+                                        if (props.userData?.admin == true) {
+                                            routeLink("/modlog?user=${state.userDetail?.name}", className = "btn btn-secondary") {
+                                                i("fas fa-scroll") { }
+                                                +"Mod Log"
+                                            }
+                                        }
+                                        routeLink("/modreview?user=${state.userDetail?.name}", className = "btn btn-secondary") {
+                                            i("fas fa-heartbeat") { }
+                                            +"Reviews"
                                         }
                                     }
                                 }
