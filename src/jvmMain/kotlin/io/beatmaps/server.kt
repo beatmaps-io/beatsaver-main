@@ -47,6 +47,7 @@ import io.beatmaps.pages.templates.MainTemplate
 import io.beatmaps.util.downloadsThread
 import io.beatmaps.util.playlistStats
 import io.beatmaps.util.reviewListeners
+import io.beatmaps.util.scheduleCleanser
 import io.beatmaps.util.scheduleTask
 import io.beatmaps.websockets.mapUpdateEnricher
 import io.ktor.http.ContentType
@@ -342,6 +343,7 @@ fun Application.beatmapsio() {
     installOauth2()
 
     scheduleTask()
+    scheduleCleanser()
     playlistStats()
     emailQueue()
 
