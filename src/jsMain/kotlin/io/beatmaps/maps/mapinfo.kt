@@ -370,7 +370,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                             a(classes = "btn btn-primary m-1") {
                                 attrs.onClickFunction = {
                                     val newTitle = inputRef.current?.value ?: ""
-                                    val newDescription = textareaRef.current?.asDynamic().value as String
+                                    val newDescription = textareaRef.current?.value ?: ""
                                     val newTags = state.tags?.toList()
 
                                     setState {

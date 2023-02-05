@@ -10,8 +10,8 @@ import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.beatmapTableRow
 import io.beatmaps.util.textToContent
 import kotlinx.datetime.internal.JSJoda.Instant
-import kotlinx.html.TEXTAREA
 import kotlinx.html.js.onClickFunction
+import org.w3c.dom.HTMLTextAreaElement
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -23,7 +23,6 @@ import react.dom.div
 import react.dom.td
 import react.dom.textarea
 import react.dom.tr
-import react.dom.value
 import react.key
 import react.setState
 
@@ -43,7 +42,7 @@ external interface RecentTestplayRowState : State {
 }
 
 class RecentTestplayRow : RComponent<RecentTestplayRowProps, RecentTestplayRowState>() {
-    private val textareaRef = createRef<TEXTAREA>()
+    private val textareaRef = createRef<HTMLTextAreaElement>()
 
     override fun componentWillMount() {
         setState {

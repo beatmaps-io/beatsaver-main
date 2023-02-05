@@ -77,7 +77,7 @@ class EditableText : RComponent<EditableTextProps, EditableTextState>() {
 
             a(classes = "btn btn-primary mt-1 float-end") {
                 attrs.onClickFunction = {
-                    val newReview = textareaRef.current?.asDynamic().value as String
+                    val newReview = textareaRef.current?.value ?: ""
 
                     setState {
                         loading = true

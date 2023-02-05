@@ -7,8 +7,8 @@ import io.beatmaps.Config
 import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.util.textToContent
 import kotlinx.datetime.internal.JSJoda.Instant
-import kotlinx.html.TEXTAREA
 import kotlinx.html.js.onClickFunction
+import org.w3c.dom.HTMLTextAreaElement
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -39,7 +39,7 @@ external interface FeedbackState : State {
 }
 
 class Feedback : RComponent<FeedbackProps, FeedbackState>() {
-    private val textareaRef = createRef<TEXTAREA>()
+    private val textareaRef = createRef<HTMLTextAreaElement>()
 
     override fun componentWillMount() {
         setState {
@@ -59,7 +59,7 @@ class Feedback : RComponent<FeedbackProps, FeedbackState>() {
                         if (state.editing == true) {
                             button(classes = "btn btn-success m-1") {
                                 attrs.onClickFunction = {
-                                    val newText = textareaRef.current?.asDynamic().value as String
+                                    val newText = textareaRef.current?.value ?: ""
 
                                     setState {
                                         loading = true

@@ -17,11 +17,11 @@ import io.beatmaps.util.textToContent
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.html.InputType
-import kotlinx.html.TEXTAREA
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.HTMLTextAreaElement
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -74,7 +74,7 @@ external interface VersionState : State {
 private const val testplayEnabled = false
 
 class VersionComponent : RComponent<VersionProps, VersionState>() {
-    private val textareaRef = createRef<TEXTAREA>()
+    private val textareaRef = createRef<HTMLTextAreaElement>()
 
     override fun componentWillMount() {
         setState {
@@ -197,7 +197,7 @@ class VersionComponent : RComponent<VersionProps, VersionState>() {
                         if (props.firstVersion && textareaRef.current != null) {
                             button(classes = "btn btn-success m-1") {
                                 attrs.onClickFunction = {
-                                    val newText = textareaRef.current?.asDynamic().value as String
+                                    val newText = textareaRef.current?.value ?: ""
 
                                     setState {
                                         loading = true

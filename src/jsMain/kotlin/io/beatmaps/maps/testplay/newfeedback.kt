@@ -6,8 +6,8 @@ import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.FeedbackUpdate
 import kotlinx.datetime.internal.JSJoda.Instant
-import kotlinx.html.TEXTAREA
 import kotlinx.html.js.onClickFunction
+import org.w3c.dom.HTMLTextAreaElement
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -19,7 +19,6 @@ import react.dom.button
 import react.dom.div
 import react.dom.i
 import react.dom.textarea
-import react.dom.value
 import react.setState
 
 external interface NewFeedbackProps : Props {
@@ -35,7 +34,7 @@ external interface NewFeedbackState : State {
 }
 
 class NewFeedback : RComponent<NewFeedbackProps, NewFeedbackState>() {
-    private val textareaRef = createRef<TEXTAREA>()
+    private val textareaRef = createRef<HTMLTextAreaElement>()
 
     override fun RBuilder.render() {
         if (state.done == true) {
