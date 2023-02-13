@@ -106,7 +106,7 @@ fun Route.bookmarkRoute() {
     post<BookmarksApi.Bookmark> {
         val req = call.receive<BookmarkRequest>()
 
-        requireAuthorization("bookmarks") { sess ->
+        requireAuthorization(OauthScope.BOOKMARKS) { sess ->
 
             val (updateCount, playlistId) = transaction {
                 (req.key?.toIntOrNull(16) ?: req.hash?.let { mapIdForHash(it) })?.let { mapId ->
@@ -128,7 +128,7 @@ fun Route.bookmarkRoute() {
     }
 
     get<BookmarksApi.Bookmarks> {
-        requireAuthorization("bookmarks") { sess ->
+        requireAuthorization(OauthScope.BOOKMARKS) { sess ->
             val maps = transaction {
                 PlaylistMap
                     .join(reviewerAlias, JoinType.LEFT, PlaylistMap.playlistId, reviewerAlias[User.bookmarksId])

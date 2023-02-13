@@ -78,17 +78,25 @@ import java.util.logging.Logger
 
 private val pipelineLogger = Logger.getLogger("bmio.Pipeline")
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.requireAuthorization(scope: String? = null, block: suspend PipelineContext<*, ApplicationCall>.(Session) -> T) {
-    checkOauthHeader(scope)?.let { u ->
-        (u.identity?.metadata?.get("object") as? UserDao)?.let { block(Session.fromUser(it)) }?.let { true }
-    } ?: run {
-        call.sessions.get<Session>()?.let {
-            block(it)
-        }
-    } ?: call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
+suspend fun <T> PipelineContext<*, ApplicationCall>.optionalAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(Session?) -> T) {
+    block(
+        checkOauthHeader(scope)?.let { u ->
+            (u.identity?.metadata?.get("object") as? UserDao)?.let { Session.fromUser(it) }
+        } ?: call.sessions.get()
+    )
 }
 
-fun PipelineContext<*, ApplicationCall>.checkOauthHeader(scope: String? = null) =
+suspend fun <T> PipelineContext<*, ApplicationCall>.requireAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(Session) -> T) {
+    optionalAuthorization(scope) {
+        if (it == null) {
+            call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
+        } else {
+            block(it)
+        }
+    }
+}
+
+fun PipelineContext<*, ApplicationCall>.checkOauthHeader(scope: OauthScope? = null) =
     call.request.parseAuthorizationHeader().let { authHeader ->
         if (authHeader is HttpAuthHeader.Single) {
             val token = DBTokenStore.accessToken(authHeader.blob)
@@ -96,7 +104,7 @@ fun PipelineContext<*, ApplicationCall>.checkOauthHeader(scope: String? = null) 
             when (token?.expired()) {
                 true -> DBTokenStore.revokeAccessToken(token.accessToken).let { null }
                 false -> {
-                    if (token.scopes.contains(scope)) {
+                    if (token.scopes.contains(scope?.tag)) {
                         token
                     } else null
                 }
@@ -222,21 +230,19 @@ suspend fun validateOculusToken(oculusId: String, proof: String) = try {
 
 fun Route.testplayRoute() {
     post<TestplayApi.Queue> { req ->
-        requireAuthorization("testplay") { sess ->
+        requireAuthorization(OauthScope.TESTPLAY) { sess ->
             call.respond(getTestplayQueue(sess.userId, false, req.page))
         }
     }
 
     get<TestplayApi.Queue> { req ->
-        val userId = checkOauthHeader("testplay")?.let { u ->
-            u.identity?.username?.toIntOrNull()
-        } ?: call.sessions.get<Session>()?.userId
-
-        call.respond(getTestplayQueue(userId, req.includePlayed, req.page))
+        optionalAuthorization(OauthScope.TESTPLAY) { sess ->
+            call.respond(getTestplayQueue(sess?.userId, req.includePlayed, req.page))
+        }
     }
 
     get<TestplayApi.Recent> { req ->
-        requireAuthorization("testplay") { sess ->
+        requireAuthorization(OauthScope.TESTPLAY) { sess ->
             call.respond(getTestplayRecent(sess.userId, req.page))
         }
     }
@@ -299,7 +305,7 @@ fun Route.testplayRoute() {
     }
 
     post<TestplayApi.Version> {
-        requireAuthorization("testplay") { sess ->
+        requireAuthorization(OauthScope.TESTPLAY) { sess ->
             val update = call.receive<FeedbackUpdate>()
 
             val valid = transaction {
@@ -333,7 +339,7 @@ fun Route.testplayRoute() {
     }
 
     post<TestplayApi.Mark> {
-        requireAuthorization("testplay") { sess ->
+        requireAuthorization(OauthScope.TESTPLAY) { sess ->
             val mark = call.receive<MarkRequest>()
 
             transaction {
@@ -374,7 +380,7 @@ fun Route.testplayRoute() {
     }
 
     post<TestplayApi.Feedback> {
-        requireAuthorization("testplay") { sess ->
+        requireAuthorization(OauthScope.TESTPLAY) { sess ->
             val update = call.receive<FeedbackUpdate>()
 
             captchaIfPresent(update.captcha) {

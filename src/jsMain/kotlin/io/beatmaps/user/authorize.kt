@@ -2,6 +2,7 @@ package io.beatmaps.user
 
 import external.axiosGet
 import io.beatmaps.Config
+import io.beatmaps.api.OauthScope
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
@@ -71,21 +72,15 @@ class AuthorizePage : RComponent<Props, AuthorizePageState>() {
         }
     }
 
-    private val descriptions = mapOf(
-        "identity" to "Access your id, username and avatar",
-        "bookmarks" to "Read and update your bookmarks",
-        "testplay" to "Submit testplay feedback on your behalf",
-        "alerts" to "Read your alerts",
-        "alerts.mark" to "Mark your alerts as read/unread"
-    )
-
     override fun RBuilder.render() {
         val params = URLSearchParams(window.location.search)
         val oauth = (document.querySelector("meta[name=\"oauth-data\"]") as? HTMLMetaElement)?.let {
             JSON.parse<OauthData>(it.content)
         }
         val clientName = oauth?.name ?: "An unknown application"
-        val scopes = (params.get("scope") ?: "").split(" ")
+        val scopes = (params.get("scope") ?: "").split(" ").map {
+            OauthScope.fromTag(it)
+        }
 
         div("login-form card border-dark") {
             div("card-header") {
@@ -125,7 +120,7 @@ class AuthorizePage : RComponent<Props, AuthorizePageState>() {
 
                 for (scope in scopes) {
                     div("scope") {
-                        descriptions[scope]?.let {
+                        scope?.description?.let {
                             i("fas fa-user-check") {}
                             span { b { +"  $it" } }
                         } ?: run {

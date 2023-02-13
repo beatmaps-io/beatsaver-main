@@ -71,7 +71,7 @@ fun Route.alertsRoute() {
     }
 
     get<AlertsApi.Unread> {
-        requireAuthorization("alerts") { user ->
+        requireAuthorization(OauthScope.ALERTS) { user ->
             val alerts = getAlerts(user.userId, false, it.page, EAlertType.fromList(it.type))
 
             call.respond(alerts)
@@ -79,7 +79,7 @@ fun Route.alertsRoute() {
     }
 
     get<AlertsApi.Read> {
-        requireAuthorization("alerts") { user ->
+        requireAuthorization(OauthScope.ALERTS) { user ->
             val alerts = getAlerts(user.userId, true, it.page, EAlertType.fromList(it.type))
 
             call.respond(alerts)
@@ -102,7 +102,7 @@ fun Route.alertsRoute() {
         }
 
     get<AlertsApi.Stats> {
-        requireAuthorization("alerts") { user ->
+        requireAuthorization(OauthScope.ALERTS) { user ->
             val statParts = transaction { getStats(user.userId) }
 
             call.respond(UserAlertStats.fromParts(statParts))
@@ -122,7 +122,7 @@ fun Route.alertsRoute() {
     post<AlertsApi.Mark> {
         val req = call.receive<AlertUpdate>()
 
-        requireAuthorization("alerts.mark") { user ->
+        requireAuthorization(OauthScope.MARK_ALERTS) { user ->
             val stats = transaction {
                 val result = AlertRecipient
                     .join(Alert, JoinType.INNER, AlertRecipient.alertId, Alert.id)
@@ -150,7 +150,7 @@ fun Route.alertsRoute() {
     post<AlertsApi.MarkAll> {
         val req = call.receive<AlertUpdateAll>()
 
-        requireAuthorization("alerts.mark") { user ->
+        requireAuthorization(OauthScope.MARK_ALERTS) { user ->
             val stats = transaction {
                 val result = AlertRecipient.update({
                     AlertRecipient.readAt.run { if (req.read) isNull() else isNotNull() } and

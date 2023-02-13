@@ -222,48 +222,49 @@ fun Route.playlistRoute() {
     get<PlaylistApi.ByUploadDate>("Get playlists ordered by created/updated".responds(ok<PlaylistSearchResponse>())) {
         call.response.header("Access-Control-Allow-Origin", "*")
 
-        val sess = call.sessions.get<Session>()
-        val sortField = when (it.sort) {
-            null, LatestPlaylistSort.CREATED -> Playlist.createdAt
-            LatestPlaylistSort.SONGS_UPDATED -> Playlist.songsChangedAt
-            LatestPlaylistSort.UPDATED -> Playlist.updatedAt
-        }
+        optionalAuthorization(OauthScope.PLAYLISTS) { sess ->
+            val sortField = when (it.sort) {
+                null, LatestPlaylistSort.CREATED -> Playlist.createdAt
+                LatestPlaylistSort.SONGS_UPDATED -> Playlist.songsChangedAt
+                LatestPlaylistSort.UPDATED -> Playlist.updatedAt
+            }
 
-        val playlists = transaction {
-            Playlist
-                .joinMaps()
-                .joinPlaylistCurator()
-                .joinOwner()
-                .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats)
-                .select {
-                    Playlist.id.inSubQuery(
-                        Playlist
-                            .slice(Playlist.id)
-                            .select {
-                                (Playlist.deletedAt.isNull() and (sess?.let { s -> Playlist.owner eq s.userId or (Playlist.type eq EPlaylistType.Public) } ?: (Playlist.type eq EPlaylistType.Public)))
-                                    .notNull(it.before) { o -> sortField less o.toJavaInstant() }
-                                    .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
-                            }
-                            .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
-                            .limit(20)
-                    )
-                }
-                .groupBy(Playlist.id, User.id, curatorAlias[User.id])
-                .handleOwner()
-                .handleCurator()
-                .sortedByDescending { row ->
-                    when (it.sort) {
-                        null, LatestPlaylistSort.CREATED -> row[Playlist.createdAt]
-                        LatestPlaylistSort.SONGS_UPDATED -> row[Playlist.songsChangedAt]
-                        LatestPlaylistSort.UPDATED -> row[Playlist.updatedAt]
+            val playlists = transaction {
+                Playlist
+                    .joinMaps()
+                    .joinPlaylistCurator()
+                    .joinOwner()
+                    .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats)
+                    .select {
+                        Playlist.id.inSubQuery(
+                            Playlist
+                                .slice(Playlist.id)
+                                .select {
+                                    (Playlist.deletedAt.isNull() and (sess?.let { s -> Playlist.owner eq s.userId or (Playlist.type eq EPlaylistType.Public) } ?: (Playlist.type eq EPlaylistType.Public)))
+                                        .notNull(it.before) { o -> sortField less o.toJavaInstant() }
+                                        .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
+                                }
+                                .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
+                                .limit(20)
+                        )
                     }
-                }
-                .map { playlist ->
-                    PlaylistFull.from(playlist, cdnPrefix())
-                }
-        }
+                    .groupBy(Playlist.id, User.id, curatorAlias[User.id])
+                    .handleOwner()
+                    .handleCurator()
+                    .sortedByDescending { row ->
+                        when (it.sort) {
+                            null, LatestPlaylistSort.CREATED -> row[Playlist.createdAt]
+                            LatestPlaylistSort.SONGS_UPDATED -> row[Playlist.songsChangedAt]
+                            LatestPlaylistSort.UPDATED -> row[Playlist.updatedAt]
+                        }
+                    }
+                    .map { playlist ->
+                        PlaylistFull.from(playlist, cdnPrefix())
+                    }
+            }
 
-        call.respond(PlaylistSearchResponse(playlists))
+            call.respond(PlaylistSearchResponse(playlists))
+        }
     }
 
     options<PlaylistApi.Text> {
@@ -394,8 +395,9 @@ fun Route.playlistRoute() {
     }
 
     get<PlaylistApi.Detail> { req ->
-        val sess = call.sessions.get<Session>()
-        getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, null)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
+        optionalAuthorization(OauthScope.PLAYLISTS) { sess ->
+            getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, null)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
+        }
     }
 
     options<PlaylistApi.DetailWithPage> {
@@ -406,8 +408,9 @@ fun Route.playlistRoute() {
     get<PlaylistApi.DetailWithPage>("Get playlist detail".responds(ok<PlaylistPage>(), notFound())) { req ->
         call.response.header("Access-Control-Allow-Origin", "*")
 
-        val sess = call.sessions.get<Session>()
-        getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, req.page)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
+        optionalAuthorization(OauthScope.PLAYLISTS) { sess ->
+            getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, req.page)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
+        }
     }
 
     options<PlaylistApi.ByUser> {
@@ -418,60 +421,60 @@ fun Route.playlistRoute() {
     get<PlaylistApi.ByUser>("Get playlists by user".responds(ok<PlaylistSearchResponse>())) { req ->
         call.response.header("Access-Control-Allow-Origin", "*")
 
-        val sess = call.sessions.get<Session>()
-
-        fun <T> doQuery(table: FieldSet = Playlist, groupBy: Array<Column<*>> = arrayOf(Playlist.id), block: (ResultRow) -> T) =
-            transaction {
-                table
-                    .select {
-                        Playlist.id.inSubQuery(
-                            Playlist
-                                .slice(Playlist.id)
-                                .select {
-                                    ((Playlist.owner eq req.userId) and Playlist.deletedAt.isNull()).let {
-                                        if (req.userId == sess?.userId) {
-                                            it
-                                        } else {
-                                            it and (Playlist.type eq EPlaylistType.Public)
+        optionalAuthorization(OauthScope.PLAYLISTS) { sess ->
+            fun <T> doQuery(table: FieldSet = Playlist, groupBy: Array<Column<*>> = arrayOf(Playlist.id), block: (ResultRow) -> T) =
+                transaction {
+                    table
+                        .select {
+                            Playlist.id.inSubQuery(
+                                Playlist
+                                    .slice(Playlist.id)
+                                    .select {
+                                        ((Playlist.owner eq req.userId) and Playlist.deletedAt.isNull()).let {
+                                            if (req.userId == sess?.userId) {
+                                                it
+                                            } else {
+                                                it and (Playlist.type eq EPlaylistType.Public)
+                                            }
                                         }
                                     }
-                                }
-                                .orderBy(
-                                    (Playlist.type neq EPlaylistType.System) to SortOrder.ASC,
-                                    Playlist.createdAt to SortOrder.DESC
-                                )
-                                .limit(req.page, 20)
+                                    .orderBy(
+                                        (Playlist.type neq EPlaylistType.System) to SortOrder.ASC,
+                                        Playlist.createdAt to SortOrder.DESC
+                                    )
+                                    .limit(req.page, 20)
+                            )
+                        }
+                        .orderBy(
+                            (Playlist.type neq EPlaylistType.System) to SortOrder.ASC,
+                            Playlist.createdAt to SortOrder.DESC
                         )
-                    }
-                    .orderBy(
-                        (Playlist.type neq EPlaylistType.System) to SortOrder.ASC,
-                        Playlist.createdAt to SortOrder.DESC
-                    )
-                    .groupBy(*groupBy)
-                    .handleOwner()
-                    .handleCurator()
-                    .map(block)
-            }
+                        .groupBy(*groupBy)
+                        .handleOwner()
+                        .handleCurator()
+                        .map(block)
+                }
 
-        if (req.basic) {
-            val page = doQuery {
-                PlaylistBasic.from(it, cdnPrefix())
-            }
+            if (req.basic) {
+                val page = doQuery {
+                    PlaylistBasic.from(it, cdnPrefix())
+                }
 
-            call.respond(page)
-        } else {
-            val page = doQuery(
-                Playlist
-                    .joinMaps()
-                    .joinOwner()
-                    .joinPlaylistCurator()
-                    .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats),
-                arrayOf(Playlist.id, User.id, curatorAlias[User.id])
-            ) {
-                PlaylistFull.from(it, cdnPrefix())
-            }
+                call.respond(page)
+            } else {
+                val page = doQuery(
+                    Playlist
+                        .joinMaps()
+                        .joinOwner()
+                        .joinPlaylistCurator()
+                        .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats),
+                    arrayOf(Playlist.id, User.id, curatorAlias[User.id])
+                ) {
+                    PlaylistFull.from(it, cdnPrefix())
+                }
 
-            call.respond(PlaylistSearchResponse(page))
+                call.respond(PlaylistSearchResponse(page))
+            }
         }
     }
 
@@ -511,32 +514,34 @@ fun Route.playlistRoute() {
             getPlaylist() to getMapsInPlaylist()
         }
 
-        if (playlist != null && (playlist.type == EPlaylistType.Public || playlist.owner.id == call.sessions.get<Session>()?.userId)) {
-            val localFile = when (playlist.type) {
-                EPlaylistType.System -> bookmarksIcon
-                else -> File(localPlaylistCoverFolder(), "${playlist.playlistId}.jpg").readBytes()
-            }
-            val imageStr = Base64.getEncoder().encodeToString(localFile)
+        optionalAuthorization(OauthScope.PLAYLISTS) { sess ->
+            if (playlist != null && (playlist.type == EPlaylistType.Public || playlist.owner.id == sess?.userId)) {
+                val localFile = when (playlist.type) {
+                    EPlaylistType.System -> bookmarksIcon
+                    else -> File(localPlaylistCoverFolder(), "${playlist.playlistId}.jpg").readBytes()
+                }
+                val imageStr = Base64.getEncoder().encodeToString(localFile)
 
-            val cleanName = cleanString("BeatSaver - ${playlist.name}.bplist")
-            call.response.headers.append(HttpHeaders.ContentDisposition, "attachment; filename=\"${cleanName}\"")
-            call.respond(
-                Playlist(
-                    playlist.name,
-                    playlist.owner.name,
-                    playlist.description,
-                    imageStr,
-                    PlaylistCustomData(playlist.downloadURL),
-                    playlistSongs
+                val cleanName = cleanString("BeatSaver - ${playlist.name}.bplist")
+                call.response.headers.append(HttpHeaders.ContentDisposition, "attachment; filename=\"${cleanName}\"")
+                call.respond(
+                    Playlist(
+                        playlist.name,
+                        playlist.owner.name,
+                        playlist.description,
+                        imageStr,
+                        PlaylistCustomData(playlist.downloadURL),
+                        playlistSongs
+                    )
                 )
-            )
-        } else {
-            call.respond(HttpStatusCode.NotFound)
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
         }
     }
 
     post<PlaylistApi.Add> { req ->
-        requireAuthorization { sess ->
+        requireAuthorization(OauthScope.MANAGE_PLAYLISTS) { sess ->
             val pmr = call.receive<PlaylistMapRequest>()
             try {
                 transaction {
@@ -593,7 +598,7 @@ fun Route.playlistRoute() {
 
     val thumbnailSizes = listOf(256, 512)
     post<PlaylistApi.Create> {
-        requireAuthorization { sess ->
+        requireAuthorization(OauthScope.ADMIN_PLAYLISTS) { sess ->
             val files = mutableMapOf<Int, File>()
 
             try {
@@ -656,7 +661,7 @@ fun Route.playlistRoute() {
     }
 
     post<PlaylistApi.Edit> { req ->
-        requireAuthorization { sess ->
+        requireAuthorization(OauthScope.ADMIN_PLAYLISTS) { sess ->
             val query = (Playlist.id eq req.id and Playlist.deletedAt.isNull()).let { q ->
                 if (sess.isAdmin()) {
                     q
