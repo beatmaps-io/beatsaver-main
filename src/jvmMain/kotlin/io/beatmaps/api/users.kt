@@ -111,6 +111,12 @@ actual object UserDetailHelper {
     actual fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean) = Config.siteBase(absolute) + "/profile/${userDetail.id}" + (tab?.let { "#$it" } ?: "")
 }
 
+val secret = System.getenv("BSHASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: byteArrayOf()
+fun getHash(userId: String, salt: ByteArray) = MessageDigest.getInstance("SHA1").let {
+    it.update(salt + userId.toByteArray())
+    String.format("%040x", BigInteger(1, it.digest()))
+}
+
 @Location("/api/users")
 class UsersApi {
     @Location("/me")
@@ -334,11 +340,6 @@ fun Route.userRoute() {
         }
     }
 
-    val secret = System.getenv("BSHASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: byteArrayOf()
-    fun getHash(userId: String) = MessageDigest.getInstance("SHA1").let {
-        it.update(secret + userId.toByteArray())
-        String.format("%040x", BigInteger(1, it.digest()))
-    }
     fun keyForUser(user: UserDao) = Keys.hmacShaKeyFor(secret + "${user.password}-${user.createdAt}".toByteArray())
 
     post<UsersApi.Register> {
@@ -356,7 +357,7 @@ fun Route.userRoute() {
                 } else {
                     try {
                         val bcrypt = String(Bcrypt.hash(req.password, 12))
-                        val token = getHash(req.email)
+                        val token = getHash(req.email, secret)
 
                         val newUserId = transaction {
                             try {

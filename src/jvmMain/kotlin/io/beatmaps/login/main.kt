@@ -1,6 +1,7 @@
 package io.beatmaps.login
 
 import io.beatmaps.api.alertCount
+import io.beatmaps.api.getHash
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.Config
 import io.beatmaps.common.client
@@ -61,6 +62,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.File
 import java.time.Instant
+import java.util.Base64
 import java.util.UUID
 
 data class Session(
@@ -126,6 +128,8 @@ data class DiscordUserInfo(
     val avatar: String?
 )
 
+val discordSecret = System.getenv("DISCORD_HASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: byteArrayOf()
+
 fun Route.authRoute() {
     suspend fun downloadDiscordAvatar(discordAvatar: String, discordId: Long): String {
         val bytes = client.get("https://cdn.discordapp.com/avatars/$discordId/$discordAvatar.png") {
@@ -134,10 +138,12 @@ fun Route.authRoute() {
                 requestTimeoutMillis = 60000
             }
         }.body<ByteArray>()
-        val localFile = File(localAvatarFolder(), "$discordId.png")
+
+        val fileName = getHash(discordId.toString(), discordSecret)
+        val localFile = File(localAvatarFolder(), "$fileName.png")
         localFile.writeBytes(bytes)
 
-        return "${Config.cdnBase("", true)}/avatar/$discordId.png"
+        return "${Config.cdnBase("", true)}/avatar/$fileName.png"
     }
 
     suspend fun ApplicationCall.getDiscordData(): DiscordUserInfo {
