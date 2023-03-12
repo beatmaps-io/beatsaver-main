@@ -7,9 +7,13 @@ import external.ReCAPTCHA
 import external.reactFor
 import external.recaptcha
 import io.beatmaps.WithRouterProps
+import io.beatmaps.common.MapTag
+import io.beatmaps.maps.TagPickerHeadingRenderer
+import io.beatmaps.maps.tagPicker
 import io.beatmaps.setPageTitle
 import kotlinx.html.InputType
 import kotlinx.html.id
+import kotlinx.html.js.onBlurFunction
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
@@ -78,6 +82,8 @@ external interface UploadPageState : State {
     var errors: List<String>?
     var loading: Boolean?
     var beatsage: Boolean?
+    var hasTitle: Boolean?
+    var tags: Set<MapTag>?
 }
 
 class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
@@ -104,10 +110,25 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                 attrs.reactFor = "name"
                                 +"Title"
                             }
-                            input(InputType.text, classes = "form-control") {
+                            input(InputType.text, classes = "form-control" + (if (state.hasTitle == false) " is-invalid" else "")) {
                                 attrs.id = "name"
                                 attrs.disabled = state.loading == true
                                 ref = titleRef
+                                val checkForValue = { _: Event ->
+                                    val newValue = titleRef.current?.value?.isNotEmpty()
+                                    if (newValue != state.hasTitle) {
+                                        setState {
+                                            hasTitle = newValue
+                                        }
+                                    }
+                                }
+                                attrs.onChangeFunction = checkForValue
+                                attrs.onBlurFunction = checkForValue
+                            }
+                            if (state.hasTitle == false) {
+                                div("invalid-feedback") {
+                                    +"Enter a title"
+                                }
                             }
                         }
 
@@ -123,6 +144,22 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                             }
                         }
 
+                        tagPicker {
+                            attrs.classes = "ul-tags mb-3"
+                            attrs.tags = state.tags
+                            attrs.tagUpdateCallback = {
+                                setState {
+                                    tags = it
+                                }
+                            }
+                            attrs.renderHeading = TagPickerHeadingRenderer { byType ->
+                                label("form-label") {
+                                    val allocationInfo = MapTag.maxPerType.map { "${byType.getValue(it.key)}/${it.value} ${it.key.name}" }.joinToString(", ")
+                                    +"Tags ($allocationInfo):"
+                                }
+                            }
+                        }
+
                         div("mb-3") {
                             input(InputType.radio, name = "beatsage", classes = "btn-check") {
                                 attrs.id = "beatsage-no"
@@ -131,6 +168,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                 attrs.onChangeFunction = {
                                     setState {
                                         beatsage = false
+                                        hasTitle = titleRef.current?.value?.isNotEmpty()
                                     }
                                 }
                             }
@@ -149,6 +187,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                 attrs.onChangeFunction = {
                                     setState {
                                         beatsage = true
+                                        hasTitle = titleRef.current?.value?.isNotEmpty()
                                     }
                                 }
                             }
@@ -158,7 +197,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                             }
                         }
 
-                        if (state.beatsage != null) {
+                        if (state.hasTitle == true && state.beatsage != null) {
                             Dropzone.default {
                                 simple(
                                     props.history, state.loading == true, state.errors?.isNotEmpty() == true, progressBarInnerRef,
@@ -170,9 +209,11 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                         val titleInput = titleRef.current
                                         val descrInput = descrRef.current
                                         val beatsageInput = beatsageRef.current
+                                        val tagsStr = state.tags?.joinToString(",") { t -> t.slug }
 
                                         it.append("title", titleInput?.value ?: "")
                                         it.append("description", descrInput?.value ?: "")
+                                        it.append("tags", tagsStr ?: "")
                                         it.append("beatsage", if (beatsageInput?.checked == true) "true" else "")
                                     },
                                     {
@@ -232,7 +273,7 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                         }
                     }
                 }
-                div("card bg-info mb-3") {
+                div("card bg-blue mb-3") {
                     div("card-body") {
                         h4("card-title") {
                             +"AI Mapping"

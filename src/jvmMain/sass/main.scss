@@ -9,6 +9,7 @@ $primary: #375a7f;
 $secondary: #444;
 $success: #00bc8c;
 $info: #3498db;
+$info-accent: $primary;
 $warning: #f39c12;
 $danger: #e74c3c;
 $light: #999;
@@ -464,7 +465,7 @@ table.search-results {
   padding: 5px;
   width: 200px;
   text-align: left;
-  border-bottom: 2px solid $cyan;
+  border-bottom: 2px solid $info;
 
   span {
     display: inline-block;
@@ -629,18 +630,19 @@ th a {
   }
 }
 
-.card {
-  .tags {
-    h4 {
-      font-size: 12px;
-      text-transform: uppercase;
-    }
-    .break:first-of-type:not(h4 + .break) {
-      height: 10px;
-    }
-    .badge {
-      cursor: pointer;
-    }
+.card .tags, .ul-tags {
+  h4 {
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+  label {
+    display: block;
+  }
+  .break:first-of-type:not(h4 + .break) {
+    height: 10px;
+  }
+  .badge {
+    cursor: pointer;
   }
 }
 
@@ -683,7 +685,7 @@ th a {
       background-color: $warning;
     }
     &.info {
-      background-color: $info;
+      background-color: $cyan;
     }
     &.bs-purple {
       background-color: $bs-purple;
@@ -806,13 +808,13 @@ th a {
   .thumb {
     height: 14px;
     width: 14px;
-    background: $blue;
+    background: $info-accent;
     border-radius: 50%;
     cursor: grab;
     margin-top: 5px;
   }
   .track-1 {
-    background: $cyan;
+    background: $info;
   }
 }
 

@@ -8,6 +8,7 @@ import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.BSPrettyPrinter
 import io.beatmaps.common.Config
 import io.beatmaps.common.CopyException
+import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.beatsaber.MapInfo
 import io.beatmaps.common.copyToSuspend
@@ -255,6 +256,15 @@ fun Route.uploadController() {
                     } ?: Beatmap.insertAndGetId {
                         it[name] = (multipart.dataMap["title"] ?: "").take(1000)
                         it[description] = (multipart.dataMap["description"] ?: "").take(10000)
+
+                        val tagsList = (multipart.dataMap["tags"] ?: "").split(',').mapNotNull { t -> MapTag.fromSlug(t) }.toSet()
+                        val tooMany = tagsList.groupBy { t -> t.type }.mapValues { t -> t.value.size }.withDefault { 0 }.let { byType ->
+                            MapTag.maxPerType.any { type -> byType.getValue(type.key) > type.value }
+                        }
+
+                        if (!tooMany) {
+                            it[tags] = tagsList.map { t -> t.slug }.toTypedArray()
+                        }
                         it[uploader] = EntityID(session.userId, User)
 
                         setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
