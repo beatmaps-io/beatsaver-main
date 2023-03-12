@@ -411,7 +411,7 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                     }
 
                                     Axios.post<String>("${Config.apibase}/maps/${update.first}", update.second, update.third).then({
-                                        props.updateMapinfo(props.mapInfo.copy(name = newTitle, description = newDescription))
+                                        props.updateMapinfo(props.mapInfo.copy(name = newTitle, description = newDescription, tags = newTags ?: listOf()))
                                         setState {
                                             loading = false
                                             editing = false
