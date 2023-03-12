@@ -28,17 +28,15 @@ class TOSPageTemplate : Template<BODY> {
                     +"By submitting a beatmap to the site you confirm that you have all applicable rights to publish the beatmap, including but not limited to:"
                 }
                 ul {
-                    li {
-                        +"Music distribution rights"
-                    }
-                    li {
-                        +"Rights to the beatmap data (Notes and Lighting)"
-                    }
-                    li {
-                        +"Rights to publish any additional content included in the uploaded zip"
-                    }
-                    li {
-                        +"Permission to grant BeatSaver distribution rights to all files contained in the uploaded zip"
+                    listOf(
+                        "Music distribution rights",
+                        "Rights to the beatmap data (Notes and Lighting)",
+                        "Rights to publish any additional content included in the uploaded zip",
+                        "Permission to grant BeatSaver distribution rights to all files contained in the uploaded zip"
+                    ).forEach {
+                        li {
+                            +it
+                        }
                     }
                 }
                 p {
@@ -69,37 +67,31 @@ class TOSPageTemplate : Template<BODY> {
                     +"The following apply to the content in a beatmap zip upload, map title, and description:"
                 }
                 ul {
-                    li {
-                        +"Do not advertise or mention any content creation services, monetization, or donation methods. (Ko-fi, Patreon, Commissions, etc.)"
-                    }
-                    li {
-                        +"Harassment and Hate speech are not allowed"
-                    }
-                    li {
-                        +"Explicit lyrics or profanities in song audio are only allowed if they are not harmful to the mentioned race, gender, nationality, sexuality, etc. in their intent."
-                    }
-                    li {
-                        +"Explicit imagery in the map’s cover and any additional images included in the zip needs to be censored."
-                    }
-                    li {
-                        +"Do not distribute viruses, malware, or phish others by any means such as exploits or links."
+                    listOf(
+                        "Do not advertise or mention any content creation services, monetization, or donation methods. (Ko-fi, Patreon, Commissions, etc.)",
+                        "Harassment and Hate speech are not allowed",
+                        "Explicit lyrics or profanities in song audio are only allowed if they are not harmful to the mentioned race, gender, nationality, sexuality, etc. in their intent.",
+                        "Explicit imagery in the map’s cover and any additional images included in the zip needs to be censored.",
+                        "Do not distribute viruses, malware, or phish others by any means such as exploits or links."
+                    ).forEach {
+                        li {
+                            +it
+                        }
                     }
                 }
                 p {
                     +"The following apply to the content in user-generated reviews:"
                 }
                 ul {
-                    li {
-                        +"Reviews exist to help other users find content that might appeal to them. They should be well-intentioned and constructive with the recommendation selection generally matching the body of the review."
-                    }
-                    li {
-                        +"Do not leave reviews on your own maps (self-reviews) or maps that you have not played"
-                    }
-                    li {
-                        +"Do not use personal attacks and/or harassment against mappers or other community members. Remember that there are real people on the other side of the maps on this site."
-                    }
-                    li {
-                        +"Reviews that only reference the song audio and not the map (\"This song is terrible\", \"I hate anime\"), where it's clear that the reviewer was attempting a map that was too difficult for their skill level, or that only include random characters/keyboard spam will be removed."
+                    listOf(
+                        "Reviews exist to help other users find content that might appeal to them. They should be well-intentioned and constructive with the recommendation selection generally matching the body of the review.",
+                        "Do not leave reviews on your own maps (self-reviews) or maps that you have not played",
+                        "Do not use personal attacks and/or harassment against mappers or other community members. Remember that there are real people on the other side of the maps on this site.",
+                        "Reviews that only reference the song audio and not the map (\"This song is terrible\", \"I hate anime\"), where it's clear that the reviewer was attempting a map that was too difficult for their skill level, or that only include random characters/keyboard spam will be removed."
+                    ).forEach {
+                        li {
+                            +it
+                        }
                     }
                 }
                 p {
@@ -113,14 +105,14 @@ class TOSPageTemplate : Template<BODY> {
                     +"Established limits are as follows:"
                 }
                 ul {
-                    li {
-                        +"15 MiB maximum zip file size"
-                    }
-                    li {
-                        +"50 MiB maximum size for an individual file in unzipped form"
-                    }
-                    li {
-                        +"Map revision updates for unpublished works in progress are limited to two uploads every 12 hours"
+                    listOf(
+                        "15 MiB maximum zip file size",
+                        "50 MiB maximum size for an individual file in unzipped form",
+                        "Map revision updates for unpublished works in progress are limited to two uploads every 12 hours"
+                    ).forEach {
+                        li {
+                            +it
+                        }
                     }
                 }
                 p {
@@ -132,26 +124,39 @@ class TOSPageTemplate : Template<BODY> {
                 }
                 hr("my-4") {}
                 h3 {
+                    +"Prohibited Behaviors"
+                }
+                p {
+                    +"Activities during your interaction with the site should not be abusive to the site or community. Behaviors in violation of this include, but are not limited to"
+                }
+                ul {
+                    listOf(
+                        "Excessive beatmap uploads and/or deletions",
+                        "Creating multiple accounts to manipulate the site's review system ratings",
+                        "Posting misleading reviews"
+                    ).forEach {
+                        li {
+                            +it
+                        }
+                    }
+                }
+                h3 {
                     +"Prohibited Usernames"
                 }
                 p {
                     +"Usernames that are not permitted are as follows:"
                 }
                 ul {
-                    li {
-                        +"Impersonation of another user or famous person"
-                    }
-                    li {
-                        +"Imply they represent BeatSaver or organization they are not affiliated with"
-                    }
-                    li {
-                        +"Imply they have special permissions such as site administrator, staff, moderator, etc."
-                    }
-                    li {
-                        +"Contain profanities in any language"
-                    }
-                    li {
-                        +"Intended to offend a particular race, gender, nationality, sexuality, etc."
+                    listOf(
+                        "Impersonation of another user or famous person",
+                        "Imply they represent BeatSaver or organization they are not affiliated with",
+                        "Imply they have special permissions such as site administrator, staff, moderator, etc.",
+                        "Contain profanities in any language",
+                        "Intended to offend a particular race, gender, nationality, sexuality, etc."
+                    ).forEach {
+                        li {
+                            +it
+                        }
                     }
                 }
                 p {
@@ -168,17 +173,15 @@ class TOSPageTemplate : Template<BODY> {
                     +"Some reasons that would result in your account being restricted or terminated are:"
                 }
                 ul {
-                    li {
-                        +"Excessive content theft"
-                    }
-                    li {
-                        +"Multiple warnings of policy violations"
-                    }
-                    li {
-                        +"Malicious uploads, map titles, or descriptions"
-                    }
-                    li {
-                        +"Excessive policy violations"
+                    listOf(
+                        "Excessive content theft",
+                        "Multiple warnings of policy violations",
+                        "Malicious uploads, map titles, or descriptions",
+                        "Excessive policy violations"
+                    ).forEach {
+                        li {
+                            +it
+                        }
                     }
                 }
                 hr("my-4") {}
@@ -197,7 +200,7 @@ class TOSPageTemplate : Template<BODY> {
                 }
                 hr("my-4") {}
                 p("text-muted") {
-                    +"This document was last updated on November 15, 2022"
+                    +"This document was last updated on March 12, 2023"
                 }
             }
         }
