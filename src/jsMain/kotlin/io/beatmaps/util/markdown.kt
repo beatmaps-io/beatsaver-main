@@ -33,6 +33,7 @@ fun String.parseSocialLinks() =
     listOf(
         "(^|\\s)twt@(\\w+?)($|\\W)" to """$1<a href="https://twitter.com/$2">twt@$2</a>$3""",
         "(^|\\s)yt@([\\w.-]+?)($|[^\\w.-])" to """$1<a href="https://www.youtube.com/channel/$2">yt@$2</a>$3""",
+        "(^|\\s)yth@([\\w.-]+?)($|[^\\w.-])" to """$1<a href="https://www.youtube.com/@$2">yth@$2</a>$3""",
         "(^|\\s)ttv@(\\w+?)($|\\W)" to """$1<a href="https://www.twitch.tv/$2">ttv@$2</a>$3""",
         "(^|\\s)steam@(\\d+?)($|\\W)" to """$1<a href="https://steamcommunity.com/profiles/$2">steam@$2</a>$3""",
         "(^|\\s)ss@(\\d+?)($|\\W)" to """$1<a href="https://scoresaber.com/u/$2">ss@$2</a>$3""",
