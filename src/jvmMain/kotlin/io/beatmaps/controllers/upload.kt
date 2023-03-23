@@ -263,7 +263,7 @@ fun Route.uploadController() {
                         }
 
                         if (!tooMany) {
-                            it[tags] = tagsList.map { t -> t.slug }.toTypedArray()
+                            it[tags] = tagsList.filter { t -> t != MapTag.None }.map { t -> t.slug }.toTypedArray()
                         }
                         it[uploader] = EntityID(session.userId, User)
 

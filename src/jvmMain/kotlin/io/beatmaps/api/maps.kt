@@ -233,7 +233,7 @@ fun Route.mapDetailRoute() {
                             mapUpdate.name?.let { n -> it[name] = n.take(1000) }
                             mapUpdate.description?.let { d -> it[description] = d.take(10000) }
                             if (tooMany != true) { // Don't update tags if request is trying to add too many tags
-                                mapUpdate.tags?.map { t -> t.slug }?.let { t -> it[tags] = t.toTypedArray() }
+                                mapUpdate.tags?.filter { t -> t != MapTag.None }?.map { t -> t.slug }?.let { t -> it[tags] = t.toTypedArray() }
                             }
                             it[updatedAt] = NowExpression(updatedAt.columnType)
                         }
@@ -287,7 +287,7 @@ fun Route.mapDetailRoute() {
                         Beatmap.update({
                             Beatmap.id eq mapUpdate.id and Beatmap.deletedAt.isNull()
                         }) {
-                            mapUpdate.tags?.map { it.slug }?.let { t -> it[tags] = t.toTypedArray() }
+                            mapUpdate.tags?.filter { t -> t != MapTag.None }?.map { t -> t.slug }?.let { t -> it[tags] = t.toTypedArray() }
                             it[updatedAt] = NowExpression(updatedAt.columnType)
                         }
 
