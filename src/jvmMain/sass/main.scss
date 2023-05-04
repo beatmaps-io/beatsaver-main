@@ -5,6 +5,10 @@ $white: #fff;
 $navbar-dark-color: rgba($white, .8);
 $tooltip-max-width: 400px;
 
+$color-contrast-light: #DDD;
+$color-contrast-dark: #222;
+$min-contrast-ratio: 4.5;
+
 $primary: #375a7f;
 $secondary: #444;
 $success: #00bc8c;
@@ -21,6 +25,16 @@ $bs-red: #b52a1c;
 $bs-orange: #bd5500;
 $bs-yellow: #fff301;
 $bs-purple: #7646af;
+
+// Anniversary
+$body-bg: #0d1037;
+$primary: #3951ab;
+
+$info: #e18da9;
+$info-accent: #d0607b;
+
+$link-color: $info;
+$link-hover-color: $info-accent;
 
 // Bring back old look
 $card-cap-padding-y: .75rem;
