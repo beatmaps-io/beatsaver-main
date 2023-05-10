@@ -87,7 +87,7 @@ fun Route.voteRoute() {
                 val downVotes = (voteTotals[false] ?: 0)
                 val totalVotes = (upVotes + downVotes).toDouble()
                 val rawScore = upVotes / totalVotes
-                val scoreWeighted = rawScore - (rawScore - 0.5) * 2.0.pow(-log10(totalVotes + 1))
+                val scoreWeighted = rawScore - (rawScore - 0.5) * 2.0.pow(-log3(totalVotes / 2 + 1))
 
                 var uploader: Int? = null
                 Beatmap.updateReturning(
