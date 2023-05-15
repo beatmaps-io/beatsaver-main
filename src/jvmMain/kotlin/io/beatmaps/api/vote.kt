@@ -45,7 +45,6 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.publish
 import java.lang.Integer.toHexString
-import kotlin.math.log10
 import kotlin.math.pow
 
 @Location("/api") class VoteApi {
