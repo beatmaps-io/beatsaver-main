@@ -45,6 +45,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.publish
 import java.lang.Integer.toHexString
+import kotlin.math.log
 import kotlin.math.pow
 
 @Location("/api") class VoteApi {
@@ -86,7 +87,7 @@ fun Route.voteRoute() {
                 val downVotes = (voteTotals[false] ?: 0)
                 val totalVotes = (upVotes + downVotes).toDouble()
                 val rawScore = upVotes / totalVotes
-                val scoreWeighted = rawScore - (rawScore - 0.5) * 2.0.pow(-log3(totalVotes / 2 + 1))
+                val scoreWeighted = rawScore - (rawScore - 0.5) * 2.0.pow(-log(totalVotes / 2 + 1, 3.0))
 
                 var uploader: Int? = null
                 Beatmap.updateReturning(
