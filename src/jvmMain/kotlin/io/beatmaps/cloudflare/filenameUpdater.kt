@@ -52,6 +52,9 @@ fun Application.filenameUpdater() {
 
     rabbitOptional {
         consumeAck("cdn.r2", CDNUpdate::class) { _, update ->
+            // Ignore test maps
+            if (update.hash?.contains(" ") == true) return@consumeAck
+
             deleteFromR2(update, r2Client)
 
             if (update.deleted) return@consumeAck
