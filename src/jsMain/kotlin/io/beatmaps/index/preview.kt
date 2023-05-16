@@ -36,7 +36,7 @@ class ModalComponent : RComponent<Props, ModalState>() {
     private val modal = createRef<HTMLDivElement>()
     private val iframe = createRef<HTMLIFrameElement>()
 
-    fun show(downloadURL: String) = showIframe("$previewBaseUrl?url=$downloadURL")
+    fun show(downloadURL: String) = showIframe("$previewBaseUrl?noProxy=true&url=$downloadURL")
     fun showById(mapId: String) = showIframe("$previewBaseUrl?id=$mapId")
 
     private fun showIframe(url: String) {
