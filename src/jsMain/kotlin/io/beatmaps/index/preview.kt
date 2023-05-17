@@ -22,7 +22,7 @@ import react.dom.h5
 import react.dom.iframe
 import react.setState
 
-const val previewBaseUrl = "https://skystudioapps.com/bs-viewer/"
+const val previewBaseUrl = "https://allpoland.github.io/ArcViewer/"
 
 external interface ModalState : State {
     var modal: ModalData?
@@ -102,6 +102,7 @@ class ModalComponent : RComponent<Props, ModalState>() {
                 iframe(classes = "modal-content") {
                     ref = iframe
                     attrs.src = "about:blank"
+                    attrs["allow"] = "fullscreen"
                 }
             }
             div("modal-dialog" + if (state.modal?.large == true) " modal-lg" else "") {
