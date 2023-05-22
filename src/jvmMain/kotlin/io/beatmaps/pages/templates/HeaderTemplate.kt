@@ -20,6 +20,7 @@ import kotlinx.html.title
 import kotlinx.html.ul
 
 val bannerEnabled = System.getenv("BANNER_ENABLED") == "true"
+val supportLink = System.getenv("SUPPORT_LINK")
 
 class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
     override fun FlowContent.apply() {
@@ -116,6 +117,14 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                     }
 
                     ul("navbar-nav") {
+                        if (supportLink != null) {
+                            li("nav-item") {
+                                a(supportLink, target = "_blank", classes = "nav-link") {
+                                    title = "Support"
+                                    i("fas fa-heart")
+                                }
+                            }
+                        }
                         if (s == null) {
                             li("nav-item") {
                                 a("/login", classes = "nav-link auto-router") {
@@ -125,6 +134,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                         } else {
                             li("nav-item") {
                                 a("/alerts", classes = "nav-link auto-router") {
+                                    title = "Alerts"
                                     i("fas fa-bell")
                                     small("alert-count") {
                                         id = "alert-count"
@@ -136,6 +146,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                             }
                             li("nav-item dropdown") {
                                 a("#", classes = "nav-link dropdown-toggle no-caret") {
+                                    title = "New"
                                     i("fas fa-plus-square")
                                 }
                                 div("dropdown-menu") {
