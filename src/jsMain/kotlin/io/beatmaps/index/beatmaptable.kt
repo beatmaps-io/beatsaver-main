@@ -116,7 +116,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
             } ?: ""
         }
 
-    private val hashRegex = Regex("^[A-Za-z0-9]{40}$")
+    private val hashRegex = Regex("^[A-F0-9]{40}$", RegexOption.IGNORE_CASE)
 
     private fun loadUserSuggestion(token: CancelTokenSource) {
         props.search?.let { search ->

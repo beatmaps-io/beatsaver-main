@@ -6,6 +6,7 @@ import de.nielsfalk.ktor.swagger.Ignore
 import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
+import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.DeletedPlaylistData
@@ -27,6 +28,7 @@ import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
+import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.handleCurator
@@ -67,10 +69,13 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import net.coobird.thumbnailator.Thumbnails
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Coalesce
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.FieldSet
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.LiteralOp
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -90,6 +95,7 @@ import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import org.postgresql.util.PSQLException
 import org.valiktor.constraints.NotBlank
 import org.valiktor.functions.hasSize
 import org.valiktor.functions.isNotBlank
@@ -105,6 +111,7 @@ const val prefix: String = "/playlists"
     @Group("Playlists") @Location("$prefix/id/{id}/{page}") data class DetailWithPage(val id: Int, @DefaultValue("0") val page: Long, @Ignore val api: PlaylistApi)
     @Location("$prefix/id/{id}/download/{filename?}") data class Download(val id: Int, val filename: String? = null, val api: PlaylistApi)
     @Location("$prefix/id/{id}/add") data class Add(val id: Int, val api: PlaylistApi)
+    @Group("Playlists") @Location("$prefix/id/{id}/batch") data class Batch(val id: Int, @Ignore val api: PlaylistApi)
     @Location("$prefix/id/{id}/edit") data class Edit(val id: Int, val api: PlaylistApi)
     @Location("$prefix/create") data class Create(val api: PlaylistApi)
     @Location("$prefix/curate") data class Curate(val api: PlaylistApi)
@@ -538,6 +545,86 @@ fun Route.playlistRoute() {
         }
     }
 
+    class PlaylistChangeException(msg: String) : Exception(msg)
+    fun applyPlaylistChange(pId: Int, inPlaylist: Boolean, mapId: Expression<EntityID<Int>>, newOrder: Float? = null) =
+        try {
+            if (inPlaylist) {
+                PlaylistMap.upsert(conflictIndex = PlaylistMap.link) {
+                    it[playlistId] = pId
+                    it[PlaylistMap.mapId] = mapId
+                    it[order] = newOrder?.let { f -> floatLiteral(f) } ?: getMaxMap(pId)
+                }
+
+                true
+            } else {
+                PlaylistMap.deleteWhere {
+                    (PlaylistMap.playlistId eq pId) and (PlaylistMap.mapId eq mapId)
+                }.let { res -> res > 0 }
+            }
+        } catch (e: ExposedSQLException) {
+            val cause = e.cause
+            if (cause is PSQLException && cause.sqlState == "23502") {
+                // Set value is null. Map not found
+                throw PlaylistChangeException("Cancel transaction")
+            }
+
+            throw e
+        }
+
+    fun applyPlaylistChange(pId: Int, inPlaylist: Boolean, mapId: Int, newOrder: Float? = null) =
+        applyPlaylistChange(pId, inPlaylist, LiteralOp(Beatmap.id.columnType, EntityID(mapId, Beatmap)), newOrder)
+
+    post<PlaylistApi.Batch, PlaylistBatchRequest>("Add or remove up to 50 maps to a playlist. Requires OAUTH".responds(ok<ActionResponse>())) { req, pbr ->
+        requireAuthorization(OauthScope.MANAGE_PLAYLISTS) { sess ->
+            if ((pbr.hashes?.size ?: 0) + (pbr.keys?.size ?: 0) > 50) {
+                call.respond(HttpStatusCode.BadRequest, "Too many maps")
+                return@requireAuthorization
+            }
+
+            try {
+                transaction {
+                    Playlist
+                        .updateReturning(
+                            {
+                                (Playlist.id eq req.id) and (Playlist.owner eq sess.userId) and Playlist.deletedAt.isNull()
+                            },
+                            {
+                                it[songsChangedAt] = NowExpression(songsChangedAt.columnType)
+                            },
+                            *Playlist.columns.toTypedArray()
+                        )?.firstOrNull()?.let { row ->
+                            val playlist = PlaylistDao.wrapRow(row)
+
+                            val hashOps = (pbr.hashes ?: listOf()).map { hash ->
+                                wrapAsExpressionNotNull<EntityID<Int>>(Versions.slice(Versions.mapId).select { Versions.hash eq hash })
+                            }
+                            val keyOps = (pbr.keys ?: listOf()).map { key ->
+                                LiteralOp(Beatmap.id.columnType, EntityID(key.toInt(16), Beatmap))
+                            }
+                            val results = (hashOps + keyOps).map { mapId ->
+                                applyPlaylistChange(playlist.id.value, pbr.inPlaylist == true, mapId)
+                            }
+
+                            if (results.any { b -> b }) playlist.id.value else 0
+                        }
+                }
+            } catch (_: PlaylistChangeException) {
+                null
+            } catch (_: NumberFormatException) {
+                null
+            }.let {
+                when (it) {
+                    null -> call.respond(HttpStatusCode.NotFound)
+                    0 -> call.respond(ActionResponse(false))
+                    else -> {
+                        call.pub("beatmaps", "playlists.$it.updated", null, it)
+                        call.respond(ActionResponse(true))
+                    }
+                }
+            }
+        }
+    }
+
     post<PlaylistApi.Add> { req ->
         requireAuthorization(OauthScope.MANAGE_PLAYLISTS) { sess ->
             val pmr = call.receive<PlaylistMapRequest>()
@@ -558,22 +645,15 @@ fun Route.playlistRoute() {
 
                             // Only perform these operations once we've verified the owner is logged in
                             // and the playlist exists (as above)
-                            if (pmr.inPlaylist == true) {
-                                // Add to playlist
-                                PlaylistMap.upsert(conflictIndex = PlaylistMap.link) {
-                                    it[playlistId] = playlist.id
-                                    it[mapId] = pmr.mapId.toInt(16)
-                                    it[order] = newOrder?.let { no -> floatLiteral(no) } ?: getMaxMap(req.id)
-                                }
-
+                            if (applyPlaylistChange(playlist.id.value, pmr.inPlaylist == true, pmr.mapId.toInt(16), newOrder)) {
                                 playlist.id.value
                             } else {
-                                PlaylistMap.deleteWhere {
-                                    (PlaylistMap.playlistId eq req.id) and (PlaylistMap.mapId eq pmr.mapId.toInt(16))
-                                }.let { res -> if (res > 0) playlist.id.value else 0 }
+                                0
                             }
                         }
                 }
+            } catch (_: PlaylistChangeException) {
+                null
             } catch (_: NumberFormatException) {
                 null
             }.let {
@@ -746,7 +826,6 @@ fun Route.playlistRoute() {
     }
 
     post<PlaylistApi.Curate> {
-        call.response.header("Access-Control-Allow-Origin", "*")
         requireAuthorization { user ->
             if (!user.isCurator()) {
                 call.respond(HttpStatusCode.BadRequest)

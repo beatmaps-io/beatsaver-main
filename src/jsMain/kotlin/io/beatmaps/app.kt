@@ -8,6 +8,7 @@ import io.beatmaps.modlog.ModLog
 import io.beatmaps.modreview.ModReview
 import io.beatmaps.nav.viewportMinWidthPolyfill
 import io.beatmaps.playlist.EditPlaylist
+import io.beatmaps.playlist.MultiAddPlaylist
 import io.beatmaps.playlist.Playlist
 import io.beatmaps.playlist.PlaylistFeed
 import io.beatmaps.upload.UploadPage
@@ -99,6 +100,7 @@ class App : RComponent<Props, State>() {
                 bsroute("/playlists/new", klazz = EditPlaylist::class)
                 bsroute("/playlists/:id", klazz = Playlist::class)
                 bsroute("/playlists/:id/edit", klazz = EditPlaylist::class)
+                bsroute("/playlists/:id/add", klazz = MultiAddPlaylist::class)
                 bsroute("/test") {
                     recentTestplays { }
                 }

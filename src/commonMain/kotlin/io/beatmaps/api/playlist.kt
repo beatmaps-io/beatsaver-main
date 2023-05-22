@@ -9,9 +9,9 @@ import kotlinx.serialization.Serializable
 data class Playlist(
     val playlistTitle: String,
     val playlistAuthor: String,
-    val playlistDescription: String,
+    val playlistDescription: String = "",
     val image: String,
-    val customData: PlaylistCustomData,
+    val customData: PlaylistCustomData? = null,
     val songs: List<PlaylistSong>
 )
 
@@ -68,6 +68,9 @@ data class InPlaylist(val playlist: PlaylistBasic, val inPlaylist: Boolean) {
 
 @Serializable
 data class PlaylistMapRequest(val mapId: String, val inPlaylist: Boolean? = null, val order: Float? = null)
+
+@Serializable
+data class PlaylistBatchRequest(val hashes: List<String>?, val keys: List<String>?, val inPlaylist: Boolean? = null)
 
 @Serializable
 data class MapDetailWithOrder(val map: MapDetail, val order: Float)

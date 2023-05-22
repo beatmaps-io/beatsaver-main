@@ -209,6 +209,9 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                 routeLink("/playlists/${pl.playlistId}/edit", className = "btn btn-primary") {
                                     +"Edit"
                                 }
+                                routeLink("/playlists/${pl.playlistId}/add", className = "btn btn-purple") {
+                                    +"Multi-Add"
+                                }
                                 a("#", classes = "btn btn-danger") {
                                     attrs.onClickFunction = {
                                         it.preventDefault()
