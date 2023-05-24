@@ -151,8 +151,6 @@ class MultiAddPlaylist : RComponent<MultiAddPlaylistProps, MultiAddPlaylistState
                                                 playlist.songs.joinToString(",") { song -> song.hash }
                                             } catch (e: SerializationException) {
                                                 // Bad bplist :O
-                                                console.log(e)
-
                                                 ""
                                             }
                                         }
