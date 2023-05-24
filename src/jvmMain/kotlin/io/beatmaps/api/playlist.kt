@@ -85,6 +85,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
+import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.countDistinct
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.floatLiteral
@@ -546,8 +547,20 @@ fun Route.playlistRoute() {
     }
 
     class PlaylistChangeException(msg: String) : Exception(msg)
+    fun <T> catchNullRelation(block: () -> T) = try {
+        block()
+    } catch (e: ExposedSQLException) {
+        val cause = e.cause
+        if (cause is PSQLException && cause.sqlState == "23502") {
+            // Set value is null. Map not found
+            throw PlaylistChangeException("Cancel transaction")
+        }
+
+        throw e
+    }
+
     fun applyPlaylistChange(pId: Int, inPlaylist: Boolean, mapId: Expression<EntityID<Int>>, newOrder: Float? = null) =
-        try {
+        catchNullRelation {
             if (inPlaylist) {
                 PlaylistMap.upsert(conflictIndex = PlaylistMap.link) {
                     it[playlistId] = pId
@@ -561,23 +574,23 @@ fun Route.playlistRoute() {
                     (PlaylistMap.playlistId eq pId) and (PlaylistMap.mapId eq mapId)
                 }.let { res -> res > 0 }
             }
-        } catch (e: ExposedSQLException) {
-            val cause = e.cause
-            if (cause is PSQLException && cause.sqlState == "23502") {
-                // Set value is null. Map not found
-                throw PlaylistChangeException("Cancel transaction")
-            }
-
-            throw e
         }
 
     fun applyPlaylistChange(pId: Int, inPlaylist: Boolean, mapId: Int, newOrder: Float? = null) =
         applyPlaylistChange(pId, inPlaylist, LiteralOp(Beatmap.id.columnType, EntityID(mapId, Beatmap)), newOrder)
 
-    post<PlaylistApi.Batch, PlaylistBatchRequest>("Add or remove up to 50 maps to a playlist. Requires OAUTH".responds(ok<ActionResponse>())) { req, pbr ->
+    post<PlaylistApi.Batch, PlaylistBatchRequest>("Add or remove up to 100 maps to a playlist. Requires OAUTH".responds(ok<ActionResponse>())) { req, pbr ->
         requireAuthorization(OauthScope.MANAGE_PLAYLISTS) { sess ->
-            if ((pbr.hashes?.size ?: 0) + (pbr.keys?.size ?: 0) > 50) {
+            val validKeys = (pbr.keys ?: listOf()).mapNotNull { key -> key.toIntOrNull(16) }
+            val hashesOrEmpty = pbr.hashes ?: listOf()
+            if (hashesOrEmpty.size + validKeys.size > 100) {
                 call.respond(HttpStatusCode.BadRequest, "Too many maps")
+                return@requireAuthorization
+            } else if (hashesOrEmpty.size + validKeys.size <= 0 || (validKeys.size != (pbr.keys?.size ?: 0) && pbr.ignoreUnknown != true)) {
+                // No hashes or keys
+                // OR
+                // Some invalid keys but not allowed to ignore unknown
+                call.respond(HttpStatusCode.BadRequest, "Nothing to do")
                 return@requireAuthorization
             }
 
@@ -594,23 +607,48 @@ fun Route.playlistRoute() {
                             *Playlist.columns.toTypedArray()
                         )?.firstOrNull()?.let { row ->
                             val playlist = PlaylistDao.wrapRow(row)
+                            val maxMap =
+                                PlaylistMap
+                                    .slice(PlaylistMap.order)
+                                    .select {
+                                        PlaylistMap.playlistId eq playlist.id.value
+                                    }
+                                    .orderBy(PlaylistMap.order, SortOrder.DESC)
+                                    .limit(1)
+                                    .firstOrNull()
+                                    ?.let {
+                                        it[PlaylistMap.order]
+                                    } ?: 0f
 
-                            val hashOps = (pbr.hashes ?: listOf()).map { hash ->
-                                wrapAsExpressionNotNull<EntityID<Int>>(Versions.slice(Versions.mapId).select { Versions.hash eq hash })
-                            }
-                            val keyOps = (pbr.keys ?: listOf()).map { key ->
-                                LiteralOp(Beatmap.id.columnType, EntityID(key.toInt(16), Beatmap))
-                            }
-                            val results = (hashOps + keyOps).map { mapId ->
-                                applyPlaylistChange(playlist.id.value, pbr.inPlaylist == true, mapId)
-                            }
+                            val mapIds = Beatmap
+                                .joinVersions(false, null)
+                                .slice(Beatmap.id)
+                                .select {
+                                    Beatmap.deletedAt.isNull() and (Beatmap.id.inList(validKeys) or Versions.hash.inList(hashesOrEmpty))
+                                }
+                                .map {
+                                    it[Beatmap.id]
+                                }
 
-                            if (results.any { b -> b }) playlist.id.value else 0
+                            if (mapIds.size != (hashesOrEmpty + validKeys).size && pbr.ignoreUnknown != true) {
+                                rollback()
+                                null
+                            } else if (pbr.inPlaylist == true) {
+                                PlaylistMap.batchInsert(mapIds.mapIndexed { idx, it -> idx to it }, true, shouldReturnGeneratedValues = false) {
+                                    this[PlaylistMap.playlistId] = playlist.id
+                                    this[PlaylistMap.mapId] = it.second
+                                    this[PlaylistMap.order] = maxMap + it.first + 1
+                                }.size
+                            } else {
+                                PlaylistMap.deleteWhere {
+                                    (PlaylistMap.playlistId eq playlist.id.value) and (PlaylistMap.mapId.inList(mapIds))
+                                }
+                            }?.let {
+                                if (it > 0) playlist.id.value else 0
+                            }
                         }
                 }
             } catch (_: PlaylistChangeException) {
-                null
-            } catch (_: NumberFormatException) {
                 null
             }.let {
                 when (it) {

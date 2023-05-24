@@ -48,7 +48,7 @@ class MultiAddPlaylist : RComponent<MultiAddPlaylistProps, MultiAddPlaylistState
     private val hashRegex = Regex("^[A-F0-9]{40}$", RegexOption.IGNORE_CASE)
 
     private fun startAdd(hashes: List<String>) {
-        doAdd(hashes.chunked(50))
+        doAdd(hashes.chunked(100))
     }
 
     private fun doAdd(queue: List<List<String>>) {
@@ -65,11 +65,11 @@ class MultiAddPlaylist : RComponent<MultiAddPlaylistProps, MultiAddPlaylistState
 
         Axios.post<ActionResponse>(
             "${Config.apibase}/playlists/id/${props.params["id"]}/batch",
-            PlaylistBatchRequest(hashList, keyList, true),
+            PlaylistBatchRequest(hashList, keyList, inPlaylist = true, ignoreUnknown = true),
             generateConfig<PlaylistBatchRequest, ActionResponse>()
         ).then {
             setState {
-                progress = progress?.let { it.first + hashes.size to it.second }
+                progress = progress?.let { p -> p.first + hashes.size to p.second }
             }
             window.setTimeout(
                 {
@@ -78,9 +78,8 @@ class MultiAddPlaylist : RComponent<MultiAddPlaylistProps, MultiAddPlaylistState
                 500
             )
         }.catch {
-            console.log("doAdd catch", it)
             setState {
-                progress = progress?.let { -1 to it.second }
+                progress = progress?.let { p -> -1 to p.second }
             }
         }
     }
