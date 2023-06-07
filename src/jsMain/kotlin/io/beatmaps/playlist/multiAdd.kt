@@ -174,7 +174,7 @@ class MultiAddPlaylist : RComponent<MultiAddPlaylistProps, MultiAddPlaylistState
                         }
                         button(classes = "btn btn-success") {
                             attrs.onClickFunction = {
-                                val hashes = (hashRef.current?.value ?: "").split(",").filter { it.isNotBlank() }
+                                val hashes = (hashRef.current?.value ?: "").split(",", "\r\n", "\n").filter { it.isNotBlank() }
                                 startAdd(hashes)
                                 setState {
                                     progress = 0 to hashes.size

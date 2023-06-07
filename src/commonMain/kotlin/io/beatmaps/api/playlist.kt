@@ -16,7 +16,7 @@ data class Playlist(
 )
 
 @Serializable
-data class PlaylistSong(val key: String?, val hash: String, val songName: String? = null)
+data class PlaylistSong(val key: String? = null, val hash: String, val songName: String? = null)
 
 @Serializable
 data class PlaylistCustomData(val syncURL: String)
