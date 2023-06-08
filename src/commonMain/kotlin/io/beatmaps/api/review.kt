@@ -7,7 +7,7 @@ class ReviewConstants {
     companion object {
         const val COMMENTS_ENABLED = true
         const val MAX_LENGTH = 2000
-        const val MINIMUM_REVIEWS = 5
+        const val MINIMUM_REVIEWS = 3
     }
 }
 
