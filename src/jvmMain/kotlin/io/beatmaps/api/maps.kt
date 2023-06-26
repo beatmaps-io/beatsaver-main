@@ -163,7 +163,7 @@ fun Route.mapDetailRoute() {
                                         "Your map has been uncurated",
                                         "@${user.uniqueName} just uncurated your map #${toHexString(mapUpdate.id)}: **${it.name}**.\n" +
                                             "Reason: *\"${mapUpdate.reason ?: ""}\"*",
-                                        EAlertType.Deletion,
+                                        EAlertType.Uncuration,
                                         it.uploader.id.value
                                     )
                                 }
