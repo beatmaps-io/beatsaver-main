@@ -65,7 +65,7 @@ fun Route.alertsRoute() {
             .limit(page)
             .map {
                 AlertDao.wrapRow(it).let { alert ->
-                    UserAlert(alert.id.value, alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant())
+                    UserAlert(alert.id.value, alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant(), alert.collaborationId?.value)
                 }
             }
     }

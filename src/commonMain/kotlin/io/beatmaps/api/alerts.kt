@@ -10,7 +10,8 @@ data class UserAlert(
     val head: String,
     val body: String,
     val type: EAlertType,
-    val time: Instant
+    val time: Instant,
+    val collaborationId: Int?
 )
 
 @Serializable
