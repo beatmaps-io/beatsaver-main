@@ -40,7 +40,10 @@ fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
     other.tags?.mapNotNull {
         MapTag.fromSlug(it)
     } ?: listOf(),
-    other.bookmarked
+    other.bookmarked,
+    other.collaborators.values.map {
+        UserDetail.from(it)
+    }.ifEmpty { null }
 )
 fun MapDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(BeatmapDao.wrapRow(row), cdnPrefix)
 

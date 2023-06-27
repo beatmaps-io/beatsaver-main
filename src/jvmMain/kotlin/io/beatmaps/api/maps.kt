@@ -27,6 +27,7 @@ import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinBookmarked
 import io.beatmaps.common.dbo.joinCollaborations
+import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
@@ -325,6 +326,7 @@ fun Route.mapDetailRoute() {
                     .joinUploader()
                     .joinCurator()
                     .joinBookmarked(sess?.userId)
+                    .joinCollaborators()
                     .select {
                         (Beatmap.id eq it.id.toInt(16)).let {
                             if (isAdmin) {
