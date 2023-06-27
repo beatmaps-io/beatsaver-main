@@ -17,6 +17,7 @@ import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
+import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistDao
@@ -25,6 +26,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinBookmarked
+import io.beatmaps.common.dbo.joinCollaborations
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
@@ -50,6 +52,7 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -519,13 +522,15 @@ fun Route.mapDetailRoute() {
                 .joinUploader()
                 .joinCurator()
                 .joinBookmarked(sess?.userId)
+                .joinCollaborations()
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
                             .joinVersions()
                             .slice(Beatmap.id)
                             .select {
-                                Beatmap.uploader.eq(it.id) and (Beatmap.deletedAt.isNull())
+                                (Beatmap.uploader eq it.id or (Collaboration.collaboratorId eq it.id)) and
+                                        Beatmap.deletedAt.isNull()
                             }
                             .orderBy(Beatmap.uploaded to SortOrder.DESC)
                             .limit(it.page)
