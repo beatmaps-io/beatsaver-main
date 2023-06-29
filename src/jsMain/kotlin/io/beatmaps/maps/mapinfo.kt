@@ -187,7 +187,7 @@ class CollaboratorPicker : RComponent<CollaboratorPickerProps, CollaboratorPicke
                 }
 
                 state.collaborators?.let { collaborationDetails ->
-                    div {
+                    div("collaborator-cards") {
                         collaborationDetails.forEach { c ->
                             div("collaborator" + if (c.accepted) " accepted" else "") {
                                 img(c.collaborator.name, c.collaborator.avatar) { }

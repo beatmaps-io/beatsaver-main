@@ -664,30 +664,34 @@ th a {
     gap: 0.5rem;
   }
 
-  .collaborator {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
+  .collaborator-cards {
+    flex-wrap: wrap;
 
-    border: 1px solid $warning;
-    border-radius: 0.25rem;
-    background-color: rgba($warning, 0.5);
-
-    padding: 0.5rem 1rem;
-
-    &.accepted {
-      border-color: $success;
-      background-color: rgba($success, 0.5);
-    }
-
-    span {
+    .collaborator {
       display: flex;
-      flex-direction: column;
-      line-height: 1em;
+      gap: 1rem;
+      align-items: center;
 
-      .status {
-        color: rgba($white, 0.5);
-        font-size: 0.75rem;
+      border: 1px solid $warning;
+      border-radius: 0.25rem;
+      background-color: rgba($warning, 0.5);
+
+      padding: 0.5rem 1rem;
+
+      &.accepted {
+        border-color: $success;
+        background-color: rgba($success, 0.5);
+      }
+
+      span {
+        display: flex;
+        flex-direction: column;
+        line-height: 1em;
+
+        .status {
+          color: rgba($white, 0.5);
+          font-size: 0.75rem;
+        }
       }
     }
   }
