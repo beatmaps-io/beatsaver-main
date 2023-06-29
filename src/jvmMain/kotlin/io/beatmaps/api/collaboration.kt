@@ -2,6 +2,7 @@ package io.beatmaps.api
 
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.dbo.Alert
+import io.beatmaps.common.dbo.AlertRecipient
 import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.CollaborationDAO
 import io.beatmaps.common.dbo.User
@@ -15,7 +16,9 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
@@ -25,6 +28,16 @@ import org.jetbrains.exposed.sql.update
 
 fun CollaborationDetail.Companion.from(row: ResultRow) = CollaborationDAO.wrapRow(row).let {
     CollaborationDetail(it.mapId.value, UserDetail.from(row), it.accepted)
+}
+
+fun removeAlerts(where: SqlExpressionBuilder.() -> Op<Boolean>) {
+    Alert.deleteWhere {
+        Alert.id inSubQuery Alert
+            .join(AlertRecipient, JoinType.LEFT, Alert.id, AlertRecipient.alertId)
+            .join(Collaboration, JoinType.LEFT, Alert.collaborationId, Collaboration.id)
+            .slice(Alert.id)
+            .select(where)
+    }
 }
 
 @Location("/api/collaborations")
@@ -78,6 +91,10 @@ fun Route.collaborationRoute() {
             val req = call.receive<CollaborationResponseData>()
 
             val success = transaction {
+                removeAlerts {
+                    AlertRecipient.recipientId eq sess.userId and (Alert.collaborationId eq req.collaborationId)
+                }
+
                 if (req.accepted) {
                     Collaboration.update({
                         Collaboration.id eq req.collaborationId and (Collaboration.collaboratorId eq sess.userId)
@@ -100,6 +117,10 @@ fun Route.collaborationRoute() {
             val req = call.receive<CollaborationRemoveData>()
 
             val success = transaction {
+                removeAlerts {
+                    AlertRecipient.recipientId eq req.collaboratorId and (Collaboration.mapId eq req.mapId)
+                }
+
                 isUploader(req.mapId, sess.userId) &&
                         Collaboration.deleteWhere {
                             Collaboration.mapId eq req.mapId and (Collaboration.collaboratorId eq req.collaboratorId)
