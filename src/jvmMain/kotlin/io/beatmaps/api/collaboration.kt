@@ -18,6 +18,7 @@ import io.ktor.server.routing.Route
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
@@ -142,6 +143,7 @@ fun Route.collaborationRoute() {
                         .select {
                             Collaboration.mapId eq mapId
                         }
+                        .orderBy(Collaboration.accepted, SortOrder.DESC)
                         .map { row ->
                             CollaborationDetail.from(row)
                         }
