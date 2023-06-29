@@ -5,7 +5,7 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
 import io.beatmaps.shared.diffIcons
 import io.beatmaps.shared.links
-import io.beatmaps.shared.uploader
+import io.beatmaps.shared.uploaderWithInfo
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -37,7 +37,7 @@ class TableRow : RComponent<TableRowProps, State>() {
                     +props.map.name
                 }
                 p {
-                    uploader {
+                    uploaderWithInfo {
                         attrs.map = props.map
                         attrs.version = props.version
                     }

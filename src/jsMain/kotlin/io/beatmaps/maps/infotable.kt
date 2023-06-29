@@ -7,6 +7,7 @@ import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.common.fixedStr
 import io.beatmaps.common.formatTime
+import io.beatmaps.shared.uploader
 import kotlinx.html.DIV
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.role
@@ -46,7 +47,15 @@ class InfoTable : RComponent<InfoTableProps, State>() {
         val publishedVersion = if (props.map.deletedAt == null) props.map.publishedVersion() else null
 
         div("list-group" + if (props.horizontal == true) " list-group-horizontal row m-4" else "") {
-            infoItem("Mapper", "${props.map.uploader.name} (${props.map.metadata.levelAuthorName})", props.map.uploader.profileLink())
+            div(itemClasses) {
+                +(if (props.map.collaborators?.size != 0) "Mappers" else "Mapper")
+                span("ms-4 text-wrap") {
+                    uploader {
+                        attrs.map = props.map
+                    }
+                    + " (${props.map.metadata.levelAuthorName})"
+                }
+            }
             val score = publishedVersion?.sageScore ?: 0
             if (score < -4 || props.map.automapper) {
                 infoItem("AI", if (score < -4) "Bot" else "Unsure")

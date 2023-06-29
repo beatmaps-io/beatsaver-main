@@ -17,7 +17,7 @@ import io.beatmaps.shared.diffIcons
 import io.beatmaps.shared.links
 import io.beatmaps.shared.mapTitle
 import io.beatmaps.shared.rating
-import io.beatmaps.shared.uploader
+import io.beatmaps.shared.uploaderWithInfo
 import io.beatmaps.util.AutoSizeComponent
 import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.AutoSizeComponentState
@@ -164,7 +164,7 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
                             attrs.mapKey = map.id
                         }
                         p {
-                            uploader {
+                            uploaderWithInfo {
                                 attrs.map = map
                                 attrs.version = props.version
                             }

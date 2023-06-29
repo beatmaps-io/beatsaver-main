@@ -177,14 +177,25 @@ val links = fc<LinksProps> { props ->
     }
 }
 
-external interface UploadeProps : Props {
+external interface UploaderProps : Props {
     var map: MapDetail
     var version: MapVersion?
 }
 
-val uploader = fc<UploadeProps> { props ->
-    routeLink(props.map.uploader.profileLink()) {
-        +props.map.uploader.name
+val uploader = fc<UploaderProps> { props ->
+    (listOf(props.map.uploader) + (props.map.collaborators ?: listOf())).let {
+        it.forEachIndexed { idx, u ->
+            routeLink(u.profileLink()) {
+                +u.name
+            }
+            if (idx < it.lastIndex) + ", "
+        }
+    }
+}
+
+val uploaderWithInfo = fc<UploaderProps> { props ->
+    uploader {
+        attrs.map = props.map
     }
     botInfo {
         attrs.version = props.version
