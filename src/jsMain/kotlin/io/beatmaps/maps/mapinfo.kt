@@ -4,11 +4,15 @@ import external.Axios
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.BookmarkRequest
+import io.beatmaps.api.CollaborationDetail
+import io.beatmaps.api.CollaborationRemoveData
+import io.beatmaps.api.CollaborationRequestData
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.SimpleMapInfoUpdate
 import io.beatmaps.api.StateUpdate
+import io.beatmaps.api.UserDetail
 import io.beatmaps.api.ValidateMap
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.MapTagType
@@ -22,6 +26,7 @@ import io.beatmaps.shared.bookmarkButton
 import io.beatmaps.shared.links
 import io.beatmaps.util.textToContent
 import kotlinx.browser.window
+import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
@@ -36,7 +41,9 @@ import react.RefObject
 import react.State
 import react.createRef
 import react.dom.a
+import react.dom.button
 import react.dom.div
+import react.dom.form
 import react.dom.h4
 import react.dom.i
 import react.dom.img
@@ -98,7 +105,7 @@ external interface TagPickerProps : Props {
 val tagPicker = fc<TagPickerProps> { props ->
     val tags = props.tags
 
-    div(props.classes ?: "tags") {
+    div("tags " + (props.classes ?: "")) {
         fun renderTag(it: MapTag) {
             mapTag {
                 attrs.selected = tags?.contains(it) == true
@@ -146,6 +153,137 @@ val tagPicker = fc<TagPickerProps> { props ->
         }
     }
 }
+
+external interface CollaboratorPickerProps : Props {
+    var classes: String?
+    var map: MapDetail
+    var disabled: Boolean
+}
+
+external interface CollaboratorPickerState : State {
+    var foundUsers: List<UserDetail>?
+    var collaborators: List<CollaborationDetail>?
+}
+
+class CollaboratorPicker : RComponent<CollaboratorPickerProps, CollaboratorPickerState>() {
+    private val inputRef = createRef<HTMLInputElement>()
+
+    override fun componentWillMount() {
+        Axios.get<List<CollaborationDetail>>(
+            "${Config.apibase}/collaborations/map/${props.map.id}",
+            generateConfig<String, List<CollaborationDetail>>()
+        ).then {
+            setState {
+                collaborators = it.data
+            }
+        }
+    }
+
+    override fun RBuilder.render() {
+        globalContext.Consumer { userData ->
+            div("collaborators " + (props.classes ?: "")) {
+                h4 {
+                    +"Collaborators"
+                }
+
+                state.collaborators?.let { collaborationDetails ->
+                    div {
+                        collaborationDetails.forEach { c ->
+                            div("collaborator" + if (c.accepted) " accepted" else "") {
+                                img(c.collaborator.name, c.collaborator.avatar) { }
+                                span {
+                                    +c.collaborator.name
+                                    span("status") {
+                                        +(if (c.accepted) "Accepted" else "Pending")
+                                    }
+                                }
+                                a(classes = "btn-close") {
+                                    attrs.onClickFunction = {
+                                        Axios.post<String>(
+                                            "${Config.apibase}/collaborations/remove",
+                                            CollaborationRemoveData(c.mapId, c.collaborator.id),
+                                            generateConfig<CollaborationRemoveData, String>()
+                                        ).then {
+                                            setState {
+                                                collaborators = (collaborators ?: listOf()) - c
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                form("", classes = "search") {
+                    input(InputType.search, classes = "form-control") {
+                        attrs.id = "collaborators"
+                        attrs.placeholder = "Add users"
+                        attrs.disabled = props.disabled
+                        ref = inputRef
+                    }
+
+                    button(type = ButtonType.submit, classes = "btn btn-primary") {
+                        attrs.onClickFunction = {
+                            it.preventDefault()
+                            inputRef.current?.value?.ifBlank { null }?.let { q ->
+                                Axios.get<List<UserDetail>>(
+                                    "${Config.apibase}/users/search?q=$q",
+                                    generateConfig<String, List<UserDetail>>()
+                                )
+                                    .then {
+                                        setState {
+                                            foundUsers = it.data
+                                        }
+                                    }
+                            } ?: setState {
+                                foundUsers = null
+                            }
+                        }
+                        +"Search"
+                    }
+                }
+
+                state.foundUsers?.filter {
+                    it.id != userData?.userId && state.collaborators?.none { c ->
+                        c.collaborator.id == it.id
+                    } ?: true
+                }?.ifEmpty { null }?.let { users ->
+                    div("search-results list-group") {
+                        users.forEach { user ->
+                            div("list-group-item user") {
+                                span {
+                                    img(user.name, user.avatar) { }
+                                    +user.name
+                                }
+
+                                a(classes = "btn btn-success btn-sm") {
+                                    attrs.onClickFunction = {
+                                        Axios.post<String>(
+                                            "${Config.apibase}/collaborations/request",
+                                            CollaborationRequestData(props.map.intId(), user.id),
+                                            generateConfig<CollaborationRequestData, String>()
+                                        ).then {
+                                            setState {
+                                                collaborators = (collaborators ?: listOf()) + CollaborationDetail(props.map.intId(), user, false)
+                                            }
+                                        }
+                                    }
+                                    +"Invite"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun RBuilder.collaboratorPicker(handler: CollaboratorPickerProps.() -> Unit) =
+    child(CollaboratorPicker::class) {
+        this.attrs(handler)
+    }
 
 class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
     private val inputRef = createRef<HTMLInputElement>()
@@ -351,12 +489,19 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                             }
 
                             tagPicker {
+                                attrs.classes = "m-2"
                                 attrs.tags = state.tags
                                 attrs.tagUpdateCallback = {
                                     setState {
                                         tags = it
                                     }
                                 }
+                            }
+
+                            collaboratorPicker {
+                                classes = "m-2"
+                                map = props.mapInfo
+                                disabled = state.loading == true || isCurating
                             }
                         } else {
                             textToContent(props.mapInfo.description)

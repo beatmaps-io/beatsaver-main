@@ -5,8 +5,10 @@ import external.TimeAgo
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.AlertUpdate
+import io.beatmaps.api.CollaborationResponseData
 import io.beatmaps.api.UserAlert
 import io.beatmaps.api.UserAlertStats
+import io.beatmaps.common.api.EAlertType
 import io.beatmaps.shared.coloredCard
 import io.beatmaps.util.textToContent
 import kotlinx.browser.document
@@ -23,6 +25,7 @@ import react.dom.b
 import react.dom.div
 import react.dom.i
 import react.dom.jsStyle
+import react.dom.p
 import react.dom.span
 import react.setState
 
@@ -91,6 +94,28 @@ class AlertElement : RComponent<AlertProps, AlertState>() {
         }
     }
 
+    private fun respondCollaboration(accept: Boolean) = props.alert?.let { alert ->
+        markAlert(alert, true) {
+            props.markAlert?.invoke(UserAlertStats(it.unread, it.read - 1, it.byType.let { map ->
+                map.toMutableMap().apply {
+                    this[EAlertType.Collaboration]?.let { count ->
+                        this[EAlertType.Collaboration] = count - 1
+                    }
+
+                    if (this[EAlertType.Collaboration] == 0) remove(EAlertType.Collaboration)
+                }
+            }))
+
+            if (alert.collaborationId != null) {
+                Axios.post<String>(
+                    "${Config.apibase}/collaborations/response",
+                    CollaborationResponseData(alert.collaborationId, accept),
+                    generateConfig<CollaborationResponseData, String>()
+                )
+            }
+        }
+    }
+
     override fun RBuilder.render() {
         props.alert?.let { alert ->
             coloredCard {
@@ -131,7 +156,22 @@ class AlertElement : RComponent<AlertProps, AlertState>() {
                 }
                 div("card-body") {
                     ref = bodyRef
-                    textToContent(alert.body)
+                    p {
+                        textToContent(alert.body)
+                    }
+
+                    if (alert.type == EAlertType.Collaboration) {
+                        div("alert-buttons") {
+                            a(classes = "btn btn-success") {
+                                +"Accept"
+                                attrs.onClickFunction = { respondCollaboration(true) }
+                            }
+                            a(classes = "btn btn-danger") {
+                                +"Reject"
+                                attrs.onClickFunction = { respondCollaboration(false) }
+                            }
+                        }
+                    }
                 }
             }
         } ?: run {

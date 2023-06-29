@@ -522,7 +522,7 @@ table.search-results {
   }
 }
 .mapinfo {
-  img {
+  & > img {
     width: 200px;
     float: left;
   }
@@ -634,7 +634,7 @@ th a {
   }
 }
 
-.card .tags, .ul-tags {
+.card .tags, .ul-tags, .card .collaborators {
   h4 {
     font-size: 12px;
     text-transform: uppercase;
@@ -650,10 +650,87 @@ th a {
   }
 }
 
+.card .collaborators {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  h4 {
+    margin: 0;
+  }
+
+  & > :is(div, form) {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .collaborator {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+
+    border: 1px solid $warning;
+    border-radius: 0.25rem;
+    background-color: rgba($warning, 0.5);
+
+    padding: 0.5rem 1rem;
+
+    &.accepted {
+      border-color: $success;
+      background-color: rgba($success, 0.5);
+    }
+
+    span {
+      display: flex;
+      flex-direction: column;
+      line-height: 1em;
+
+      .status {
+        color: rgba($white, 0.5);
+        font-size: 0.75rem;
+      }
+    }
+  }
+
+  .search-results {
+    flex-direction: column;
+    gap: 0;
+
+    .user {
+      display: flex;
+      justify-content: space-between;
+      background-color: $color-contrast-dark;
+
+      span {
+        display: flex;
+        margin-right: 4.5rem;
+        gap: 1rem;
+        align-items: center;
+      }
+    }
+  }
+
+  img {
+    height: 2rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+  }
+}
+
 .alerts {
   .card.colored {
     transition: opacity 0.2s, height 0.2s linear 0.2s, margin 0.2s linear 0.2s;
     overflow: hidden;
+
+    .alert-buttons {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+
+      a {
+        flex: 0 1 100%;
+      }
+    }
   }
 }
 
@@ -1558,6 +1635,10 @@ small.alert-count {
       display: none;
     }
   }
+}
+
+.btn-close {
+  cursor: pointer; // Why this isn't already the case is beyond me
 }
 
 @include media-breakpoint-up(xxl) {
