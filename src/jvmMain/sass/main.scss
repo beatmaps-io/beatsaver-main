@@ -700,10 +700,13 @@ th a {
     flex-direction: column;
     gap: 0;
 
+    .list-group-item {
+      background-color: $color-contrast-dark;
+    }
+
     .user {
       display: flex;
       justify-content: space-between;
-      background-color: $color-contrast-dark;
 
       span {
         display: flex;

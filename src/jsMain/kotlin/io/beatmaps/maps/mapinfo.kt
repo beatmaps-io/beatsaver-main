@@ -248,29 +248,35 @@ class CollaboratorPicker : RComponent<CollaboratorPickerProps, CollaboratorPicke
                     it.id != userData?.userId && state.collaborators?.none { c ->
                         c.collaborator.id == it.id
                     } ?: true
-                }?.ifEmpty { null }?.let { users ->
+                }?.let { users ->
                     div("search-results list-group") {
-                        users.forEach { user ->
-                            div("list-group-item user") {
-                                span {
-                                    img(user.name, user.avatar) { }
-                                    +user.name
-                                }
+                        if (users.isNotEmpty()) {
+                            users.forEach { user ->
+                                div("list-group-item user") {
+                                    span {
+                                        img(user.name, user.avatar) { }
+                                        +user.name
+                                    }
 
-                                a(classes = "btn btn-success btn-sm") {
-                                    attrs.onClickFunction = {
-                                        Axios.post<String>(
-                                            "${Config.apibase}/collaborations/request",
-                                            CollaborationRequestData(props.map.intId(), user.id),
-                                            generateConfig<CollaborationRequestData, String>()
-                                        ).then {
-                                            setState {
-                                                collaborators = (collaborators ?: listOf()) + CollaborationDetail(props.map.intId(), user, false)
+                                    a(classes = "btn btn-success btn-sm") {
+                                        attrs.onClickFunction = {
+                                            Axios.post<String>(
+                                                "${Config.apibase}/collaborations/request",
+                                                CollaborationRequestData(props.map.intId(), user.id),
+                                                generateConfig<CollaborationRequestData, String>()
+                                            ).then {
+                                                setState {
+                                                    collaborators = (collaborators ?: listOf()) + CollaborationDetail(props.map.intId(), user, false)
+                                                }
                                             }
                                         }
+                                        +"Invite"
                                     }
-                                    +"Invite"
                                 }
+                            }
+                        } else {
+                            div("list-group-item text-center") {
+                                +"No results"
                             }
                         }
                     }
