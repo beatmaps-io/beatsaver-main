@@ -119,6 +119,7 @@ kotlin {
                 implementation("io.lettuce:lettuce-core:6.0.1.RELEASE")
                 implementation("pl.jutupe:ktor-rabbitmq:0.4.5")
                 implementation("com.rabbitmq:amqp-client:5.9.0")
+                implementation("org.litote.kmongo:kmongo:4.9.0")
 
                 // Serialization
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")

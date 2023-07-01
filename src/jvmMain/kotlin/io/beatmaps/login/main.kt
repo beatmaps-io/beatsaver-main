@@ -33,8 +33,10 @@ import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.locations.post
 import io.ktor.server.plugins.NotFoundException
+import io.ktor.server.plugins.origin
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.queryString
+import io.ktor.server.request.userAgent
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -46,6 +48,7 @@ import io.ktor.util.StringValues
 import io.ktor.util.hex
 import kotlinx.coroutines.runBlocking
 import kotlinx.html.meta
+import kotlinx.serialization.Serializable
 import nl.myndocs.oauth2.authenticator.Credentials
 import nl.myndocs.oauth2.client.Client
 import nl.myndocs.oauth2.identity.Identity
@@ -65,6 +68,7 @@ import java.time.Instant
 import java.util.Base64
 import java.util.UUID
 
+@Serializable
 data class Session(
     val userId: Int,
     val hash: String? = null,
@@ -79,8 +83,12 @@ data class Session(
     val alerts: Int? = null,
     val curator: Boolean = false,
     val oauth2ClientId: String? = null,
-    val suspended: Boolean = false
+    val suspended: Boolean = false,
+    val ip: String? = null,
+    val userAgent: String? = null
 ) {
+    constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?, curator: Boolean, oauth2ClientId: String?, suspended: Boolean) :
+        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, curator, oauth2ClientId, suspended, null, null)
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?, curator: Boolean, oauth2ClientId: String?) :
         this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, curator, oauth2ClientId, false)
     constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?, curator: Boolean) :
@@ -102,7 +110,10 @@ data class Session(
     fun isCurator() = isAdmin() || (curator && transaction { UserDao[userId].curator })
 
     companion object {
-        fun fromUser(user: UserDao, alertCount: Int? = null, oauth2ClientId: String? = null) = Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, alertCount, user.curator, oauth2ClientId, user.suspendedAt != null)
+        fun fromUser(user: UserDao, alertCount: Int? = null, oauth2ClientId: String? = null, call: ApplicationCall? = null) = Session(
+            user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, alertCount,
+            user.curator, oauth2ClientId, user.suspendedAt != null, call?.request?.origin?.remoteHost, call?.request?.userAgent()
+        )
     }
 }
 
@@ -171,7 +182,7 @@ fun Route.authRoute() {
                 UserDao[userId] to alertCount(userId)
             }
 
-            call.sessions.set(Session(user.id.value, user.hash, "", data.username, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, user.hash == null, alertCount))
+            call.sessions.set(Session.fromUser(user, alertCount, call = call))
             req.state?.let { String(hex(it)) }.orEmpty().let { query ->
                 if (query.isNotEmpty() && query.contains("client_id")) {
                     call.respondRedirect("/oauth2/authorize/success$query")
@@ -249,14 +260,14 @@ fun Route.authRoute() {
         post<Login> {
             call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
                 val user = newPrincipal.user
-                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator, suspended = user.suspendedAt != null))
+                call.sessions.set(Session.fromUser(user, newPrincipal.alertCount, call = call))
             }
             call.respondRedirect("/")
         }
         post<Oauth2.Authorize> {
             call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
                 val user = newPrincipal.user
-                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator, it.client_id, user.suspendedAt != null))
+                call.sessions.set(Session.fromUser(user, newPrincipal.alertCount, it.client_id, call))
 
                 call.respondRedirect(newPrincipal.redirect)
             }
