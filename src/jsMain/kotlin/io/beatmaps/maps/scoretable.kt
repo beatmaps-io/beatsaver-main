@@ -105,6 +105,11 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
                 if (state.page?.let { p -> p < 3 } != false) {
                     loadNextPage()
                 }
+            } else if (newScores.valid) {
+                setState {
+                    uid = newScores.uid
+                    loading = false
+                }
             }
         }.catch {
             // Cancelled request

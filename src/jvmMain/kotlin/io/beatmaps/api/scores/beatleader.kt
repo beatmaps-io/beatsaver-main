@@ -11,21 +11,21 @@ class BeatLeaderScores : RemoteScores {
     override suspend fun getLeaderboard(hash: String, diff: EDifficulty, mode: SSGameMode, page: Int) =
         ssTry {
             scoresClient.get(
-                "https://api.beatleader.xyz/v4/scores/$hash/${diff.enumName()}/${mode.characteristic.enumName()}?page=$page&count=12"
+                "https://api.beatleader.xyz/v5/scores/$hash/${diff.enumName()}/${mode.characteristic.enumName()}?page=$page&count=12"
             ).body<BLPaged>()
         }.let {
-            val firstScore = it?.data?.firstOrNull()
             LeaderboardData(
-                firstScore?.pp?.let { pp -> pp > 0.0 } == true,
-                firstScore?.leaderboardId,
+                it?.container?.ranked == true,
+                it?.container?.leaderboardId,
                 it?.data?.map(BLLeaderboardScore::toLeaderboardScore) ?: listOf(),
                 false,
-                firstScore != null
+                it?.container?.leaderboardId != null
             )
         }
 }
 
-data class BLPaged(val metadata: SSPagedMetadata, val data: List<BLLeaderboardScore>)
+data class BLPaged(val metadata: SSPagedMetadata, val container: BLLeaderboardContainer, val data: List<BLLeaderboardScore>)
+data class BLLeaderboardContainer(val leaderboardId: String?, val ranked: Boolean)
 data class BLLeaderboardScore(
     val id: Long,
     val baseScore: Int,
