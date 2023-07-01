@@ -630,7 +630,7 @@ fun Route.playlistRoute() {
                                     it[Beatmap.id]
                                 }
 
-                            if (mapIds.size != (hashesOrEmpty + validKeys).size && pbr.ignoreUnknown != true) {
+                            val result = if (mapIds.size != (hashesOrEmpty + validKeys).size && pbr.ignoreUnknown != true) {
                                 rollback()
                                 null
                             } else if (pbr.inPlaylist == true) {
@@ -643,7 +643,9 @@ fun Route.playlistRoute() {
                                 PlaylistMap.deleteWhere {
                                     (PlaylistMap.playlistId eq playlist.id.value) and (PlaylistMap.mapId.inList(mapIds))
                                 }
-                            }?.let {
+                            }
+
+                            result?.let {
                                 if (it > 0) playlist.id.value else 0
                             }
                         }
