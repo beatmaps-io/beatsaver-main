@@ -29,5 +29,8 @@ db.sessions.createIndex(
 db.sessions.createIndex(
     {
         "session.userId": 1
+    },
+    {
+        name: "userId"
     }
 );

@@ -24,3 +24,4 @@ services:
       MONGO_INITDB_DATABASE: "beatmaps"
       MONGO_USER: "beatmaps"
       MONGO_PASSWORD: "insecure-password"
+    restart: always
