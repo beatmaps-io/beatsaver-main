@@ -504,10 +504,12 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                 }
                             }
 
-                            collaboratorPicker {
-                                classes = "m-2"
-                                map = props.mapInfo
-                                disabled = state.loading == true || isCurating
+                            if (userData?.suspended == false) {
+                                collaboratorPicker {
+                                    classes = "m-2"
+                                    map = props.mapInfo
+                                    disabled = state.loading == true || isCurating
+                                }
                             }
                         } else {
                             textToContent(props.mapInfo.description)

@@ -63,7 +63,7 @@ fun Route.collaborationRoute() {
             val key = req.mapId.toString(16)
 
             val success = transaction {
-                isUploader(req.mapId, sess.userId).also { authorized ->
+                (isUploader(req.mapId, sess.userId) && !sess.suspended).also { authorized ->
                     if (authorized) {
                         Collaboration.insertAndGetId {
                             it[mapId] = req.mapId
