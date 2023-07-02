@@ -5,8 +5,6 @@ CREATE SEQUENCE public."collaboration_collaborationId_seq"
     NO MAXVALUE
     CACHE 1;
 
-ALTER TABLE public.alert ADD COLUMN "collaborationId" integer DEFAULT NULL;
-
 ALTER TYPE alerttype ADD VALUE 'Collaboration';
 
 CREATE TABLE public.collaboration
@@ -14,6 +12,7 @@ CREATE TABLE public.collaboration
     "collaborationId" integer NOT NULL DEFAULT nextval('"collaboration_collaborationId_seq"'::regclass),
     "mapId" integer,
     "collaboratorId" integer,
+    "requestedAt" timestamp with time zone,
     "accepted" bool DEFAULT false,
     CONSTRAINT collaborator_pkey PRIMARY KEY ("collaborationId"),
     CONSTRAINT map_fk FOREIGN KEY ("mapId")
