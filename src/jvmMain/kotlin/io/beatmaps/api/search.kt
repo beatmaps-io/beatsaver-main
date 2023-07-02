@@ -261,9 +261,7 @@ fun Route.searchRoute() {
                                             }
                                         }
                                     }
-                                    .notNull(it.mapper) { o ->
-                                        Beatmap.uploader eq o or (Collaboration.collaboratorId eq o)
-                                    }
+                                    .notNull(it.mapper) { o -> Beatmap.uploader eq o }
                                     .notNull(it.curator) { o -> Beatmap.curator eq o }
                             }
                             .orderBy(*sortArgs)

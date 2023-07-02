@@ -524,11 +524,12 @@ fun Route.mapDetailRoute() {
                 .joinUploader()
                 .joinCurator()
                 .joinBookmarked(sess?.userId)
-                .joinCollaborations()
+                .joinCollaborators()
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
                             .joinVersions()
+                            .joinCollaborations()
                             .slice(Beatmap.id)
                             .select {
                                 (Beatmap.uploader eq it.id or (Collaboration.collaboratorId eq it.id)) and

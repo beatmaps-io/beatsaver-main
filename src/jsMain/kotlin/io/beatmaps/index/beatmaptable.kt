@@ -92,7 +92,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         } else if (props.curated == true && props.user != null) {
             "${Config.apibase}/search/text/$page?sortOrder=Curated&curator=${props.user}&automapper=true"
         } else if (props.user != null) {
-            "${Config.apibase}/search/text/$page?mapper=${props.user}&automapper=true"
+            "${Config.apibase}/maps/uploader/${props.user}/0"
         } else {
             props.search?.let { search ->
                 val tagStr = search.tagsQuery()
