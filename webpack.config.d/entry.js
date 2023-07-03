@@ -16,6 +16,7 @@
         analyzerMode: 'static',
         reportFilename: '../../../../reports/webpack/BeatMaps/BeatMaps.js.report.html',
         generateStatsFile: true,
-        statsFilename: '../../../../reports/webpack/BeatMaps/BeatMaps.js.stats.json'
+        statsFilename: '../../../../reports/webpack/BeatMaps/BeatMaps.js.stats.json',
+        openAnalyzer: false
     }));
 }()
