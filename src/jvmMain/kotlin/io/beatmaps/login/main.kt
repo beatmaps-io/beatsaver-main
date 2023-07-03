@@ -1,7 +1,7 @@
 package io.beatmaps.login
 
+import io.beatmaps.api.UserCrypto
 import io.beatmaps.api.alertCount
-import io.beatmaps.api.getHash
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.Config
 import io.beatmaps.common.client
@@ -9,6 +9,7 @@ import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.getCountry
 import io.beatmaps.common.localAvatarFolder
 import io.beatmaps.genericPage
 import io.ktor.client.call.body
@@ -85,7 +86,8 @@ data class Session(
     val oauth2ClientId: String? = null,
     val suspended: Boolean = false,
     val ip: String? = null,
-    val userAgent: String? = null
+    val userAgent: String? = null,
+    val countryCode: String? = null
 ) {
     fun isAdmin() = admin && transaction { UserDao[userId].admin }
     fun isCurator() = isAdmin() || (curator && transaction { UserDao[userId].curator })
@@ -93,7 +95,8 @@ data class Session(
     companion object {
         fun fromUser(user: UserDao, alertCount: Int? = null, oauth2ClientId: String? = null, call: ApplicationCall? = null) = Session(
             user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, alertCount,
-            user.curator, oauth2ClientId, user.suspendedAt != null, call?.request?.origin?.remoteHost, call?.request?.userAgent()
+            user.curator, oauth2ClientId, user.suspendedAt != null, call?.request?.origin?.remoteHost, call?.request?.userAgent(),
+            call?.getCountry()?.let { if (it.success) it.countryCode else null }
         )
     }
 }
@@ -131,7 +134,7 @@ fun Route.authRoute() {
             }
         }.body<ByteArray>()
 
-        val fileName = getHash(discordId.toString(), discordSecret)
+        val fileName = UserCrypto.getHash(discordId.toString(), discordSecret)
         val localFile = File(localAvatarFolder(), "$fileName.png")
         localFile.writeBytes(bytes)
 

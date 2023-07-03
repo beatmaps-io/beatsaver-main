@@ -79,3 +79,5 @@ data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val curator
 data class UserSuspendRequest(val userId: Int, val suspended: Boolean, val reason: String?)
 @Serializable
 data class UserFollowRequest(val userId: Int, val followed: Boolean)
+@Serializable
+data class SessionRevokeRequest(val id: String, val site: Boolean)

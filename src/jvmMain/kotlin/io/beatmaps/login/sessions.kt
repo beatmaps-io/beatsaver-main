@@ -12,12 +12,6 @@ import io.ktor.server.sessions.SessionTransportCookie
 import io.ktor.server.sessions.Sessions
 import io.ktor.server.sessions.defaultSessionSerializer
 import io.ktor.server.sessions.generateSessionId
-import io.lettuce.core.RedisClient
-import io.lettuce.core.api.coroutines
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Contextual
@@ -28,12 +22,8 @@ import org.litote.kmongo.eq
 import org.litote.kmongo.findOne
 import org.litote.kmongo.getCollection
 import java.util.logging.Logger
-import kotlin.reflect.typeOf
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
-
-val redisHost = System.getenv("REDIS_HOST") ?: ""
-val redisPort = System.getenv("REDIS_PORT") ?: "6379"
 
 val mongoHost = System.getenv("MONGO_HOST") ?: ""
 val mongoPort = System.getenv("MONGO_PORT") ?: "27017"
@@ -50,44 +40,31 @@ val cookieDomain = System.getenv("COOKIE_DOMAIN") ?: null
 @Serializable
 data class MongoSession(val _id: String, val session: Session, @Contextual val expireAt: Instant)
 
-fun Application.installSessions() {
-    val sessionStorage = try {
-        if (mongoHost.isEmpty()) throw Exception("Mongo not configured")
+object MongoClient {
+    private val mongoClient = KMongo.createClient(
+        "mongodb://$mongoUser:$mongoPass@$mongoHost:$mongoPort/$mongoAuthDb?serverSelectionTimeoutMS=2000&connectTimeoutMS=2000"
+    )
+    private val database = mongoClient.getDatabase(mongoDb)
+    val sessions = database.getCollection<MongoSession>("sessions")
 
-        val mongoClient = KMongo.createClient(
-            "mongodb://$mongoUser:$mongoPass@$mongoHost:$mongoPort/$mongoAuthDb?serverSelectionTimeoutMS=2000&connectTimeoutMS=2000"
-        )
-        val database = mongoClient.getDatabase(mongoDb)
-        val sessions = database.getCollection<MongoSession>("sessions")
+    var connected = false
 
-        val currentCount = sessions.countDocuments(EMPTY_BSON)
-        logger.info("Using mongodb session storage ($currentCount)")
+    fun testConnection() =
+        try {
+            if (mongoHost.isEmpty()) throw Exception("Mongo not configured")
 
-        MongoSessionStorage(sessions)
-    } catch (e: Exception) {
-        logger.warning("Using in memory session storage")
-        SessionStorageMemory()
-    }
+            val currentCount = sessions.countDocuments(EMPTY_BSON)
+            logger.info("Using mongodb session storage ($currentCount)")
 
-    if (redisHost.isNotEmpty() && sessionStorage is MongoSessionStorage) {
-        val redisClient: RedisClient = RedisClient.create("redis://$redisHost:$redisPort")
-        val connection = redisClient.connect().coroutines()
+            connected = true
 
-        launch {
-            val oldSerial = defaultSessionSerializer<Session>(typeOf<Session>())
-            connection.keys("*").map {
-                Triple(it, connection.get(it), connection.ttl(it))
-            }.filter {
-                it.second != null && it.third != null
-            }.map {
-                Triple(it.first, oldSerial.deserialize(it.second!!), it.third!!)
-            }.map {
-                sessionStorage.writeLocal(it.first, it.second, it.third)
-                connection.del(it.first)
-            }.collect()
+            true
+        } catch (e: Exception) {
+            false
         }
-    }
+}
 
+fun Application.installSessions() {
     install(Sessions) {
         val sessionType = Session::class
         val cookieConfig = CookieConfiguration().apply {
@@ -96,11 +73,16 @@ fun Application.installSessions() {
         }
 
         val transport = SessionTransportCookie(cookieName, cookieConfig, listOf())
-        val tracker = when (sessionStorage) {
-            is MongoSessionStorage -> TypedSessionTracker(sessionType, sessionStorage) { generateSessionId() }
-            is SessionStorageMemory -> SessionTrackerById(sessionType, defaultSessionSerializer(), sessionStorage) { generateSessionId() }
-            else -> throw Exception("Impossible session storage type")
+        val tracker = if (MongoClient.testConnection()) {
+            logger.info("Using mongodb session storage")
+            val sessionStorage = MongoSessionStorage(MongoClient.sessions)
+            TypedSessionTracker(sessionType, sessionStorage) { generateSessionId() }
+        } else {
+            logger.warning("Using in memory session storage")
+            val sessionStorage = SessionStorageMemory()
+            SessionTrackerById(sessionType, defaultSessionSerializer(), sessionStorage) { generateSessionId() }
         }
+
         val provider = SessionProvider(cookieName, sessionType, transport, tracker)
         register(provider)
     }

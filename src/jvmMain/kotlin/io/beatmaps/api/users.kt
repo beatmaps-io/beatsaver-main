@@ -19,7 +19,9 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.ModLog
+import io.beatmaps.common.dbo.OauthClient
 import io.beatmaps.common.dbo.Playlist
+import io.beatmaps.common.dbo.RefreshTokenTable
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
@@ -27,7 +29,10 @@ import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.sendEmail
 import io.beatmaps.login.DBTokenStore
+import io.beatmaps.login.MongoClient
+import io.beatmaps.login.MongoSession
 import io.beatmaps.login.Session
+import io.beatmaps.login.cookieName
 import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
@@ -40,6 +45,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
+import io.ktor.server.locations.delete
 import io.ktor.server.locations.get
 import io.ktor.server.locations.options
 import io.ktor.server.locations.post
@@ -51,6 +57,9 @@ import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
+import io.ktor.util.hex
+import kotlinx.datetime.Clock
+import kotlinx.datetime.toJavaInstant
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.exceptions.ExposedSQLException
@@ -81,15 +90,21 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import org.litote.kmongo.div
+import org.litote.kmongo.eq
 import java.lang.Integer.toHexString
 import java.math.BigInteger
 import java.security.MessageDigest
-import java.time.Instant
+import java.security.SecureRandom
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.util.Base64
 import java.util.Date
+import javax.crypto.Cipher
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 fun md5(input: String): String {
     val md = MessageDigest.getInstance("MD5")
@@ -111,10 +126,26 @@ actual object UserDetailHelper {
     actual fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean) = Config.siteBase(absolute) + "/profile/${userDetail.id}" + (tab?.let { "#$it" } ?: "")
 }
 
-val secret = System.getenv("BSHASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: byteArrayOf()
-fun getHash(userId: String, salt: ByteArray) = MessageDigest.getInstance("SHA1").let {
-    it.update(salt + userId.toByteArray())
-    String.format("%040x", BigInteger(1, it.digest()))
+object UserCrypto {
+    private val secret = System.getenv("BSHASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: hex("f1d2959be6ac1a5c457cebd9837cacad")
+    private val secretEncryptKey = SecretKeySpec(secret, "AES")
+    private val ephemeralIv = ByteArray(secretEncryptKey.encoded.size).apply { SecureRandom().nextBytes(this) }
+
+    fun keyForUser(user: UserDao): java.security.Key = Keys.hmacShaKeyFor(secret + "${user.password}-${user.createdAt}".toByteArray())
+
+    private fun encryptDecrypt(mode: Int, input: ByteArray, iv: ByteArray): ByteArray {
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING")
+        cipher.init(mode, secretEncryptKey, IvParameterSpec(iv))
+        return cipher.doFinal(input)
+    }
+
+    fun encrypt(input: String, iv: ByteArray = ephemeralIv) = hex(encryptDecrypt(Cipher.ENCRYPT_MODE, input.toByteArray(), iv))
+    fun decrypt(input: String, iv: ByteArray = ephemeralIv) = String(encryptDecrypt(Cipher.DECRYPT_MODE, hex(input), iv))
+
+    fun getHash(userId: String, salt: ByteArray = secret) = MessageDigest.getInstance("SHA1").let {
+        it.update(salt + userId.toByteArray())
+        hex(it.digest())
+    }
 }
 
 @Location("/api/users")
@@ -143,17 +174,14 @@ class UsersApi {
     @Location("/reset")
     data class Reset(val api: UsersApi)
 
-    @Location("/id/{id}/stats")
-    data class UserStats(val id: Int, val api: UsersApi)
+    @Location("/sessions")
+    data class Sessions(val api: UsersApi)
 
     @Location("/id/{id}/playlist/{filename?}")
     data class UserPlaylist(val id: Int, val filename: String? = null, val api: UsersApi)
 
     @Location("/find/{id}")
     data class Find(val id: String, val api: UsersApi)
-
-    @Location("/beatsaver")
-    data class LinkBeatsaver(val api: UsersApi)
 
     @Location("/list/{page}")
     data class List(val page: Long = 0, val api: UsersApi)
@@ -340,8 +368,6 @@ fun Route.userRoute() {
         }
     }
 
-    fun keyForUser(user: UserDao) = Keys.hmacShaKeyFor(secret + "${user.password}-${user.createdAt}".toByteArray())
-
     post<UsersApi.Register> {
         val req = call.receive<RegisterRequest>()
 
@@ -357,7 +383,7 @@ fun Route.userRoute() {
                 } else {
                     try {
                         val bcrypt = String(Bcrypt.hash(req.password, 12))
-                        val token = getHash(req.email, secret)
+                        val token = UserCrypto.getHash(req.email)
 
                         val newUserId = transaction {
                             try {
@@ -428,9 +454,9 @@ fun Route.userRoute() {
                         (User.email eq req.email) and User.password.isNotNull() and (User.active or User.verifyToken.isNotNull())
                     }.firstOrNull()?.let { UserDao.wrapRow(it) }
                 }?.let { user ->
-                    val builder = Jwts.builder().setExpiration(Date.from(Instant.now().plus(20L, ChronoUnit.MINUTES)))
+                    val builder = Jwts.builder().setExpiration(Date(Clock.System.now().plus(20.toDuration(DurationUnit.MINUTES)).epochSeconds))
                     builder.setSubject(user.id.toString())
-                    builder.signWith(keyForUser(user))
+                    builder.signWith(UserCrypto.keyForUser(user))
                     val jwt = builder.compact()
 
                     sendEmail(
@@ -449,6 +475,64 @@ fun Route.userRoute() {
 
         response?.let {
             call.respond(it)
+        }
+    }
+
+    get<UsersApi.Sessions> {
+        requireAuthorization {
+            val oauthSessions = transaction {
+                RefreshTokenTable
+                    .join(OauthClient, JoinType.INNER, RefreshTokenTable.clientId, OauthClient.clientId)
+                    .select {
+                        (RefreshTokenTable.userName eq it.userId) and (RefreshTokenTable.expiration greater Clock.System.now().toJavaInstant())
+                    }
+                    .map { row ->
+                        OauthSession(
+                            UserCrypto.encrypt(row[RefreshTokenTable.id].value),
+                            row[OauthClient.name],
+                            row[OauthClient.iconUrl],
+                            row[RefreshTokenTable.scope].split(","),
+                            row[RefreshTokenTable.expiration].toKotlinInstant()
+                        )
+                    }
+            }
+
+            val sessionId = call.request.cookies[cookieName]
+            val siteSessions = if (MongoClient.connected) {
+                MongoClient.sessions.find(MongoSession::session / Session::userId eq it.userId).map { row ->
+                    SiteSession(
+                        UserCrypto.encrypt(row._id),
+                        row.session.countryCode,
+                        row.expireAt,
+                        row._id == sessionId
+                    )
+                }.toList()
+            } else listOf()
+
+            call.respond(SessionsData(oauthSessions, siteSessions))
+        }
+    }
+
+    delete<UsersApi.Sessions> {
+        requireAuthorization {
+            val req = call.receive<SessionRevokeRequest>()
+            val id = UserCrypto.decrypt(req.id)
+
+            if (!req.site) {
+                DBTokenStore.revokeRefreshToken(id)
+            } else if (!MongoClient.connected) {
+                call.respond(ActionResponse(false, listOf("Can't revoke in memory sessions")))
+                return@requireAuthorization
+            } else if (id == call.request.cookies[cookieName]) {
+                call.respond(ActionResponse(false, listOf("Can't revoke current session")))
+                return@requireAuthorization
+            } else {
+                MongoClient.sessions.deleteOne(
+                    MongoSession::_id eq id
+                )
+            }
+
+            call.respond(ActionResponse(true))
         }
     }
 
@@ -474,7 +558,7 @@ fun Route.userRoute() {
                         }.firstOrNull()?.let { UserDao.wrapRow(it) }?.let { user ->
                             // If the jwt is valid we can reset the user's password :D
                             try {
-                                Jwts.parserBuilder().setSigningKey(keyForUser(user)).build().parseClaimsJws(req.jwt)
+                                Jwts.parserBuilder().setSigningKey(UserCrypto.keyForUser(user)).build().parseClaimsJws(req.jwt)
 
                                 val success = User.update({
                                     User.id eq userId

@@ -83,7 +83,6 @@ kotlin {
                 optIn("kotlin.ExperimentalUnsignedTypes")
                 optIn("kotlinx.serialization.ExperimentalSerializationApi")
                 optIn("kotlinx.coroutines.DelicateCoroutinesApi")
-                optIn("io.lettuce.core.ExperimentalLettuceCoroutinesApi")
             }
             dependencies {
                 api(kotlin("reflect", "1.8.22"))
@@ -122,7 +121,6 @@ kotlin {
 
                 // Database drivers
                 implementation("org.postgresql:postgresql:42.5.0")
-                implementation("io.lettuce:lettuce-core:6.0.1.RELEASE")
                 implementation("pl.jutupe:ktor-rabbitmq:0.4.5")
                 implementation("com.rabbitmq:amqp-client:5.9.0")
                 implementation("org.litote.kmongo:kmongo-serialization:4.9.0")
