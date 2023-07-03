@@ -221,7 +221,6 @@ tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
     outputFileName = "output.js"
     sourceMaps = true
     destinationDirectory = file("$buildDir/processedResources/jvm/main/assets")
-    //report = true
 }
 
 tasks.withType<AbstractCopyTask> {
