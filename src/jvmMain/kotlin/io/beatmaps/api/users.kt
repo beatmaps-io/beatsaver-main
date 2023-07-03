@@ -776,7 +776,7 @@ fun Route.userRoute() {
                 )
             }
 
-            call.sessions.set(it.copy(testplay = user.testplay, curator = user.curator, admin = user.admin, alerts = alertCount, uniqueName = user.uniqueName, suspended = user.suspendedAt != null))
+            call.sessions.set(Session.fromUser(user, alertCount, it.oauth2ClientId, call))
 
             val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
 

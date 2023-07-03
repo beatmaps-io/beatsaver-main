@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import org.litote.kmongo.EMPTY_BSON
 import org.litote.kmongo.KMongo
 import org.litote.kmongo.eq
@@ -45,7 +47,8 @@ private val logger = Logger.getLogger("bmio.Redis")
 val cookieName = System.getenv("COOKIE_NAME") ?: "BMSESSIONID"
 val cookieDomain = System.getenv("COOKIE_DOMAIN") ?: null
 
-data class MongoSession(val _id: String, val session: Session, val expireAt: Instant)
+@Serializable
+data class MongoSession(val _id: String, val session: Session, @Contextual val expireAt: Instant)
 
 fun Application.installSessions() {
     val sessionStorage = try {
