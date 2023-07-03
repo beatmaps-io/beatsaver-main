@@ -484,7 +484,7 @@ fun Route.playlistRoute() {
         }
     }
 
-    val bookmarksIcon = javaClass.classLoader.getResourceAsStream("favicon/android-chrome-512x512.png")!!.readAllBytes()
+    val bookmarksIcon = javaClass.classLoader.getResourceAsStream("assets/favicon/android-chrome-512x512.png")!!.readAllBytes()
     get<PlaylistApi.Download> { req ->
         val (playlist, playlistSongs) = transaction {
             fun getPlaylist() =

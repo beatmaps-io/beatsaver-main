@@ -3,8 +3,8 @@ import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
-    kotlin("multiplatform") version "1.7.10"
-    kotlin("plugin.serialization") version "1.7.10"
+    kotlin("multiplatform") version "1.8.22"
+    kotlin("plugin.serialization") version "1.8.22"
     id("io.miret.etienne.sass") version "1.1.2"
     id("org.flywaydb.flyway") version "9.2.2"
     id("org.jlleitschuh.gradle.ktlint") version "11.0.0"
@@ -40,15 +40,21 @@ kotlin {
         browser {
             binaries.executable()
             webpackTask {
-                cssSupport.enabled = true
+                cssSupport {
+                    enabled.set(true)
+                }
             }
             runTask {
-                cssSupport.enabled = true
+                cssSupport {
+                    enabled.set(true)
+                }
             }
             testTask {
                 useKarma {
                     useChromeHeadless()
-                    webpackConfig.cssSupport.enabled = true
+                    webpackConfig.cssSupport {
+                        enabled.set(true)
+                    }
                 }
             }
         }
@@ -80,7 +86,7 @@ kotlin {
                 optIn("io.lettuce.core.ExperimentalLettuceCoroutinesApi")
             }
             dependencies {
-                api(kotlin("reflect", "1.7.10"))
+                api(kotlin("reflect", "1.8.22"))
 
                 // Core
                 implementation("io.ktor:ktor-utils:$ktorVersion")
@@ -204,7 +210,7 @@ flyway {
 tasks.getByName<CompileSass>("compileSass") {
     dependsOn(tasks.getByName("kotlinNpmInstall"))
 
-    outputDir = file("$buildDir/processedResources/jvm/main")
+    outputDir = file("$buildDir/processedResources/jvm/main/assets")
     setSourceDir(file("$projectDir/src/jvmMain/sass"))
     loadPath(file("$buildDir/js/node_modules"))
 
@@ -214,7 +220,8 @@ tasks.getByName<CompileSass>("compileSass") {
 tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
     outputFileName = "output.js"
     sourceMaps = true
-    report = true
+    destinationDirectory = file("$buildDir/processedResources/jvm/main/assets")
+    //report = true
 }
 
 tasks.withType<AbstractCopyTask> {
