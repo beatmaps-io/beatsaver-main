@@ -1,10 +1,12 @@
 package io.beatmaps.user
 
 import external.Axios
+import external.axiosDelete
 import external.generateConfig
 import external.reactFor
 import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
+import io.beatmaps.api.SessionRevokeRequest
 import io.beatmaps.api.UserAdminRequest
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserSuspendRequest
@@ -79,6 +81,25 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
             generateConfig<UserSuspendRequest, ActionResponse>()
         ).then {
             props.onUpdate()
+            setState {
+                errors = it.data.errors
+                loading = false
+                success = it.data.success
+            }
+        }.catch {
+            // Cancelled request
+            setState {
+                loading = false
+                success = false
+            }
+        }
+    }
+
+    private fun revoke(reason: String? = null) {
+        axiosDelete<SessionRevokeRequest, ActionResponse>(
+            "${Config.apibase}/users/sessions",
+            SessionRevokeRequest(userId = props.userDetail.id, site = true, reason = reason)
+        ).then {
             setState {
                 errors = it.data.errors
                 loading = false
@@ -228,6 +249,34 @@ class AdminAccountComponent : RComponent<AdminAccountComponentProps, AdminAccoun
                             }
                             +"Suspend"
                         }
+                    }
+                    a("#", classes = "btn btn-purple mt-2") {
+                        attrs.onClickFunction = { ev ->
+                            ev.preventDefault()
+
+                            setState {
+                                loading = true
+                            }
+
+                            props.modal.current?.showDialog(
+                                ModalData(
+                                    "Revoke logins",
+                                    bodyCallback = {
+                                        p {
+                                            +"Revoke all devices this user is currently logged in on?"
+                                        }
+                                        p {
+                                            +"Reason for action:"
+                                        }
+                                        textarea(classes = "form-control") {
+                                            ref = reasonRef
+                                        }
+                                    },
+                                    buttons = listOf(ModalButton("Revoke", "primary") { revoke(reasonRef.current?.value) }, ModalButton("Cancel"))
+                                )
+                            )
+                        }
+                        +"Revoke Logins"
                     }
                 }
             }

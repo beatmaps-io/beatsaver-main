@@ -11,6 +11,7 @@ import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.ReviewDeleteData
 import io.beatmaps.common.ReviewModerationData
+import io.beatmaps.common.RevokeSessionsData
 import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.UploadLimitData
@@ -228,6 +229,16 @@ val modLogEntryRenderer = fc<ModLogEntryProps> {
                         is ReviewModerationData -> {
                             diffText("text", it.action.oldText, it.action.newText)
                             diffText("sentiment", ReviewSentiment.fromInt(it.action.oldSentiment).name, ReviewSentiment.fromInt(it.action.newSentiment).name)
+                        }
+
+                        is RevokeSessionsData -> {
+                            p("card-text") {
+                                +"Revoked ${if (it.action.all) "all " else ""}sessions"
+                                it.action.reason?.let { reason ->
+                                    br {}
+                                    +"Reason: $reason"
+                                }
+                            }
                         }
                     }
                 }

@@ -448,6 +448,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                 account {
                     userDetail = detail
                     onUpdate = { loadState() }
+                    modal = modalRef
                 }
             } else {
                 adminAccount {

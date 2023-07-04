@@ -58,10 +58,6 @@ data class UserFollowData(
 @Serializable
 data class UserDiffStats(val total: Int, val easy: Int, val normal: Int, val hard: Int, val expert: Int, val expertPlus: Int)
 @Serializable
-data class BeatsaverLink(val linked: Boolean) { companion object }
-@Serializable
-data class BeatsaverLinkReq(val user: String, val password: String, val useOldName: Boolean = true)
-@Serializable
 data class AccountDetailReq(val textContent: String)
 @Serializable
 data class RegisterRequest(val captcha: String, val username: String, val email: String, val password: String, val password2: String)
@@ -80,4 +76,4 @@ data class UserSuspendRequest(val userId: Int, val suspended: Boolean, val reaso
 @Serializable
 data class UserFollowRequest(val userId: Int, val followed: Boolean)
 @Serializable
-data class SessionRevokeRequest(val id: String, val site: Boolean)
+data class SessionRevokeRequest(val userId: Int? = null, val site: Boolean? = null, val reason: String? = null)

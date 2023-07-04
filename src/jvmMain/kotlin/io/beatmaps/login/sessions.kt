@@ -53,9 +53,7 @@ object MongoClient {
         try {
             if (mongoHost.isEmpty()) throw Exception("Mongo not configured")
 
-            val currentCount = sessions.countDocuments(EMPTY_BSON)
-            logger.info("Using mongodb session storage ($currentCount)")
-
+            sessions.countDocuments(EMPTY_BSON)
             connected = true
 
             true

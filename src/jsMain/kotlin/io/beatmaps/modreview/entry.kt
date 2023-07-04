@@ -58,7 +58,7 @@ val modReviewEntryRenderer = fc<ModReviewEntryProps> {
         val mapId = it.entry?.map?.id
         val userId = it.entry?.creator?.id
 
-        axiosDelete("${Config.apibase}/review/single/$mapId/$userId", DeleteReview(reason)).then({
+        axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/$mapId/$userId", DeleteReview(reason)).then({
             setHidden(true)
         }) { }
     }

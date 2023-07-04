@@ -6,6 +6,7 @@ import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.common.Config
+import io.beatmaps.common.RevokeSessionsData
 import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UploadLimitData
 import io.beatmaps.common.api.EDifficulty
@@ -90,8 +91,11 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import org.litote.kmongo.and
+import org.litote.kmongo.descending
 import org.litote.kmongo.div
 import org.litote.kmongo.eq
+import org.litote.kmongo.ne
 import java.lang.Integer.toHexString
 import java.math.BigInteger
 import java.security.MessageDigest
@@ -176,6 +180,9 @@ class UsersApi {
 
     @Location("/sessions")
     data class Sessions(val api: UsersApi)
+
+    @Location("/sessions/{id}")
+    data class SessionsById(val id: String, val api: UsersApi)
 
     @Location("/id/{id}/playlist/{filename?}")
     data class UserPlaylist(val id: Int, val filename: String? = null, val api: UsersApi)
@@ -486,12 +493,13 @@ fun Route.userRoute() {
                     .select {
                         (RefreshTokenTable.userName eq it.userId) and (RefreshTokenTable.expiration greater Clock.System.now().toJavaInstant())
                     }
+                    .orderBy(RefreshTokenTable.expiration to SortOrder.DESC)
                     .map { row ->
                         OauthSession(
                             UserCrypto.encrypt(row[RefreshTokenTable.id].value),
                             row[OauthClient.name],
                             row[OauthClient.iconUrl],
-                            row[RefreshTokenTable.scope].split(","),
+                            row[RefreshTokenTable.scope].split(",").mapNotNull { scope -> OauthScope.fromTag(scope) },
                             row[RefreshTokenTable.expiration].toKotlinInstant()
                         )
                     }
@@ -499,14 +507,16 @@ fun Route.userRoute() {
 
             val sessionId = call.request.cookies[cookieName]
             val siteSessions = if (MongoClient.connected) {
-                MongoClient.sessions.find(MongoSession::session / Session::userId eq it.userId).map { row ->
-                    SiteSession(
-                        UserCrypto.encrypt(row._id),
-                        row.session.countryCode,
-                        row.expireAt,
-                        row._id == sessionId
-                    )
-                }.toList()
+                MongoClient.sessions.find(MongoSession::session / Session::userId eq it.userId)
+                    .sort(descending(MongoSession::expireAt))
+                    .map { row ->
+                        SiteSession(
+                            UserCrypto.encrypt(row._id),
+                            row.session.countryCode,
+                            row.expireAt,
+                            row._id == sessionId
+                        )
+                    }.toList()
             } else listOf()
 
             call.respond(SessionsData(oauthSessions, siteSessions))
@@ -514,25 +524,80 @@ fun Route.userRoute() {
     }
 
     delete<UsersApi.Sessions> {
-        requireAuthorization {
+        requireAuthorization { sess ->
             val req = call.receive<SessionRevokeRequest>()
-            val id = UserCrypto.decrypt(req.id)
+            val userId = req.userId ?: sess.userId
+            val sessionId = call.request.cookies[cookieName]
 
-            if (!req.site) {
-                DBTokenStore.revokeRefreshToken(id)
-            } else if (!MongoClient.connected) {
-                call.respond(ActionResponse(false, listOf("Can't revoke in memory sessions")))
-                return@requireAuthorization
-            } else if (id == call.request.cookies[cookieName]) {
-                call.respond(ActionResponse(false, listOf("Can't revoke current session")))
-                return@requireAuthorization
+            val response = if (userId != sess.userId && !sess.isAdmin()) {
+                ActionResponse(false, listOf("Not an admin or no reason given"))
             } else {
-                MongoClient.sessions.deleteOne(
-                    MongoSession::_id eq id
-                )
+                transaction {
+                    if (userId != sess.userId) {
+                        ModLog.insert(
+                            sess.userId,
+                            null,
+                            RevokeSessionsData(true, req.reason),
+                            userId
+                        )
+                    }
+
+                    if (req.site != true) {
+                        DBTokenStore.deleteForUser(userId)
+                    }
+
+                    if (req.site != false && MongoClient.connected) {
+                        MongoClient.sessions.deleteMany(
+                            and(MongoSession::_id ne sessionId, MongoSession::session / Session::userId eq userId)
+                        )
+                    }
+                }
+
+                ActionResponse(true)
             }
 
-            call.respond(ActionResponse(true))
+            call.respond(response)
+        }
+    }
+
+    delete<UsersApi.SessionsById> { byId ->
+        requireAuthorization { sess ->
+            val req = call.receive<SessionRevokeRequest>()
+            val userId = req.userId ?: sess.userId
+            val id = UserCrypto.decrypt(byId.id)
+
+            val response = if (userId != sess.userId && !sess.isAdmin()) {
+                ActionResponse(false, listOf("Not an admin"))
+            } else if (req.site == null) {
+                ActionResponse(false, listOf("site property is required when deleting by id"))
+            } else {
+                transaction {
+                    if (userId != sess.userId) {
+                        ModLog.insert(
+                            sess.userId,
+                            null,
+                            RevokeSessionsData(false, req.reason),
+                            userId
+                        )
+                    }
+
+                    if (!req.site) {
+                        DBTokenStore.revokeRefreshToken(id)
+                        ActionResponse(true)
+                    } else if (!MongoClient.connected) {
+                        ActionResponse(false, listOf("Can't revoke in memory sessions"))
+                    } else if (id == call.request.cookies[cookieName]) {
+                        ActionResponse(false, listOf("Can't revoke current session"))
+                    } else {
+                        MongoClient.sessions.deleteOne(
+                            MongoSession::_id eq id
+                        )
+                        ActionResponse(true)
+                    }
+                }
+            }
+
+            call.respond(response)
         }
     }
 

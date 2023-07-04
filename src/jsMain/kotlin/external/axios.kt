@@ -105,7 +105,7 @@ external interface AxiosInstance {
     var interceptors: `T$1`
     fun <T> request(config: AxiosRequestConfig): AxiosPromise<T>
     fun <T> get(url: String, config: AxiosRequestConfig? = definedExternally /* null */): AxiosPromise<T>
-    fun delete(url: String, config: AxiosRequestConfig? = definedExternally /* null */): AxiosPromise<Any>
+    fun <T> delete(url: String, config: AxiosRequestConfig? = definedExternally /* null */): AxiosPromise<T>
     fun head(url: String, config: AxiosRequestConfig? = definedExternally /* null */): AxiosPromise<Any>
     fun <T> post(url: String, data: Any? = definedExternally /* null */, config: AxiosRequestConfig? = definedExternally /* null */): AxiosPromise<T>
     fun <T> put(url: String, data: Any? = definedExternally /* null */, config: AxiosRequestConfig? = definedExternally /* null */): AxiosPromise<T>
@@ -141,13 +141,20 @@ inline fun <reified T, reified U> generateConfig(ct: CancelToken? = null) = obje
     }
 }
 
-inline fun <reified T> axiosDelete(url: String, body: T) = Axios.delete(
+inline fun <reified T, reified U> axiosDelete(url: String, body: T) = Axios.delete<U>(
     url,
     object : AxiosRequestConfig {
         override var data: Any? = body
         override var transformRequest: Array<(T, dynamic) -> String> = arrayOf(
             { data, headers -> transformRequest(data, headers) }
         )
+        override var transformResponse: (String) -> U = {
+            if (it is U) {
+                it
+            } else {
+                json.decodeFromString(it)
+            }
+        }
     }
 )
 
