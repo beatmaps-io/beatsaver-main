@@ -1,4 +1,4 @@
-package io.beatmaps.maps.review
+package io.beatmaps.shared.review
 
 import external.Axios
 import external.CancelTokenSource
@@ -21,8 +21,11 @@ import react.dom.div
 import react.setState
 
 external interface ReviewTableProps : Props {
-    var map: String
-    var mapUploaderId: Int
+    var map: String?
+    var mapUploaderId: Int?
+    var reviewerId: Int?
+    var fullWidth: Boolean?
+    var showMap: Boolean?
     var modal: RefObject<ModalComponent>
 }
 
@@ -42,7 +45,11 @@ class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
         }
     }
 
-    private fun getUrl(page: Int) = "${Config.apibase}/review/map/${props.map}/$page"
+    private fun getUrl(page: Int) = when {
+        props.map != null -> "${Config.apibase}/review/map/${props.map}/$page"
+        props.reviewerId != null -> "${Config.apibase}/review/user/${props.reviewerId}/$page"
+        else -> throw IllegalStateException()
+    }
 
     private val loadPage = { toLoad: Int, token: CancelTokenSource ->
         Axios.get<ReviewsResponse>(
@@ -54,24 +61,26 @@ class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
     }
 
     override fun RBuilder.render() {
-        div("reviews col-lg-8") {
+        div("reviews" + if (props.fullWidth == true) "" else " col-lg-8") {
             ref = resultsTable
             key = "resultsTable"
 
             globalContext.Consumer { userData ->
-                if (userData != null && !userData.suspended && userData.userId != props.mapUploaderId) {
-                    newReview {
-                        mapId = props.map
-                        userId = userData.userId
-                        existingReview = state.existingReview
-                        setExistingReview = { nv ->
-                            setState {
-                                existingReview = nv
+                props.map?.let { map ->
+                    if (userData != null && !userData.suspended && userData.userId != props.mapUploaderId) {
+                        newReview {
+                            mapId = map
+                            userId = userData.userId
+                            existingReview = state.existingReview
+                            setExistingReview = { nv ->
+                                setState {
+                                    existingReview = nv
+                                }
                             }
-                        }
-                        reloadList = {
-                            setState {
-                                resultsKey = Any()
+                            reloadList = {
+                                setState {
+                                    resultsKey = Any()
+                                }
                             }
                         }
                     }
@@ -86,8 +95,8 @@ class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
                 attrs.renderElement = InfiniteScrollElementRenderer { rv ->
                     reviewItem {
                         obj = rv
-                        mapId = props.map
                         userId = rv?.creator?.id ?: -1
+                        showMap = props.showMap ?: false
                         modal = props.modal
                         setExistingReview = { nv ->
                             setState {

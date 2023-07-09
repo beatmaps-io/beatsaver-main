@@ -1,4 +1,4 @@
-package io.beatmaps.maps.review
+package io.beatmaps.shared.review
 
 import io.beatmaps.api.ReviewSentiment
 import kotlinx.html.js.onClickFunction

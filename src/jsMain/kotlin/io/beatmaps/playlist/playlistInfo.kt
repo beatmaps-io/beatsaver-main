@@ -56,7 +56,6 @@ class PlaylistInfo : AutoSizeComponent<PlaylistFull, PlaylistInfoProps, Playlist
                             playlistOwner {
                                 attrs.owner = pl.owner
                                 attrs.time = pl.createdAt
-                                attrs.tab = "playlists"
                             }
                         }
                     }
