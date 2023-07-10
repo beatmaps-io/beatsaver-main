@@ -620,15 +620,18 @@ fun Route.playlistRoute() {
                                         it[PlaylistMap.order]
                                     } ?: 0f
 
-                            val mapIds = Beatmap
+                            val lookup = Beatmap
                                 .joinVersions(false, null)
-                                .slice(Beatmap.id)
+                                .slice(Versions.hash, Beatmap.id)
                                 .select {
                                     Beatmap.deletedAt.isNull() and (Beatmap.id.inList(validKeys) or Versions.hash.inList(hashesOrEmpty))
+                                }.associate {
+                                    it[Versions.hash] to it[Beatmap.id].value
                                 }
-                                .map {
-                                    it[Beatmap.id]
-                                }
+                            val unorderedMapids = lookup.values.toSet()
+
+                            val mapIds = validKeys.filter { unorderedMapids.contains(it) } +
+                                    hashesOrEmpty.mapNotNull { if (lookup.containsKey(it) && !validKeys.contains(lookup[it])) lookup[it] else null }
 
                             val result = if (mapIds.size != (hashesOrEmpty + validKeys).size && pbr.ignoreUnknown != true) {
                                 rollback()
