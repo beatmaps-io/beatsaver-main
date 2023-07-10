@@ -132,8 +132,10 @@ actual object UserDetailHelper {
 
 object UserCrypto {
     private val secret = System.getenv("BSHASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: hex("f1d2959be6ac1a5c457cebd9837cacad")
-    private val secretEncryptKey = SecretKeySpec(secret, "AES")
-    private val ephemeralIv = ByteArray(secretEncryptKey.encoded.size).apply { SecureRandom().nextBytes(this) }
+    private val sessionSecret = System.getenv("SESSION_ENCRYPT_SECRET")?.let { Base64.getDecoder().decode(it) } ?: hex("f1d2959be6ac1a5c457cebd9837cacad")
+    private val secretEncryptKey = SecretKeySpec(sessionSecret, "AES")
+    private val ephemeralIv = ByteArray(16).apply { SecureRandom().nextBytes(this) }
+    private val envIv = System.getenv("BSIV")?.let { Base64.getDecoder().decode(it) } ?: ephemeralIv
 
     fun keyForUser(user: UserDao): java.security.Key = Keys.hmacShaKeyFor(secret + "${user.password}-${user.createdAt}".toByteArray())
 
@@ -143,8 +145,8 @@ object UserCrypto {
         return cipher.doFinal(input)
     }
 
-    fun encrypt(input: String, iv: ByteArray = ephemeralIv) = hex(encryptDecrypt(Cipher.ENCRYPT_MODE, input.toByteArray(), iv))
-    fun decrypt(input: String, iv: ByteArray = ephemeralIv) = String(encryptDecrypt(Cipher.DECRYPT_MODE, hex(input), iv))
+    fun encrypt(input: String, iv: ByteArray = envIv) = hex(encryptDecrypt(Cipher.ENCRYPT_MODE, input.toByteArray(), iv))
+    fun decrypt(input: String, iv: ByteArray = envIv) = String(encryptDecrypt(Cipher.DECRYPT_MODE, hex(input), iv))
 
     fun getHash(userId: String, salt: ByteArray = secret) = MessageDigest.getInstance("SHA1").let {
         it.update(salt + userId.toByteArray())
