@@ -631,7 +631,7 @@ fun Route.playlistRoute() {
                             val unorderedMapids = lookup.values.toSet()
 
                             val mapIds = validKeys.filter { unorderedMapids.contains(it) } +
-                                    hashesOrEmpty.mapNotNull { if (lookup.containsKey(it) && !validKeys.contains(lookup[it])) lookup[it] else null }
+                                hashesOrEmpty.mapNotNull { if (lookup.containsKey(it) && !validKeys.contains(lookup[it])) lookup[it] else null }
 
                             val result = if (mapIds.size != (hashesOrEmpty + validKeys).size && pbr.ignoreUnknown != true) {
                                 rollback()
