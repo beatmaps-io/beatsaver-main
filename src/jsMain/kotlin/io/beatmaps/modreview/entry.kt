@@ -16,8 +16,8 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
-import io.beatmaps.maps.review.sentimentIcon
-import io.beatmaps.maps.review.sentimentPicker
+import io.beatmaps.shared.review.sentimentIcon
+import io.beatmaps.shared.review.sentimentPicker
 import io.beatmaps.shared.mapTitle
 import kotlinx.html.TD
 import kotlinx.html.js.onClickFunction
@@ -80,7 +80,7 @@ val modReviewEntryRenderer = fc<ModReviewEntryProps> {
         tr {
             it.entry?.let { review ->
                 td {
-                    if (review.creator != null) linkUser(review.creator)
+                    review.creator?.let { c -> linkUser(c) }
                 }
                 td {
                     if (review.map != null) mapTitle {

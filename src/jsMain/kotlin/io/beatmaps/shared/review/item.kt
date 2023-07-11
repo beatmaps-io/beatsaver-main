@@ -1,4 +1,4 @@
-package io.beatmaps.maps.review
+package io.beatmaps.shared.review
 
 import external.Axios
 import external.axiosDelete
@@ -17,7 +17,7 @@ import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.modreview.editableText
-import io.beatmaps.shared.playlistOwner
+import io.beatmaps.shared.reviewer
 import io.beatmaps.util.AutoSizeComponent
 import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.AutoSizeComponentState
@@ -44,7 +44,7 @@ import react.setState
 
 external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
     var userId: Int
-    var mapId: String
+    var showMap: Boolean
     var modal: RefObject<ModalComponent>
     var setExistingReview: ((Boolean) -> Unit)?
 }
@@ -91,11 +91,13 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
         val reason = reasonRef.current?.value ?: ""
         reasonRef.current?.value = ""
 
-        axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", DeleteReview(reason)).then({
-            hide()
+        props.obj?.map?.id?.let { mapId ->
+            axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/${mapId}/${props.userId}", DeleteReview(reason)).then({
+                hide()
 
-            if (currentUser) props.setExistingReview?.invoke(false)
-        }) { }
+                if (currentUser) props.setExistingReview?.invoke(false)
+            }) { }
+        }
     }
 
     override fun RBuilder.render() {
@@ -113,8 +115,9 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                             attrs.sentiment = sentimentLocal
                         }
                         div(classes = "owner") {
-                            playlistOwner {
-                                attrs.owner = rv.creator
+                            reviewer {
+                                attrs.reviewer = rv.creator
+                                attrs.map = rv.map
                                 attrs.time = rv.createdAt
                             }
                         }
@@ -199,14 +202,16 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                             maxLength = ReviewConstants.MAX_LENGTH
                             saveText = { newReview ->
                                 val newSentiment = state.newSentiment ?: sentimentLocal
-                                Axios.put<ActionResponse>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->
-                                    if (r.data.success) {
-                                        setState {
-                                            sentiment = newSentiment
+                                rv.map?.id?.let { mapId ->
+                                    Axios.put<ActionResponse>("${Config.apibase}/review/single/${mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->
+                                        if (r.data.success) {
+                                            setState {
+                                                sentiment = newSentiment
+                                            }
                                         }
-                                    }
 
-                                    r
+                                        r
+                                    }
                                 }
                             }
                             stopEditing = { t ->

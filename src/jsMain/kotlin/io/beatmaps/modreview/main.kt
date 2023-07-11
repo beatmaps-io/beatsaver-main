@@ -9,7 +9,7 @@ import io.beatmaps.WithRouterProps
 import io.beatmaps.api.ReviewsResponse
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
-import io.beatmaps.maps.review.CommentsInfiniteScroll
+import io.beatmaps.shared.review.CommentsInfiniteScroll
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import kotlinx.browser.window
