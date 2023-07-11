@@ -17,6 +17,7 @@ import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
 import io.beatmaps.common.pub
 import io.beatmaps.util.cdnPrefix
@@ -95,10 +96,11 @@ fun Route.reviewRoute() {
                 Review
                     .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                    .joinVersions(false)
                     .joinUploader()
                     .joinCurator()
                     .select {
-                        Review.deletedAt.isNull()
+                        Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                             .notNull(it.before) { o -> Review.createdAt less o.toJavaInstant() }
                             .notNull(it.user) { u -> reviewerAlias[User.uniqueName] eq u }
                     }
@@ -126,6 +128,7 @@ fun Route.reviewRoute() {
             try {
                 Review
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                    .joinVersions(false)
                     .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
                     .slice(Review.columns + reviewerAlias.columns)
                     .select {
@@ -156,6 +159,7 @@ fun Route.reviewRoute() {
             try {
                 Review
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                    .joinVersions(false)
                     .joinUploader()
                     .joinCurator()
                     .select {
@@ -185,6 +189,7 @@ fun Route.reviewRoute() {
             try {
                 Review
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                    .joinVersions(false)
                     .join(User, JoinType.INNER, Review.userId, User.id)
                     .slice(Review.columns + User.columns)
                     .select {
