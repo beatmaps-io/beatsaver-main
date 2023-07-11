@@ -582,7 +582,7 @@ fun Route.playlistRoute() {
     post<PlaylistApi.Batch, PlaylistBatchRequest>("Add or remove up to 100 maps to a playlist. Requires OAUTH".responds(ok<ActionResponse>())) { req, pbr ->
         requireAuthorization(OauthScope.MANAGE_PLAYLISTS) { sess ->
             val validKeys = (pbr.keys ?: listOf()).mapNotNull { key -> key.toIntOrNull(16) }
-            val hashesOrEmpty = pbr.hashes ?: listOf()
+            val hashesOrEmpty = pbr.hashes?.map { it.lowercase() } ?: listOf()
             if (hashesOrEmpty.size + validKeys.size > 100) {
                 call.respond(HttpStatusCode.BadRequest, "Too many maps")
                 return@requireAuthorization
@@ -626,7 +626,7 @@ fun Route.playlistRoute() {
                                 .select {
                                     Beatmap.deletedAt.isNull() and (Beatmap.id.inList(validKeys) or Versions.hash.inList(hashesOrEmpty))
                                 }.associate {
-                                    it[Versions.hash] to it[Beatmap.id].value
+                                    it[Versions.hash].lowercase() to it[Beatmap.id].value
                                 }
                             val unorderedMapids = lookup.values.toSet()
 
