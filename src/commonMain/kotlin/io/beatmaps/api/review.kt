@@ -14,7 +14,7 @@ class ReviewConstants {
 @Serializable
 data class ReviewDetail(
     val id: Int,
-    var creator: UserDetail? = null,
+    val creator: UserDetail? = null,
     val map: MapDetail? = null,
     val text: String,
     val sentiment: ReviewSentiment,

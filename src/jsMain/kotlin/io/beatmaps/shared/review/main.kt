@@ -95,9 +95,7 @@ class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
                 attrs.container = resultsTable
                 attrs.renderElement = InfiniteScrollElementRenderer { rv ->
                     reviewItem {
-                        obj = rv?.apply {
-                            creator = props.userDetail ?: creator
-                        }
+                        obj = rv?.copy(creator = props.userDetail ?: rv.creator)
                         userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
                         showMap = props.showMap ?: false
                         modal = props.modal
