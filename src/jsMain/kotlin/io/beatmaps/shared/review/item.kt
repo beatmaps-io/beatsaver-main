@@ -92,7 +92,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
         reasonRef.current?.value = ""
 
         props.obj?.map?.id?.let { mapId ->
-            axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/${mapId}/${props.userId}", DeleteReview(reason)).then({
+            axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/$mapId/${props.userId}", DeleteReview(reason)).then({
                 hide()
 
                 if (currentUser) props.setExistingReview?.invoke(false)
@@ -203,7 +203,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                             saveText = { newReview ->
                                 val newSentiment = state.newSentiment ?: sentimentLocal
                                 rv.map?.id?.let { mapId ->
-                                    Axios.put<ActionResponse>("${Config.apibase}/review/single/${mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->
+                                    Axios.put<ActionResponse>("${Config.apibase}/review/single/$mapId/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->
                                         if (r.data.success) {
                                             setState {
                                                 sentiment = newSentiment

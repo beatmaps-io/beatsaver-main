@@ -49,7 +49,7 @@ class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
     private fun getUrl(page: Int) = if (props.map != null) {
         "${Config.apibase}/review/map/${props.map}/$page"
     } else {
-        props.userDetail?.id?.let { "${Config.apibase}/review/user/${it}/$page" } ?: throw IllegalStateException()
+        props.userDetail?.id?.let { "${Config.apibase}/review/user/$it/$page" } ?: throw IllegalStateException()
     }
 
     private val loadPage = { toLoad: Int, token: CancelTokenSource ->

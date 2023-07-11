@@ -16,9 +16,9 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
+import io.beatmaps.shared.mapTitle
 import io.beatmaps.shared.review.sentimentIcon
 import io.beatmaps.shared.review.sentimentPicker
-import io.beatmaps.shared.mapTitle
 import kotlinx.html.TD
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title

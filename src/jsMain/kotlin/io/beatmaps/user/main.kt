@@ -16,9 +16,9 @@ import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
-import io.beatmaps.shared.review.reviewTable
 import io.beatmaps.playlist.playlistTable
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.review.reviewTable
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.userTitles
 import kotlinx.browser.localStorage
