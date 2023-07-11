@@ -6,6 +6,7 @@ import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewsResponse
+import io.beatmaps.api.UserDetail
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.shared.InfiniteScroll
@@ -23,7 +24,7 @@ import react.setState
 external interface ReviewTableProps : Props {
     var map: String?
     var mapUploaderId: Int?
-    var reviewerId: Int?
+    var userDetail: UserDetail?
     var fullWidth: Boolean?
     var showMap: Boolean?
     var modal: RefObject<ModalComponent>
@@ -45,10 +46,10 @@ class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
         }
     }
 
-    private fun getUrl(page: Int) = when {
-        props.map != null -> "${Config.apibase}/review/map/${props.map}/$page"
-        props.reviewerId != null -> "${Config.apibase}/review/user/${props.reviewerId}/$page"
-        else -> throw IllegalStateException()
+    private fun getUrl(page: Int) = if (props.map != null) {
+        "${Config.apibase}/review/map/${props.map}/$page"
+    } else {
+        props.userDetail?.id?.let { "${Config.apibase}/review/user/${it}/$page" } ?: throw IllegalStateException()
     }
 
     private val loadPage = { toLoad: Int, token: CancelTokenSource ->
@@ -94,8 +95,10 @@ class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
                 attrs.container = resultsTable
                 attrs.renderElement = InfiniteScrollElementRenderer { rv ->
                     reviewItem {
-                        obj = rv
-                        userId = rv?.creator?.id ?: -1
+                        obj = rv?.apply {
+                            creator = props.userDetail ?: creator
+                        }
+                        userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
                         showMap = props.showMap ?: false
                         modal = props.modal
                         setExistingReview = { nv ->

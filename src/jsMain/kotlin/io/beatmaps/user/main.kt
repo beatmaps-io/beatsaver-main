@@ -447,7 +447,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
         if (state.state == ProfileTab.REVIEWS) {
             reviewTable {
-                reviewerId = userId ?: loggedInLocal
+                userDetail = detail
                 fullWidth = true
                 modal = modalRef
             }

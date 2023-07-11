@@ -152,7 +152,6 @@ fun Route.reviewRoute() {
         val reviews = transaction {
             try {
                 Review
-                    .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
                     .joinUploader()
                     .joinCurator()

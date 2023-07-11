@@ -80,7 +80,7 @@ val modReviewEntryRenderer = fc<ModReviewEntryProps> {
         tr {
             it.entry?.let { review ->
                 td {
-                    if (review.creator != null) linkUser(review.creator)
+                    review.creator?.let { c -> linkUser(c) }
                 }
                 td {
                     if (review.map != null) mapTitle {
