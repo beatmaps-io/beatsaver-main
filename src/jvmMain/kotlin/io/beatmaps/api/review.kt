@@ -190,8 +190,7 @@ fun Route.reviewRoute() {
                 Review
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
                     .joinVersions(false)
-                    .join(User, JoinType.INNER, Review.userId, User.id)
-                    .slice(Review.columns + User.columns)
+                    .slice(Review.columns)
                     .select {
                         Review.mapId eq it.mapId.toInt(16) and (Review.userId eq it.userId) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
