@@ -7,11 +7,12 @@ import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
+import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.contains
-import io.beatmaps.common.db.distinctOn
 import io.beatmaps.common.db.greaterEqF
 import io.beatmaps.common.db.ilike
+import io.beatmaps.common.db.lateral
 import io.beatmaps.common.db.lessEqF
 import io.beatmaps.common.db.similar
 import io.beatmaps.common.db.unaccent
@@ -43,9 +44,12 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.sql.CustomFunction
 import org.jetbrains.exposed.sql.ExpressionWithColumnType
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.not
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
@@ -200,18 +204,24 @@ fun Route.searchRoute() {
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
-                            .joinVersions(needsDiff)
                             .joinUploader()
-                            .slice(
+                            .let { q ->
                                 if (needsDiff) {
-                                    Beatmap.id.distinctOn(
-                                        Beatmap.id,
-                                        *sortArgs.map { arg -> arg.first }.toTypedArray()
+                                    q.crossJoin(
+                                        Versions
+                                            .join(Difficulty, JoinType.INNER, Versions.id, Difficulty.versionId)
+                                            .slice(intLiteral(1))
+                                            .select {
+                                                (Versions.mapId eq Beatmap.id) and (Versions.state eq EMapState.Published)
+                                                    .notNull(it.minNps) { o -> (Difficulty.nps greaterEqF o) }
+                                                    .notNull(it.maxNps) { o -> (Difficulty.nps lessEqF o) }
+                                            }
+                                            .limit(1)
+                                            .lateral().alias("diff")
                                     )
-                                } else {
-                                    Beatmap.id
-                                }
-                            )
+                                } else q
+                            }
+                            .slice(Beatmap.id)
                             .select {
                                 Beatmap.deletedAt.isNull()
                                     .let { q -> searchInfo.applyQuery(q) }
@@ -230,8 +240,8 @@ fun Route.searchRoute() {
                                     .notNull(it.curated) { o -> with(Beatmap.curatedAt) { if (o) isNotNull() else isNull() } }
                                     .notNull(it.verified) { o -> User.verifiedMapper eq o }
                                     .notNull(it.fullSpread) { o -> Beatmap.fullSpread eq o }
-                                    .notNull(it.minNps) { o -> (Beatmap.maxNps greaterEqF o) and (Difficulty.nps greaterEqF o) }
-                                    .notNull(it.maxNps) { o -> (Beatmap.minNps lessEqF o) and (Difficulty.nps lessEqF o) }
+                                    .notNull(it.minNps) { o -> (Beatmap.maxNps greaterEqF o) }
+                                    .notNull(it.maxNps) { o -> (Beatmap.minNps lessEqF o) }
                                     .notNull(it.minDuration) { o -> Beatmap.duration greaterEq o }
                                     .notNull(it.maxDuration) { o -> Beatmap.duration lessEq o }
                                     .notNull(it.minRating) { o -> Beatmap.score greaterEqF o }
