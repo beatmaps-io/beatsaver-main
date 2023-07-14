@@ -261,10 +261,10 @@ fun Route.searchRoute() {
                                             o.split(",").fold(Op.TRUE as Op<Boolean>) { op, t ->
                                                 op and t.split("|").fold(Op.FALSE as Op<Boolean>) { op2, t2 ->
                                                     op2 or
-                                                            if (t2.startsWith("!"))
-                                                                Beatmap.tags.isNull() or not(Beatmap.tags contains arrayOf(t2.substringAfter("!")))
-                                                            else
-                                                                Beatmap.tags contains arrayOf(t2)
+                                                        if (t2.startsWith("!"))
+                                                            Beatmap.tags.isNull() or not(Beatmap.tags contains arrayOf(t2.substringAfter("!")))
+                                                        else
+                                                            Beatmap.tags contains arrayOf(t2)
                                                 }
                                             }
                                         }
