@@ -212,6 +212,7 @@ fun Route.searchRoute() {
                     .select {
                         Beatmap.id.inSubQuery(
                             Beatmap
+                                .joinUploader()
                                 .crossJoin(
                                     Versions
                                         .let { q ->
