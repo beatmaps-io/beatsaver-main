@@ -26,7 +26,6 @@ external interface ReviewTableProps : Props {
     var mapUploaderId: Int?
     var userDetail: UserDetail?
     var fullWidth: Boolean?
-    var showMap: Boolean?
     var modal: RefObject<ModalComponent>
 }
 
@@ -97,7 +96,7 @@ class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
                     reviewItem {
                         obj = rv?.copy(creator = props.userDetail ?: rv.creator)
                         userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
-                        showMap = props.showMap ?: false
+                        mapId = props.map ?: rv?.map?.id ?: ""
                         modal = props.modal
                         setExistingReview = { nv ->
                             setState {

@@ -44,7 +44,7 @@ import react.setState
 
 external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
     var userId: Int
-    var showMap: Boolean
+    var mapId: String
     var modal: RefObject<ModalComponent>
     var setExistingReview: ((Boolean) -> Unit)?
 }
@@ -91,13 +91,11 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
         val reason = reasonRef.current?.value ?: ""
         reasonRef.current?.value = ""
 
-        props.obj?.map?.id?.let { mapId ->
-            axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/$mapId/${props.userId}", DeleteReview(reason)).then({
-                hide()
+        axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", DeleteReview(reason)).then({
+            hide()
 
-                if (currentUser) props.setExistingReview?.invoke(false)
-            }) { }
-        }
+            if (currentUser) props.setExistingReview?.invoke(false)
+        }) { }
     }
 
     override fun RBuilder.render() {
@@ -202,16 +200,14 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                             maxLength = ReviewConstants.MAX_LENGTH
                             saveText = { newReview ->
                                 val newSentiment = state.newSentiment ?: sentimentLocal
-                                rv.map?.id?.let { mapId ->
-                                    Axios.put<ActionResponse>("${Config.apibase}/review/single/$mapId/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->
-                                        if (r.data.success) {
-                                            setState {
-                                                sentiment = newSentiment
-                                            }
+                                Axios.put<ActionResponse>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->
+                                    if (r.data.success) {
+                                        setState {
+                                            sentiment = newSentiment
                                         }
-
-                                        r
                                     }
+
+                                    r
                                 }
                             }
                             stopEditing = { t ->
