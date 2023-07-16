@@ -463,7 +463,7 @@ fun Route.userRoute() {
                         (User.email eq req.email) and User.password.isNotNull() and (User.active or User.verifyToken.isNotNull())
                     }.firstOrNull()?.let { UserDao.wrapRow(it) }
                 }?.let { user ->
-                    val builder = Jwts.builder().setExpiration(Date(Clock.System.now().plus(20.toDuration(DurationUnit.MINUTES)).epochSeconds))
+                    val builder = Jwts.builder().setExpiration(Date.from(Clock.System.now().plus(20.toDuration(DurationUnit.MINUTES)).toJavaInstant()))
                     builder.setSubject(user.id.toString())
                     builder.signWith(UserCrypto.keyForUser(user))
                     val jwt = builder.compact()
