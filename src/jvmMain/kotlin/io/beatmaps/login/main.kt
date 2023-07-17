@@ -1,6 +1,5 @@
 package io.beatmaps.login
 
-import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserCrypto
 import io.beatmaps.api.alertCount
 import io.beatmaps.api.parseJwtUntrusted
@@ -39,7 +38,6 @@ import io.ktor.server.auth.principal
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.locations.post
-import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.queryString
