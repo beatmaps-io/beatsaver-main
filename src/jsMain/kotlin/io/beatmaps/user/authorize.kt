@@ -6,6 +6,7 @@ import io.beatmaps.api.OauthScope
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.errors
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.html.FormMethod
@@ -24,7 +25,6 @@ import react.dom.div
 import react.dom.form
 import react.dom.i
 import react.dom.img
-import react.dom.jsStyle
 import react.dom.span
 import react.setState
 
@@ -149,11 +149,8 @@ class AuthorizePage : RComponent<Props, AuthorizePageState>() {
 
                     loginForm {
                         if (params.has("failed")) {
-                            div("invalid-feedback") {
-                                attrs.jsStyle {
-                                    display = "block"
-                                }
-                                +"Username or password not valid"
+                            errors {
+                                attrs.errors = listOf("Username or password not valid")
                             }
                         }
 

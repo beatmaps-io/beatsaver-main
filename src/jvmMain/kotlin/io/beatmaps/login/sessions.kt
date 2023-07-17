@@ -18,6 +18,7 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.litote.kmongo.EMPTY_BSON
 import org.litote.kmongo.KMongo
+import org.litote.kmongo.div
 import org.litote.kmongo.eq
 import org.litote.kmongo.findOne
 import org.litote.kmongo.getCollection
@@ -48,6 +49,9 @@ object MongoClient {
     lateinit var sessions: MongoCollection<MongoSession>
 
     var connected = false
+
+    fun deleteSessionsFor(userId: Int) =
+        connected && sessions.deleteMany(MongoSession::session / Session::userId eq userId).wasAcknowledged()
 
     fun testConnection() =
         try {

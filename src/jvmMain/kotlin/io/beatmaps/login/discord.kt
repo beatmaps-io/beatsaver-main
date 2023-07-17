@@ -70,8 +70,7 @@ fun Application.installDiscordOauth() {
                             User.uniqueName eq credentials.name
                         } and User.active
                     }.firstOrNull()?.let {
-                        val curPw = it[User.password]
-                        if (curPw != null && Bcrypt.verify(credentials.password, curPw.toByteArray())) {
+                        if (it[User.password]?.let { curPw -> Bcrypt.verify(credentials.password, curPw.toByteArray()) } == true) {
                             SimpleUserPrincipal(UserDao.wrapRow(it), alertCount(it[User.id].value), request.uri)
                         } else {
                             null

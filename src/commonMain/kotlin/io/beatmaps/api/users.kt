@@ -68,6 +68,8 @@ data class ForgotRequest(val captcha: String, val email: String)
 @Serializable
 data class ResetRequest(val jwt: String, val password: String, val password2: String)
 @Serializable
+data class ChangeEmailRequest(val jwt: String, val password: String)
+@Serializable
 data class AccountRequest(val currentPassword: String? = null, val password: String? = null, val password2: String? = null)
 @Serializable
 data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val curator: Boolean, val verifiedMapper: Boolean)

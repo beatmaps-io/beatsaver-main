@@ -14,7 +14,9 @@ import io.beatmaps.api.SessionRevokeRequest
 import io.beatmaps.api.SessionsData
 import io.beatmaps.api.UserDetail
 import io.beatmaps.index.ModalComponent
+import io.beatmaps.shared.errors
 import io.beatmaps.upload.UploadRequestConfig
+import io.beatmaps.user.account.accountEmail
 import io.beatmaps.user.account.changePassword
 import io.beatmaps.user.account.manageSessions
 import kotlinx.html.ButtonType
@@ -43,7 +45,6 @@ import react.dom.form
 import react.dom.h5
 import react.dom.hr
 import react.dom.input
-import react.dom.jsStyle
 import react.dom.label
 import react.dom.span
 import react.dom.textarea
@@ -125,29 +126,12 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             }
             hr("mt-2") {}
             if (props.userDetail.type != AccountType.DISCORD) {
-                div("mb-3 row") {
-                    label("col-sm-2 col-form-label") {
-                        attrs.reactFor = "email"
-                        +"Email"
-                    }
-                    div("col-sm-10") {
-                        input(InputType.text, classes = "form-control-plaintext") {
-                            key = "email"
-                            attrs.id = "email"
-                            attrs.disabled = true
-                            attrs.value = props.userDetail.email ?: ""
-                        }
-                    }
+                accountEmail {
+                    attrs.userDetail = props.userDetail
                 }
             }
-            div("invalid-feedback") {
-                val error = state.usernameErrors.firstOrNull()
-                if (error != null) {
-                    attrs.jsStyle {
-                        display = "block"
-                    }
-                    +error
-                }
+            errors {
+                attrs.errors = state.usernameErrors.take(1)
             }
             div("mb-3") {
                 label("form-label") {
@@ -208,14 +192,8 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     }
                 }
             }
-            div("invalid-feedback") {
-                val error = state.descriptionErrors.firstOrNull()
-                if (error != null) {
-                    attrs.jsStyle {
-                        display = "block"
-                    }
-                    +error
-                }
+            errors {
+                attrs.errors = state.descriptionErrors.take(1)
             }
             div("mb-3") {
                 label("form-label") {

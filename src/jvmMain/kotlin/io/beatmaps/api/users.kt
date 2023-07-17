@@ -6,6 +6,8 @@ import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.common.Config
+import io.beatmaps.common.EmailChangedData
+import io.beatmaps.common.PasswordChangedData
 import io.beatmaps.common.RevokeSessionsData
 import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UploadLimitData
@@ -25,6 +27,7 @@ import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.RefreshTokenTable
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.dbo.UserLog
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
@@ -34,8 +37,13 @@ import io.beatmaps.login.MongoClient
 import io.beatmaps.login.MongoSession
 import io.beatmaps.login.Session
 import io.beatmaps.login.cookieName
+import io.jsonwebtoken.Claims
 import io.jsonwebtoken.ExpiredJwtException
+import io.jsonwebtoken.Header
+import io.jsonwebtoken.Jwt
+import io.jsonwebtoken.JwtBuilder
 import io.jsonwebtoken.JwtException
+import io.jsonwebtoken.JwtParserBuilder
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import io.jsonwebtoken.security.SignatureException
@@ -44,6 +52,7 @@ import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.delete
@@ -59,6 +68,7 @@ import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.util.hex
+import io.ktor.util.pipeline.PipelineContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
 import kotlinx.datetime.toKotlinInstant
@@ -89,6 +99,7 @@ import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import org.litote.kmongo.and
@@ -107,13 +118,21 @@ import java.util.Date
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-fun md5(input: String): String {
-    val md = MessageDigest.getInstance("MD5")
-    return BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
-}
+fun md5(input: String) =
+    MessageDigest.getInstance("MD5").let { md ->
+        BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
+    }
+
+fun JwtBuilder.setExpiration(duration: Duration): JwtBuilder = setExpiration(Date.from(Clock.System.now().plus(duration).toJavaInstant()))
+fun JwtParserBuilder.setKeyForUser(userId: Int, pwdHash: String = ""): JwtParserBuilder = setSigningKey(UserCrypto.keyForUser(userId, pwdHash))
+fun parseJwtUntrusted(jwt: String): Jwt<Header<*>, Claims> =
+    jwt.substring(0, jwt.lastIndexOf('.') + 1).let {
+        Jwts.parserBuilder().build().parseClaimsJwt(it)
+    }
 
 fun UserDetail.Companion.getAvatar(other: UserDao) = other.avatar ?: "https://www.gravatar.com/avatar/${other.hash ?: md5(other.uniqueName ?: other.name)}?d=retro"
 
@@ -137,7 +156,10 @@ object UserCrypto {
     private val ephemeralIv = ByteArray(16).apply { SecureRandom().nextBytes(this) }
     private val envIv = System.getenv("BSIV")?.let { Base64.getDecoder().decode(it) } ?: ephemeralIv
 
-    fun keyForUser(user: UserDao): java.security.Key = Keys.hmacShaKeyFor(secret + "${user.password}-${user.createdAt}".toByteArray())
+    fun keyForUser(user: UserDao) = keyForUser(user.id.value, user.password ?: "")
+
+    fun keyForUser(userId: Int, pwdHash: String = ""): java.security.Key =
+        Keys.hmacShaKeyFor((pwdHash + getHash(userId.toString())).toByteArray())
 
     private fun encryptDecrypt(mode: Int, input: ByteArray, iv: ByteArray): ByteArray {
         val cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING")
@@ -179,6 +201,12 @@ class UsersApi {
 
     @Location("/reset")
     data class Reset(val api: UsersApi)
+
+    @Location("/email")
+    data class Email(val api: UsersApi)
+
+    @Location("/change-email")
+    data class ChangeEmail(val api: UsersApi)
 
     @Location("/sessions")
     data class Sessions(val api: UsersApi)
@@ -392,7 +420,6 @@ fun Route.userRoute() {
                 } else {
                     try {
                         val bcrypt = String(Bcrypt.hash(req.password, 12))
-                        val token = UserCrypto.getHash(req.email)
 
                         val newUserId = transaction {
                             try {
@@ -400,7 +427,7 @@ fun Route.userRoute() {
                                     it[name] = req.username
                                     it[email] = req.email
                                     it[password] = bcrypt
-                                    it[verifyToken] = token
+                                    it[verifyToken] = "pending"
                                     it[uniqueName] = req.username
                                     it[active] = false
                                 } to null
@@ -421,10 +448,17 @@ fun Route.userRoute() {
                         // Complicated series of fallbacks. If the id is set we created a news user, send them an email. If a response is set send it.
                         // Otherwise the email was a duplicate, tell the user via email so we don't reveal which emails have been registered already.
                         newUserId.first?.let {
+                            val jwt = Jwts.builder()
+                                .setExpiration(30.toDuration(DurationUnit.DAYS))
+                                .setSubject(it.value.toString())
+                                .claim("action", "register")
+                                .signWith(UserCrypto.keyForUser(it.value))
+                                .compact()
+
                             sendEmail(
                                 req.email,
                                 "BeatSaver Account Verification",
-                                "${req.username}\n\nTo verify your account, please click the link below:\n${Config.siteBase()}/verify?user=$it&token=$token"
+                                "${req.username}\n\nTo verify your account, please click the link below:\n${Config.siteBase()}/verify/$jwt"
                             )
 
                             ActionResponse(true)
@@ -463,10 +497,12 @@ fun Route.userRoute() {
                         (User.email eq req.email) and User.password.isNotNull() and (User.active or User.verifyToken.isNotNull())
                     }.firstOrNull()?.let { UserDao.wrapRow(it) }
                 }?.let { user ->
-                    val builder = Jwts.builder().setExpiration(Date.from(Clock.System.now().plus(20.toDuration(DurationUnit.MINUTES)).toJavaInstant()))
-                    builder.setSubject(user.id.toString())
-                    builder.signWith(UserCrypto.keyForUser(user))
-                    val jwt = builder.compact()
+                    val jwt = Jwts.builder()
+                        .setExpiration(20.toDuration(DurationUnit.MINUTES))
+                        .setSubject(user.id.toString())
+                        .claim("action", "reset")
+                        .signWith(UserCrypto.keyForUser(user))
+                        .compact()
 
                     sendEmail(
                         req.email,
@@ -603,6 +639,139 @@ fun Route.userRoute() {
         }
     }
 
+    post<UsersApi.Email> {
+        requireAuthorization { sess ->
+            val req = call.receive<AccountDetailReq>()
+            val newEmail = req.textContent
+
+            val response = newSuspendedTransaction {
+                User.select {
+                    (User.id eq sess.userId)
+                }.firstOrNull()?.let { UserDao.wrapRow(it) }
+            }?.let { user ->
+                if (user.emailChangedAt.toKotlinInstant() > Clock.System.now().minus(10.toDuration(DurationUnit.DAYS))) {
+                    ActionResponse(false, listOf("You can only change email once every 10 days"))
+                } else {
+                    val jwt = Jwts.builder()
+                        .setExpiration(20.toDuration(DurationUnit.MINUTES))
+                        .setSubject(user.id.toString())
+                        .claim("email", newEmail)
+                        .claim("action", "email")
+                        .signWith(UserCrypto.keyForUser(user.id.value))
+                        .compact()
+
+                    sendEmail(
+                        newEmail,
+                        "BeatSaver Email Change",
+                        "Hi ${user.uniqueName},\n\n" +
+                            "You can update the email on your account by clicking here: ${Config.siteBase()}/change-email/$jwt"
+                    )
+
+                    ActionResponse(true)
+                }
+            } ?: ActionResponse(false, listOf("User not found"))
+
+            call.respond(response)
+        }
+    }
+
+    fun PipelineContext<*, ApplicationCall>.sendReclaimMail(user: UserDao) =
+        user.email?.let {
+            val jwt = Jwts.builder()
+                .setExpiration(7.toDuration(DurationUnit.DAYS))
+                .setSubject(user.id.toString())
+                .claim("email", user.email)
+                .claim("action", "reclaim")
+                .signWith(UserCrypto.keyForUser(user.id.value))
+                .compact()
+
+            sendEmail(
+                it,
+                "BeatSaver Email Changed",
+                "Hi ${user.uniqueName ?: user.name},\n\n" +
+                    "Your email address for accessing ${Config.siteBase()} was changed.\n\n" +
+                    "If this wasn't you then you can click here to change it back: ${Config.siteBase()}/change-email/$jwt\n\n" +
+                    "If you are still having trouble accessing your account get in touch with us on discord " +
+                    "( https://discord.gg/rjVDapkMmj ) or email support@beatsaver.com"
+            )
+        }
+
+    post<UsersApi.ChangeEmail> {
+        val req = call.receive<ChangeEmailRequest>()
+
+        try {
+            val untrusted = parseJwtUntrusted(req.jwt)
+
+            val userId = untrusted.body.subject.toInt()
+            val newEmail = untrusted.body.get("email", String::class.java)
+            val action = untrusted.body.get("action", String::class.java)
+
+            newSuspendedTransaction {
+                User.select {
+                    User.id eq userId
+                }.firstOrNull()?.let { UserDao.wrapRow(it) }?.let { user ->
+                    try {
+                        // Check the user knows the current account password
+                        val isReclaim = action == "reclaim"
+                        if (user.email == newEmail) {
+                            // Ignore if this is a re-do
+                            ActionResponse(true)
+                        } else if (!isReclaim && user.emailChangedAt.toKotlinInstant() > Clock.System.now().minus(10.toDuration(DurationUnit.DAYS))) {
+                            ActionResponse(false, listOf("You can only change email once every 10 days"))
+                        } else if (isReclaim || user.password?.let { curPw -> Bcrypt.verify(req.password, curPw.toByteArray()) } == true) {
+                            // If the jwt is valid we can change the users email
+                            Jwts.parserBuilder()
+                                .setSigningKey(UserCrypto.keyForUser(user.id.value))
+                                .build()
+                                .parseClaimsJws(req.jwt)
+
+                            if (!listOf("email", "reclaim").contains(action)) throw JwtException("Bad claim")
+
+                            val success = User.update({
+                                User.id eq userId
+                            }) {
+                                it[email] = newEmail
+                                it[emailChangedAt] = NowExpression(emailChangedAt.columnType)
+                            } > 0
+
+                            if (success) {
+                                UserLog.insert(userId, null, EmailChangedData(user.email, newEmail))
+
+                                // Log out user as sessions contain their email so they are now invalid
+                                DBTokenStore.deleteForUser(userId)
+                                MongoClient.deleteSessionsFor(userId)
+
+                                if (!isReclaim) {
+                                    sendReclaimMail(user)
+                                }
+
+                                ActionResponse(true)
+                            } else {
+                                ActionResponse(false, listOf("Failed to update email"))
+                            }
+                        } else {
+                            ActionResponse(false, listOf("Current password incorrect"))
+                        }
+                    } catch (e: ExposedSQLException) {
+                        ActionResponse(false, listOf("Email in use on another account"))
+                    } catch (e: SignatureException) {
+                        ActionResponse(false, listOf("Token no longer valid"))
+                    } catch (e: JwtException) {
+                        ActionResponse(false, listOf("Bad token"))
+                    }
+                } ?: ActionResponse(false, listOf("User not found"))
+            }
+        } catch (e: IllegalArgumentException) {
+            ActionResponse(false, listOf("Password too long"))
+        } catch (e: ExpiredJwtException) {
+            ActionResponse(false, listOf("Link has expired"))
+        } catch (e: JwtException) {
+            ActionResponse(false, listOf("Token is malformed"))
+        }.let {
+            call.respond(it)
+        }
+    }
+
     post<UsersApi.Reset> {
         val req = call.receive<ResetRequest>()
 
@@ -613,10 +782,7 @@ fun Route.userRoute() {
         } else {
             try {
                 val bcrypt = String(Bcrypt.hash(req.password, 12))
-
-                val i = req.jwt.lastIndexOf('.')
-                val withoutSignature = req.jwt.substring(0, i + 1)
-                val untrusted = Jwts.parserBuilder().build().parseClaimsJwt(withoutSignature)
+                val untrusted = parseJwtUntrusted(req.jwt)
 
                 untrusted.body.subject.toInt().let { userId ->
                     transaction {
@@ -625,7 +791,11 @@ fun Route.userRoute() {
                         }.firstOrNull()?.let { UserDao.wrapRow(it) }?.let { user ->
                             // If the jwt is valid we can reset the user's password :D
                             try {
-                                Jwts.parserBuilder().setSigningKey(UserCrypto.keyForUser(user)).build().parseClaimsJws(req.jwt)
+                                Jwts.parserBuilder()
+                                    .require("action", "reset")
+                                    .setSigningKey(UserCrypto.keyForUser(user))
+                                    .build()
+                                    .parseClaimsJws(req.jwt)
 
                                 val success = User.update({
                                     User.id eq userId
@@ -639,7 +809,11 @@ fun Route.userRoute() {
                                 } > 0
 
                                 if (success) {
+                                    UserLog.insert(userId, null, PasswordChangedData)
+
+                                    // Revoke all logins
                                     DBTokenStore.deleteForUser(userId)
+                                    MongoClient.deleteSessionsFor(userId)
 
                                     ActionResponse(true)
                                 } else {
@@ -650,7 +824,7 @@ fun Route.userRoute() {
                                 // has changed since we sent the link
                                 ActionResponse(false, listOf("Reset token no longer valid"))
                             } catch (e: JwtException) {
-                                ActionResponse(false, listOf("Reset token is malformed"))
+                                ActionResponse(false, listOf("Bad token"))
                             }
                         } ?: ActionResponse(false, listOf("User not found"))
                     }
@@ -686,8 +860,7 @@ fun Route.userRoute() {
                         User.select {
                             User.id eq sess.userId
                         }.firstOrNull()?.let { r ->
-                            val curPw = r[User.password]
-                            if (curPw != null && Bcrypt.verify(req.currentPassword, curPw.toByteArray())) {
+                            if (r[User.password]?.let { curPw -> Bcrypt.verify(req.currentPassword, curPw.toByteArray()) } == true) {
                                 User.update({
                                     User.id eq sess.userId
                                 }) {

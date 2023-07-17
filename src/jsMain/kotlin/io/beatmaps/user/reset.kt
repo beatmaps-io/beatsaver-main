@@ -7,6 +7,7 @@ import io.beatmaps.WithRouterProps
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ResetRequest
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.errors
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
@@ -19,7 +20,6 @@ import react.dom.button
 import react.dom.div
 import react.dom.form
 import react.dom.input
-import react.dom.jsStyle
 import react.setState
 
 external interface ResetPageProps : WithRouterProps
@@ -81,13 +81,8 @@ class ResetPage : RComponent<ResetPageProps, ResetPageState>() {
                         }
                     }
                 }
-                state.errors.forEach {
-                    div("invalid-feedback") {
-                        attrs.jsStyle {
-                            display = "block"
-                        }
-                        +it
-                    }
+                errors {
+                    attrs.errors = state.errors
                 }
                 input(type = InputType.password, classes = "form-control") {
                     key = "password"

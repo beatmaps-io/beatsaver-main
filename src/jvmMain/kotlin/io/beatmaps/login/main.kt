@@ -1,8 +1,11 @@
 package io.beatmaps.login
 
+import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserCrypto
 import io.beatmaps.api.alertCount
+import io.beatmaps.api.parseJwtUntrusted
 import io.beatmaps.api.requireAuthorization
+import io.beatmaps.api.setKeyForUser
 import io.beatmaps.common.Config
 import io.beatmaps.common.client
 import io.beatmaps.common.db.upsert
@@ -12,6 +15,9 @@ import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.getCountry
 import io.beatmaps.common.localAvatarFolder
 import io.beatmaps.genericPage
+import io.jsonwebtoken.JwtException
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.security.SignatureException
 import io.ktor.client.call.body
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.forms.submitForm
@@ -111,9 +117,8 @@ data class Session(
 @Location("/register") class Register
 @Location("/forgot") class Forgot
 @Location("/reset/{jwt}") class Reset(val jwt: String)
-@Location("/verify") data class Verify(
-    val user: Int?,
-    val token: String = ""
+@Location("/verify/{jwt}") data class Verify(
+    val jwt: String
 )
 @Location("/username") class Username
 @Location("/steam") class Steam
@@ -225,16 +230,29 @@ fun Route.authRoute() {
     get<Forgot> { genericPage() }
     get<Reset> { genericPage() }
 
-    get<Verify> { v ->
-        val userId = v.user ?: throw NotFoundException("User not specified")
+    get<Verify> { req ->
+        val untrusted = parseJwtUntrusted(req.jwt)
+        val valid = try {
+            val trusted = Jwts.parserBuilder()
+                .require("action", "register")
+                .setKeyForUser(untrusted.body.subject.toInt())
+                .build()
+                .parseClaimsJws(req.jwt)
 
-        val valid = transaction {
-            User.update({
-                (User.id eq userId) and (User.verifyToken eq v.token)
-            }) {
-                it[active] = true
-                it[verifyToken] = null
-            } > 0
+            trusted.body.subject.toInt().let { userId ->
+                transaction {
+                    User.update({
+                        (User.id eq userId) and User.verifyToken.isNotNull()
+                    }) {
+                        it[active] = true
+                        it[verifyToken] = null
+                    } > 0
+                }
+            }
+        } catch (e: SignatureException) {
+            false
+        } catch (e: JwtException) {
+            false
         }
 
         call.respondRedirect("/login" + if (valid) "?valid" else "")

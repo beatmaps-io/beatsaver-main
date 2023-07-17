@@ -14,6 +14,7 @@ import io.beatmaps.api.PlaylistPage
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.globalContext
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.errors
 import io.beatmaps.upload.UploadRequestConfig
 import kotlinx.browser.window
 import kotlinx.html.ButtonType
@@ -36,7 +37,6 @@ import react.dom.button
 import react.dom.div
 import react.dom.form
 import react.dom.input
-import react.dom.jsStyle
 import react.dom.label
 import react.dom.textarea
 import react.setState
@@ -236,12 +236,9 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                                 attrs.hidden = state.loading == true
                             }
                         }
-                        state.errors?.forEach {
-                            div("invalid-feedback") {
-                                attrs.jsStyle {
-                                    display = "block"
-                                }
-                                +it
+                        state.errors?.let {
+                            errors {
+                                attrs.errors = it
                             }
                         }
                         div("btn-group w-100 mt-5") {

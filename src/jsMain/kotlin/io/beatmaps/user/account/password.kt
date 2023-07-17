@@ -7,6 +7,7 @@ import io.beatmaps.Config
 import io.beatmaps.api.AccountRequest
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
+import io.beatmaps.shared.errors
 import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
 import kotlinx.html.InputType
@@ -21,7 +22,6 @@ import react.dom.form
 import react.dom.h5
 import react.dom.hr
 import react.dom.input
-import react.dom.jsStyle
 import react.dom.label
 import react.fc
 import react.useRef
@@ -36,7 +36,8 @@ val changePassword = fc<ChangePasswordProps> { props ->
     val passwordRef = useRef<HTMLInputElement>()
     val password2Ref = useRef<HTMLInputElement>()
 
-    val (errors, setErrors) = useState<List<String>>()
+    val (errors, setErrors) = useState(listOf<String>())
+    val (valid, setValid) = useState(false)
     val (loading, setLoading) = useState<Boolean>()
 
     form(classes = "user-form", action = "/profile", method = FormMethod.post) {
@@ -56,9 +57,11 @@ val changePassword = fc<ChangePasswordProps> { props ->
                     currpassRef.current?.value = ""
                     passwordRef.current?.value = ""
                     password2Ref.current?.value = ""
+                    setValid(true)
                     setErrors(listOf("Password updated"))
                     setLoading(false)
                 } else {
+                    setValid(false)
                     setErrors(it.data.errors)
                     setLoading(false)
                 }
@@ -78,14 +81,9 @@ val changePassword = fc<ChangePasswordProps> { props ->
             attrs.value = props.userDetail.name
             attrs.attributes["autocomplete"] = "username"
         }
-        div("invalid-feedback") {
-            val error = errors?.firstOrNull()
-            if (error != null) {
-                attrs.jsStyle {
-                    display = "block"
-                }
-                +error
-            }
+        errors {
+            attrs.errors = errors.take(1)
+            attrs.valid = valid
         }
         div("mb-3") {
             label("form-label") {

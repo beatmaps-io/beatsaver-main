@@ -10,6 +10,7 @@ import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.errors
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
@@ -121,12 +122,9 @@ class PickUsernamePage : RComponent<PickUsernameProps, PickUsernameState>() {
                         +". _ -"
                     }
                 }
-                state.errors?.forEach {
-                    div("invalid-feedback") {
-                        attrs.jsStyle {
-                            display = "block"
-                        }
-                        +it
+                state.errors?.let {
+                    errors {
+                        attrs.errors = it
                     }
                 }
                 input(type = InputType.text, classes = "form-control") {
