@@ -5,7 +5,6 @@ import external.ReCAPTCHA
 import external.generateConfig
 import external.reactFor
 import io.beatmaps.Config
-import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.EmailRequest
 import io.beatmaps.api.UserDetail
