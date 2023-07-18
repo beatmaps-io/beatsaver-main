@@ -66,6 +66,8 @@ data class ActionResponse(val success: Boolean, val errors: List<String> = listO
 @Serializable
 data class ForgotRequest(val captcha: String, val email: String)
 @Serializable
+data class EmailRequest(val captcha: String, val email: String)
+@Serializable
 data class ResetRequest(val jwt: String, val password: String, val password2: String)
 @Serializable
 data class ChangeEmailRequest(val jwt: String, val password: String)

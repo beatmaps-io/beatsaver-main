@@ -1,10 +1,12 @@
 package io.beatmaps.user
 
 import external.Axios
+import external.ReCAPTCHA
 import external.axiosDelete
 import external.axiosGet
 import external.generateConfig
 import external.reactFor
+import external.recaptcha
 import io.beatmaps.Config
 import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.AccountType
@@ -76,6 +78,8 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
     private val usernameRef = createRef<HTMLInputElement>()
     private val descriptionRef = createRef<HTMLTextAreaElement>()
 
+    private val captchaRef = createRef<ReCAPTCHA>()
+
     override fun componentWillMount() {
         setState {
             loading = false
@@ -128,6 +132,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             if (props.userDetail.type != AccountType.DISCORD) {
                 accountEmail {
                     attrs.userDetail = props.userDetail
+                    attrs.captchaRef = captchaRef
                 }
             }
             errors {
@@ -362,6 +367,8 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                 }
             }
         }
+
+        recaptcha(captchaRef)
     }
 }
 

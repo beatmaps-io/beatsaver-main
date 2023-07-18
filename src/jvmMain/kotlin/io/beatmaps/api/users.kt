@@ -481,9 +481,7 @@ fun Route.userRoute() {
             ActionResponse(false, listOf("Could not verify user [${it.errorCodes.joinToString(", ")}]"))
         }
 
-        response?.let {
-            call.respond(it)
-        }
+        call.respond(response)
     }
 
     post<UsersApi.Forgot> {
@@ -518,9 +516,7 @@ fun Route.userRoute() {
             ActionResponse(false, listOf("Could not verify user [${it.errorCodes.joinToString(", ")}]"))
         }
 
-        response?.let {
-            call.respond(it)
-        }
+        call.respond(response)
     }
 
     get<UsersApi.Sessions> {
@@ -641,35 +637,41 @@ fun Route.userRoute() {
 
     post<UsersApi.Email> {
         requireAuthorization { sess ->
-            val req = call.receive<AccountDetailReq>()
-            val newEmail = req.textContent
+            val req = call.receive<EmailRequest>()
 
-            val response = newSuspendedTransaction {
-                User.select {
-                    (User.id eq sess.userId)
-                }.firstOrNull()?.let { UserDao.wrapRow(it) }
-            }?.let { user ->
-                if (user.emailChangedAt.toKotlinInstant() > Clock.System.now().minus(10.toDuration(DurationUnit.DAYS))) {
-                    ActionResponse(false, listOf("You can only change email once every 10 days"))
-                } else {
-                    val jwt = Jwts.builder()
-                        .setExpiration(20.toDuration(DurationUnit.MINUTES))
-                        .setSubject(user.id.toString())
-                        .claim("email", newEmail)
-                        .claim("action", "email")
-                        .signWith(UserCrypto.keyForUser(user.id.value))
-                        .compact()
+            val response = requireCaptcha(
+                req.captcha,
+                {
+                    newSuspendedTransaction {
+                        User.select {
+                            (User.id eq sess.userId)
+                        }.firstOrNull()?.let { UserDao.wrapRow(it) }
+                    }?.let { user ->
+                        if (user.emailChangedAt.toKotlinInstant() > Clock.System.now().minus(10.toDuration(DurationUnit.DAYS))) {
+                            ActionResponse(false, listOf("You can only change email once every 10 days"))
+                        } else {
+                            val jwt = Jwts.builder()
+                                .setExpiration(20.toDuration(DurationUnit.MINUTES))
+                                .setSubject(user.id.toString())
+                                .claim("email", req.email)
+                                .claim("action", "email")
+                                .signWith(UserCrypto.keyForUser(user.id.value))
+                                .compact()
 
-                    sendEmail(
-                        newEmail,
-                        "BeatSaver Email Change",
-                        "Hi ${user.uniqueName},\n\n" +
-                            "You can update the email on your account by clicking here: ${Config.siteBase()}/change-email/$jwt"
-                    )
+                            sendEmail(
+                                req.email,
+                                "BeatSaver Email Change",
+                                "Hi ${user.uniqueName},\n\n" +
+                                        "You can update the email on your account by clicking here: ${Config.siteBase()}/change-email/$jwt"
+                            )
 
-                    ActionResponse(true)
+                            ActionResponse(true)
+                        }
+                    } ?: ActionResponse(false, listOf("User not found"))
                 }
-            } ?: ActionResponse(false, listOf("User not found"))
+            ) {
+                ActionResponse(false, it.errorCodes.map { "Captcha error: $it" })
+            }
 
             call.respond(response)
         }

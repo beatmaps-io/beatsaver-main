@@ -1,11 +1,13 @@
 package io.beatmaps.user.account
 
 import external.Axios
+import external.ReCAPTCHA
 import external.generateConfig
 import external.reactFor
 import io.beatmaps.Config
 import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.ActionResponse
+import io.beatmaps.api.EmailRequest
 import io.beatmaps.api.UserDetail
 import io.beatmaps.shared.errors
 import kotlinx.html.ButtonType
@@ -15,6 +17,7 @@ import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
 import react.Props
+import react.RefObject
 import react.dom.button
 import react.dom.div
 import react.dom.input
@@ -25,6 +28,7 @@ import react.useState
 
 external interface AccountEmailProps : Props {
     var userDetail: UserDetail
+    var captchaRef: RefObject<ReCAPTCHA>
 }
 
 val accountEmail = fc<AccountEmailProps> { props ->
@@ -62,23 +66,26 @@ val accountEmail = fc<AccountEmailProps> { props ->
                     } else {
                         setLoading(true)
 
-                        Axios.post<ActionResponse>(
-                            "${Config.apibase}/users/email",
-                            AccountDetailReq(email),
-                            generateConfig<AccountDetailReq, ActionResponse>()
-                        ).then {
-                            if (it.data.success) {
-                                setValid(true)
-                                setErrors(listOf("Email sent"))
-                                setLoading(false)
-                            } else {
-                                setValid(false)
-                                setErrors(it.data.errors)
+                        props.captchaRef.current?.executeAsync()?.then { captcha ->
+                            Axios.post<ActionResponse>(
+                                "${Config.apibase}/users/email",
+                                EmailRequest(captcha, email),
+                                generateConfig<EmailRequest, ActionResponse>()
+                            ).then {
+                                if (it.data.success) {
+                                    setValid(true)
+                                    setErrors(listOf("Email sent"))
+                                    setLoading(false)
+                                } else {
+                                    props.captchaRef.current?.reset()
+                                    setValid(false)
+                                    setErrors(it.data.errors)
+                                    setLoading(false)
+                                }
+                            }.catch {
+                                // Cancelled request
                                 setLoading(false)
                             }
-                        }.catch {
-                            // Cancelled request
-                            setLoading(false)
                         }
                     }
                 }
