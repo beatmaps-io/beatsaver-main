@@ -662,7 +662,7 @@ fun Route.userRoute() {
                                 req.email,
                                 "BeatSaver Email Change",
                                 "Hi ${user.uniqueName},\n\n" +
-                                        "You can update the email on your account by clicking here: ${Config.siteBase()}/change-email/$jwt"
+                                    "You can update the email on your account by clicking here: ${Config.siteBase()}/change-email/$jwt"
                             )
 
                             ActionResponse(true)
