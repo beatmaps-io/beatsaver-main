@@ -43,7 +43,6 @@ import io.jsonwebtoken.Header
 import io.jsonwebtoken.Jwt
 import io.jsonwebtoken.JwtBuilder
 import io.jsonwebtoken.JwtException
-import io.jsonwebtoken.JwtParserBuilder
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import io.jsonwebtoken.security.SignatureException
@@ -128,7 +127,6 @@ fun md5(input: String) =
     }
 
 fun JwtBuilder.setExpiration(duration: Duration): JwtBuilder = setExpiration(Date.from(Clock.System.now().plus(duration).toJavaInstant()))
-fun JwtParserBuilder.setKeyForUser(userId: Int, pwdHash: String = ""): JwtParserBuilder = setSigningKey(UserCrypto.keyForUser(userId, pwdHash))
 fun parseJwtUntrusted(jwt: String): Jwt<Header<*>, Claims> =
     jwt.substring(0, jwt.lastIndexOf('.') + 1).let {
         Jwts.parserBuilder().build().parseClaimsJwt(it)
@@ -150,16 +148,17 @@ actual object UserDetailHelper {
 }
 
 object UserCrypto {
-    private val secret = System.getenv("BSHASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: hex("f1d2959be6ac1a5c457cebd9837cacad")
-    private val sessionSecret = System.getenv("SESSION_ENCRYPT_SECRET")?.let { Base64.getDecoder().decode(it) } ?: hex("f1d2959be6ac1a5c457cebd9837cacad")
+    private const val defaultSecretEncoded = "ZsEgU9mLHT1Vg+K5HKzlKna20mFQi26ZbB92zILrklNxV5Yxg8SyEcHVWzkspEiCCGkRB89claAWbFhglykfUA=="
+    private val secret = Base64.getDecoder().decode(System.getenv("BSHASH_SECRET") ?: defaultSecretEncoded)
+    private val sessionSecret = Base64.getDecoder().decode(System.getenv("SESSION_ENCRYPT_SECRET") ?: defaultSecretEncoded)
     private val secretEncryptKey = SecretKeySpec(sessionSecret, "AES")
     private val ephemeralIv = ByteArray(16).apply { SecureRandom().nextBytes(this) }
     private val envIv = System.getenv("BSIV")?.let { Base64.getDecoder().decode(it) } ?: ephemeralIv
 
-    fun keyForUser(user: UserDao) = keyForUser(user.id.value, user.password ?: "")
+    fun keyForUser(user: UserDao) = key(user.password ?: "")
 
-    fun keyForUser(userId: Int, pwdHash: String = ""): java.security.Key =
-        Keys.hmacShaKeyFor((pwdHash + getHash(userId.toString())).toByteArray())
+    fun key(pwdHash: String = ""): java.security.Key =
+        Keys.hmacShaKeyFor(secret + pwdHash.toByteArray())
 
     private fun encryptDecrypt(mode: Int, input: ByteArray, iv: ByteArray): ByteArray {
         val cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING")
@@ -452,7 +451,7 @@ fun Route.userRoute() {
                                 .setExpiration(30.toDuration(DurationUnit.DAYS))
                                 .setSubject(it.value.toString())
                                 .claim("action", "register")
-                                .signWith(UserCrypto.keyForUser(it.value))
+                                .signWith(UserCrypto.key())
                                 .compact()
 
                             sendEmail(
@@ -655,7 +654,7 @@ fun Route.userRoute() {
                                 .setSubject(user.id.toString())
                                 .claim("email", req.email)
                                 .claim("action", "email")
-                                .signWith(UserCrypto.keyForUser(user.id.value))
+                                .signWith(UserCrypto.key())
                                 .compact()
 
                             sendEmail(
@@ -684,7 +683,7 @@ fun Route.userRoute() {
                 .setSubject(user.id.toString())
                 .claim("email", user.email)
                 .claim("action", "reclaim")
-                .signWith(UserCrypto.keyForUser(user.id.value))
+                .signWith(UserCrypto.key())
                 .compact()
 
             sendEmail(
@@ -723,7 +722,7 @@ fun Route.userRoute() {
                         } else if (isReclaim || user.password?.let { curPw -> Bcrypt.verify(req.password, curPw.toByteArray()) } == true) {
                             // If the jwt is valid we can change the users email
                             Jwts.parserBuilder()
-                                .setSigningKey(UserCrypto.keyForUser(user.id.value))
+                                .setSigningKey(UserCrypto.key())
                                 .build()
                                 .parseClaimsJws(req.jwt)
 

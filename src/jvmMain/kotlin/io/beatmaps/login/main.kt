@@ -4,7 +4,6 @@ import io.beatmaps.api.UserCrypto
 import io.beatmaps.api.alertCount
 import io.beatmaps.api.parseJwtUntrusted
 import io.beatmaps.api.requireAuthorization
-import io.beatmaps.api.setKeyForUser
 import io.beatmaps.common.Config
 import io.beatmaps.common.client
 import io.beatmaps.common.db.upsert
@@ -233,7 +232,7 @@ fun Route.authRoute() {
         val valid = try {
             val trusted = Jwts.parserBuilder()
                 .require("action", "register")
-                .setKeyForUser(untrusted.body.subject.toInt())
+                .setSigningKey(UserCrypto.key())
                 .build()
                 .parseClaimsJws(req.jwt)
 
