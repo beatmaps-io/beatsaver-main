@@ -2,7 +2,6 @@ package io.beatmaps.login
 
 import io.beatmaps.api.UserCrypto
 import io.beatmaps.api.alertCount
-import io.beatmaps.api.parseJwtUntrusted
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.Config
 import io.beatmaps.common.client
