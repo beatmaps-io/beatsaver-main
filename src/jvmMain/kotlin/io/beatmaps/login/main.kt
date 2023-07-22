@@ -228,7 +228,6 @@ fun Route.authRoute() {
     get<Reset> { genericPage() }
 
     get<Verify> { req ->
-        val untrusted = parseJwtUntrusted(req.jwt)
         val valid = try {
             val trusted = Jwts.parserBuilder()
                 .require("action", "register")
