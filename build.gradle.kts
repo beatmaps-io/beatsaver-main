@@ -179,7 +179,6 @@ kotlin {
                 implementation(npm("bootswatch", "5.1.3"))
                 implementation(npm("bootstrap", "5.1.3"))
                 implementation(devNpm("webpack-bundle-analyzer", "4.6.1"))
-                implementation(devNpm("get_cpus_length", "1.0.3"))
             }
         }
         val jsTest by getting {

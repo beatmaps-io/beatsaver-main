@@ -1,25 +1,13 @@
 +function () {
     const webpack = require('webpack');
     const ContextReplacementPlugin = webpack.ContextReplacementPlugin;
-    const TerserPlugin = require("terser-webpack-plugin");
-    const getCpusLength = require("get_cpus_length");
-    let cpus = getCpusLength();
 
     config.optimization = {
         usedExports: true,
         splitChunks: {
             chunks: 'all',
             filename: 'modules.js'
-        },
-        minimize: true,
-        minimizer: [new TerserPlugin({
-            parallel: cpus > 6 ? cpus - 1 : false,
-            terserOptions: {
-                compress: {
-                    passes: 2
-                }
-            }
-        })]
+        }
     };
     config.plugins.push(new ContextReplacementPlugin(/moment[\/\\]locale$/, /en\-gb/));
 
