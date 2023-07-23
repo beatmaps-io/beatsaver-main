@@ -84,15 +84,12 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.batchInsert
-import org.jetbrains.exposed.sql.countDistinct
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.floatLiteral
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -211,14 +208,6 @@ fun getMaxMap(id: Int) = Coalesce(
     floatLiteral(1f)
 )
 
-val playlistStats = listOf(
-    Beatmap.uploader.countDistinct(),
-    Beatmap.duration.sum(),
-    Beatmap.upVotesInt.sum(),
-    Beatmap.downVotesInt.sum(),
-    Beatmap.score.avg(4)
-)
-
 fun Route.playlistRoute() {
     options<PlaylistApi.ByUploadDate> {
         call.response.header("Access-Control-Allow-Origin", "*")
@@ -240,7 +229,7 @@ fun Route.playlistRoute() {
                     .joinMaps()
                     .joinPlaylistCurator()
                     .joinOwner()
-                    .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats)
+                    .slice(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all)
                     .select {
                         Playlist.id.inSubQuery(
                             Playlist
@@ -297,7 +286,7 @@ fun Route.playlistRoute() {
                 .joinPlaylistCurator()
                 .slice(
                     (if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) +
-                        Playlist.columns + User.columns + curatorAlias.columns + playlistStats
+                        Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all
                 )
                 .select {
                     Playlist.id.inSubQuery(
@@ -342,7 +331,7 @@ fun Route.playlistRoute() {
                 .joinMaps()
                 .joinOwner()
                 .joinPlaylistCurator()
-                .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats)
+                .slice(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all)
                 .select {
                     (Playlist.id eq id).let {
                         if (isAdmin) {
@@ -473,7 +462,7 @@ fun Route.playlistRoute() {
                         .joinMaps()
                         .joinOwner()
                         .joinPlaylistCurator()
-                        .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats),
+                        .slice(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all),
                     arrayOf(Playlist.id, User.id, curatorAlias[User.id])
                 ) {
                     PlaylistFull.from(it, cdnPrefix())
