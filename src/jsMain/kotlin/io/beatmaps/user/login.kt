@@ -2,6 +2,7 @@ package io.beatmaps.user
 
 import external.routeLink
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.errors
 import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
@@ -19,7 +20,6 @@ import react.dom.form
 import react.dom.hr
 import react.dom.i
 import react.dom.input
-import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
 import react.fc
@@ -68,6 +68,21 @@ class LoginPage : RComponent<Props, State>() {
         setPageTitle("Login")
     }
 
+    private fun getToast() =
+        URLSearchParams(window.location.search).let { params ->
+            if (params.has("failed")) {
+                "Username or password not valid" to false
+            } else if (params.has("valid")) {
+                "Account activated, you can now login" to true
+            } else if (params.has("reset")) {
+                "Password reset, you can now login" to true
+            } else if (params.has("email")) {
+                "Email changed, you must log in again" to true
+            } else {
+                null
+            }
+        }
+
     override fun RBuilder.render() {
         div("login-form card border-dark") {
             div("card-header") {
@@ -77,27 +92,12 @@ class LoginPage : RComponent<Props, State>() {
                 loginForm {
                     attrs.buttonText = "Sign in"
 
-                    val params = URLSearchParams(window.location.search)
-                    if (params.has("failed")) {
-                        div("invalid-feedback") {
-                            attrs.jsStyle {
-                                display = "block"
+                    getToast()?.let {
+                        div("mb-2") {
+                            errors {
+                                attrs.valid = it.second
+                                attrs.errors = listOf(it.first)
                             }
-                            +"Username or password not valid"
-                        }
-                    } else if (params.has("valid")) {
-                        div("valid-feedback") {
-                            attrs.jsStyle {
-                                display = "block"
-                            }
-                            +"Account activated, you can now login"
-                        }
-                    } else if (params.has("reset")) {
-                        div("valid-feedback") {
-                            attrs.jsStyle {
-                                display = "block"
-                            }
-                            +"Password reset, you can now login"
                         }
                     }
                 }
@@ -115,8 +115,3 @@ class LoginPage : RComponent<Props, State>() {
         }
     }
 }
-
-fun RBuilder.loginPage(handler: Props.() -> Unit) =
-    child(LoginPage::class) {
-        this.attrs(handler)
-    }

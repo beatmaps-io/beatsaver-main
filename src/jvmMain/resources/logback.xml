@@ -11,6 +11,8 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
+    <logger name="org.mongodb" level="off" additivity="false" />
+
     <!-- Set root logger on another level  -->
     <root level="info">
         <appender-ref ref="STDOUT"/>

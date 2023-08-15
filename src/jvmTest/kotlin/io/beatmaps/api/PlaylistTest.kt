@@ -47,7 +47,7 @@ class PlaylistTest {
 
         routing {
             get("/login-test") {
-                call.sessions.set(Session(1, "test@example.com", "test", false, null, null))
+                call.sessions.set(Session(1, userEmail = "test@example.com", userName = "test"))
             }
         }
 

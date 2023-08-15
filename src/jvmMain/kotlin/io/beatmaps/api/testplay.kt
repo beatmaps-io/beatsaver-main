@@ -124,7 +124,7 @@ suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(captcha: Stri
             if (result.isSuccess) {
                 block()
             } else {
-                error?.let { it(result) } ?: run { call.respond(HttpStatusCode.BadRequest); null }
+                error?.invoke(this, result) ?: throw BadRequestException("Bad captcha")
             }
         }
     }

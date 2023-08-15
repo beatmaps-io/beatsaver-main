@@ -63,9 +63,7 @@ import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.html.respondHtmlTemplate
-import io.ktor.server.http.content.defaultResource
-import io.ktor.server.http.content.resources
-import io.ktor.server.http.content.static
+import io.ktor.server.http.content.staticResources
 import io.ktor.server.locations.Locations
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.NotFoundException
@@ -81,6 +79,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
+import io.ktor.server.sessions.set
 import io.ktor.util.converters.DataConversionException
 import io.ktor.util.pipeline.PipelineContext
 import io.ktor.util.reflect.TypeInfo
@@ -108,6 +107,11 @@ suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStat
 
 suspend fun ApplicationCall.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) {
     val sess = sessions.get<Session>()
+
+    // Force renew session
+    if (statusCode == HttpStatusCode.OK && sess != null)
+        sessions.set(sess)
+
     if (sess != null && sess.uniqueName == null && request.path() != "/username") {
         respondRedirect("/username")
     } else {
@@ -152,12 +156,12 @@ fun Application.beatmapsio() {
                         null
                     } ?: jsConv.deserialize(charset, typeInfo, content)
 
-                override suspend fun serialize(contentType: ContentType, charset: Charset, typeInfo: TypeInfo, value: Any) =
+                override suspend fun serializeNullable(contentType: ContentType, charset: Charset, typeInfo: TypeInfo, value: Any?) =
                     try {
-                        kotlinx.serialize(contentType, charset, typeInfo, value)
+                        kotlinx.serializeNullable(contentType, charset, typeInfo, value)
                     } catch (e: Exception) {
                         null
-                    } ?: jsConv.serialize(contentType, charset, typeInfo, value)
+                    } ?: jsConv.serializeNullable(contentType, charset, typeInfo, value)
             }
         )
     }
@@ -230,9 +234,6 @@ fun Application.beatmapsio() {
         val errorLogger = Logger.getLogger("bmio.error")
 
         status(HttpStatusCode.NotFound) {
-            /*(call.attributes.allKeys.find { it.name == "SessionKey" } as? AttributeKey<Any>)?.let {
-                call.attributes.remove(it)
-            }*/
             val reqPath = call.request.path()
             if (reqPath.startsWith("/api")) {
                 call.respond(HttpStatusCode.NotFound, ErrorResponse("Not Found"))
@@ -378,9 +379,6 @@ fun Application.beatmapsio() {
 
         mapUpdateEnricher()
 
-        static("static") {
-            resources()
-            defaultResource("404.html")
-        }
+        staticResources("/static", "assets")
     }
 }

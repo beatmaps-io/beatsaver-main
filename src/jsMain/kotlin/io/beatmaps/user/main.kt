@@ -18,6 +18,7 @@ import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
 import io.beatmaps.playlist.playlistTable
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.review.reviewTable
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.userTitles
 import kotlinx.browser.localStorage
@@ -73,6 +74,7 @@ enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps, Tab
     UNPUBLISHED("Unpublished", condition = { _, c, _ -> (c.userId == null) }, bootCondition = { (localStorage["profile.showwip"] == "true") }, onSelected = { if (it.userId == null) { localStorage["profile.showwip"] = "true" } }),
     PLAYLISTS("Playlists"),
     CURATED("Curated", condition = { _, _, it -> (it.userDetail?.curator == true) }),
+    REVIEWS("Reviews"),
     ACCOUNT("Account", condition = { it, c, _ -> (it.userData?.admin == true || c.userId == null) })
 }
 
@@ -443,11 +445,20 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             }
         }
 
+        if (state.state == ProfileTab.REVIEWS) {
+            reviewTable {
+                userDetail = detail
+                fullWidth = true
+                modal = modalRef
+            }
+        }
+
         if (state.state == ProfileTab.ACCOUNT && detail != null) {
             if (userId == null) {
                 account {
                     userDetail = detail
                     onUpdate = { loadState() }
+                    modal = modalRef
                 }
             } else {
                 adminAccount {

@@ -1,7 +1,7 @@
 package io.beatmaps.login
 
+import io.beatmaps.api.UserCrypto
 import io.beatmaps.api.alertCount
-import io.beatmaps.api.getHash
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.Config
 import io.beatmaps.common.client
@@ -9,8 +9,12 @@ import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.getCountry
 import io.beatmaps.common.localAvatarFolder
 import io.beatmaps.genericPage
+import io.jsonwebtoken.JwtException
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.security.SignatureException
 import io.ktor.client.call.body
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.forms.submitForm
@@ -32,9 +36,10 @@ import io.ktor.server.auth.principal
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.locations.post
-import io.ktor.server.plugins.NotFoundException
+import io.ktor.server.plugins.origin
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.queryString
+import io.ktor.server.request.userAgent
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -46,6 +51,7 @@ import io.ktor.util.StringValues
 import io.ktor.util.hex
 import kotlinx.coroutines.runBlocking
 import kotlinx.html.meta
+import kotlinx.serialization.Serializable
 import nl.myndocs.oauth2.authenticator.Credentials
 import nl.myndocs.oauth2.client.Client
 import nl.myndocs.oauth2.identity.Identity
@@ -65,6 +71,7 @@ import java.time.Instant
 import java.util.Base64
 import java.util.UUID
 
+@Serializable
 data class Session(
     val userId: Int,
     val hash: String? = null,
@@ -79,30 +86,20 @@ data class Session(
     val alerts: Int? = null,
     val curator: Boolean = false,
     val oauth2ClientId: String? = null,
-    val suspended: Boolean = false
+    val suspended: Boolean = false,
+    val ip: String? = null,
+    val userAgent: String? = null,
+    val countryCode: String? = null
 ) {
-    constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?, curator: Boolean, oauth2ClientId: String?) :
-        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, curator, oauth2ClientId, false)
-    constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?, curator: Boolean) :
-        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, curator, null)
-    constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean, alerts: Int?) :
-        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, alerts, false)
-    constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?, canLink: Boolean) :
-        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, canLink, transaction { alertCount(userId) })
-    constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean, uniqueName: String?) :
-        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, uniqueName, true)
-    constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?, admin: Boolean) :
-        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, admin, null)
-    constructor(userId: Int, hash: String?, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?) :
-        this(userId, hash, userEmail, userName, testplay, steamId, oculusId, false)
-    constructor(userId: Int, userEmail: String, userName: String, testplay: Boolean, steamId: Long?, oculusId: Long?) :
-        this(userId, null, userEmail, userName, testplay, steamId, oculusId)
-
     fun isAdmin() = admin && transaction { UserDao[userId].admin }
     fun isCurator() = isAdmin() || (curator && transaction { UserDao[userId].curator })
 
     companion object {
-        fun fromUser(user: UserDao, alertCount: Int? = null, oauth2ClientId: String? = null) = Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, alertCount, user.curator, oauth2ClientId, user.suspendedAt != null)
+        fun fromUser(user: UserDao, alertCount: Int? = null, oauth2ClientId: String? = null, call: ApplicationCall? = null) = Session(
+            user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, alertCount,
+            user.curator, oauth2ClientId, user.suspendedAt != null, call?.request?.origin?.remoteHost, call?.request?.userAgent(),
+            call?.getCountry()?.let { if (it.success) it.countryCode else null }
+        )
     }
 }
 
@@ -116,9 +113,8 @@ data class Session(
 @Location("/register") class Register
 @Location("/forgot") class Forgot
 @Location("/reset/{jwt}") class Reset(val jwt: String)
-@Location("/verify") data class Verify(
-    val user: Int?,
-    val token: String = ""
+@Location("/verify/{jwt}") data class Verify(
+    val jwt: String
 )
 @Location("/username") class Username
 @Location("/steam") class Steam
@@ -139,7 +135,7 @@ fun Route.authRoute() {
             }
         }.body<ByteArray>()
 
-        val fileName = getHash(discordId.toString(), discordSecret)
+        val fileName = UserCrypto.getHash(discordId.toString(), discordSecret)
         val localFile = File(localAvatarFolder(), "$fileName.png")
         localFile.writeBytes(bytes)
 
@@ -171,7 +167,7 @@ fun Route.authRoute() {
                 UserDao[userId] to alertCount(userId)
             }
 
-            call.sessions.set(Session(user.id.value, user.hash, "", data.username, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, user.hash == null, alertCount))
+            call.sessions.set(Session.fromUser(user, alertCount, call = call))
             req.state?.let { String(hex(it)) }.orEmpty().let { query ->
                 if (query.isNotEmpty() && query.contains("client_id")) {
                     call.respondRedirect("/oauth2/authorize/success$query")
@@ -230,16 +226,28 @@ fun Route.authRoute() {
     get<Forgot> { genericPage() }
     get<Reset> { genericPage() }
 
-    get<Verify> { v ->
-        val userId = v.user ?: throw NotFoundException("User not specified")
+    get<Verify> { req ->
+        val valid = try {
+            val trusted = Jwts.parserBuilder()
+                .require("action", "register")
+                .setSigningKey(UserCrypto.key())
+                .build()
+                .parseClaimsJws(req.jwt)
 
-        val valid = transaction {
-            User.update({
-                (User.id eq userId) and (User.verifyToken eq v.token)
-            }) {
-                it[active] = true
-                it[verifyToken] = null
-            } > 0
+            trusted.body.subject.toInt().let { userId ->
+                transaction {
+                    User.update({
+                        (User.id eq userId) and User.verifyToken.isNotNull()
+                    }) {
+                        it[active] = true
+                        it[verifyToken] = null
+                    } > 0
+                }
+            }
+        } catch (e: SignatureException) {
+            false
+        } catch (e: JwtException) {
+            false
         }
 
         call.respondRedirect("/login" + if (valid) "?valid" else "")
@@ -249,14 +257,14 @@ fun Route.authRoute() {
         post<Login> {
             call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
                 val user = newPrincipal.user
-                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator, suspended = user.suspendedAt != null))
+                call.sessions.set(Session.fromUser(user, newPrincipal.alertCount, call = call))
             }
             call.respondRedirect("/")
         }
         post<Oauth2.Authorize> {
             call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
                 val user = newPrincipal.user
-                call.sessions.set(Session(user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, newPrincipal.alertCount, user.curator, it.client_id, user.suspendedAt != null))
+                call.sessions.set(Session.fromUser(user, newPrincipal.alertCount, it.client_id, call))
 
                 call.respondRedirect(newPrincipal.redirect)
             }

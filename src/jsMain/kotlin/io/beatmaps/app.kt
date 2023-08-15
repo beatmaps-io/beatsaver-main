@@ -12,14 +12,15 @@ import io.beatmaps.playlist.MultiAddPlaylist
 import io.beatmaps.playlist.Playlist
 import io.beatmaps.playlist.PlaylistFeed
 import io.beatmaps.upload.UploadPage
+import io.beatmaps.user.LoginPage
 import io.beatmaps.user.PickUsernamePage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.ResetPage
 import io.beatmaps.user.UserList
 import io.beatmaps.user.alerts.AlertsPage
 import io.beatmaps.user.authorizePage
+import io.beatmaps.user.changeEmailPage
 import io.beatmaps.user.forgotPage
-import io.beatmaps.user.loginPage
 import io.beatmaps.user.signupPage
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -124,9 +125,7 @@ class App : RComponent<Props, State>() {
                     div {}
                 }
                 bsroute("/mappers", klazz = UserList::class)
-                bsroute("/login") {
-                    loginPage { }
-                }
+                bsroute("/login", klazz = LoginPage::class)
                 bsroute("/oauth2/authorize") {
                     authorizePage { }
                 }
@@ -137,6 +136,9 @@ class App : RComponent<Props, State>() {
                     forgotPage { }
                 }
                 bsroute("/reset/:jwt", klazz = ResetPage::class)
+                bsroute("/change-email/:jwt") {
+                    changeEmailPage { }
+                }
                 bsroute("/username", klazz = PickUsernamePage::class)
                 bsroute("*") {
                     notFound { }

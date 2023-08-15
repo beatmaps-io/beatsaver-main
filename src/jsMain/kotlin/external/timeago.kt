@@ -5,6 +5,7 @@ import react.Props
 
 external interface TimeAgoProps : Props {
     var date: String
+    var minPeriod: Int
 }
 
 @JsModule("react-timeago")

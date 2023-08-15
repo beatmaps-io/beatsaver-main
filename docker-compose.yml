@@ -11,3 +11,17 @@ services:
       POSTGRES_USER: beatmaps
       POSTGRES_PASSWORD: "insecure-password"
     restart: always
+  sessions:
+    image: mongo:6-jammy
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo:/data/db
+      - ./src/commonMain/resources/mongo:/docker-entrypoint-initdb.d:ro
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "root"
+      MONGO_INITDB_ROOT_PASSWORD: "insecure-password"
+      MONGO_INITDB_DATABASE: "beatmaps"
+      MONGO_USER: "beatmaps"
+      MONGO_PASSWORD: "insecure-password"
+    restart: always

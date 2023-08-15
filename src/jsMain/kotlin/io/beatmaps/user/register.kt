@@ -9,6 +9,7 @@ import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.RegisterRequest
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.errors
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
@@ -25,7 +26,6 @@ import react.dom.form
 import react.dom.hr
 import react.dom.i
 import react.dom.input
-import react.dom.jsStyle
 import react.dom.p
 import react.dom.small
 import react.setState
@@ -108,13 +108,8 @@ class SignupPage : RComponent<Props, SignupPageState>() {
                             }
                         }
                     }
-                    state.errors.forEach {
-                        div("invalid-feedback") {
-                            attrs.jsStyle {
-                                display = "block"
-                            }
-                            +it
-                        }
+                    errors {
+                        attrs.errors = state.errors
                     }
                     input(type = InputType.text, classes = "form-control") {
                         key = "username"

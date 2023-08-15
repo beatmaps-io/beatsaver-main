@@ -17,6 +17,7 @@ import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
 import io.beatmaps.common.pub
 import io.beatmaps.util.cdnPrefix
@@ -37,6 +38,7 @@ import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -94,10 +96,11 @@ fun Route.reviewRoute() {
                 Review
                     .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                    .joinVersions(false)
                     .joinUploader()
                     .joinCurator()
                     .select {
-                        Review.deletedAt.isNull()
+                        Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                             .notNull(it.before) { o -> Review.createdAt less o.toJavaInstant() }
                             .notNull(it.user) { u -> reviewerAlias[User.uniqueName] eq u }
                     }
@@ -124,9 +127,12 @@ fun Route.reviewRoute() {
         val reviews = transaction {
             try {
                 Review
+                    .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                    .joinVersions(false)
                     .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
+                    .slice(Review.columns + reviewerAlias.columns)
                     .select {
-                        Review.mapId eq it.id.toInt(16) and Review.deletedAt.isNull()
+                        Review.mapId eq it.id.toInt(16) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
                     .orderBy(
                         Review.curatedAt to SortOrder.DESC_NULLS_LAST,
@@ -153,10 +159,11 @@ fun Route.reviewRoute() {
             try {
                 Review
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                    .joinVersions(false)
                     .joinUploader()
                     .joinCurator()
                     .select {
-                        Review.userId eq it.id and Review.deletedAt.isNull()
+                        Review.userId eq it.id and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
                     .orderBy(
                         Review.createdAt, SortOrder.DESC
@@ -181,9 +188,11 @@ fun Route.reviewRoute() {
         val review = transaction {
             try {
                 Review
-                    .join(User, JoinType.INNER, Review.userId, User.id)
+                    .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                    .joinVersions(false)
+                    .slice(Review.columns)
                     .select {
-                        Review.mapId eq it.mapId.toInt(16) and (Review.userId eq it.userId) and Review.deletedAt.isNull()
+                        Review.mapId eq it.mapId.toInt(16) and (Review.userId eq it.userId) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
                     .singleOrNull()
                     ?.let { row ->

@@ -10,9 +10,9 @@ import io.beatmaps.api.ReviewConstants
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
-import io.beatmaps.maps.review.reviewTable
 import io.beatmaps.maps.testplay.testplay
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.review.reviewTable
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import org.w3c.dom.get

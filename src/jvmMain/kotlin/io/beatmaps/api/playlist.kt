@@ -85,15 +85,12 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.batchInsert
-import org.jetbrains.exposed.sql.countDistinct
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.floatLiteral
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -212,14 +209,6 @@ fun getMaxMap(id: Int) = Coalesce(
     floatLiteral(1f)
 )
 
-val playlistStats = listOf(
-    Beatmap.uploader.countDistinct(),
-    Beatmap.duration.sum(),
-    Beatmap.upVotesInt.sum(),
-    Beatmap.downVotesInt.sum(),
-    Beatmap.score.avg(4)
-)
-
 fun Route.playlistRoute() {
     options<PlaylistApi.ByUploadDate> {
         call.response.header("Access-Control-Allow-Origin", "*")
@@ -241,7 +230,7 @@ fun Route.playlistRoute() {
                     .joinMaps()
                     .joinPlaylistCurator()
                     .joinOwner()
-                    .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats)
+                    .slice(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all)
                     .select {
                         Playlist.id.inSubQuery(
                             Playlist
@@ -298,7 +287,7 @@ fun Route.playlistRoute() {
                 .joinPlaylistCurator()
                 .slice(
                     (if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) +
-                        Playlist.columns + User.columns + curatorAlias.columns + playlistStats
+                        Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all
                 )
                 .select {
                     Playlist.id.inSubQuery(
@@ -343,7 +332,7 @@ fun Route.playlistRoute() {
                 .joinMaps()
                 .joinOwner()
                 .joinPlaylistCurator()
-                .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats)
+                .slice(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all)
                 .select {
                     (Playlist.id eq id).let {
                         if (isAdmin) {
@@ -475,7 +464,7 @@ fun Route.playlistRoute() {
                         .joinMaps()
                         .joinOwner()
                         .joinPlaylistCurator()
-                        .slice(Playlist.columns + User.columns + curatorAlias.columns + playlistStats),
+                        .slice(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all),
                     arrayOf(Playlist.id, User.id, curatorAlias[User.id])
                 ) {
                     PlaylistFull.from(it, cdnPrefix())
@@ -486,7 +475,7 @@ fun Route.playlistRoute() {
         }
     }
 
-    val bookmarksIcon = javaClass.classLoader.getResourceAsStream("favicon/android-chrome-512x512.png")!!.readAllBytes()
+    val bookmarksIcon = javaClass.classLoader.getResourceAsStream("assets/favicon/android-chrome-512x512.png")!!.readAllBytes()
     get<PlaylistApi.Download> { req ->
         val (playlist, playlistSongs) = transaction {
             fun getPlaylist() =
@@ -584,7 +573,7 @@ fun Route.playlistRoute() {
     post<PlaylistApi.Batch, PlaylistBatchRequest>("Add or remove up to 100 maps to a playlist. Requires OAUTH".responds(ok<ActionResponse>())) { req, pbr ->
         requireAuthorization(OauthScope.MANAGE_PLAYLISTS) { sess ->
             val validKeys = (pbr.keys ?: listOf()).mapNotNull { key -> key.toIntOrNull(16) }
-            val hashesOrEmpty = pbr.hashes ?: listOf()
+            val hashesOrEmpty = pbr.hashes?.map { it.lowercase() } ?: listOf()
             if (hashesOrEmpty.size + validKeys.size > 100) {
                 call.respond(HttpStatusCode.BadRequest, "Too many maps")
                 return@requireAuthorization
@@ -622,17 +611,20 @@ fun Route.playlistRoute() {
                                         it[PlaylistMap.order]
                                     } ?: 0f
 
-                            val mapIds = Beatmap
+                            val lookup = Beatmap
                                 .joinVersions(false, null)
-                                .slice(Beatmap.id)
+                                .slice(Versions.hash, Beatmap.id)
                                 .select {
                                     Beatmap.deletedAt.isNull() and (Beatmap.id.inList(validKeys) or Versions.hash.inList(hashesOrEmpty))
+                                }.associate {
+                                    it[Versions.hash].lowercase() to it[Beatmap.id].value
                                 }
-                                .map {
-                                    it[Beatmap.id]
-                                }
+                            val unorderedMapids = lookup.values.toSet()
 
-                            if (mapIds.size != (hashesOrEmpty + validKeys).size && pbr.ignoreUnknown != true) {
+                            val mapIds = validKeys.filter { unorderedMapids.contains(it) } +
+                                hashesOrEmpty.mapNotNull { if (lookup.containsKey(it) && !validKeys.contains(lookup[it])) lookup[it] else null }
+
+                            val result = if (mapIds.size != (hashesOrEmpty + validKeys).size && pbr.ignoreUnknown != true) {
                                 rollback()
                                 null
                             } else if (pbr.inPlaylist == true) {
@@ -645,7 +637,9 @@ fun Route.playlistRoute() {
                                 PlaylistMap.deleteWhere {
                                     (PlaylistMap.playlistId eq playlist.id.value) and (PlaylistMap.mapId.inList(mapIds))
                                 }
-                            }?.let {
+                            }
+
+                            result?.let {
                                 if (it > 0) playlist.id.value else 0
                             }
                         }

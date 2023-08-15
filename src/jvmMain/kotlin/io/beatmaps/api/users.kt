@@ -6,6 +6,9 @@ import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.common.Config
+import io.beatmaps.common.EmailChangedData
+import io.beatmaps.common.PasswordChangedData
+import io.beatmaps.common.RevokeSessionsData
 import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UploadLimitData
 import io.beatmaps.common.api.EDifficulty
@@ -21,16 +24,26 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.ModLog
+import io.beatmaps.common.dbo.OauthClient
 import io.beatmaps.common.dbo.Playlist
+import io.beatmaps.common.dbo.RefreshTokenTable
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.dbo.UserLog
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.sendEmail
 import io.beatmaps.login.DBTokenStore
+import io.beatmaps.login.MongoClient
+import io.beatmaps.login.MongoSession
 import io.beatmaps.login.Session
+import io.beatmaps.login.cookieName
+import io.jsonwebtoken.Claims
 import io.jsonwebtoken.ExpiredJwtException
+import io.jsonwebtoken.Header
+import io.jsonwebtoken.Jwt
+import io.jsonwebtoken.JwtBuilder
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
@@ -40,8 +53,10 @@ import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
+import io.ktor.server.locations.delete
 import io.ktor.server.locations.get
 import io.ktor.server.locations.options
 import io.ktor.server.locations.post
@@ -53,6 +68,10 @@ import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
+import io.ktor.util.hex
+import io.ktor.util.pipeline.PipelineContext
+import kotlinx.datetime.Clock
+import kotlinx.datetime.toJavaInstant
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.exceptions.ExposedSQLException
@@ -81,22 +100,39 @@ import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import org.litote.kmongo.and
+import org.litote.kmongo.descending
+import org.litote.kmongo.div
+import org.litote.kmongo.eq
+import org.litote.kmongo.ne
 import java.lang.Integer.toHexString
 import java.math.BigInteger
 import java.security.MessageDigest
-import java.time.Instant
+import java.security.SecureRandom
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.util.Base64
 import java.util.Date
+import javax.crypto.Cipher
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
-fun md5(input: String): String {
-    val md = MessageDigest.getInstance("MD5")
-    return BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
-}
+fun md5(input: String) =
+    MessageDigest.getInstance("MD5").let { md ->
+        BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
+    }
+
+fun JwtBuilder.setExpiration(duration: Duration): JwtBuilder = setExpiration(Date.from(Clock.System.now().plus(duration).toJavaInstant()))
+fun parseJwtUntrusted(jwt: String): Jwt<Header<*>, Claims> =
+    jwt.substring(0, jwt.lastIndexOf('.') + 1).let {
+        Jwts.parserBuilder().build().parseClaimsJwt(it)
+    }
 
 fun UserDetail.Companion.getAvatar(other: UserDao) = other.avatar ?: "https://www.gravatar.com/avatar/${other.hash ?: md5(other.uniqueName ?: other.name)}?d=retro"
 
@@ -113,10 +149,32 @@ actual object UserDetailHelper {
     actual fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean) = Config.siteBase(absolute) + "/profile/${userDetail.id}" + (tab?.let { "#$it" } ?: "")
 }
 
-val secret = System.getenv("BSHASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: byteArrayOf()
-fun getHash(userId: String, salt: ByteArray) = MessageDigest.getInstance("SHA1").let {
-    it.update(salt + userId.toByteArray())
-    String.format("%040x", BigInteger(1, it.digest()))
+object UserCrypto {
+    private const val defaultSecretEncoded = "ZsEgU9mLHT1Vg+K5HKzlKna20mFQi26ZbB92zILrklNxV5Yxg8SyEcHVWzkspEiCCGkRB89claAWbFhglykfUA=="
+    private val secret = Base64.getDecoder().decode(System.getenv("BSHASH_SECRET") ?: defaultSecretEncoded)
+    private val sessionSecret = Base64.getDecoder().decode(System.getenv("SESSION_ENCRYPT_SECRET") ?: defaultSecretEncoded)
+    private val secretEncryptKey = SecretKeySpec(sessionSecret, "AES")
+    private val ephemeralIv = ByteArray(16).apply { SecureRandom().nextBytes(this) }
+    private val envIv = System.getenv("BSIV")?.let { Base64.getDecoder().decode(it) } ?: ephemeralIv
+
+    fun keyForUser(user: UserDao) = key(user.password ?: "")
+
+    fun key(pwdHash: String = ""): java.security.Key =
+        Keys.hmacShaKeyFor(secret + pwdHash.toByteArray())
+
+    private fun encryptDecrypt(mode: Int, input: ByteArray, iv: ByteArray): ByteArray {
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING")
+        cipher.init(mode, secretEncryptKey, IvParameterSpec(iv))
+        return cipher.doFinal(input)
+    }
+
+    fun encrypt(input: String, iv: ByteArray = envIv) = hex(encryptDecrypt(Cipher.ENCRYPT_MODE, input.toByteArray(), iv))
+    fun decrypt(input: String, iv: ByteArray = envIv) = String(encryptDecrypt(Cipher.DECRYPT_MODE, hex(input), iv))
+
+    fun getHash(userId: String, salt: ByteArray = secret) = MessageDigest.getInstance("SHA1").let {
+        it.update(salt + userId.toByteArray())
+        hex(it.digest())
+    }
 }
 
 @Location("/api/users")
@@ -145,17 +203,23 @@ class UsersApi {
     @Location("/reset")
     data class Reset(val api: UsersApi)
 
-    @Location("/id/{id}/stats")
-    data class UserStats(val id: Int, val api: UsersApi)
+    @Location("/email")
+    data class Email(val api: UsersApi)
+
+    @Location("/change-email")
+    data class ChangeEmail(val api: UsersApi)
+
+    @Location("/sessions")
+    data class Sessions(val api: UsersApi)
+
+    @Location("/sessions/{id}")
+    data class SessionsById(val id: String, val api: UsersApi)
 
     @Location("/id/{id}/playlist/{filename?}")
     data class UserPlaylist(val id: Int, val filename: String? = null, val api: UsersApi)
 
     @Location("/find/{id}")
     data class Find(val id: String, val api: UsersApi)
-
-    @Location("/beatsaver")
-    data class LinkBeatsaver(val api: UsersApi)
 
     @Location("/list/{page}")
     data class List(val page: Long = 0, val api: UsersApi)
@@ -345,8 +409,6 @@ fun Route.userRoute() {
         }
     }
 
-    fun keyForUser(user: UserDao) = Keys.hmacShaKeyFor(secret + "${user.password}-${user.createdAt}".toByteArray())
-
     post<UsersApi.Register> {
         val req = call.receive<RegisterRequest>()
 
@@ -362,7 +424,6 @@ fun Route.userRoute() {
                 } else {
                     try {
                         val bcrypt = String(Bcrypt.hash(req.password, 12))
-                        val token = getHash(req.email, secret)
 
                         val newUserId = transaction {
                             try {
@@ -370,7 +431,7 @@ fun Route.userRoute() {
                                     it[name] = req.username
                                     it[email] = req.email
                                     it[password] = bcrypt
-                                    it[verifyToken] = token
+                                    it[verifyToken] = "pending"
                                     it[uniqueName] = req.username
                                     it[active] = false
                                 } to null
@@ -391,10 +452,17 @@ fun Route.userRoute() {
                         // Complicated series of fallbacks. If the id is set we created a news user, send them an email. If a response is set send it.
                         // Otherwise the email was a duplicate, tell the user via email so we don't reveal which emails have been registered already.
                         newUserId.first?.let {
+                            val jwt = Jwts.builder()
+                                .setExpiration(30.toDuration(DurationUnit.DAYS))
+                                .setSubject(it.value.toString())
+                                .claim("action", "register")
+                                .signWith(UserCrypto.key())
+                                .compact()
+
                             sendEmail(
                                 req.email,
                                 "BeatSaver Account Verification",
-                                "${req.username}\n\nTo verify your account, please click the link below:\n${Config.siteBase()}/verify?user=$it&token=$token"
+                                "${req.username}\n\nTo verify your account, please click the link below:\n${Config.siteBase()}/verify/$jwt"
                             )
 
                             ActionResponse(true)
@@ -417,9 +485,7 @@ fun Route.userRoute() {
             ActionResponse(false, listOf("Could not verify user [${it.errorCodes.joinToString(", ")}]"))
         }
 
-        response?.let {
-            call.respond(it)
-        }
+        call.respond(response)
     }
 
     post<UsersApi.Forgot> {
@@ -433,10 +499,12 @@ fun Route.userRoute() {
                         (User.email eq req.email) and User.password.isNotNull() and (User.active or User.verifyToken.isNotNull())
                     }.firstOrNull()?.let { UserDao.wrapRow(it) }
                 }?.let { user ->
-                    val builder = Jwts.builder().setExpiration(Date.from(Instant.now().plus(20L, ChronoUnit.MINUTES)))
-                    builder.setSubject(user.id.toString())
-                    builder.signWith(keyForUser(user))
-                    val jwt = builder.compact()
+                    val jwt = Jwts.builder()
+                        .setExpiration(20.toDuration(DurationUnit.MINUTES))
+                        .setSubject(user.id.toString())
+                        .claim("action", "reset")
+                        .signWith(UserCrypto.keyForUser(user))
+                        .compact()
 
                     sendEmail(
                         req.email,
@@ -452,7 +520,260 @@ fun Route.userRoute() {
             ActionResponse(false, listOf("Could not verify user [${it.errorCodes.joinToString(", ")}]"))
         }
 
-        response?.let {
+        call.respond(response)
+    }
+
+    get<UsersApi.Sessions> {
+        requireAuthorization {
+            val oauthSessions = transaction {
+                RefreshTokenTable
+                    .join(OauthClient, JoinType.INNER, RefreshTokenTable.clientId, OauthClient.clientId)
+                    .select {
+                        (RefreshTokenTable.userName eq it.userId) and (RefreshTokenTable.expiration greater Clock.System.now().toJavaInstant())
+                    }
+                    .orderBy(RefreshTokenTable.expiration to SortOrder.DESC)
+                    .map { row ->
+                        OauthSession(
+                            UserCrypto.encrypt(row[RefreshTokenTable.id].value),
+                            row[OauthClient.name],
+                            row[OauthClient.iconUrl],
+                            row[RefreshTokenTable.scope].split(",").mapNotNull { scope -> OauthScope.fromTag(scope) },
+                            row[RefreshTokenTable.expiration].toKotlinInstant()
+                        )
+                    }
+            }
+
+            val sessionId = call.request.cookies[cookieName]
+            val siteSessions = if (MongoClient.connected) {
+                MongoClient.sessions.find(MongoSession::session / Session::userId eq it.userId)
+                    .sort(descending(MongoSession::expireAt))
+                    .map { row ->
+                        SiteSession(
+                            UserCrypto.encrypt(row._id),
+                            row.session.countryCode,
+                            row.expireAt,
+                            row._id == sessionId
+                        )
+                    }.toList()
+            } else listOf()
+
+            call.respond(SessionsData(oauthSessions, siteSessions))
+        }
+    }
+
+    delete<UsersApi.Sessions> {
+        requireAuthorization { sess ->
+            val req = call.receive<SessionRevokeRequest>()
+            val userId = req.userId ?: sess.userId
+            val sessionId = call.request.cookies[cookieName]
+
+            val response = if (userId != sess.userId && !sess.isAdmin()) {
+                ActionResponse(false, listOf("Not an admin or no reason given"))
+            } else {
+                transaction {
+                    if (userId != sess.userId) {
+                        ModLog.insert(
+                            sess.userId,
+                            null,
+                            RevokeSessionsData(true, req.reason),
+                            userId
+                        )
+                    }
+
+                    if (req.site != true) {
+                        DBTokenStore.deleteForUser(userId)
+                    }
+
+                    if (req.site != false && MongoClient.connected) {
+                        MongoClient.sessions.deleteMany(
+                            and(MongoSession::_id ne sessionId, MongoSession::session / Session::userId eq userId)
+                        )
+                    }
+                }
+
+                ActionResponse(true)
+            }
+
+            call.respond(response)
+        }
+    }
+
+    delete<UsersApi.SessionsById> { byId ->
+        requireAuthorization { sess ->
+            val req = call.receive<SessionRevokeRequest>()
+            val userId = req.userId ?: sess.userId
+            val id = UserCrypto.decrypt(byId.id)
+
+            val response = if (userId != sess.userId && !sess.isAdmin()) {
+                ActionResponse(false, listOf("Not an admin"))
+            } else if (req.site == null) {
+                ActionResponse(false, listOf("site property is required when deleting by id"))
+            } else {
+                transaction {
+                    if (userId != sess.userId) {
+                        ModLog.insert(
+                            sess.userId,
+                            null,
+                            RevokeSessionsData(false, req.reason),
+                            userId
+                        )
+                    }
+
+                    if (!req.site) {
+                        DBTokenStore.revokeRefreshToken(id)
+                        ActionResponse(true)
+                    } else if (!MongoClient.connected) {
+                        ActionResponse(false, listOf("Can't revoke in memory sessions"))
+                    } else if (id == call.request.cookies[cookieName]) {
+                        ActionResponse(false, listOf("Can't revoke current session"))
+                    } else {
+                        MongoClient.sessions.deleteOne(
+                            MongoSession::_id eq id
+                        )
+                        ActionResponse(true)
+                    }
+                }
+            }
+
+            call.respond(response)
+        }
+    }
+
+    post<UsersApi.Email> {
+        requireAuthorization { sess ->
+            val req = call.receive<EmailRequest>()
+
+            val response = requireCaptcha(
+                req.captcha,
+                {
+                    newSuspendedTransaction {
+                        User.select {
+                            (User.id eq sess.userId)
+                        }.firstOrNull()?.let { UserDao.wrapRow(it) }
+                    }?.let { user ->
+                        if (user.emailChangedAt.toKotlinInstant() > Clock.System.now().minus(10.toDuration(DurationUnit.DAYS))) {
+                            ActionResponse(false, listOf("You can only change email once every 10 days"))
+                        } else {
+                            val jwt = Jwts.builder()
+                                .setExpiration(20.toDuration(DurationUnit.MINUTES))
+                                .setSubject(user.id.toString())
+                                .claim("email", req.email)
+                                .claim("action", "email")
+                                .signWith(UserCrypto.key())
+                                .compact()
+
+                            sendEmail(
+                                req.email,
+                                "BeatSaver Email Change",
+                                "Hi ${user.uniqueName},\n\n" +
+                                    "You can update the email on your account by clicking here: ${Config.siteBase()}/change-email/$jwt"
+                            )
+
+                            ActionResponse(true)
+                        }
+                    } ?: ActionResponse(false, listOf("User not found"))
+                }
+            ) {
+                ActionResponse(false, it.errorCodes.map { "Captcha error: $it" })
+            }
+
+            call.respond(response)
+        }
+    }
+
+    fun PipelineContext<*, ApplicationCall>.sendReclaimMail(user: UserDao) =
+        user.email?.let {
+            val jwt = Jwts.builder()
+                .setExpiration(7.toDuration(DurationUnit.DAYS))
+                .setSubject(user.id.toString())
+                .claim("email", user.email)
+                .claim("action", "reclaim")
+                .signWith(UserCrypto.key())
+                .compact()
+
+            sendEmail(
+                it,
+                "BeatSaver Email Changed",
+                "Hi ${user.uniqueName ?: user.name},\n\n" +
+                    "Your email address for accessing ${Config.siteBase()} was changed.\n\n" +
+                    "If this wasn't you then you can click here to change it back: ${Config.siteBase()}/change-email/$jwt\n\n" +
+                    "If you are still having trouble accessing your account get in touch with us on discord " +
+                    "( https://discord.gg/rjVDapkMmj ) or email support@beatsaver.com"
+            )
+        }
+
+    post<UsersApi.ChangeEmail> {
+        val req = call.receive<ChangeEmailRequest>()
+
+        try {
+            val untrusted = parseJwtUntrusted(req.jwt)
+
+            val userId = untrusted.body.subject.toInt()
+            val newEmail = untrusted.body.get("email", String::class.java)
+            val action = untrusted.body.get("action", String::class.java)
+
+            newSuspendedTransaction {
+                User.select {
+                    User.id eq userId
+                }.firstOrNull()?.let { UserDao.wrapRow(it) }?.let { user ->
+                    try {
+                        // Check the user knows the current account password
+                        val isReclaim = action == "reclaim"
+                        if (user.email == newEmail) {
+                            // Ignore if this is a re-do
+                            ActionResponse(true)
+                        } else if (!isReclaim && user.emailChangedAt.toKotlinInstant() > Clock.System.now().minus(10.toDuration(DurationUnit.DAYS))) {
+                            ActionResponse(false, listOf("You can only change email once every 10 days"))
+                        } else if (isReclaim || user.password?.let { curPw -> Bcrypt.verify(req.password, curPw.toByteArray()) } == true) {
+                            // If the jwt is valid we can change the users email
+                            Jwts.parserBuilder()
+                                .setSigningKey(UserCrypto.key())
+                                .build()
+                                .parseClaimsJws(req.jwt)
+
+                            if (!listOf("email", "reclaim").contains(action)) throw JwtException("Bad claim")
+
+                            val success = User.update({
+                                User.id eq userId
+                            }) {
+                                it[email] = newEmail
+                                it[emailChangedAt] = NowExpression(emailChangedAt.columnType)
+                            } > 0
+
+                            if (success) {
+                                UserLog.insert(userId, null, EmailChangedData(user.email, newEmail))
+
+                                // Log out user as sessions contain their email so they are now invalid
+                                DBTokenStore.deleteForUser(userId)
+                                MongoClient.deleteSessionsFor(userId)
+
+                                if (!isReclaim) {
+                                    sendReclaimMail(user)
+                                }
+
+                                ActionResponse(true)
+                            } else {
+                                ActionResponse(false, listOf("Failed to update email"))
+                            }
+                        } else {
+                            ActionResponse(false, listOf("Current password incorrect"))
+                        }
+                    } catch (e: ExposedSQLException) {
+                        ActionResponse(false, listOf("Email in use on another account"))
+                    } catch (e: SignatureException) {
+                        ActionResponse(false, listOf("Token no longer valid"))
+                    } catch (e: JwtException) {
+                        ActionResponse(false, listOf("Bad token"))
+                    }
+                } ?: ActionResponse(false, listOf("User not found"))
+            }
+        } catch (e: IllegalArgumentException) {
+            ActionResponse(false, listOf("Password too long"))
+        } catch (e: ExpiredJwtException) {
+            ActionResponse(false, listOf("Link has expired"))
+        } catch (e: JwtException) {
+            ActionResponse(false, listOf("Token is malformed"))
+        }.let {
             call.respond(it)
         }
     }
@@ -467,10 +788,7 @@ fun Route.userRoute() {
         } else {
             try {
                 val bcrypt = String(Bcrypt.hash(req.password, 12))
-
-                val i = req.jwt.lastIndexOf('.')
-                val withoutSignature = req.jwt.substring(0, i + 1)
-                val untrusted = Jwts.parserBuilder().build().parseClaimsJwt(withoutSignature)
+                val untrusted = parseJwtUntrusted(req.jwt)
 
                 untrusted.body.subject.toInt().let { userId ->
                     transaction {
@@ -479,7 +797,11 @@ fun Route.userRoute() {
                         }.firstOrNull()?.let { UserDao.wrapRow(it) }?.let { user ->
                             // If the jwt is valid we can reset the user's password :D
                             try {
-                                Jwts.parserBuilder().setSigningKey(keyForUser(user)).build().parseClaimsJws(req.jwt)
+                                Jwts.parserBuilder()
+                                    .require("action", "reset")
+                                    .setSigningKey(UserCrypto.keyForUser(user))
+                                    .build()
+                                    .parseClaimsJws(req.jwt)
 
                                 val success = User.update({
                                     User.id eq userId
@@ -493,7 +815,11 @@ fun Route.userRoute() {
                                 } > 0
 
                                 if (success) {
+                                    UserLog.insert(userId, null, PasswordChangedData)
+
+                                    // Revoke all logins
                                     DBTokenStore.deleteForUser(userId)
+                                    MongoClient.deleteSessionsFor(userId)
 
                                     ActionResponse(true)
                                 } else {
@@ -504,7 +830,7 @@ fun Route.userRoute() {
                                 // has changed since we sent the link
                                 ActionResponse(false, listOf("Reset token no longer valid"))
                             } catch (e: JwtException) {
-                                ActionResponse(false, listOf("Reset token is malformed"))
+                                ActionResponse(false, listOf("Bad token"))
                             }
                         } ?: ActionResponse(false, listOf("User not found"))
                     }
@@ -540,8 +866,7 @@ fun Route.userRoute() {
                         User.select {
                             User.id eq sess.userId
                         }.firstOrNull()?.let { r ->
-                            val curPw = r[User.password]
-                            if (curPw != null && Bcrypt.verify(req.currentPassword, curPw.toByteArray())) {
+                            if (r[User.password]?.let { curPw -> Bcrypt.verify(req.currentPassword, curPw.toByteArray()) } == true) {
                                 User.update({
                                     User.id eq sess.userId
                                 }) {
@@ -781,7 +1106,7 @@ fun Route.userRoute() {
                 )
             }
 
-            call.sessions.set(it.copy(testplay = user.testplay, curator = user.curator, admin = user.admin, alerts = alertCount, uniqueName = user.uniqueName, suspended = user.suspendedAt != null))
+            call.sessions.set(Session.fromUser(user, alertCount, it.oauth2ClientId, call))
 
             val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
 

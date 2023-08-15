@@ -24,7 +24,7 @@ external interface EditableTextProps : Props {
     var text: String?
     var renderText: Boolean?
     var editing: Boolean?
-    var saveText: ((String) -> Promise<AxiosResponse<ActionResponse>>)?
+    var saveText: ((String) -> Promise<AxiosResponse<ActionResponse>>?)?
     var stopEditing: ((String) -> Unit)?
     var maxLength: Int?
 }

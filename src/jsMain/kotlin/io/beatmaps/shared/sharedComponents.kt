@@ -211,14 +211,38 @@ val uploaderWithInfo = fc<UploaderProps> { props ->
 
 external interface PlaylistOwnerProps : Props {
     var owner: UserDetail?
-    var tab: String?
     var time: Instant
 }
 
 val playlistOwner = fc<PlaylistOwnerProps> { props ->
     props.owner?.let { owner ->
-        routeLink(owner.profileLink(props.tab)) {
+        routeLink(owner.profileLink("playlists")) {
             +owner.name
+        }
+        +" - "
+    }
+    TimeAgo.default {
+        attrs.date = props.time.toString()
+    }
+}
+
+external interface ReviewerProps : Props {
+    var reviewer: UserDetail?
+    var map: MapDetail?
+    var time: Instant
+}
+
+val reviewer = fc<ReviewerProps> { props ->
+    props.reviewer?.let { owner ->
+        routeLink(owner.profileLink("reviews")) {
+            +owner.name
+        }
+        +" - "
+    }
+    props.map?.let { map ->
+        +" on "
+        routeLink("/maps/${map.id}") {
+            +map.name
         }
         +" - "
     }

@@ -1,4 +1,4 @@
-package io.beatmaps.maps.review
+package io.beatmaps.shared.review
 
 import external.Axios
 import external.axiosDelete
@@ -17,7 +17,7 @@ import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.modreview.editableText
-import io.beatmaps.shared.playlistOwner
+import io.beatmaps.shared.reviewer
 import io.beatmaps.util.AutoSizeComponent
 import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.AutoSizeComponentState
@@ -91,7 +91,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
         val reason = reasonRef.current?.value ?: ""
         reasonRef.current?.value = ""
 
-        axiosDelete("${Config.apibase}/review/single/${props.mapId}/${props.userId}", DeleteReview(reason)).then({
+        axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", DeleteReview(reason)).then({
             hide()
 
             if (currentUser) props.setExistingReview?.invoke(false)
@@ -113,8 +113,9 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                             attrs.sentiment = sentimentLocal
                         }
                         div(classes = "owner") {
-                            playlistOwner {
-                                attrs.owner = rv.creator
+                            reviewer {
+                                attrs.reviewer = rv.creator
+                                attrs.map = rv.map
                                 attrs.time = rv.createdAt
                             }
                         }

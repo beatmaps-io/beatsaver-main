@@ -16,9 +16,9 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
-import io.beatmaps.maps.review.sentimentIcon
-import io.beatmaps.maps.review.sentimentPicker
 import io.beatmaps.shared.mapTitle
+import io.beatmaps.shared.review.sentimentIcon
+import io.beatmaps.shared.review.sentimentPicker
 import kotlinx.html.TD
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
@@ -58,7 +58,7 @@ val modReviewEntryRenderer = fc<ModReviewEntryProps> {
         val mapId = it.entry?.map?.id
         val userId = it.entry?.creator?.id
 
-        axiosDelete("${Config.apibase}/review/single/$mapId/$userId", DeleteReview(reason)).then({
+        axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/$mapId/$userId", DeleteReview(reason)).then({
             setHidden(true)
         }) { }
     }
@@ -80,7 +80,7 @@ val modReviewEntryRenderer = fc<ModReviewEntryProps> {
         tr {
             it.entry?.let { review ->
                 td {
-                    if (review.creator != null) linkUser(review.creator)
+                    review.creator?.let { c -> linkUser(c) }
                 }
                 td {
                     if (review.map != null) mapTitle {

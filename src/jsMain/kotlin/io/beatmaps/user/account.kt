@@ -1,15 +1,26 @@
 package io.beatmaps.user
 
 import external.Axios
+import external.ReCAPTCHA
+import external.axiosDelete
+import external.axiosGet
 import external.generateConfig
 import external.reactFor
+import external.recaptcha
 import io.beatmaps.Config
 import io.beatmaps.api.AccountDetailReq
-import io.beatmaps.api.AccountRequest
 import io.beatmaps.api.AccountType
 import io.beatmaps.api.ActionResponse
+import io.beatmaps.api.SessionInfo
+import io.beatmaps.api.SessionRevokeRequest
+import io.beatmaps.api.SessionsData
 import io.beatmaps.api.UserDetail
+import io.beatmaps.index.ModalComponent
+import io.beatmaps.shared.errors
 import io.beatmaps.upload.UploadRequestConfig
+import io.beatmaps.user.account.accountEmail
+import io.beatmaps.user.account.changePassword
+import io.beatmaps.user.account.manageSessions
 import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
 import kotlinx.html.InputType
@@ -17,7 +28,6 @@ import kotlinx.html.hidden
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
-import kotlinx.html.js.onSubmitFunction
 import kotlinx.html.role
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
@@ -27,6 +37,7 @@ import org.w3c.xhr.FormData
 import react.Props
 import react.RBuilder
 import react.RComponent
+import react.RefObject
 import react.State
 import react.createRef
 import react.dom.a
@@ -36,17 +47,16 @@ import react.dom.form
 import react.dom.h5
 import react.dom.hr
 import react.dom.input
-import react.dom.jsStyle
 import react.dom.label
 import react.dom.span
 import react.dom.textarea
 import react.dom.value
 import react.setState
-import kotlin.collections.set
 
 external interface AccountComponentProps : Props {
     var userDetail: UserDetail
     var onUpdate: () -> Unit
+    var modal: RefObject<ModalComponent>
 }
 
 external interface AccountComponentState : State {
@@ -58,6 +68,7 @@ external interface AccountComponentState : State {
     var username: String
     var descriptionErrors: List<String>
     var description: String
+    var sessions: SessionsData?
 }
 
 class AccountComponent : RComponent<AccountComponentProps, AccountComponentState>() {
@@ -67,9 +78,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
     private val usernameRef = createRef<HTMLInputElement>()
     private val descriptionRef = createRef<HTMLTextAreaElement>()
 
-    private val currpassRef = createRef<HTMLInputElement>()
-    private val passwordRef = createRef<HTMLInputElement>()
-    private val password2Ref = createRef<HTMLInputElement>()
+    private val captchaRef = createRef<ReCAPTCHA>()
 
     override fun componentWillMount() {
         setState {
@@ -84,6 +93,35 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
         }
     }
 
+    override fun componentDidMount() {
+        axiosGet<SessionsData>(
+            "${Config.apibase}/users/sessions",
+        ).then {
+            setState {
+                sessions = it.data
+            }
+        }.catch {
+            // Ignore
+        }
+    }
+
+    private fun removeSessionCallback(session: SessionInfo) {
+        setState {
+            sessions = SessionsData(
+                sessions?.oauth?.filter { c -> c.id != session.id } ?: listOf(),
+                sessions?.site?.filter { c -> c.id != session.id } ?: listOf(),
+            )
+        }
+    }
+
+    private fun revokeAll() {
+        axiosDelete<SessionRevokeRequest, String>("${Config.apibase}/users/sessions", SessionRevokeRequest(site = true)).then {
+            setState {
+                sessions = SessionsData(listOf(), sessions?.site?.filter { c -> c.current } ?: listOf())
+            }
+        }
+    }
+
     override fun RBuilder.render() {
         // Having 2 forms confuses password managers, only the password section needs to invoke them
         div(classes = "user-form") {
@@ -92,29 +130,13 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             }
             hr("mt-2") {}
             if (props.userDetail.type != AccountType.DISCORD) {
-                div("mb-3 row") {
-                    label("col-sm-2 col-form-label") {
-                        attrs.reactFor = "email"
-                        +"Email"
-                    }
-                    div("col-sm-10") {
-                        input(InputType.text, classes = "form-control-plaintext") {
-                            key = "email"
-                            attrs.id = "email"
-                            attrs.disabled = true
-                            attrs.value = props.userDetail.email ?: ""
-                        }
-                    }
+                accountEmail {
+                    attrs.userDetail = props.userDetail
+                    attrs.captchaRef = captchaRef
                 }
             }
-            div("invalid-feedback") {
-                val error = state.usernameErrors.firstOrNull()
-                if (error != null) {
-                    attrs.jsStyle {
-                        display = "block"
-                    }
-                    +error
-                }
+            errors {
+                attrs.errors = state.usernameErrors.take(1)
             }
             div("mb-3") {
                 label("form-label") {
@@ -175,14 +197,8 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     }
                 }
             }
-            div("invalid-feedback") {
-                val error = state.descriptionErrors.firstOrNull()
-                if (error != null) {
-                    attrs.jsStyle {
-                        display = "block"
-                    }
-                    +error
-                }
+            errors {
+                attrs.errors = state.descriptionErrors.take(1)
             }
             div("mb-3") {
                 label("form-label") {
@@ -313,102 +329,16 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             }
         }
         if (props.userDetail.type != AccountType.DISCORD) {
-            form(classes = "user-form", action = "/profile", method = FormMethod.post) {
-                attrs.onSubmitFunction = { ev ->
-                    ev.preventDefault()
-
-                    Axios.post<ActionResponse>(
-                        "${Config.apibase}/users/me",
-                        AccountRequest(
-                            currpassRef.current?.value ?: "",
-                            passwordRef.current?.value ?: "",
-                            password2Ref.current?.value ?: "",
-                        ),
-                        generateConfig<AccountRequest, ActionResponse>()
-                    ).then {
-                        if (it.data.success) {
-                            currpassRef.current?.value = ""
-                            passwordRef.current?.value = ""
-                            password2Ref.current?.value = ""
-                            setState {
-                                errors = listOf("Password updated")
-                                loading = false
-                            }
-                        } else {
-                            setState {
-                                errors = it.data.errors
-                                loading = false
-                            }
-                        }
-                    }.catch {
-                        // Cancelled request
-                        setState {
-                            loading = false
-                        }
-                    }
-                }
-                h5("mt-5") {
-                    +"Password"
-                }
-                hr("mt-2") {}
-                input(InputType.text) {
-                    attrs.hidden = true
-                    key = "hiddenname"
-                    attrs.name = "username"
-                    attrs.value = props.userDetail.name
-                    attrs.attributes["autocomplete"] = "username"
-                }
-                div("invalid-feedback") {
-                    val error = state.errors.firstOrNull()
-                    if (error != null) {
-                        attrs.jsStyle {
-                            display = "block"
-                        }
-                        +error
-                    }
-                }
-                div("mb-3") {
-                    label("form-label") {
-                        attrs.reactFor = "current-password"
-                        +"Current Password"
-                    }
-                    input(InputType.password, classes = "form-control") {
-                        key = "curpass"
-                        ref = currpassRef
-                        attrs.id = "current-password"
-                        attrs.required = true
-                        attrs.placeholder = "Current Password"
-                        attrs.attributes["autocomplete"] = "current-password"
-                    }
-                }
-                div("mb-3") {
-                    label("form-label") {
-                        attrs.reactFor = "new-password"
-                        +"New Password"
-                    }
-                    input(InputType.password, classes = "form-control") {
-                        key = "password"
-                        ref = passwordRef
-                        attrs.id = "new-password"
-                        attrs.required = true
-                        attrs.placeholder = "New Password"
-                        attrs.attributes["autocomplete"] = "new-password"
-                    }
-                    input(InputType.password, classes = "form-control") {
-                        key = "password2"
-                        ref = password2Ref
-                        attrs.id = "new-password2"
-                        attrs.required = true
-                        attrs.placeholder = "Repeat Password"
-                        attrs.attributes["autocomplete"] = "new-password"
-                    }
-                    div("d-grid") {
-                        button(classes = "btn btn-success", type = ButtonType.submit) {
-                            attrs.disabled = state.loading == true
-                            +"Change password"
-                        }
-                    }
-                }
+            changePassword {
+                attrs.userDetail = props.userDetail
+            }
+        }
+        state.sessions?.let { s ->
+            manageSessions {
+                attrs.revokeAllCallback = ::revokeAll
+                attrs.removeSessionCallback = ::removeSessionCallback
+                attrs.modal = props.modal
+                attrs.sessions = s
             }
         }
         if (props.userDetail.type == AccountType.DUAL) {
@@ -437,6 +367,8 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                 }
             }
         }
+
+        recaptcha(captchaRef)
     }
 }
 

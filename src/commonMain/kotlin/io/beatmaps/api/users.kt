@@ -58,10 +58,6 @@ data class UserFollowData(
 @Serializable
 data class UserDiffStats(val total: Int, val easy: Int, val normal: Int, val hard: Int, val expert: Int, val expertPlus: Int)
 @Serializable
-data class BeatsaverLink(val linked: Boolean) { companion object }
-@Serializable
-data class BeatsaverLinkReq(val user: String, val password: String, val useOldName: Boolean = true)
-@Serializable
 data class AccountDetailReq(val textContent: String)
 @Serializable
 data class RegisterRequest(val captcha: String, val username: String, val email: String, val password: String, val password2: String)
@@ -70,7 +66,11 @@ data class ActionResponse(val success: Boolean, val errors: List<String> = listO
 @Serializable
 data class ForgotRequest(val captcha: String, val email: String)
 @Serializable
+data class EmailRequest(val captcha: String, val email: String)
+@Serializable
 data class ResetRequest(val jwt: String, val password: String, val password2: String)
+@Serializable
+data class ChangeEmailRequest(val jwt: String, val password: String)
 @Serializable
 data class AccountRequest(val currentPassword: String? = null, val password: String? = null, val password2: String? = null)
 @Serializable
@@ -79,3 +79,5 @@ data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val curator
 data class UserSuspendRequest(val userId: Int, val suspended: Boolean, val reason: String?)
 @Serializable
 data class UserFollowRequest(val userId: Int, val followed: Boolean)
+@Serializable
+data class SessionRevokeRequest(val userId: Int? = null, val site: Boolean? = null, val reason: String? = null)
