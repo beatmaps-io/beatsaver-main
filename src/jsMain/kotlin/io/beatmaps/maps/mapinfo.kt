@@ -404,7 +404,20 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                         attrs.attributes["aria-label"] = text
                                         attrs.onClickFunction = {
                                             it.preventDefault()
-                                            if (!isCurated) curate()
+                                            if (!isCurated) props.modal.current?.showDialog(
+                                                ModalData(
+                                                    "Curate map",
+                                                    bodyCallback = {
+                                                        p {
+                                                            +"Are you sure you want to curate this map?"
+                                                        }
+                                                    },
+                                                    buttons = listOf(
+                                                        ModalButton("Curate", "primary") { curate() },
+                                                        ModalButton("Cancel")
+                                                    )
+                                                )
+                                            )
                                             else props.modal.current?.showDialog(
                                                 ModalData(
                                                     "Uncurate map",
