@@ -32,6 +32,7 @@ import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import java.lang.Integer.toHexString
 
 @Location("/api/alerts") class AlertsApi {
     @Location("/unread/{page?}")
@@ -59,7 +60,7 @@ fun alertCount(userId: Int) = AlertRecipient
 
 fun UserAlert.Companion.from(collaboration: CollaborationDAO) = UserAlert(
     head = "Collaboration Proposal",
-    body = "You have been invited to be a collaborator on #${collaboration.mapId}. " +
+    body = "You have been invited to be a collaborator on #${toHexString(collaboration.mapId.value)}. " +
             "By accepting this proposal, your name will appear on the map's info screen, " +
             "and the map will appear on your account.",
     type = EAlertType.Collaboration,
