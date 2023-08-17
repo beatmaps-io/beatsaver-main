@@ -247,7 +247,7 @@ class CollaboratorPicker : RComponent<CollaboratorPickerProps, CollaboratorPicke
                 state.foundUsers?.filter {
                     it.id != userData?.userId && state.collaborators?.none { c ->
                         c.collaborator.id == it.id
-                    } ?: true
+                    } != false
                 }?.let { users ->
                     div("search-results list-group") {
                         if (users.isNotEmpty()) {
