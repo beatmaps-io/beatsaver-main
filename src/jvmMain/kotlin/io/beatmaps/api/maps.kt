@@ -17,6 +17,7 @@ import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
+import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistDao
@@ -25,6 +26,8 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinBookmarked
+import io.beatmaps.common.dbo.joinCollaborations
+import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
@@ -32,6 +35,7 @@ import io.beatmaps.common.pub
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
@@ -44,12 +48,15 @@ import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
+import io.ktor.util.pipeline.PipelineContext
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -74,6 +81,7 @@ class MapsApi {
     )
 
     @Group("Maps") @Location("/maps/uploader/{id}/{page}") data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
+    @Group("Maps") @Location("/maps/collaborations/{id}/{page}") data class Collaborations(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
     @Group("Maps") @Location("/maps/latest") data class ByUploadDate(
         @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
         val before: Instant? = null,
@@ -322,6 +330,7 @@ fun Route.mapDetailRoute() {
                     .joinUploader()
                     .joinCurator()
                     .joinBookmarked(sess?.userId)
+                    .joinCollaborators()
                     .select {
                         (Beatmap.id eq it.id.toInt(16)).let {
                             if (isAdmin) {
@@ -510,25 +519,29 @@ fun Route.mapDetailRoute() {
         }
     }
 
-    get<MapsApi.ByUploader>("Get maps by a user".responds(ok<SearchResponse>())) {
+    fun PipelineContext<*, ApplicationCall>.mapsByUser(userId: Int, page: Long, includeCollaborations: Boolean): List<MapDetail> {
         val sess = call.sessions.get<Session>()
-        call.response.header("Access-Control-Allow-Origin", "*")
-        val beatmaps = transaction {
+        return transaction {
             Beatmap
                 .joinVersions(true)
                 .joinUploader()
                 .joinCurator()
                 .joinBookmarked(sess?.userId)
+                .joinCollaborators()
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
                             .joinVersions()
+                            .joinCollaborations()
                             .slice(Beatmap.id)
                             .select {
-                                Beatmap.uploader.eq(it.id) and (Beatmap.deletedAt.isNull())
+                                (Beatmap.uploader eq userId or (
+                                        if (includeCollaborations) Collaboration.collaboratorId eq userId
+                                        else Op.FALSE
+                                )) and Beatmap.deletedAt.isNull()
                             }
                             .orderBy(Beatmap.uploaded to SortOrder.DESC)
-                            .limit(it.page)
+                            .limit(page)
                     )
                 }
                 .complexToBeatmap()
@@ -537,6 +550,20 @@ fun Route.mapDetailRoute() {
                 }
                 .sortedByDescending { it.uploaded }
         }
+    }
+
+    get<MapsApi.ByUploader>("Get maps by a user".responds(ok<SearchResponse>())) {
+        call.response.header("Access-Control-Allow-Origin", "*")
+
+        val beatmaps = mapsByUser(it.id, it.page, false)
+
+        call.respond(SearchResponse(beatmaps))
+    }
+
+    get<MapsApi.Collaborations>("Get maps by a user, including collaborations".responds(ok<SearchResponse>())) {
+        call.response.header("Access-Control-Allow-Origin", "*")
+
+        val beatmaps = mapsByUser(it.id, it.page, true)
 
         call.respond(SearchResponse(beatmaps))
     }

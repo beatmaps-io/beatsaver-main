@@ -34,6 +34,7 @@ import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.handleCurator
 import io.beatmaps.common.dbo.handleOwner
 import io.beatmaps.common.dbo.joinBookmarked
+import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinPlaylistCurator
@@ -365,6 +366,7 @@ fun Route.playlistRoute() {
                     .join(Beatmap, JoinType.INNER, mapsSubQuery[PlaylistMap.mapId], Beatmap.id)
                     .joinVersions(true)
                     .joinUploader()
+                    .joinCollaborators()
                     .joinCurator()
                     .joinBookmarked(userId)
                     .select {

@@ -43,7 +43,8 @@ data class MapDetail(
     val lastPublishedAt: Instant? = null,
     val deletedAt: Instant? = null,
     val tags: List<MapTag> = listOf(),
-    val bookmarked: Boolean? = null
+    val bookmarked: Boolean? = null,
+    val collaborators: List<UserDetail>? = null
 ) {
     fun intId() = id.toInt(16)
     fun latestVersion() = versions.maxByOrNull { it.createdAt }

@@ -6,11 +6,12 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class UserAlert(
-    val id: Int,
+    val id: Int? = null,
     val head: String,
     val body: String,
     val type: EAlertType,
-    val time: Instant
+    val time: Instant,
+    val collaborationId: Int? = null
 )
 
 @Serializable

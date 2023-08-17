@@ -304,16 +304,18 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                         +"Mappers"
                                     }
                                     state.maps?.let { maps ->
-                                        maps.map { it.map.uploader }.groupBy { it.id }.entries.map {
-                                            it.value.size to it.value.first()
-                                        }.sortedByDescending { it.first }.mapIndexed { idx, it ->
-                                            if (idx > 0) {
-                                                +", "
+                                        maps
+                                            .flatMap { (it.map.collaborators ?: listOf()) + it.map.uploader }
+                                            .groupBy { it.id }.entries.map {
+                                                it.value.size to it.value.first()
+                                            }.sortedByDescending { it.first }.mapIndexed { idx, it ->
+                                                if (idx > 0) {
+                                                    +", "
+                                                }
+                                                routeLink(it.second.profileLink()) {
+                                                    +it.second.name
+                                                }
                                             }
-                                            routeLink(it.second.profileLink()) {
-                                                +it.second.name
-                                            }
-                                        }
                                     }
                                 }
                             }

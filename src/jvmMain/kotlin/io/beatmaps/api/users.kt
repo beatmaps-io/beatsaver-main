@@ -18,6 +18,8 @@ import io.beatmaps.common.client
 import io.beatmaps.common.db.DateMinusDays
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
+import io.beatmaps.common.db.length
+import io.beatmaps.common.db.startsWith
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
@@ -230,6 +232,9 @@ class UsersApi {
 
     @Location("/followedBy/{user}/{page}")
     data class FollowedBy(val user: Int, val page: Long = 0, val api: UsersApi)
+
+    @Location("/search")
+    data class Search(val api: UsersApi, val q: String? = "")
 }
 
 fun followData(uploaderId: Int, userId: Int?): UserFollowData {
@@ -1202,6 +1207,23 @@ fun Route.userRoute() {
 
             call.respond(users)
         }
+    }
+
+    get<UsersApi.Search> {
+        val users = transaction {
+            User
+                .select {
+                    User.uniqueName startsWith it.q and User.active
+                }
+                .orderBy(length(User.uniqueName), SortOrder.ASC)
+                .limit(10)
+                .map { row ->
+                    UserDetail.from(row)
+                }
+
+        }
+
+        call.respond(users)
     }
 }
 
