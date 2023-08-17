@@ -55,14 +55,14 @@ fun alertCount(userId: Int) = AlertRecipient
     .join(Collaboration, JoinType.FULL) { Op.FALSE }
     .select {
         (AlertRecipient.recipientId eq userId and AlertRecipient.readAt.isNull()) or
-                (Collaboration.collaboratorId eq userId and not(Collaboration.accepted))
+            (Collaboration.collaboratorId eq userId and not(Collaboration.accepted))
     }.count().toInt()
 
 fun UserAlert.Companion.from(collaboration: CollaborationDAO) = UserAlert(
     head = "Collaboration Proposal",
     body = "You have been invited to be a collaborator on #${toHexString(collaboration.mapId.value)}. " +
-            "By accepting this proposal, your name will appear on the map's info screen, " +
-            "and the map will appear on your account.",
+        "By accepting this proposal, your name will appear on the map's info screen, " +
+        "and the map will appear on your account.",
     type = EAlertType.Collaboration,
     time = collaboration.requestedAt.toKotlinInstant(),
     collaborationId = collaboration.id.value
@@ -74,13 +74,15 @@ fun Route.alertsRoute() {
             .join(Alert, JoinType.LEFT, AlertRecipient.alertId, Alert.id)
             .join(Collaboration, JoinType.FULL) { Op.FALSE }
             .select {
-                ((AlertRecipient.recipientId eq userId) and AlertRecipient.readAt.run { if (read) isNotNull() else isNull() } or
-                        if (!read) (Collaboration.collaboratorId eq userId and not(Collaboration.accepted)) else Op.FALSE) and
-                        when {
-                            type == null -> Op.TRUE
-                            type.contains(EAlertType.Collaboration) -> Alert.type.inList(type) or Collaboration.id.isNotNull()
-                            else -> Alert.type.inList(type)
-                        }
+                (
+                    AlertRecipient.recipientId eq userId and
+                        AlertRecipient.readAt.run { if (read) isNotNull() else isNull() } or
+                        if (!read) (Collaboration.collaboratorId eq userId and not(Collaboration.accepted)) else Op.FALSE
+                    ) and when {
+                    type == null -> Op.TRUE
+                    type.contains(EAlertType.Collaboration) -> Alert.type.inList(type) or Collaboration.id.isNotNull()
+                    else -> Alert.type.inList(type)
+                }
             }
             .orderBy(Alert.sentAt, SortOrder.DESC)
             .limit(page)
@@ -117,7 +119,7 @@ fun Route.alertsRoute() {
         .slice(AlertRecipient.id.count(), AlertRecipient.readAt.isNull(), Alert.type, Collaboration.id.count())
         .select {
             (AlertRecipient.recipientId eq userId) or
-                    (Collaboration.collaboratorId eq userId and not(Collaboration.accepted))
+                (Collaboration.collaboratorId eq userId and not(Collaboration.accepted))
         }
         .groupBy(Alert.type, AlertRecipient.readAt.isNull())
         .mapNotNull {
@@ -127,8 +129,7 @@ fun Route.alertsRoute() {
                     !it[AlertRecipient.readAt.isNull()],
                     it[AlertRecipient.id.count()]
                 )
-            }
-            else if (it.getOrNull(Collaboration.id.count()) != null) {
+            } else if (it.getOrNull(Collaboration.id.count()) != null) {
                 StatPart(
                     EAlertType.Collaboration,
                     false,

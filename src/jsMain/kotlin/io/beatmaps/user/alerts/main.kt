@@ -193,7 +193,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                             alert = it
                             read = state.read
                             hidden = (state.forceHide == true && it?.type != EAlertType.Collaboration) ||
-                                    state.hiddenAlerts?.contains(it?.hashCode()) ?: false
+                                state.hiddenAlerts?.contains(it?.hashCode()) ?: false
                             markAlert = { stats ->
                                 setState {
                                     alertStats = stats

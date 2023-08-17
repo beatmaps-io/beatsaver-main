@@ -1220,7 +1220,6 @@ fun Route.userRoute() {
                 .map { row ->
                     UserDetail.from(row)
                 }
-
         }
 
         call.respond(users)
