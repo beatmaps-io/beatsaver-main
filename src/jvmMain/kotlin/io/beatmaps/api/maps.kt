@@ -535,10 +535,12 @@ fun Route.mapDetailRoute() {
                             .joinCollaborations()
                             .slice(Beatmap.id)
                             .select {
-                                (Beatmap.uploader eq userId or (
+                                (
+                                    Beatmap.uploader eq userId or (
                                         if (includeCollaborations) Collaboration.collaboratorId eq userId
                                         else Op.FALSE
-                                )) and Beatmap.deletedAt.isNull()
+                                        )
+                                    ) and Beatmap.deletedAt.isNull()
                             }
                             .orderBy(Beatmap.uploaded to SortOrder.DESC)
                             .limit(page)

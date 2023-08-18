@@ -19,7 +19,6 @@ import io.beatmaps.common.db.unaccent
 import io.beatmaps.common.db.unaccentLiteral
 import io.beatmaps.common.db.wildcard
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
@@ -28,7 +27,6 @@ import io.beatmaps.common.dbo.collaboratorAlias
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinBookmarked
-import io.beatmaps.common.dbo.joinCollaborations
 import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
@@ -213,9 +211,11 @@ fun Route.searchRoute() {
                     .joinCurator()
                     .joinBookmarked(sess?.userId)
                     .joinCollaborators()
-                    .slice((if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf())
-                            + Beatmap.columns + Versions.columns + Difficulty.columns + User.columns
-                            + curatorAlias.columns + bookmark.columns + collaboratorAlias.columns)
+                    .slice(
+                        (if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) +
+                            Beatmap.columns + Versions.columns + Difficulty.columns + User.columns +
+                            curatorAlias.columns + bookmark.columns + collaboratorAlias.columns
+                    )
                     .select {
                         Beatmap.id.inSubQuery(
                             Beatmap

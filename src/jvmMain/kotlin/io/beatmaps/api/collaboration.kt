@@ -91,9 +91,9 @@ fun Route.collaborationRoute() {
 
             val success = transaction {
                 isUploader(req.mapId, sess.userId) &&
-                        Collaboration.deleteWhere {
-                            Collaboration.mapId eq req.mapId and (Collaboration.collaboratorId eq req.collaboratorId)
-                        } > 0
+                    Collaboration.deleteWhere {
+                        Collaboration.mapId eq req.mapId and (Collaboration.collaboratorId eq req.collaboratorId)
+                    } > 0
             }
 
             call.respond(if (success) HttpStatusCode.OK else HttpStatusCode.Unauthorized)
@@ -118,7 +118,6 @@ fun Route.collaborationRoute() {
                 } else {
                     null
                 }
-
             }
             call.respond(collaborations ?: HttpStatusCode.Unauthorized)
         }
