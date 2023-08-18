@@ -53,12 +53,11 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.union
 import org.jetbrains.exposed.sql.update
 import java.lang.Integer.toHexString
 
@@ -572,11 +571,18 @@ fun Route.mapDetailRoute() {
                     Beatmap.id.inSubQuery(
                         Beatmap
                             .joinVersions()
-                            .joinCollaborations()
                             .slice(Beatmap.id)
                             .select {
-                                val includeColab = if (includeCollaborations) Collaboration.collaboratorId eq userId else Op.FALSE
-                                (Beatmap.uploader eq userId or includeColab) and Beatmap.deletedAt.isNull()
+                                if (includeCollaborations) {
+                                    // Inception music plays
+                                    Beatmap.id.inSubQuery(
+                                        Collaboration.slice(Collaboration.mapId).select { Collaboration.collaboratorId eq userId and Collaboration.accepted }.union(
+                                            Beatmap.slice(Beatmap.id).select { Beatmap.uploader eq userId and Beatmap.deletedAt.isNull() }
+                                        )
+                                    )
+                                } else {
+                                    Beatmap.uploader eq userId and Beatmap.deletedAt.isNull()
+                                }
                             }
                             .orderBy(Beatmap.uploaded to SortOrder.DESC)
                             .limit(page)
