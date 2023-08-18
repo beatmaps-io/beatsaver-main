@@ -81,7 +81,7 @@ val discordWebhookUrl: String? = System.getenv("DISCORD_WEBHOOK_URL")
 fun truncateWithEllipsis(text: String, maxLength: Int, ellipsis: String = "...") =
     if (text.length > maxLength) {
         text.take(maxLength - ellipsis.length) + ellipsis
-    } else text
+    } else { text }
 
 fun Application.reviewListeners() {
     rabbitOptional {

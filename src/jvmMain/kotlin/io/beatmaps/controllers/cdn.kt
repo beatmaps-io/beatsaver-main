@@ -38,20 +38,28 @@ import java.io.File
 class CDN {
     @Location("/{file}.zip")
     data class Zip(val file: String, val api: CDN)
+
     @Location("/{file}.jpg")
     data class Cover(val file: String, val api: CDN)
+
     @Location("/avatar/{user}.png")
     data class Avatar(val user: String, val api: CDN)
+
     @Location("/avatar/{user}.jpg")
     data class AvatarSimple(val user: String, val api: CDN)
+
     @Location("/beatsaver/{file}.zip")
     data class BeatSaver(val file: String, val api: CDN)
+
     @Location("/{file}.mp3")
     data class Audio(val file: String, val api: CDN)
+
     @Location("/beatsaver/{file}.mp3")
     data class BSAudio(val file: String, val api: CDN)
+
     @Location("/playlist/{file}.jpg")
     data class PlaylistCover(val file: String, val api: CDN)
+
     @Location("/playlist/{size}/{file}.jpg")
     data class PlaylistCoverSized(val file: String, val size: Int, val api: CDN)
 }

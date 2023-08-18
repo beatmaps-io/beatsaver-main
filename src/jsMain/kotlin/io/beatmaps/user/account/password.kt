@@ -49,7 +49,7 @@ val changePassword = fc<ChangePasswordProps> { props ->
                 AccountRequest(
                     currpassRef.current?.value ?: "",
                     passwordRef.current?.value ?: "",
-                    password2Ref.current?.value ?: "",
+                    password2Ref.current?.value ?: ""
                 ),
                 generateConfig<AccountRequest, ActionResponse>()
             ).then {

@@ -81,6 +81,7 @@ val reCaptchaVerify = System.getenv("RECAPTCHA_SECRET")?.let { ReCaptchaVerify(i
 
 @Location("/upload")
 class UploadMap
+
 @Location("/avatar")
 class UploadAvatar
 

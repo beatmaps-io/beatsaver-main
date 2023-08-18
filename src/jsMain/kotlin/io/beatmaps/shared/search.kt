@@ -70,7 +70,7 @@ val presets = mapOf(
     "Last week" to PresetDateRange(Moment().subtract(1, "week"), null),
     "Last month" to PresetDateRange(Moment().subtract(1, "month"), null),
     "Last 3 months" to PresetDateRange(Moment().subtract(3, "month"), null),
-    "All" to PresetDateRange(null, null),
+    "All" to PresetDateRange(null, null)
 )
 
 enum class FilterCategory {

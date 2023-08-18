@@ -42,9 +42,12 @@ val cookieDomain = System.getenv("COOKIE_DOMAIN") ?: null
 data class MongoSession(val _id: String, val session: Session, @Contextual val expireAt: Instant)
 
 object MongoClient {
-    private val mongoClient = if (mongoHost.isEmpty()) null else KMongo.createClient(
-        "mongodb://$mongoUser:$mongoPass@$mongoHost:$mongoPort/$mongoAuthDb?serverSelectionTimeoutMS=2000&connectTimeoutMS=2000"
-    )
+    private val mongoClient = if (mongoHost.isEmpty()) { null } else {
+        KMongo.createClient(
+            "mongodb://$mongoUser:$mongoPass@$mongoHost:$mongoPort/$mongoAuthDb?serverSelectionTimeoutMS=2000&connectTimeoutMS=2000"
+        )
+    }
+
     private val database = mongoClient?.getDatabase(mongoDb)
     lateinit var sessions: MongoCollection<MongoSession>
 

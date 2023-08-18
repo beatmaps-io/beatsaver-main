@@ -33,8 +33,7 @@ class RecentTestplays : RComponent<Props, RecentTestplaysState>() {
     }
 
     private fun loadNextPage() {
-        if (state.loading == true)
-            return
+        if (state.loading == true) return
 
         setState {
             loading = true

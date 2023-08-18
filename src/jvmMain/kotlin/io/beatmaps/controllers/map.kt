@@ -18,26 +18,38 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
-@Location("/maps") class MapController {
-    @Location("/{key}") data class Detail(val key: String, val api: MapController)
+@Location("/maps")
+class MapController {
+    @Location("/{key}")
+    data class Detail(val key: String, val api: MapController)
 }
 
-@Location("/beatsaver") class BeatsaverController {
-    @Location("/{key}") data class Detail(val key: String, val api: BeatsaverController)
+@Location("/beatsaver")
+class BeatsaverController {
+    @Location("/{key}")
+    data class Detail(val key: String, val api: BeatsaverController)
 }
 
-@Location("/beatmap") class BeatmapController {
-    @Location("/{key}") data class RedirectOld(val key: String, val api: BeatmapController)
+@Location("/beatmap")
+class BeatmapController {
+    @Location("/{key}")
+    data class RedirectOld(val key: String, val api: BeatmapController)
 }
 
-@Location("/search") class OldSearch
+@Location("/search")
+class OldSearch
 
-@Location("/browse") class OldBrowseController {
-    @Location("/hot") data class Hot(val api: OldBrowseController)
+@Location("/browse")
+class OldBrowseController {
+    @Location("/hot")
+    data class Hot(val api: OldBrowseController)
 }
 
-@Location("/mappers") class Mappers
-@Location("/test") class Testplays
+@Location("/mappers")
+class Mappers
+
+@Location("/test")
+class Testplays
 
 fun Route.mapController() {
     get<Mappers> {

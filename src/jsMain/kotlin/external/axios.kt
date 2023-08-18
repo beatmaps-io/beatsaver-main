@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:wrapping", "ktlint:standard:comment-wrapping")
+
 package external
 
 import io.beatmaps.common.json
@@ -15,6 +17,8 @@ external interface AxiosBasicCredentials {
     var username: String
     var password: String
 }
+
+@Suppress("ktlint:standard:class-naming")
 external interface `T$0` {
     var username: String
     var password: String
@@ -96,6 +100,8 @@ external interface AxiosInterceptorManager<V> {
     fun use(onFulfilled: ((value: V) -> dynamic /* V | Promise<V> */)? = definedExternally /* null */, onRejected: ((error: Any) -> Any)? = definedExternally /* null */): Number
     fun eject(id: Number)
 }
+
+@Suppress("ktlint:standard:class-naming")
 external interface `T$1` {
     var request: AxiosInterceptorManager<AxiosRequestConfig>
     var response: AxiosInterceptorManager<AxiosResponse<Any>>

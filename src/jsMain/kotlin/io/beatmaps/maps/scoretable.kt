@@ -78,8 +78,7 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
     }
 
     private fun loadNextPage() {
-        if (state.loading == true)
-            return
+        if (state.loading == true) return
 
         setState {
             loading = true

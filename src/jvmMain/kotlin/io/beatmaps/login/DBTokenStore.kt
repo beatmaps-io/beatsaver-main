@@ -83,7 +83,7 @@ object DBTokenStore : TokenStore {
         row[RefreshTokenTable.expiration],
         createIdentity(row[RefreshTokenTable.userName], UserDao.wrapRow(row)),
         row[RefreshTokenTable.clientId],
-        row[RefreshTokenTable.scope].split(",").toSet(),
+        row[RefreshTokenTable.scope].split(",").toSet()
     )
 
     override fun revokeAccessToken(token: String) {

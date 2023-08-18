@@ -1,4 +1,3 @@
-// ktlint-disable filename
 package io.beatmaps.api
 
 enum class OauthScope(val tag: String, val description: String) {

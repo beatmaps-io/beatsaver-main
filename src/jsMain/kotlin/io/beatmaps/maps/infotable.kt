@@ -53,7 +53,7 @@ class InfoTable : RComponent<InfoTableProps, State>() {
                     uploader {
                         attrs.map = props.map
                     }
-                    + " (${props.map.metadata.levelAuthorName})"
+                    +" (${props.map.metadata.levelAuthorName})"
                 }
             }
             val score = publishedVersion?.sageScore ?: 0
@@ -175,7 +175,7 @@ class InfoTable : RComponent<InfoTableProps, State>() {
         }
 
     private fun RDOMBuilder<DIV>.infoItem(label: String, info: String, href: String? = null) =
-        if (info.isNotBlank())
+        if (info.isNotBlank()) {
             href?.let {
                 routeLink(href, className = itemClasses) {
                     +label
@@ -189,7 +189,8 @@ class InfoTable : RComponent<InfoTableProps, State>() {
                 span("text-truncate ms-4") {
                     +info
                 }
-            } else null
+            }
+        } else { null }
 }
 
 fun RBuilder.infoTable(handler: InfoTableProps.() -> Unit) =

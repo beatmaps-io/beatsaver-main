@@ -374,8 +374,11 @@ fun Route.userRoute() {
                         User.update({
                             User.id eq req.userId
                         }) { u ->
-                            if (req.suspended) u[suspendedAt] = NowExpression(suspendedAt.columnType)
-                            else u[suspendedAt] = null
+                            if (req.suspended) {
+                                u[suspendedAt] = NowExpression(suspendedAt.columnType)
+                            } else {
+                                u[suspendedAt] = null
+                            }
                         } > 0
 
                     runUpdate().also {
@@ -555,7 +558,7 @@ fun Route.userRoute() {
                             row._id == sessionId
                         )
                     }.toList()
-            } else listOf()
+            } else { listOf() }
 
             call.respond(SessionsData(oauthSessions, siteSessions))
         }

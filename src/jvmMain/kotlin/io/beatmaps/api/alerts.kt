@@ -6,7 +6,7 @@ import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.AlertDao
 import io.beatmaps.common.dbo.AlertRecipient
 import io.beatmaps.common.dbo.Collaboration
-import io.beatmaps.common.dbo.CollaborationDAO
+import io.beatmaps.common.dbo.CollaborationDao
 import io.beatmaps.login.Session
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
@@ -34,7 +34,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.lang.Integer.toHexString
 
-@Location("/api/alerts") class AlertsApi {
+@Location("/api/alerts")
+class AlertsApi {
     @Location("/unread/{page?}")
     data class Unread(val page: Long? = null, val type: String? = null, val api: AlertsApi)
 
@@ -58,7 +59,7 @@ fun alertCount(userId: Int) = AlertRecipient
             (Collaboration.collaboratorId eq userId and not(Collaboration.accepted))
     }.count().toInt()
 
-fun UserAlert.Companion.from(collaboration: CollaborationDAO) = UserAlert(
+fun UserAlert.Companion.from(collaboration: CollaborationDao) = UserAlert(
     head = "Collaboration Proposal",
     body = "You have been invited to be a collaborator on #${toHexString(collaboration.mapId.value)}. " +
         "By accepting this proposal, your name will appear on the map's info screen, " +
@@ -74,15 +75,17 @@ fun Route.alertsRoute() {
             .join(Alert, JoinType.LEFT, AlertRecipient.alertId, Alert.id)
             .join(Collaboration, JoinType.FULL) { Op.FALSE }
             .select {
-                (
-                    AlertRecipient.recipientId eq userId and
-                        AlertRecipient.readAt.run { if (read) isNotNull() else isNull() } or
-                        if (!read) (Collaboration.collaboratorId eq userId and not(Collaboration.accepted)) else Op.FALSE
-                    ) and when {
+                val filter = AlertRecipient.recipientId eq userId and
+                    AlertRecipient.readAt.run { if (read) isNotNull() else isNull() } or
+                    if (!read) (Collaboration.collaboratorId eq userId and not(Collaboration.accepted)) else Op.FALSE
+
+                val typeFilter = when {
                     type == null -> Op.TRUE
                     type.contains(EAlertType.Collaboration) -> Alert.type.inList(type) or Collaboration.id.isNotNull()
                     else -> Alert.type.inList(type)
                 }
+
+                filter and typeFilter
             }
             .orderBy(Alert.sentAt, SortOrder.DESC)
             .limit(page)
@@ -92,8 +95,8 @@ fun Route.alertsRoute() {
                         UserAlert(alert.id.value, alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant())
                     }
                 } else if (it.getOrNull(Collaboration.id) != null) {
-                    UserAlert.from(CollaborationDAO.wrapRow(it))
-                } else null
+                    UserAlert.from(CollaborationDao.wrapRow(it))
+                } else { null }
             }
     }
 
@@ -135,7 +138,7 @@ fun Route.alertsRoute() {
                     false,
                     it[Collaboration.id.count()]
                 )
-            } else null
+            } else { null }
         }
 
     get<AlertsApi.Stats> {
@@ -177,7 +180,7 @@ fun Route.alertsRoute() {
 
                 if (result > 0) {
                     getStats(user.userId)
-                } else null
+                } else { null }
             }
 
             respondStats(user, stats)
@@ -202,7 +205,9 @@ fun Route.alertsRoute() {
 
                 if (result > 0) {
                     getStats(user.userId)
-                } else null
+                } else {
+                    null
+                }
             }
 
             respondStats(user, stats)

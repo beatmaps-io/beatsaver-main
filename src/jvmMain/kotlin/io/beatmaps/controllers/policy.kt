@@ -14,10 +14,16 @@ import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 
-@Location("/policy") class PolicyController {
-    @Location("/dmca") data class DMCA(val api: PolicyController)
-    @Location("/tos") data class TOS(val api: PolicyController)
-    @Location("/privacy") data class Privacy(val api: PolicyController)
+@Location("/policy")
+class PolicyController {
+    @Location("/dmca")
+    data class DMCA(val api: PolicyController)
+
+    @Location("/tos")
+    data class TOS(val api: PolicyController)
+
+    @Location("/privacy")
+    data class Privacy(val api: PolicyController)
 }
 
 fun Route.policyController() {

@@ -36,7 +36,7 @@ fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
             val params = parameters as StringValuesBuilder
             params["state"] = it
         }
-    },
+    }
 )
 
 class SimpleUserPrincipal(val user: UserDao, val alertCount: Int, val redirect: String) : Principal

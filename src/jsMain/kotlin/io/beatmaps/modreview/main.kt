@@ -101,7 +101,7 @@ class ModReview : RComponent<ModReviewProps, ModReviewState>() {
                         th { +"Map" }
                         th { +"Sentiment" }
                         th { +"Time" }
-                        th { + "" }
+                        th { +"" }
                     }
                     tr {
                         td {

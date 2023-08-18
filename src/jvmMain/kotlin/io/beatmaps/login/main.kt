@@ -103,21 +103,44 @@ data class Session(
     }
 }
 
-@Location("/discord") class DiscordLogin(val state: String? = null)
-@Location("/login") class Login
-@Location("/oauth2") class Oauth2 {
-    @Location("/authorize") class Authorize(val client_id: String, val api: Oauth2)
-    @Location("/authorize/success") class AuthorizeSuccess(val client_id: String, val api: Oauth2)
-    @Location("/authorize/not-me") class NotMe(val api: Oauth2)
+@Location("/discord")
+class DiscordLogin(val state: String? = null)
+
+@Location("/login")
+class Login
+
+@Location("/oauth2")
+class Oauth2 {
+    @Location("/authorize")
+    class Authorize(val client_id: String, val api: Oauth2)
+
+    @Location("/authorize/success")
+    class AuthorizeSuccess(val client_id: String, val api: Oauth2)
+
+    @Location("/authorize/not-me")
+    class NotMe(val api: Oauth2)
 }
-@Location("/register") class Register
-@Location("/forgot") class Forgot
-@Location("/reset/{jwt}") class Reset(val jwt: String)
-@Location("/verify/{jwt}") data class Verify(
+
+@Location("/register")
+class Register
+
+@Location("/forgot")
+class Forgot
+
+@Location("/reset/{jwt}")
+class Reset(val jwt: String)
+
+@Location("/verify/{jwt}")
+data class Verify(
     val jwt: String
 )
-@Location("/username") class Username
-@Location("/steam") class Steam
+
+@Location("/username")
+class Username
+
+@Location("/steam")
+class Steam
+
 data class DiscordUserInfo(
     val username: String,
     val id: Long,

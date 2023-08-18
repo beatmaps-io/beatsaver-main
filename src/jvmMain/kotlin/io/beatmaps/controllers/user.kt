@@ -20,17 +20,26 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-@Location("/uploader") class UploaderController {
-    @Location("/{key}") data class RedirectOld(val key: String, val api: UploaderController)
+@Location("/uploader")
+class UploaderController {
+    @Location("/{key}")
+    data class RedirectOld(val key: String, val api: UploaderController)
 }
 
-@Location("/profile") class UserController {
-    @Location("/unlink-discord") data class UnlinkDiscord(val api: UserController)
-    @Location("/{id?}") data class Detail(val id: Int? = null, val api: UserController)
-    @Location("/username/{name}") data class RedirectName(val name: String, val api: UserController)
+@Location("/profile")
+class UserController {
+    @Location("/unlink-discord")
+    data class UnlinkDiscord(val api: UserController)
+
+    @Location("/{id?}")
+    data class Detail(val id: Int? = null, val api: UserController)
+
+    @Location("/username/{name}")
+    data class RedirectName(val name: String, val api: UserController)
 }
 
-@Location("/alerts") class AlertController
+@Location("/alerts")
+class AlertController
 
 fun Route.userController() {
     get<UploaderController.RedirectOld> {

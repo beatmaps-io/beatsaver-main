@@ -126,8 +126,7 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
     val loading = { newState: Boolean -> setState { loading = newState } }
 
     private fun loadNextPage() {
-        if (state.loading == true)
-            return
+        if (state.loading == true) return
 
         // Find first visible page that isn't loaded or beyond the final page
         val toLoad = state.visiblePages?.firstOrNull { state.finalPage?.let { f -> it < f } != false && state.pages?.containsKey(it) != true } ?: return
@@ -222,7 +221,7 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
     }
 
     private fun scrollTo(idx: Int) {
-        val scrollTo = if (idx == 0) 0.0 else {
+        val scrollTo = if (idx == 0) { 0.0 } else {
             val top = props.container.current?.children?.get(idx)?.getBoundingClientRect()?.top ?: 0.0
             val offset = props.scrollParent?.scrollTop ?: window.pageYOffset
             top + offset - beforeContent()

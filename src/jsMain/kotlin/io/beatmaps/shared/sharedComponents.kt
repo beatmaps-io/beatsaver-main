@@ -188,7 +188,7 @@ val uploader = fc<UploaderProps> { props ->
             routeLink(u.profileLink()) {
                 +u.name
             }
-            if (idx < it.lastIndex) + ", "
+            if (idx < it.lastIndex) +", "
         }
     }
 }

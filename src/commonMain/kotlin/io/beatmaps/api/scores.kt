@@ -18,5 +18,6 @@ data class LeaderboardData(val ranked: Boolean, val uid: String? = null, val sco
         val EMPTY = LeaderboardData(false, null, listOf(), false, valid = false)
     }
 }
+
 @Serializable
 data class LeaderboardScore(val playerId: Long, val name: String, val rank: Int, val score: Int, val pp: Double, val mods: List<String>)

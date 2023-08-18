@@ -1,4 +1,5 @@
 @file:UseSerializers(InstantAsStringSerializer::class, ECharacteristicSerializer::class)
+
 package io.beatmaps.api
 
 import io.beatmaps.common.MapTag
@@ -59,7 +60,7 @@ enum class UserSentiment(val human: String, val color: String) {
     MOSTLY_NEGATIVE("Mostly Negative", "warning"),
     MIXED("Mixed", "light"),
     MOSTLY_POSITIVE("Mostly Positive", "info"),
-    VERY_POSITIVE("Very Positive", "success");
+    VERY_POSITIVE("Very Positive", "success")
 }
 
 @Serializable

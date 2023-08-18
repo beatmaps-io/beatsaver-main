@@ -14,8 +14,10 @@ import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 
-@Location("/api/scores") class ScoresApi {
-    @Location("/{key}/{page}") data class Leaderboard(
+@Location("/api/scores")
+class ScoresApi {
+    @Location("/{key}/{page}")
+    data class Leaderboard(
         val key: String,
         val page: Int = 1,
         val difficulty: Int = -1,

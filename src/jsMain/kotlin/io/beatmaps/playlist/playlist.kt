@@ -75,8 +75,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
     }
 
     private fun loadPage(page: Int? = 0) {
-        if (state.loading == true)
-            return
+        if (state.loading == true) return
 
         val id = props.params["id"]
         setState {

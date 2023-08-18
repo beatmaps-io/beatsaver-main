@@ -2,7 +2,7 @@ package io.beatmaps.api
 
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Collaboration
-import io.beatmaps.common.dbo.CollaborationDAO
+import io.beatmaps.common.dbo.CollaborationDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.util.isUploader
 import io.ktor.http.HttpStatusCode
@@ -23,7 +23,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-fun CollaborationDetail.Companion.from(row: ResultRow) = CollaborationDAO.wrapRow(row).let {
+fun CollaborationDetail.Companion.from(row: ResultRow) = CollaborationDao.wrapRow(row).let {
     CollaborationDetail(it.mapId.value, UserDetail.from(row), it.accepted)
 }
 

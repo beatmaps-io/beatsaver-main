@@ -65,8 +65,10 @@ import kotlin.time.toDuration
 private val searchThreshold = (System.getenv("SEARCH_THRESHOLD")?.toIntOrNull() ?: 10).toDuration(DurationUnit.SECONDS)
 private val searchLogger = Logger.getLogger("bmio.Search")
 
-@Location("/api") class SearchApi {
-    @Group("Search") @Location("/search/text/{page}")
+@Location("/api")
+class SearchApi {
+    @Group("Search")
+    @Location("/search/text/{page}")
     data class Text(
         val q: String? = "",
         @Description("Options are a little weird, I may add another enum field in future to make this clearer.\ntrue = both, false = only ai, null = no ai") val automapper: Boolean? = null,
@@ -269,10 +271,11 @@ fun Route.searchRoute() {
                                             o.split(",").fold(Op.TRUE as Op<Boolean>) { op, t ->
                                                 op and t.split("|").fold(Op.FALSE as Op<Boolean>) { op2, t2 ->
                                                     op2 or
-                                                        if (t2.startsWith("!"))
+                                                        if (t2.startsWith("!")) {
                                                             Beatmap.tags.isNull() or not(Beatmap.tags contains arrayOf(t2.substringAfter("!")))
-                                                        else
+                                                        } else {
                                                             Beatmap.tags contains arrayOf(t2)
+                                                        }
                                                 }
                                             }
                                         }

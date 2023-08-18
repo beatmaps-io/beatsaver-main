@@ -69,7 +69,7 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
         }
 
         axiosGet<MapDetail>(
-            "${Config.apibase}/maps/$subPath/$mapKey",
+            "${Config.apibase}/maps/$subPath/$mapKey"
         ).then {
             val mapLocal = it.data
             setPageTitle("Map - " + mapLocal.name)

@@ -62,7 +62,7 @@ class ResetPage : RComponent<ResetPageProps, ResetPageState>() {
                         ResetRequest(
                             props.params["jwt"] ?: "",
                             passwordRef.current?.value ?: "",
-                            password2Ref.current?.value ?: "",
+                            password2Ref.current?.value ?: ""
                         ),
                         generateConfig<ResetRequest, ActionResponse>()
                     ).then {

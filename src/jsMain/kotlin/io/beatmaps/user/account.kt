@@ -95,7 +95,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
 
     override fun componentDidMount() {
         axiosGet<SessionsData>(
-            "${Config.apibase}/users/sessions",
+            "${Config.apibase}/users/sessions"
         ).then {
             setState {
                 sessions = it.data
@@ -109,7 +109,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
         setState {
             sessions = SessionsData(
                 sessions?.oauth?.filter { c -> c.id != session.id } ?: listOf(),
-                sessions?.site?.filter { c -> c.id != session.id } ?: listOf(),
+                sessions?.site?.filter { c -> c.id != session.id } ?: listOf()
             )
         }
     }

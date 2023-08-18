@@ -22,8 +22,10 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.lang.Integer.toHexString
 
-@Location("/api") class ModLogApi {
-    @Location("/modlog/{page}") data class ModLog(
+@Location("/api")
+class ModLogApi {
+    @Location("/modlog/{page}")
+    data class ModLog(
         val page: Long = 0,
         val api: ModLogApi,
         val mod: String? = null,

@@ -26,11 +26,12 @@ data class ReviewDetail(
     companion object
 }
 
-@Serializable
-data class ReviewsResponse(val docs: List<ReviewDetail>)
+@Serializable data class ReviewsResponse(val docs: List<ReviewDetail>)
 
 @Serializable data class PutReview(val text: String, val sentiment: ReviewSentiment, val captcha: String? = null)
+
 @Serializable data class CurateReview(val id: Int, val curated: Boolean = false)
+
 @Serializable data class DeleteReview(val reason: String)
 
 enum class ReviewSentiment(val dbValue: Int, val emoji: String) {

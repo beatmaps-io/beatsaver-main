@@ -74,11 +74,13 @@ data class PlaylistBatchRequest(val hashes: List<String>?, val keys: List<String
 
 @Serializable
 data class MapDetailWithOrder(val map: MapDetail, val order: Float)
+
 @Serializable
 data class PlaylistPage(val playlist: PlaylistFull? = null, val maps: List<MapDetailWithOrder>? = null)
 
 @Serializable
 data class PlaylistSearchResponse(val docs: List<PlaylistFull>)
+
 @Serializable
 data class CuratePlaylist(val id: Int, val curated: Boolean = false)
 

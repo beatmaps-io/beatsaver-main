@@ -15,10 +15,16 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
-@Location("/playlists") class PlaylistController {
-    @Location("/{id}/edit") data class Edit(val id: Int, val api: PlaylistController)
-    @Location("/new") data class New(val api: PlaylistController)
-    @Location("/{id}") data class Detail(val id: Int, val api: PlaylistController)
+@Location("/playlists")
+class PlaylistController {
+    @Location("/{id}/edit")
+    data class Edit(val id: Int, val api: PlaylistController)
+
+    @Location("/new")
+    data class New(val api: PlaylistController)
+
+    @Location("/{id}")
+    data class Detail(val id: Int, val api: PlaylistController)
 }
 
 fun Route.playlistController() {

@@ -120,8 +120,9 @@ fun Route.bookmarkRoute() {
                 } ?: (0 to null)
             }
 
-            if (playlistId != null)
+            if (playlistId != null) {
                 call.pub("beatmaps", "playlists.$playlistId.updated", null, playlistId)
+            }
 
             call.respond(BookmarkUpdateResponse(updateCount > 0))
         }

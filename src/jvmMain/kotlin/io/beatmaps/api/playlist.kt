@@ -105,16 +105,38 @@ import java.nio.file.Files
 import java.util.Base64
 
 const val prefix: String = "/playlists"
-@Location("/api") class PlaylistApi {
-    @Location("$prefix/id/{id}") data class Detail(val id: Int, val api: PlaylistApi)
-    @Group("Playlists") @Location("$prefix/id/{id}/{page}") data class DetailWithPage(val id: Int, @DefaultValue("0") val page: Long, @Ignore val api: PlaylistApi)
-    @Location("$prefix/id/{id}/download/{filename?}") data class Download(val id: Int, val filename: String? = null, val api: PlaylistApi)
-    @Location("$prefix/id/{id}/add") data class Add(val id: Int, val api: PlaylistApi)
-    @Group("Playlists") @Location("$prefix/id/{id}/batch") data class Batch(val id: Int, @Ignore val api: PlaylistApi)
-    @Location("$prefix/id/{id}/edit") data class Edit(val id: Int, val api: PlaylistApi)
-    @Location("$prefix/create") data class Create(val api: PlaylistApi)
-    @Location("$prefix/curate") data class Curate(val api: PlaylistApi)
-    @Group("Playlists") @Location("$prefix/user/{userId}/{page}") data class ByUser(
+
+@Location("/api")
+class PlaylistApi {
+    @Location("$prefix/id/{id}")
+    data class Detail(val id: Int, val api: PlaylistApi)
+
+    @Group("Playlists")
+    @Location("$prefix/id/{id}/{page}")
+    data class DetailWithPage(val id: Int, @DefaultValue("0") val page: Long, @Ignore val api: PlaylistApi)
+
+    @Location("$prefix/id/{id}/download/{filename?}")
+    data class Download(val id: Int, val filename: String? = null, val api: PlaylistApi)
+
+    @Location("$prefix/id/{id}/add")
+    data class Add(val id: Int, val api: PlaylistApi)
+
+    @Group("Playlists")
+    @Location("$prefix/id/{id}/batch")
+    data class Batch(val id: Int, @Ignore val api: PlaylistApi)
+
+    @Location("$prefix/id/{id}/edit")
+    data class Edit(val id: Int, val api: PlaylistApi)
+
+    @Location("$prefix/create")
+    data class Create(val api: PlaylistApi)
+
+    @Location("$prefix/curate")
+    data class Curate(val api: PlaylistApi)
+
+    @Group("Playlists")
+    @Location("$prefix/user/{userId}/{page}")
+    data class ByUser(
         val userId: Int,
         val page: Long,
         @Ignore
@@ -122,7 +144,10 @@ const val prefix: String = "/playlists"
         @Ignore
         val api: PlaylistApi
     )
-    @Group("Playlists") @Location("$prefix/latest") data class ByUploadDate(
+
+    @Group("Playlists")
+    @Location("$prefix/latest")
+    data class ByUploadDate(
         @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
         val before: Instant? = null,
         @Description("Like `before` but will get you maps more recent than the time supplied.\nYYYY-MM-DDTHH:MM:SS+00:00")
@@ -131,7 +156,9 @@ const val prefix: String = "/playlists"
         @Ignore
         val api: PlaylistApi
     )
-    @Group("Playlists") @Location("$prefix/search/{page}")
+
+    @Group("Playlists")
+    @Location("$prefix/search/{page}")
     data class Text(
         val q: String? = "",
         @DefaultValue("0") val page: Long = 0,
@@ -300,7 +327,7 @@ fun Route.playlistRoute() {
                                     .let { q ->
                                         if (it.includeEmpty != true) {
                                             q.and(Playlist.totalMaps greater 0)
-                                        } else q
+                                        } else { q }
                                     }
                                     .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
                                     .notNull(it.minNps) { o -> Playlist.maxNps greaterEqF o }

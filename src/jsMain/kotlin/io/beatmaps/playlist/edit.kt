@@ -81,8 +81,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
     }
 
     private fun loadData() {
-        if (state.loading == true)
-            return
+        if (state.loading == true) return
 
         val id = props.params["id"]
         setState {
@@ -135,10 +134,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                                 data.append("description", descriptionRef.current?.value ?: "")
                                 data.append(
                                     "type",
-                                    if (publicRef.current?.checked == true)
-                                        EPlaylistType.Public.name
-                                    else
-                                        EPlaylistType.Private.name
+                                    if (publicRef.current?.checked == true) EPlaylistType.Public.name else EPlaylistType.Private.name
                                 )
                                 val file = coverRef.current?.files?.let { it[0] }
                                 if (file != null) {

@@ -15,7 +15,7 @@ object DBClientService : ClientService {
             (OauthClient.clientId eq clientId).let { q ->
                 if (clientSecret != null) {
                     q and (OauthClient.secret eq clientSecret)
-                } else q
+                } else { q }
             }
         }.firstOrNull()?.let { client -> OauthClientDao.wrapRow(client) }
     }

@@ -404,40 +404,43 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                         attrs.attributes["aria-label"] = text
                                         attrs.onClickFunction = {
                                             it.preventDefault()
-                                            if (!isCurated) props.modal.current?.showDialog(
-                                                ModalData(
-                                                    "Curate map",
-                                                    bodyCallback = {
-                                                        p {
-                                                            +"Are you sure you want to curate this map?"
-                                                        }
-                                                    },
-                                                    buttons = listOf(
-                                                        ModalButton("Curate", "primary") { curate() },
-                                                        ModalButton("Cancel")
+                                            if (!isCurated) {
+                                                props.modal.current?.showDialog(
+                                                    ModalData(
+                                                        "Curate map",
+                                                        bodyCallback = {
+                                                            p {
+                                                                +"Are you sure you want to curate this map?"
+                                                            }
+                                                        },
+                                                        buttons = listOf(
+                                                            ModalButton("Curate", "primary") { curate() },
+                                                            ModalButton("Cancel")
+                                                        )
                                                     )
                                                 )
-                                            )
-                                            else props.modal.current?.showDialog(
-                                                ModalData(
-                                                    "Uncurate map",
-                                                    bodyCallback = {
-                                                        p {
-                                                            +"Are you sure you want to uncurate this map? If so, please provide a comprehensive reason."
-                                                        }
-                                                        p {
-                                                            +"Reason for action:"
-                                                        }
-                                                        textarea(classes = "form-control") {
-                                                            ref = reasonRef
-                                                        }
-                                                    },
-                                                    buttons = listOf(
-                                                        ModalButton("Uncurate", "primary") { curate(false) },
-                                                        ModalButton("Cancel")
+                                            } else {
+                                                props.modal.current?.showDialog(
+                                                    ModalData(
+                                                        "Uncurate map",
+                                                        bodyCallback = {
+                                                            p {
+                                                                +"Are you sure you want to uncurate this map? If so, please provide a comprehensive reason."
+                                                            }
+                                                            p {
+                                                                +"Reason for action:"
+                                                            }
+                                                            textarea(classes = "form-control") {
+                                                                ref = reasonRef
+                                                            }
+                                                        },
+                                                        buttons = listOf(
+                                                            ModalButton("Uncurate", "primary") { curate(false) },
+                                                            ModalButton("Cancel")
+                                                        )
                                                     )
                                                 )
-                                            )
+                                            }
                                         }
                                         i("fas fa-award " + if (isCurated) "text-danger" else "text-success") { }
                                     }

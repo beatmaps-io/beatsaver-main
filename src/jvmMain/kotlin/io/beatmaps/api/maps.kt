@@ -64,25 +64,54 @@ import java.lang.Integer.toHexString
 
 @Location("/api")
 class MapsApi {
-    @Location("/maps/update") data class Update(val api: MapsApi)
-    @Location("/maps/tagupdate") data class TagUpdate(val api: MapsApi)
-    @Location("/maps/curate") data class Curate(val api: MapsApi)
-    @Location("/maps/validate") data class Validate(val api: MapsApi)
-    @Location("/maps/wip/{page}") data class WIP(val page: Long = 0, val api: MapsApi)
-    @Location("/download/key/{key}") data class BeatsaverDownload(val key: String, val api: MapsApi)
-    @Location("/maps/beatsaver/{key}") data class Beatsaver(val key: String, @Ignore val api: MapsApi)
-    @Group("Maps") @Location("/maps/id/{id}") data class Detail(val id: String, @Ignore val api: MapsApi)
-    @Location("/maps/id/{id}/playlists") data class InPlaylists(val id: String, @Ignore val api: MapsApi)
-    @Group("Maps") @Location("/maps/hash/{hash}") data class ByHash(
+    @Location("/maps/update")
+    data class Update(val api: MapsApi)
+
+    @Location("/maps/tagupdate")
+    data class TagUpdate(val api: MapsApi)
+
+    @Location("/maps/curate")
+    data class Curate(val api: MapsApi)
+
+    @Location("/maps/validate")
+    data class Validate(val api: MapsApi)
+
+    @Location("/maps/wip/{page}")
+    data class WIP(val page: Long = 0, val api: MapsApi)
+
+    @Location("/download/key/{key}")
+    data class BeatsaverDownload(val key: String, val api: MapsApi)
+
+    @Location("/maps/beatsaver/{key}")
+    data class Beatsaver(val key: String, @Ignore val api: MapsApi)
+
+    @Group("Maps")
+    @Location("/maps/id/{id}")
+    data class Detail(val id: String, @Ignore val api: MapsApi)
+
+    @Location("/maps/id/{id}/playlists")
+    data class InPlaylists(val id: String, @Ignore val api: MapsApi)
+
+    @Group("Maps")
+    @Location("/maps/hash/{hash}")
+    data class ByHash(
         @Description("Up to 50 hashes seperated by commas")
         val hash: String,
         @Ignore
         val api: MapsApi
     )
 
-    @Group("Maps") @Location("/maps/uploader/{id}/{page}") data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
-    @Group("Maps") @Location("/maps/collaborations/{id}/{page}") data class Collaborations(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
-    @Group("Maps") @Location("/maps/latest") data class ByUploadDate(
+    @Group("Maps")
+    @Location("/maps/uploader/{id}/{page}")
+    data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
+
+    @Group("Maps")
+    @Location("/maps/collaborations/{id}/{page}")
+    data class Collaborations(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
+
+    @Group("Maps")
+    @Location("/maps/latest")
+    data class ByUploadDate(
         @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
         val before: Instant? = null,
         @Description("Like `before` but will get you maps more recent than the time supplied.\nYYYY-MM-DDTHH:MM:SS+00:00")
@@ -94,10 +123,21 @@ class MapsApi {
         val api: MapsApi
     )
 
-    @Group("Maps") @Location("/maps/plays/{page}") data class ByPlayCount(@DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
-    @Group("Users") @Location("/users/id/{id}") data class UserId(val id: Int, @Ignore val api: MapsApi)
-    @Group("Users") @Location("/users/name/{name}") data class UserName(val name: String, @Ignore val api: MapsApi)
-    @Group("Users") @Location("/users/verify") data class Verify(@Ignore val api: MapsApi)
+    @Group("Maps")
+    @Location("/maps/plays/{page}")
+    data class ByPlayCount(@DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
+
+    @Group("Users")
+    @Location("/users/id/{id}")
+    data class UserId(val id: Int, @Ignore val api: MapsApi)
+
+    @Group("Users")
+    @Location("/users/name/{name}")
+    data class UserName(val name: String, @Ignore val api: MapsApi)
+
+    @Group("Users")
+    @Location("/users/verify")
+    data class Verify(@Ignore val api: MapsApi)
 }
 
 enum class LatestSort {
@@ -535,12 +575,8 @@ fun Route.mapDetailRoute() {
                             .joinCollaborations()
                             .slice(Beatmap.id)
                             .select {
-                                (
-                                    Beatmap.uploader eq userId or (
-                                        if (includeCollaborations) Collaboration.collaboratorId eq userId
-                                        else Op.FALSE
-                                        )
-                                    ) and Beatmap.deletedAt.isNull()
+                                val includeColab = if (includeCollaborations) Collaboration.collaboratorId eq userId else Op.FALSE
+                                (Beatmap.uploader eq userId or includeColab) and Beatmap.deletedAt.isNull()
                             }
                             .orderBy(Beatmap.uploaded to SortOrder.DESC)
                             .limit(page)

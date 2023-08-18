@@ -96,9 +96,11 @@ val modLogEntryRenderer = fc<ModLogEntryProps> {
                 linkUser(false, it.user)
             }
             td {
-                if (it.map != null) mapTitle {
-                    attrs.title = it.map.name
-                    attrs.mapKey = it.map.id
+                if (it.map != null) {
+                    mapTitle {
+                        attrs.title = it.map.name
+                        attrs.mapKey = it.map.id
+                    }
                 }
             }
             td { +it.type.name }

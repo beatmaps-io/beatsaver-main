@@ -1,4 +1,3 @@
-// ktlint-disable filename
 package io.beatmaps.api
 
 actual object UserDetailHelper {

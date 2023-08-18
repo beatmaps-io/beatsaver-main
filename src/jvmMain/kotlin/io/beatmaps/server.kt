@@ -109,8 +109,9 @@ suspend fun ApplicationCall.genericPage(statusCode: HttpStatusCode = HttpStatusC
     val sess = sessions.get<Session>()
 
     // Force renew session
-    if (statusCode == HttpStatusCode.OK && sess != null)
+    if (statusCode == HttpStatusCode.OK && sess != null) {
         sessions.set(sess)
+    }
 
     if (sess != null && sess.uniqueName == null && request.path() != "/username") {
         respondRedirect("/username")

@@ -83,9 +83,11 @@ val modReviewEntryRenderer = fc<ModReviewEntryProps> {
                     review.creator?.let { c -> linkUser(c) }
                 }
                 td {
-                    if (review.map != null) mapTitle {
-                        attrs.title = review.map.name
-                        attrs.mapKey = review.map.id
+                    if (review.map != null) {
+                        mapTitle {
+                            attrs.title = review.map.name
+                            attrs.mapKey = review.map.id
+                        }
                     }
                 }
                 td {

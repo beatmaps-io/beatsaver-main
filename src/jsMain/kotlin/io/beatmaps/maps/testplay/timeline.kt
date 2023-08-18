@@ -95,7 +95,9 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                         val extraText = listOf("${recentVersions.size} / 2 uploads used in the last 12 hours").let {
                             if (hoursUntilNext > 0) {
                                 it + "$hoursUntilNext hours until next upload"
-                            } else it
+                            } else {
+                                it
+                            }
                         }
 
                         Dropzone.default {

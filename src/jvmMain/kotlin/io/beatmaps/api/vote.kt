@@ -48,15 +48,23 @@ import java.lang.Integer.toHexString
 import kotlin.math.log
 import kotlin.math.pow
 
-@Location("/api") class VoteApi {
-    @Group("Vote") @Location("/vote") data class Vote(@Ignore val api: VoteApi)
-    @Group("Vote") @Location("/vote") data class Since(val since: Instant, @Ignore val api: VoteApi)
+@Location("/api")
+class VoteApi {
+    @Group("Vote")
+    @Location("/vote")
+    data class Vote(@Ignore val api: VoteApi)
+
+    @Group("Vote")
+    @Location("/vote")
+    data class Since(val since: Instant, @Ignore val api: VoteApi)
 }
 
 @Serializable
 data class VoteRequest(val auth: AuthRequest, val hash: String, val direction: Boolean)
+
 @Serializable
 data class VoteResponse(val success: Boolean, val error: String? = null)
+
 data class QueuedVote(val userId: Long, val steam: Boolean, val mapId: Int, val direction: Boolean)
 
 @Serializable

@@ -67,13 +67,25 @@ import org.jetbrains.exposed.sql.update
 import java.time.Instant
 import java.util.logging.Logger
 
-@Location("/api/testplay") class TestplayApi {
-    @Location("/queue/{page}") data class Queue(val page: Long = 0, val includePlayed: Boolean = true, val api: TestplayApi)
-    @Location("/recent/{page}") data class Recent(val page: Long = 0, val api: TestplayApi)
-    @Location("/feedback") data class Feedback(val api: TestplayApi)
-    @Location("/state") data class State(val api: TestplayApi)
-    @Location("/version") data class Version(val api: TestplayApi)
-    @Location("/mark") data class Mark(val api: TestplayApi)
+@Location("/api/testplay")
+class TestplayApi {
+    @Location("/queue/{page}")
+    data class Queue(val page: Long = 0, val includePlayed: Boolean = true, val api: TestplayApi)
+
+    @Location("/recent/{page}")
+    data class Recent(val page: Long = 0, val api: TestplayApi)
+
+    @Location("/feedback")
+    data class Feedback(val api: TestplayApi)
+
+    @Location("/state")
+    data class State(val api: TestplayApi)
+
+    @Location("/version")
+    data class Version(val api: TestplayApi)
+
+    @Location("/mark")
+    data class Mark(val api: TestplayApi)
 }
 
 private val pipelineLogger = Logger.getLogger("bmio.Pipeline")
@@ -106,11 +118,11 @@ fun PipelineContext<*, ApplicationCall>.checkOauthHeader(scope: OauthScope? = nu
                 false -> {
                     if (token.scopes.contains(scope?.tag)) {
                         token
-                    } else null
+                    } else { null }
                 }
                 null -> null
             }
-        } else null
+        } else { null }
     }
 
 suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(captcha: String, block: suspend PipelineContext<*, ApplicationCall>.() -> T, error: (suspend PipelineContext<*, ApplicationCall>.(SiteVerifyResponse) -> T)? = null) =
@@ -138,8 +150,10 @@ suspend fun <T> PipelineContext<*, ApplicationCall>.captchaIfPresent(captcha: St
 
 @Serializable
 data class AuthRequest(val steamId: String? = null, val oculusId: String? = null, val proof: String)
+
 @Serializable
 data class MarkRequest(val hash: String, val markPlayed: Boolean = true, val removeFromQueue: Boolean = false, val addToQueue: Boolean = false)
+
 @Serializable
 data class VerifyResponse(val success: Boolean, val error: String? = null)
 

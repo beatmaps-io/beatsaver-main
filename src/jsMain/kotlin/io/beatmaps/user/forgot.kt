@@ -71,7 +71,7 @@ class ForgotPage : RComponent<Props, ForgotPageState>() {
                                 "${Config.apibase}/users/forgot",
                                 ForgotRequest(
                                     captcha,
-                                    emailRef.current?.value ?: "",
+                                    emailRef.current?.value ?: ""
                                 ),
                                 generateConfig<ForgotRequest, ActionResponse>()
                             ).then {
