@@ -4,6 +4,7 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
 import io.beatmaps.common.DownloadInfo
 import io.beatmaps.common.DownloadType
+import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
@@ -17,6 +18,7 @@ import io.beatmaps.common.localFolder
 import io.beatmaps.common.localPlaylistCoverFolder
 import io.beatmaps.common.pub
 import io.beatmaps.common.returnFile
+import io.beatmaps.login.Session
 import io.ktor.http.HttpHeaders
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
@@ -27,9 +29,12 @@ import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.plugins.origin
 import io.ktor.server.response.header
 import io.ktor.server.routing.Route
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
 import io.ktor.util.pipeline.PipelineContext
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
@@ -78,6 +83,8 @@ fun Route.cdnRoute() {
     }
 
     get<CDN.Zip> {
+        val sess = call.sessions.get<Session>()
+
         if (it.file.isBlank()) {
             throw NotFoundException()
         }
@@ -86,9 +93,10 @@ fun Route.cdnRoute() {
         val name = if (file.exists()) {
             transaction {
                 Beatmap
-                    .join(Versions, JoinType.FULL, onColumn = Beatmap.id, otherColumn = Versions.mapId) // , additionalConstraint = { Versions.state neq EMapState.Uploaded })
+                    .join(Versions, JoinType.INNER, onColumn = Beatmap.id, otherColumn = Versions.mapId) // , additionalConstraint = { Versions.state neq EMapState.Uploaded })
                     .select {
-                        (Versions.hash eq it.file) and Beatmap.deletedAt.isNull()
+                        ((Beatmap.uploader eq sess?.userId) or (Versions.state eq EMapState.Published)) and
+                            (Versions.hash eq it.file) and Beatmap.deletedAt.isNull()
                     }
                     .complexToBeatmap()
                     .firstOrNull()
