@@ -12,12 +12,21 @@ import io.beatmaps.common.dbo.TestplayDao
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.localPlaylistCoverFolder
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.Query
 import org.jetbrains.exposed.sql.ResultRow
 import java.io.File
 import java.lang.Integer.toHexString
 import kotlin.time.Duration.Companion.seconds
+
+fun getActualPrefixForTime(cdnPrefix: String, time: Instant, r2: Boolean = false) =
+    when {
+        // Don't use cdn servers during sync period
+        Clock.System.now() - time < 30.seconds -> "" to ""
+        r2 -> "r2" to cdnPrefix
+        else -> "" to cdnPrefix
+    }
 
 fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
     toHexString(other.id.value), other.name, other.description,
@@ -44,14 +53,8 @@ fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
 fun MapDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(BeatmapDao.wrapRow(row), cdnPrefix)
 
 fun getActualPrefixForVersion(other: VersionsDao, cdnPrefix: String) =
-    // Don't use cdn servers during sync period
-    if (Clock.System.now() - other.uploaded.toKotlinInstant() < 30.seconds) {
-        "" to ""
-    } else if (other.r2) {
-        "r2" to cdnPrefix
-    } else {
-        "" to cdnPrefix
-    }
+    getActualPrefixForTime(cdnPrefix, other.uploaded.toKotlinInstant(), other.r2)
+
 fun MapVersion.Companion.from(other: VersionsDao, cdnPrefix: String) =
     getActualPrefixForVersion(other, cdnPrefix).let { (zipPrefix, actualPrefix) ->
         MapVersion(
@@ -106,20 +109,23 @@ fun PlaylistBasic.Companion.from(other: PlaylistDao, cdnPrefix: String) = Playli
 )
 fun PlaylistBasic.Companion.from(row: ResultRow, cdnPrefix: String) = from(PlaylistDao.wrapRow(row), cdnPrefix)
 
-fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPrefix: String) = PlaylistFull(
-    other.id.value, other.name, other.description,
-    if (other.type == EPlaylistType.System) "/static/favicon/android-chrome-512x512.png" else "${Config.cdnBase(cdnPrefix)}/playlist/${other.id.value}.jpg",
-    if (File(localPlaylistCoverFolder(512), "${other.id.value}.jpg").exists()) "${Config.cdnBase(cdnPrefix)}/playlist/512/${other.id.value}.jpg" else null,
-    UserDetail.from(other.owner),
-    other.curator?.let {
-        UserDetail.from(it)
-    },
-    stats,
-    other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.songsChangedAt?.toKotlinInstant(), other.curatedAt?.toKotlinInstant(),
-    other.deletedAt?.toKotlinInstant(),
-    "${Config.apiBase(true)}/playlists/id/${other.id.value}/download",
-    other.type
-)
+fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPrefix: String) =
+    getActualPrefixForTime(cdnPrefix, other.createdAt.toKotlinInstant()).let { (_, actualPrefix) ->
+        PlaylistFull(
+            other.id.value, other.name, other.description,
+            if (other.type == EPlaylistType.System) "/static/favicon/android-chrome-512x512.png" else "${Config.cdnBase(actualPrefix)}/playlist/${other.id.value}.jpg",
+            if (File(localPlaylistCoverFolder(512), "${other.id.value}.jpg").exists()) "${Config.cdnBase(actualPrefix)}/playlist/512/${other.id.value}.jpg" else null,
+            UserDetail.from(other.owner),
+            other.curator?.let {
+                UserDetail.from(it)
+            },
+            stats,
+            other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.songsChangedAt?.toKotlinInstant(), other.curatedAt?.toKotlinInstant(),
+            other.deletedAt?.toKotlinInstant(),
+            "${Config.apiBase(true)}/playlists/id/${other.id.value}/download",
+            other.type
+        )
+    }
 fun PlaylistFull.Companion.from(row: ResultRow, cdnPrefix: String) = from(
     PlaylistDao.wrapRow(row),
     if (row.hasValue(Playlist.Stats.mapperCount)) {
