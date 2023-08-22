@@ -150,9 +150,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                 return@then null
             }
 
-            val newMin = it.data.docs?.mapNotNull { doc -> doc.uploaded }?.reduce { a, b ->
-                a.coerceAtMost(b)
-            }
+            val newMin = it.data.docs?.mapNotNull { doc -> doc.uploaded }?.min()
             val oldMin = state.minTime
             if (newMin != null && (oldMin == null || newMin < oldMin)) {
                 setState {
