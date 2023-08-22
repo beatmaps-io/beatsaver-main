@@ -1,6 +1,7 @@
 package io.beatmaps.api
 
 import io.beatmaps.common.db.NowExpression
+import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.CollaborationDao
 import io.beatmaps.common.dbo.User
@@ -54,6 +55,7 @@ fun Route.collaborationRoute() {
                             it[mapId] = req.mapId
                             it[collaboratorId] = req.collaboratorId
                             it[requestedAt] = NowExpression(requestedAt.columnType)
+                            it[uploadedAt] = Beatmap.slice(Beatmap.uploaded).select { Beatmap.id eq req.mapId }
                         }
                     }
                 }

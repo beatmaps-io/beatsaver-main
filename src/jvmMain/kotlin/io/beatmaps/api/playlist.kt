@@ -639,7 +639,7 @@ fun Route.playlistRoute() {
                                     } ?: 0f
 
                             val lookup = Beatmap
-                                .joinVersions(false, null)
+                                .joinVersions(false, state = null)
                                 .slice(Versions.hash, Beatmap.id)
                                 .select {
                                     Beatmap.deletedAt.isNull() and (Beatmap.id.inList(validKeys) or Versions.hash.inList(hashesOrEmpty))

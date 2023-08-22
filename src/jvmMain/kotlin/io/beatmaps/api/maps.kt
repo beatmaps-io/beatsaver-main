@@ -34,7 +34,6 @@ import io.beatmaps.common.pub
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
@@ -47,16 +46,17 @@ import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
-import io.ktor.util.pipeline.PipelineContext
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.union
+import org.jetbrains.exposed.sql.unionAll
 import org.jetbrains.exposed.sql.update
 import java.lang.Integer.toHexString
 
@@ -104,8 +104,8 @@ class MapsApi {
     data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
 
     @Group("Maps")
-    @Location("/maps/collaborations/{id}/{page}")
-    data class Collaborations(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
+    @Location("/maps/collaborations/{id}")
+    data class Collaborations(val id: Int, val before: Instant? = null, @DefaultValue("20") @Description("1 - 100") val pageSize: Int? = 20, @Ignore val api: MapsApi)
 
     @Group("Maps")
     @Location("/maps/latest")
@@ -117,6 +117,8 @@ class MapsApi {
         @Description("true = both, false = no ai")
         val automapper: Boolean? = false,
         val sort: LatestSort? = LatestSort.FIRST_PUBLISHED,
+        @Description("1 - 100") @DefaultValue("20")
+        val pageSize: Int? = 20,
         @Ignore
         val api: MapsApi
     )
@@ -364,7 +366,7 @@ fun Route.mapDetailRoute() {
         val r = try {
             transaction {
                 Beatmap
-                    .joinVersions(true, null) // Allow returning non-published versions
+                    .joinVersions(true, state = null) // Allow returning non-published versions
                     .joinUploader()
                     .joinCurator()
                     .joinBookmarked(sess?.userId)
@@ -523,7 +525,7 @@ fun Route.mapDetailRoute() {
         requireAuthorization { sess ->
             val beatmaps = transaction {
                 Beatmap
-                    .joinVersions(true, null)
+                    .joinVersions(true, state = null)
                     .joinUploader()
                     .joinCurator()
                     .joinBookmarked(sess.userId)
@@ -557,34 +559,26 @@ fun Route.mapDetailRoute() {
         }
     }
 
-    fun PipelineContext<*, ApplicationCall>.mapsByUser(userId: Int, page: Long, includeCollaborations: Boolean): List<MapDetail> {
+    get<MapsApi.ByUploader>("Get maps by a user".responds(ok<SearchResponse>())) {
+        call.response.header("Access-Control-Allow-Origin", "*")
+
         val sess = call.sessions.get<Session>()
-        return transaction {
+        val beatmaps = transaction {
             Beatmap
                 .joinVersions(true)
                 .joinUploader()
                 .joinCurator()
                 .joinBookmarked(sess?.userId)
-                .joinCollaborators()
                 .select {
                     Beatmap.id.inSubQuery(
                         Beatmap
                             .joinVersions()
                             .slice(Beatmap.id)
                             .select {
-                                if (includeCollaborations) {
-                                    // Inception music plays
-                                    Beatmap.id.inSubQuery(
-                                        Collaboration.slice(Collaboration.mapId).select { Collaboration.collaboratorId eq userId and Collaboration.accepted }.union(
-                                            Beatmap.slice(Beatmap.id).select { Beatmap.uploader eq userId and Beatmap.deletedAt.isNull() }
-                                        )
-                                    )
-                                } else {
-                                    Beatmap.uploader eq userId and Beatmap.deletedAt.isNull()
-                                }
+                                Beatmap.uploader.eq(it.id) and (Beatmap.deletedAt.isNull())
                             }
                             .orderBy(Beatmap.uploaded to SortOrder.DESC)
-                            .limit(page)
+                            .limit(it.page)
                     )
                 }
                 .complexToBeatmap()
@@ -593,12 +587,6 @@ fun Route.mapDetailRoute() {
                 }
                 .sortedByDescending { it.uploaded }
         }
-    }
-
-    get<MapsApi.ByUploader>("Get maps by a user".responds(ok<SearchResponse>())) {
-        call.response.header("Access-Control-Allow-Origin", "*")
-
-        val beatmaps = mapsByUser(it.id, it.page, false)
 
         call.respond(SearchResponse(beatmaps))
     }
@@ -606,7 +594,52 @@ fun Route.mapDetailRoute() {
     get<MapsApi.Collaborations>("Get maps by a user, including collaborations".responds(ok<SearchResponse>())) {
         call.response.header("Access-Control-Allow-Origin", "*")
 
-        val beatmaps = mapsByUser(it.id, it.page, true)
+        val sess = call.sessions.get<Session>()
+        val pageSize = (it.pageSize ?: 20).coerceIn(1, 100)
+        val beatmaps = transaction {
+            val collabQuery = Collaboration
+                .joinVersions(column = Collaboration.mapId)
+                .slice(Collaboration.mapId, Collaboration.uploadedAt)
+                .select {
+                    (Collaboration.collaboratorId eq it.id and Collaboration.accepted)
+                        .notNull(it.before) { o -> Collaboration.uploadedAt less o.toJavaInstant() }
+                }
+                .orderBy(Collaboration.uploadedAt to SortOrder.DESC)
+                .limit(pageSize)
+
+            val uploadQuery = Beatmap
+                .joinVersions()
+                .slice(Beatmap.id, Beatmap.uploaded)
+                .select {
+                    (Beatmap.uploader eq it.id and Beatmap.deletedAt.isNull())
+                        .notNull(it.before) { o -> Beatmap.uploaded less o.toJavaInstant() }
+                }
+                .orderBy(Beatmap.uploaded to SortOrder.DESC)
+                .limit(pageSize)
+
+            Beatmap
+                .joinVersions(true)
+                .joinUploader()
+                .joinCurator()
+                .joinBookmarked(sess?.userId)
+                .joinCollaborators()
+                .select {
+                    Beatmap.id.inSubQuery(
+                        collabQuery.unionAll(uploadQuery).alias("tm").let { u ->
+                            u
+                                .slice(u[Collaboration.mapId])
+                                .selectAll()
+                                .orderBy(u[Collaboration.uploadedAt] to SortOrder.DESC)
+                                .limit(20)
+                        }
+                    )
+                }
+                .complexToBeatmap()
+                .map { map ->
+                    MapDetail.from(map, cdnPrefix())
+                }
+                .sortedByDescending { it.uploaded }
+        }
 
         call.respond(SearchResponse(beatmaps))
     }
@@ -627,6 +660,7 @@ fun Route.mapDetailRoute() {
             LatestSort.CURATED -> Beatmap.curatedAt
         }
 
+        val pageSize = (it.pageSize ?: 20).coerceIn(1, 100)
         val beatmaps = transaction {
             Beatmap
                 .joinVersions(true)
@@ -650,7 +684,7 @@ fun Route.mapDetailRoute() {
                                     }
                             }
                             .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
-                            .limit(20)
+                            .limit(pageSize)
                     )
                 }
                 .complexToBeatmap()

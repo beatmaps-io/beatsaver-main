@@ -15,6 +15,7 @@ import io.beatmaps.shared.CommonParams
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import kotlinx.browser.window
+import kotlinx.datetime.Instant
 import org.w3c.dom.Audio
 import org.w3c.dom.HTMLElement
 import react.Props
@@ -70,6 +71,7 @@ data class SearchParams(
 external interface BeatmapTableState : State {
     var user: UserDetail?
     var resultsKey: Any
+    var minTime: Instant?
 }
 
 external fun encodeURIComponent(uri: String): String
@@ -92,7 +94,8 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
         } else if (props.curated == true && props.user != null) {
             "${Config.apibase}/search/text/$page?sortOrder=Curated&curator=${props.user}&automapper=true"
         } else if (props.user != null) {
-            "${Config.apibase}/maps/collaborations/${props.user}/0"
+            "${Config.apibase}/maps/collaborations/${props.user}?" +
+                (if (state.minTime != null) "&before=${state.minTime}" else "")
         } else {
             props.search?.let { search ->
                 val tagStr = search.tagsQuery()
@@ -147,6 +150,15 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                 return@then null
             }
 
+            val newMin = it.data.docs?.mapNotNull { doc -> doc.uploaded }?.reduce { a, b ->
+                a.coerceAtMost(b)
+            }
+            val oldMin = state.minTime
+            if (newMin != null && (oldMin == null || newMin < oldMin)) {
+                setState {
+                    minTime = newMin
+                }
+            }
             return@then it.data.docs
         }
     }

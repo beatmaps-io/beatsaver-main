@@ -27,7 +27,7 @@ fun Route.mapUpdateEnricher() {
         consumeAck("bm.updateStream", Int::class) { _, mapId ->
             transaction {
                 Beatmap
-                    .joinVersions(true, null)
+                    .joinVersions(true, state = null)
                     .joinUploader()
                     .joinCurator()
                     .select {

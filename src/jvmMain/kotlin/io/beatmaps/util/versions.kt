@@ -10,6 +10,7 @@ import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
+import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.DifficultyDao
 import io.beatmaps.common.dbo.Follows
@@ -96,7 +97,13 @@ fun publishVersion(mapId: Int, hash: String, additionalCallback: (Op<Boolean>) -
                 }
             },
             Beatmap.uploaded
-        )
+        )?.singleOrNull()?.let { rr ->
+            Collaboration.update({
+                Collaboration.mapId eq mapId
+            }) {
+                it[uploadedAt] = rr[Beatmap.uploaded]
+            }
+        }
     }
 }
 
