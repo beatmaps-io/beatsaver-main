@@ -297,7 +297,7 @@ fun Route.mapDetailRoute() {
                             } else {
                                 InfoEditData(oldData.name, oldData.description, mapUpdate.name ?: "", mapUpdate.description ?: "", oldData.tags?.mapNotNull { MapTag.fromSlug(it) }, mapUpdate.tags)
                             },
-                            oldData.uploader.id.value
+                            oldData.uploaderId.value
                         )
                         if (mapUpdate.deleted) {
                             Alert.insert(

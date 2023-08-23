@@ -1,18 +1,22 @@
 package io.beatmaps.util
 
 import io.beatmaps.common.db.NowExpression
+import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
+import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.localAudioFolder
 import io.beatmaps.common.localCoverFolder
 import io.beatmaps.common.localFolder
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.File
+import java.lang.Integer.toHexString
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Timer
@@ -55,6 +59,27 @@ class BeatsageCleanse : TimerTask() {
                     }
 
                     schedulerLogger.log(Level.INFO, "Permanently deleted $digest")
+                }
+            }
+
+            transaction {
+                val subQuery = Beatmap
+                    .joinVersions {
+                        Versions.sageScore less (-10).toShort()
+                    }
+                    .slice(Beatmap.id)
+                    .select {
+                        Beatmap.deletedAt.isNull() and (Beatmap.updatedAt less Instant.now().minus(90L, ChronoUnit.DAYS))
+                    }
+                    .orderBy(Beatmap.updatedAt to SortOrder.ASC)
+                    .limit(5)
+
+                Beatmap.updateReturning({
+                    Beatmap.id inSubQuery(subQuery) and Beatmap.deletedAt.isNull()
+                }, {
+                    it[deletedAt] = NowExpression(deletedAt.columnType)
+                }, Beatmap.id)?.forEach {
+                    schedulerLogger.log(Level.INFO, "Deleted old beatsage map #${toHexString(it[Beatmap.id].value)}")
                 }
             }
         } catch (e: Exception) {
