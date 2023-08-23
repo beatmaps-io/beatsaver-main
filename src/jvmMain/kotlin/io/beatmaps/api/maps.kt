@@ -305,7 +305,7 @@ fun Route.mapDetailRoute() {
                                 "Your map #${toHexString(mapUpdate.id)}: **${oldData.name}** has been removed by a moderator.\n" +
                                     "Reason: *\"${mapUpdate.reason}\"*",
                                 EAlertType.Deletion,
-                                oldData.uploader.id.value
+                                oldData.uploaderId.value
                             )
                         }
                     }

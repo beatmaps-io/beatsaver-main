@@ -25,12 +25,16 @@ import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
+import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.count
+import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.not
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.unionAll
 import org.jetbrains.exposed.sql.update
 import java.lang.Integer.toHexString
 
@@ -71,33 +75,43 @@ fun UserAlert.Companion.from(collaboration: CollaborationDao) = UserAlert(
 
 fun Route.alertsRoute() {
     fun getAlerts(userId: Int, read: Boolean, page: Long? = null, type: List<EAlertType>? = null): List<UserAlert> = transaction {
-        AlertRecipient
-            .join(Alert, JoinType.LEFT, AlertRecipient.alertId, Alert.id)
-            .join(Collaboration, JoinType.FULL) { Op.FALSE }
+        val (s0, s1) = intLiteral(0).alias("s") to intLiteral(1).alias("s")
+
+        val collabQuery = Collaboration
+            .slice(s0, Collaboration.id, Collaboration.requestedAt)
             .select {
-                val filter = AlertRecipient.recipientId eq userId and
-                    AlertRecipient.readAt.run { if (read) isNotNull() else isNull() } or
-                    if (!read) (Collaboration.collaboratorId eq userId and not(Collaboration.accepted)) else Op.FALSE
+                Collaboration.collaboratorId eq userId and not(Collaboration.accepted)
+            }
 
-                val typeFilter = when {
-                    type == null -> Op.TRUE
-                    type.contains(EAlertType.Collaboration) -> Alert.type.inList(type) or Collaboration.id.isNotNull()
-                    else -> Alert.type.inList(type)
+        val alertQuery = AlertRecipient
+            .join(Alert, JoinType.LEFT, AlertRecipient.alertId, Alert.id)
+            .slice(s1, AlertRecipient.alertId, Alert.sentAt)
+            .select {
+                AlertRecipient.recipientId eq userId and AlertRecipient.readAt.run { if (read) isNotNull() else isNull() } and
+                    if (type != null) { Alert.type.inList(type) } else Op.TRUE
+            }
+
+        if (!read && (type == null || type.contains(EAlertType.Collaboration))) {
+            alertQuery.unionAll(collabQuery)
+        } else {
+            alertQuery
+        }.alias("u").let { u ->
+            u
+                .join(Alert, JoinType.LEFT, u[AlertRecipient.alertId], Alert.id) { u[s1] eq intLiteral(1) }
+                .join(Collaboration, JoinType.LEFT, u[AlertRecipient.alertId], Collaboration.id) { u[s1] eq intLiteral(0) }
+                .selectAll()
+                .orderBy(u[Alert.sentAt] to SortOrder.DESC)
+                .limit(page)
+                .mapNotNull {
+                    if (it.getOrNull(Alert.id) != null) {
+                        AlertDao.wrapRow(it).let { alert ->
+                            UserAlert(alert.id.value, alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant())
+                        }
+                    } else if (it.getOrNull(Collaboration.id) != null) {
+                        UserAlert.from(CollaborationDao.wrapRow(it))
+                    } else { null }
                 }
-
-                filter and typeFilter
-            }
-            .orderBy(Alert.sentAt, SortOrder.DESC)
-            .limit(page)
-            .mapNotNull {
-                if (it.getOrNull(Alert.id) != null) {
-                    AlertDao.wrapRow(it).let { alert ->
-                        UserAlert(alert.id.value, alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant())
-                    }
-                } else if (it.getOrNull(Collaboration.id) != null) {
-                    UserAlert.from(CollaborationDao.wrapRow(it))
-                } else { null }
-            }
+        }
     }
 
     get<AlertsApi.Unread> {
