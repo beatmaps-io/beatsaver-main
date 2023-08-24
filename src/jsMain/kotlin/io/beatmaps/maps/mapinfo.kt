@@ -168,15 +168,17 @@ external interface CollaboratorPickerState : State {
 class CollaboratorPicker : RComponent<CollaboratorPickerProps, CollaboratorPickerState>() {
     private val inputRef = createRef<HTMLInputElement>()
 
-    override fun componentWillMount() {
-        Axios.get<List<CollaborationDetail>>(
-            "${Config.apibase}/collaborations/map/${props.map.id}",
-            generateConfig<String, List<CollaborationDetail>>()
-        ).then {
-            setState {
-                collaborators = it.data
-            }
+    private fun updateCollaborators() = Axios.get<List<CollaborationDetail>>(
+        "${Config.apibase}/collaborations/map/${props.map.id}",
+        generateConfig<String, List<CollaborationDetail>>()
+    ).then {
+        setState {
+            collaborators = it.data
         }
+    }
+
+    override fun componentWillMount() {
+        updateCollaborators()
     }
 
     override fun RBuilder.render() {
@@ -189,6 +191,8 @@ class CollaboratorPicker : RComponent<CollaboratorPickerProps, CollaboratorPicke
                 state.collaborators?.let { collaborationDetails ->
                     div("collaborator-cards") {
                         collaborationDetails.forEach { c ->
+                            if (c.collaborator == null) return@forEach
+
                             div("collaborator" + if (c.accepted) " accepted" else "") {
                                 img(c.collaborator.name, c.collaborator.avatar) { }
                                 span {
@@ -246,7 +250,7 @@ class CollaboratorPicker : RComponent<CollaboratorPickerProps, CollaboratorPicke
 
                 state.foundUsers?.filter {
                     it.id != userData?.userId && state.collaborators?.none { c ->
-                        c.collaborator.id == it.id
+                        c.collaborator?.id == it.id
                     } != false
                 }?.let { users ->
                     div("search-results list-group") {
@@ -265,9 +269,7 @@ class CollaboratorPicker : RComponent<CollaboratorPickerProps, CollaboratorPicke
                                                 CollaborationRequestData(props.map.intId(), user.id),
                                                 generateConfig<CollaborationRequestData, String>()
                                             ).then {
-                                                setState {
-                                                    collaborators = (collaborators ?: listOf()) + CollaborationDetail(props.map.intId(), user, false)
-                                                }
+                                                updateCollaborators()
                                             }
                                         }
                                         +"Invite"
