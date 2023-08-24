@@ -5,6 +5,9 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.CollaborationDao
 import io.beatmaps.common.dbo.User
+import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.dbo.collaboratorAlias
+import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.isUploader
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -14,6 +17,7 @@ import io.ktor.server.locations.post
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
@@ -24,8 +28,15 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-fun CollaborationDetail.Companion.from(row: ResultRow) = CollaborationDao.wrapRow(row).let {
-    CollaborationDetail(it.mapId.value, UserDetail.from(row), it.accepted)
+fun CollaborationDetail.Companion.from(row: ResultRow, cdnPrefix: String) = CollaborationDao.wrapRow(row).let {
+    CollaborationDetail(
+        it.id.value,
+        it.mapId.value,
+        if (row.hasValue(collaboratorAlias[User.id])) UserDetail.from(UserDao.wrapRow(row, collaboratorAlias)) else null,
+        if (row.hasValue(Beatmap.id)) MapDetail.from(row, cdnPrefix) else null,
+        it.requestedAt.toKotlinInstant(),
+        it.accepted
+    )
 }
 
 @Location("/api/collaborations")
@@ -109,13 +120,13 @@ fun Route.collaborationRoute() {
             val collaborations = transaction {
                 if (isUploader(mapId, sess.userId) || sess.admin) {
                     Collaboration
-                        .join(User, JoinType.LEFT, Collaboration.collaboratorId, User.id)
+                        .join(collaboratorAlias, JoinType.LEFT, Collaboration.collaboratorId, collaboratorAlias[User.id])
                         .select {
                             Collaboration.mapId eq mapId
                         }
                         .orderBy(Collaboration.accepted, SortOrder.DESC)
                         .map { row ->
-                            CollaborationDetail.from(row)
+                            CollaborationDetail.from(row, cdnPrefix())
                         }
                 } else {
                     null

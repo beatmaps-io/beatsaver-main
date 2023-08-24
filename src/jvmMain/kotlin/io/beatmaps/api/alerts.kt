@@ -5,9 +5,11 @@ import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.AlertDao
 import io.beatmaps.common.dbo.AlertRecipient
+import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Collaboration
-import io.beatmaps.common.dbo.CollaborationDao
+import io.beatmaps.common.dbo.User
 import io.beatmaps.login.Session
+import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
@@ -63,18 +65,20 @@ fun alertCount(userId: Int) = AlertRecipient
             (Collaboration.collaboratorId eq userId and not(Collaboration.accepted))
     }.count().toInt()
 
-fun UserAlert.Companion.from(collaboration: CollaborationDao) = UserAlert(
-    head = "Collaboration Proposal",
-    body = "You have been invited to be a collaborator on #${toHexString(collaboration.mapId.value)}. " +
-        "By accepting this proposal, your name will appear on the map's info screen, " +
-        "and the map will appear on your account.",
-    type = EAlertType.Collaboration,
-    time = collaboration.requestedAt.toKotlinInstant(),
-    collaborationId = collaboration.id.value
-)
+fun UserAlert.Companion.from(collaboration: CollaborationDetail) = collaboration.map?.let { map ->
+    UserAlert(
+        head = "Collaboration Proposal",
+        body = "@${map.uploader.name} has invited you to be a collaborator on #${toHexString(collaboration.mapId)}: **${map.name}**. " +
+            "By accepting this proposal, your name will appear on the map's info screen, " +
+            "and the map will appear on your account.",
+        type = EAlertType.Collaboration,
+        time = collaboration.requestedAt,
+        collaborationId = collaboration.id
+    )
+}
 
 fun Route.alertsRoute() {
-    fun getAlerts(userId: Int, read: Boolean, page: Long? = null, type: List<EAlertType>? = null): List<UserAlert> = transaction {
+    fun PipelineContext<*, ApplicationCall>.getAlerts(userId: Int, read: Boolean, page: Long? = null, type: List<EAlertType>? = null): List<UserAlert> = transaction {
         val (s0, s1) = intLiteral(0).alias("s") to intLiteral(1).alias("s")
 
         val collabQuery = Collaboration
@@ -99,6 +103,8 @@ fun Route.alertsRoute() {
             u
                 .join(Alert, JoinType.LEFT, u[AlertRecipient.alertId], Alert.id) { u[s1] eq intLiteral(1) }
                 .join(Collaboration, JoinType.LEFT, u[AlertRecipient.alertId], Collaboration.id) { u[s1] eq intLiteral(0) }
+                .join(Beatmap, JoinType.LEFT, Beatmap.id, Collaboration.mapId)
+                .join(User, JoinType.LEFT, User.id, Beatmap.uploader)
                 .selectAll()
                 .orderBy(u[Alert.sentAt] to SortOrder.DESC)
                 .limit(page)
@@ -108,7 +114,7 @@ fun Route.alertsRoute() {
                             UserAlert(alert.id.value, alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant())
                         }
                     } else if (it.getOrNull(Collaboration.id) != null) {
-                        UserAlert.from(CollaborationDao.wrapRow(it))
+                        UserAlert.from(CollaborationDetail.from(it, cdnPrefix()))
                     } else { null }
                 }
         }
