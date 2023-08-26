@@ -1,5 +1,6 @@
 package io.beatmaps.index
 
+import io.beatmaps.previewBaseUrl
 import io.beatmaps.util.textToContent
 import kotlinx.browser.window
 import kotlinx.dom.addClass
@@ -22,8 +23,6 @@ import react.dom.h5
 import react.dom.iframe
 import react.setState
 
-const val previewBaseUrl = "https://allpoland.github.io/ArcViewer/"
-
 external interface ModalState : State {
     var modal: ModalData?
 }
@@ -36,7 +35,7 @@ class ModalComponent : RComponent<Props, ModalState>() {
     private val modal = createRef<HTMLDivElement>()
     private val iframe = createRef<HTMLIFrameElement>()
 
-    fun show(downloadURL: String) = showIframe("$previewBaseUrl?noProxy=true&url=$downloadURL")
+    fun show(hash: String) = showIframe("/maps/viewer/$hash")
     fun showById(mapId: String) = showIframe("$previewBaseUrl?id=$mapId")
 
     private fun showIframe(url: String) {

@@ -3,25 +3,41 @@ package io.beatmaps.controllers
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
 import io.beatmaps.common.Config
+import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.genericPage
+import io.beatmaps.login.Session
+import io.beatmaps.previewBaseUrl
 import io.beatmaps.util.cdnPrefix
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
 import kotlinx.html.meta
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.lang.Integer.toHexString
+import java.net.URLEncoder
+import kotlin.time.Duration.Companion.seconds
 
 @Location("/maps")
 class MapController {
     @Location("/{key}")
     data class Detail(val key: String, val api: MapController)
+
+    @Location("/viewer/{hash}")
+    data class Viewer(val hash: String, val api: MapController)
 }
 
 @Location("/beatsaver")
@@ -66,6 +82,35 @@ fun Route.mapController() {
 
     get<OldSearch> {
         call.respondRedirect("/")
+    }
+
+    get<MapController.Viewer> {
+        val sess = call.sessions.get<Session>()
+
+        transaction {
+            Beatmap
+                .join(Versions, JoinType.INNER, onColumn = Beatmap.id, otherColumn = Versions.mapId)
+                .select {
+                    (Versions.hash eq it.hash) and Beatmap.deletedAt.isNull()
+                }
+                .complexToBeatmap()
+                .firstOrNull()
+        }?.let { map ->
+            val url = previewBaseUrl + if (map.versions.any { v -> v.value.state == EMapState.Published }) {
+                "?id=${toHexString(map.id.value)}"
+            } else if (map.uploaderId.value == sess?.userId) {
+                val exp = Clock.System.now().plus(60.seconds).epochSeconds
+                val mapUrl = "${Config.cdnBase("", true)}/${it.hash}.zip?${CdnSig.queryParams(it.hash, exp)}&.zip"
+
+                "?noProxy=true&url=" + withContext(Dispatchers.IO) {
+                    URLEncoder.encode(mapUrl, "UTF-8")
+                }
+            } else {
+                ""
+            }
+
+            call.respondRedirect(url)
+        }
     }
 
     get<MapController.Detail> {

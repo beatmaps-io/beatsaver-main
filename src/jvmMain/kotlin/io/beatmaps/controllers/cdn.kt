@@ -20,6 +20,7 @@ import io.beatmaps.common.pub
 import io.beatmaps.common.returnFile
 import io.beatmaps.login.Session
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -27,22 +28,34 @@ import io.ktor.server.locations.get
 import io.ktor.server.locations.options
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.plugins.origin
+import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.response.header
+import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
+import io.ktor.util.hex
 import io.ktor.util.pipeline.PipelineContext
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
+import java.util.Base64
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 @Location("/cdn")
 class CDN {
     @Location("/{file}.zip")
     data class Zip(val file: String, val api: CDN)
+
+    @Location("/viewer/{file}")
+    data class Test(val file: String, val api: CDN)
 
     @Location("/{file}.jpg")
     data class Cover(val file: String, val api: CDN)
@@ -69,21 +82,51 @@ class CDN {
     data class PlaylistCoverSized(val file: String, val size: Int, val api: CDN)
 }
 
+object CdnSig {
+    private const val defaultSecretEncoded = "ZsEgU9mLHT1Vg+K5HKzlKna20mFQi26ZbB92zILrklNxV5Yxg8SyEcHVWzkspEiCCGkRB89claAWbFhglykfUA=="
+    private val key = Base64.getDecoder().decode(System.getenv("CDN_SECRET") ?: defaultSecretEncoded)
+
+    fun signature(input: String, exp: Long?) = signature("$input-$exp")
+    fun queryParams(input: String, exp: Long?) =
+        "exp=$exp&sig=${signature(input, exp)}"
+
+    fun verify(input: String, req: ApplicationRequest) =
+        verify(input, req.queryParameters["exp"]?.toLongOrNull(), req.queryParameters["sig"])
+
+    private fun verify(input: String, exp: Long?, sig: String?) =
+        exp != null && sig != null &&
+            Instant.fromEpochSeconds(exp, 0) > Clock.System.now() &&
+            signature(input, exp) == sig
+
+    private fun signature(input: String): String {
+        val signingKey = SecretKeySpec(key, "HmacSHA256")
+        val mac = Mac.getInstance("HmacSHA256")
+        mac.init(signingKey)
+
+        val bytes = mac.doFinal(input.toByteArray())
+        return hex(bytes).take(16)
+    }
+}
+
 fun Route.cdnRoute() {
     options<CDN.Zip> {
         call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
     }
 
     options<CDN.Cover> {
         call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
     }
 
     options<CDN.BeatSaver> {
         call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
     }
 
     get<CDN.Zip> {
         val sess = call.sessions.get<Session>()
+        val signed = CdnSig.verify(it.file, call.request)
 
         if (it.file.isBlank()) {
             throw NotFoundException()
@@ -93,10 +136,15 @@ fun Route.cdnRoute() {
         val name = if (file.exists()) {
             transaction {
                 Beatmap
-                    .join(Versions, JoinType.INNER, onColumn = Beatmap.id, otherColumn = Versions.mapId) // , additionalConstraint = { Versions.state neq EMapState.Uploaded })
+                    .join(Versions, JoinType.INNER, onColumn = Beatmap.id, otherColumn = Versions.mapId)
                     .select {
-                        ((Beatmap.uploader eq sess?.userId) or (Versions.state eq EMapState.Published)) and
-                            (Versions.hash eq it.file) and Beatmap.deletedAt.isNull()
+                        val unsignedQuery = if (signed) {
+                            Op.TRUE
+                        } else {
+                            (Beatmap.uploader eq sess?.userId) or (Versions.state eq EMapState.Published)
+                        }
+
+                        ((Versions.hash eq it.file) and Beatmap.deletedAt.isNull()) and unsignedQuery
                     }
                     .complexToBeatmap()
                     .firstOrNull()

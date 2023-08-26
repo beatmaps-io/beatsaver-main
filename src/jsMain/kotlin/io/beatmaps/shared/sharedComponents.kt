@@ -10,10 +10,9 @@ import io.beatmaps.api.MapVersion
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalComponent
-import io.beatmaps.index.encodeURIComponent
 import io.beatmaps.index.oneclick
-import io.beatmaps.index.previewBaseUrl
 import io.beatmaps.maps.diffImg
+import io.beatmaps.previewBaseUrl
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.datetime.Instant
@@ -143,7 +142,7 @@ val links = fc<LinksProps> { props ->
     val altLink = if (version?.state == EMapState.Published) {
         "$previewBaseUrl?id=${props.map.id}"
     } else if (version != null) {
-        "$previewBaseUrl?url=${encodeURIComponent(version.downloadURL)}"
+        "/maps/viewer/${version.hash}"
     } else {
         "#"
     }
@@ -156,8 +155,8 @@ val links = fc<LinksProps> { props ->
             if (props.version?.state == EMapState.Published) {
                 props.modal.current?.showById(props.map.id)
             } else {
-                props.version?.downloadURL?.let { downloadURL ->
-                    props.modal.current?.show(downloadURL)
+                props.version?.hash?.let { hash ->
+                    props.modal.current?.show(hash)
                 }
             }
         }
