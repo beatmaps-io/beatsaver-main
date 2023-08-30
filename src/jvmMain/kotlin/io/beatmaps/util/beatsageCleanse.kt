@@ -86,7 +86,7 @@ class BeatsageCleanse(val app: Application) : TimerTask() {
                     schedulerLogger.log(Level.INFO, "Deleted old beatsage map #${toHexString(it)}")
                 }
             }?.forEach {
-                app.pub("beatmaps", "maps.${it}.updated.deleted", null, it)
+                app.pub("beatmaps", "maps.$it.updated.deleted", null, it)
             }
         } catch (e: Exception) {
             schedulerLogger.log(Level.SEVERE, "Exception while running task", e)
