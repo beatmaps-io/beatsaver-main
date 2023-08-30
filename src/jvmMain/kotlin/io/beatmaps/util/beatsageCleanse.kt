@@ -9,6 +9,8 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.localAudioFolder
 import io.beatmaps.common.localCoverFolder
 import io.beatmaps.common.localFolder
+import io.beatmaps.common.pub
+import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
@@ -26,11 +28,11 @@ import java.util.logging.Logger
 
 private val schedulerLogger = Logger.getLogger("bmio.BeatsageCleanse")
 
-fun scheduleCleanser() {
-    Timer().scheduleAtFixedRate(BeatsageCleanse(), 5000L, 60 * 1000L)
+fun Application.scheduleCleanser() {
+    Timer().scheduleAtFixedRate(BeatsageCleanse(this), 5000L, 60 * 1000L)
 }
 
-class BeatsageCleanse : TimerTask() {
+class BeatsageCleanse(val app: Application) : TimerTask() {
     override fun run() {
         try {
             transaction {
@@ -69,7 +71,7 @@ class BeatsageCleanse : TimerTask() {
                     }
                     .slice(Beatmap.id)
                     .select {
-                        Beatmap.deletedAt.isNull() and (Beatmap.updatedAt less Instant.now().minus(90L, ChronoUnit.DAYS))
+                        Beatmap.deletedAt.isNull() and Beatmap.automapper and (Beatmap.updatedAt less Instant.now().minus(90L, ChronoUnit.DAYS))
                     }
                     .orderBy(Beatmap.updatedAt to SortOrder.ASC)
                     .limit(5)
@@ -78,9 +80,13 @@ class BeatsageCleanse : TimerTask() {
                     Beatmap.id inSubQuery(subQuery) and Beatmap.deletedAt.isNull()
                 }, {
                     it[deletedAt] = NowExpression(deletedAt.columnType)
-                }, Beatmap.id)?.forEach {
-                    schedulerLogger.log(Level.INFO, "Deleted old beatsage map #${toHexString(it[Beatmap.id].value)}")
+                }, Beatmap.id)?.map {
+                    it[Beatmap.id].value
+                }?.onEach {
+                    schedulerLogger.log(Level.INFO, "Deleted old beatsage map #${toHexString(it)}")
                 }
+            }?.forEach {
+                app.pub("beatmaps", "maps.${it}.updated.deleted", null, it)
             }
         } catch (e: Exception) {
             schedulerLogger.log(Level.SEVERE, "Exception while running task", e)
