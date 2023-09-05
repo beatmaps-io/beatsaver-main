@@ -206,8 +206,8 @@ fun Route.patreonLink() {
             val membership = response.getIncluded<PatreonMembership>(PatreonMembership).first()
             val tier = response.getIncluded<PatreonTier>(PatreonTier).first()
 
-            println(membership)
-            println(tier)
+            patreonLogger.info(membership.toString())
+            patreonLogger.info(tier.toString())
         }
     }
 
