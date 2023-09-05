@@ -1,43 +1,28 @@
 package io.beatmaps.login
 
 import io.beatmaps.api.UserCrypto
-import io.beatmaps.api.alertCount
-import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.Config
 import io.beatmaps.common.client
-import io.beatmaps.common.db.upsert
-import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.getCountry
-import io.beatmaps.common.localAvatarFolder
 import io.beatmaps.genericPage
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.SignatureException
-import io.ktor.client.call.body
-import io.ktor.client.plugins.timeout
 import io.ktor.client.request.forms.submitForm
-import io.ktor.client.request.get
-import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.HttpMethod
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
 import io.ktor.http.parametersOf
-import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
-import io.ktor.server.application.install
-import io.ktor.server.auth.OAuthAccessTokenResponse
 import io.ktor.server.auth.authenticate
-import io.ktor.server.auth.authentication
 import io.ktor.server.auth.principal
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.locations.post
 import io.ktor.server.plugins.origin
-import io.ktor.server.request.httpMethod
 import io.ktor.server.request.queryString
 import io.ktor.server.request.userAgent
 import io.ktor.server.response.respondRedirect
@@ -48,28 +33,10 @@ import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.util.StringValues
-import io.ktor.util.hex
-import kotlinx.coroutines.runBlocking
-import kotlinx.html.meta
 import kotlinx.serialization.Serializable
-import nl.myndocs.oauth2.authenticator.Credentials
-import nl.myndocs.oauth2.client.Client
-import nl.myndocs.oauth2.identity.Identity
-import nl.myndocs.oauth2.identity.IdentityService
-import nl.myndocs.oauth2.ktor.feature.Oauth2ServerFeature
-import nl.myndocs.oauth2.token.RefreshToken
-import nl.myndocs.oauth2.token.converter.RefreshTokenConverter
-import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.count
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
-import java.io.File
-import java.time.Instant
-import java.util.Base64
-import java.util.UUID
 
 @Serializable
 data class Session(
@@ -102,9 +69,6 @@ data class Session(
         )
     }
 }
-
-@Location("/discord")
-class DiscordLogin(val state: String? = null)
 
 @Location("/login")
 class Login
@@ -141,110 +105,7 @@ class Username
 @Location("/steam")
 class Steam
 
-data class DiscordUserInfo(
-    val username: String,
-    val id: Long,
-    val avatar: String?
-)
-
-val discordSecret = System.getenv("DISCORD_HASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: byteArrayOf()
-
 fun Route.authRoute() {
-    suspend fun downloadDiscordAvatar(discordAvatar: String, discordId: Long): String {
-        val bytes = client.get("https://cdn.discordapp.com/avatars/$discordId/$discordAvatar.png") {
-            timeout {
-                socketTimeoutMillis = 30000
-                requestTimeoutMillis = 60000
-            }
-        }.body<ByteArray>()
-
-        val fileName = UserCrypto.getHash(discordId.toString(), discordSecret)
-        val localFile = File(localAvatarFolder(), "$fileName.png")
-        localFile.writeBytes(bytes)
-
-        return "${Config.cdnBase("", true)}/avatar/$fileName.png"
-    }
-
-    suspend fun ApplicationCall.getDiscordData(): DiscordUserInfo {
-        val principal = authentication.principal<OAuthAccessTokenResponse.OAuth2>() ?: error("No principal")
-
-        return client.get("https://discord.com/api/users/@me") {
-            header("Authorization", "Bearer ${principal.accessToken}")
-        }.body()
-    }
-
-    authenticate("discord") {
-        get<DiscordLogin> { req ->
-            val data = call.getDiscordData()
-
-            val avatarLocal = data.avatar?.let { downloadDiscordAvatar(it, data.id) }
-
-            val (user, alertCount) = transaction {
-                val userId = User.upsert(User.discordId) {
-                    it[name] = data.username
-                    it[discordId] = data.id
-                    it[avatar] = avatarLocal
-                    it[active] = true
-                }.value
-
-                UserDao[userId] to alertCount(userId)
-            }
-
-            call.sessions.set(Session.fromUser(user, alertCount, call = call))
-            req.state?.let { String(hex(it)) }.orEmpty().let { query ->
-                if (query.isNotEmpty() && query.contains("client_id")) {
-                    call.respondRedirect("/oauth2/authorize/success$query")
-                } else {
-                    call.respondRedirect("/")
-                }
-            }
-        }
-    }
-
-    authenticate("discord") {
-        get("/discord-link") {
-            requireAuthorization { sess ->
-                val data = call.getDiscordData()
-
-                newSuspendedTransaction {
-                    val (existingMaps, dualAccount) = User
-                        .join(Beatmap, JoinType.LEFT, User.id, Beatmap.uploader) {
-                            Beatmap.deletedAt.isNull()
-                        }
-                        .slice(User.discordId, User.email, Beatmap.id.count())
-                        .select {
-                            (User.discordId eq data.id) and User.active
-                        }
-                        .groupBy(User.id)
-                        .firstOrNull()?.let {
-                            it[Beatmap.id.count()] to (it[User.email] != null)
-                        } ?: (0L to null)
-
-                    if (existingMaps > 0 || dualAccount == true) {
-                        // User has maps, can't link
-                        return@newSuspendedTransaction
-                    } else if (dualAccount == false) {
-                        // Email = false means the other account is a pure discord account
-                        // and as it has no maps we can set it to inactive before linking it to the current account
-                        User.update({ User.discordId eq data.id }) {
-                            it[active] = false
-                            it[discordId] = null
-                        }
-                    }
-
-                    val avatarLocal = data.avatar?.let { downloadDiscordAvatar(it, data.id) }
-
-                    User.update({ User.id eq sess.userId }) {
-                        it[discordId] = data.id
-                        it[avatar] = avatarLocal
-                    }
-                }
-
-                call.respondRedirect("/profile#account")
-            }
-        }
-    }
-
     get<Register> { genericPage() }
     get<Forgot> { genericPage() }
     get<Reset> { genericPage() }
@@ -375,80 +236,6 @@ fun Route.authRoute() {
             }
             call.sessions.set(sess.copy(steamId = steamid))
             call.respondRedirect("/profile")
-        }
-    }
-}
-
-fun Application.installOauth2() {
-    install(Oauth2ServerFeature) {
-        authenticationCallback = { call, callRouter ->
-            if (call.request.httpMethod == HttpMethod.Get) {
-                val userSession = call.sessions.get<Session>()
-                val reqClientId = (call.parameters as StringValues)["client_id"]
-
-                if (reqClientId != null && userSession?.oauth2ClientId == reqClientId) {
-                    callRouter.route(BSCallContext(call), Credentials(userSession.userId.toString(), ""))
-                } else {
-                    runBlocking {
-                        call.genericPage(headerTemplate = {
-                            reqClientId?.let { DBClientService.getClient(it) }?.let { client ->
-                                meta("oauth-data", "{\"id\": \"${client.clientId}\", \"name\": \"${client.name}\", \"icon\": \"${client.iconUrl}\"}")
-                            }
-                        })
-                    }
-                }
-            }
-        }
-
-        tokenInfoCallback = {
-            val user = it.identity?.metadata?.get("object") as UserDao
-            mapOf(
-                "id" to it.identity?.username,
-                "name" to user.uniqueName,
-                "avatar" to user.avatar,
-                "scopes" to it.scopes
-            )
-        }
-
-        tokenEndpoint = "/api/oauth2/token"
-        authorizationEndpoint = "/oauth2/authorize"
-        tokenInfoEndpoint = "/api/oauth2/identity"
-
-        identityService = object : IdentityService {
-            override fun allowedScopes(forClient: Client, identity: Identity, scopes: Set<String>) = scopes
-
-            override fun identityOf(forClient: Client, username: String) = Identity(username)
-
-            override fun validCredentials(forClient: Client, identity: Identity, password: String) =
-                transaction {
-                    !User.select { (User.id eq identity.username.toInt()) and User.active }.empty()
-                }
-        }
-
-        clientService = DBClientService
-        tokenStore = DBTokenStore
-
-        // Refresh tokens will last 45 days, will refresh after 15 days (30 left)
-        refreshTokenConverter = object : RefreshTokenConverter {
-            val validTime = 45 * 86400L
-            val refreshAfter = 30 * 86400L
-
-            override fun convertToToken(refreshToken: RefreshToken) =
-                if (refreshToken.expiresIn() < refreshAfter) {
-                    convertToToken(refreshToken.identity, refreshToken.clientId, refreshToken.scopes)
-                } else {
-                    refreshToken
-                }
-
-            override fun convertToToken(identity: Identity?, clientId: String, requestedScopes: Set<String>): RefreshToken {
-                return RefreshToken(
-                    UUID.randomUUID().toString(),
-                    Instant.now().plusSeconds(validTime),
-                    identity,
-                    clientId,
-                    requestedScopes
-                )
-            }
         }
     }
 }

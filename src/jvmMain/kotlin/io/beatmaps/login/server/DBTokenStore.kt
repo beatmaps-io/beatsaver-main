@@ -1,4 +1,4 @@
-package io.beatmaps.login
+package io.beatmaps.login.server
 
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.AccessTokenTable

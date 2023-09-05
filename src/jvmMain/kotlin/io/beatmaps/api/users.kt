@@ -34,11 +34,11 @@ import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.sendEmail
-import io.beatmaps.login.DBTokenStore
 import io.beatmaps.login.MongoClient
 import io.beatmaps.login.MongoSession
 import io.beatmaps.login.Session
 import io.beatmaps.login.cookieName
+import io.beatmaps.login.server.DBTokenStore
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.Header

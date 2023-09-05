@@ -24,8 +24,8 @@ import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.controllers.reCaptchaVerify
-import io.beatmaps.login.DBTokenStore
 import io.beatmaps.login.Session
+import io.beatmaps.login.server.DBTokenStore
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.publishVersion
 import io.ktor.client.call.body

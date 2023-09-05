@@ -1,27 +1,55 @@
 package io.beatmaps.login
 
-import com.toxicbakery.bcrypt.Bcrypt
+import io.beatmaps.api.UserCrypto
 import io.beatmaps.api.alertCount
+import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.Config
+import io.beatmaps.common.client
+import io.beatmaps.common.db.upsert
+import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
+import io.beatmaps.common.localAvatarFolder
+import io.ktor.client.call.body
+import io.ktor.client.plugins.timeout
+import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.http.HttpMethod
-import io.ktor.server.application.Application
-import io.ktor.server.application.install
-import io.ktor.server.auth.Authentication
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.auth.OAuthAccessTokenResponse
 import io.ktor.server.auth.OAuthServerSettings
-import io.ktor.server.auth.Principal
-import io.ktor.server.auth.form
-import io.ktor.server.auth.oauth
-import io.ktor.server.request.uri
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.authentication
+import io.ktor.server.locations.Location
+import io.ktor.server.locations.get
 import io.ktor.server.response.respondRedirect
-import io.ktor.util.StringValues
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
+import io.ktor.server.sessions.sessions
+import io.ktor.server.sessions.set
 import io.ktor.util.StringValuesBuilder
+import io.ktor.util.hex
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
+import java.io.File
+import java.util.Base64
+
+val discordSecret = System.getenv("DISCORD_HASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: byteArrayOf()
+
+@Location("/discord")
+class DiscordLogin(val state: String? = null)
+
+data class DiscordUserInfo(
+    val username: String,
+    val id: Long,
+    val avatar: String?
+)
 
 fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
     name = "discord",
@@ -39,44 +67,96 @@ fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
     }
 )
 
-class SimpleUserPrincipal(val user: UserDao, val alertCount: Int, val redirect: String) : Principal
+suspend fun downloadDiscordAvatar(discordAvatar: String, discordId: Long): String {
+    val bytes = client.get("https://cdn.discordapp.com/avatars/$discordId/$discordAvatar.png") {
+        timeout {
+            socketTimeoutMillis = 30000
+            requestTimeoutMillis = 60000
+        }
+    }.body<ByteArray>()
 
-fun Application.installDiscordOauth() {
-    install(Authentication) {
-        oauth("discord") {
-            client = HttpClient(Apache)
-            urlProvider = { "${Config.siteBase()}${request.uri.substringBefore("?")}" }
-            providerLookup = {
-                val queryParams = request.queryParameters as StringValues
-                discordProvider(queryParams["state"])
+    val fileName = UserCrypto.getHash(discordId.toString(), discordSecret)
+    val localFile = File(localAvatarFolder(), "$fileName.png")
+    localFile.writeBytes(bytes)
+
+    return "${Config.cdnBase("", true)}/avatar/$fileName.png"
+}
+
+suspend fun ApplicationCall.getDiscordData(): DiscordUserInfo {
+    val principal = authentication.principal<OAuthAccessTokenResponse.OAuth2>() ?: error("No principal")
+
+    return client.get("https://discord.com/api/users/@me") {
+        header("Authorization", "Bearer ${principal.accessToken}")
+    }.body()
+}
+
+fun Route.discordLogin() {
+    authenticate("discord") {
+        get<DiscordLogin> { req ->
+            val data = call.getDiscordData()
+
+            val avatarLocal = data.avatar?.let { downloadDiscordAvatar(it, data.id) }
+
+            val (user, alertCount) = transaction {
+                val userId = User.upsert(User.discordId) {
+                    it[name] = data.username
+                    it[discordId] = data.id
+                    it[avatar] = avatarLocal
+                    it[active] = true
+                }.value
+
+                UserDao[userId] to alertCount(userId)
+            }
+
+            call.sessions.set(Session.fromUser(user, alertCount, call = call))
+            req.state?.let { String(hex(it)) }.orEmpty().let { query ->
+                if (query.isNotEmpty() && query.contains("client_id")) {
+                    call.respondRedirect("/oauth2/authorize/success$query")
+                } else {
+                    call.respondRedirect("/")
+                }
             }
         }
-        form("auth-form") {
-            userParamName = "username"
-            passwordParamName = "password"
-            challenge {
-                if (call.request.uri.startsWith("/oauth2")) {
-                    call.respondRedirect("${call.request.uri}&failed")
-                } else {
-                    call.respondRedirect("/login?failed")
-                }
-            }
-            validate { credentials ->
-                transaction {
-                    User.select {
-                        if (credentials.name.contains('@')) {
-                            (User.email eq credentials.name) and User.discordId.isNull()
-                        } else {
-                            User.uniqueName eq credentials.name
-                        } and User.active
-                    }.firstOrNull()?.let {
-                        if (it[User.password]?.let { curPw -> Bcrypt.verify(credentials.password, curPw.toByteArray()) } == true) {
-                            SimpleUserPrincipal(UserDao.wrapRow(it), alertCount(it[User.id].value), request.uri)
-                        } else {
-                            null
+
+        get("/discord-link") {
+            requireAuthorization { sess ->
+                val data = call.getDiscordData()
+
+                newSuspendedTransaction {
+                    val (existingMaps, dualAccount) = User
+                        .join(Beatmap, JoinType.LEFT, User.id, Beatmap.uploader) {
+                            Beatmap.deletedAt.isNull()
+                        }
+                        .slice(User.discordId, User.email, Beatmap.id.count())
+                        .select {
+                            (User.discordId eq data.id) and User.active
+                        }
+                        .groupBy(User.id)
+                        .firstOrNull()?.let {
+                            it[Beatmap.id.count()] to (it[User.email] != null)
+                        } ?: (0L to null)
+
+                    if (existingMaps > 0 || dualAccount == true) {
+                        // User has maps, can't link
+                        return@newSuspendedTransaction
+                    } else if (dualAccount == false) {
+                        // Email = false means the other account is a pure discord account
+                        // and as it has no maps we can set it to inactive before linking it to the current account
+                        User.update({ User.discordId eq data.id }) {
+                            it[active] = false
+                            it[discordId] = null
                         }
                     }
+
+                    val avatarLocal = data.avatar?.let { downloadDiscordAvatar(it, data.id) }
+
+                    User.update({ User.id eq sess.userId }) {
+                        it[discordId] = data.id
+                        it[avatar] = avatarLocal
+                    }
                 }
+
+                call.respondRedirect("/profile#account")
             }
         }
     }

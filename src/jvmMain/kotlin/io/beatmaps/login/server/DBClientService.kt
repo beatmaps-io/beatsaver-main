@@ -1,4 +1,4 @@
-package io.beatmaps.login
+package io.beatmaps.login.server
 
 import io.beatmaps.common.dbo.OauthClient
 import io.beatmaps.common.dbo.OauthClientDao

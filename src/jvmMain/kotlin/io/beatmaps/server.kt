@@ -40,9 +40,11 @@ import io.beatmaps.controllers.uploadController
 import io.beatmaps.controllers.userController
 import io.beatmaps.login.Session
 import io.beatmaps.login.authRoute
-import io.beatmaps.login.installDiscordOauth
-import io.beatmaps.login.installOauth2
+import io.beatmaps.login.discordLogin
+import io.beatmaps.login.installOauth
 import io.beatmaps.login.installSessions
+import io.beatmaps.login.patreonLink
+import io.beatmaps.login.server.installOauth2
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
 import io.beatmaps.util.downloadsThread
@@ -297,7 +299,7 @@ fun Application.beatmapsio() {
 
     installMetrics()
     installSessions()
-    installDiscordOauth()
+    installOauth()
     if (rabbitHost.isNotEmpty()) {
         install(RabbitMQ) {
             setupAMQP {
@@ -358,6 +360,8 @@ fun Application.beatmapsio() {
         cdnRoute()
 
         authRoute()
+        discordLogin()
+        patreonLink()
         mapDetailRoute()
         userRoute()
         searchRoute()

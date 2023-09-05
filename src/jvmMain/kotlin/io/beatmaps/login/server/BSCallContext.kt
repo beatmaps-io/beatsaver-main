@@ -1,4 +1,4 @@
-package io.beatmaps.login
+package io.beatmaps.login.server
 
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
