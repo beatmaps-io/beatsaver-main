@@ -87,6 +87,15 @@ class MapsApi {
     @Location("/maps/id/{id}")
     data class Detail(val id: String, @Ignore val api: MapsApi)
 
+    @Group("Maps")
+    @Location("/maps/ids/{ids}")
+    data class ByIds(
+        @Description("Up to 50 ids seperated by commas")
+        val ids: String,
+        @Ignore
+        val api: MapsApi
+    )
+
     @Location("/maps/id/{id}/playlists")
     data class InPlaylists(val id: String, @Ignore val api: MapsApi)
 
@@ -476,6 +485,42 @@ fun Route.mapDetailRoute() {
             call.respond(HttpStatusCode.NotFound)
         } else {
             call.respondRedirect(r.downloadURL)
+        }
+    }
+
+    get<MapsApi.ByIds>("Get maps for mapIds".responds(ok<MapDetail>(), notFound())) {ids->
+        call.response.header("Access-Control-Allow-Origin", "*")
+        val sess = call.sessions.get<Session>()
+        val mapIdList = ids.ids.split(",").take(50)
+        val isAdmin = sess?.isAdmin() == true
+        val r = try {
+            transaction {
+                Beatmap
+                    .joinVersions(true, state = null)
+                    .joinUploader()
+                    .joinCurator()
+                    .joinBookmarked(sess?.userId)
+                    .joinCollaborators()
+                    .select {
+                        Beatmap.id.inList(
+                            mapIdList.mapNotNull {id -> id.toIntOrNull(16) }
+                        ) and (Beatmap.deletedAt.isNull())
+                    }
+                    .complexToBeatmap()
+                    .map {
+                        MapDetail.from(it, cdnPrefix())
+                    }.filter {
+                        it.publishedVersion() != null || it.uploader.id == sess?.userId || sess?.testplay == true || isAdmin
+                    }
+                    .associateBy { it.id }
+            }
+        } catch (_: NumberFormatException) {
+            null
+        }
+        if (r == null) {
+            call.respond(HttpStatusCode.NotFound)
+        } else {
+            call.respond(r)
         }
     }
 
