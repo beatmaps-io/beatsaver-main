@@ -43,7 +43,7 @@ import io.beatmaps.login.authRoute
 import io.beatmaps.login.discordLogin
 import io.beatmaps.login.installOauth
 import io.beatmaps.login.installSessions
-import io.beatmaps.login.patreonLink
+import io.beatmaps.login.patreon.patreonLink
 import io.beatmaps.login.server.installOauth2
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
