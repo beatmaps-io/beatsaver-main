@@ -20,6 +20,8 @@ data class PatreonUser(
     val hidePledges: Boolean? = null,
     @JsonNames("image_url")
     val imageUrl: String? = null,
+    @JsonNames("is_creator")
+    val isCreator: Boolean? = null,
     @JsonNames("is_email_verified")
     val isEmailVerified: Boolean? = null,
     @JsonNames("last_name")
