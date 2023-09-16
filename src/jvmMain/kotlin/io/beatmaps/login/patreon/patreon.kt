@@ -2,8 +2,10 @@ package io.beatmaps.login.patreon
 
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.client
+import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Patreon
+import io.beatmaps.common.dbo.PatreonLog
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.json
 import io.ktor.client.request.get
@@ -34,13 +36,11 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
-import java.util.logging.Logger
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-
-private val patreonLogger = Logger.getLogger("bmio.Patreon")
 
 private val patreonWebhookSecret = System.getenv("PATREON_WEBHOOK_SECRET") ?: "insecure-secret"
 
@@ -128,13 +128,18 @@ fun Route.patreonLink() {
                     header("Authorization", "Bearer ${principal.accessToken}")
                 }.bodyAsText()
 
+                transaction {
+                    PatreonLog.insert {
+                        it[type] = "login"
+                        it[text] = responseText
+                        it[time] = NowExpression(time.columnType)
+                    }
+                }
+
                 val response = json.decodeFromString<PatreonResponse>(responseText)
                 val membership = response.getIncluded<PatreonMembership>(PatreonMembership).firstOrNull()
                 val user = response.getIncluded<PatreonUser>(PatreonUser).first()
                 val tierObj = response.getIncluded<PatreonTier>(PatreonTier).maxByOrNull { it.attributes.amountCents ?: Int.MIN_VALUE }
-
-                patreonLogger.info(membership.toString())
-                patreonLogger.info(tierObj.toString())
 
                 transaction {
                     User.update({ User.id eq sess.userId }) {
@@ -171,8 +176,13 @@ fun Route.patreonLink() {
             throw BadRequestException("Invalid signature")
         }
 
-        patreonLogger.info("Received patreon webhook $event")
-        patreonLogger.info(hookContent)
+        transaction {
+            PatreonLog.insert {
+                it[type] = event ?: ""
+                it[text] = hookContent
+                it[time] = NowExpression(time.columnType)
+            }
+        }
 
         val hook = json.decodeFromString<PatreonResponse>(hookContent)
         val user = hook.getIncluded<PatreonUser>(PatreonUser).first()
