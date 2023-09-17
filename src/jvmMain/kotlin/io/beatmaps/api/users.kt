@@ -32,6 +32,8 @@ import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.UserLog
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.handlePatreon
+import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.sendEmail
 import io.beatmaps.login.MongoClient
@@ -136,15 +138,15 @@ fun parseJwtUntrusted(jwt: String): Jwt<Header<*>, Claims> =
 
 fun UserDetail.Companion.getAvatar(other: UserDao) = other.avatar ?: "https://www.gravatar.com/avatar/${other.hash ?: md5(other.uniqueName ?: other.name)}?d=retro"
 
-fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null, description: Boolean = false) =
+fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null, description: Boolean = false, patreon: Boolean = false) =
     UserDetail(
         other.id.value, other.uniqueName ?: other.name, if (description) other.description else null, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
         getAvatar(other), stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
         admin = other.admin, curator = other.curator, verifiedMapper = other.verifiedMapper, suspendedAt = other.suspendedAt?.toKotlinInstant(),
-        playlistUrl = "${Config.apiBase(true)}/users/id/${other.id.value}/playlist"
+        playlistUrl = "${Config.apiBase(true)}/users/id/${other.id.value}/playlist", patreon = if (patreon) PatreonTier.fromPledge(other.patreon?.pledge) else null
     )
 
-fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false) = from(UserDao.wrapRow(row), roles)
+fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false, patreon: Boolean = false) = from(UserDao.wrapRow(row), roles, patreon = patreon)
 actual object UserDetailHelper {
     actual fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean) = Config.siteBase(absolute) + "/profile/${userDetail.id}" + (tab?.let { "#$it" } ?: "")
 }
@@ -915,17 +917,15 @@ fun Route.userRoute() {
 
     get<UsersApi.Find> {
         val user = transaction {
-            UserDao.wrapRows(
-                User.select {
-                    User.hash.eq(it.id) and User.active
-                }
-            ).firstOrNull()
+            User.select {
+                User.hash.eq(it.id) and User.active
+            }.firstOrNull()?.let { row -> UserDetail.from(row) }
         }
 
         if (user == null) {
             call.respond(HttpStatusCode.NotFound)
         } else {
-            call.respond(UserDetail.from(user))
+            call.respond(user)
         }
     }
 
@@ -1097,36 +1097,40 @@ fun Route.userRoute() {
 
     get<UsersApi.Me> {
         requireAuthorization {
-            val (user, alertCount, followData) = transaction {
-                Triple(
-                    UserDao.wrapRows(
-                        User.select {
+            val (user, detail, alertCount) = transaction {
+                val user = UserDao.wrapRow(
+                    User
+                        .joinPatreon()
+                        .select {
                             User.id.eq(it.userId)
                         }
-                    ).first(),
-                    alertCount(it.userId),
-                    followData(it.userId, it.userId)
+                        .handlePatreon()
+                        .single()
+                )
+
+                val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
+                val followData = followData(it.userId, it.userId)
+
+                Triple(
+                    user,
+                    UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let { usr ->
+                        if (dualAccount) {
+                            usr.copy(type = AccountType.DUAL, email = user.email)
+                        } else {
+                            usr.copy(email = user.email)
+                        }
+                    },
+                    alertCount(it.userId)
                 )
             }
 
             call.sessions.set(Session.fromUser(user, alertCount, it.oauth2ClientId, call))
-
-            val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
-
-            call.respond(
-                UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true).let { usr ->
-                    if (dualAccount) {
-                        usr.copy(type = AccountType.DUAL, email = user.email)
-                    } else {
-                        usr.copy(email = user.email)
-                    }
-                }
-            )
+            call.respond(detail)
         }
     }
 
     fun userBy(where: SqlExpressionBuilder.() -> Op<Boolean>) =
-        UserDao.wrapRows(User.select(where)).firstOrNull() ?: throw NotFoundException()
+        UserDao.wrapRow(User.joinPatreon().select(where).handlePatreon().firstOrNull() ?: throw NotFoundException())
 
     options<MapsApi.UserId> {
         call.response.header("Access-Control-Allow-Origin", "*")
@@ -1134,17 +1138,18 @@ fun Route.userRoute() {
     }
     get<MapsApi.UserId>("Get user info".responds(ok<UserDetail>(), notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
-        val (user, followData) = transaction {
-            userBy {
+        val userDetail = transaction {
+            val user = userBy {
                 (User.id eq it.id) and User.active
-            } to followData(it.id, call.sessions.get<Session>()?.userId)
-        }
+            }
+            val followData = followData(it.id, call.sessions.get<Session>()?.userId)
 
-        val userDetail = UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true).let {
-            if (call.sessions.get<Session>()?.isAdmin() == true) {
-                it.copy(uploadLimit = user.uploadLimit)
-            } else {
-                it
+            UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let {
+                if (call.sessions.get<Session>()?.isAdmin() == true) {
+                    it.copy(uploadLimit = user.uploadLimit)
+                } else {
+                    it
+                }
             }
         }
 
@@ -1157,13 +1162,15 @@ fun Route.userRoute() {
     }
     get<MapsApi.UserName>("Get user info by name".responds(ok<UserDetail>(), notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
-        val user = transaction {
-            userBy {
+        val userDetail = transaction {
+            val user = userBy {
                 (User.uniqueName eq it.name) and User.active
             }
+
+            UserDetail.from(user, stats = statsForUser(user), description = true, patreon = true)
         }
 
-        call.respond(UserDetail.from(user, stats = statsForUser(user), description = true))
+        call.respond(userDetail)
     }
 
     fun getFollowerData(page: Long, joinOn: Column<EntityID<Int>>, condition: SqlExpressionBuilder.() -> Op<Boolean>) = transaction {

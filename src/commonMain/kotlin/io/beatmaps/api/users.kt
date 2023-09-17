@@ -10,6 +10,14 @@ enum class AccountType {
     DISCORD, SIMPLE, DUAL
 }
 
+enum class PatreonTier(val pledge: Int, val supporting: Boolean, val title: String) {
+    None(0, false, ""), Supporter(350, true, "Supporter"), SupporterPlus(1000, true, "Supporter+");
+
+    companion object {
+        fun fromPledge(pledge: Int?) = if (pledge == null) null else values().filter { it.pledge >= pledge }.minBy { it.pledge }
+    }
+}
+
 @Serializable
 data class UserDetail(
     val id: Int,
@@ -28,7 +36,8 @@ data class UserDetail(
     val curator: Boolean? = null,
     val verifiedMapper: Boolean = false,
     val suspendedAt: Instant? = null,
-    val playlistUrl: String? = null
+    val playlistUrl: String? = null,
+    val patreon: PatreonTier? = null
 ) {
     fun profileLink(tab: String? = null, absolute: Boolean = false) = UserDetailHelper.profileLink(this, tab, absolute)
     companion object
