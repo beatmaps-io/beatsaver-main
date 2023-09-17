@@ -10,8 +10,8 @@ enum class AccountType {
     DISCORD, SIMPLE, DUAL
 }
 
-enum class PatreonTier(val pledge: Int, val title: String) {
-    Supporter(350, "Supporter"), SupporterPlus(1000, "Supporter+");
+enum class PatreonTier(val pledge: Int, val supporting: Boolean, val title: String) {
+    None(0, false, ""), Supporter(350, true, "Supporter"), SupporterPlus(1000, true, "Supporter+");
 
     companion object {
         fun fromPledge(pledge: Int?) = if (pledge == null) null else values().filter { it.pledge >= pledge }.minBy { it.pledge }

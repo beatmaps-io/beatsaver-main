@@ -359,7 +359,10 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             }
         }
 
-        form(classes = "user-form", action = "/patreon", method = FormMethod.get) {
+        val linkPatreon = props.userDetail.patreon == null
+        val verbPatreon = if (!linkPatreon) "Unlink" else "Link"
+        val actionPatreon = if (!linkPatreon) "/profile/unlink-patreon" else "/patreon"
+        form(classes = "user-form", action = actionPatreon, method = if (linkPatreon) FormMethod.get else FormMethod.post) {
             h5("mt-5") {
                 +"Patreon"
             }
@@ -367,7 +370,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             div("mb-3 d-grid") {
                 button(classes = "btn btn-patreon", type = ButtonType.submit) {
                     attrs.disabled = state.loading == true
-                    +"Link patreon"
+                    +"$verbPatreon patreon"
                 }
             }
         }

@@ -26,6 +26,8 @@ $bs-orange: #bd5500;
 $bs-yellow: #fff301;
 $bs-purple: #7646af;
 
+$patreon: #f47fff;
+
 // Bring back old look
 $card-cap-padding-y: .75rem;
 $card-cap-padding-x: 1.25rem;
@@ -56,7 +58,9 @@ $theme-colors: (
   "expert": $bs-red,
   "purple": $bs-purple,
   "hard": $bs-orange,
-  "unsure": $bs-yellow
+  "unsure": $bs-yellow,
+
+  "patreon": $patreon
 );
 
 @use "datepicker";
