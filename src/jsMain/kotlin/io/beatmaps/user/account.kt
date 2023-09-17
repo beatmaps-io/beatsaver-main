@@ -40,7 +40,6 @@ import react.RComponent
 import react.RefObject
 import react.State
 import react.createRef
-import react.dom.a
 import react.dom.button
 import react.dom.div
 import react.dom.form
@@ -341,29 +340,34 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                 attrs.sessions = s
             }
         }
-        if (props.userDetail.type == AccountType.DUAL) {
-            form(classes = "user-form", action = "/profile/unlink-discord", method = FormMethod.post) {
+        if (props.userDetail.type != AccountType.DISCORD) {
+            val link = props.userDetail.type == AccountType.SIMPLE
+            val verb = if (!link) "Unlink" else "Link"
+            val action = if (!link) "/profile/unlink-discord" else "/discord-link"
+
+            form(classes = "user-form", action = action, method = if (link) FormMethod.get else FormMethod.post) {
                 h5("mt-5") {
-                    +"Unlink discord"
+                    +"$verb discord"
                 }
                 hr("mt-2") {}
                 div("mb-3 d-grid") {
-                    button(classes = "btn btn-danger", type = ButtonType.submit) {
+                    button(classes = "btn btn-info", type = ButtonType.submit) {
                         attrs.disabled = state.loading == true
-                        +"Unlink discord"
+                        +"$verb discord"
                     }
                 }
             }
-        } else if (props.userDetail.type == AccountType.SIMPLE) {
-            form(classes = "user-form", action = "/profile/unlink-discord", method = FormMethod.post) {
-                h5("mt-5") {
-                    +"Link discord"
-                }
-                hr("mt-2") {}
-                div("mb-3 d-grid") {
-                    a("/discord-link", classes = "btn btn-info") {
-                        +"Link discord"
-                    }
+        }
+
+        form(classes = "user-form", action = "/patreon", method = FormMethod.get) {
+            h5("mt-5") {
+                +"Patreon"
+            }
+            hr("mt-2") {}
+            div("mb-3 d-grid") {
+                button(classes = "btn btn-patreon", type = ButtonType.submit) {
+                    attrs.disabled = state.loading == true
+                    +"Link patreon"
                 }
             }
         }

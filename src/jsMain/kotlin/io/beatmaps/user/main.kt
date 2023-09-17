@@ -202,7 +202,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         }
         div("row") {
             div("col-md-4 mb-3") {
-                div("card user-info") {
+                div("card user-info" + if (state.userDetail?.patreon != null) " border border-3 border-patreon" else "") {
                     div("card-body") {
                         div("d-flex align-items-center mb-2") {
                             img("Profile Image", state.userDetail?.avatar, classes = "rounded-circle me-3") {
