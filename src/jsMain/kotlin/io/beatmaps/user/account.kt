@@ -40,6 +40,7 @@ import react.RComponent
 import react.RefObject
 import react.State
 import react.createRef
+import react.dom.a
 import react.dom.button
 import react.dom.div
 import react.dom.form
@@ -341,36 +342,43 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             }
         }
         if (props.userDetail.type != AccountType.DISCORD) {
-            val link = props.userDetail.type == AccountType.SIMPLE
-            val verb = if (!link) "Unlink" else "Link"
-            val action = if (!link) "/profile/unlink-discord" else "/discord-link"
-
-            form(classes = "user-form", action = action, method = if (link) FormMethod.get else FormMethod.post) {
+            form(classes = "user-form", action = "/profile/unlink-discord", method = FormMethod.post) {
                 h5("mt-5") {
-                    +"$verb discord"
+                    +"Discord"
                 }
                 hr("mt-2") {}
                 div("mb-3 d-grid") {
-                    button(classes = "btn btn-info", type = ButtonType.submit) {
-                        attrs.disabled = state.loading == true
-                        +"$verb discord"
+                    if (props.userDetail.type == AccountType.SIMPLE) {
+                        // Can't use form as redirect to external site triggers CSP
+                        a(classes = "btn btn-info", href = "/discord-link") {
+                            +"Link discord"
+                        }
+                    } else {
+                        button(classes = "btn btn-info", type = ButtonType.submit) {
+                            attrs.disabled = state.loading == true
+                            +"Unlink discord"
+                        }
                     }
                 }
             }
         }
 
-        val linkPatreon = props.userDetail.patreon == null
-        val verbPatreon = if (!linkPatreon) "Unlink" else "Link"
-        val actionPatreon = if (!linkPatreon) "/profile/unlink-patreon" else "/patreon"
-        form(classes = "user-form", action = actionPatreon, method = if (linkPatreon) FormMethod.get else FormMethod.post) {
+        form(classes = "user-form", action = "/profile/unlink-patreon", method = FormMethod.post) {
             h5("mt-5") {
                 +"Patreon"
             }
             hr("mt-2") {}
             div("mb-3 d-grid") {
-                button(classes = "btn btn-patreon", type = ButtonType.submit) {
-                    attrs.disabled = state.loading == true
-                    +"$verbPatreon patreon"
+                if (props.userDetail.patreon == null) {
+                    // Can't use form as redirect to external site triggers CSP
+                    a(classes = "btn btn-patreon", href = "/patreon") {
+                        +"Link patreon"
+                    }
+                } else {
+                    button(classes = "btn btn-patreon", type = ButtonType.submit) {
+                        attrs.disabled = state.loading == true
+                        +"Unlink patreon"
+                    }
                 }
             }
         }
