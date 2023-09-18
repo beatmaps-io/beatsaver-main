@@ -8,6 +8,7 @@ import io.beatmaps.api.CollaborationDetail
 import io.beatmaps.api.CollaborationRemoveData
 import io.beatmaps.api.CollaborationRequestData
 import io.beatmaps.api.CurateMap
+import io.beatmaps.api.ErrorResponse
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.SimpleMapInfoUpdate
@@ -17,12 +18,14 @@ import io.beatmaps.api.ValidateMap
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.MapTagType
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.json
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.playlist.addToPlaylist
 import io.beatmaps.shared.bookmarkButton
+import io.beatmaps.shared.errors
 import io.beatmaps.shared.links
 import io.beatmaps.util.textToContent
 import kotlinx.browser.window
@@ -31,6 +34,7 @@ import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
+import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.Event
@@ -54,6 +58,8 @@ import react.dom.span
 import react.dom.textarea
 import react.fc
 import react.setState
+import react.useRef
+import react.useState
 import kotlin.collections.set
 
 external interface MapTagProps : Props {
@@ -84,12 +90,6 @@ external interface MapInfoProps : Props {
     var reloadMap: () -> Unit
     var deleteMap: () -> Unit
     var updateMapinfo: (MapDetail) -> Unit
-}
-
-external interface MapInfoState : State {
-    var loading: Boolean?
-    var editing: Boolean?
-    var tags: Set<MapTag>?
 }
 
 fun interface TagPickerHeadingRenderer {
@@ -293,181 +293,155 @@ fun RBuilder.collaboratorPicker(handler: CollaboratorPickerProps.() -> Unit) =
         this.attrs(handler)
     }
 
-class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
-    private val inputRef = createRef<HTMLInputElement>()
-    private val textareaRef = createRef<HTMLTextAreaElement>()
-    private val reasonRef = createRef<HTMLTextAreaElement>()
+val mapInfo = fc<MapInfoProps> { props ->
+    val inputRef = useRef<HTMLInputElement>()
+    val textareaRef = useRef<HTMLTextAreaElement>()
+    val reasonRef = useRef<HTMLTextAreaElement>()
 
-    override fun componentWillMount() {
-        setState {
-            tags = props.mapInfo.tags.toSet()
-        }
-    }
+    val (tags, setTags) = useState(props.mapInfo.tags.toSet())
+    val (loading, setLoading) = useState(false)
+    val (error, setError) = useState<String?>(null)
+    val (editing, setEditing) = useState(false)
 
-    private fun recall() {
+    fun recall() {
+        setLoading(true)
+
         props.mapInfo.publishedVersion()?.hash?.let { hash ->
-            Axios.post<String>("${Config.apibase}/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.intId(), reasonRef.current?.value), generateConfig<StateUpdate, String>())
+            Axios.post<String>("${Config.apibase}/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.intId(), reasonRef.current?.value), generateConfig<StateUpdate, String>(validateStatus = false))
                 .then({
-                    props.reloadMap()
+                    if (it.status == 200) {
+                        props.reloadMap()
+                    } else if (it.status == 400) {
+                        setError(json.decodeFromString<ErrorResponse>(it.data).error)
+                    }
 
-                    setState {
-                        loading = false
-                    }
+                    setLoading(false)
                 }) {
-                    setState {
-                        loading = false
-                    }
+                    setLoading(false)
                 }
         }
     }
 
-    private fun delete() {
+    fun delete() {
+        setLoading(true)
+
         Axios.post<String>("${Config.apibase}/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.value?.trim()), generateConfig<MapInfoUpdate, String>()).then({
             props.deleteMap()
-        }) { }
+        }) {
+            setLoading(false)
+        }
     }
 
-    private fun curate(curated: Boolean = true) {
+    fun curate(curated: Boolean = true) {
+        setLoading(true)
+
         Axios.post<String>("${Config.apibase}/maps/curate", CurateMap(props.mapInfo.intId(), curated, reason = reasonRef.current?.value?.trim()), generateConfig<CurateMap, String>()).then({
             props.reloadMap()
-        }) { }
+        }) {
+            setLoading(false)
+        }
     }
 
-    private fun validate(automapper: Boolean = true) {
+    fun validate(automapper: Boolean = true) {
+        setLoading(true)
+
         Axios.post<String>("${Config.apibase}/maps/validate", ValidateMap(props.mapInfo.intId(), automapper), generateConfig<ValidateMap, String>()).then({
             props.reloadMap()
-        }) { }
+        }) {
+            setLoading(false)
+        }
     }
 
-    private fun bookmark(bookmarked: Boolean) {
+    fun bookmark(bookmarked: Boolean) {
+        setLoading(true)
+
         Axios.post<String>("${Config.apibase}/bookmark", BookmarkRequest(props.mapInfo.id, bookmarked = bookmarked), generateConfig<BookmarkRequest, String>()).then({
             props.reloadMap()
-        }) { }
+        }) {
+            setLoading(false)
+        }
     }
 
-    override fun RBuilder.render() {
-        val deleted = props.mapInfo.deletedAt != null
-        globalContext.Consumer { userData ->
-            div("card") {
-                div("card-header d-flex" + if (deleted) " bg-danger" else "") {
-                    if (state.editing == true) {
-                        +"Edit map"
-                    } else {
-                        +props.mapInfo.name
-                    }
-                    div("ms-auto flex-shrink-0") {
-                        if (!deleted) {
-                            props.mapInfo.mainVersion()?.let { version ->
-                                if (userData != null) {
-                                    addToPlaylist {
-                                        map = props.mapInfo
-                                        modal = props.modal
-                                    }
-                                    bookmarkButton {
-                                        attrs.bookmarked = props.mapInfo.bookmarked == true
-                                        attrs.onClick = { e, bm ->
-                                            e.preventDefault()
-                                            bookmark(!bm)
-                                        }
+    val deleted = props.mapInfo.deletedAt != null
+    globalContext.Consumer { userData ->
+        div("card") {
+            div("card-header d-flex" + if (deleted) " bg-danger" else "") {
+                if (editing) {
+                    +"Edit map"
+                } else {
+                    +props.mapInfo.name
+                }
+                div("ms-auto flex-shrink-0") {
+                    if (!deleted) {
+                        props.mapInfo.mainVersion()?.let { version ->
+                            if (userData != null) {
+                                addToPlaylist {
+                                    map = props.mapInfo
+                                    modal = props.modal
+                                }
+                                bookmarkButton {
+                                    attrs.bookmarked = props.mapInfo.bookmarked == true
+                                    attrs.onClick = { e, bm ->
+                                        e.preventDefault()
+                                        if (!loading) bookmark(!bm)
                                     }
                                 }
+                            }
 
-                                links {
-                                    attrs.map = props.mapInfo
-                                    attrs.version = version
-                                    attrs.modal = props.modal
-                                }
+                            links {
+                                attrs.map = props.mapInfo
+                                attrs.version = version
+                                attrs.modal = props.modal
+                            }
 
-                                if (userData?.curator == true || props.isOwner) {
-                                    a("#") {
-                                        attrs.title = "Edit"
-                                        attrs.attributes["aria-label"] = "Edit"
-                                        attrs.onClickFunction = {
-                                            it.preventDefault()
-                                            setState {
-                                                editing = state.editing != true
-                                            }
-                                            window.setTimeout(
-                                                {
-                                                    inputRef.current?.value = props.mapInfo.name
-                                                },
-                                                1
-                                            )
-                                        }
-                                        i("fas fa-pen text-warning") { }
+                            if (userData?.curator == true || props.isOwner) {
+                                a("#") {
+                                    attrs.title = "Edit"
+                                    attrs.attributes["aria-label"] = "Edit"
+                                    attrs.onClickFunction = {
+                                        it.preventDefault()
+                                        setEditing(!editing)
+                                        window.setTimeout(
+                                            {
+                                                inputRef.current?.value = props.mapInfo.name
+                                            },
+                                            1
+                                        )
                                     }
+                                    i("fas fa-pen text-warning") { }
                                 }
+                            }
 
-                                if (userData?.curator == true && !props.isOwner) {
-                                    a("#") {
-                                        val isCurated = props.mapInfo.curator != null
-                                        val text = if (isCurated) "Uncurate" else "Curate"
-                                        attrs.title = text
-                                        attrs.attributes["aria-label"] = text
-                                        attrs.onClickFunction = {
-                                            it.preventDefault()
-                                            if (!isCurated) {
-                                                props.modal.current?.showDialog(
-                                                    ModalData(
-                                                        "Curate map",
-                                                        bodyCallback = {
-                                                            p {
-                                                                +"Are you sure you want to curate this map?"
-                                                            }
-                                                        },
-                                                        buttons = listOf(
-                                                            ModalButton("Curate", "primary") { curate() },
-                                                            ModalButton("Cancel")
-                                                        )
-                                                    )
-                                                )
-                                            } else {
-                                                props.modal.current?.showDialog(
-                                                    ModalData(
-                                                        "Uncurate map",
-                                                        bodyCallback = {
-                                                            p {
-                                                                +"Are you sure you want to uncurate this map? If so, please provide a comprehensive reason."
-                                                            }
-                                                            p {
-                                                                +"Reason for action:"
-                                                            }
-                                                            textarea(classes = "form-control") {
-                                                                ref = reasonRef
-                                                            }
-                                                        },
-                                                        buttons = listOf(
-                                                            ModalButton("Uncurate", "primary") { curate(false) },
-                                                            ModalButton("Cancel")
-                                                        )
-                                                    )
-                                                )
-                                            }
-                                        }
-                                        i("fas fa-award " + if (isCurated) "text-danger" else "text-success") { }
-                                    }
-                                }
-                                if (userData?.admin == true) {
-                                    a("#") {
-                                        attrs.title = if (props.mapInfo.automapper) "Flag as Human-made Map" else "Flag as AI-assisted Map"
-                                        attrs.attributes["aria-label"] = if (props.mapInfo.automapper) "Validate" else "Invalidate"
-                                        attrs.onClickFunction = {
-                                            it.preventDefault()
-                                            validate(!props.mapInfo.automapper)
-                                        }
-                                        i("fas " + if (props.mapInfo.automapper) "fa-user-check text-success" else "fa-user-times text-danger") { }
-                                    }
-                                    a("#") {
-                                        attrs.title = "Delete"
-                                        attrs.attributes["aria-label"] = "Delete"
-                                        attrs.onClickFunction = {
-                                            it.preventDefault()
+                            if (userData?.curator == true && !props.isOwner) {
+                                a("#") {
+                                    val isCurated = props.mapInfo.curator != null
+                                    val text = if (isCurated) "Uncurate" else "Curate"
+                                    attrs.title = text
+                                    attrs.attributes["aria-label"] = text
+                                    attrs.onClickFunction = {
+                                        it.preventDefault()
+                                        if (!isCurated) {
                                             props.modal.current?.showDialog(
                                                 ModalData(
-                                                    "Delete map",
+                                                    "Curate map",
                                                     bodyCallback = {
                                                         p {
-                                                            +"Delete completely so that no more versions can be added or just unpublish the current version?"
+                                                            +"Are you sure you want to curate this map?"
+                                                        }
+                                                    },
+                                                    buttons = listOf(
+                                                        ModalButton("Curate", "primary") { curate() },
+                                                        ModalButton("Cancel")
+                                                    )
+                                                )
+                                            )
+                                        } else {
+                                            props.modal.current?.showDialog(
+                                                ModalData(
+                                                    "Uncurate map",
+                                                    bodyCallback = {
+                                                        p {
+                                                            +"Are you sure you want to uncurate this map? If so, please provide a comprehensive reason."
                                                         }
                                                         p {
                                                             +"Reason for action:"
@@ -477,124 +451,164 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
                                                         }
                                                     },
                                                     buttons = listOf(
-                                                        ModalButton("DELETE", "danger", ::delete),
-                                                        ModalButton("Unpublish", "primary", ::recall),
+                                                        ModalButton("Uncurate", "primary") { curate(false) },
                                                         ModalButton("Cancel")
                                                     )
                                                 )
                                             )
                                         }
-                                        i("fas fa-trash text-danger") { }
                                     }
+                                    i("fas fa-award " + if (isCurated) "text-danger" else "text-success") { }
+                                }
+                            }
+                            if (userData?.admin == true) {
+                                a("#") {
+                                    attrs.title = if (props.mapInfo.automapper) "Flag as Human-made Map" else "Flag as AI-assisted Map"
+                                    attrs.attributes["aria-label"] = if (props.mapInfo.automapper) "Validate" else "Invalidate"
+                                    attrs.onClickFunction = {
+                                        it.preventDefault()
+                                        if (!loading) validate(!props.mapInfo.automapper)
+                                    }
+                                    i("fas " + if (props.mapInfo.automapper) "fa-user-check text-success" else "fa-user-times text-danger") { }
+                                }
+                                a("#") {
+                                    attrs.title = "Delete"
+                                    attrs.attributes["aria-label"] = "Delete"
+                                    attrs.onClickFunction = {
+                                        it.preventDefault()
+                                        props.modal.current?.showDialog(
+                                            ModalData(
+                                                "Delete map",
+                                                bodyCallback = {
+                                                    p {
+                                                        +"Delete completely so that no more versions can be added or just unpublish the current version?"
+                                                    }
+                                                    p {
+                                                        +"Reason for action:"
+                                                    }
+                                                    textarea(classes = "form-control") {
+                                                        ref = reasonRef
+                                                    }
+                                                },
+                                                buttons = listOf(
+                                                    ModalButton("DELETE", "danger", ::delete),
+                                                    ModalButton("Unpublish", "primary", ::recall),
+                                                    ModalButton("Cancel")
+                                                )
+                                            )
+                                        )
+                                    }
+                                    i("fas fa-trash text-danger") { }
                                 }
                             }
                         }
                     }
                 }
-                div("card-body mapinfo") {
-                    img("Cover Image", props.mapInfo.mainVersion()?.coverURL) {
-                        attrs.width = "200"
-                        attrs.height = "200"
-                    }
-                    div("card-text clearfix") {
-                        if (state.editing == true) {
-                            // If you're not an admin or the owner I hope you're a curator
-                            val isCurating = !(userData?.admin == true || props.isOwner)
-                            input(InputType.text, classes = "form-control m-2") {
-                                attrs.id = "name"
-                                attrs.disabled = state.loading == true || isCurating
-                                ref = inputRef
-                            }
-                            textarea("10", classes = "form-control m-2") {
-                                attrs.id = "description"
-                                attrs.disabled = state.loading == true || isCurating
-                                +props.mapInfo.description
-                                ref = textareaRef
-                            }
-
-                            tagPicker {
-                                attrs.classes = "m-2"
-                                attrs.tags = state.tags
-                                attrs.tagUpdateCallback = {
-                                    setState {
-                                        tags = it
-                                    }
-                                }
-                            }
-
-                            if (userData?.suspended == false) {
-                                collaboratorPicker {
-                                    classes = "m-2"
-                                    map = props.mapInfo
-                                    disabled = state.loading == true || isCurating
-                                }
-                            }
-                        } else {
-                            textToContent(props.mapInfo.description)
+            }
+            div("card-body mapinfo") {
+                img("Cover Image", props.mapInfo.mainVersion()?.coverURL) {
+                    attrs.width = "200"
+                    attrs.height = "200"
+                }
+                div("card-text clearfix") {
+                    if (editing) {
+                        // If you're not an admin or the owner I hope you're a curator
+                        val isCurating = !(userData?.admin == true || props.isOwner)
+                        input(InputType.text, classes = "form-control m-2") {
+                            attrs.id = "name"
+                            attrs.disabled = loading || isCurating
+                            ref = inputRef
                         }
+                        textarea("10", classes = "form-control m-2") {
+                            attrs.id = "description"
+                            attrs.disabled = loading || isCurating
+                            +props.mapInfo.description
+                            ref = textareaRef
+                        }
+
+                        tagPicker {
+                            attrs.classes = "m-2"
+                            attrs.tags = tags
+                            attrs.tagUpdateCallback = {
+                                setTags(it)
+                            }
+                        }
+
+                        if (userData?.suspended == false) {
+                            collaboratorPicker {
+                                classes = "m-2"
+                                map = props.mapInfo
+                                disabled = loading || isCurating
+                            }
+                        }
+                    } else {
+                        textToContent(props.mapInfo.description)
                     }
+                }
 
-                    if (state.editing == true) {
-                        div("text-end") {
-                            if (props.isOwner) {
-                                if (props.mapInfo.publishedVersion() != null) {
-                                    a(classes = "btn btn-danger m-1") {
-                                        attrs.onClickFunction = {
-                                            props.modal.current?.showDialog(
-                                                ModalData(
-                                                    "Are you sure?",
-                                                    "This will hide your map from other players until you publish a new version",
-                                                    listOf(ModalButton("OK", "primary", ::recall), ModalButton("Cancel"))
-                                                )
+                if (editing) {
+                    div("text-end") {
+                        error?.let {
+                            errors {
+                                attrs.errors = listOf(it)
+                            }
+                        }
+
+                        if (props.isOwner) {
+                            if (props.mapInfo.publishedVersion() != null) {
+                                button(classes = "btn btn-danger m-1") {
+                                    attrs.disabled = loading
+                                    attrs.onClickFunction = {
+                                        props.modal.current?.showDialog(
+                                            ModalData(
+                                                "Are you sure?",
+                                                "This will hide your map from other players until you publish a new version",
+                                                listOf(ModalButton("OK", "primary", ::recall), ModalButton("Cancel"))
                                             )
-                                        }
-                                        +"Unpublish"
+                                        )
                                     }
+                                    +"Unpublish"
+                                }
+                            } else {
+                                button(classes = "btn btn-danger m-1") {
+                                    attrs.disabled = loading
+                                    attrs.onClickFunction = {
+                                        props.modal.current?.showDialog(
+                                            ModalData(
+                                                "Are you sure?",
+                                                "You won't be able to recover this map after you delete it",
+                                                listOf(ModalButton("DELETE", "primary", ::delete), ModalButton("Cancel"))
+                                            )
+                                        )
+                                    }
+                                    +"Delete"
+                                }
+                            }
+                        }
+                        button(classes = "btn btn-primary m-1") {
+                            attrs.disabled = loading
+                            attrs.onClickFunction = {
+                                val newTitle = inputRef.current?.value ?: ""
+                                val newDescription = textareaRef.current?.value ?: ""
+                                val newTags = tags.toList()
+
+                                setLoading(true)
+
+                                val update = if (userData?.admin == true || props.isOwner) {
+                                    Triple("update", MapInfoUpdate(props.mapInfo.intId(), newTitle, newDescription, newTags), generateConfig<MapInfoUpdate, String>())
                                 } else {
-                                    a(classes = "btn btn-danger m-1") {
-                                        attrs.onClickFunction = {
-                                            props.modal.current?.showDialog(
-                                                ModalData(
-                                                    "Are you sure?",
-                                                    "You won't be able to recover this map after you delete it",
-                                                    listOf(ModalButton("DELETE", "primary", ::delete), ModalButton("Cancel"))
-                                                )
-                                            )
-                                        }
-                                        +"Delete"
-                                    }
+                                    Triple("tagupdate", SimpleMapInfoUpdate(props.mapInfo.intId(), newTags), generateConfig<SimpleMapInfoUpdate, String>())
+                                }
+
+                                Axios.post<String>("${Config.apibase}/maps/${update.first}", update.second, update.third).then({
+                                    props.updateMapinfo(props.mapInfo.copy(name = newTitle, description = newDescription, tags = newTags))
+                                    setLoading(false)
+                                    setEditing(false)
+                                }) {
+                                    setLoading(false)
                                 }
                             }
-                            a(classes = "btn btn-primary m-1") {
-                                attrs.onClickFunction = {
-                                    val newTitle = inputRef.current?.value ?: ""
-                                    val newDescription = textareaRef.current?.value ?: ""
-                                    val newTags = state.tags?.toList()
-
-                                    setState {
-                                        loading = true
-                                    }
-
-                                    val update = if (userData?.admin == true || props.isOwner) {
-                                        Triple("update", MapInfoUpdate(props.mapInfo.intId(), newTitle, newDescription, newTags), generateConfig<MapInfoUpdate, String>())
-                                    } else {
-                                        Triple("tagupdate", SimpleMapInfoUpdate(props.mapInfo.intId(), newTags), generateConfig<SimpleMapInfoUpdate, String>())
-                                    }
-
-                                    Axios.post<String>("${Config.apibase}/maps/${update.first}", update.second, update.third).then({
-                                        props.updateMapinfo(props.mapInfo.copy(name = newTitle, description = newDescription, tags = newTags ?: listOf()))
-                                        setState {
-                                            loading = false
-                                            editing = false
-                                        }
-                                    }) {
-                                        setState {
-                                            loading = false
-                                        }
-                                    }
-                                }
-                                +"Save"
-                            }
+                            +"Save"
                         }
                     }
                 }
@@ -602,8 +616,3 @@ class MapInfo : RComponent<MapInfoProps, MapInfoState>() {
         }
     }
 }
-
-fun RBuilder.mapInfo(handler: MapInfoProps.() -> Unit) =
-    child(MapInfo::class) {
-        this.attrs(handler)
-    }

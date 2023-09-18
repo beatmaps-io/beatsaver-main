@@ -5,6 +5,8 @@ import de.nielsfalk.ktor.swagger.SwaggerSupport
 import de.nielsfalk.ktor.swagger.version.shared.Contact
 import de.nielsfalk.ktor.swagger.version.shared.Information
 import de.nielsfalk.ktor.swagger.version.v2.Swagger
+import io.beatmaps.api.ApiException
+import io.beatmaps.api.ErrorResponse
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.alertsRoute
 import io.beatmaps.api.bookmarkRoute
@@ -142,8 +144,6 @@ fun main() {
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::beatmapsio).start(wait = true)
 }
 
-data class ErrorResponse(val error: String)
-
 fun Application.beatmapsio() {
     install(ContentNegotiation) {
         val kotlinx = KotlinxSerializationConverter(json)
@@ -269,6 +269,10 @@ fun Application.beatmapsio() {
 
         exception<DataConversionException> { cause ->
             call.respond(HttpStatusCode.InternalServerError, ErrorResponse(cause.message ?: ""))
+        }
+
+        exception<ApiException> { cause ->
+            call.respond(HttpStatusCode.BadRequest, cause.toResponse())
         }
 
         exception<ParameterConversionException> { cause ->

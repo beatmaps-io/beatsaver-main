@@ -30,14 +30,16 @@ class Testplay : RComponent<TestplayProps, State>() {
             ref = modalRef
         }
         mapInfo {
-            mapInfo = props.mapInfo
-            isOwner = props.isOwner
-            modal = modalRef
-            reloadMap = props.refreshPage
-            deleteMap = {
-                props.history.push("/profile")
+            attrs {
+                mapInfo = props.mapInfo
+                isOwner = props.isOwner
+                modal = modalRef
+                reloadMap = props.refreshPage
+                deleteMap = {
+                    props.history.push("/profile")
+                }
+                updateMapinfo = props.updateMapinfo
             }
-            updateMapinfo = props.updateMapinfo
         }
         infoTable {
             map = props.mapInfo

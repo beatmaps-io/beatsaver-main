@@ -20,10 +20,13 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.handlePatreon
+import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.controllers.reCaptchaVerify
+import io.beatmaps.controllers.userWipCount
 import io.beatmaps.login.Session
 import io.beatmaps.login.server.DBTokenStore
 import io.beatmaps.util.cdnPrefix
@@ -274,6 +277,10 @@ fun Route.testplayRoute() {
             }
 
             val valid = transaction {
+                val user = UserDao.wrapRow(
+                    User.joinPatreon().select { User.id eq sess.userId }.handlePatreon().first()
+                )
+
                 if (newState.state == EMapState.Published) {
                     publishVersion(newState.mapId, newState.hash) {
                         it and (Beatmap.uploader eq sess.userId)
@@ -298,6 +305,10 @@ fun Route.testplayRoute() {
                             }
                         }
 
+                    val currentWipCount = userWipCount(sess.userId)
+                    val maxWips = (user.patreon.toTier() ?: PatreonTier.None).maxWips
+                    sess.isAdmin() || currentWipCount < maxWips || throw ApiException(PatreonTier.maxWipsMessage)
+
                     (updateState() > 0).also { rTemp ->
                         if (rTemp && sess.isAdmin() && newState.reason?.isEmpty() == false) {
                             ModLog.insert(
@@ -313,8 +324,10 @@ fun Route.testplayRoute() {
                 }
             }
 
-            if (valid) call.pub("beatmaps", "maps.${newState.mapId}.updated.state", null, newState.mapId)
-            call.respond(if (valid) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+            valid || throw ApiException("Error updating map state")
+
+            call.pub("beatmaps", "maps.${newState.mapId}.updated.state", null, newState.mapId)
+            call.respond(HttpStatusCode.OK)
         }
     }
 
