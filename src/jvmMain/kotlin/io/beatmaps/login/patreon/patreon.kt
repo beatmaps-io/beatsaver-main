@@ -25,6 +25,7 @@ import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.request.header
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.util.hex
 import kotlinx.datetime.toJavaInstant
@@ -142,10 +143,6 @@ fun Route.patreonLink() {
                 val tierObj = response.getIncluded<PatreonTier>(PatreonTier).maxByOrNull { it.attributes.amountCents ?: Int.MIN_VALUE }
 
                 transaction {
-                    User.update({ User.id eq sess.userId }) {
-                        it[patreonId] = user.id.toInt()
-                    }
-
                     Patreon.upsert(Patreon.id) {
                         it[id] = user.id.toInt()
                         it[pledge] = membership?.attributes?.currentlyEntitledAmountCents
@@ -153,7 +150,13 @@ fun Route.patreonLink() {
                         it[expireAt] = membership?.attributes?.nextChargeDate?.toJavaInstant()
                         it[tier] = tierObj?.id?.toIntOrNull()
                     }
+
+                    User.update({ User.id eq sess.userId }) {
+                        it[patreonId] = user.id.toInt()
+                    }
                 }
+
+                call.respondRedirect("/profile#account")
             }
         }
     }
