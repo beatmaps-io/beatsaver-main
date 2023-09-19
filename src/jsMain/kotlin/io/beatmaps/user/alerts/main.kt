@@ -5,6 +5,7 @@ import external.CancelTokenSource
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.WithRouterProps
+import io.beatmaps.api.AlertOptionsRequest
 import io.beatmaps.api.AlertUpdateAll
 import io.beatmaps.api.UserAlert
 import io.beatmaps.api.UserAlertStats
@@ -15,6 +16,7 @@ import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.buildURL
 import io.beatmaps.shared.includeIfNotNull
+import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
 import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLElement
@@ -27,6 +29,9 @@ import react.dom.a
 import react.dom.div
 import react.dom.h1
 import react.dom.h6
+import react.dom.i
+import react.dom.input
+import react.dom.span
 import react.setState
 
 external interface AlertsPageProps : WithRouterProps
@@ -38,6 +43,7 @@ external interface AlertsPageState : State {
     var resultsKey: Any?
     var hiddenAlerts: List<Int>?
     var forceHide: Boolean?
+    var loading: Boolean?
 }
 
 class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
@@ -116,13 +122,28 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
             // Bad request
         }
 
+    private fun setOptions(curationAlerts: Boolean, reviewAlerts: Boolean) {
+        setState { loading = true }
+        Axios.post<String>("${Config.apibase}/alerts/options", AlertOptionsRequest(curationAlerts, reviewAlerts), generateConfig<AlertOptionsRequest, String>()).then {
+            setState {
+                loading = false
+                alertStats = alertStats?.copy(
+                    curationAlerts = curationAlerts, reviewAlerts = reviewAlerts
+                )
+            }
+        }.catch {
+            setState { loading = false }
+        }
+    }
+
     override fun RBuilder.render() {
+        val stats = state.alertStats
         div("row") {
             h1("col-lg-8") {
                 +"Alerts & Notifications"
             }
             div("col-lg-4 d-flex") {
-                if (state.read != true && state.alertStats?.let { it.unread > 0 } == true) {
+                if (state.read != true && stats?.let { it.unread > 0 } == true) {
                     a("#", classes = "mark-read") {
                         attrs.onClickFunction = { e ->
                             e.preventDefault()
@@ -138,7 +159,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                 div("list-group") {
                     alertsListItem {
                         attrs.active = state.read != true
-                        attrs.count = state.alertStats?.unread
+                        attrs.count = stats?.unread
                         attrs.icon = "fa-envelope"
                         attrs.text = "Unread"
                         attrs.action = {
@@ -147,7 +168,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                     }
                     alertsListItem {
                         attrs.active = state.read == true
-                        attrs.count = state.alertStats?.read
+                        attrs.count = stats?.read
                         attrs.icon = "fa-envelope-open"
                         attrs.text = "Read"
                         attrs.action = {
@@ -159,7 +180,7 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                     +"Filters"
                 }
                 div("list-group") {
-                    state.alertStats?.byType?.forEach { (type, count) ->
+                    stats?.byType?.forEach { (type, count) ->
                         alertsListItem {
                             attrs.active = state.filters?.contains(type) == true
                             attrs.count = count
@@ -173,6 +194,45 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                                         (state.filters ?: emptyList()).plus(type)
                                     }
                                 )
+                            }
+                        }
+                    }
+                }
+                h6("mt-3") {
+                    +"Preferences"
+                }
+                if (stats != null) {
+                    div("list-group") {
+                        a("#", classes = "list-group-item list-group-item-action d-flex justify-content-between align-items-center") {
+                            attrs.onClickFunction = { ev ->
+                                ev.preventDefault()
+                                if (state.loading != true) setOptions(!stats.curationAlerts, stats.reviewAlerts)
+                            }
+                            span {
+                                i("fas ${EAlertType.Curation.icon} me-2") {}
+                                +"Map Curation"
+                            }
+                            span("form-switch") {
+                                input(InputType.checkBox, classes = "form-check-input") {
+                                    attrs.disabled = state.loading == true
+                                    attrs.checked = stats.curationAlerts == true
+                                }
+                            }
+                        }
+                        a("#", classes = "list-group-item list-group-item-action d-flex justify-content-between align-items-center") {
+                            attrs.onClickFunction = { ev ->
+                                ev.preventDefault()
+                                if (state.loading != true) setOptions(stats.curationAlerts, !stats.reviewAlerts)
+                            }
+                            span {
+                                i("fas ${EAlertType.Review.icon} me-2") {}
+                                +"Map Review"
+                            }
+                            span("form-switch") {
+                                input(InputType.checkBox, classes = "form-check-input") {
+                                    attrs.disabled = state.loading == true
+                                    attrs.checked = stats.reviewAlerts == true
+                                }
                             }
                         }
                     }

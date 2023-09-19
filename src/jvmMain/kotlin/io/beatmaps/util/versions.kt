@@ -25,11 +25,12 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.update
+import pl.jutupe.ktor_rabbitmq.RabbitMQInstance
 import java.lang.Integer.toHexString
 import java.math.BigDecimal
 import java.time.Instant
 
-fun publishVersion(mapId: Int, hash: String, additionalCallback: (Op<Boolean>) -> Op<Boolean> = { it }): Boolean {
+fun publishVersion(mapId: Int, hash: String, rb: RabbitMQInstance?, additionalCallback: (Op<Boolean>) -> Op<Boolean> = { it }): Boolean {
     val publishingVersion = VersionsDao.wrapRow(
         Versions.select {
             Versions.hash eq hash
@@ -66,7 +67,7 @@ fun publishVersion(mapId: Int, hash: String, additionalCallback: (Op<Boolean>) -
             .select {
                 (Beatmap.id eq mapId) and (Beatmap.lastPublishedAt.isNull())
             }.firstOrNull()?.let {
-                pushAlerts(BeatmapDao.wrapRow(it))
+                pushAlerts(BeatmapDao.wrapRow(it), rb)
             }
 
         // Set published time for sorting, but don't allow gaming the system
@@ -107,11 +108,11 @@ fun publishVersion(mapId: Int, hash: String, additionalCallback: (Op<Boolean>) -
     }
 }
 
-fun pushAlerts(map: BeatmapDao) {
+fun pushAlerts(map: BeatmapDao, rb: RabbitMQInstance?) {
     val recipients = Follows.select {
-        Follows.userId eq map.uploaderId
-    }.let {
-        it.map { row -> row[Follows.followerId].value }
+        Follows.userId eq map.uploaderId and Follows.upload
+    }.map { row ->
+        row[Follows.followerId].value
     }
 
     Alert.insert(
@@ -121,4 +122,5 @@ fun pushAlerts(map: BeatmapDao) {
         EAlertType.MapRelease,
         recipients
     )
+    updateAlertCount(rb, recipients)
 }

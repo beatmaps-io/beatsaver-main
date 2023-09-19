@@ -111,16 +111,18 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                     }
 
                     mapInfo {
-                        mapInfo = it
-                        isOwner = isOwnerLocal
-                        modal = modalRef
-                        reloadMap = ::loadMap
-                        deleteMap = {
-                            props.history.push("/profile")
-                        }
-                        updateMapinfo = {
-                            setState {
-                                map = it
+                        attrs {
+                            mapInfo = it
+                            isOwner = isOwnerLocal
+                            modal = modalRef
+                            reloadMap = ::loadMap
+                            deleteMap = {
+                                props.history.push("/profile")
+                            }
+                            updateMapinfo = {
+                                setState {
+                                    map = it
+                                }
                             }
                         }
                     }

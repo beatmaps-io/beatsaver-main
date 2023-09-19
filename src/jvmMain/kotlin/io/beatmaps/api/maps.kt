@@ -18,6 +18,7 @@ import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.Collaboration
+import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistDao
@@ -33,6 +34,7 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -195,17 +197,37 @@ fun Route.mapDetailRoute() {
 
                     (curateMap() > 0).also { success ->
                         if (success) {
-                            Beatmap.select {
+                            Beatmap.joinUploader().select {
                                 Beatmap.id eq mapUpdate.id
                             }.complexToBeatmap().single().let {
+                                // Handle alerts for curation
+                                // When curating we send alerts to the uploader and their followers
+                                // When uncurating we just send alerts to the uploader
                                 if (mapUpdate.curated) {
+                                    if (it.uploader.curationAlerts) {
+                                        Alert.insert(
+                                            "Your map has been curated",
+                                            "@${user.uniqueName} just curated your map #${toHexString(mapUpdate.id)}: **${it.name}**.\n" +
+                                                "Congratulations!",
+                                            EAlertType.Curation,
+                                            it.uploader.id.value
+                                        )
+                                    }
+
+                                    val recipients = Follows.select {
+                                        Follows.userId eq it.uploader.id.value and Follows.curation
+                                    }.map { row ->
+                                        row[Follows.followerId].value
+                                    }
+
                                     Alert.insert(
-                                        "Your map has been curated",
-                                        "@${user.uniqueName} just curated your map #${toHexString(mapUpdate.id)}: **${it.name}**.\n" +
-                                            "Congratulations!",
-                                        EAlertType.Curation,
-                                        it.uploader.id.value
+                                        "Map Curated",
+                                        "@${user.uniqueName} just curated #${toHexString(mapUpdate.id)}: **${it.name}**.\n" +
+                                            "*\"${it.description.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                        EAlertType.MapCurated,
+                                        recipients
                                     )
+                                    updateAlertCount(recipients.plus(it.uploader.id.value))
                                 } else {
                                     Alert.insert(
                                         "Your map has been uncurated",
@@ -214,6 +236,7 @@ fun Route.mapDetailRoute() {
                                         EAlertType.Uncuration,
                                         it.uploader.id.value
                                     )
+                                    updateAlertCount(it.uploader.id.value)
                                 }
                             }
                         }
@@ -307,6 +330,7 @@ fun Route.mapDetailRoute() {
                                 EAlertType.Deletion,
                                 oldData.uploaderId.value
                             )
+                            updateAlertCount(oldData.uploaderId.value)
                         }
                     }
                 }

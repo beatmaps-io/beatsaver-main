@@ -10,10 +10,11 @@ enum class AccountType {
     DISCORD, SIMPLE, DUAL
 }
 
-enum class PatreonTier(val pledge: Int, val supporting: Boolean, val title: String) {
-    None(0, false, ""), Supporter(350, true, "Supporter"), SupporterPlus(1000, true, "Supporter+");
+enum class PatreonTier(val pledge: Int, val supporting: Boolean, val title: String, val maxWips: Int) {
+    None(0, false, "", 10), Supporter(350, true, "Supporter", 20), SupporterPlus(1000, true, "Supporter+", 50);
 
     companion object {
+        val maxWipsMessage = "Too many unpublished maps. Either delete or publish your existing maps. To gain additional unpublished slots become a site supporter."
         fun fromPledge(pledge: Int) = values().filter { it.pledge >= pledge }.minBy { it.pledge }
     }
 }
@@ -64,7 +65,9 @@ data class UserStats(
 data class UserFollowData(
     val followers: Int,
     val follows: Int?,
-    val following: Boolean?
+    val following: Boolean,
+    val upload: Boolean,
+    val curation: Boolean
 )
 
 @Serializable
@@ -101,7 +104,7 @@ data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val curator
 data class UserSuspendRequest(val userId: Int, val suspended: Boolean, val reason: String?)
 
 @Serializable
-data class UserFollowRequest(val userId: Int, val followed: Boolean)
+data class UserFollowRequest(val userId: Int, val following: Boolean, val upload: Boolean, val curation: Boolean)
 
 @Serializable
 data class SessionRevokeRequest(val userId: Int? = null, val site: Boolean? = null, val reason: String? = null)
