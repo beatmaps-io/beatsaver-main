@@ -18,6 +18,7 @@ import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.Collaboration
+import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistDao
@@ -52,6 +53,7 @@ import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
@@ -199,6 +201,9 @@ fun Route.mapDetailRoute() {
                             Beatmap.select {
                                 Beatmap.id eq mapUpdate.id
                             }.complexToBeatmap().single().let {
+                                // Handle alerts for curation
+                                // When curating we send alerts to the uploader and their followers
+                                // When uncurating we just send alerts to the uploader
                                 if (mapUpdate.curated) {
                                     Alert.insert(
                                         "Your map has been curated",
@@ -207,6 +212,21 @@ fun Route.mapDetailRoute() {
                                         EAlertType.Curation,
                                         it.uploader.id.value
                                     )
+
+                                    val recipients = Follows.select {
+                                        Follows.userId eq it.uploader.id.value and Follows.curation
+                                    }.map { row ->
+                                        row[Follows.followerId].value
+                                    }
+
+                                    Alert.insert(
+                                        "Map Curated",
+                                        "@${user.uniqueName} just curated #${toHexString(mapUpdate.id)}: **${it.name}**.\n" +
+                                            "*\"${it.description.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                        EAlertType.MapCurated,
+                                        recipients
+                                    )
+                                    updateAlertCount(recipients.plus(it.uploader.id.value))
                                 } else {
                                     Alert.insert(
                                         "Your map has been uncurated",
@@ -215,8 +235,8 @@ fun Route.mapDetailRoute() {
                                         EAlertType.Uncuration,
                                         it.uploader.id.value
                                     )
+                                    updateAlertCount(it.uploader.id.value)
                                 }
-                                updateAlertCount(it.uploader.id.value)
                             }
                         }
                     }

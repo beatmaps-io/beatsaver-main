@@ -20,6 +20,7 @@ import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.db.length
 import io.beatmaps.common.db.startsWith
+import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
@@ -96,7 +97,6 @@ import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.min
@@ -263,18 +263,17 @@ fun followData(uploaderId: Int, userId: Int?): UserFollowData {
         countWithFilter(followerFilter)
     }
 
-    val followingColumn = if (userId == null || userId == uploaderId) {
-        Op.nullOp()
-    } else {
-        countWithFilter(userFilter and followerFilter) greater intLiteral(0)
-    }
+    val followingColumn = countWithFilter(userFilter and followerFilter) greater intLiteral(0)
+    fun followingColumn(column: Column<Boolean>) = countWithFilter(userFilter and followerFilter and column) greater intLiteral(0)
+    val uploadColumn = followingColumn(Follows.upload)
+    val curationColumn = followingColumn(Follows.curation)
 
     return Follows
-        .slice(userColumn, followerColumn, followingColumn).select {
+        .slice(userColumn, followerColumn, followingColumn, uploadColumn, curationColumn).select {
             userFilter or followerFilter
         }
         .single().let {
-            UserFollowData(it[userColumn], it[followerColumn], it[followingColumn])
+            UserFollowData(it[userColumn], it[followerColumn], it[followingColumn], it[uploadColumn], it[curationColumn])
         }
 }
 
@@ -911,12 +910,14 @@ fun Route.userRoute() {
             val req = call.receive<UserFollowRequest>()
 
             transaction {
-                if (req.followed) {
-                    Follows.insertIgnore { follow ->
+                if (req.following) {
+                    Follows.upsert(conflictIndex = Follows.link) { follow ->
                         follow[userId] = req.userId
                         follow[followerId] = user.userId
                         follow[since] = NowExpression(since.columnType)
-                    }.insertedCount
+                        follow[upload] = req.upload
+                        follow[curation] = req.curation
+                    }
                 } else {
                     Follows.deleteWhere {
                         (Follows.userId eq req.userId) and (Follows.followerId eq user.userId)

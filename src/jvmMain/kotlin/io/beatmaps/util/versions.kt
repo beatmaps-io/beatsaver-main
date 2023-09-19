@@ -110,9 +110,9 @@ fun publishVersion(mapId: Int, hash: String, rb: RabbitMQInstance?, additionalCa
 
 fun pushAlerts(map: BeatmapDao, rb: RabbitMQInstance?) {
     val recipients = Follows.select {
-        Follows.userId eq map.uploaderId
-    }.let {
-        it.map { row -> row[Follows.followerId].value }
+        Follows.userId eq map.uploaderId and Follows.upload
+    }.map { row ->
+        row[Follows.followerId].value
     }
 
     Alert.insert(
