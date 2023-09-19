@@ -21,6 +21,7 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
 import io.beatmaps.common.pub
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -314,6 +315,7 @@ fun Route.reviewRoute() {
                         EAlertType.ReviewDeletion,
                         single.userId
                     )
+                    updateAlertCount(single.userId)
                 }
             }
 

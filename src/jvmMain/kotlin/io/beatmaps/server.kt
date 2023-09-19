@@ -49,6 +49,7 @@ import io.beatmaps.login.patreon.patreonLink
 import io.beatmaps.login.server.installOauth2
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
+import io.beatmaps.util.alertsThread
 import io.beatmaps.util.downloadsThread
 import io.beatmaps.util.playlistStats
 import io.beatmaps.util.reviewListeners
@@ -343,18 +344,22 @@ fun Application.beatmapsio() {
 
                 queueDeclare("bm.reviewDiscordHook", true, false, false, genericQueueConfig)
                 queueBind("bm.reviewDiscordHook", "beatmaps", "reviews.*.created")
+
+                queueDeclare("bm.alertCount", true, false, false, genericQueueConfig)
+                queueBind("bm.alertCount", "beatmaps", "user.alerts.*")
             }
         }
         downloadsThread()
+        alertsThread()
         filenameUpdater()
         reviewListeners()
+        playlistStats()
+        emailQueue()
     }
     installOauth2()
 
     scheduleTask()
     scheduleCleanser()
-    playlistStats()
-    emailQueue()
 
     routing {
         get("/") {

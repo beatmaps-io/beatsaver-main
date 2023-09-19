@@ -33,6 +33,7 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -215,6 +216,7 @@ fun Route.mapDetailRoute() {
                                         it.uploader.id.value
                                     )
                                 }
+                                updateAlertCount(it.uploader.id.value)
                             }
                         }
                     }
@@ -307,6 +309,7 @@ fun Route.mapDetailRoute() {
                                 EAlertType.Deletion,
                                 oldData.uploaderId.value
                             )
+                            updateAlertCount(oldData.uploaderId.value)
                         }
                     }
                 }

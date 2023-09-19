@@ -1108,42 +1108,31 @@ fun Route.userRoute() {
         statTmp.copy(diffStats = diffStats)
     }
 
+    fun userBy(where: SqlExpressionBuilder.() -> Op<Boolean>) =
+        UserDao.wrapRow(User.joinPatreon().select(where).handlePatreon().firstOrNull() ?: throw NotFoundException())
+
     get<UsersApi.Me> {
         requireAuthorization {
-            val (user, detail, alertCount) = transaction {
-                val user = UserDao.wrapRow(
-                    User
-                        .joinPatreon()
-                        .select {
-                            User.id.eq(it.userId)
-                        }
-                        .handlePatreon()
-                        .single()
-                )
+            val detail = transaction {
+                val user = userBy {
+                    User.id eq it.userId
+                }
 
                 val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
                 val followData = followData(it.userId, it.userId)
 
-                Triple(
-                    user,
-                    UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let { usr ->
-                        if (dualAccount) {
-                            usr.copy(type = AccountType.DUAL, email = user.email)
-                        } else {
-                            usr.copy(email = user.email)
-                        }
-                    },
-                    alertCount(it.userId)
-                )
+                UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let { usr ->
+                    if (dualAccount) {
+                        usr.copy(type = AccountType.DUAL, email = user.email)
+                    } else {
+                        usr.copy(email = user.email)
+                    }
+                }
             }
 
-            call.sessions.set(Session.fromUser(user, alertCount, it.oauth2ClientId, call))
             call.respond(detail)
         }
     }
-
-    fun userBy(where: SqlExpressionBuilder.() -> Op<Boolean>) =
-        UserDao.wrapRow(User.joinPatreon().select(where).handlePatreon().firstOrNull() ?: throw NotFoundException())
 
     options<MapsApi.UserId> {
         call.response.header("Access-Control-Allow-Origin", "*")

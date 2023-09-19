@@ -25,6 +25,7 @@ import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
+import io.beatmaps.common.rb
 import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.controllers.userWipCount
 import io.beatmaps.login.Session
@@ -282,7 +283,7 @@ fun Route.testplayRoute() {
                 )
 
                 if (newState.state == EMapState.Published) {
-                    publishVersion(newState.mapId, newState.hash) {
+                    publishVersion(newState.mapId, newState.hash, call.rb()) {
                         it and (Beatmap.uploader eq sess.userId)
                     }
                 } else {

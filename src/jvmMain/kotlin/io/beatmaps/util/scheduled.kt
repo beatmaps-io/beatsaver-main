@@ -46,7 +46,7 @@ class CheckScheduled(private val rb: RabbitMQInstance) : TimerTask() {
                 ).mapNotNull {
                     schedulerLogger.info("Scheduler publishing ${it.hash}")
                     runBlocking { delay(1L) }
-                    if (publishVersion(it.mapId.value, it.hash)) it else null
+                    if (publishVersion(it.mapId.value, it.hash, rb)) it else null
                 }
             }.forEach {
                 rb.publish("beatmaps", "maps.${it.mapId.value}.updated.state", null, it.mapId.value)
