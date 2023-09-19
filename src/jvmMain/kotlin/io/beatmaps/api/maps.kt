@@ -53,7 +53,6 @@ import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
@@ -198,20 +197,22 @@ fun Route.mapDetailRoute() {
 
                     (curateMap() > 0).also { success ->
                         if (success) {
-                            Beatmap.select {
+                            Beatmap.joinUploader().select {
                                 Beatmap.id eq mapUpdate.id
                             }.complexToBeatmap().single().let {
                                 // Handle alerts for curation
                                 // When curating we send alerts to the uploader and their followers
                                 // When uncurating we just send alerts to the uploader
                                 if (mapUpdate.curated) {
-                                    Alert.insert(
-                                        "Your map has been curated",
-                                        "@${user.uniqueName} just curated your map #${toHexString(mapUpdate.id)}: **${it.name}**.\n" +
-                                            "Congratulations!",
-                                        EAlertType.Curation,
-                                        it.uploader.id.value
-                                    )
+                                    if (it.uploader.curationAlerts) {
+                                        Alert.insert(
+                                            "Your map has been curated",
+                                            "@${user.uniqueName} just curated your map #${toHexString(mapUpdate.id)}: **${it.name}**.\n" +
+                                                "Congratulations!",
+                                            EAlertType.Curation,
+                                            it.uploader.id.value
+                                        )
+                                    }
 
                                     val recipients = Follows.select {
                                         Follows.userId eq it.uploader.id.value and Follows.curation

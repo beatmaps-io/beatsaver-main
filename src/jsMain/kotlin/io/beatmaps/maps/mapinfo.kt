@@ -1,6 +1,7 @@
 package io.beatmaps.maps
 
 import external.Axios
+import external.AxiosResponse
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.BookmarkRequest
@@ -303,20 +304,20 @@ val mapInfo = fc<MapInfoProps> { props ->
     val (error, setError) = useState<String?>(null)
     val (editing, setEditing) = useState(false)
 
+    @Suppress("UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
     fun recall() {
         setLoading(true)
 
         props.mapInfo.publishedVersion()?.hash?.let { hash ->
-            Axios.post<String>("${Config.apibase}/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.intId(), reasonRef.current?.value), generateConfig<StateUpdate, String>(validateStatus = false))
+            Axios.post<String>("${Config.apibase}/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.intId(), reasonRef.current?.value), generateConfig<StateUpdate, String>())
                 .then({
-                    if (it.status == 200) {
-                        props.reloadMap()
-                    } else if (it.status == 400) {
-                        setError(json.decodeFromString<ErrorResponse>(it.data).error)
+                    props.reloadMap()
+                }) {
+                    val response = it.asDynamic().response as? AxiosResponse<String>
+                    if (response?.status == 400) {
+                        setError(json.decodeFromString<ErrorResponse>(response.data).error)
                     }
 
-                    setLoading(false)
-                }) {
                     setLoading(false)
                 }
         }

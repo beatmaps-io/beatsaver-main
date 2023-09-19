@@ -133,12 +133,11 @@ external interface AxiosStatic : AxiosInstance {
 @JsNonModule
 external val Axios: AxiosStatic = definedExternally
 
-inline fun <reified T, reified U> generateConfig(ct: CancelToken? = null, validateStatus: Boolean = true) = object : AxiosRequestConfig {
+inline fun <reified T, reified U> generateConfig(ct: CancelToken? = null) = object : AxiosRequestConfig {
     override var cancelToken = ct
     override var transformRequest: Array<(T, dynamic) -> String> = arrayOf(
         { data, headers -> transformRequest(data, headers) }
     )
-    override var validateStatus: ((status: Number) -> Boolean)? = if (validateStatus) super.validateStatus else ({ true })
     override var transformResponse: (String) -> U = {
         if (it is U) {
             it
