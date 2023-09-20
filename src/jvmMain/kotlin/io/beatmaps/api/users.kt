@@ -154,7 +154,7 @@ fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: Use
     UserDetail(
         other.id.value, other.uniqueName ?: other.name, if (description) other.description else null, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
         getAvatar(other), stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
-        admin = other.admin, curator = other.curator, verifiedMapper = other.verifiedMapper, suspendedAt = other.suspendedAt?.toKotlinInstant(),
+        admin = other.admin, curator = other.curator, curatorTab = other.curatorTab, verifiedMapper = other.verifiedMapper, suspendedAt = other.suspendedAt?.toKotlinInstant(),
         playlistUrl = "${Config.apiBase(true)}/users/id/${other.id.value}/playlist", patreon = if (patreon) other.patreon.toTier() else null
     )
 
@@ -349,6 +349,7 @@ fun Route.userRoute() {
                                 u[uploadLimit] = req.maxUploadSize
                                 u[curator] = req.curator
                                 u[verifiedMapper] = req.verifiedMapper
+                                u[curatorTab] = req.curatorTab
                             } > 0
 
                         runUpdate().also {
@@ -356,7 +357,7 @@ fun Route.userRoute() {
                                 ModLog.insert(
                                     sess.userId,
                                     null,
-                                    UploadLimitData(req.maxUploadSize, req.curator, req.verifiedMapper),
+                                    UploadLimitData(req.maxUploadSize, req.curator, req.verifiedMapper, req.curatorTab),
                                     req.userId
                                 )
                             }

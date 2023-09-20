@@ -198,6 +198,10 @@ val modLogEntryRenderer = fc<ModLogEntryProps> {
                                     br {}
                                     +"Verified Mapper: $vm"
                                 }
+                                it.action.curatorTab?.let { vm ->
+                                    br {}
+                                    +"Curator Tab: $vm"
+                                }
                             }
                         }
 
