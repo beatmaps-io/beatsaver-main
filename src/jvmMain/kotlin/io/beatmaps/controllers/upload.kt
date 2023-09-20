@@ -3,8 +3,10 @@ package io.beatmaps.controllers
 import ch.compile.recaptcha.ReCaptchaVerify
 import com.fasterxml.jackson.databind.ObjectWriter
 import io.beatmaps.api.FailedUploadResponse
+import io.beatmaps.api.PatreonTier
 import io.beatmaps.api.handleMultipart
 import io.beatmaps.api.requireAuthorization
+import io.beatmaps.api.toTier
 import io.beatmaps.common.BSPrettyPrinter
 import io.beatmaps.common.Config
 import io.beatmaps.common.CopyException
@@ -20,6 +22,8 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
+import io.beatmaps.common.dbo.handlePatreon
+import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.jackson
 import io.beatmaps.common.localAudioFolder
 import io.beatmaps.common.localAvatarFolder
@@ -55,6 +59,7 @@ import net.coobird.thumbnailator.Thumbnails
 import net.coobird.thumbnailator.tasks.UnsupportedFormatException
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
@@ -86,6 +91,13 @@ class UploadMap
 class UploadAvatar
 
 private val uploadLogger = Logger.getLogger("bmio.Upload")
+
+fun userWipCount(userId: Int) = Beatmap
+    .join(Versions, JoinType.LEFT, onColumn = Beatmap.id, otherColumn = Versions.mapId) {
+        Versions.state eq EMapState.Published
+    }.select {
+        Beatmap.uploader eq userId and Beatmap.deletedAt.isNull() and Versions.id.isNull()
+    }.count()
 
 fun Route.uploadController() {
     get<UploadMap> {
@@ -135,15 +147,23 @@ fun Route.uploadController() {
 
     post<UploadMap> {
         val session = call.sessions.get<Session>() ?: throw UploadException("Not logged in")
-        val (currentLimit, nameSet, suspended) = transaction {
-            val user = UserDao[session.userId]
-            Triple(user.uploadLimit, (user.active && user.uniqueName != null), user.suspendedAt != null)
+        val (user, patreon, currentWipCount) = transaction {
+            val user = UserDao.wrapRow(
+                User.joinPatreon().select { User.id eq session.userId }.handlePatreon().first()
+            )
+
+            Triple(user, user.patreon, userWipCount(session.userId))
         }
 
         // Throw error if user is missing a username
-        nameSet || throw UploadException("Please pick a username to complete your account")
+        (user.active && user.uniqueName != null) || throw UploadException("Please pick a username to complete your account")
 
-        !suspended || throw UploadException("Suspended account")
+        // Don't allow suspended users to upload
+        user.suspendedAt == null || throw UploadException("Suspended account")
+
+        // Limit WIP maps
+        val maxWips = (patreon.toTier() ?: PatreonTier.None).maxWips
+        currentWipCount < maxWips || throw UploadException(PatreonTier.maxWipsMessage)
 
         val file = File(
             uploadDir,
@@ -158,7 +178,7 @@ fun Route.uploadController() {
             extractedInfoTmp = part.streamProvider().use { its ->
                 try {
                     file.outputStream().buffered().use {
-                        its.copyToSuspend(it, sizeLimit = currentLimit * 1024 * 1024)
+                        its.copyToSuspend(it, sizeLimit = user.uploadLimit * 1024 * 1024)
                     }.run {
                         DigestOutputStream(OutputStream.nullOutputStream(), md).use { dos ->
                             openZip(file) {

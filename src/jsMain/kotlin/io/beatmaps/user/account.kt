@@ -341,28 +341,43 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                 attrs.sessions = s
             }
         }
-        if (props.userDetail.type == AccountType.DUAL) {
+        if (props.userDetail.type != AccountType.DISCORD) {
             form(classes = "user-form", action = "/profile/unlink-discord", method = FormMethod.post) {
                 h5("mt-5") {
-                    +"Unlink discord"
+                    +"Discord"
                 }
                 hr("mt-2") {}
                 div("mb-3 d-grid") {
-                    button(classes = "btn btn-danger", type = ButtonType.submit) {
-                        attrs.disabled = state.loading == true
-                        +"Unlink discord"
+                    if (props.userDetail.type == AccountType.SIMPLE) {
+                        // Can't use form as redirect to external site triggers CSP
+                        a(classes = "btn btn-info", href = "/discord-link") {
+                            +"Link discord"
+                        }
+                    } else {
+                        button(classes = "btn btn-info", type = ButtonType.submit) {
+                            attrs.disabled = state.loading == true
+                            +"Unlink discord"
+                        }
                     }
                 }
             }
-        } else if (props.userDetail.type == AccountType.SIMPLE) {
-            form(classes = "user-form", action = "/profile/unlink-discord", method = FormMethod.post) {
-                h5("mt-5") {
-                    +"Link discord"
-                }
-                hr("mt-2") {}
-                div("mb-3 d-grid") {
-                    a("/discord-link", classes = "btn btn-info") {
-                        +"Link discord"
+        }
+
+        form(classes = "user-form", action = "/profile/unlink-patreon", method = FormMethod.post) {
+            h5("mt-5") {
+                +"Patreon"
+            }
+            hr("mt-2") {}
+            div("mb-3 d-grid") {
+                if (props.userDetail.patreon == null) {
+                    // Can't use form as redirect to external site triggers CSP
+                    a(classes = "btn btn-patreon", href = "/patreon") {
+                        +"Link patreon"
+                    }
+                } else {
+                    button(classes = "btn btn-patreon", type = ButtonType.submit) {
+                        attrs.disabled = state.loading == true
+                        +"Unlink patreon"
                     }
                 }
             }

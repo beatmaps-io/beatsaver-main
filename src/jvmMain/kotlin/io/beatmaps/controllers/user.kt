@@ -31,6 +31,9 @@ class UserController {
     @Location("/unlink-discord")
     data class UnlinkDiscord(val api: UserController)
 
+    @Location("/unlink-patreon")
+    data class UnlinkPatreon(val api: UserController)
+
     @Location("/{id?}")
     data class Detail(val id: Int? = null, val api: UserController)
 
@@ -105,6 +108,20 @@ fun Route.userController() {
             transaction {
                 User.update({ User.id eq sess.userId }) {
                     it[discordId] = null
+                }
+            }
+            call.respondRedirect("/profile#account")
+        } else {
+            call.respondRedirect("/login")
+        }
+    }
+
+    post<UserController.UnlinkPatreon> {
+        val sess = call.sessions.get<Session>()
+        if (sess != null) {
+            transaction {
+                User.update({ User.id eq sess.userId }) {
+                    it[patreonId] = null
                 }
             }
             call.respondRedirect("/profile#account")

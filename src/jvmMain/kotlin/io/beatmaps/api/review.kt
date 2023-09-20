@@ -14,6 +14,7 @@ import io.beatmaps.common.dbo.Review
 import io.beatmaps.common.dbo.ReviewDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
@@ -21,6 +22,7 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
 import io.beatmaps.common.pub
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -242,7 +244,11 @@ fun Route.reviewRoute() {
                             r[sentiment] = update.sentiment.dbValue
                         }
                     } else {
-                        if (BeatmapDao[updateMapId].uploaderId.value == single.userId) {
+                        val map = Beatmap.joinUploader().select {
+                            Beatmap.id eq updateMapId
+                        }.complexToBeatmap().single()
+
+                        if (map.uploaderId.value == single.userId) {
                             // Can't review your own map
                             call.respond(ActionResponse(false, listOf("Own map")))
                             return@newSuspendedTransaction false
@@ -256,6 +262,17 @@ fun Route.reviewRoute() {
                             r[createdAt] = NowExpression(createdAt.columnType)
                             r[updatedAt] = NowExpression(updatedAt.columnType)
                             r[deletedAt] = null
+                        }
+
+                        if (map.uploader.reviewAlerts) {
+                            Alert.insert(
+                                "New review on your map",
+                                "@${sess.uniqueName} just reviewed your map #${toHexString(updateMapId)}: **${map.name}**.\n" +
+                                    "*\"${newText.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                EAlertType.Review,
+                                map.uploaderId.value
+                            )
+                            updateAlertCount(map.uploaderId.value)
                         }
                     }
 
@@ -314,6 +331,7 @@ fun Route.reviewRoute() {
                         EAlertType.ReviewDeletion,
                         single.userId
                     )
+                    updateAlertCount(single.userId)
                 }
             }
 

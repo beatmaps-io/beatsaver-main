@@ -20,11 +20,14 @@ import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.db.length
 import io.beatmaps.common.db.startsWith
+import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.OauthClient
+import io.beatmaps.common.dbo.Patreon
+import io.beatmaps.common.dbo.PatreonDao
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.RefreshTokenTable
 import io.beatmaps.common.dbo.User
@@ -32,6 +35,8 @@ import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.UserLog
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.handlePatreon
+import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.sendEmail
 import io.beatmaps.login.MongoClient
@@ -92,7 +97,6 @@ import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.min
@@ -136,15 +140,26 @@ fun parseJwtUntrusted(jwt: String): Jwt<Header<*>, Claims> =
 
 fun UserDetail.Companion.getAvatar(other: UserDao) = other.avatar ?: "https://www.gravatar.com/avatar/${other.hash ?: md5(other.uniqueName ?: other.name)}?d=retro"
 
-fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null, description: Boolean = false) =
+fun PatreonDao?.toTier() = if (this != null) {
+    if (expireAt?.let { it.toKotlinInstant() >= Clock.System.now() } == true) {
+        PatreonTier.fromPledge(pledge ?: 0)
+    } else {
+        PatreonTier.None
+    }
+} else {
+    null
+}
+
+fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null, description: Boolean = false, patreon: Boolean = false) =
     UserDetail(
         other.id.value, other.uniqueName ?: other.name, if (description) other.description else null, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
         getAvatar(other), stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
         admin = other.admin, curator = other.curator, verifiedMapper = other.verifiedMapper, suspendedAt = other.suspendedAt?.toKotlinInstant(),
-        playlistUrl = "${Config.apiBase(true)}/users/id/${other.id.value}/playlist"
+        playlistUrl = "${Config.apiBase(true)}/users/id/${other.id.value}/playlist", patreon = if (patreon) other.patreon.toTier() else null
     )
 
-fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false) = from(UserDao.wrapRow(row), roles)
+fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null, description: Boolean = false, patreon: Boolean = false) =
+    from(UserDao.wrapRow(row), roles, stats, followData, description, patreon)
 actual object UserDetailHelper {
     actual fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean) = Config.siteBase(absolute) + "/profile/${userDetail.id}" + (tab?.let { "#$it" } ?: "")
 }
@@ -248,18 +263,17 @@ fun followData(uploaderId: Int, userId: Int?): UserFollowData {
         countWithFilter(followerFilter)
     }
 
-    val followingColumn = if (userId == null || userId == uploaderId) {
-        Op.nullOp()
-    } else {
-        countWithFilter(userFilter and followerFilter) greater intLiteral(0)
-    }
+    val followingColumn = countWithFilter(userFilter and followerFilter) greater intLiteral(0)
+    fun followingColumn(column: Column<Boolean>) = countWithFilter(userFilter and followerFilter and column) greater intLiteral(0)
+    val uploadColumn = followingColumn(Follows.upload)
+    val curationColumn = followingColumn(Follows.curation)
 
     return Follows
-        .slice(userColumn, followerColumn, followingColumn).select {
+        .slice(userColumn, followerColumn, followingColumn, uploadColumn, curationColumn).select {
             userFilter or followerFilter
         }
         .single().let {
-            UserFollowData(it[userColumn], it[followerColumn], it[followingColumn])
+            UserFollowData(it[userColumn], it[followerColumn], it[followingColumn], it[uploadColumn], it[curationColumn])
         }
 }
 
@@ -896,12 +910,14 @@ fun Route.userRoute() {
             val req = call.receive<UserFollowRequest>()
 
             transaction {
-                if (req.followed) {
-                    Follows.insertIgnore { follow ->
+                if (req.following) {
+                    Follows.upsert(conflictIndex = Follows.link) { follow ->
                         follow[userId] = req.userId
                         follow[followerId] = user.userId
                         follow[since] = NowExpression(since.columnType)
-                    }.insertedCount
+                        follow[upload] = req.upload
+                        follow[curation] = req.curation
+                    }
                 } else {
                     Follows.deleteWhere {
                         (Follows.userId eq req.userId) and (Follows.followerId eq user.userId)
@@ -915,17 +931,15 @@ fun Route.userRoute() {
 
     get<UsersApi.Find> {
         val user = transaction {
-            UserDao.wrapRows(
-                User.select {
-                    User.hash.eq(it.id) and User.active
-                }
-            ).firstOrNull()
+            User.select {
+                User.hash.eq(it.id) and User.active
+            }.firstOrNull()?.let { row -> UserDetail.from(row) }
         }
 
         if (user == null) {
             call.respond(HttpStatusCode.NotFound)
         } else {
-            call.respond(UserDetail.from(user))
+            call.respond(user)
         }
     }
 
@@ -1095,38 +1109,31 @@ fun Route.userRoute() {
         statTmp.copy(diffStats = diffStats)
     }
 
+    fun userBy(where: SqlExpressionBuilder.() -> Op<Boolean>) =
+        UserDao.wrapRow(User.joinPatreon().select(where).handlePatreon().firstOrNull() ?: throw NotFoundException())
+
     get<UsersApi.Me> {
         requireAuthorization {
-            val (user, alertCount, followData) = transaction {
-                Triple(
-                    UserDao.wrapRows(
-                        User.select {
-                            User.id.eq(it.userId)
-                        }
-                    ).first(),
-                    alertCount(it.userId),
-                    followData(it.userId, it.userId)
-                )
-            }
+            val detail = transaction {
+                val user = userBy {
+                    User.id eq it.userId
+                }
 
-            call.sessions.set(Session.fromUser(user, alertCount, it.oauth2ClientId, call))
+                val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
+                val followData = followData(it.userId, it.userId)
 
-            val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
-
-            call.respond(
-                UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true).let { usr ->
+                UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let { usr ->
                     if (dualAccount) {
                         usr.copy(type = AccountType.DUAL, email = user.email)
                     } else {
                         usr.copy(email = user.email)
                     }
                 }
-            )
+            }
+
+            call.respond(detail)
         }
     }
-
-    fun userBy(where: SqlExpressionBuilder.() -> Op<Boolean>) =
-        UserDao.wrapRows(User.select(where)).firstOrNull() ?: throw NotFoundException()
 
     options<MapsApi.UserId> {
         call.response.header("Access-Control-Allow-Origin", "*")
@@ -1134,17 +1141,18 @@ fun Route.userRoute() {
     }
     get<MapsApi.UserId>("Get user info".responds(ok<UserDetail>(), notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
-        val (user, followData) = transaction {
-            userBy {
+        val userDetail = transaction {
+            val user = userBy {
                 (User.id eq it.id) and User.active
-            } to followData(it.id, call.sessions.get<Session>()?.userId)
-        }
+            }
+            val followData = followData(it.id, call.sessions.get<Session>()?.userId)
 
-        val userDetail = UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true).let {
-            if (call.sessions.get<Session>()?.isAdmin() == true) {
-                it.copy(uploadLimit = user.uploadLimit)
-            } else {
-                it
+            UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let {
+                if (call.sessions.get<Session>()?.isAdmin() == true) {
+                    it.copy(uploadLimit = user.uploadLimit)
+                } else {
+                    it
+                }
             }
         }
 
@@ -1157,13 +1165,15 @@ fun Route.userRoute() {
     }
     get<MapsApi.UserName>("Get user info by name".responds(ok<UserDetail>(), notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
-        val user = transaction {
-            userBy {
+        val userDetail = transaction {
+            val user = userBy {
                 (User.uniqueName eq it.name) and User.active
             }
+
+            UserDetail.from(user, stats = statsForUser(user), description = true, patreon = true)
         }
 
-        call.respond(UserDetail.from(user, stats = statsForUser(user), description = true))
+        call.respond(userDetail)
     }
 
     fun getFollowerData(page: Long, joinOn: Column<EntityID<Int>>, condition: SqlExpressionBuilder.() -> Op<Boolean>) = transaction {
@@ -1176,19 +1186,22 @@ fun Route.userRoute() {
 
         followsSubquery
             .join(User, JoinType.LEFT, followsSubquery[joinOn], User.id)
+            .joinPatreon()
             .join(Beatmap, JoinType.LEFT, User.id, Beatmap.uploader) {
                 Beatmap.deletedAt.isNull()
             }
             .join(Versions, JoinType.LEFT, onColumn = Beatmap.id, otherColumn = Versions.mapId, additionalConstraint = { Versions.state eq EMapState.Published })
             .slice(
                 User.id, User.name, User.uniqueName, User.avatar, User.discordId, User.hash,
-                Versions.mapId.count(), User.admin, User.curator, User.verifiedMapper, User.suspendedAt
+                Versions.mapId.count(), User.admin, User.curator, User.verifiedMapper, User.suspendedAt,
+                User.patreonId, Patreon.id, Patreon.pledge, Patreon.tier, Patreon.active, Patreon.expireAt
             )
             .selectAll()
-            .groupBy(User.id, followsSubquery[Follows.since])
+            .groupBy(User.id, Patreon.id, followsSubquery[Follows.since])
             .orderBy(followsSubquery[Follows.since], SortOrder.DESC)
+            .handlePatreon()
             .map { row ->
-                UserDetail.from(UserDao.wrapRow(row), stats = UserStats(totalMaps = row[Versions.mapId.count()].toInt()))
+                UserDetail.from(row, stats = UserStats(totalMaps = row[Versions.mapId.count()].toInt()), patreon = true)
             }
     }
 

@@ -8,6 +8,7 @@ import io.beatmaps.common.dbo.AlertRecipient
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.User
+import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpStatusCode
@@ -50,6 +51,9 @@ class AlertsApi {
 
     @Location("/stats")
     data class Stats(val api: AlertsApi)
+
+    @Location("/options")
+    data class Options(val api: AlertsApi)
 
     @Location("/mark")
     data class Mark(val api: AlertsApi)
@@ -162,19 +166,37 @@ fun Route.alertsRoute() {
         }
 
     get<AlertsApi.Stats> {
-        requireAuthorization(OauthScope.ALERTS) { user ->
-            val statParts = transaction { getStats(user.userId) }
+        requireAuthorization(OauthScope.ALERTS) { sess ->
+            val (statParts, user) = transaction { getStats(sess.userId) to UserDao[sess.userId] }
 
-            call.respond(UserAlertStats.fromParts(statParts))
+            call.respond(UserAlertStats.fromParts(statParts).copy(reviewAlerts = user.reviewAlerts, curationAlerts = user.curationAlerts))
         }
     }
 
-    suspend fun PipelineContext<*, ApplicationCall>.respondStats(user: Session, stats: List<StatPart>?) =
+    post<AlertsApi.Options> {
+        requireAuthorization { sess ->
+            val req = call.receive<AlertOptionsRequest>()
+
+            transaction {
+                User.update({
+                    User.id eq sess.userId
+                }) {
+                    it[reviewAlerts] = req.reviewAlerts
+                    it[curationAlerts] = req.curationAlerts
+                }
+            }
+
+            call.respond(HttpStatusCode.OK)
+        }
+    }
+
+    suspend fun PipelineContext<*, ApplicationCall>.respondStats(sess: Session, stats: List<StatPart>?) =
         if (stats != null) {
             val unread = stats.filter { !it.isRead }.sumOf { it.count }.toInt()
+            val user = transaction { UserDao[sess.userId] }
 
-            call.sessions.set(user.copy(alerts = unread))
-            call.respond(UserAlertStats.fromParts(stats))
+            call.sessions.set(sess.copy(alerts = unread))
+            call.respond(UserAlertStats.fromParts(stats).copy(reviewAlerts = user.reviewAlerts, curationAlerts = user.curationAlerts))
         } else {
             call.respond(HttpStatusCode.BadRequest)
         }

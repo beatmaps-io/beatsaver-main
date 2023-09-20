@@ -5,6 +5,8 @@ import de.nielsfalk.ktor.swagger.SwaggerSupport
 import de.nielsfalk.ktor.swagger.version.shared.Contact
 import de.nielsfalk.ktor.swagger.version.shared.Information
 import de.nielsfalk.ktor.swagger.version.v2.Swagger
+import io.beatmaps.api.ApiException
+import io.beatmaps.api.ErrorResponse
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.alertsRoute
 import io.beatmaps.api.bookmarkRoute
@@ -43,10 +45,11 @@ import io.beatmaps.login.authRoute
 import io.beatmaps.login.discordLogin
 import io.beatmaps.login.installOauth
 import io.beatmaps.login.installSessions
-import io.beatmaps.login.patreonLink
+import io.beatmaps.login.patreon.patreonLink
 import io.beatmaps.login.server.installOauth2
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
+import io.beatmaps.util.alertsThread
 import io.beatmaps.util.downloadsThread
 import io.beatmaps.util.playlistStats
 import io.beatmaps.util.reviewListeners
@@ -141,8 +144,6 @@ fun main() {
 
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::beatmapsio).start(wait = true)
 }
-
-data class ErrorResponse(val error: String)
 
 fun Application.beatmapsio() {
     install(ContentNegotiation) {
@@ -271,6 +272,10 @@ fun Application.beatmapsio() {
             call.respond(HttpStatusCode.InternalServerError, ErrorResponse(cause.message ?: ""))
         }
 
+        exception<ApiException> { cause ->
+            call.respond(HttpStatusCode.BadRequest, cause.toResponse())
+        }
+
         exception<ParameterConversionException> { cause ->
             if (cause.type == Instant::class.toString()) {
                 val now = Clock.System.now().let {
@@ -339,18 +344,22 @@ fun Application.beatmapsio() {
 
                 queueDeclare("bm.reviewDiscordHook", true, false, false, genericQueueConfig)
                 queueBind("bm.reviewDiscordHook", "beatmaps", "reviews.*.created")
+
+                queueDeclare("bm.alertCount", true, false, false, genericQueueConfig)
+                queueBind("bm.alertCount", "beatmaps", "user.alerts.*")
             }
         }
         downloadsThread()
+        alertsThread()
         filenameUpdater()
         reviewListeners()
+        playlistStats()
+        emailQueue()
     }
     installOauth2()
 
     scheduleTask()
     scheduleCleanser()
-    playlistStats()
-    emailQueue()
 
     routing {
         get("/") {

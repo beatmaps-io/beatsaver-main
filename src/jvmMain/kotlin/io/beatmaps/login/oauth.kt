@@ -5,6 +5,7 @@ import io.beatmaps.api.alertCount
 import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.login.patreon.patreonProvider
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.server.application.Application

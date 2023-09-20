@@ -21,8 +21,10 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.shared.review.reviewTable
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.userTitles
+import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
+import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import kotlinx.serialization.decodeFromString
@@ -36,10 +38,12 @@ import react.createRef
 import react.dom.a
 import react.dom.b
 import react.dom.br
+import react.dom.button
 import react.dom.div
 import react.dom.h4
 import react.dom.i
 import react.dom.img
+import react.dom.input
 import react.dom.jsStyle
 import react.dom.li
 import react.dom.p
@@ -67,6 +71,7 @@ external interface ProfilePageState : State {
     var state: ProfileTab?
     var notificationCount: Map<ProfileTab, Int>?
     var followData: UserFollowData?
+    var followsDropdown: Boolean?
 }
 
 enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps, TabContext, ProfilePageState) -> Boolean = { _, _, _ -> true }, val bootCondition: () -> Boolean = { false }, val onSelected: (TabContext) -> Unit = {}) {
@@ -89,6 +94,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
     override fun componentDidMount() {
         setPageTitle("Profile")
+        document.addEventListener("click", hideDropdown)
 
         loadState()
     }
@@ -102,6 +108,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
 
     override fun componentWillUnmount() {
         window.removeEventListener("hashchange", onHashChange)
+        document.removeEventListener("click", hideDropdown)
     }
 
     private val onHashChange = { _: Event? ->
@@ -110,6 +117,12 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         val newState = ProfileTab.values().firstOrNull { hash == it.tabText.lowercase() && it.condition(props, tabContext, state) } ?: state.state
         setState {
             state = newState
+        }
+    }
+
+    private val hideDropdown = { _: Event? ->
+        setState {
+            followsDropdown = false
         }
     }
 
@@ -163,15 +176,24 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         window.addEventListener("hashchange", onHashChange)
     }
 
-    private fun setFollowStatus(followed: Boolean) {
-        Axios.post<UserFollowRequest>("${Config.apibase}/users/follow", UserFollowRequest(state.userDetail?.id ?: 0, followed), generateConfig<UserFollowRequest, String>()).then({
+    private fun setFollowStatus(following: Boolean, upload: Boolean, curation: Boolean) {
+        val req = UserFollowRequest(state.userDetail?.id ?: 0, following, upload, curation)
+        Axios.post<UserFollowRequest>("${Config.apibase}/users/follow", req, generateConfig<UserFollowRequest, String>()).then({
             setState {
                 followData = UserFollowData(
                     (followData?.followers ?: 0).let {
-                        if (followed) it + 1 else it - 1
+                        if (followData?.following == following) {
+                            it
+                        } else if (following) {
+                            it + 1
+                        } else {
+                            it - 1
+                        }
                     },
                     followData?.follows,
-                    followed
+                    following,
+                    upload,
+                    curation
                 )
             }
         }) { }
@@ -202,7 +224,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         }
         div("row") {
             div("col-md-4 mb-3") {
-                div("card user-info") {
+                div("card user-info" + if (state.userDetail?.patreon?.supporting == true) " border border-3 border-patreon" else "") {
                     div("card-body") {
                         div("d-flex align-items-center mb-2") {
                             img("Profile Image", state.userDetail?.avatar, classes = "rounded-circle me-3") {
@@ -271,20 +293,53 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                         }
                                     }
                                 }
-                                state.followData?.following?.let { following ->
+                                state.followData?.let { fd ->
                                     div("btn-group") {
-                                        a("#", classes = "btn btn-" + if (following) "secondary" else "primary") {
+                                        val btnClasses = "btn btn-" + if (fd.following) "secondary" else "primary"
+                                        button(classes = btnClasses) {
                                             attrs.onClickFunction = { e ->
                                                 e.preventDefault()
-                                                setFollowStatus(!following)
+                                                setFollowStatus(!fd.following, !fd.following, !fd.following)
                                             }
 
-                                            if (following) {
+                                            if (fd.following) {
                                                 i("fas fa-user-minus") { }
                                                 +"Unfollow"
                                             } else {
                                                 i("fas fa-user-plus") { }
                                                 +"Follow"
+                                            }
+                                        }
+                                        div("btn-group") {
+                                            button(classes = "dropdown-toggle $btnClasses") {
+                                                attrs.onClickFunction = {
+                                                    it.stopPropagation()
+                                                    setState {
+                                                        followsDropdown = followsDropdown != true
+                                                    }
+                                                }
+                                            }
+                                            div("dropdown-menu mt-4" + if (state.followsDropdown == true) " show" else "") {
+                                                a("#", classes = "dropdown-item") {
+                                                    attrs.onClickFunction = {
+                                                        it.stopPropagation()
+                                                        setFollowStatus(fd.following || !fd.upload || fd.curation, !fd.upload, fd.curation)
+                                                    }
+                                                    input(InputType.checkBox, classes = "form-check-input me-2") {
+                                                        attrs.checked = fd.upload
+                                                    }
+                                                    +"Uploads"
+                                                }
+                                                a("#", classes = "dropdown-item") {
+                                                    attrs.onClickFunction = {
+                                                        it.stopPropagation()
+                                                        setFollowStatus(fd.following || fd.upload || !fd.curation, fd.upload, !fd.curation)
+                                                    }
+                                                    input(InputType.checkBox, classes = "form-check-input me-2") {
+                                                        attrs.checked = fd.curation
+                                                    }
+                                                    +"Curations"
+                                                }
                                             }
                                         }
                                     }
