@@ -35,6 +35,7 @@ data class UserDetail(
     val uploadLimit: Int? = null,
     val admin: Boolean? = null,
     val curator: Boolean? = null,
+    val curatorTab: Boolean = false,
     val verifiedMapper: Boolean = false,
     val suspendedAt: Instant? = null,
     val playlistUrl: String? = null,
@@ -98,7 +99,7 @@ data class ChangeEmailRequest(val jwt: String, val password: String)
 data class AccountRequest(val currentPassword: String? = null, val password: String? = null, val password2: String? = null)
 
 @Serializable
-data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val curator: Boolean, val verifiedMapper: Boolean)
+data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val curator: Boolean, val curatorTab: Boolean, val verifiedMapper: Boolean)
 
 @Serializable
 data class UserSuspendRequest(val userId: Int, val suspended: Boolean, val reason: String?)

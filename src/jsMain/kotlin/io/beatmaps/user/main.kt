@@ -78,7 +78,7 @@ enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps, Tab
     PUBLISHED("Published", bootCondition = { (localStorage["profile.showwip"] == "false") }, onSelected = { if (it.userId == null) { localStorage["profile.showwip"] = "false" } }),
     UNPUBLISHED("Unpublished", condition = { _, c, _ -> (c.userId == null) }, bootCondition = { (localStorage["profile.showwip"] == "true") }, onSelected = { if (it.userId == null) { localStorage["profile.showwip"] = "true" } }),
     PLAYLISTS("Playlists"),
-    CURATED("Curated", condition = { _, _, it -> (it.userDetail?.curator == true) }),
+    CURATED("Curated", condition = { _, _, it -> (it.userDetail?.curatorTab == true) }),
     REVIEWS("Reviews"),
     ACCOUNT("Account", condition = { it, c, _ -> (it.userData?.admin == true || c.userId == null) })
 }
@@ -517,9 +517,11 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                 }
             } else {
                 adminAccount {
-                    userDetail = detail
-                    modal = modalRef
-                    onUpdate = { loadState() }
+                    attrs {
+                        userDetail = detail
+                        modal = modalRef
+                        onUpdate = { loadState() }
+                    }
                 }
             }
         }
