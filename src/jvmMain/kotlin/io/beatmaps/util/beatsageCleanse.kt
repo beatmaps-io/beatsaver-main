@@ -29,7 +29,9 @@ import java.util.logging.Logger
 private val schedulerLogger = Logger.getLogger("bmio.BeatsageCleanse")
 
 fun Application.scheduleCleanser() {
-    Timer().scheduleAtFixedRate(BeatsageCleanse(this), 5000L, 60 * 1000L)
+    val cleanserEnabled = System.getenv("CLEANSE_ENABLED") == "true"
+    if (cleanserEnabled)
+        Timer().scheduleAtFixedRate(BeatsageCleanse(this), 5000L, 60 * 1000L)
 }
 
 class BeatsageCleanse(val app: Application) : TimerTask() {
