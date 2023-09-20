@@ -1198,9 +1198,7 @@ fun Route.userRoute() {
             }
             .join(Versions, JoinType.LEFT, onColumn = Beatmap.id, otherColumn = Versions.mapId, additionalConstraint = { Versions.state eq EMapState.Published })
             .slice(
-                User.id, User.name, User.uniqueName, User.avatar, User.discordId, User.hash,
-                Versions.mapId.count(), User.admin, User.curator, User.verifiedMapper, User.suspendedAt,
-                User.patreonId, Patreon.id, Patreon.pledge, Patreon.tier, Patreon.active, Patreon.expireAt
+                User.columns.plus(Versions.mapId.count()).plus(Patreon.columns)
             )
             .selectAll()
             .groupBy(User.id, Patreon.id, followsSubquery[Follows.since])
