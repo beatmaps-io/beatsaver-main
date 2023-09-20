@@ -512,7 +512,7 @@ fun Route.mapDetailRoute() {
         }
     }
 
-    get<MapsApi.ByIds>("Get maps for mapIds".responds(ok<MapDetail>(), notFound())) {ids->
+    get<MapsApi.ByIds>("Get maps for mapIds".responds(ok<MapDetail>(), notFound())) { ids ->
         call.response.header("Access-Control-Allow-Origin", "*")
         val sess = call.sessions.get<Session>()
         val mapIdList = ids.ids.split(",").take(50)
@@ -527,7 +527,7 @@ fun Route.mapDetailRoute() {
                     .joinCollaborators()
                     .select {
                         Beatmap.id.inList(
-                            mapIdList.mapNotNull {id -> id.toIntOrNull(16) }
+                            mapIdList.mapNotNull { id -> id.toIntOrNull(16) }
                         ) and (Beatmap.deletedAt.isNull())
                     }
                     .complexToBeatmap()
