@@ -17,9 +17,13 @@ import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.buildURL
 import io.beatmaps.shared.includeIfNotNull
 import kotlinx.html.InputType
+import kotlinx.html.id
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
+import kotlinx.html.role
 import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
@@ -31,6 +35,7 @@ import react.dom.h1
 import react.dom.h6
 import react.dom.i
 import react.dom.input
+import react.dom.label
 import react.dom.span
 import react.setState
 
@@ -203,35 +208,39 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
                 }
                 if (stats != null) {
                     div("list-group") {
-                        a("#", classes = "list-group-item list-group-item-action d-flex justify-content-between align-items-center") {
-                            attrs.onClickFunction = { ev ->
-                                ev.preventDefault()
-                                if (state.loading != true) setOptions(!stats.curationAlerts, stats.reviewAlerts)
-                            }
+                        label("list-group-item list-group-item-action d-flex justify-content-between align-items-center") {
+                            attrs.htmlFor = "pref-map-curation"
+                            attrs.role = "button"
                             span {
                                 i("fas ${EAlertType.Curation.icon} me-2") {}
                                 +"Map Curation"
                             }
                             span("form-switch") {
                                 input(InputType.checkBox, classes = "form-check-input") {
+                                    attrs.id = "pref-map-curation"
                                     attrs.disabled = state.loading == true
-                                    attrs.checked = stats.curationAlerts == true
+                                    attrs.defaultChecked = stats.curationAlerts
+                                    attrs.onChangeFunction = { ev ->
+                                        setOptions((ev.target as HTMLInputElement).checked, stats.reviewAlerts)
+                                    }
                                 }
                             }
                         }
-                        a("#", classes = "list-group-item list-group-item-action d-flex justify-content-between align-items-center") {
-                            attrs.onClickFunction = { ev ->
-                                ev.preventDefault()
-                                if (state.loading != true) setOptions(stats.curationAlerts, !stats.reviewAlerts)
-                            }
+                        label("list-group-item list-group-item-action d-flex justify-content-between align-items-center") {
+                            attrs.htmlFor = "pref-map-review"
+                            attrs.role = "button"
                             span {
                                 i("fas ${EAlertType.Review.icon} me-2") {}
                                 +"Map Review"
                             }
                             span("form-switch") {
                                 input(InputType.checkBox, classes = "form-check-input") {
+                                    attrs.id = "pref-map-review"
                                     attrs.disabled = state.loading == true
-                                    attrs.checked = stats.reviewAlerts == true
+                                    attrs.defaultChecked = stats.reviewAlerts
+                                    attrs.onChangeFunction = { ev ->
+                                        setOptions(stats.curationAlerts, (ev.target as HTMLInputElement).checked)
+                                    }
                                 }
                             }
                         }
