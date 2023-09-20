@@ -65,7 +65,6 @@ import io.ktor.server.locations.delete
 import io.ktor.server.locations.get
 import io.ktor.server.locations.options
 import io.ktor.server.locations.post
-import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.request.receive
 import io.ktor.server.response.header
