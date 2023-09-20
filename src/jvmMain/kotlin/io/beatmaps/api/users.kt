@@ -910,6 +910,11 @@ fun Route.userRoute() {
         requireAuthorization { user ->
             val req = call.receive<UserFollowRequest>()
 
+            if (req.userId == user.userId && req.following) {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("Can't follow yourself"))
+                return@requireAuthorization
+            }
+
             transaction {
                 if (req.following) {
                     Follows.upsert(conflictIndex = Follows.link) { follow ->
