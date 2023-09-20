@@ -293,52 +293,54 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                         }
                                     }
                                 }
-                                state.followData?.let { fd ->
-                                    div("btn-group") {
-                                        val btnClasses = "btn btn-" + if (fd.following) "secondary" else "primary"
-                                        button(classes = btnClasses) {
-                                            attrs.onClickFunction = { e ->
-                                                e.preventDefault()
-                                                setFollowStatus(!fd.following, !fd.following, !fd.following)
-                                            }
-
-                                            if (fd.following) {
-                                                i("fas fa-user-minus") { }
-                                                +"Unfollow"
-                                            } else {
-                                                i("fas fa-user-plus") { }
-                                                +"Follow"
-                                            }
-                                        }
+                                if (loggedInLocal != null && loggedInLocal != state.userDetail?.id) {
+                                    state.followData?.let { fd ->
                                         div("btn-group") {
-                                            button(classes = "dropdown-toggle $btnClasses") {
-                                                attrs.onClickFunction = {
-                                                    it.stopPropagation()
-                                                    setState {
-                                                        followsDropdown = followsDropdown != true
-                                                    }
+                                            val btnClasses = "btn btn-" + if (fd.following) "secondary" else "primary"
+                                            button(classes = btnClasses) {
+                                                attrs.onClickFunction = { e ->
+                                                    e.preventDefault()
+                                                    setFollowStatus(!fd.following, !fd.following, !fd.following)
+                                                }
+
+                                                if (fd.following) {
+                                                    i("fas fa-user-minus") { }
+                                                    +"Unfollow"
+                                                } else {
+                                                    i("fas fa-user-plus") { }
+                                                    +"Follow"
                                                 }
                                             }
-                                            div("dropdown-menu mt-4" + if (state.followsDropdown == true) " show" else "") {
-                                                a("#", classes = "dropdown-item") {
+                                            div("btn-group") {
+                                                button(classes = "dropdown-toggle $btnClasses") {
                                                     attrs.onClickFunction = {
                                                         it.stopPropagation()
-                                                        setFollowStatus(fd.following || !fd.upload || fd.curation, !fd.upload, fd.curation)
+                                                        setState {
+                                                            followsDropdown = followsDropdown != true
+                                                        }
                                                     }
-                                                    input(InputType.checkBox, classes = "form-check-input me-2") {
-                                                        attrs.checked = fd.upload
-                                                    }
-                                                    +"Uploads"
                                                 }
-                                                a("#", classes = "dropdown-item") {
-                                                    attrs.onClickFunction = {
-                                                        it.stopPropagation()
-                                                        setFollowStatus(fd.following || fd.upload || !fd.curation, fd.upload, !fd.curation)
+                                                div("dropdown-menu mt-4" + if (state.followsDropdown == true) " show" else "") {
+                                                    a("#", classes = "dropdown-item") {
+                                                        attrs.onClickFunction = {
+                                                            it.stopPropagation()
+                                                            setFollowStatus(fd.following || !fd.upload || fd.curation, !fd.upload, fd.curation)
+                                                        }
+                                                        input(InputType.checkBox, classes = "form-check-input me-2") {
+                                                            attrs.checked = fd.upload
+                                                        }
+                                                        +"Uploads"
                                                     }
-                                                    input(InputType.checkBox, classes = "form-check-input me-2") {
-                                                        attrs.checked = fd.curation
+                                                    a("#", classes = "dropdown-item") {
+                                                        attrs.onClickFunction = {
+                                                            it.stopPropagation()
+                                                            setFollowStatus(fd.following || fd.upload || !fd.curation, fd.upload, !fd.curation)
+                                                        }
+                                                        input(InputType.checkBox, classes = "form-check-input me-2") {
+                                                            attrs.checked = fd.curation
+                                                        }
+                                                        +"Curations"
                                                     }
-                                                    +"Curations"
                                                 }
                                             }
                                         }
