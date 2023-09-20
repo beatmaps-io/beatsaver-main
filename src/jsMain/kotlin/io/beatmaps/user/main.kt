@@ -25,9 +25,13 @@ import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import kotlinx.html.InputType
+import kotlinx.html.id
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
+import kotlinx.html.role
 import kotlinx.html.title
 import kotlinx.serialization.decodeFromString
+import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.get
 import org.w3c.dom.set
@@ -45,6 +49,7 @@ import react.dom.i
 import react.dom.img
 import react.dom.input
 import react.dom.jsStyle
+import react.dom.label
 import react.dom.li
 import react.dom.p
 import react.dom.span
@@ -72,6 +77,7 @@ external interface ProfilePageState : State {
     var notificationCount: Map<ProfileTab, Int>?
     var followData: UserFollowData?
     var followsDropdown: Boolean?
+    var loading: Boolean?
 }
 
 enum class ProfileTab(val tabText: String, val condition: (ProfilePageProps, TabContext, ProfilePageState) -> Boolean = { _, _, _ -> true }, val bootCondition: () -> Boolean = { false }, val onSelected: (TabContext) -> Unit = {}) {
@@ -177,9 +183,11 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
     }
 
     private fun setFollowStatus(following: Boolean, upload: Boolean, curation: Boolean) {
+        setState { loading = true }
         val req = UserFollowRequest(state.userDetail?.id ?: 0, following, upload, curation)
         Axios.post<UserFollowRequest>("${Config.apibase}/users/follow", req, generateConfig<UserFollowRequest, String>()).then({
             setState {
+                loading = false
                 followData = UserFollowData(
                     (followData?.followers ?: 0).let {
                         if (followData?.following == following) {
@@ -298,6 +306,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                         div("btn-group") {
                                             val btnClasses = "btn btn-" + if (fd.following) "secondary" else "primary"
                                             button(classes = btnClasses) {
+                                                attrs.disabled = state.loading == true
                                                 attrs.onClickFunction = { e ->
                                                     e.preventDefault()
                                                     setFollowStatus(!fd.following, !fd.following, !fd.following)
@@ -321,23 +330,37 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                                     }
                                                 }
                                                 div("dropdown-menu mt-4" + if (state.followsDropdown == true) " show" else "") {
-                                                    a("#", classes = "dropdown-item") {
+                                                    label("dropdown-item") {
+                                                        attrs.htmlFor = "follow-uploads"
+                                                        attrs.role = "button"
                                                         attrs.onClickFunction = {
                                                             it.stopPropagation()
-                                                            setFollowStatus(fd.following || !fd.upload || fd.curation, !fd.upload, fd.curation)
                                                         }
                                                         input(InputType.checkBox, classes = "form-check-input me-2") {
-                                                            attrs.checked = fd.upload
+                                                            attrs.id = "follow-uploads"
+                                                            attrs.disabled = state.loading == true
+                                                            attrs.defaultChecked = fd.upload
+                                                            attrs.onChangeFunction = { ev ->
+                                                                val newUpload = (ev.target as HTMLInputElement).checked
+                                                                setFollowStatus(fd.following || newUpload || fd.curation, newUpload, fd.curation)
+                                                            }
                                                         }
                                                         +"Uploads"
                                                     }
-                                                    a("#", classes = "dropdown-item") {
+                                                    label("dropdown-item") {
+                                                        attrs.htmlFor = "follow-curations"
+                                                        attrs.role = "button"
                                                         attrs.onClickFunction = {
                                                             it.stopPropagation()
-                                                            setFollowStatus(fd.following || fd.upload || !fd.curation, fd.upload, !fd.curation)
                                                         }
                                                         input(InputType.checkBox, classes = "form-check-input me-2") {
-                                                            attrs.checked = fd.curation
+                                                            attrs.id = "follow-curations"
+                                                            attrs.disabled = state.loading == true
+                                                            attrs.defaultChecked = fd.curation
+                                                            attrs.onChangeFunction = { ev ->
+                                                                val newCuration = (ev.target as HTMLInputElement).checked
+                                                                setFollowStatus(fd.following || fd.upload || newCuration, fd.upload, newCuration)
+                                                            }
                                                         }
                                                         +"Curations"
                                                     }
