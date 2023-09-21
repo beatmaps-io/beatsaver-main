@@ -11,6 +11,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
@@ -20,8 +21,6 @@ import io.ktor.server.locations.post
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
-import io.ktor.server.sessions.sessions
-import io.ktor.server.sessions.set
 import io.ktor.util.pipeline.PipelineContext
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.JoinType
@@ -192,10 +191,9 @@ fun Route.alertsRoute() {
 
     suspend fun PipelineContext<*, ApplicationCall>.respondStats(sess: Session, stats: List<StatPart>?) =
         if (stats != null) {
-            val unread = stats.filter { !it.isRead }.sumOf { it.count }.toInt()
             val user = transaction { UserDao[sess.userId] }
 
-            call.sessions.set(sess.copy(alerts = unread))
+            updateAlertCount(sess.userId)
             call.respond(UserAlertStats.fromParts(stats).copy(reviewAlerts = user.reviewAlerts, curationAlerts = user.curationAlerts))
         } else {
             call.respond(HttpStatusCode.BadRequest)
