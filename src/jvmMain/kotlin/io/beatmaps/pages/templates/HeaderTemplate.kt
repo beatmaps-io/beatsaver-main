@@ -4,6 +4,7 @@ import io.beatmaps.api.ReviewConstants
 import io.beatmaps.common.Config
 import io.beatmaps.login.Session
 import io.ktor.server.html.Template
+import kotlinx.datetime.Clock
 import kotlinx.html.ButtonType
 import kotlinx.html.FlowContent
 import kotlinx.html.a
@@ -18,6 +19,7 @@ import kotlinx.html.small
 import kotlinx.html.span
 import kotlinx.html.title
 import kotlinx.html.ul
+import kotlin.time.Duration.Companion.days
 
 val bannerEnabled = System.getenv("BANNER_ENABLED") == "true"
 val supportLink = System.getenv("SUPPORT_LINK")
@@ -47,6 +49,36 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                     id = "navbar"
 
                     ul("navbar-nav me-auto") {
+                        li("nav-item dropdown") {
+                            a("#", classes = "nav-link dropdown-toggle") {
+                                +"Find Maps"
+                            }
+                            div("dropdown-menu") {
+                                a("/?curated=true", classes = "dropdown-item auto-router") {
+                                    +"Curated Maps"
+                                }
+                                a("/?verified=true", classes = "dropdown-item auto-router") {
+                                    +"From Verifed Mappers"
+                                }
+                                a("/?ranked=true", classes = "dropdown-item auto-router") {
+                                    +"Ranked Maps"
+                                }
+                                div("dropdown-divider") {}
+                                a("/?order=Rating&from=" + Clock.System.now().minus(7.days), classes = "dropdown-item auto-router") {
+                                    +"Top this week"
+                                }
+                                a("/?order=Rating&from=" + Clock.System.now().minus(30.days), classes = "dropdown-item auto-router") {
+                                    +"Top this month"
+                                }
+                                a("/?order=Rating&from=" + Clock.System.now().minus(365.days), classes = "dropdown-item auto-router") {
+                                    +"Top this year"
+                                }
+                                div("dropdown-divider") {}
+                                a("/?order=Latest", classes = "dropdown-item auto-router") {
+                                    +"Newest"
+                                }
+                            }
+                        }
                         if (s?.testplay == true) {
                             li("nav-item") {
                                 a("/test", classes = "nav-link auto-router") {
