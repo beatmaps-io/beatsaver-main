@@ -4,7 +4,6 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
 import io.beatmaps.common.DownloadInfo
 import io.beatmaps.common.DownloadType
-import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
@@ -141,7 +140,7 @@ fun Route.cdnRoute() {
                         val unsignedQuery = if (signed) {
                             Op.TRUE
                         } else {
-                            (Beatmap.uploader eq sess?.userId) or (Versions.state eq EMapState.Published)
+                            (Beatmap.uploader eq sess?.userId) or Versions.lastPublishedAt.isNotNull()
                         }
 
                         ((Versions.hash eq it.file) and Beatmap.deletedAt.isNull()) and unsignedQuery

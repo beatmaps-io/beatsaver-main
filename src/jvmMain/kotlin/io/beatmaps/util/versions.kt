@@ -49,8 +49,15 @@ fun publishVersion(mapId: Int, hash: String, rb: RabbitMQInstance?, additionalCa
                     .Else(QueryParameter(EMapState.Uploaded, Versions.state.columnType))
             }
 
+            val exp2 = Expression.build {
+                case()
+                    .When(Versions.hash eq hash, NowExpression<Instant?>(Versions.lastPublishedAt.columnType))
+                    .Else(Versions.lastPublishedAt)
+            }
+
             it[Versions.state] = exp
             it[Versions.scheduledAt] = null
+            it[Versions.lastPublishedAt] = exp2
         }
 
     return (updateState() > 0).also { valid ->
