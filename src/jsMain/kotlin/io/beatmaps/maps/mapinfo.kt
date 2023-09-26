@@ -459,7 +459,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                                             )
                                         }
                                     }
-                                    i("fas fa-award " + if (isCurated) "text-danger" else "text-success") { }
+                                    i("fas fa-award " + if (isCurated) "text-danger-light" else "text-success") { }
                                 }
                             }
                             if (userData?.admin == true) {
@@ -470,7 +470,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                                         it.preventDefault()
                                         if (!loading) validate(!props.mapInfo.automapper)
                                     }
-                                    i("fas " + if (props.mapInfo.automapper) "fa-user-check text-success" else "fa-user-times text-danger") { }
+                                    i("fas " + if (props.mapInfo.automapper) "fa-user-check text-success" else "fa-user-times text-danger-light") { }
                                 }
                                 a("#") {
                                     attrs.title = "Delete"
@@ -499,7 +499,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                                             )
                                         )
                                     }
-                                    i("fas fa-trash text-danger") { }
+                                    i("fas fa-trash text-danger-light") { }
                                 }
                             }
                         }

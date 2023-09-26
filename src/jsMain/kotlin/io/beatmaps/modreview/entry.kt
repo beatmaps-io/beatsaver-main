@@ -135,7 +135,7 @@ val modReviewEntryRenderer = fc<ModReviewEntryProps> {
                                     )
                                 )
                             }
-                            i("fas fa-trash text-danger") { }
+                            i("fas fa-trash text-danger-light") { }
                         }
                     }
                 }

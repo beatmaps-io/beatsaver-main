@@ -176,7 +176,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                                 )
                                             )
                                         }
-                                        i("fas fa-trash text-danger") { }
+                                        i("fas fa-trash text-danger-light") { }
                                     }
                                 }
                             }
