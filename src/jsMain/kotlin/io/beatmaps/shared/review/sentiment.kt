@@ -23,5 +23,5 @@ val sentimentPicker = fc<SentimentProps> {
 
     renderSentiment(ReviewSentiment.POSITIVE, "I recommend this map", "success")
     renderSentiment(ReviewSentiment.NEUTRAL, "I have mixed feelings about this map", "warning")
-    renderSentiment(ReviewSentiment.NEGATIVE, "I don't recommend this map", "danger")
+    renderSentiment(ReviewSentiment.NEGATIVE, "I don't recommend this map", "danger-light")
 }

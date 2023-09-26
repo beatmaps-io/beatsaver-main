@@ -16,6 +16,7 @@ $info: #3498db;
 $info-accent: $primary;
 $warning: #f39c12;
 $danger: #b52a1c;
+$danger-light: #ff4c38;
 $light: #999;
 $dark: #303030;
 
@@ -44,20 +45,21 @@ $table-group-separator-color: #434343;
 $enable-smooth-scroll: false;
 
 $theme-colors: (
-  "primary":    $primary,
-  "secondary":  $secondary,
-  "success":    $success,
-  "info":       $info,
-  "warning":    $warning,
-  "danger":     $danger,
-  "light":      $light,
-  "dark":       $dark,
+  "primary":      $primary,
+  "secondary":    $secondary,
+  "success":      $success,
+  "info":         $info,
+  "warning":      $warning,
+  "danger":       $danger,
+  "danger-light": $danger-light,
+  "light":        $light,
+  "dark":         $dark,
 
-  "blue": $bs-blue,
-  "green": $bs-green,
+  "blue":   $bs-blue,
+  "green":  $bs-green,
   "expert": $bs-red,
   "purple": $bs-purple,
-  "hard": $bs-orange,
+  "hard":   $bs-orange,
   "unsure": $bs-yellow,
 
   "patreon": $patreon
