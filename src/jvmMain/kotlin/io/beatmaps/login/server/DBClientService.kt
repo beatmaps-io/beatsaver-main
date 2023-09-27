@@ -27,8 +27,8 @@ object DBClientService : ClientService {
     fun convertToClient(client: OauthClientDao) =
         Client(
             client.clientId,
-            client.scopes?.split(",")?.toSet() ?: emptySet(),
-            setOfNotNull(client.redirectUrl),
+            client.scopes.toSet(),
+            client.redirectUrl.toSet(),
             setOf(
                 AuthorizedGrantType.AUTHORIZATION_CODE,
                 AuthorizedGrantType.REFRESH_TOKEN
