@@ -1,5 +1,6 @@
 package io.beatmaps.login.server
 
+import io.beatmaps.api.OauthScope
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.genericPage
@@ -49,12 +50,22 @@ fun Application.installOauth2() {
 
         tokenInfoCallback = {
             val user = it.identity?.metadata?.get("object") as UserDao
-            mapOf(
-                "id" to it.identity?.username,
-                "name" to user.uniqueName,
-                "avatar" to user.avatar,
+
+            val out = mapOf(
                 "scopes" to it.scopes
             )
+
+            if (it.scopes.contains(OauthScope.IDENTITY.tag)) {
+                out.plus(
+                    mapOf(
+                        "id" to it.identity?.username,
+                        "name" to user.uniqueName,
+                        "avatar" to user.avatar
+                    )
+                )
+            } else {
+                out
+            }
         }
 
         tokenEndpoint = "/api/oauth2/token"
