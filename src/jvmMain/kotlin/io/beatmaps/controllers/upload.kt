@@ -1,16 +1,15 @@
 package io.beatmaps.controllers
 
 import ch.compile.recaptcha.ReCaptchaVerify
-import com.fasterxml.jackson.databind.ObjectWriter
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PatreonTier
 import io.beatmaps.api.handleMultipart
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.api.toTier
-import io.beatmaps.common.BSPrettyPrinter
 import io.beatmaps.common.Config
 import io.beatmaps.common.CopyException
 import io.beatmaps.common.MapTag
+import io.beatmaps.common.OptionalProperty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.beatsaber.MapInfo
 import io.beatmaps.common.copyToSuspend
@@ -24,11 +23,11 @@ import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.handlePatreon
 import io.beatmaps.common.dbo.joinPatreon
-import io.beatmaps.common.jackson
 import io.beatmaps.common.localAudioFolder
 import io.beatmaps.common.localAvatarFolder
 import io.beatmaps.common.localCoverFolder
 import io.beatmaps.common.localFolder
+import io.beatmaps.common.or
 import io.beatmaps.common.pub
 import io.beatmaps.common.zip.ExtractedInfo
 import io.beatmaps.common.zip.RarException
@@ -77,8 +76,6 @@ import java.security.MessageDigest
 import java.util.logging.Logger
 import kotlin.collections.set
 import kotlin.math.roundToInt
-
-val jsonWriter: ObjectWriter = jackson.writer(BSPrettyPrinter())
 
 val uploadDir = File(System.getenv("UPLOAD_DIR") ?: "S:\\A")
 val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
@@ -237,12 +234,12 @@ fun Route.uploadController() {
                 setInt: (column: Column<Int>, value: Int) -> Unit,
                 setString: (column: Column<String>, value: String) -> Unit
             ) {
-                setFloat(Beatmap.bpm, extractedInfo.mapInfo._beatsPerMinute)
+                setFloat(Beatmap.bpm, extractedInfo.mapInfo._beatsPerMinute.or(0f))
                 setInt(Beatmap.duration, extractedInfo.duration.roundToInt())
-                setString(Beatmap.songName, extractedInfo.mapInfo._songName)
-                setString(Beatmap.songSubName, extractedInfo.mapInfo._songSubName)
-                setString(Beatmap.levelAuthorName, extractedInfo.mapInfo._levelAuthorName)
-                setString(Beatmap.songAuthorName, extractedInfo.mapInfo._songAuthorName)
+                setString(Beatmap.songName, extractedInfo.mapInfo._songName.or(""))
+                setString(Beatmap.songSubName, extractedInfo.mapInfo._songSubName.or(""))
+                setString(Beatmap.levelAuthorName, extractedInfo.mapInfo._levelAuthorName.or(""))
+                setString(Beatmap.songAuthorName, extractedInfo.mapInfo._songAuthorName.or(""))
             }
 
             val newMap = try {
@@ -372,7 +369,8 @@ fun ZipHelper.validateFiles(dos: DigestOutputStream) =
         val prefix = infoPrefix()
         val withoutPrefix = newFiles.map { its -> its.removePrefix(prefix.lowercase()) }.toSet()
 
-        jsonWriter.writeValue(dos, p.mapInfo)
+        val output = p.mapInfo.toJson().toByteArray()
+        dos.write(output)
 
         // Validate info.dat
         p.mapInfo.validate(withoutPrefix, p, audioFile, ::fromInfo)
@@ -385,7 +383,7 @@ fun ZipHelper.validateFiles(dos: DigestOutputStream) =
         // Write updated info.dat back to zip
         infoPath.deleteIfExists()
         getPathDirect("/Info.dat").outputStream().use {
-            jsonWriter.writeValue(it, p.mapInfo)
+            it.write(output)
         }
 
         // Delete any extra files in the zip (like autosaves)
@@ -411,21 +409,23 @@ fun ZipHelper.validateFiles(dos: DigestOutputStream) =
     }
 
 fun findAllowedFiles(info: MapInfo) = (
-    listOf("info.dat", "bpminfo.dat", "cinema-video.json", info._coverImageFilename, info._songFilename) +
-        (info._customData?._contributors?.mapNotNull { it._iconPath } ?: listOf()) +
-        info._difficultyBeatmapSets.flatMap { set -> set._difficultyBeatmaps.map { it._beatmapFilename } }
+    listOfNotNull("info.dat", "bpminfo.dat", "cinema-video.json", info._coverImageFilename.orNull(), info._songFilename.orNull()) +
+        (info._customData.orNull()?._contributors?.orNull()?.mapNotNull { it.orNull()?._iconPath?.orNull() } ?: listOf()) +
+        info._difficultyBeatmapSets.or(listOf()).mapNotNull { set -> set.orNull()?._difficultyBeatmaps?.orNull()?.mapNotNull { it.orNull()?._beatmapFilename?.orNull() } }.flatten()
     ).map { it.lowercase() }
 
 fun ZipHelper.oggToEgg(info: ExtractedInfo) =
-    fromInfo(info.mapInfo._songFilename.lowercase())?.let { path ->
-        if (info.mapInfo._songFilename.endsWith(".ogg")) {
-            val originalAudioName = info.mapInfo._songFilename
-            info.mapInfo = info.mapInfo.copy(_songFilename = originalAudioName.replace(Regex("\\.ogg$"), ".egg"))
-            moveFile(path, "/${info.mapInfo._songFilename}")
-            files.minus((infoPrefix() + originalAudioName).lowercase())
-                .plus((infoPrefix() + info.mapInfo._songFilename).lowercase()) to filesOriginalCase.minus(infoPrefix() + originalAudioName)
-        } else {
-            null
+    info.mapInfo._songFilename.orNull()?.let { filename ->
+        fromInfo(filename.lowercase())?.let { path ->
+            if (filename.endsWith(".ogg")) {
+                val newFilename = filename.replace(Regex("\\.ogg$"), ".egg")
+                info.mapInfo = info.mapInfo.copy(_songFilename = OptionalProperty.Present(newFilename))
+                moveFile(path, "/$newFilename")
+                files.minus((infoPrefix() + filename).lowercase()).plus((infoPrefix() + newFilename).lowercase()) to
+                    filesOriginalCase.minus(infoPrefix() + filename)
+            } else {
+                null
+            }
         }
     } ?: (files to filesOriginalCase)
 
