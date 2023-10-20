@@ -411,7 +411,13 @@ fun ZipHelper.validateFiles(dos: DigestOutputStream) =
 fun findAllowedFiles(info: MapInfo) = (
     listOfNotNull("info.dat", "bpminfo.dat", "cinema-video.json", info._coverImageFilename.orNull(), info._songFilename.orNull()) +
         (info._customData.orNull()?._contributors?.orNull()?.mapNotNull { it.orNull()?._iconPath?.orNull() } ?: listOf()) +
-        info._difficultyBeatmapSets.or(listOf()).mapNotNull { set -> set.orNull()?._difficultyBeatmaps?.orNull()?.mapNotNull { it.orNull()?._beatmapFilename?.orNull() } }.flatten()
+        info._difficultyBeatmapSets.or(listOf()).mapNotNull { set ->
+            set.orNull()?.let { setNotNull ->
+                listOfNotNull(setNotNull._customData.orNull()?._characteristicIconImageFilename?.orNull()).plus(
+                    setNotNull._difficultyBeatmaps.or(listOf()).mapNotNull { it.orNull()?._beatmapFilename?.orNull() }
+                )
+            }
+        }.flatten()
     ).map { it.lowercase() }
 
 fun ZipHelper.oggToEgg(info: ExtractedInfo) =
