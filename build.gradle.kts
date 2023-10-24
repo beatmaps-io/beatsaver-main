@@ -79,7 +79,6 @@ kotlin {
                 optIn("kotlin.io.path.ExperimentalPathApi")
                 optIn("io.ktor.server.locations.KtorExperimentalLocationsAPI")
                 optIn("kotlin.time.ExperimentalTime")
-                optIn("io.ktor.util.KtorExperimentalAPI")
                 optIn("kotlin.ExperimentalUnsignedTypes")
                 optIn("kotlinx.serialization.ExperimentalSerializationApi")
                 optIn("kotlinx.coroutines.DelicateCoroutinesApi")

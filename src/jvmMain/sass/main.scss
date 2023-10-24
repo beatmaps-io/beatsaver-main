@@ -1654,6 +1654,12 @@ small.alert-count {
   cursor: pointer; // Why this isn't already the case is beyond me
 }
 
+.invalid-feedback a {
+  color: #b52a1c;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+}
+
 @include media-breakpoint-up(xxl) {
   .search-results {
     .playlist-card {

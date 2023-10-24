@@ -7,6 +7,7 @@ import external.ReCAPTCHA
 import external.reactFor
 import external.recaptcha
 import io.beatmaps.WithRouterProps
+import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.common.MapTag
 import io.beatmaps.maps.TagPickerHeadingRenderer
 import io.beatmaps.maps.tagPicker
@@ -15,6 +16,8 @@ import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onBlurFunction
 import kotlinx.html.js.onChangeFunction
+import kotlinx.html.js.onClickFunction
+import kotlinx.html.title
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
@@ -38,6 +41,7 @@ import react.dom.p
 import react.dom.strong
 import react.dom.textarea
 import react.dom.ul
+import react.fc
 import react.setState
 
 external interface DropInfo : Props {
@@ -69,6 +73,37 @@ external interface DropInputProps : Props {
     var tabIndex: Int
 }
 
+external interface UploadErrorProps : Props {
+    var info: UploadValidationInfo
+}
+
+val uploadError = fc<UploadErrorProps> { props ->
+    props.info.property.forEachIndexed { idx, it ->
+        if (idx > 0) {
+            +"."
+        }
+
+        it.descriptor?.also { d ->
+            a("#") {
+                attrs.onClickFunction = { e ->
+                    e.preventDefault()
+                }
+                attrs.title = it.name
+                +d
+            }
+        } ?: run {
+            +it.name
+        }
+        if (it.index != null) {
+            +"[${it.index}]"
+        }
+    }
+    if (props.info.property.isNotEmpty()) {
+        +": "
+    }
+    +props.info.message
+}
+
 class UploadRequestConfig(block: (AxiosProgress) -> Unit) : AxiosRequestConfig {
     override var onUploadProgress: ((progressEvent: AxiosProgress) -> Unit)? = block
     override var validateStatus: ((Number) -> Boolean)? = {
@@ -79,7 +114,7 @@ class UploadRequestConfig(block: (AxiosProgress) -> Unit) : AxiosRequestConfig {
 external interface UploadPageProps : WithRouterProps
 
 external interface UploadPageState : State {
-    var errors: List<String>?
+    var errors: List<UploadValidationInfo>?
     var loading: Boolean?
     var beatsage: Boolean?
     var hasTitle: Boolean?
@@ -226,14 +261,6 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                             }
                         }
 
-                        if (state.loading != true) {
-                            state.errors?.forEach {
-                                div("invalid-feedback") {
-                                    +it
-                                }
-                            }
-                        }
-
                         recaptcha(captchaRef)
                     }
                 }
@@ -307,6 +334,22 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                 +"Terms of Service"
                             }
                             +"."
+                        }
+                    }
+                }
+            }
+        }
+
+        div("row") {
+            if (state.errors?.isNotEmpty() == true) {
+                div("is-invalid") {}
+            }
+
+            if (state.loading != true) {
+                state.errors?.forEach {
+                    div("invalid-feedback") {
+                        uploadError {
+                            attrs.info = it
                         }
                     }
                 }

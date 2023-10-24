@@ -8,6 +8,7 @@ import de.nielsfalk.ktor.swagger.version.v2.Swagger
 import io.beatmaps.api.ApiException
 import io.beatmaps.api.ErrorResponse
 import io.beatmaps.api.FailedUploadResponse
+import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.api.alertsRoute
 import io.beatmaps.api.bookmarkRoute
 import io.beatmaps.api.collaborationRoute
@@ -23,6 +24,9 @@ import io.beatmaps.api.userRoute
 import io.beatmaps.api.voteRoute
 import io.beatmaps.cloudflare.filenameUpdater
 import io.beatmaps.common.StatusPagesCustom
+import io.beatmaps.common.beatsaber.BMConstraintViolation
+import io.beatmaps.common.beatsaber.BMConstraintViolationMessage
+import io.beatmaps.common.beatsaber.BMPropertyInfo
 import io.beatmaps.common.db.setupDB
 import io.beatmaps.common.emailQueue
 import io.beatmaps.common.genericQueueConfig
@@ -99,7 +103,7 @@ import kotlinx.html.HEAD
 import nl.myndocs.oauth2.exception.InvalidGrantException
 import org.flywaydb.core.Flyway
 import org.valiktor.ConstraintViolationException
-import org.valiktor.i18n.mapToMessage
+import org.valiktor.i18n.toMessage
 import pl.jutupe.ktor_rabbitmq.RabbitMQ
 import java.io.File
 import java.math.BigInteger
@@ -254,8 +258,18 @@ fun Application.beatmapsio() {
                 FailedUploadResponse(
                     e.constraintViolations
                         .take(1000)
-                        .mapToMessage("messages")
-                        .map { "${it.property}: ${it.message}" }
+                        .map {
+                            when (it) {
+                                is BMConstraintViolation -> it.toMessage("messages")
+                                else -> it.toMessage("messages")
+                            }
+                        }
+                        .map {
+                            when (it) {
+                                is BMConstraintViolationMessage -> UploadValidationInfo(it.propertyInfo, it.message)
+                                else -> UploadValidationInfo(listOf(BMPropertyInfo(it.property)), it.message)
+                            }
+                        }
                 )
             )
         }

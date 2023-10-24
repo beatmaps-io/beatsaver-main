@@ -6,6 +6,7 @@ import external.DropzoneProps
 import external.ReCAPTCHA
 import io.beatmaps.History
 import io.beatmaps.api.FailedUploadResponse
+import io.beatmaps.api.UploadValidationInfo
 import kotlinx.html.InputType
 import kotlinx.html.hidden
 import kotlinx.html.js.onBlurFunction
@@ -42,7 +43,7 @@ fun RElementBuilder<DropzoneProps>.simple(
     dropText: String,
     captchaRef: RefObject<ReCAPTCHA>,
     block: (FormData) -> Unit,
-    errorsBlock: (List<String>) -> Unit,
+    errorsBlock: (List<UploadValidationInfo>) -> Unit,
     extraInfo: List<String> = emptyList(),
     successBlock: ((AxiosResponse<dynamic>) -> Unit)? = null
 ) {
@@ -66,14 +67,14 @@ fun RElementBuilder<DropzoneProps>.simple(
                         history.push("/maps/${r.data}")
                     }
                 } else if (r.status == 413) {
-                    errorsBlock(listOf("Zip file too big"))
+                    errorsBlock(listOf(UploadValidationInfo(listOf(), "Zip file too big")))
                 } else {
                     captchaRef.current?.reset()
                     val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)
                     errorsBlock(failedResponse.errors)
                 }
             }.catch {
-                errorsBlock(listOf("Internal server error"))
+                errorsBlock(listOf(UploadValidationInfo(listOf(), "Internal server error")))
             }
         }
     }
