@@ -103,7 +103,6 @@ import kotlinx.html.HEAD
 import nl.myndocs.oauth2.exception.InvalidGrantException
 import org.flywaydb.core.Flyway
 import org.valiktor.ConstraintViolationException
-import org.valiktor.i18n.mapToMessage
 import org.valiktor.i18n.toMessage
 import pl.jutupe.ktor_rabbitmq.RabbitMQ
 import java.io.File

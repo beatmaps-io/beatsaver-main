@@ -12,7 +12,6 @@ import io.beatmaps.common.CopyException
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.OptionalProperty
 import io.beatmaps.common.api.EMapState
-import io.beatmaps.common.beatsaber.BMPropertyInfo
 import io.beatmaps.common.beatsaber.MapInfo
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
