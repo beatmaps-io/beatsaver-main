@@ -3,6 +3,7 @@ package io.beatmaps.controllers
 import ch.compile.recaptcha.ReCaptchaVerify
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PatreonTier
+import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.api.handleMultipart
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.api.toTier
@@ -11,6 +12,7 @@ import io.beatmaps.common.CopyException
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.OptionalProperty
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.beatsaber.BMPropertyInfo
 import io.beatmaps.common.beatsaber.MapInfo
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
@@ -436,5 +438,5 @@ fun ZipHelper.oggToEgg(info: ExtractedInfo) =
     } ?: (files to filesOriginalCase)
 
 class UploadException(private val msg: String) : RuntimeException() {
-    fun toResponse() = FailedUploadResponse(listOf(msg))
+    fun toResponse() = FailedUploadResponse(listOf(UploadValidationInfo(listOf(), msg)))
 }

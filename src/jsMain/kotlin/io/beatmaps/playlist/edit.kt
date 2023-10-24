@@ -151,7 +151,7 @@ class EditPlaylist : RComponent<PlaylistEditProps, PlaylistEditState>() {
                                         captchaRef.current?.reset()
                                         val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)
                                         setState {
-                                            errors = failedResponse.errors
+                                            errors = failedResponse.errors.map { it.message }
                                             loading = false
                                             success = failedResponse.success
                                         }
