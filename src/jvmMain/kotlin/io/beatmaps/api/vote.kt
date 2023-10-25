@@ -124,7 +124,7 @@ fun Route.voteRoute() {
             transaction {
                 Beatmap.slice(Beatmap.uploader).select {
                     Beatmap.id eq mapId
-                }.firstOrNull()?.let { it[Beatmap.uploader] }
+                }.firstOrNull()?.let { it[Beatmap.uploader].value }
             }.let {
                 publish("beatmaps", "user.stats.$it", null, it)
             }
