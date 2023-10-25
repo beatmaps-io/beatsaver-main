@@ -7,10 +7,10 @@ import io.beatmaps.maps.recent.recentTestplays
 import io.beatmaps.modlog.ModLog
 import io.beatmaps.modreview.ModReview
 import io.beatmaps.nav.viewportMinWidthPolyfill
-import io.beatmaps.playlist.EditPlaylist
 import io.beatmaps.playlist.MultiAddPlaylist
 import io.beatmaps.playlist.Playlist
-import io.beatmaps.playlist.PlaylistFeed
+import io.beatmaps.playlist.editPlaylist
+import io.beatmaps.playlist.playlistFeed
 import io.beatmaps.upload.UploadPage
 import io.beatmaps.user.LoginPage
 import io.beatmaps.user.PickUsernamePage
@@ -97,10 +97,16 @@ class App : RComponent<Props, State>() {
                     }
                 }
                 bsroute("/alerts", klazz = AlertsPage::class)
-                bsroute("/playlists", klazz = PlaylistFeed::class)
-                bsroute("/playlists/new", klazz = EditPlaylist::class)
+                bsroute("/playlists") {
+                    playlistFeed { }
+                }
+                bsroute("/playlists/new") {
+                    editPlaylist { }
+                }
                 bsroute("/playlists/:id", klazz = Playlist::class)
-                bsroute("/playlists/:id/edit", klazz = EditPlaylist::class)
+                bsroute("/playlists/:id/edit") {
+                    editPlaylist { }
+                }
                 bsroute("/playlists/:id/add", klazz = MultiAddPlaylist::class)
                 bsroute("/test") {
                     recentTestplays { }

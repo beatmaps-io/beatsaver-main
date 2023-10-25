@@ -123,6 +123,7 @@ fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPr
             other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.songsChangedAt?.toKotlinInstant(), other.curatedAt?.toKotlinInstant(),
             other.deletedAt?.toKotlinInstant(),
             "${Config.apiBase(true)}/playlists/id/${other.id.value}/download",
+            other.config,
             other.type
         )
     }

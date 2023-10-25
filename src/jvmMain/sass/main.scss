@@ -489,6 +489,12 @@ table.search-results {
     line-height: 23px;
   }
 }
+.filter-container, .ps-filter {
+  h4 {
+    text-transform: uppercase;
+    font-size: 12px;
+  }
+}
 .filter-container {
   margin-bottom: 1rem;
   text-align: center;
@@ -502,10 +508,6 @@ table.search-results {
     }
     .form-check-label {
       display: block;
-    }
-    h4 {
-      text-transform: uppercase;
-      font-size: 12px;
     }
     .d-flex {
       column-gap: 20px;
@@ -1129,9 +1131,11 @@ div.mapstats {
   background: #00a279;
   color: #fff;
 }
-.DateRangePicker {
+.col-sm-3 .DateRangePicker {
   left: 50%;
   transform: translate(-50%, 0);
+}
+.DateRangePicker {
   z-index: 20;
 }
 .DateRangePicker_picker, .DayPicker, .CalendarMonth, .CalendarDay:not(.CalendarDay__selected):not(.CalendarDay__selected_span):not(.CalendarDay__hovered_span),

@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+/*
 enum class SortOrderTarget {
     Map, Playlist;
 
@@ -25,3 +26,4 @@ enum class SearchOrder(val idx: Int, val targets: List<SortOrderTarget>) {
         }
     }
 }
+*/

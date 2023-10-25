@@ -7,10 +7,10 @@ import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.MapDetail
-import io.beatmaps.api.SearchOrder
 import io.beatmaps.api.SearchResponse
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.MapTagType
+import io.beatmaps.common.MapTags
+import io.beatmaps.common.SearchOrder
 import io.beatmaps.shared.CommonParams
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
@@ -57,7 +57,7 @@ data class SearchParams(
     val fullSpread: Boolean?,
     val me: Boolean?,
     val cinema: Boolean?,
-    val tags: Map<Boolean, Map<MapTagType, List<String>>>
+    val tags: MapTags
 ) : CommonParams {
     fun tagsQuery() = tags.flatMap { x ->
         x.value.map { y ->

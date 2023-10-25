@@ -26,8 +26,8 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
 import react.Props
 import react.PropsWithChildren
+import react.PropsWithRef
 import react.RefObject
-import react.dom.RDOMBuilder
 import react.dom.a
 import react.dom.div
 import react.dom.h4
@@ -40,6 +40,7 @@ import react.dom.p
 import react.dom.small
 import react.dom.span
 import react.fc
+import react.forwardRef
 import kotlin.collections.set
 import kotlin.math.log
 import kotlin.math.pow
@@ -332,39 +333,63 @@ val rating = fc<RatingProps> {
     }
 }
 
-fun RDOMBuilder<DIV>.toggle(id: String, text: String, localRef: RefObject<HTMLInputElement>, block: (Boolean) -> Unit) {
-    div("form-check form-switch") {
+external interface ToggleProps : PropsWithRef<HTMLInputElement> {
+    var id: String
+    var text: String
+    var disabled: Boolean?
+    var block: ((Boolean) -> Unit)?
+    var default: Boolean?
+    var className: String?
+}
+
+val toggle = forwardRef<HTMLInputElement, ToggleProps> { props, refPassed ->
+    div("form-check form-switch ${props.className ?: ""}") {
         input(InputType.checkBox, classes = "form-check-input") {
-            attrs.id = id
-            ref = localRef
-            attrs.onChangeFunction = {
-                block(localRef.current?.checked ?: false)
+            attrs.id = props.id
+            attrs.defaultChecked = props.default ?: false
+            attrs.disabled = props.disabled ?: false
+            ref = refPassed
+            attrs.onChangeFunction = { ev ->
+                props.block?.invoke((ev.target as HTMLInputElement).checked)
             }
         }
         label("form-check-label") {
-            attrs.reactFor = id
-            +text
+            attrs.reactFor = props.id
+            +props.text
         }
     }
 }
 
-fun RDOMBuilder<DIV>.slider(text: String, currentMin: Float, currentMax: Float, max: Int, block: (Array<Int>) -> Unit) {
-    div("mb-3 col-sm-3") {
+external interface SliderProps : Props {
+    var text: String
+    var currentMin: Float
+    var currentMax: Float
+    var max: Int?
+    var block: (Array<Int>) -> Unit
+    var className: String?
+}
+
+val slider = fc<SliderProps> { props ->
+    val max = props.max ?: 16
+
+    div(props.className ?: "") {
         val maxSlider = max * 10
         ReactSlider.default {
-            attrs.ariaLabel = arrayOf("Min $text", "Max $text")
-            attrs.value = arrayOf((currentMin * 10).toInt(), (currentMax * 10).toInt())
+            attrs.ariaLabel = arrayOf("Min ${props.text}", "Max ${props.text}")
+            attrs.value = arrayOf((props.currentMin * 10).toInt(), (props.currentMax * 10).toInt())
             attrs.max = maxSlider
             attrs.defaultValue = arrayOf(0, maxSlider)
             attrs.minDistance = 5
-            attrs.onChange = block
+            attrs.onChange = props.block
         }
-        p("m-0 float-start") {
-            +text
-        }
-        p("m-0 float-end") {
-            val maxStr = if (currentMax >= max) "∞" else currentMax.toString()
-            +"$currentMin - $maxStr"
+        div("row") {
+            div("col") {
+                +props.text
+            }
+            div("col text-end") {
+                val maxStr = if (props.currentMax >= max) "∞" else props.currentMax.toString()
+                +"${props.currentMin} - $maxStr"
+            }
         }
     }
 }

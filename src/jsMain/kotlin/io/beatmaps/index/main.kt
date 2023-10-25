@@ -1,13 +1,12 @@
 package io.beatmaps.index
 
 import io.beatmaps.WithRouterProps
-import io.beatmaps.api.SearchOrder
-import io.beatmaps.api.SortOrderTarget
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.MapTagType
+import io.beatmaps.common.SearchOrder
+import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.dateFormat
-import io.beatmaps.maps.mapTag
-import io.beatmaps.setPageTitle
+import io.beatmaps.shared.ExtraFilterRenderer
 import io.beatmaps.shared.FilterCategory
 import io.beatmaps.shared.FilterInfo
 import io.beatmaps.shared.SearchParamGenerator
@@ -15,18 +14,13 @@ import io.beatmaps.shared.buildURL
 import io.beatmaps.shared.includeIfNotNull
 import io.beatmaps.shared.queryParams
 import io.beatmaps.shared.search
-import kotlinx.browser.document
+import io.beatmaps.shared.tags
 import kotlinx.browser.window
-import org.w3c.dom.events.Event
-import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
 import react.State
 import react.createRef
-import react.dom.div
-import react.dom.h4
-import react.fc
 import react.ref
 import react.setState
 
@@ -35,8 +29,6 @@ external interface HomePageProps : WithRouterProps
 external interface HomePageState : State {
     var searchParams: SearchParams?
     var tags: Map<Boolean, Set<MapTag>>?
-    var shiftHeld: Boolean?
-    var altHeld: Boolean?
 }
 
 val mapFilters = listOf<FilterInfo<SearchParams>>(
@@ -63,30 +55,12 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
         }
     }
 
-    override fun componentDidMount() {
-        setPageTitle("Home")
-        document.addEventListener("keyup", handleShift)
-        document.addEventListener("keydown", handleShift)
-    }
-
-    override fun componentWillUnmount() {
-        document.removeEventListener("keyup", handleShift)
-        document.removeEventListener("keydown", handleShift)
-    }
-
     override fun componentWillUpdate(nextProps: HomePageProps, nextState: HomePageState) {
         if (state.searchParams == nextState.searchParams) {
             val fromParams = fromURL()
             if (fromParams != state.searchParams) {
                 nextState.searchParams = fromParams
             }
-        }
-    }
-
-    private val handleShift = { it: Event ->
-        setState {
-            shiftHeld = (it as? KeyboardEvent)?.shiftKey ?: false
-            altHeld = (it as? KeyboardEvent)?.altKey ?: false
         }
     }
 
@@ -170,45 +144,12 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
                     this@HomePage.state.tags?.mapValues { o -> o.value.groupBy { y -> y.type }.mapValues { y -> y.value.map { x -> x.slug } } } ?: mapOf()
                 )
             }
-            extraFilters = fc {
-                div("tags") {
-                    h4 {
-                        +"Tags"
-                    }
-
-                    MapTag.sorted.fold(MapTagType.None) { prev, it ->
-                        if (it.type != prev) div("break") {}
-
-                        if (it.type != MapTagType.None) {
-                            mapTag {
-                                attrs.selected = state.tags?.let { tags -> tags.any { x -> x.value.contains(it) } || tags.isEmpty() } ?: false
-                                attrs.excluded = state.tags?.get(false)?.contains(it) == true
-                                attrs.tag = it
-
-                                attrs.onClick = { _ ->
-                                    (state.tags?.get(state.altHeld != true) ?: setOf()).let { tags ->
-                                        val shouldAdd = !tags.contains(it)
-
-                                        val newTags = tags.applyIf(state.shiftHeld != true) {
-                                            filterTo(hashSetOf()) { o -> o.type != it.type }
-                                        }.applyIf(shouldAdd) {
-                                            plus(it)
-                                        }.applyIf(state.shiftHeld == true && !shouldAdd) {
-                                            minus(it)
-                                        }
-
-                                        setState {
-                                            this.tags = mapOf(
-                                                (state.altHeld != true) to newTags,
-                                                (state.altHeld == true) to (state.tags?.get(state.altHeld == true)?.let { x -> x - it } ?: setOf())
-                                            )
-                                        }
-                                        window.asDynamic().getSelection().removeAllRanges() as Unit
-                                    }
-                                }
-                            }
+            extraFilters = ExtraFilterRenderer {
+                tags {
+                    attrs.callback = {
+                        setState {
+                            tags = it
                         }
-                        it.type
                     }
                 }
             }

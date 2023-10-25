@@ -11,24 +11,30 @@ import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
+import io.beatmaps.common.SearchOrder
+import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.cleanString
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.PgConcat
+import io.beatmaps.common.db.contains
 import io.beatmaps.common.db.greaterEqF
+import io.beatmaps.common.db.lateral
 import io.beatmaps.common.db.lessEqF
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
+import io.beatmaps.common.dbo.collaboratorAlias
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.handleCurator
@@ -40,6 +46,7 @@ import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.common.json
 import io.beatmaps.common.localPlaylistCoverFolder
 import io.beatmaps.common.pub
 import io.beatmaps.controllers.UploadException
@@ -68,6 +75,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
+import kotlinx.serialization.decodeFromString
 import net.coobird.thumbnailator.Thumbnails
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.exceptions.ExposedSQLException
@@ -77,6 +85,7 @@ import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.FieldSet
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.LiteralOp
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -89,6 +98,8 @@ import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.floatLiteral
 import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.intLiteral
+import org.jetbrains.exposed.sql.not
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -101,6 +112,7 @@ import org.valiktor.functions.isNotBlank
 import org.valiktor.validate
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.lang.Integer.min
 import java.nio.file.Files
 import java.util.Base64
 
@@ -295,7 +307,7 @@ fun Route.playlistRoute() {
         call.respond(HttpStatusCode.OK)
     }
 
-    get<PlaylistApi.Text>("Search for playlists".responds(ok<PlaylistSearchResponse>())) {
+    get<PlaylistApi.Text>("Search for playlists".responds(ok<PlaylistSearchResponse>())) { it ->
         call.response.header("Access-Control-Allow-Origin", "*")
 
         val searchFields = PgConcat(" ", Playlist.name, Playlist.description)
@@ -322,11 +334,11 @@ fun Route.playlistRoute() {
                             .joinOwner()
                             .slice(Playlist.id)
                             .select {
-                                (Playlist.deletedAt.isNull() and (Playlist.type eq EPlaylistType.Public))
+                                (Playlist.deletedAt.isNull() and (Playlist.type inList EPlaylistType.values().filter { v -> v.anonymousAllowed }))
                                     .let { q -> searchInfo.applyQuery(q) }
                                     .let { q ->
                                         if (it.includeEmpty != true) {
-                                            q.and(Playlist.totalMaps greater 0)
+                                            q.and((Playlist.totalMaps greater 0) or (Playlist.type eq EPlaylistType.Search))
                                         } else { q }
                                     }
                                     .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
@@ -350,6 +362,101 @@ fun Route.playlistRoute() {
                 }
 
             call.respond(PlaylistSearchResponse(playlists))
+        }
+    }
+
+    fun performSearchForPlaylist(config: SearchPlaylistConfig, cdnPrefix: String, page: Long, pageSize: Int = 20): List<MapDetailWithOrder> {
+        val offset = page.toInt() * pageSize
+        val actualPageSize = min(offset + pageSize, config.mapCount) - offset
+
+        if (actualPageSize <= 0 || actualPageSize > pageSize) return listOf()
+
+        val params = config.searchParams
+        val needsDiff = params.minNps != null || params.maxNps != null
+        val searchFields = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
+        val searchInfo = parseSearchQuery(params.search, searchFields, needsDiff)
+        val actualSortOrder = searchInfo.validateSearchOrder(params.sortOrder)
+        val sortArgs = searchInfo.sortArgsFor(actualSortOrder)
+
+        return transaction {
+            Beatmap
+                .joinVersions(true)
+                .joinUploader()
+                .joinCurator()
+                .joinCollaborators()
+                .slice(
+                    (if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) +
+                        Beatmap.columns + Versions.columns + Difficulty.columns + User.columns +
+                        curatorAlias.columns + collaboratorAlias.columns
+                )
+                .select {
+                    Beatmap.id.inSubQuery(
+                        Beatmap
+                            .joinUploader()
+                            .crossJoin(
+                                Versions
+                                    .let { q ->
+                                        if (needsDiff) q.join(Difficulty, JoinType.INNER, Versions.id, Difficulty.versionId) else q
+                                    }
+                                    .slice(intLiteral(1))
+                                    .select {
+                                        (Versions.mapId eq Beatmap.id) and (Versions.state eq EMapState.Published)
+                                            .notNull(params.minNps) { o -> (Difficulty.nps greaterEqF o) }
+                                            .notNull(params.maxNps) { o -> (Difficulty.nps lessEqF o) }
+                                    }
+                                    .limit(1)
+                                    .lateral().alias("diff")
+                            )
+                            .slice(Beatmap.id)
+                            .select {
+                                Beatmap.deletedAt.isNull()
+                                    .let { q -> searchInfo.applyQuery(q) }
+                                    .let { q ->
+                                        // Doesn't quite make sense but we want to exclude beat sage by default
+                                        when (params.automapper) {
+                                            true -> q
+                                            false -> q.and(Beatmap.automapper eq true)
+                                            null -> q.and(Beatmap.automapper eq false)
+                                        }
+                                    }
+                                    .notNull(searchInfo.userSubQuery) { o -> Beatmap.uploader inSubQuery o }
+                                    .notNull(params.chroma) { o -> Beatmap.chroma eq o }
+                                    .notNull(params.noodle) { o -> Beatmap.noodle eq o }
+                                    .notNull(params.ranked) { o -> Beatmap.ranked eq o }
+                                    .notNull(params.curated) { o -> with(Beatmap.curatedAt) { if (o) isNotNull() else isNull() } }
+                                    .notNull(params.verified) { o -> User.verifiedMapper eq o }
+                                    .notNull(params.fullSpread) { o -> Beatmap.fullSpread eq o }
+                                    .notNull(params.minNps) { o -> (Beatmap.maxNps greaterEqF o) }
+                                    .notNull(params.maxNps) { o -> (Beatmap.minNps lessEqF o) }
+                                    .notNull(params.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }
+                                    .notNull(params.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
+                                    .notNull(params.me) { o -> Beatmap.me eq o }
+                                    .notNull(params.cinema) { o -> Beatmap.cinema eq o }
+                                    .notNull(params.tags) { o ->
+                                        o.entries.fold(Op.TRUE as Op<Boolean>) { op, t ->
+                                            op and t.value.entries.fold(Op.FALSE as Op<Boolean>) { op2, t2 ->
+                                                op2 or
+                                                    if (!t.key) {
+                                                        Beatmap.tags.isNull() or not(Beatmap.tags contains t2.value.toTypedArray())
+                                                    } else {
+                                                        Beatmap.tags contains arrayOf(t2)
+                                                    }
+                                            }
+                                        }
+                                    }
+                            }
+                            .orderBy(*sortArgs)
+                            .limit(actualPageSize, offset.toLong())
+                    )
+                }
+                .orderBy(*sortArgs)
+                .complexToBeatmap()
+                .mapIndexed { idx, m ->
+                    MapDetailWithOrder(
+                        MapDetail.from(m, cdnPrefix),
+                        (offset + idx).toFloat()
+                    )
+                }
         }
     }
 
@@ -377,41 +484,45 @@ fun Route.playlistRoute() {
                 }
 
             val mapsWithOrder = page?.let { page ->
-                val mapsSubQuery = PlaylistMap
-                    .join(Beatmap, JoinType.INNER, PlaylistMap.mapId, Beatmap.id)
-                    .joinVersions()
-                    .slice(PlaylistMap.mapId, PlaylistMap.order)
-                    .select {
-                        (PlaylistMap.playlistId eq id)
-                    }
-                    .orderBy(PlaylistMap.order)
-                    .limit(page, 100)
-                    .alias("subquery")
+                if (playlist?.type == EPlaylistType.Search && playlist.config is SearchPlaylistConfig) {
+                    performSearchForPlaylist(playlist.config, cdnPrefix, page)
+                } else {
+                    val mapsSubQuery = PlaylistMap
+                        .join(Beatmap, JoinType.INNER, PlaylistMap.mapId, Beatmap.id)
+                        .joinVersions()
+                        .slice(PlaylistMap.mapId, PlaylistMap.order)
+                        .select {
+                            (PlaylistMap.playlistId eq id)
+                        }
+                        .orderBy(PlaylistMap.order)
+                        .limit(page, 100)
+                        .alias("subquery")
 
-                val orderList = mutableListOf<Float>()
-                val maps = mapsSubQuery
-                    .join(Beatmap, JoinType.INNER, mapsSubQuery[PlaylistMap.mapId], Beatmap.id)
-                    .joinVersions(true)
-                    .joinUploader()
-                    .joinCollaborators()
-                    .joinCurator()
-                    .joinBookmarked(userId)
-                    .select {
-                        (Beatmap.deletedAt.isNull())
-                    }
-                    .complexToBeatmap {
-                        orderList.add(it[mapsSubQuery[PlaylistMap.order]])
-                    }
-                    .map {
-                        MapDetail.from(it, cdnPrefix)
-                    }
-                maps.zip(orderList).map { MapDetailWithOrder(it.first, it.second) }
+                    val orderList = mutableListOf<Float>()
+                    val maps = mapsSubQuery
+                        .join(Beatmap, JoinType.INNER, mapsSubQuery[PlaylistMap.mapId], Beatmap.id)
+                        .joinVersions(true)
+                        .joinUploader()
+                        .joinCollaborators()
+                        .joinCurator()
+                        .joinBookmarked(userId)
+                        .select {
+                            (Beatmap.deletedAt.isNull())
+                        }
+                        .complexToBeatmap {
+                            orderList.add(it[mapsSubQuery[PlaylistMap.order]])
+                        }
+                        .map {
+                            MapDetail.from(it, cdnPrefix)
+                        }
+                    maps.zip(orderList).map { MapDetailWithOrder(it.first, it.second) }
+                }
             }
 
             PlaylistPage(playlist, mapsWithOrder)
         }
 
-        return if (detailPage.playlist != null && (detailPage.playlist.type == EPlaylistType.Public || detailPage.playlist.owner.id == userId || isAdmin)) {
+        return if (detailPage.playlist != null && (detailPage.playlist.type.anonymousAllowed || detailPage.playlist.owner.id == userId || isAdmin)) {
             detailPage
         } else {
             null
@@ -517,6 +628,7 @@ fun Route.playlistRoute() {
                     .firstOrNull()?.let {
                         PlaylistFull.from(it, cdnPrefix())
                     }
+
             fun getMapsInPlaylist() =
                 PlaylistMap
                     .join(Beatmap, JoinType.INNER, PlaylistMap.mapId, Beatmap.id)
@@ -535,11 +647,27 @@ fun Route.playlistRoute() {
                             )
                         }
                     }
-            getPlaylist() to getMapsInPlaylist()
+
+            val playlist = getPlaylist()
+
+            if (playlist?.type == EPlaylistType.Search && playlist.config is SearchPlaylistConfig) {
+                playlist to performSearchForPlaylist(playlist.config, cdnPrefix(), 0, 1000)
+                    .mapNotNull {
+                        it.map.publishedVersion()?.let { v ->
+                            PlaylistSong(
+                                it.map.id,
+                                v.hash,
+                                it.map.name
+                            )
+                        }
+                    }
+            } else {
+                playlist to getMapsInPlaylist()
+            }
         }
 
         optionalAuthorization(OauthScope.PLAYLISTS) { sess ->
-            if (playlist != null && (playlist.type == EPlaylistType.Public || playlist.owner.id == sess?.userId)) {
+            if (playlist != null && (playlist.type.anonymousAllowed || playlist.owner.id == sess?.userId)) {
                 val localFile = when (playlist.type) {
                     EPlaylistType.System -> bookmarksIcon
                     else -> File(localPlaylistCoverFolder(), "${playlist.playlistId}.jpg").readBytes()
@@ -831,13 +959,18 @@ fun Route.playlistRoute() {
                 }
             }
 
+            val configDecoded = multipart.dataMap["config"]?.let {
+                json.decodeFromString<SearchPlaylistConfig>(it)
+            }
+
             val shouldDelete = multipart.dataMap["deleted"].toBoolean()
             val newDescription = multipart.dataMap["description"] ?: ""
             val toCreate = PlaylistBasic(
                 0, "",
                 multipart.dataMap["name"] ?: "",
                 typeFromReq(multipart, sess),
-                sess.userId
+                sess.userId,
+                configDecoded
             )
 
             if (!shouldDelete) {
@@ -857,6 +990,7 @@ fun Route.playlistRoute() {
                             it[name] = toCreate.name
                             it[description] = newDescription
                             it[type] = toCreate.type
+                            it[config] = toCreate.config
                         }
                         it[updatedAt] = NowExpression(updatedAt.columnType)
                     } > 0 || throw UploadException("Update failed")

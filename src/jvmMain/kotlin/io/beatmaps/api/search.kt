@@ -7,6 +7,7 @@ import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
+import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.contains
@@ -141,6 +142,13 @@ class SearchParams(
             else -> SearchOrder.Latest
         }
 
+    fun sortArgsFor(searchOrder: SearchOrder) = when (searchOrder) {
+        SearchOrder.Relevance -> listOf(similarRank to SortOrder.DESC, Beatmap.score to SortOrder.DESC, Beatmap.uploaded to SortOrder.DESC)
+        SearchOrder.Rating -> listOf(Beatmap.score to SortOrder.DESC, Beatmap.uploaded to SortOrder.DESC)
+        SearchOrder.Latest -> listOf(Beatmap.uploaded to SortOrder.DESC)
+        SearchOrder.Curated -> listOf(Beatmap.curatedAt to SortOrder.DESC_NULLS_LAST, Beatmap.uploaded to SortOrder.DESC)
+    }.toTypedArray()
+
     private fun preApplyQuery(q: Op<Boolean>) =
         if (query.isBlank()) {
             q
@@ -186,12 +194,7 @@ fun Route.searchRoute() {
         val searchFields = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
         val searchInfo = parseSearchQuery(it.q, searchFields, needsDiff)
         val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
-        val sortArgs = when (actualSortOrder) {
-            SearchOrder.Relevance -> listOf(searchInfo.similarRank to SortOrder.DESC, Beatmap.score to SortOrder.DESC, Beatmap.uploaded to SortOrder.DESC)
-            SearchOrder.Rating -> listOf(Beatmap.score to SortOrder.DESC, Beatmap.uploaded to SortOrder.DESC)
-            SearchOrder.Latest -> listOf(Beatmap.uploaded to SortOrder.DESC)
-            SearchOrder.Curated -> listOf(Beatmap.curatedAt to SortOrder.DESC_NULLS_LAST, Beatmap.uploaded to SortOrder.DESC)
-        }.toTypedArray()
+        val sortArgs = searchInfo.sortArgsFor(actualSortOrder)
 
         newSuspendedTransaction {
             if (searchInfo.escapedQuery != null && searchInfo.escapedQuery.startsWith("key:")) {

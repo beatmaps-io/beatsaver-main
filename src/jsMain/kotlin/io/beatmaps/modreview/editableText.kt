@@ -43,7 +43,7 @@ class EditableText : RComponent<EditableTextProps, EditableTextState>() {
         }
     }
 
-    private fun endLoading(e: Throwable) {
+    private val endLoading = { _: Throwable ->
         setState {
             loading = false
         }
@@ -91,7 +91,7 @@ class EditableText : RComponent<EditableTextProps, EditableTextState>() {
                         if (it.data.success) {
                             props.stopEditing?.invoke(newReview)
                         }
-                    }, ::endLoading)
+                    }, endLoading)
                 }
                 +(props.buttonText ?: "Save")
             }

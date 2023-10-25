@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+import io.beatmaps.common.IPlaylistConfig
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.fixed
 import kotlinx.datetime.Instant
@@ -22,7 +23,7 @@ data class PlaylistSong(val key: String? = null, val hash: String, val songName:
 data class PlaylistCustomData(val syncURL: String)
 
 @Serializable
-data class PlaylistBasic(val playlistId: Int, val playlistImage: String, val name: String, val type: EPlaylistType, val owner: Int)
+data class PlaylistBasic(val playlistId: Int, val playlistImage: String, val name: String, val type: EPlaylistType, val owner: Int, val config: IPlaylistConfig? = null)
 
 @Serializable
 data class PlaylistFull(
@@ -40,6 +41,7 @@ data class PlaylistFull(
     val curatedAt: Instant? = null,
     val deletedAt: Instant? = null,
     val downloadURL: String,
+    val config: IPlaylistConfig? = null,
     val type: EPlaylistType
 ) {
     companion object
