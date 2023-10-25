@@ -47,6 +47,9 @@ fun Route.mapUpdateEnricher() {
                 val wsMsg = if (map.first == null) {
                     MapUpdateMessage(MapUpdateMessageType.MAP_UPDATE, map.second)
                 } else {
+                    val uploader = map.second.uploader.id
+                    publish("beatmaps", "user.stats.$uploader", null, uploader)
+
                     MapUpdateMessage(MapUpdateMessageType.MAP_DELETE, toHexString(mapId))
                 }
 
