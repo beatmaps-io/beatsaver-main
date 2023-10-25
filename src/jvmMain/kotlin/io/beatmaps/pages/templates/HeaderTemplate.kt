@@ -222,9 +222,9 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                 id = "site-notice"
                 div("container flex-nowrap") {
                     div("navbar-text flex-grow-1 text-center") {
-                        +"BeastSaber Curation Recruitment Now Open - "
+                        +"BeastSaber Curation Team now recruiting enthusiastic casual players - "
                         a("https://docs.google.com/forms/d/e/1FAIpQLSeHzYQY8WTGQ3kxcM3dy4eEj6k0ttnUUjbs84GQ5slcFanU_A/viewform", target = "_blank") {
-                            +"Click here to apply"
+                            +"click here to apply"
                         }
                     }
                     button(type = ButtonType.button, classes = "btn-close btn-close-white") { }
