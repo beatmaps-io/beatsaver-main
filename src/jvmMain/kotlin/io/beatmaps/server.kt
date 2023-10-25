@@ -330,6 +330,10 @@ fun Application.beatmapsio() {
                 queueDeclare("uvstats", true, false, false, genericQueueConfig)
                 queueBind("uvstats", "beatmaps", "user.stats.*")
 
+                queueDeclare("maptouv", true, false, false, genericQueueConfig)
+                queueBind("maptouv", "beatmaps", "maps.*.updated.deleted")
+                queueBind("maptouv", "beatmaps", "maps.*.updated.state")
+
                 queueDeclare("bm.updateStream", true, false, false, genericQueueConfig)
                 queueBind("bm.updateStream", "beatmaps", "maps.*.updated")
                 queueBind("bm.updateStream", "beatmaps", "maps.*.updated.*")

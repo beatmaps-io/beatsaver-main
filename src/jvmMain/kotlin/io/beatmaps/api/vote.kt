@@ -120,6 +120,16 @@ fun Route.voteRoute() {
             }
         }
 
+        consumeAck("maptouv", Int::class) { _, mapId ->
+            transaction {
+                Beatmap.slice(Beatmap.uploader).select {
+                    Beatmap.id eq mapId
+                }.firstOrNull()?.let { it[Beatmap.uploader] }
+            }.let {
+                publish("beatmaps", "user.stats.$it", null, it)
+            }
+        }
+
         consumeAck("uvstats", Int::class) { _, body ->
             transaction {
                 val subQuery = Beatmap
