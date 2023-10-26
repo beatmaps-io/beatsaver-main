@@ -70,8 +70,6 @@ val playlistFeed = fc<Props> {
         setSearchParams(searchParamsLocal)
     }
 
-    console.log("RENDER2", searchParams.toString())
-
     search<PlaylistSearchParams> {
         typedState = searchParams
         sortOrderTarget = SortOrderTarget.Playlist

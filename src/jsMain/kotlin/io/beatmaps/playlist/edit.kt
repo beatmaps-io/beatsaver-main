@@ -90,15 +90,6 @@ val editPlaylist = fc<Props> {
             setPageTitle("Create Playlist")
             setLoading(false)
             setInit(true)
-
-            window.setTimeout(
-                {
-                    console.log("Update", publicRef.current, publicRef.current?.checked)
-                    publicRef.current?.checked = true
-                    console.log("Update2", publicRef.current, publicRef.current?.checked)
-                },
-                1
-            )
         } else {
             setPageTitle("Edit Playlist")
             loadData()
@@ -192,11 +183,10 @@ val editPlaylist = fc<Props> {
                         }
                     }
                     if (userData?.suspended == false && playlist?.type != EPlaylistType.Search) {
-                        console.log("RENDER IT")
                         toggle {
                             attrs.id = "public"
                             attrs.disabled = loading
-                            attrs.default = playlist?.type?.anonymousAllowed == true
+                            attrs.default = playlist?.type?.anonymousAllowed != false
                             attrs.ref = publicRef
                             attrs.text = "Public"
                             attrs.className = "mb-3"
