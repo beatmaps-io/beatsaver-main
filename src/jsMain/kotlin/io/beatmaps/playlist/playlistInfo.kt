@@ -46,7 +46,7 @@ val stats = listOf(
     StatInfo("fa-hat-wizard", { "Mapping Extensions" }, { it.searchParams.me == true }),
 
     StatInfo("fa-map", { "Maximum maps" }, { true }) { it.mapCount.toString() },
-    StatInfo("fa-sort-amount-down", { it.searchParams.sortOrder.name }, { true }),
+    StatInfo("fa-sort-amount-down", { it.searchParams.sortOrder.name }, { true })
 )
 
 class PlaylistInfo : AutoSizeComponent<PlaylistFull, PlaylistInfoProps, PlaylistInfoState>(12) {

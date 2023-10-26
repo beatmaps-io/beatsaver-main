@@ -3,7 +3,6 @@ package io.beatmaps.playlist
 import external.DateRangePicker
 import external.Moment
 import external.reactFor
-import io.beatmaps.common.MapTag
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SearchParamsPlaylist
 import io.beatmaps.common.SearchPlaylistConfig

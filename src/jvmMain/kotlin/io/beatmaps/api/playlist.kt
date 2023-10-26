@@ -20,7 +20,6 @@ import io.beatmaps.common.cleanString
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.PgConcat
-import io.beatmaps.common.db.contains
 import io.beatmaps.common.db.greaterEqF
 import io.beatmaps.common.db.lateral
 import io.beatmaps.common.db.lessEqF
@@ -86,7 +85,6 @@ import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.FieldSet
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.LiteralOp
-import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -100,7 +98,6 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.floatLiteral
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.intLiteral
-import org.jetbrains.exposed.sql.not
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
