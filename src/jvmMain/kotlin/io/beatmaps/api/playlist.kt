@@ -15,6 +15,7 @@ import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
+import io.beatmaps.common.applyToQuery
 import io.beatmaps.common.cleanString
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
@@ -46,7 +47,7 @@ import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
-import io.beatmaps.common.json
+import io.beatmaps.common.jsonLenient
 import io.beatmaps.common.localPlaylistCoverFolder
 import io.beatmaps.common.pub
 import io.beatmaps.controllers.UploadException
@@ -432,18 +433,7 @@ fun Route.playlistRoute() {
                                     .notNull(params.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
                                     .notNull(params.me) { o -> Beatmap.me eq o }
                                     .notNull(params.cinema) { o -> Beatmap.cinema eq o }
-                                    .notNull(params.tags) { o ->
-                                        o.entries.fold(Op.TRUE as Op<Boolean>) { op, t ->
-                                            op and t.value.entries.fold(Op.FALSE as Op<Boolean>) { op2, t2 ->
-                                                op2 or
-                                                    if (!t.key) {
-                                                        Beatmap.tags.isNull() or not(Beatmap.tags contains t2.value.toTypedArray())
-                                                    } else {
-                                                        Beatmap.tags contains arrayOf(t2)
-                                                    }
-                                            }
-                                        }
-                                    }
+                                    .notNull(params.tags) { o -> o.applyToQuery() }
                             }
                             .orderBy(*sortArgs)
                             .limit(actualPageSize, offset.toLong())
@@ -960,7 +950,7 @@ fun Route.playlistRoute() {
             }
 
             val configDecoded = multipart.dataMap["config"]?.let {
-                json.decodeFromString<SearchPlaylistConfig>(it)
+                jsonLenient.decodeFromString<SearchPlaylistConfig>(it)
             }
 
             val shouldDelete = multipart.dataMap["deleted"].toBoolean()

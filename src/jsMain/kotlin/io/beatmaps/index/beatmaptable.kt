@@ -11,6 +11,7 @@ import io.beatmaps.api.SearchResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.MapTags
 import io.beatmaps.common.SearchOrder
+import io.beatmaps.common.toQuery
 import io.beatmaps.shared.CommonParams
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
@@ -58,15 +59,7 @@ data class SearchParams(
     val me: Boolean?,
     val cinema: Boolean?,
     val tags: MapTags
-) : CommonParams {
-    fun tagsQuery() = tags.flatMap { x ->
-        x.value.map { y ->
-            y.value.joinToString(if (x.key) "|" else ",") {
-                (if (x.key) "" else "!") + it
-            }
-        }
-    }.joinToString(",")
-}
+) : CommonParams
 
 external interface BeatmapTableState : State {
     var user: UserDetail?
@@ -98,7 +91,7 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                 (if (state.minTime != null) "&before=${state.minTime}" else "")
         } else {
             props.search?.let { search ->
-                val tagStr = search.tagsQuery()
+                val tagStr = search.tags.toQuery()
 
                 "${Config.apibase}/search/text/$page?sortOrder=${search.sortOrder}" +
                     (if (search.automapper != null) "&automapper=${search.automapper}" else "") +

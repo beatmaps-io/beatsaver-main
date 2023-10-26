@@ -1,10 +1,13 @@
 package io.beatmaps.index
 
 import io.beatmaps.WithRouterProps
-import io.beatmaps.common.MapTag
-import io.beatmaps.common.MapTagType
+import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
+import io.beatmaps.common.emptyTags
+import io.beatmaps.common.toQuery
+import io.beatmaps.common.toSet
+import io.beatmaps.common.toTags
 import io.beatmaps.dateFormat
 import io.beatmaps.shared.ExtraFilterRenderer
 import io.beatmaps.shared.FilterCategory
@@ -28,7 +31,7 @@ external interface HomePageProps : WithRouterProps
 
 external interface HomePageState : State {
     var searchParams: SearchParams?
-    var tags: Map<Boolean, Set<MapTag>>?
+    var tags: MapTagSet?
 }
 
 val mapFilters = listOf<FilterInfo<SearchParams>>(
@@ -81,10 +84,8 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             params.get("fullSpread")?.toBoolean(),
             params.get("me")?.toBoolean(),
             params.get("cinema")?.toBoolean(),
-            mapOf<Boolean, Map<MapTagType, List<String>>>(true to mapOf(), false to mapOf()).plus(
-                params.get("tags")?.split(",", "|")?.groupBy { !it.startsWith("!") }?.mapValues {
-                    it.value.map { slug -> slug.removePrefix("!") }.groupBy { slug -> MapTag.fromSlug(slug)?.type ?: MapTagType.None }
-                } ?: mapOf()
+            emptyTags().plus(
+                params.get("tags")?.toTags() ?: mapOf()
             )
         )
     }
@@ -92,7 +93,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
     private fun updateSearchParams(searchParamsLocal: SearchParams?, row: Int?) {
         if (searchParamsLocal == null) return
 
-        val tagStr = searchParamsLocal.tagsQuery()
+        val tagStr = searchParamsLocal.tags.toQuery()
 
         with(searchParamsLocal) {
             buildURL(
@@ -141,7 +142,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
                     if (isFiltered("fs")) true else null,
                     if (isFiltered("me")) true else null,
                     if (isFiltered("cinema")) true else null,
-                    this@HomePage.state.tags?.mapValues { o -> o.value.groupBy { y -> y.type }.mapValues { y -> y.value.map { x -> x.slug } } } ?: mapOf()
+                    this@HomePage.state.tags?.toTags() ?: mapOf()
                 )
             }
             extraFilters = ExtraFilterRenderer {
@@ -154,7 +155,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
                 }
             }
             updateUI = { params ->
-                state.tags = params?.tags?.mapValues { it.value.flatMap { x -> x.value.mapNotNull { y -> MapTag.fromSlug(y) } }.toSet() }
+                state.tags = params?.tags?.toSet()
             }
             filterTexts = {
                 (state.tags?.flatMap { y -> y.value.map { z -> (if (y.key) "" else "!") + z.slug } } ?: listOf())

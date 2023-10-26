@@ -2,9 +2,12 @@ package io.beatmaps.playlist
 
 import external.routeLink
 import io.beatmaps.api.PlaylistFull
+import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.api.MapAttr
+import io.beatmaps.common.fixed
 import io.beatmaps.common.formatTime
+import io.beatmaps.common.human
 import io.beatmaps.shared.coloredCard
 import io.beatmaps.shared.playlistOwner
 import io.beatmaps.shared.rating
@@ -21,6 +24,30 @@ import react.dom.span
 
 external interface PlaylistInfoProps : AutoSizeComponentProps<PlaylistFull>
 external interface PlaylistInfoState : AutoSizeComponentState
+
+data class StatInfo(val icon: String, val text: (SearchPlaylistConfig) -> String, val filter: (SearchPlaylistConfig) -> Boolean = { true }, val value: (SearchPlaylistConfig) -> String? = { null })
+
+val stats = listOf(
+    StatInfo("fa-search", { it.searchParams.search }, { it.searchParams.search.isNotEmpty() }),
+    StatInfo("fa-tag", { it.searchParams.tags.human() }, { it.searchParams.tags.isNotEmpty() }),
+
+    StatInfo("/static/icons/nps.png", { "NPS Range" }, { it.searchParams.minNps != null || it.searchParams.maxNps != null }) {
+        "${(it.searchParams.minNps ?: 0f).fixed(2)} - ${it.searchParams.maxNps?.fixed(2) ?: "∞"}"
+    },
+
+    StatInfo("fa-award", { "Curated" }, { it.searchParams.curated == true }),
+    StatInfo("fa-star", { "Ranked" }, { it.searchParams.ranked == true }),
+    StatInfo("fa-certificate", { "Verified" }, { it.searchParams.verified == true }),
+    StatInfo("fa-robot", { "AI Included" }, { it.searchParams.automapper == true }),
+
+    StatInfo("fa-hat-wizard", { "Noodle" }, { it.searchParams.noodle == true }),
+    StatInfo("fa-hat-wizard", { "Chroma" }, { it.searchParams.chroma == true }),
+    StatInfo("fa-video", { "Cinema" }, { it.searchParams.cinema == true }),
+    StatInfo("fa-hat-wizard", { "Mapping Extensions" }, { it.searchParams.me == true }),
+
+    StatInfo("fa-map", { "Maximum maps" }, { true }) { it.mapCount.toString() },
+    StatInfo("fa-sort-amount-down", { it.searchParams.sortOrder.name }, { true }),
+)
 
 class PlaylistInfo : AutoSizeComponent<PlaylistFull, PlaylistInfoProps, PlaylistInfoState>(12) {
     override fun RBuilder.render() {
@@ -60,7 +87,38 @@ class PlaylistInfo : AutoSizeComponent<PlaylistFull, PlaylistInfoProps, Playlist
                         }
                     }
                     div("additional") {
-                        if (pl.stats != null) {
+                        if (pl.type == EPlaylistType.Search) {
+                            div("rating") {
+                                i("fas fa-search me-1") { }
+                            }
+                            div("stats") {
+                                if (pl.config is SearchPlaylistConfig) {
+                                    stats.filter { it.filter(pl.config) }.take(5).forEach {
+                                        div("me-4") {
+                                            val txt = it.text(pl.config)
+                                            if (it.icon.startsWith("/")) {
+                                                img(txt, it.icon) {
+                                                    attrs.title = txt
+                                                    attrs.attributes["aria-label"] = txt
+                                                    attrs.width = "12"
+                                                    attrs.height = "12"
+                                                }
+                                            } else {
+                                                i("fas ${it.icon}") {
+                                                    attrs.title = txt
+                                                    attrs.attributes["aria-label"] = txt
+                                                }
+                                            }
+                                            it.value(pl.config)?.let { v ->
+                                                span("ms-1") {
+                                                    +v
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else if (pl.stats != null) {
                             div("rating") {
                                 rating {
                                     attrs.up = pl.stats.upVotes

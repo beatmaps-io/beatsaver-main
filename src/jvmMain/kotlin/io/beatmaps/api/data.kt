@@ -129,7 +129,7 @@ fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPr
     }
 fun PlaylistFull.Companion.from(row: ResultRow, cdnPrefix: String) = from(
     PlaylistDao.wrapRow(row),
-    if (row.hasValue(Playlist.Stats.mapperCount)) {
+    if (row.hasValue(Playlist.Stats.mapperCount) && row[Playlist.type] != EPlaylistType.Search) {
         PlaylistStats(
             row[Playlist.totalMaps],
             row[Playlist.Stats.mapperCount],

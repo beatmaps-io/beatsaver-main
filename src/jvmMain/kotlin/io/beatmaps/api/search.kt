@@ -9,8 +9,8 @@ import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.applyToQuery
 import io.beatmaps.common.db.PgConcat
-import io.beatmaps.common.db.contains
 import io.beatmaps.common.db.greaterEqF
 import io.beatmaps.common.db.ilike
 import io.beatmaps.common.db.lateral
@@ -32,6 +32,7 @@ import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.common.toTags
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpStatusCode
@@ -53,8 +54,6 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.intLiteral
-import org.jetbrains.exposed.sql.not
-import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.lang.Integer.toHexString
@@ -271,16 +270,7 @@ fun Route.searchRoute() {
                                         .notNull(it.me) { o -> Beatmap.me eq o }
                                         .notNull(it.cinema) { o -> Beatmap.cinema eq o }
                                         .notNull(it.tags) { o ->
-                                            o.split(",").fold(Op.TRUE as Op<Boolean>) { op, t ->
-                                                op and t.split("|").fold(Op.FALSE as Op<Boolean>) { op2, t2 ->
-                                                    op2 or
-                                                        if (t2.startsWith("!")) {
-                                                            Beatmap.tags.isNull() or not(Beatmap.tags contains arrayOf(t2.substringAfter("!")))
-                                                        } else {
-                                                            Beatmap.tags contains arrayOf(t2)
-                                                        }
-                                                }
-                                            }
+                                            o.toTags()?.applyToQuery() ?: Op.TRUE
                                         }
                                         .notNull(it.mapper) { o -> Beatmap.uploader eq o }
                                         .notNull(it.curator) { o -> Beatmap.curator eq o }
