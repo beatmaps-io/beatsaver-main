@@ -42,6 +42,10 @@ external interface PSEProps : Props {
 
 val mapCounts = listOf(10, 20, 50, 100, 200, 500)
 
+data class PlaylistSearchBooleanFilter(val id: String, val text: String, val filter: (SearchParamsPlaylist) -> Boolean?) {
+    val ref = useRef<HTMLInputElement>()
+}
+
 val playlistSearchEditor = fc<PSEProps> { props ->
     val (minNps, setMinNps) = useState(props.config.searchParams.minNps ?: 0f)
     val (maxNps, setMaxNps) = useState(props.config.searchParams.maxNps ?: 16f)
@@ -52,40 +56,48 @@ val playlistSearchEditor = fc<PSEProps> { props ->
     val (mapCount, setMapCount) = useState(props.config.mapCount)
     val (tags, setTags) = useState(props.config.searchParams.tags)
 
+    val filters = listOf(
+        "General" to listOf(
+            PlaylistSearchBooleanFilter("automapper", "AI") { it.automapper },
+            PlaylistSearchBooleanFilter("ranked", "Ranked") { it.ranked },
+            PlaylistSearchBooleanFilter("curated", "Curated") { it.curated },
+            PlaylistSearchBooleanFilter("verified", "Verified Mapper") { it.verified },
+            PlaylistSearchBooleanFilter("fullspread", "Full Spread") { it.fullSpread }
+        ),
+        "Requirements" to listOf(
+            PlaylistSearchBooleanFilter("chroma", "Chroma") { it.chroma },
+            PlaylistSearchBooleanFilter("noodle", "Noodle") { it.noodle },
+            PlaylistSearchBooleanFilter("me", "Mapping Extensions") { it.me },
+            PlaylistSearchBooleanFilter("cinema", "Cinema") { it.cinema }
+        )
+    )
+
     val searchRef = useRef<HTMLInputElement>()
-    val aiRef = useRef<HTMLInputElement>()
-    val rankedRef = useRef<HTMLInputElement>()
-    val curatedRef = useRef<HTMLInputElement>()
-    val verifiedRef = useRef<HTMLInputElement>()
-    val fullSpreadRef = useRef<HTMLInputElement>()
 
-    val chromaRef = useRef<HTMLInputElement>()
-    val noodleRef = useRef<HTMLInputElement>()
-    val meRef = useRef<HTMLInputElement>()
-    val cinemaRef = useRef<HTMLInputElement>()
-
-    fun nullIfFalse(b: Boolean?) =
-        if (b != true) null else true
+    fun fromFilter(s: String) =
+        filters.flatMap { it.second }.firstOrNull { it.id == s }?.ref?.current?.checked.let { b ->
+            if (b != true) null else true
+        }
 
     fun doCallback() {
         props.callback(
             SearchPlaylistConfig(
                 SearchParamsPlaylist(
                     searchRef.current?.value ?: "",
-                    nullIfFalse(aiRef.current?.checked),
+                    fromFilter("automapper"),
                     if (minNps > 0) minNps else null,
                     if (maxNps < 16) maxNps else null,
-                    nullIfFalse(chromaRef.current?.checked),
+                    fromFilter("chroma"),
                     order,
                     startDate?.let { Instant.parse(it.toISOString()) },
                     endDate?.let { Instant.parse(it.toISOString()) },
-                    nullIfFalse(noodleRef.current?.checked),
-                    nullIfFalse(rankedRef.current?.checked),
-                    nullIfFalse(curatedRef.current?.checked),
-                    nullIfFalse(verifiedRef.current?.checked),
-                    nullIfFalse(fullSpreadRef.current?.checked),
-                    nullIfFalse(meRef.current?.checked),
-                    nullIfFalse(cinemaRef.current?.checked),
+                    fromFilter("noodle"),
+                    fromFilter("ranked"),
+                    fromFilter("curated"),
+                    fromFilter("verified"),
+                    fromFilter("fullspread"),
+                    fromFilter("me"),
+                    fromFilter("cinema"),
                     tags
                 ),
                 mapCount
@@ -207,101 +219,22 @@ val playlistSearchEditor = fc<PSEProps> { props ->
             }
         }
         div("col-2 mb-3 ps-filter") {
-            h4 {
-                +"General"
-            }
-            toggle {
-                attrs.id = "automapper"
-                attrs.disabled = props.loading
-                attrs.default = props.config.searchParams.automapper
-                attrs.text = "AI"
-                attrs.ref = aiRef
-                attrs.block = {
-                    doCallback()
+            filters.forEachIndexed { idx, s ->
+                h4(if (idx > 0) "mt-4" else "") {
+                    +s.first
                 }
-            }
-            toggle {
-                attrs.id = "ranked"
-                attrs.disabled = props.loading
-                attrs.default = props.config.searchParams.ranked
-                attrs.text = "Ranked"
-                attrs.ref = rankedRef
-                attrs.block = {
-                    doCallback()
-                }
-            }
-            toggle {
-                attrs.id = "curated"
-                attrs.disabled = props.loading
-                attrs.default = props.config.searchParams.curated
-                attrs.text = "Curated"
-                attrs.ref = curatedRef
-                attrs.block = {
-                    doCallback()
-                }
-            }
-            toggle {
-                attrs.id = "verified"
-                attrs.disabled = props.loading
-                attrs.default = props.config.searchParams.verified
-                attrs.text = "Verified Mapper"
-                attrs.ref = verifiedRef
-                attrs.block = {
-                    doCallback()
-                }
-            }
-            toggle {
-                attrs.id = "fullspread"
-                attrs.disabled = props.loading
-                attrs.default = props.config.searchParams.fullSpread
-                attrs.text = "Full Spread"
-                attrs.ref = fullSpreadRef
-                attrs.block = {
-                    doCallback()
-                }
-            }
 
-            h4("mt-4") {
-                +"Requirements"
-            }
-            toggle {
-                attrs.id = "chroma"
-                attrs.disabled = props.loading
-                attrs.default = props.config.searchParams.chroma
-                attrs.text = "Chroma"
-                attrs.ref = chromaRef
-                attrs.block = {
-                    doCallback()
-                }
-            }
-            toggle {
-                attrs.id = "noodle"
-                attrs.disabled = props.loading
-                attrs.default = props.config.searchParams.noodle
-                attrs.text = "Noodle"
-                attrs.ref = noodleRef
-                attrs.block = {
-                    doCallback()
-                }
-            }
-            toggle {
-                attrs.id = "me"
-                attrs.disabled = props.loading
-                attrs.default = props.config.searchParams.me
-                attrs.text = "Mapping Extensions"
-                attrs.ref = meRef
-                attrs.block = {
-                    doCallback()
-                }
-            }
-            toggle {
-                attrs.id = "cinema"
-                attrs.disabled = props.loading
-                attrs.default = props.config.searchParams.cinema
-                attrs.text = "Cinema"
-                attrs.ref = cinemaRef
-                attrs.block = {
-                    doCallback()
+                s.second.forEach { f ->
+                    toggle {
+                        attrs.id = f.id
+                        attrs.disabled = props.loading
+                        attrs.default = f.filter(props.config.searchParams)
+                        attrs.text = f.text
+                        attrs.ref = f.ref
+                        attrs.block = {
+                            doCallback()
+                        }
+                    }
                 }
             }
         }

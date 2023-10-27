@@ -19,6 +19,7 @@ import react.useState
 external interface TagsProps : Props {
     var default: MapTagSet?
     var callback: ((MapTagSet) -> Unit)?
+    var highlightOnEmpty: Boolean?
 }
 
 val tags = fc<TagsProps> { props ->
@@ -52,12 +53,13 @@ val tags = fc<TagsProps> { props ->
             +"Tags"
         }
 
+        val highlightAll = props.highlightOnEmpty == true && selected.all { it.value.isEmpty() }
         MapTag.sorted.fold(MapTagType.None) { prev, it ->
             if (it.type != prev) div("break") {}
 
             if (it.type != MapTagType.None) {
                 mapTag {
-                    attrs.selected = selected.any { x -> x.value.contains(it) } || selected.all { it.value.isEmpty() }
+                    attrs.selected = selected.any { x -> x.value.contains(it) } || selected.isEmpty() || highlightAll
                     attrs.excluded = selected[false]?.contains(it) == true
                     attrs.tag = it
 
