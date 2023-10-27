@@ -32,6 +32,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromDynamic
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
+import org.w3c.dom.url.URLSearchParams
 import org.w3c.files.get
 import org.w3c.xhr.FormData
 import react.Props
@@ -66,12 +67,15 @@ val editPlaylist = fc<Props> {
     val history = History(useNavigate())
     val id = params["id"]
 
+    val query = URLSearchParams(location.search)
+    val hasSearchQuery = query.has("search")
+
     val (loading, setLoading) = useState(false)
     val (init, setInit) = useState(false)
     val (playlist, setPlaylist) = useState<PlaylistFull?>(null)
     val (errors, setErrors) = useState(listOf<UploadValidationInfo>())
     val (config, setConfig) = useState(playlist?.config as? SearchPlaylistConfig ?: fromState)
-    val isSearch = playlist?.type == EPlaylistType.Search || (playlist == null && fromState != null)
+    val isSearch = playlist?.type == EPlaylistType.Search || (playlist == null && (fromState != null || hasSearchQuery))
 
     fun loadData() {
         if (loading) return

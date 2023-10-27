@@ -324,7 +324,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                     }
                 }
                 div("col-lg-8") {
-                    if (state.playlist?.owner?.id == userData?.userId) {
+                    if (state.playlist?.owner?.id == userData?.userId && state.playlist?.type?.orderable == true) {
                         DragDropContext {
                             attrs.onDragEnd = {
                                 it.destination?.let { dest ->
