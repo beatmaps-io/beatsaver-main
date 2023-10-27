@@ -7,4 +7,6 @@ import kotlinx.serialization.Serializable
 data class FailedUploadResponse(val errors: List<UploadValidationInfo>, val success: Boolean = false)
 
 @Serializable
-data class UploadValidationInfo(val property: List<BMPropertyInfo>, val message: String)
+data class UploadValidationInfo(val property: List<BMPropertyInfo>, val message: String) {
+    constructor(msg: String) : this(listOf(), msg)
+}

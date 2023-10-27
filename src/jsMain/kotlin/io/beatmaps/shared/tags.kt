@@ -22,7 +22,7 @@ external interface TagsProps : Props {
 }
 
 val tags = fc<TagsProps> { props ->
-    val (selected, setSelected) = useState(props.default ?: emptyMap())
+    val (selected, setSelected) = useState<MapTagSet>(emptyMap())
     val (altHeld, setAltHeld) = useState(false)
     val (shiftHeld, setShiftHeld) = useState(false)
 
@@ -32,6 +32,10 @@ val tags = fc<TagsProps> { props ->
             setShiftHeld(ke.shiftKey)
             setAltHeld(ke.altKey)
         }
+    }
+
+    useEffect(listOf(props.default)) {
+        props.default?.let { setSelected(it) }
     }
 
     useEffect(listOf<Any>()) {

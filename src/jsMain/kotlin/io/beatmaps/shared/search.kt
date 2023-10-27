@@ -8,6 +8,7 @@ import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.index.encodeURIComponent
 import kotlinx.browser.document
 import kotlinx.html.ButtonType
+import kotlinx.html.DIV
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
@@ -22,6 +23,7 @@ import react.RComponent
 import react.State
 import react.createElement
 import react.createRef
+import react.dom.RDOMBuilder
 import react.dom.attrs
 import react.dom.button
 import react.dom.div
@@ -40,8 +42,16 @@ fun interface SearchParamGenerator<T : CommonParams> {
     fun Search<T>.get(): T
 }
 
-fun interface ExtraFilterRenderer {
+fun interface ExtraContentRenderer {
     fun RBuilder.invoke()
+}
+
+fun RDOMBuilder<DIV>.invokeECR(renderer: ExtraContentRenderer?) {
+    renderer?.let { exr ->
+        with(exr) {
+            this@invokeECR.invoke()
+        }
+    }
 }
 
 external interface SearchProps<T : CommonParams> : Props {
@@ -53,7 +63,7 @@ external interface SearchProps<T : CommonParams> : Props {
     var updateSearchParams: (T, Int?) -> Unit
     var updateUI: ((T?) -> Unit)?
     var filterTexts: (() -> List<String>)?
-    var extraFilters: ExtraFilterRenderer?
+    var extraFilters: ExtraContentRenderer?
 }
 
 external interface SearchState<T> : State {
@@ -180,7 +190,7 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                         ref = inputRef
                     }
                 }
-                div("mb-3 col-lg-3 d-grid") {
+                div("mb-3 col-lg-3 btn-group") {
                     button(type = ButtonType.submit, classes = "btn btn-primary") {
                         attrs.onClickFunction = {
                             it.preventDefault()
@@ -243,13 +253,7 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                                 }
                             }
 
-                            val self = this
-
-                            props.extraFilters?.let { exr ->
-                                with(exr) {
-                                    self.invoke()
-                                }
-                            }
+                            invokeECR(props.extraFilters)
                         }
                     }
                 }

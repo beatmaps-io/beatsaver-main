@@ -1,15 +1,18 @@
 package io.beatmaps.index
 
+import external.Moment
+import io.beatmaps.stateNavOptions
 import io.beatmaps.WithRouterProps
 import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
+import io.beatmaps.common.SearchParamsPlaylist
 import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.common.emptyTags
 import io.beatmaps.common.toQuery
 import io.beatmaps.common.toSet
 import io.beatmaps.common.toTags
 import io.beatmaps.dateFormat
-import io.beatmaps.shared.ExtraFilterRenderer
+import io.beatmaps.shared.ExtraContentRenderer
 import io.beatmaps.shared.FilterCategory
 import io.beatmaps.shared.FilterInfo
 import io.beatmaps.shared.SearchParamGenerator
@@ -19,11 +22,17 @@ import io.beatmaps.shared.queryParams
 import io.beatmaps.shared.search
 import io.beatmaps.shared.tags
 import kotlinx.browser.window
+import kotlinx.datetime.Instant
+import kotlinx.html.ButtonType
+import kotlinx.html.js.onClickFunction
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
 import react.State
 import react.createRef
+import react.dom.button
+import react.dom.div
+import react.dom.jsStyle
 import react.ref
 import react.setState
 
@@ -48,6 +57,27 @@ val mapFilters = listOf<FilterInfo<SearchParams>>(
 )
 
 inline fun <T> T.applyIf(condition: Boolean, block: T.() -> T): T = if (condition) block(this) else this
+
+fun String.toInstant() = Instant.parse(Moment(this).toISOString())
+
+fun SearchParams?.toPlaylistConfig() = SearchParamsPlaylist(
+    this?.search ?: "",
+    this?.automapper,
+    this?.minNps,
+    this?.maxNps,
+    this?.chroma,
+    this?.sortOrder ?: SearchOrder.Latest,
+    this?.from?.toInstant(),
+    this?.to?.toInstant(),
+    this?.noodle,
+    this?.ranked,
+    this?.curated,
+    this?.verified,
+    this?.fullSpread,
+    this?.me,
+    this?.cinema,
+    this?.tags ?: mapOf()
+)
 
 class HomePage : RComponent<HomePageProps, HomePageState>() {
     private val modalRef = createRef<ModalComponent>()
@@ -145,8 +175,9 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
                     this@HomePage.state.tags?.toTags() ?: mapOf()
                 )
             }
-            extraFilters = ExtraFilterRenderer {
+            extraFilters = ExtraContentRenderer {
                 tags {
+                    attrs.default = state.tags
                     attrs.callback = {
                         setState {
                             tags = it
@@ -155,7 +186,9 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
                 }
             }
             updateUI = { params ->
-                state.tags = params?.tags?.toSet()
+                setState {
+                    tags = params?.tags?.toSet()
+                }
             }
             filterTexts = {
                 (state.tags?.flatMap { y -> y.value.map { z -> (if (y.key) "" else "!") + z.slug } } ?: listOf())
@@ -171,6 +204,26 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             history = props.history
             updateScrollIndex = {
                 updateSearchParams(state.searchParams, if (it < 2) null else it)
+            }
+        }
+
+        div("position-absolute btn-group") {
+            attrs.jsStyle {
+                position = "absolute"
+                right = "10px"
+                bottom = "10px"
+            }
+
+            button(type = ButtonType.button, classes = "btn btn-sm btn-primary") {
+                attrs.onClickFunction = {
+                    it.preventDefault()
+
+                    props.history.go(
+                        "/playlists/new",
+                        stateNavOptions(state.searchParams?.toPlaylistConfig(), false)
+                    )
+                }
+                +"Create Search Playlist"
             }
         }
     }

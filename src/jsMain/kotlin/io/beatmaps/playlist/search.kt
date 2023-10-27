@@ -177,7 +177,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                     SearchOrder.values().filter { SortOrderTarget.Map in it.targets }.forEach {
                         option {
                             attrs.value = it.toString()
-                            attrs.selected = order == it
+                            attrs.selected = it == order
                             +it.toString()
                         }
                     }
@@ -199,7 +199,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                     mapCounts.forEach {
                         option {
                             attrs.value = it.toString()
-                            attrs.selected = mapCount == it
+                            attrs.selected = it == mapCount
                             +it.toString()
                         }
                     }

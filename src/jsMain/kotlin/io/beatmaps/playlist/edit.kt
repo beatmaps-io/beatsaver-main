@@ -11,15 +11,17 @@ import io.beatmaps.History
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
+import io.beatmaps.api.UploadValidationInfo
+import io.beatmaps.common.SearchParamsPlaylist
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.json
 import io.beatmaps.globalContext
+import io.beatmaps.readState
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.errors
 import io.beatmaps.shared.toggle
 import io.beatmaps.upload.UploadRequestConfig
-import kotlinx.browser.window
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.hidden
@@ -42,6 +44,7 @@ import react.dom.input
 import react.dom.label
 import react.dom.textarea
 import react.fc
+import react.router.useLocation
 import react.router.useNavigate
 import react.router.useParams
 import react.useEffect
@@ -56,6 +59,9 @@ val editPlaylist = fc<Props> {
     val descriptionRef = useRef<HTMLTextAreaElement>()
     val publicRef = useRef<HTMLInputElement>()
 
+    val location = useLocation()
+    val fromState = location.readState<SearchParamsPlaylist>()?.let { SearchPlaylistConfig(it, 100) }
+
     val params = useParams()
     val history = History(useNavigate())
     val id = params["id"]
@@ -63,8 +69,9 @@ val editPlaylist = fc<Props> {
     val (loading, setLoading) = useState(false)
     val (init, setInit) = useState(false)
     val (playlist, setPlaylist) = useState<PlaylistFull?>(null)
-    val (errors, setErrors) = useState(listOf<String>())
-    val (config, setConfig) = useState(playlist?.config as? SearchPlaylistConfig)
+    val (errors, setErrors) = useState(listOf<UploadValidationInfo>())
+    val (config, setConfig) = useState(playlist?.config as? SearchPlaylistConfig ?: fromState)
+    val isSearch = playlist?.type == EPlaylistType.Search || (playlist == null && fromState != null)
 
     fun loadData() {
         if (loading) return
@@ -111,8 +118,8 @@ val editPlaylist = fc<Props> {
                             data.append("name", nameRef.current?.value ?: "")
                             data.append("description", descriptionRef.current?.value ?: "")
 
-                            if (playlist?.type == EPlaylistType.Search) {
-                                data.append("type", playlist.type.name)
+                            if (isSearch) {
+                                data.append("type", EPlaylistType.Search.name)
                                 data.append(
                                     "config",
                                     json.encodeToString(config)
@@ -137,11 +144,11 @@ val editPlaylist = fc<Props> {
                                 } else {
                                     captchaRef.current?.reset()
                                     val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)
-                                    setErrors(failedResponse.errors.map { it.message })
+                                    setErrors(failedResponse.errors)
                                     setLoading(false)
                                 }
                             }.catch {
-                                setErrors(listOf("Internal server error"))
+                                setErrors(listOf(UploadValidationInfo("Internal server error")))
                                 setLoading(false)
                             }
                         }
@@ -182,7 +189,7 @@ val editPlaylist = fc<Props> {
                             ref = descriptionRef
                         }
                     }
-                    if (userData?.suspended == false && playlist?.type != EPlaylistType.Search) {
+                    if (userData?.suspended == false && !isSearch) {
                         toggle {
                             attrs.id = "public"
                             attrs.disabled = loading
@@ -206,18 +213,18 @@ val editPlaylist = fc<Props> {
                             attrs.hidden = loading
                         }
                     }
-                    if (playlist?.type == EPlaylistType.Search) {
+                    if (isSearch) {
                         hr {}
                         playlistSearchEditor {
                             attrs.loading = loading
-                            attrs.config = (playlist.config as? SearchPlaylistConfig) ?: SearchPlaylistConfig.DEFAULT
+                            attrs.config = (playlist?.config as? SearchPlaylistConfig) ?: fromState ?: SearchPlaylistConfig.DEFAULT
                             attrs.callback = {
                                 setConfig(it)
                             }
                         }
                     }
                     errors {
-                        attrs.errors = errors
+                        attrs.validationErrors = errors
                     }
                     div("btn-group w-100 mt-5") {
                         routeLink(id?.let { "/playlists/$it" } ?: "/", className = "btn btn-secondary w-50") {

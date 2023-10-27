@@ -9,8 +9,8 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalComponent
+import io.beatmaps.shared.errors
 import io.beatmaps.upload.simple
-import io.beatmaps.upload.uploadError
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.w3c.dom.HTMLElement
@@ -128,12 +128,8 @@ class Timeline : RComponent<TimelineProps, TimelineState>() {
                             }
                         }
                         if (!state.loading) {
-                            state.errors.forEach {
-                                div("invalid-feedback") {
-                                    uploadError {
-                                        attrs.info = it
-                                    }
-                                }
+                            errors {
+                                attrs.validationErrors = state.errors
                             }
                         }
                     }
