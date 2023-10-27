@@ -25,6 +25,7 @@ import kotlinx.browser.window
 import kotlinx.datetime.Instant
 import kotlinx.html.ButtonType
 import kotlinx.html.js.onClickFunction
+import kotlinx.html.title
 import org.w3c.dom.url.URLSearchParams
 import react.RBuilder
 import react.RComponent
@@ -32,6 +33,7 @@ import react.State
 import react.createRef
 import react.dom.button
 import react.dom.div
+import react.dom.i
 import react.dom.jsStyle
 import react.ref
 import react.setState
@@ -215,6 +217,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             }
 
             button(type = ButtonType.button, classes = "btn btn-sm btn-primary") {
+                attrs.title = "Create playlist from search"
                 attrs.onClickFunction = {
                     it.preventDefault()
 
@@ -223,7 +226,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
                         stateNavOptions(state.searchParams?.toPlaylistConfig(), false)
                     )
                 }
-                +"Create Search Playlist"
+                i("fas fa-list-ul") { }
             }
         }
     }
