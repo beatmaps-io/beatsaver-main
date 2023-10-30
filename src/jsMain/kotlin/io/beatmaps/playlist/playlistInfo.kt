@@ -5,6 +5,7 @@ import io.beatmaps.api.PlaylistFull
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.api.MapAttr
+import io.beatmaps.common.asQuery
 import io.beatmaps.common.fixed
 import io.beatmaps.common.formatTime
 import io.beatmaps.common.human
@@ -29,7 +30,7 @@ data class StatInfo(val icon: String, val text: (SearchPlaylistConfig) -> String
 
 val stats = listOf(
     StatInfo("fa-search", { it.searchParams.search }, { it.searchParams.search.isNotEmpty() }),
-    StatInfo("fa-tag", { it.searchParams.tags.human() }, { it.searchParams.tags.isNotEmpty() }),
+    StatInfo("fa-tag", { it.searchParams.tags.asQuery().human() }, { it.searchParams.tags.isNotEmpty() }),
 
     StatInfo("/static/icons/nps.png", { "NPS Range" }, { it.searchParams.minNps != null || it.searchParams.maxNps != null }) {
         "${(it.searchParams.minNps ?: 0f).fixed(2)} - ${it.searchParams.maxNps?.fixed(2) ?: "∞"}"

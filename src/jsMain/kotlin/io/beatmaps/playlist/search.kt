@@ -11,8 +11,6 @@ import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SearchParamsPlaylist
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.SortOrderTarget
-import io.beatmaps.common.toSet
-import io.beatmaps.common.toTags
 import io.beatmaps.maps.collaboratorCard
 import io.beatmaps.maps.userSearch
 import io.beatmaps.shared.presets
@@ -263,9 +261,9 @@ val playlistSearchEditor = fc<PSEProps> { props ->
             }
 
             tags {
-                attrs.default = props.config.searchParams.tags.toSet()
+                attrs.default = tags
                 attrs.callback = {
-                    setTags(it.toTags())
+                    setTags(it)
                 }
             }
         }

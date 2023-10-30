@@ -16,6 +16,7 @@ import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.applyToQuery
+import io.beatmaps.common.asQuery
 import io.beatmaps.common.cleanString
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
@@ -49,6 +50,7 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.jsonLenient
 import io.beatmaps.common.localPlaylistCoverFolder
 import io.beatmaps.common.pub
+import io.beatmaps.common.toQuery
 import io.beatmaps.controllers.UploadException
 import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.controllers.uploadDir
@@ -430,7 +432,7 @@ fun Route.playlistRoute() {
                                     .notNull(params.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
                                     .notNull(params.me) { o -> Beatmap.me eq o }
                                     .notNull(params.cinema) { o -> Beatmap.cinema eq o }
-                                    .notNull(params.tags) { o -> o.applyToQuery() }
+                                    .notNull(params.tags) { o -> o.asQuery().applyToQuery() }
                                     .let { q ->
                                         if (params.mappers.isEmpty()) q else q.and(Beatmap.uploader inList params.mappers)
                                     }
