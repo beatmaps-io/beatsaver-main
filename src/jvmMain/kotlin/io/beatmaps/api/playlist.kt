@@ -50,7 +50,6 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.jsonLenient
 import io.beatmaps.common.localPlaylistCoverFolder
 import io.beatmaps.common.pub
-import io.beatmaps.common.toQuery
 import io.beatmaps.controllers.UploadException
 import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.controllers.uploadDir
