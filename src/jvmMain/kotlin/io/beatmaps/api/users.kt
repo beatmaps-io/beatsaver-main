@@ -1147,11 +1147,12 @@ fun Route.userRoute() {
     }
     get<MapsApi.UserId>("Get user info".responds(ok<UserDetail>(), notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
+
         val userDetail = transaction {
             val user = userBy {
                 (User.id eq it.id) and User.active
             }
-            val followData = followData(it.id, call.sessions.get<Session>()?.userId)
+            val followData = followData(user.id.value, call.sessions.get<Session>()?.userId)
 
             UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let {
                 if (call.sessions.get<Session>()?.isAdmin() == true) {
@@ -1160,6 +1161,28 @@ fun Route.userRoute() {
                     it
                 }
             }
+        }
+
+        call.respond(userDetail)
+    }
+
+    options<MapsApi.UserIds> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
+    }
+    get<MapsApi.UserIds>("Get user info".responds(ok<UserDetail>(), notFound())) {
+        call.response.header("Access-Control-Allow-Origin", "*")
+
+        val ids = it.ids.split(",").mapNotNull { id -> id.toIntOrNull() }.take(50)
+
+        val userDetail = transaction {
+            User
+                .select {
+                    (User.id inList ids) and User.active
+                }
+                .map { row ->
+                    UserDetail.from(row)
+                }
         }
 
         call.respond(userDetail)

@@ -663,52 +663,7 @@ th a {
   }
 }
 
-.card .collaborators {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-
-  h4 {
-    margin: 0;
-  }
-
-  & > :is(div, form) {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .collaborator-cards {
-    flex-wrap: wrap;
-
-    .collaborator {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-
-      border: 1px solid $warning;
-      border-radius: 0.25rem;
-      background-color: rgba($warning, 0.5);
-
-      padding: 0.5rem 1rem;
-
-      &.accepted {
-        border-color: $success;
-        background-color: rgba($success, 0.5);
-      }
-
-      span {
-        display: flex;
-        flex-direction: column;
-        line-height: 1em;
-
-        .status {
-          color: rgba($white, 0.5);
-          font-size: 0.75rem;
-        }
-      }
-    }
-  }
-
+.card .collaborators, .playlist-mappers {
   .search-results {
     flex-direction: column;
     gap: 0;
@@ -734,6 +689,56 @@ th a {
     height: 2rem;
     aspect-ratio: 1;
     border-radius: 50%;
+  }
+
+  & > form {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  gap: 0.5rem;
+}
+
+.card .collaborators {
+  display: flex;
+  flex-direction: column;
+
+  h4 {
+    margin: 0;
+  }
+}
+
+.collaborator-cards {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+
+  .collaborator {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+
+    border: 1px solid $warning;
+    border-radius: 0.25rem;
+    background-color: rgba($warning, 0.5);
+
+    padding: 0.5rem 1rem;
+
+    &.accepted {
+      border-color: $success;
+      background-color: rgba($success, 0.5);
+    }
+
+    span {
+      display: flex;
+      flex-direction: column;
+      line-height: 1em;
+
+      .status {
+        color: rgba($white, 0.5);
+        font-size: 0.75rem;
+      }
+    }
   }
 }
 

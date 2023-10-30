@@ -431,6 +431,7 @@ fun Route.playlistRoute() {
                                     .notNull(params.me) { o -> Beatmap.me eq o }
                                     .notNull(params.cinema) { o -> Beatmap.cinema eq o }
                                     .notNull(params.tags) { o -> o.applyToQuery() }
+                                    .notNull(params.mappers) { o -> Beatmap.uploader inList o }
                             }
                             .orderBy(*sortArgs)
                             .limit(actualPageSize, offset.toLong())

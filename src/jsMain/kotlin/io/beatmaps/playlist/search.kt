@@ -1,14 +1,20 @@
 package io.beatmaps.playlist
 
+import external.Axios
 import external.DateRangePicker
 import external.Moment
+import external.generateConfig
 import external.reactFor
+import io.beatmaps.Config
+import io.beatmaps.api.UserDetail
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SearchParamsPlaylist
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.common.toSet
 import io.beatmaps.common.toTags
+import io.beatmaps.maps.collaboratorCard
+import io.beatmaps.maps.userSearch
 import io.beatmaps.shared.presets
 import io.beatmaps.shared.slider
 import io.beatmaps.shared.tags
@@ -56,6 +62,9 @@ val playlistSearchEditor = fc<PSEProps> { props ->
     val (mapCount, setMapCount) = useState(props.config.mapCount)
     val (tags, setTags) = useState(props.config.searchParams.tags)
 
+    val maxMappersInFilter = 30
+    val (currentMappers, setCurrentMappers) = useState(listOf<UserDetail>())
+
     val filters = listOf(
         "General" to listOf(
             PlaylistSearchBooleanFilter("automapper", "AI") { it.automapper },
@@ -98,15 +107,25 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                     fromFilter("fullspread"),
                     fromFilter("me"),
                     fromFilter("cinema"),
-                    tags
+                    tags,
+                    currentMappers.map { it.id }
                 ),
                 mapCount
             )
         )
     }
 
-    useEffect(minNps, maxNps, startDate, endDate, order, mapCount, tags) {
+    useEffect(minNps, maxNps, startDate, endDate, order, mapCount, tags, currentMappers) {
         doCallback()
+    }
+
+    useEffect(props.config) {
+        Axios.get<List<UserDetail>>(
+            "${Config.apibase}/users/ids/${props.config.searchParams.mappers.joinToString(",")}",
+            generateConfig<String, List<UserDetail>>()
+        ).then {
+            setCurrentMappers(it.data)
+        }
     }
 
     div("row") {
@@ -248,6 +267,35 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                 attrs.callback = {
                     setTags(it.toTags())
                 }
+            }
+        }
+    }
+    div("row playlist-mappers") {
+        label("form-label") {
+            attrs.reactFor = "mappers"
+            +"Mappers"
+        }
+
+        div("collaborator-cards") {
+            currentMappers.forEach { user ->
+                collaboratorCard {
+                    key = user.id.toString()
+                    attrs.user = user
+                    attrs.callback = {
+                        setCurrentMappers(currentMappers.minus(user))
+                    }
+                }
+            }
+        }
+
+        if (currentMappers.size < maxMappersInFilter) {
+            userSearch {
+                attrs.disabled = props.loading
+                attrs.excludeUsers = currentMappers.map { it.id }
+                attrs.callback = { newUser ->
+                    setCurrentMappers(currentMappers.plus(newUser))
+                }
+                attrs.addText = "Add"
             }
         }
     }

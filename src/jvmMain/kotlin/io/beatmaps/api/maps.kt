@@ -143,6 +143,10 @@ class MapsApi {
     data class UserId(val id: Int, @Ignore val api: MapsApi)
 
     @Group("Users")
+    @Location("/users/ids/{ids}")
+    data class UserIds(val ids: String, @Ignore val api: MapsApi)
+
+    @Group("Users")
     @Location("/users/name/{name}")
     data class UserName(val name: String, @Ignore val api: MapsApi)
 
