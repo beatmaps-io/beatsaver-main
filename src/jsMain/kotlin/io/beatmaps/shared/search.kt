@@ -3,11 +3,12 @@ package io.beatmaps.shared
 import external.DateRangePicker
 import external.Moment
 import io.beatmaps.History
-import io.beatmaps.api.SearchOrder
-import io.beatmaps.api.SortOrderTarget
+import io.beatmaps.common.SearchOrder
+import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.index.encodeURIComponent
 import kotlinx.browser.document
 import kotlinx.html.ButtonType
+import kotlinx.html.DIV
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
@@ -16,13 +17,13 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.events.Event
-import react.FC
 import react.Props
 import react.RBuilder
 import react.RComponent
 import react.State
 import react.createElement
 import react.createRef
+import react.dom.RDOMBuilder
 import react.dom.attrs
 import react.dom.button
 import react.dom.div
@@ -41,6 +42,18 @@ fun interface SearchParamGenerator<T : CommonParams> {
     fun Search<T>.get(): T
 }
 
+fun interface ExtraContentRenderer {
+    fun RBuilder.invoke()
+}
+
+fun RDOMBuilder<DIV>.invokeECR(renderer: ExtraContentRenderer?) {
+    renderer?.let { exr ->
+        with(exr) {
+            this@invokeECR.invoke()
+        }
+    }
+}
+
 external interface SearchProps<T : CommonParams> : Props {
     var typedState: T?
     var sortOrderTarget: SortOrderTarget
@@ -50,7 +63,7 @@ external interface SearchProps<T : CommonParams> : Props {
     var updateSearchParams: (T, Int?) -> Unit
     var updateUI: ((T?) -> Unit)?
     var filterTexts: (() -> List<String>)?
-    var extraFilters: FC<Props>?
+    var extraFilters: ExtraContentRenderer?
 }
 
 external interface SearchState<T> : State {
@@ -64,14 +77,6 @@ external interface SearchState<T> : State {
     var filtersOpen: Boolean?
 }
 data class PresetDateRange(val startDate: Moment?, val endDate: Moment?)
-
-val presets = mapOf(
-    "Last 24h" to PresetDateRange(Moment().subtract(1, "day"), null),
-    "Last week" to PresetDateRange(Moment().subtract(1, "week"), null),
-    "Last month" to PresetDateRange(Moment().subtract(1, "month"), null),
-    "Last 3 months" to PresetDateRange(Moment().subtract(3, "month"), null),
-    "All" to PresetDateRange(null, null)
-)
 
 enum class FilterCategory {
     NONE, GENERAL, REQUIREMENTS
@@ -185,7 +190,7 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                         ref = inputRef
                     }
                 }
-                div("mb-3 col-lg-3 d-grid") {
+                div("mb-3 col-lg-3 btn-group") {
                     button(type = ButtonType.submit, classes = "btn btn-primary") {
                         attrs.onClickFunction = {
                             it.preventDefault()
@@ -233,9 +238,14 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                                         }
                                     }
 
-                                    toggle(filter.key.key, filter.key.name, filter.value) {
-                                        setState {
-                                            filterMap?.put(filter.key, it)
+                                    toggle {
+                                        attrs.id = filter.key.key
+                                        attrs.text = filter.key.name
+                                        attrs.ref = filter.value
+                                        attrs.block = {
+                                            setState {
+                                                filterMap?.put(filter.key, it)
+                                            }
                                         }
                                     }
 
@@ -243,15 +253,22 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                                 }
                             }
 
-                            props.extraFilters?.invoke { }
+                            invokeECR(props.extraFilters)
                         }
                     }
                 }
-                slider("NPS", state.minNps ?: 0f, state.maxNps ?: 16f, props.maxNps) {
-                    setState {
-                        minNps = it[0] / 10f
-                        maxNps = it[1] / 10f
+                slider {
+                    attrs.text = "NPS"
+                    attrs.currentMin = state.minNps ?: 0f
+                    attrs.currentMax = state.maxNps ?: props.maxNps.toFloat()
+                    attrs.max = props.maxNps
+                    attrs.block = {
+                        setState {
+                            minNps = it[0] / 10f
+                            maxNps = it[1] / 10f
+                        }
                     }
+                    attrs.className = "mb-3 col-sm-3"
                 }
                 div("mb-3 col-sm-3") {
                     DateRangePicker.default {
@@ -277,17 +294,11 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                         attrs.numberOfMonths = 1
                         attrs.renderCalendarInfo = {
                             createElement<Props> {
-                                div("presets") {
-                                    presets.forEach { preset ->
-                                        button {
-                                            attrs.onClickFunction = {
-                                                it.preventDefault()
-                                                setState {
-                                                    startDate = preset.value.startDate
-                                                    endDate = preset.value.endDate
-                                                }
-                                            }
-                                            +preset.key
+                                presets {
+                                    attrs.callback = { sd, ed ->
+                                        setState {
+                                            startDate = sd
+                                            endDate = ed
                                         }
                                     }
                                 }

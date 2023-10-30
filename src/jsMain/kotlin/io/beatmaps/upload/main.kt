@@ -12,6 +12,7 @@ import io.beatmaps.common.MapTag
 import io.beatmaps.maps.TagPickerHeadingRenderer
 import io.beatmaps.maps.tagPicker
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.errors
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onBlurFunction
@@ -160,10 +161,8 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
                                 attrs.onChangeFunction = checkForValue
                                 attrs.onBlurFunction = checkForValue
                             }
-                            if (state.hasTitle == false) {
-                                div("invalid-feedback") {
-                                    +"Enter a title"
-                                }
+                            div("invalid-feedback") {
+                                +"Enter a title"
                             }
                         }
 
@@ -341,17 +340,9 @@ class UploadPage : RComponent<UploadPageProps, UploadPageState>() {
         }
 
         div("row") {
-            if (state.errors?.isNotEmpty() == true) {
-                div("is-invalid") {}
-            }
-
             if (state.loading != true) {
-                state.errors?.forEach {
-                    div("invalid-feedback") {
-                        uploadError {
-                            attrs.info = it
-                        }
-                    }
+                errors {
+                    attrs.validationErrors = state.errors
                 }
             }
         }

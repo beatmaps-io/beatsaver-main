@@ -208,8 +208,10 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                                 routeLink("/playlists/${pl.playlistId}/edit", className = "btn btn-primary") {
                                     +"Edit"
                                 }
-                                routeLink("/playlists/${pl.playlistId}/add", className = "btn btn-purple") {
-                                    +"Multi-Add"
+                                if (pl.type != EPlaylistType.Search) {
+                                    routeLink("/playlists/${pl.playlistId}/add", className = "btn btn-purple") {
+                                        +"Multi-Add"
+                                    }
                                 }
                                 a("#", classes = "btn btn-danger") {
                                     attrs.onClickFunction = {
@@ -322,7 +324,7 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
                     }
                 }
                 div("col-lg-8") {
-                    if (state.playlist?.owner?.id == userData?.userId) {
+                    if (state.playlist?.owner?.id == userData?.userId && state.playlist?.type?.orderable == true) {
                         DragDropContext {
                             attrs.onDragEnd = {
                                 it.destination?.let { dest ->

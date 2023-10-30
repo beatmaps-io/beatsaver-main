@@ -1,12 +1,16 @@
 package io.beatmaps
 
 import history.Location
+import io.beatmaps.common.json
+import io.beatmaps.common.jsonLenient
 import io.beatmaps.nav.manageNav
 import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import kotlinx.js.jso
 import kotlinx.js.timers.setTimeout
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HashChangeEvent
@@ -20,6 +24,7 @@ import react.createElement
 import react.fc
 import react.react
 import react.router.NavigateFunction
+import react.router.NavigateOptions
 import react.router.Params
 import react.router.Route
 import react.router.useLocation
@@ -33,17 +38,26 @@ external interface WithRouterProps : Props {
     var params: Params
 }
 
-class History(private val navigation: NavigateFunction) {
-    fun push(location: String) = go(location, false)
-    fun replace(location: String) = go(location, true)
+inline fun <reified T> stateNavOptions(obj: T, replace: Boolean? = null) = object : NavigateOptions {
+    override var replace = replace
+    override var state: Any? = json.encodeToString(obj)
+}
 
-    private fun go(location: String, replace: Boolean) {
-        navigation.invoke(
-            location,
-            jso {
-                this.replace = replace
-            }
-        )
+abstract class NO(override var replace: Boolean?) : NavigateOptions {
+    override var state: Any? = null
+}
+
+object ReplaceNavOption : NO(true)
+object NewNavOption : NO(false)
+
+inline fun <reified T> Location.readState() = (state as? String)?.let { jsonLenient.decodeFromString<T>(it) }
+
+class History(private val navigation: NavigateFunction) {
+    fun push(location: String) = go(location, NewNavOption)
+    fun replace(location: String) = go(location, ReplaceNavOption)
+
+    fun go(location: String, nav: NavigateOptions) {
+        navigation.invoke(location, nav)
     }
 }
 

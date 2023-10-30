@@ -67,20 +67,20 @@ fun RElementBuilder<DropzoneProps>.simple(
                         history.push("/maps/${r.data}")
                     }
                 } else if (r.status == 413) {
-                    errorsBlock(listOf(UploadValidationInfo(listOf(), "Zip file too big")))
+                    errorsBlock(listOf(UploadValidationInfo("Zip file too big")))
                 } else {
                     captchaRef.current?.reset()
                     val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)
                     errorsBlock(failedResponse.errors)
                 }
             }.catch {
-                errorsBlock(listOf(UploadValidationInfo(listOf(), "Internal server error")))
+                errorsBlock(listOf(UploadValidationInfo("Internal server error")))
             }
         }
     }
     attrs.children = { info ->
         createElement<Props> {
-            div("dropzone" + (if (errors) " is-invalid" else "")) {
+            div("dropzone") {
                 val rootProps = info.getRootProps()
                 val props = info.getInputProps()
                 attrs {

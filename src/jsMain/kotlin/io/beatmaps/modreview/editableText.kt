@@ -43,7 +43,7 @@ class EditableText : RComponent<EditableTextProps, EditableTextState>() {
         }
     }
 
-    private fun endLoading(e: Throwable) {
+    private val endLoading = { _: Throwable ->
         setState {
             loading = false
         }
@@ -78,20 +78,21 @@ class EditableText : RComponent<EditableTextProps, EditableTextState>() {
             a(classes = "btn btn-primary mt-1 float-end") {
                 attrs.onClickFunction = {
                     val newReview = textareaRef.current?.value ?: ""
-
-                    setState {
-                        loading = true
-                    }
-
-                    props.saveText?.invoke(newReview)?.then({
+                    if (state.loading != true) {
                         setState {
-                            loading = false
+                            loading = true
                         }
 
-                        if (it.data.success) {
-                            props.stopEditing?.invoke(newReview)
-                        }
-                    }, ::endLoading)
+                        props.saveText?.invoke(newReview)?.then({
+                            setState {
+                                loading = false
+                            }
+
+                            if (it.data.success) {
+                                props.stopEditing?.invoke(newReview)
+                            }
+                        }, endLoading)
+                    }
                 }
                 +(props.buttonText ?: "Save")
             }

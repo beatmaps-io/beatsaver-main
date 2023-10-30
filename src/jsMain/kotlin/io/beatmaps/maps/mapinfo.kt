@@ -5,19 +5,13 @@ import external.AxiosResponse
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.BookmarkRequest
-import io.beatmaps.api.CollaborationDetail
-import io.beatmaps.api.CollaborationRemoveData
-import io.beatmaps.api.CollaborationRequestData
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.ErrorResponse
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.SimpleMapInfoUpdate
 import io.beatmaps.api.StateUpdate
-import io.beatmaps.api.UserDetail
 import io.beatmaps.api.ValidateMap
-import io.beatmaps.common.MapTag
-import io.beatmaps.common.MapTagType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.json
 import io.beatmaps.globalContext
@@ -30,7 +24,6 @@ import io.beatmaps.shared.errors
 import io.beatmaps.shared.links
 import io.beatmaps.util.textToContent
 import kotlinx.browser.window
-import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
@@ -38,51 +31,20 @@ import kotlinx.html.title
 import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
-import org.w3c.dom.events.Event
 import react.Props
-import react.RBuilder
-import react.RComponent
 import react.RefObject
-import react.State
-import react.createRef
 import react.dom.a
 import react.dom.button
 import react.dom.div
-import react.dom.form
-import react.dom.h4
 import react.dom.i
 import react.dom.img
 import react.dom.input
-import react.dom.jsStyle
 import react.dom.p
-import react.dom.span
 import react.dom.textarea
 import react.fc
-import react.setState
 import react.useRef
 import react.useState
 import kotlin.collections.set
-
-external interface MapTagProps : Props {
-    var selected: Boolean
-    var excluded: Boolean
-    var margins: String?
-    var tag: MapTag
-    var onClick: (Event) -> Unit
-}
-
-val mapTag = fc<MapTagProps> { props ->
-    val dark = !props.selected && !props.excluded
-    val margins = props.margins ?: "me-2 mb-2"
-    span("badge badge-${if (props.excluded) "danger" else props.tag.type.color} $margins") {
-        attrs.jsStyle {
-            opacity = if (dark) 0.4 else 1
-        }
-        attrs.title = props.tag.human
-        attrs.onClickFunction = props.onClick
-        +props.tag.human
-    }
-}
 
 external interface MapInfoProps : Props {
     var mapInfo: MapDetail
@@ -92,207 +54,6 @@ external interface MapInfoProps : Props {
     var deleteMap: () -> Unit
     var updateMapinfo: (MapDetail) -> Unit
 }
-
-fun interface TagPickerHeadingRenderer {
-    fun RBuilder.invoke(info: Map<MapTagType, Int>)
-}
-external interface TagPickerProps : Props {
-    var classes: String?
-    var tags: Set<MapTag>?
-    var tagUpdateCallback: ((Set<MapTag>) -> Unit)?
-    var renderHeading: TagPickerHeadingRenderer?
-}
-
-val tagPicker = fc<TagPickerProps> { props ->
-    val tags = props.tags
-
-    div("tags " + (props.classes ?: "")) {
-        fun renderTag(it: MapTag) {
-            mapTag {
-                attrs.selected = tags?.contains(it) == true
-                attrs.tag = it
-                attrs.onClick = { _ ->
-                    val shouldAdd = tags == null || (!tags.contains(it) && tags.count { o -> o.type == it.type } < MapTag.maxPerType.getValue(it.type))
-
-                    with(tags ?: setOf()) {
-                        if (shouldAdd) {
-                            plus(it)
-                        } else {
-                            minus(it)
-                        }
-                    }.also {
-                        props.tagUpdateCallback?.invoke(it)
-                    }
-                }
-            }
-        }
-
-        val byType = (tags?.groupBy { it.type } ?: mapOf()).mapValues {
-            it.value.size
-        }.withDefault { 0 }
-
-        props.renderHeading?.let { rh ->
-            with(rh) {
-                this@div.invoke(byType)
-            }
-        } ?: run {
-            h4 {
-                val allocationInfo = MapTag.maxPerType.map { "${byType.getValue(it.key)}/${it.value} ${it.key.name}" }.joinToString(", ")
-                +"Tags ($allocationInfo):"
-            }
-        }
-
-        tags?.sortedBy { it.type.ordinal }?.forEach(::renderTag)
-
-        MapTag.sorted.minus(tags ?: setOf()).fold(MapTagType.None) { prev, it ->
-            if (it.type != prev) div("break") {}
-
-            if (byType.getValue(it.type) < MapTag.maxPerType.getValue(it.type)) {
-                renderTag(it)
-            }
-            it.type
-        }
-    }
-}
-
-external interface CollaboratorPickerProps : Props {
-    var classes: String?
-    var map: MapDetail
-    var disabled: Boolean
-}
-
-external interface CollaboratorPickerState : State {
-    var foundUsers: List<UserDetail>?
-    var collaborators: List<CollaborationDetail>?
-}
-
-class CollaboratorPicker : RComponent<CollaboratorPickerProps, CollaboratorPickerState>() {
-    private val inputRef = createRef<HTMLInputElement>()
-
-    private fun updateCollaborators() = Axios.get<List<CollaborationDetail>>(
-        "${Config.apibase}/collaborations/map/${props.map.id}",
-        generateConfig<String, List<CollaborationDetail>>()
-    ).then {
-        setState {
-            collaborators = it.data
-        }
-    }
-
-    override fun componentWillMount() {
-        updateCollaborators()
-    }
-
-    override fun RBuilder.render() {
-        globalContext.Consumer { userData ->
-            div("collaborators " + (props.classes ?: "")) {
-                h4 {
-                    +"Collaborators"
-                }
-
-                state.collaborators?.let { collaborationDetails ->
-                    div("collaborator-cards") {
-                        collaborationDetails.forEach { c ->
-                            if (c.collaborator == null) return@forEach
-
-                            div("collaborator" + if (c.accepted) " accepted" else "") {
-                                img(c.collaborator.name, c.collaborator.avatar) { }
-                                span {
-                                    +c.collaborator.name
-                                    span("status") {
-                                        +(if (c.accepted) "Accepted" else "Pending")
-                                    }
-                                }
-                                a(classes = "btn-close") {
-                                    attrs.onClickFunction = {
-                                        Axios.post<String>(
-                                            "${Config.apibase}/collaborations/remove",
-                                            CollaborationRemoveData(c.mapId, c.collaborator.id),
-                                            generateConfig<CollaborationRemoveData, String>()
-                                        ).then {
-                                            setState {
-                                                collaborators = (collaborators ?: listOf()) - c
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                form("", classes = "search") {
-                    input(InputType.search, classes = "form-control") {
-                        attrs.id = "collaborators"
-                        attrs.placeholder = "Add users"
-                        attrs.disabled = props.disabled
-                        ref = inputRef
-                    }
-
-                    button(type = ButtonType.submit, classes = "btn btn-primary") {
-                        attrs.onClickFunction = {
-                            it.preventDefault()
-                            inputRef.current?.value?.ifBlank { null }?.let { q ->
-                                Axios.get<List<UserDetail>>(
-                                    "${Config.apibase}/users/search?q=$q",
-                                    generateConfig<String, List<UserDetail>>()
-                                )
-                                    .then {
-                                        setState {
-                                            foundUsers = it.data
-                                        }
-                                    }
-                            } ?: setState {
-                                foundUsers = null
-                            }
-                        }
-                        +"Search"
-                    }
-                }
-
-                state.foundUsers?.filter {
-                    it.id != userData?.userId && state.collaborators?.none { c ->
-                        c.collaborator?.id == it.id
-                    } != false
-                }?.let { users ->
-                    div("search-results list-group") {
-                        if (users.isNotEmpty()) {
-                            users.forEach { user ->
-                                div("list-group-item user") {
-                                    span {
-                                        img(user.name, user.avatar) { }
-                                        +user.name
-                                    }
-
-                                    a(classes = "btn btn-success btn-sm") {
-                                        attrs.onClickFunction = {
-                                            Axios.post<String>(
-                                                "${Config.apibase}/collaborations/request",
-                                                CollaborationRequestData(props.map.intId(), user.id),
-                                                generateConfig<CollaborationRequestData, String>()
-                                            ).then {
-                                                updateCollaborators()
-                                            }
-                                        }
-                                        +"Invite"
-                                    }
-                                }
-                            }
-                        } else {
-                            div("list-group-item text-center") {
-                                +"No results"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-fun RBuilder.collaboratorPicker(handler: CollaboratorPickerProps.() -> Unit) =
-    child(CollaboratorPicker::class) {
-        this.attrs(handler)
-    }
 
 val mapInfo = fc<MapInfoProps> { props ->
     val inputRef = useRef<HTMLInputElement>()
@@ -537,9 +298,9 @@ val mapInfo = fc<MapInfoProps> { props ->
 
                         if (userData?.suspended == false) {
                             collaboratorPicker {
-                                classes = "m-2"
-                                map = props.mapInfo
-                                disabled = loading || isCurating
+                                attrs.classes = "m-2"
+                                attrs.map = props.mapInfo
+                                attrs.disabled = loading || isCurating
                             }
                         }
                     } else {

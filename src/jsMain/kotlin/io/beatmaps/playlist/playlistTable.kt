@@ -7,7 +7,7 @@ import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistSearchResponse
-import io.beatmaps.api.SearchOrder
+import io.beatmaps.common.SearchOrder
 import io.beatmaps.index.encodeURIComponent
 import io.beatmaps.shared.CommonParams
 import io.beatmaps.shared.InfiniteScroll
@@ -69,7 +69,7 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
                     (if (search.minNps != null) "&minNps=${search.minNps}" else "") +
                     (if (search.from != null) "&from=${search.from}" else "") +
                     (if (search.to != null) "&to=${search.to}" else "") +
-                    (if (search.includeEmpty != null) "&to=${search.includeEmpty}" else "")
+                    (if (search.includeEmpty != null) "&includeEmpty=${search.includeEmpty}" else "")
             } ?: ""
         }
 

@@ -30,7 +30,7 @@ fun Application.scheduleTask() {
     rabbitOptional {
         schedulerLogger.info("Scheduler starting")
 
-        val t = Timer()
+        val t = Timer("Map Publish")
         t.scheduleAtFixedRate(CheckScheduled(this), firstInvocation, 60 * 1000L)
     }
 }

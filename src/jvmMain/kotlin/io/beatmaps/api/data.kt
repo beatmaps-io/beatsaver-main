@@ -123,12 +123,13 @@ fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPr
             other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.songsChangedAt?.toKotlinInstant(), other.curatedAt?.toKotlinInstant(),
             other.deletedAt?.toKotlinInstant(),
             "${Config.apiBase(true)}/playlists/id/${other.id.value}/download",
+            other.config,
             other.type
         )
     }
 fun PlaylistFull.Companion.from(row: ResultRow, cdnPrefix: String) = from(
     PlaylistDao.wrapRow(row),
-    if (row.hasValue(Playlist.Stats.mapperCount)) {
+    if (row.hasValue(Playlist.Stats.mapperCount) && row[Playlist.type] != EPlaylistType.Search) {
         PlaylistStats(
             row[Playlist.totalMaps],
             row[Playlist.Stats.mapperCount],
