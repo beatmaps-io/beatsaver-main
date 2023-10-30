@@ -1,7 +1,6 @@
 package io.beatmaps.index
 
 import external.Moment
-import io.beatmaps.stateNavOptions
 import io.beatmaps.WithRouterProps
 import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
@@ -21,6 +20,7 @@ import io.beatmaps.shared.includeIfNotNull
 import io.beatmaps.shared.queryParams
 import io.beatmaps.shared.search
 import io.beatmaps.shared.tags
+import io.beatmaps.stateNavOptions
 import kotlinx.browser.window
 import kotlinx.datetime.Instant
 import kotlinx.html.ButtonType
