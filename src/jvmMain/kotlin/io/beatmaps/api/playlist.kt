@@ -365,7 +365,7 @@ fun Route.playlistRoute() {
 
     fun performSearchForPlaylist(config: SearchPlaylistConfig, cdnPrefix: String, page: Long, pageSize: Int = 20): List<MapDetailWithOrder> {
         val offset = page.toInt() * pageSize
-        val actualPageSize = min(offset + pageSize, config.mapCount) - offset
+        val actualPageSize = min(offset + pageSize, min(500, config.mapCount)) - offset
 
         if (actualPageSize <= 0 || actualPageSize > pageSize) return listOf()
 
