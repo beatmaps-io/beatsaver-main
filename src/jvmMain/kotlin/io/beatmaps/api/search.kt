@@ -32,7 +32,7 @@ import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
-import io.beatmaps.common.toTags
+import io.beatmaps.common.toQuery
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpStatusCode
@@ -270,7 +270,7 @@ fun Route.searchRoute() {
                                         .notNull(it.me) { o -> Beatmap.me eq o }
                                         .notNull(it.cinema) { o -> Beatmap.cinema eq o }
                                         .notNull(it.tags) { o ->
-                                            o.toTags()?.applyToQuery() ?: Op.TRUE
+                                            o.toQuery()?.applyToQuery() ?: Op.TRUE
                                         }
                                         .notNull(it.mapper) { o -> Beatmap.uploader eq o }
                                         .notNull(it.curator) { o -> Beatmap.curator eq o }

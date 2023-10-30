@@ -9,7 +9,7 @@ import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.SearchResponse
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.MapTags
+import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.toQuery
 import io.beatmaps.shared.CommonParams
@@ -58,7 +58,7 @@ data class SearchParams(
     val fullSpread: Boolean?,
     val me: Boolean?,
     val cinema: Boolean?,
-    val tags: MapTags
+    val tags: MapTagSet
 ) : CommonParams
 
 external interface BeatmapTableState : State {

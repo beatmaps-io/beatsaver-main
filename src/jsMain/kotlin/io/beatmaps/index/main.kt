@@ -6,10 +6,8 @@ import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SearchParamsPlaylist
 import io.beatmaps.common.SortOrderTarget
-import io.beatmaps.common.emptyTags
 import io.beatmaps.common.toQuery
-import io.beatmaps.common.toSet
-import io.beatmaps.common.toTags
+import io.beatmaps.common.toTagSet
 import io.beatmaps.dateFormat
 import io.beatmaps.shared.ExtraContentRenderer
 import io.beatmaps.shared.FilterCategory
@@ -116,9 +114,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             params.get("fullSpread")?.toBoolean(),
             params.get("me")?.toBoolean(),
             params.get("cinema")?.toBoolean(),
-            emptyTags().plus(
-                params.get("tags")?.toTags() ?: mapOf()
-            )
+            params.get("tags")?.toQuery()?.toTagSet() ?: mapOf()
         )
     }
 
@@ -174,7 +170,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
                     if (isFiltered("fs")) true else null,
                     if (isFiltered("me")) true else null,
                     if (isFiltered("cinema")) true else null,
-                    this@HomePage.state.tags?.toTags() ?: mapOf()
+                    this@HomePage.state.tags ?: mapOf()
                 )
             }
             extraFilters = ExtraContentRenderer {
@@ -189,7 +185,7 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             }
             updateUI = { params ->
                 setState {
-                    tags = params?.tags?.toSet()
+                    tags = params?.tags
                 }
             }
             filterTexts = {
