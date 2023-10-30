@@ -365,7 +365,7 @@ fun Route.playlistRoute() {
 
     fun performSearchForPlaylist(config: SearchPlaylistConfig, cdnPrefix: String, page: Long, pageSize: Int = 20): List<MapDetailWithOrder> {
         val offset = page.toInt() * pageSize
-        val actualPageSize = min(offset + pageSize, config.mapCount) - offset
+        val actualPageSize = min(offset + pageSize, min(500, config.mapCount)) - offset
 
         if (actualPageSize <= 0 || actualPageSize > pageSize) return listOf()
 
@@ -431,7 +431,9 @@ fun Route.playlistRoute() {
                                     .notNull(params.me) { o -> Beatmap.me eq o }
                                     .notNull(params.cinema) { o -> Beatmap.cinema eq o }
                                     .notNull(params.tags) { o -> o.applyToQuery() }
-                                    .notNull(params.mappers) { o -> Beatmap.uploader inList o }
+                                    .let { q ->
+                                        if (params.mappers.isEmpty()) q else q.and(Beatmap.uploader inList params.mappers)
+                                    }
                             }
                             .orderBy(*sortArgs)
                             .limit(actualPageSize, offset.toLong())
