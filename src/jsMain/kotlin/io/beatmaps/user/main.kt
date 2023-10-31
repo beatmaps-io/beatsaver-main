@@ -16,6 +16,7 @@ import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
+import io.beatmaps.index.modalContext
 import io.beatmaps.playlist.playlistTable
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.review.reviewTable
@@ -230,158 +231,240 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         modal {
             ref = modalRef
         }
-        div("row") {
-            div("col-md-4 mb-3") {
-                div("card user-info" + if (state.userDetail?.patreon?.supporting == true) " border border-3 border-patreon" else "") {
-                    div("card-body") {
-                        div("d-flex align-items-center mb-2") {
-                            img("Profile Image", state.userDetail?.avatar, classes = "rounded-circle me-3") {
-                                attrs.width = "50"
-                                attrs.height = "50"
-                            }
-                            div("d-inline") {
-                                h4("mb-1") {
-                                    +(state.userDetail?.name ?: "")
-                                }
-                                p("text-muted mb-1") {
-                                    +userTitles(state.userDetail).joinToString(", ")
-                                }
-                            }
-                        }
-                        div("mb-3") {
-                            state.followData?.followers?.let {
-                                span {
-                                    a(if (it > 0) "#" else null) {
-                                        attrs.onClickFunction = { e ->
-                                            e.preventDefault()
-                                            if (it > 0) {
-                                                showFollows("Followers", following = state.userDetail?.id)
-                                            }
-                                        }
 
-                                        +"Followed by "
-                                        b("text-warning") { +"$it" }
-                                        +(" user" + if (it != 1) "s" else "")
+        modalContext.Provider {
+            attrs.value = modalRef
+
+            div("row") {
+                div("col-md-4 mb-3") {
+                    div("card user-info" + if (state.userDetail?.patreon?.supporting == true) " border border-3 border-patreon" else "") {
+                        div("card-body") {
+                            div("d-flex align-items-center mb-2") {
+                                img("Profile Image", state.userDetail?.avatar, classes = "rounded-circle me-3") {
+                                    attrs.width = "50"
+                                    attrs.height = "50"
+                                }
+                                div("d-inline") {
+                                    h4("mb-1") {
+                                        +(state.userDetail?.name ?: "")
+                                    }
+                                    p("text-muted mb-1") {
+                                        +userTitles(state.userDetail).joinToString(", ")
                                     }
                                 }
                             }
-                            state.followData?.follows?.let {
-                                br { }
-                                span {
-                                    a(if (it > 0) "#" else null) {
-                                        attrs.onClickFunction = { e ->
-                                            e.preventDefault()
-                                            if (it > 0) {
-                                                showFollows("Follows", followedBy = state.userDetail?.id)
+                            div("mb-3") {
+                                state.followData?.followers?.let {
+                                    span {
+                                        a(if (it > 0) "#" else null) {
+                                            attrs.onClickFunction = { e ->
+                                                e.preventDefault()
+                                                if (it > 0) {
+                                                    showFollows("Followers", following = state.userDetail?.id)
+                                                }
                                             }
-                                        }
 
-                                        +"Following "
-                                        b("text-warning") { +"$it" }
-                                        +(" user" + if (it != 1) "s" else "")
+                                            +"Followed by "
+                                            b("text-warning") { +"$it" }
+                                            +(" user" + if (it != 1) "s" else "")
+                                        }
+                                    }
+                                }
+                                state.followData?.follows?.let {
+                                    br { }
+                                    span {
+                                        a(if (it > 0) "#" else null) {
+                                            attrs.onClickFunction = { e ->
+                                                e.preventDefault()
+                                                if (it > 0) {
+                                                    showFollows("Follows", followedBy = state.userDetail?.id)
+                                                }
+                                            }
+
+                                            +"Following "
+                                            b("text-warning") { +"$it" }
+                                            +(" user" + if (it != 1) "s" else "")
+                                        }
                                     }
                                 }
                             }
-                        }
-                        div {
                             div {
-                                state.userDetail?.playlistUrl?.let { url ->
-                                    div("btn-group") {
-                                        a(url, "_blank", "btn btn-secondary") {
-                                            attrs.attributes["download"] = ""
-                                            i("fas fa-download") { }
-                                            +"Playlist"
-                                        }
-                                        a(
-                                            "bsplaylist://playlist/$url/beatsaver-user-${state.userDetail?.id}.bplist",
-                                            classes = "btn btn-primary"
-                                        ) {
-                                            attrs.attributes["aria-label"] = "One-Click"
-                                            i("fas fa-cloud-download-alt m-0") { }
-                                        }
-                                    }
-                                }
-                                if (loggedInLocal != null && loggedInLocal != state.userDetail?.id) {
-                                    state.followData?.let { fd ->
+                                div {
+                                    state.userDetail?.playlistUrl?.let { url ->
                                         div("btn-group") {
-                                            val btnClasses = "btn btn-" + if (fd.following) "secondary" else "primary"
-                                            button(classes = btnClasses) {
-                                                attrs.disabled = state.loading == true
-                                                attrs.onClickFunction = { e ->
-                                                    e.preventDefault()
-                                                    setFollowStatus(!fd.following, !fd.following, !fd.following)
-                                                }
-
-                                                if (fd.following) {
-                                                    i("fas fa-user-minus") { }
-                                                    +"Unfollow"
-                                                } else {
-                                                    i("fas fa-user-plus") { }
-                                                    +"Follow"
-                                                }
+                                            a(url, "_blank", "btn btn-secondary") {
+                                                attrs.attributes["download"] = ""
+                                                i("fas fa-download") { }
+                                                +"Playlist"
                                             }
+                                            a(
+                                                "bsplaylist://playlist/$url/beatsaver-user-${state.userDetail?.id}.bplist",
+                                                classes = "btn btn-primary"
+                                            ) {
+                                                attrs.attributes["aria-label"] = "One-Click"
+                                                i("fas fa-cloud-download-alt m-0") { }
+                                            }
+                                        }
+                                    }
+                                    if (loggedInLocal != null && loggedInLocal != state.userDetail?.id) {
+                                        state.followData?.let { fd ->
                                             div("btn-group") {
-                                                button(classes = "dropdown-toggle $btnClasses") {
-                                                    attrs.onClickFunction = {
-                                                        it.stopPropagation()
-                                                        setState {
-                                                            followsDropdown = followsDropdown != true
-                                                        }
+                                                val btnClasses = "btn btn-" + if (fd.following) "secondary" else "primary"
+                                                button(classes = btnClasses) {
+                                                    attrs.disabled = state.loading == true
+                                                    attrs.onClickFunction = { e ->
+                                                        e.preventDefault()
+                                                        setFollowStatus(!fd.following, !fd.following, !fd.following)
+                                                    }
+
+                                                    if (fd.following) {
+                                                        i("fas fa-user-minus") { }
+                                                        +"Unfollow"
+                                                    } else {
+                                                        i("fas fa-user-plus") { }
+                                                        +"Follow"
                                                     }
                                                 }
-                                                div("dropdown-menu mt-4" + if (state.followsDropdown == true) " show" else "") {
-                                                    label("dropdown-item") {
-                                                        attrs.htmlFor = "follow-uploads"
-                                                        attrs.role = "button"
+                                                div("btn-group") {
+                                                    button(classes = "dropdown-toggle $btnClasses") {
                                                         attrs.onClickFunction = {
                                                             it.stopPropagation()
-                                                        }
-                                                        input(InputType.checkBox, classes = "form-check-input me-2") {
-                                                            attrs.id = "follow-uploads"
-                                                            attrs.disabled = state.loading == true
-                                                            attrs.defaultChecked = fd.upload
-                                                            attrs.onChangeFunction = { ev ->
-                                                                val newUpload = (ev.target as HTMLInputElement).checked
-                                                                setFollowStatus(fd.following || newUpload || fd.curation, newUpload, fd.curation)
+                                                            setState {
+                                                                followsDropdown = followsDropdown != true
                                                             }
                                                         }
-                                                        +"Uploads"
                                                     }
-                                                    label("dropdown-item") {
-                                                        attrs.htmlFor = "follow-curations"
-                                                        attrs.role = "button"
-                                                        attrs.onClickFunction = {
-                                                            it.stopPropagation()
-                                                        }
-                                                        input(InputType.checkBox, classes = "form-check-input me-2") {
-                                                            attrs.id = "follow-curations"
-                                                            attrs.disabled = state.loading == true
-                                                            attrs.defaultChecked = fd.curation
-                                                            attrs.onChangeFunction = { ev ->
-                                                                val newCuration = (ev.target as HTMLInputElement).checked
-                                                                setFollowStatus(fd.following || fd.upload || newCuration, fd.upload, newCuration)
+                                                    div("dropdown-menu mt-4" + if (state.followsDropdown == true) " show" else "") {
+                                                        label("dropdown-item") {
+                                                            attrs.htmlFor = "follow-uploads"
+                                                            attrs.role = "button"
+                                                            attrs.onClickFunction = {
+                                                                it.stopPropagation()
                                                             }
+                                                            input(InputType.checkBox, classes = "form-check-input me-2") {
+                                                                attrs.id = "follow-uploads"
+                                                                attrs.disabled = state.loading == true
+                                                                attrs.defaultChecked = fd.upload
+                                                                attrs.onChangeFunction = { ev ->
+                                                                    val newUpload = (ev.target as HTMLInputElement).checked
+                                                                    setFollowStatus(fd.following || newUpload || fd.curation, newUpload, fd.curation)
+                                                                }
+                                                            }
+                                                            +"Uploads"
                                                         }
-                                                        +"Curations"
+                                                        label("dropdown-item") {
+                                                            attrs.htmlFor = "follow-curations"
+                                                            attrs.role = "button"
+                                                            attrs.onClickFunction = {
+                                                                it.stopPropagation()
+                                                            }
+                                                            input(InputType.checkBox, classes = "form-check-input me-2") {
+                                                                attrs.id = "follow-curations"
+                                                                attrs.disabled = state.loading == true
+                                                                attrs.defaultChecked = fd.curation
+                                                                attrs.onChangeFunction = { ev ->
+                                                                    val newCuration = (ev.target as HTMLInputElement).checked
+                                                                    setFollowStatus(fd.following || fd.upload || newCuration, fd.upload, newCuration)
+                                                                }
+                                                            }
+                                                            +"Curations"
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
                                     }
                                 }
-                            }
-                            if (props.userData?.admin == true || props.userData?.curator == true) {
-                                div("mt-2") {
-                                    div("btn-group") {
-                                        if (props.userData?.admin == true) {
-                                            routeLink("/modlog?user=${state.userDetail?.name}", className = "btn btn-secondary") {
-                                                i("fas fa-scroll") { }
-                                                +"Mod Log"
+                                if (props.userData?.admin == true || props.userData?.curator == true) {
+                                    div("mt-2") {
+                                        div("btn-group") {
+                                            if (props.userData?.admin == true) {
+                                                routeLink("/modlog?user=${state.userDetail?.name}", className = "btn btn-secondary") {
+                                                    i("fas fa-scroll") { }
+                                                    +"Mod Log"
+                                                }
+                                            }
+                                            routeLink("/modreview?user=${state.userDetail?.name}", className = "btn btn-secondary") {
+                                                i("fas fa-heartbeat") { }
+                                                +"Reviews"
                                             }
                                         }
-                                        routeLink("/modreview?user=${state.userDetail?.name}", className = "btn btn-secondary") {
-                                            i("fas fa-heartbeat") { }
-                                            +"Reviews"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                div("col-md-8 mb-3 position-relative") {
+                    div("card user-info") {
+                        div("card-body") {
+                            if (state.userDetail?.suspendedAt != null) {
+                                span("text-danger") {
+                                    +"This user has been suspended."
+                                }
+                            } else {
+                                span {
+                                    textToContent((state.userDetail?.description?.take(500) ?: ""))
+                                }
+                            }
+                            state.userDetail?.stats?.let {
+                                if (it.totalMaps != 0) {
+                                    table("table table-dark") {
+                                        thead {
+                                            tr {
+                                                th { +"Maps" }
+                                                th { +"Average Rating" }
+                                                th { +"Difficulty Spread" }
+                                            }
+                                        }
+                                        tbody {
+                                            tr {
+                                                td { +"${it.totalMaps}" }
+                                                td { +"${it.avgScore}% (${it.totalUpvotes} / ${it.totalDownvotes})" }
+                                                it.diffStats?.let { ds ->
+                                                    td {
+                                                        div("difficulty-spread mb-1") {
+                                                            div("badge-green") {
+                                                                attrs.jsStyle {
+                                                                    flex = ds.easy
+                                                                }
+                                                                attrs.title = "${ds.easy}"
+                                                            }
+                                                            div("badge-blue") {
+                                                                attrs.jsStyle {
+                                                                    flex = ds.normal
+                                                                }
+                                                                attrs.title = "${ds.normal}"
+                                                            }
+                                                            div("badge-hard") {
+                                                                attrs.jsStyle {
+                                                                    flex = ds.hard
+                                                                }
+                                                                attrs.title = "${ds.hard}"
+                                                            }
+                                                            div("badge-expert") {
+                                                                attrs.jsStyle {
+                                                                    flex = ds.expert
+                                                                }
+                                                                attrs.title = "${ds.expert}"
+                                                            }
+                                                            div("badge-purple") {
+                                                                attrs.jsStyle {
+                                                                    flex = ds.expertPlus
+                                                                }
+                                                                attrs.title = "${ds.expertPlus}"
+                                                            }
+                                                        }
+                                                        div("legend") {
+                                                            span("legend-green") { +"Easy" }
+                                                            span("legend-blue") { +"Normal" }
+                                                            span("legend-hard") { +"Hard" }
+                                                            span("legend-expert") { +"Expert" }
+                                                            span("legend-purple") { +"Expert+" }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -390,162 +473,82 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                     }
                 }
             }
-            div("col-md-8 mb-3 position-relative") {
-                div("card user-info") {
-                    div("card-body") {
-                        if (state.userDetail?.suspendedAt != null) {
-                            span("text-danger") {
-                                +"This user has been suspended."
+            val userId = props.params["userId"]?.toIntOrNull()
+            ul("nav nav-minimal mb-3") {
+                val tabContext = TabContext(userId)
+                ProfileTab.values().forEach { tab ->
+                    if (!tab.condition(props, tabContext, state)) return@forEach
+
+                    li("nav-item") {
+                        a("#", classes = "nav-link" + if (state.state == tab) " active" else "") {
+                            key = tab.tabText
+                            attrs.onClickFunction = {
+                                it.preventDefault()
+
+                                val userPart = if (userId != null) "/$userId" else ""
+                                props.history.push("/profile$userPart#${tab.tabText.lowercase()}")
+
+                                tab.onSelected(tabContext)
+                                setState {
+                                    state = tab
+                                }
                             }
-                        } else {
+
+                            (state.notificationCount?.get(tab) ?: 0).let { notifCount ->
+                                if (notifCount > 0) {
+                                    span("badge rounded-pill badge-danger me-2") {
+                                        +"$notifCount"
+                                    }
+                                }
+                            }
+
                             span {
-                                textToContent((state.userDetail?.description?.take(500) ?: ""))
-                            }
-                        }
-                        state.userDetail?.stats?.let {
-                            if (it.totalMaps != 0) {
-                                table("table table-dark") {
-                                    thead {
-                                        tr {
-                                            th { +"Maps" }
-                                            th { +"Average Rating" }
-                                            th { +"Difficulty Spread" }
-                                        }
-                                    }
-                                    tbody {
-                                        tr {
-                                            td { +"${it.totalMaps}" }
-                                            td { +"${it.avgScore}% (${it.totalUpvotes} / ${it.totalDownvotes})" }
-                                            it.diffStats?.let { ds ->
-                                                td {
-                                                    div("difficulty-spread mb-1") {
-                                                        div("badge-green") {
-                                                            attrs.jsStyle {
-                                                                flex = ds.easy
-                                                            }
-                                                            attrs.title = "${ds.easy}"
-                                                        }
-                                                        div("badge-blue") {
-                                                            attrs.jsStyle {
-                                                                flex = ds.normal
-                                                            }
-                                                            attrs.title = "${ds.normal}"
-                                                        }
-                                                        div("badge-hard") {
-                                                            attrs.jsStyle {
-                                                                flex = ds.hard
-                                                            }
-                                                            attrs.title = "${ds.hard}"
-                                                        }
-                                                        div("badge-expert") {
-                                                            attrs.jsStyle {
-                                                                flex = ds.expert
-                                                            }
-                                                            attrs.title = "${ds.expert}"
-                                                        }
-                                                        div("badge-purple") {
-                                                            attrs.jsStyle {
-                                                                flex = ds.expertPlus
-                                                            }
-                                                            attrs.title = "${ds.expertPlus}"
-                                                        }
-                                                    }
-                                                    div("legend") {
-                                                        span("legend-green") { +"Easy" }
-                                                        span("legend-blue") { +"Normal" }
-                                                        span("legend-hard") { +"Hard" }
-                                                        span("legend-expert") { +"Expert" }
-                                                        span("legend-purple") { +"Expert+" }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                +tab.tabText
                             }
                         }
                     }
                 }
             }
-        }
-        val userId = props.params["userId"]?.toIntOrNull()
-        ul("nav nav-minimal mb-3") {
-            val tabContext = TabContext(userId)
-            ProfileTab.values().forEach { tab ->
-                if (!tab.condition(props, tabContext, state)) return@forEach
-
-                li("nav-item") {
-                    a("#", classes = "nav-link" + if (state.state == tab) " active" else "") {
-                        key = tab.tabText
-                        attrs.onClickFunction = {
-                            it.preventDefault()
-
-                            val userPart = if (userId != null) "/$userId" else ""
-                            props.history.push("/profile$userPart#${tab.tabText.lowercase()}")
-
-                            tab.onSelected(tabContext)
-                            setState {
-                                state = tab
-                            }
-                        }
-
-                        (state.notificationCount?.get(tab) ?: 0).let { notifCount ->
-                            if (notifCount > 0) {
-                                span("badge rounded-pill badge-danger me-2") {
-                                    +"$notifCount"
-                                }
-                            }
-                        }
-
-                        span {
-                            +tab.tabText
-                        }
-                    }
-                }
-            }
-        }
-        val detail = state.userDetail
-        if (detail != null) {
-            playlistTable {
-                own = userId == null
-                this.userId = detail.id
-                history = props.history
-                visible = state.state == ProfileTab.PLAYLISTS
-            }
-            if (state.startup == true) {
-                beatmapTable {
-                    key = "maps-${state.state}"
-                    user = userId ?: loggedInLocal ?: 0
-                    modal = modalRef
-                    wip = state.state == ProfileTab.UNPUBLISHED
-                    curated = state.state == ProfileTab.CURATED
+            val detail = state.userDetail
+            if (detail != null) {
+                playlistTable {
+                    own = userId == null
+                    this.userId = detail.id
                     history = props.history
-                    visible = state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED || state.state == ProfileTab.CURATED
+                    visible = state.state == ProfileTab.PLAYLISTS
+                }
+                if (state.startup == true) {
+                    beatmapTable {
+                        key = "maps-${state.state}"
+                        user = userId ?: loggedInLocal ?: 0
+                        wip = state.state == ProfileTab.UNPUBLISHED
+                        curated = state.state == ProfileTab.CURATED
+                        history = props.history
+                        visible = state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED || state.state == ProfileTab.CURATED
+                    }
                 }
             }
-        }
 
-        if (state.state == ProfileTab.REVIEWS) {
-            reviewTable {
-                userDetail = detail
-                fullWidth = true
-                modal = modalRef
-            }
-        }
-
-        if (state.state == ProfileTab.ACCOUNT && detail != null) {
-            if (userId == null) {
-                account {
+            if (state.state == ProfileTab.REVIEWS) {
+                reviewTable {
                     userDetail = detail
-                    onUpdate = { loadState() }
+                    fullWidth = true
                     modal = modalRef
                 }
-            } else {
-                adminAccount {
-                    attrs {
+            }
+
+            if (state.state == ProfileTab.ACCOUNT && detail != null) {
+                if (userId == null) {
+                    account {
                         userDetail = detail
-                        modal = modalRef
                         onUpdate = { loadState() }
+                    }
+                } else {
+                    adminAccount {
+                        attrs {
+                            userDetail = detail
+                            onUpdate = { loadState() }
+                        }
                     }
                 }
             }

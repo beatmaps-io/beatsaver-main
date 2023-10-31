@@ -7,7 +7,6 @@ import io.beatmaps.shared.diffIcons
 import io.beatmaps.shared.links
 import io.beatmaps.shared.uploaderWithInfo
 import react.Props
-import react.RefObject
 import react.dom.img
 import react.dom.p
 import react.dom.small
@@ -18,7 +17,6 @@ import react.fc
 external interface TableRowProps : Props {
     var map: MapDetail
     var version: MapVersion?
-    var modal: RefObject<ModalComponent>
 }
 
 val beatmapTableRow = fc<TableRowProps> { props ->
@@ -52,7 +50,6 @@ val beatmapTableRow = fc<TableRowProps> { props ->
             links {
                 attrs.map = props.map
                 attrs.version = props.version
-                attrs.modal = props.modal
             }
         }
     }

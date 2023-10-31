@@ -9,6 +9,7 @@ import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.common.toQuery
 import io.beatmaps.common.toTagSet
 import io.beatmaps.dateFormat
+import io.beatmaps.globalContext
 import io.beatmaps.shared.ExtraContentRenderer
 import io.beatmaps.shared.FilterCategory
 import io.beatmaps.shared.FilterInfo
@@ -148,81 +149,90 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
     }
 
     override fun RBuilder.render() {
-        search<SearchParams> {
-            typedState = state.searchParams
-            sortOrderTarget = SortOrderTarget.Map
-            filters = mapFilters
-            maxNps = 16
-            paramsFromPage = SearchParamGenerator {
-                SearchParams(
-                    inputRef.current?.value?.trim() ?: "",
-                    if (isFiltered("bot")) true else null,
-                    if (state.minNps?.let { it > 0 } == true) state.minNps else null,
-                    if (state.maxNps?.let { it < props.maxNps } == true) state.maxNps else null,
-                    if (isFiltered("chroma")) true else null,
-                    state.order ?: SearchOrder.Relevance,
-                    state.startDate?.format(dateFormat),
-                    state.endDate?.format(dateFormat),
-                    if (isFiltered("noodle")) true else null,
-                    if (isFiltered("ranked")) true else null,
-                    if (isFiltered("curated")) true else null,
-                    if (isFiltered("verified")) true else null,
-                    if (isFiltered("fs")) true else null,
-                    if (isFiltered("me")) true else null,
-                    if (isFiltered("cinema")) true else null,
-                    this@HomePage.state.tags ?: mapOf()
-                )
-            }
-            extraFilters = ExtraContentRenderer {
-                tags {
-                    attrs.default = state.tags
-                    attrs.callback = {
-                        setState {
-                            tags = it
-                        }
-                    }
-                }
-            }
-            updateUI = { params ->
-                setState {
-                    tags = params?.tags
-                }
-            }
-            filterTexts = {
-                (state.tags?.flatMap { y -> y.value.map { z -> (if (y.key) "" else "!") + z.slug } } ?: listOf())
-            }
-            updateSearchParams = ::updateSearchParams
-        }
         modal {
             ref = modalRef
         }
-        beatmapTable {
-            search = state.searchParams
-            modal = modalRef
-            history = props.history
-            updateScrollIndex = {
-                updateSearchParams(state.searchParams, if (it < 2) null else it)
-            }
-        }
 
-        div("position-absolute btn-group") {
-            attrs.jsStyle {
-                position = "absolute"
-                right = "10px"
-                bottom = "10px"
-            }
+        modalContext.Provider {
+            attrs.value = modalRef
 
-            button(type = ButtonType.button, classes = "btn btn-sm btn-primary") {
-                attrs.title = "Create playlist from search"
-                attrs.onClickFunction = {
-                    it.preventDefault()
-
-                    props.history.go(
-                        "/playlists/new",
-                        stateNavOptions(state.searchParams?.toPlaylistConfig(), false)
+            search<SearchParams> {
+                typedState = state.searchParams
+                sortOrderTarget = SortOrderTarget.Map
+                filters = mapFilters
+                maxNps = 16
+                paramsFromPage = SearchParamGenerator {
+                    SearchParams(
+                        inputRef.current?.value?.trim() ?: "",
+                        if (isFiltered("bot")) true else null,
+                        if (state.minNps?.let { it > 0 } == true) state.minNps else null,
+                        if (state.maxNps?.let { it < props.maxNps } == true) state.maxNps else null,
+                        if (isFiltered("chroma")) true else null,
+                        state.order ?: SearchOrder.Relevance,
+                        state.startDate?.format(dateFormat),
+                        state.endDate?.format(dateFormat),
+                        if (isFiltered("noodle")) true else null,
+                        if (isFiltered("ranked")) true else null,
+                        if (isFiltered("curated")) true else null,
+                        if (isFiltered("verified")) true else null,
+                        if (isFiltered("fs")) true else null,
+                        if (isFiltered("me")) true else null,
+                        if (isFiltered("cinema")) true else null,
+                        this@HomePage.state.tags ?: mapOf()
                     )
                 }
-                i("fas fa-list-ul") { }
+                extraFilters = ExtraContentRenderer {
+                    tags {
+                        attrs.default = state.tags
+                        attrs.callback = {
+                            setState {
+                                tags = it
+                            }
+                        }
+                    }
+                }
+                updateUI = { params ->
+                    setState {
+                        tags = params?.tags
+                    }
+                }
+                filterTexts = {
+                    (state.tags?.flatMap { y -> y.value.map { z -> (if (y.key) "" else "!") + z.slug } } ?: listOf())
+                }
+                updateSearchParams = ::updateSearchParams
+            }
+
+            beatmapTable {
+                search = state.searchParams
+                history = props.history
+                updateScrollIndex = {
+                    updateSearchParams(state.searchParams, if (it < 2) null else it)
+                }
+            }
+
+            globalContext.Consumer { userData ->
+                if (userData != null) {
+                    div("position-absolute btn-group") {
+                        attrs.jsStyle {
+                            position = "absolute"
+                            right = "10px"
+                            bottom = "10px"
+                        }
+
+                        button(type = ButtonType.button, classes = "btn btn-sm btn-primary") {
+                            attrs.title = "Create playlist from search"
+                            attrs.onClickFunction = {
+                                it.preventDefault()
+
+                                props.history.go(
+                                    "/playlists/new",
+                                    stateNavOptions(state.searchParams?.toPlaylistConfig(), false)
+                                )
+                            }
+                            i("fas fa-list-ul") { }
+                        }
+                    }
+                }
             }
         }
     }

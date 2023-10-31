@@ -29,6 +29,7 @@ import react.dom.attrs
 import react.dom.defaultValue
 import react.dom.div
 import react.dom.h4
+import react.dom.hr
 import react.dom.input
 import react.dom.label
 import react.dom.option
@@ -271,6 +272,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
             }
         }
     }
+    hr {}
     div("row playlist-mappers") {
         label("form-label") {
             attrs.reactFor = "mappers"

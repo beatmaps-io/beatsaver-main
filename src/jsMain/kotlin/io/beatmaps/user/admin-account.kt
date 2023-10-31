@@ -11,8 +11,8 @@ import io.beatmaps.api.UserAdminRequest
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserSuspendRequest
 import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
+import io.beatmaps.index.modalContext
 import io.beatmaps.shared.errors
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
@@ -23,7 +23,6 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.RefObject
 import react.dom.a
 import react.dom.button
 import react.dom.div
@@ -37,13 +36,13 @@ import react.dom.p
 import react.dom.select
 import react.dom.textarea
 import react.fc
+import react.useContext
 import react.useEffectOnce
 import react.useRef
 import react.useState
 
 external interface AdminAccountComponentProps : Props {
     var userDetail: UserDetail
-    var modal: RefObject<ModalComponent>
     var onUpdate: () -> Unit
 }
 
@@ -58,6 +57,8 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
     val (success, setSuccess) = useState(false)
     val (errors, setErrors) = useState(listOf<String>())
     val (uploadLimit, setUploadLimit) = useState(props.userDetail.uploadLimit ?: 1)
+
+    val modal = useContext(modalContext)
 
     useEffectOnce {
         curatorRef.current?.checked = props.userDetail.curator == true
@@ -215,7 +216,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
                             ev.preventDefault()
                             setLoading(true)
 
-                            props.modal.current?.showDialog(
+                            modal?.current?.showDialog(
                                 ModalData(
                                     "Suspend user",
                                     bodyCallback = {
@@ -244,7 +245,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
                         ev.preventDefault()
                         setLoading(true)
 
-                        props.modal.current?.showDialog(
+                        modal?.current?.showDialog(
                             ModalData(
                                 "Revoke logins",
                                 bodyCallback = {

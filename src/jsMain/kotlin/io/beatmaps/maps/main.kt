@@ -7,9 +7,9 @@ import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.ReviewConstants
-import io.beatmaps.globalContext
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
+import io.beatmaps.index.modalContext
 import io.beatmaps.maps.testplay.testplay
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.review.reviewTable
@@ -83,38 +83,34 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
     }
 
     override fun RBuilder.render() {
-        globalContext.Consumer { userData ->
-            state.map?.let {
-                val version = it.publishedVersion()
-                val loggedInLocal = userData?.userId
-                val isOwnerLocal = loggedInLocal == it.uploader.id
+        state.map?.let {
+            val version = it.publishedVersion()
 
-                if (version == null && it.deletedAt == null) {
-                    testplay {
-                        mapInfo = it
-                        isOwner = isOwnerLocal
-                        loggedInId = loggedInLocal
-                        refreshPage = {
-                            loadMap()
-                            window.scrollTo(0.0, 0.0)
-                        }
-                        history = props.history
-                        updateMapinfo = {
-                            setState {
-                                map = it
-                            }
+            if (version == null && it.deletedAt == null) {
+                testplay {
+                    attrs.mapInfo = it
+                    attrs.refreshPage = {
+                        loadMap()
+                        window.scrollTo(0.0, 0.0)
+                    }
+                    attrs.history = props.history
+                    attrs.updateMapinfo = {
+                        setState {
+                            map = it
                         }
                     }
-                } else {
-                    modal {
-                        ref = modalRef
-                    }
+                }
+            } else {
+                modal {
+                    ref = modalRef
+                }
+
+                modalContext.Provider {
+                    attrs.value = modalRef
 
                     mapInfo {
                         attrs {
                             mapInfo = it
-                            isOwner = isOwnerLocal
-                            modal = modalRef
                             reloadMap = ::loadMap
                             deleteMap = {
                                 props.history.push("/profile")

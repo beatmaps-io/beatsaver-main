@@ -9,7 +9,7 @@ import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.MapVersion
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.api.EMapState
-import io.beatmaps.index.ModalComponent
+import io.beatmaps.index.modalContext
 import io.beatmaps.index.oneclick
 import io.beatmaps.maps.diffImg
 import io.beatmaps.previewBaseUrl
@@ -27,7 +27,6 @@ import org.w3c.dom.events.Event
 import react.Props
 import react.PropsWithChildren
 import react.PropsWithRef
-import react.RefObject
 import react.dom.a
 import react.dom.div
 import react.dom.h4
@@ -41,6 +40,7 @@ import react.dom.small
 import react.dom.span
 import react.fc
 import react.forwardRef
+import react.useContext
 import kotlin.collections.set
 import kotlin.math.log
 import kotlin.math.pow
@@ -132,10 +132,11 @@ fun setClipboard(str: String) {
 external interface LinksProps : Props {
     var map: MapDetail
     var version: MapVersion?
-    var modal: RefObject<ModalComponent>
 }
 
 val links = fc<LinksProps> { props ->
+    val modal = useContext(modalContext)
+
     copyBsr {
         attrs.map = props.map
     }
@@ -154,10 +155,10 @@ val links = fc<LinksProps> { props ->
             it.preventDefault()
 
             if (props.version?.state == EMapState.Published) {
-                props.modal.current?.showById(props.map.id)
+                modal?.current?.showById(props.map.id)
             } else {
                 props.version?.hash?.let { hash ->
-                    props.modal.current?.show(hash)
+                    modal?.current?.show(hash)
                 }
             }
         }

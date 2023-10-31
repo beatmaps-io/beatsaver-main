@@ -15,7 +15,6 @@ import io.beatmaps.api.SessionInfo
 import io.beatmaps.api.SessionRevokeRequest
 import io.beatmaps.api.SessionsData
 import io.beatmaps.api.UserDetail
-import io.beatmaps.index.ModalComponent
 import io.beatmaps.shared.errors
 import io.beatmaps.upload.UploadRequestConfig
 import io.beatmaps.user.account.accountEmail
@@ -37,7 +36,6 @@ import org.w3c.xhr.FormData
 import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RefObject
 import react.State
 import react.createRef
 import react.dom.a
@@ -56,7 +54,6 @@ import react.setState
 external interface AccountComponentProps : Props {
     var userDetail: UserDetail
     var onUpdate: () -> Unit
-    var modal: RefObject<ModalComponent>
 }
 
 external interface AccountComponentState : State {
@@ -337,7 +334,6 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
             manageSessions {
                 attrs.revokeAllCallback = ::revokeAll
                 attrs.removeSessionCallback = ::removeSessionCallback
-                attrs.modal = props.modal
                 attrs.sessions = s
             }
         }

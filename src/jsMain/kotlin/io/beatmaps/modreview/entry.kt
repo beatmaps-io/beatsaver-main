@@ -14,8 +14,8 @@ import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewSentiment
 import io.beatmaps.api.UserDetail
 import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
+import io.beatmaps.index.modalContext
 import io.beatmaps.shared.mapTitle
 import io.beatmaps.shared.review.sentimentIcon
 import io.beatmaps.shared.review.sentimentPicker
@@ -24,7 +24,6 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.RefObject
 import react.createRef
 import react.dom.RDOMBuilder
 import react.dom.a
@@ -35,10 +34,10 @@ import react.dom.td
 import react.dom.textarea
 import react.dom.tr
 import react.fc
+import react.useContext
 import react.useState
 
 external interface ModReviewEntryProps : Props {
-    var modal: RefObject<ModalComponent>
     var entry: ReviewDetail?
     var setUser: (String) -> Unit
 }
@@ -50,6 +49,8 @@ val modReviewEntryRenderer = fc<ModReviewEntryProps> {
     val (sentiment, setSentiment) = useState(null as ReviewSentiment?)
     val (newSentiment, setNewSentiment) = useState(null as ReviewSentiment?)
     val (text, setText) = useState(null as String?)
+
+    val modal = useContext(modalContext)
 
     fun delete() {
         val reason = reasonRef.current?.value ?: ""
@@ -117,7 +118,7 @@ val modReviewEntryRenderer = fc<ModReviewEntryProps> {
                             attrs.attributes["aria-label"] = "Delete"
                             attrs.onClickFunction = { e ->
                                 e.preventDefault()
-                                it.modal.current?.showDialog(
+                                modal?.current?.showDialog(
                                     ModalData(
                                         "Delete review",
                                         bodyCallback = {

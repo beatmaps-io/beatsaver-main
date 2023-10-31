@@ -22,7 +22,6 @@ import org.w3c.dom.HTMLElement
 import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RefObject
 import react.State
 import react.createRef
 import react.dom.div
@@ -36,7 +35,6 @@ external interface BeatmapTableProps : Props {
     var user: Int?
     var curated: Boolean?
     var wip: Boolean?
-    var modal: RefObject<ModalComponent>
     var history: History
     var updateScrollIndex: ((Int) -> Unit)?
     var visible: Boolean?
@@ -210,7 +208,6 @@ class BeatmapTable : RComponent<BeatmapTableProps, BeatmapTableState>() {
                     beatmapInfo {
                         obj = it
                         version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
-                        modal = props.modal
                         audio = this@BeatmapTable.audio
                     }
                 }

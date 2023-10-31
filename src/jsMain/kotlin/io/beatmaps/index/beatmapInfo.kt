@@ -26,7 +26,6 @@ import kotlinx.html.js.onClickFunction
 import org.w3c.dom.Audio
 import org.w3c.dom.HTMLElement
 import react.RBuilder
-import react.RefObject
 import react.createRef
 import react.dom.div
 import react.dom.i
@@ -37,7 +36,6 @@ import react.setState
 
 external interface BeatmapInfoProps : AutoSizeComponentProps<MapDetail> {
     var version: MapVersion?
-    var modal: RefObject<ModalComponent>
     var audio: Audio?
 }
 
@@ -209,8 +207,7 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
                                         }
                                     }
                                     addToPlaylist {
-                                        this.map = map
-                                        modal = props.modal
+                                        attrs.map = map
                                     }
                                 }
                             }
@@ -220,7 +217,6 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
                         links {
                             attrs.map = map
                             attrs.version = props.version
-                            attrs.modal = props.modal
                         }
                     }
                 }

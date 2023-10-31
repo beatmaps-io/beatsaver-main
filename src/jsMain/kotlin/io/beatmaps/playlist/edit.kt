@@ -48,6 +48,7 @@ import react.fc
 import react.router.useLocation
 import react.router.useNavigate
 import react.router.useParams
+import react.useContext
 import react.useEffect
 import react.useRef
 import react.useState
@@ -69,6 +70,8 @@ val editPlaylist = fc<Props> {
 
     val query = URLSearchParams(location.search)
     val hasSearchQuery = query.has("search")
+
+    val userData = useContext(globalContext)
 
     val (loading, setLoading) = useState(false)
     val (init, setInit) = useState(false)
@@ -108,140 +111,138 @@ val editPlaylist = fc<Props> {
     }
 
     if (init) {
-        globalContext.Consumer { userData ->
-            div("card border-dark") {
-                div("card-header") {
-                    +((if (id == null) "Create" else "Edit") + " playlist")
-                }
-                form(classes = "card-body") {
-                    attrs.onSubmitFunction = { ev ->
-                        ev.preventDefault()
-                        setLoading(true)
+        div("card border-dark") {
+            div("card-header") {
+                +((if (id == null) "Create" else "Edit") + " playlist")
+            }
+            form(classes = "card-body") {
+                attrs.onSubmitFunction = { ev ->
+                    ev.preventDefault()
+                    setLoading(true)
 
-                        fun sendForm(data: FormData) {
-                            data.append("name", nameRef.current?.value ?: "")
-                            data.append("description", descriptionRef.current?.value ?: "")
+                    fun sendForm(data: FormData) {
+                        data.append("name", nameRef.current?.value ?: "")
+                        data.append("description", descriptionRef.current?.value ?: "")
 
-                            if (isSearch) {
-                                data.append("type", EPlaylistType.Search.name)
-                                data.append(
-                                    "config",
-                                    json.encodeToString(config)
-                                )
+                        if (isSearch) {
+                            data.append("type", EPlaylistType.Search.name)
+                            data.append(
+                                "config",
+                                json.encodeToString(config)
+                            )
+                        } else {
+                            data.append(
+                                "type",
+                                if (publicRef.current?.checked == true) EPlaylistType.Public.name else EPlaylistType.Private.name
+                            )
+                        }
+                        val file = coverRef.current?.files?.let { it[0] }
+                        if (file != null) {
+                            data.asDynamic().append("file", file) // Kotlin doesn't have an equivalent method to this js
+                        }
+
+                        Axios.post<dynamic>(
+                            Config.apibase + "/playlists" + if (id == null) "/create" else "/id/$id/edit", data,
+                            UploadRequestConfig { }
+                        ).then { r ->
+                            if (r.status == 200) {
+                                history.push("/playlists/${id ?: r.data}")
                             } else {
-                                data.append(
-                                    "type",
-                                    if (publicRef.current?.checked == true) EPlaylistType.Public.name else EPlaylistType.Private.name
-                                )
-                            }
-                            val file = coverRef.current?.files?.let { it[0] }
-                            if (file != null) {
-                                data.asDynamic().append("file", file) // Kotlin doesn't have an equivalent method to this js
-                            }
-
-                            Axios.post<dynamic>(
-                                Config.apibase + "/playlists" + if (id == null) "/create" else "/id/$id/edit", data,
-                                UploadRequestConfig { }
-                            ).then { r ->
-                                if (r.status == 200) {
-                                    history.push("/playlists/${id ?: r.data}")
-                                } else {
-                                    captchaRef.current?.reset()
-                                    val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)
-                                    setErrors(failedResponse.errors)
-                                    setLoading(false)
-                                }
-                            }.catch {
-                                setErrors(listOf(UploadValidationInfo("Internal server error")))
+                                captchaRef.current?.reset()
+                                val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)
+                                setErrors(failedResponse.errors)
                                 setLoading(false)
                             }
+                        }.catch {
+                            setErrors(listOf(UploadValidationInfo("Internal server error")))
+                            setLoading(false)
                         }
+                    }
 
-                        val data = FormData()
-                        captchaRef.current?.executeAsync()?.then {
-                            data.append("recaptcha", it)
-                            sendForm(data)
-                        } ?: run {
-                            sendForm(data)
+                    val data = FormData()
+                    captchaRef.current?.executeAsync()?.then {
+                        data.append("recaptcha", it)
+                        sendForm(data)
+                    } ?: run {
+                        sendForm(data)
+                    }
+                }
+                div("mb-3") {
+                    label("form-label") {
+                        attrs.reactFor = "name"
+                        +"Name"
+                    }
+                    input(type = InputType.text, classes = "form-control") {
+                        key = "name"
+                        ref = nameRef
+                        attrs.defaultValue = playlist?.name ?: ""
+                        attrs.id = "name"
+                        attrs.placeholder = "Name"
+                        attrs.disabled = loading
+                        attrs.required = true
+                        attrs.autoFocus = true
+                    }
+                }
+                div("mb-3") {
+                    label("form-label") {
+                        attrs.reactFor = "description"
+                        +"Description"
+                    }
+                    textarea("10", classes = "form-control") {
+                        attrs.id = "description"
+                        attrs.disabled = loading
+                        attrs.defaultValue = playlist?.description ?: ""
+                        ref = descriptionRef
+                    }
+                }
+                if (userData?.suspended == false && !isSearch) {
+                    toggle {
+                        attrs.id = "public"
+                        attrs.disabled = loading
+                        attrs.default = playlist?.type?.anonymousAllowed != false
+                        attrs.ref = publicRef
+                        attrs.text = "Public"
+                        attrs.className = "mb-3"
+                    }
+                }
+                div("mb-3 w-25") {
+                    label("form-label") {
+                        attrs.reactFor = "cover"
+                        div("text-truncate") {
+                            +"Cover image"
                         }
                     }
-                    div("mb-3") {
-                        label("form-label") {
-                            attrs.reactFor = "name"
-                            +"Name"
-                        }
-                        input(type = InputType.text, classes = "form-control") {
-                            key = "name"
-                            ref = nameRef
-                            attrs.defaultValue = playlist?.name ?: ""
-                            attrs.id = "name"
-                            attrs.placeholder = "Name"
-                            attrs.disabled = loading
-                            attrs.required = true
-                            attrs.autoFocus = true
+                    input(InputType.file, classes = "form-control") {
+                        key = "cover"
+                        attrs.id = "cover"
+                        ref = coverRef
+                        attrs.hidden = loading
+                    }
+                }
+                if (isSearch) {
+                    hr {}
+                    playlistSearchEditor {
+                        attrs.loading = loading
+                        attrs.config = (playlist?.config as? SearchPlaylistConfig) ?: fromState ?: SearchPlaylistConfig.DEFAULT
+                        attrs.callback = {
+                            setConfig(it)
                         }
                     }
-                    div("mb-3") {
-                        label("form-label") {
-                            attrs.reactFor = "description"
-                            +"Description"
-                        }
-                        textarea("10", classes = "form-control") {
-                            attrs.id = "description"
-                            attrs.disabled = loading
-                            attrs.defaultValue = playlist?.description ?: ""
-                            ref = descriptionRef
-                        }
+                }
+                errors {
+                    attrs.validationErrors = errors
+                }
+                div("btn-group w-100 mt-3") {
+                    routeLink(id?.let { "/playlists/$it" } ?: "/", className = "btn btn-secondary w-50") {
+                        +"Cancel"
                     }
-                    if (userData?.suspended == false && !isSearch) {
-                        toggle {
-                            attrs.id = "public"
-                            attrs.disabled = loading
-                            attrs.default = playlist?.type?.anonymousAllowed != false
-                            attrs.ref = publicRef
-                            attrs.text = "Public"
-                            attrs.className = "mb-3"
-                        }
+                    if (id == null) {
+                        // Middle element otherwise the button corners don't round properly
+                        recaptcha(captchaRef)
                     }
-                    div("mb-3 w-25") {
-                        label("form-label") {
-                            attrs.reactFor = "cover"
-                            div("text-truncate") {
-                                +"Cover image"
-                            }
-                        }
-                        input(InputType.file, classes = "form-control") {
-                            key = "cover"
-                            attrs.id = "cover"
-                            ref = coverRef
-                            attrs.hidden = loading
-                        }
-                    }
-                    if (isSearch) {
-                        hr {}
-                        playlistSearchEditor {
-                            attrs.loading = loading
-                            attrs.config = (playlist?.config as? SearchPlaylistConfig) ?: fromState ?: SearchPlaylistConfig.DEFAULT
-                            attrs.callback = {
-                                setConfig(it)
-                            }
-                        }
-                    }
-                    errors {
-                        attrs.validationErrors = errors
-                    }
-                    div("btn-group w-100 mt-5") {
-                        routeLink(id?.let { "/playlists/$it" } ?: "/", className = "btn btn-secondary w-50") {
-                            +"Cancel"
-                        }
-                        if (id == null) {
-                            // Middle element otherwise the button corners don't round properly
-                            recaptcha(captchaRef)
-                        }
-                        button(classes = "btn btn-success w-50", type = ButtonType.submit) {
-                            attrs.disabled = loading
-                            +(if (id == null) "Create" else "Save")
-                        }
+                    button(classes = "btn btn-success w-50", type = ButtonType.submit) {
+                        attrs.disabled = loading
+                        +(if (id == null) "Create" else "Save")
                     }
                 }
             }
