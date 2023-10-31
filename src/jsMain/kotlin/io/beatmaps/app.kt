@@ -1,8 +1,8 @@
 package io.beatmaps
 
 import external.ReactDatesInit
-import io.beatmaps.index.HomePage
-import io.beatmaps.maps.MapPage
+import io.beatmaps.index.homePage
+import io.beatmaps.maps.mapPage
 import io.beatmaps.maps.recent.recentTestplays
 import io.beatmaps.modlog.modlog
 import io.beatmaps.modreview.modReview
@@ -13,7 +13,6 @@ import io.beatmaps.playlist.editPlaylist
 import io.beatmaps.playlist.playlistFeed
 import io.beatmaps.upload.UploadPage
 import io.beatmaps.user.ProfilePage
-import io.beatmaps.user.UserList
 import io.beatmaps.user.alerts.AlertsPage
 import io.beatmaps.user.authorizePage
 import io.beatmaps.user.changeEmailPage
@@ -22,6 +21,7 @@ import io.beatmaps.user.loginPage
 import io.beatmaps.user.pickUsernamePage
 import io.beatmaps.user.resetPage
 import io.beatmaps.user.signupPage
+import io.beatmaps.user.userList
 import kotlinx.browser.document
 import kotlinx.browser.window
 import react.Props
@@ -78,12 +78,18 @@ class App : RComponent<Props, State>() {
     override fun RBuilder.render() {
         BrowserRouter {
             Routes {
-                bsroute("/", klazz = HomePage::class)
-                bsroute("/beatsaver/:mapKey", klazz = MapPage::class) {
-                    beatsaver = true
+                bsroute("/") {
+                    homePage { }
                 }
-                bsroute("/maps/:mapKey", klazz = MapPage::class) {
-                    beatsaver = false
+                bsroute("/beatsaver/:mapKey") {
+                    mapPage {
+                        attrs.beatsaver = true
+                    }
+                }
+                bsroute("/maps/:mapKey") {
+                    mapPage {
+                        attrs.beatsaver = false
+                    }
                 }
                 bsroute("/upload", klazz = UploadPage::class)
                 bsroute("/profile") {
@@ -126,7 +132,9 @@ class App : RComponent<Props, State>() {
                 bsroute("/policy/privacy", replaceHomelink = false) {
                     div {}
                 }
-                bsroute("/mappers", klazz = UserList::class)
+                bsroute("/mappers") {
+                    userList { }
+                }
                 bsroute("/login") {
                     loginPage { }
                 }

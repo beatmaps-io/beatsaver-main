@@ -45,7 +45,7 @@ import react.setState
 external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
     var userId: Int
     var mapId: String
-    var modal: RefObject<ModalComponent>
+    var modal: RefObject<ModalComponent>?
     var setExistingReview: ((Boolean) -> Unit)?
 }
 external interface ReviewItemState : AutoSizeComponentState {
@@ -156,7 +156,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                         attrs.attributes["aria-label"] = "Delete"
                                         attrs.onClickFunction = {
                                             it.preventDefault()
-                                            props.modal.current?.showDialog(
+                                            props.modal?.current?.showDialog(
                                                 ModalData(
                                                     "Delete review",
                                                     bodyCallback = {

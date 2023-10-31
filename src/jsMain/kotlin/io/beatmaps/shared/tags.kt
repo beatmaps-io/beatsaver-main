@@ -3,7 +3,6 @@ package io.beatmaps.shared
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.MapTagType
-import io.beatmaps.index.applyIf
 import io.beatmaps.maps.mapTag
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -35,6 +34,8 @@ val tags = fc<TagsProps> { props ->
             setAltHeld(ke.altKey)
         }
     }
+
+    inline fun <T> T.applyIf(condition: Boolean, block: T.() -> T): T = if (condition) block(this) else this
 
     useEffect(props.default) {
         props.default?.let { setSelected(it) }

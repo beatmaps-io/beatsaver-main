@@ -40,10 +40,9 @@ val testplay = fc<TestplayProps> { props ->
             }
         }
         infoTable {
-            map = props.mapInfo
-            horizontal = true
-            selected = null
-            changeSelectedDiff = { }
+            attrs.map = props.mapInfo
+            attrs.horizontal = true
+            attrs.selected = null
         }
         timeline {
             attrs {
