@@ -4,6 +4,7 @@ import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
+import io.beatmaps.index.modalContext
 import io.beatmaps.maps.infoTable
 import io.beatmaps.maps.mapInfo
 import react.Props
@@ -24,29 +25,32 @@ val testplay = fc<TestplayProps> { props ->
     modal {
         ref = modalRef
     }
-    mapInfo {
-        attrs {
-            mapInfo = props.mapInfo
-            modal = modalRef
-            reloadMap = props.refreshPage
-            deleteMap = {
-                props.history.push("/profile")
+
+    modalContext.Provider {
+        attrs.value = modalRef
+
+        mapInfo {
+            attrs {
+                mapInfo = props.mapInfo
+                reloadMap = props.refreshPage
+                deleteMap = {
+                    props.history.push("/profile")
+                }
+                updateMapinfo = props.updateMapinfo
             }
-            updateMapinfo = props.updateMapinfo
         }
-    }
-    infoTable {
-        map = props.mapInfo
-        horizontal = true
-        selected = null
-        changeSelectedDiff = { }
-    }
-    timeline {
-        attrs {
-            mapInfo = props.mapInfo
-            reloadMap = props.refreshPage
-            modal = modalRef
-            history = props.history
+        infoTable {
+            map = props.mapInfo
+            horizontal = true
+            selected = null
+            changeSelectedDiff = { }
+        }
+        timeline {
+            attrs {
+                mapInfo = props.mapInfo
+                reloadMap = props.refreshPage
+                history = props.history
+            }
         }
     }
 }

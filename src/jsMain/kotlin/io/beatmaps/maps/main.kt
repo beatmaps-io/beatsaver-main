@@ -9,6 +9,7 @@ import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
+import io.beatmaps.index.modalContext
 import io.beatmaps.maps.testplay.testplay
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.review.reviewTable
@@ -104,67 +105,70 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                     ref = modalRef
                 }
 
-                mapInfo {
-                    attrs {
-                        mapInfo = it
-                        modal = modalRef
-                        reloadMap = ::loadMap
-                        deleteMap = {
-                            props.history.push("/profile")
+                modalContext.Provider {
+                    attrs.value = modalRef
+
+                    mapInfo {
+                        attrs {
+                            mapInfo = it
+                            reloadMap = ::loadMap
+                            deleteMap = {
+                                props.history.push("/profile")
+                            }
+                            updateMapinfo = {
+                                setState {
+                                    map = it
+                                }
+                            }
                         }
-                        updateMapinfo = {
-                            setState {
+                    }
+                    div("row mt-3") {
+                        val leaderBoardType = state.type ?: LeaderboardType.fromName(localStorage["maps.leaderboardType"]) ?: LeaderboardType.ScoreSaber
+                        val showComments = ReviewConstants.COMMENTS_ENABLED && state.comments ?: (localStorage["maps.showComments"] == "true")
+                        div("col-lg-4 text-nowrap") {
+                            mapPageNav {
+                                attrs.map = it
+                                attrs.comments = showComments
+                                attrs.setComments = {
+                                    localStorage["maps.showComments"] = "true"
+                                    setState {
+                                        comments = true
+                                    }
+                                }
+                                attrs.type = leaderBoardType
+                                attrs.setType = { lt ->
+                                    localStorage["maps.leaderboardType"] = lt.name
+                                    localStorage["maps.showComments"] = "false"
+                                    setState {
+                                        type = lt
+                                        comments = false
+                                    }
+                                }
+                            }
+
+                            infoTable {
                                 map = it
-                            }
-                        }
-                    }
-                }
-                div("row mt-3") {
-                    val leaderBoardType = state.type ?: LeaderboardType.fromName(localStorage["maps.leaderboardType"]) ?: LeaderboardType.ScoreSaber
-                    val showComments = ReviewConstants.COMMENTS_ENABLED && state.comments ?: (localStorage["maps.showComments"] == "true")
-                    div("col-lg-4 text-nowrap") {
-                        mapPageNav {
-                            attrs.map = it
-                            attrs.comments = showComments
-                            attrs.setComments = {
-                                localStorage["maps.showComments"] = "true"
-                                setState {
-                                    comments = true
-                                }
-                            }
-                            attrs.type = leaderBoardType
-                            attrs.setType = { lt ->
-                                localStorage["maps.leaderboardType"] = lt.name
-                                localStorage["maps.showComments"] = "false"
-                                setState {
-                                    type = lt
-                                    comments = false
+                                selected = state.selectedDiff
+                                changeSelectedDiff = {
+                                    setState {
+                                        selectedDiff = it
+                                    }
                                 }
                             }
                         }
 
-                        infoTable {
-                            map = it
-                            selected = state.selectedDiff
-                            changeSelectedDiff = {
-                                setState {
-                                    selectedDiff = it
-                                }
+                        if (showComments) {
+                            reviewTable {
+                                map = it.id
+                                mapUploaderId = it.uploader.id
+                                modal = modalRef
                             }
-                        }
-                    }
-
-                    if (showComments) {
-                        reviewTable {
-                            map = it.id
-                            mapUploaderId = it.uploader.id
-                            modal = modalRef
-                        }
-                    } else if (version != null && it.deletedAt == null) {
-                        scoreTable {
-                            attrs.mapKey = version.hash
-                            attrs.selected = state.selectedDiff
-                            attrs.type = leaderBoardType
+                        } else if (version != null && it.deletedAt == null) {
+                            scoreTable {
+                                attrs.mapKey = version.hash
+                                attrs.selected = state.selectedDiff
+                                attrs.type = leaderBoardType
+                            }
                         }
                     }
                 }

@@ -6,7 +6,6 @@ import io.beatmaps.Config
 import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
-import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.beatmapTableRow
 import io.beatmaps.util.textToContent
 import kotlinx.datetime.internal.JSJoda.Instant
@@ -15,7 +14,6 @@ import org.w3c.dom.HTMLTextAreaElement
 import react.Props
 import react.RBuilder
 import react.RComponent
-import react.RefObject
 import react.State
 import react.createRef
 import react.dom.button
@@ -23,7 +21,6 @@ import react.dom.div
 import react.dom.td
 import react.dom.textarea
 import react.dom.tr
-import react.key
 import react.setState
 
 external interface RecentTestplayRowProps : Props {
@@ -31,7 +28,6 @@ external interface RecentTestplayRowProps : Props {
     var version: MapVersion
     var feedback: String?
     var time: String
-    var modal: RefObject<ModalComponent>
 }
 
 external interface RecentTestplayRowState : State {
@@ -57,7 +53,6 @@ class RecentTestplayRow : RComponent<RecentTestplayRowProps, RecentTestplayRowSt
             key = props.map.id
             attrs.map = props.map
             attrs.version = props.version
-            attrs.modal = props.modal
         }
 
         tr {

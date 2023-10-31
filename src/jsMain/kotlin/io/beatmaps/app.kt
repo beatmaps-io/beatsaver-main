@@ -5,7 +5,7 @@ import io.beatmaps.index.HomePage
 import io.beatmaps.maps.MapPage
 import io.beatmaps.maps.recent.recentTestplays
 import io.beatmaps.modlog.modlog
-import io.beatmaps.modreview.ModReview
+import io.beatmaps.modreview.modReview
 import io.beatmaps.nav.viewportMinWidthPolyfill
 import io.beatmaps.playlist.MultiAddPlaylist
 import io.beatmaps.playlist.Playlist
@@ -115,9 +115,7 @@ class App : RComponent<Props, State>() {
                     modlog { }
                 }
                 bsroute("/modreview") {
-                    withRouter(ModReview::class) {
-                        userData = useContext(globalContext)
-                    }
+                    modReview { }
                 }
                 bsroute("/policy/dmca", replaceHomelink = false) {
                     div {}

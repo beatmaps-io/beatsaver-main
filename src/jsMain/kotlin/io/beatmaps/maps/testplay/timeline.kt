@@ -9,14 +9,12 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.globalContext
-import io.beatmaps.index.ModalComponent
 import io.beatmaps.shared.errors
 import io.beatmaps.upload.simple
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.w3c.dom.HTMLElement
 import react.Props
-import react.RefObject
 import react.dom.article
 import react.dom.br
 import react.dom.div
@@ -37,7 +35,6 @@ external interface TimelineProps : Props {
     var mapInfo: MapDetail
     var reloadMap: () -> Unit
     var history: History
-    var modal: RefObject<ModalComponent>
 }
 
 val timeline = fc<TimelineProps> { props ->
@@ -144,7 +141,6 @@ val timeline = fc<TimelineProps> { props ->
                         attrs.scheduledAt = it.secondaryTime
                         attrs.reloadMap = props.reloadMap
                         attrs.mapId = props.mapInfo.intId()
-                        attrs.modal = props.modal
                         attrs.allowPublish = props.mapInfo.name.isNotEmpty()
                     }
                     first = false

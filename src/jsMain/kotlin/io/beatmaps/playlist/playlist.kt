@@ -20,6 +20,7 @@ import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.beatmapInfo
 import io.beatmaps.index.modal
+import io.beatmaps.index.modalContext
 import io.beatmaps.setPageTitle
 import io.beatmaps.upload.UploadRequestConfig
 import io.beatmaps.util.textToContent
@@ -195,166 +196,169 @@ class Playlist : RComponent<PlaylistProps, PlaylistState>() {
         modal {
             ref = modalRef
         }
-        globalContext.Consumer { userData ->
-            div("row mt-3") {
-                div("playlist-info col-lg-4") {
-                    state.playlist?.let { pl ->
-                        if (pl.deletedAt != null) {
-                            div("alert alert-danger text-center") {
-                                +"DELETED"
-                            }
-                        } else if (pl.type != EPlaylistType.System && (state.playlist?.owner?.id == userData?.userId || userData?.admin == true)) {
-                            div("btn-group") {
-                                routeLink("/playlists/${pl.playlistId}/edit", className = "btn btn-primary") {
-                                    +"Edit"
-                                }
-                                if (pl.type != EPlaylistType.Search) {
-                                    routeLink("/playlists/${pl.playlistId}/add", className = "btn btn-purple") {
-                                        +"Multi-Add"
-                                    }
-                                }
-                                a("#", classes = "btn btn-danger") {
-                                    attrs.onClickFunction = {
-                                        it.preventDefault()
-                                        modalRef.current?.showDialog(
-                                            ModalData(
-                                                "Delete playlist",
-                                                bodyCallback = {
-                                                    p {
-                                                        +"Are you sure? This action cannot be reversed."
-                                                    }
-                                                    if (userData?.admin == true) {
-                                                        p {
-                                                            +"Reason for action:"
-                                                        }
-                                                        textarea(classes = "form-control") {
-                                                            ref = reasonRef
-                                                        }
-                                                    }
-                                                },
-                                                buttons = listOf(ModalButton("YES, DELETE", "danger", ::delete), ModalButton("Cancel"))
-                                            )
-                                        )
-                                    }
-                                    +"Delete"
-                                }
-                            }
-                        }
-                        if (pl.type != EPlaylistType.System && pl.deletedAt == null && userData?.curator == true) {
-                            div("break") {}
-                            div("btn-group") {
-                                a("#", classes = "btn " + if (pl.curatedAt == null) "btn-green" else "btn-expert") {
-                                    val text = ((if (pl.curatedAt == null) "" else "Un-") + "Curate")
-                                    attrs.title = text
-                                    attrs.attributes["aria-label"] = text
-                                    attrs.onClickFunction = {
-                                        it.preventDefault()
-                                        curate(pl.playlistId, pl.curatedAt == null)
-                                    }
-                                    +text
-                                }
-                            }
-                        }
-                        div("list-group") {
-                            img("Cover", pl.playlistImage512 ?: pl.playlistImage) { }
-                            div("list-group-item d-flex justify-content-between") {
-                                +"Name"
-                                span("text-truncate ms-4") {
-                                    +pl.name
-                                }
-                            }
-                            routeLink(pl.owner.profileLink(), className = "list-group-item d-flex justify-content-between") {
-                                +"Created by"
-                                span("text-truncate ms-4") {
-                                    attrs.title = pl.owner.name
-                                    +pl.owner.name
-                                }
-                            }
-                            pl.curator?.let { curator ->
-                                div("list-group-item d-flex justify-content-between") {
-                                    +"Curated by"
-                                    span("text-truncate ms-4") {
-                                        +curator.name
-                                    }
-                                }
-                            }
-                            div("list-group-item d-flex justify-content-between") {
-                                +"Maps"
-                                span("text-truncate ms-4") {
-                                    +(state.maps?.size ?: 0).toString()
-                                }
-                            }
-                            if (pl.description.isNotBlank()) {
-                                div("list-group-item ws-normal text-break") {
-                                    textToContent(pl.description)
-                                }
-                            }
-                        }
-                        div("btn-group d-flex") {
-                            a(pl.downloadURL, classes = "btn btn-success") {
-                                +"Download"
-                            }
-                            a("bsplaylist://playlist/${pl.downloadURL}/beatsaver-${pl.playlistId}.bplist", classes = "btn btn-info") {
-                                +"One-Click"
-                            }
-                        }
-                        if ((state.maps?.size ?: 0) > 0) {
-                            div("list-group") {
-                                div("list-group-item ws-normal") {
-                                    div("mb-1") {
-                                        +"Mappers"
-                                    }
-                                    state.maps?.let { maps ->
-                                        maps
-                                            .flatMap { (it.map.collaborators ?: listOf()) + it.map.uploader }
-                                            .groupBy { it.id }.entries.map {
-                                                it.value.size to it.value.first()
-                                            }.sortedByDescending { it.first }.mapIndexed { idx, it ->
-                                                if (idx > 0) {
-                                                    +", "
-                                                }
-                                                routeLink(it.second.profileLink()) {
-                                                    +it.second.name
-                                                }
-                                            }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                div("col-lg-8") {
-                    if (state.playlist?.owner?.id == userData?.userId && state.playlist?.type?.orderable == true) {
-                        DragDropContext {
-                            attrs.onDragEnd = {
-                                it.destination?.let { dest ->
-                                    reorderMaps(it.source.index, dest.index)
-                                }
-                            }
-                            droppable("playlist") {
-                                attrs.classes = setOf("playlist")
-                                state.maps?.mapIndexed { idx, it ->
-                                    draggable(it.map.id, idx) {
-                                        attrs.classes = setOf("drag-beatmap")
 
-                                        beatmapInfo {
-                                            obj = it.map
-                                            version = it.map.publishedVersion()
-                                            modal = modalRef
-                                            audio = this@Playlist.audio
+        modalContext.Provider {
+            attrs.value = modalRef
+
+            globalContext.Consumer { userData ->
+                div("row mt-3") {
+                    div("playlist-info col-lg-4") {
+                        state.playlist?.let { pl ->
+                            if (pl.deletedAt != null) {
+                                div("alert alert-danger text-center") {
+                                    +"DELETED"
+                                }
+                            } else if (pl.type != EPlaylistType.System && (state.playlist?.owner?.id == userData?.userId || userData?.admin == true)) {
+                                div("btn-group") {
+                                    routeLink("/playlists/${pl.playlistId}/edit", className = "btn btn-primary") {
+                                        +"Edit"
+                                    }
+                                    if (pl.type != EPlaylistType.Search) {
+                                        routeLink("/playlists/${pl.playlistId}/add", className = "btn btn-purple") {
+                                            +"Multi-Add"
+                                        }
+                                    }
+                                    a("#", classes = "btn btn-danger") {
+                                        attrs.onClickFunction = {
+                                            it.preventDefault()
+                                            modalRef.current?.showDialog(
+                                                ModalData(
+                                                    "Delete playlist",
+                                                    bodyCallback = {
+                                                        p {
+                                                            +"Are you sure? This action cannot be reversed."
+                                                        }
+                                                        if (userData?.admin == true) {
+                                                            p {
+                                                                +"Reason for action:"
+                                                            }
+                                                            textarea(classes = "form-control") {
+                                                                ref = reasonRef
+                                                            }
+                                                        }
+                                                    },
+                                                    buttons = listOf(ModalButton("YES, DELETE", "danger", ::delete), ModalButton("Cancel"))
+                                                )
+                                            )
+                                        }
+                                        +"Delete"
+                                    }
+                                }
+                            }
+                            if (pl.type != EPlaylistType.System && pl.deletedAt == null && userData?.curator == true) {
+                                div("break") {}
+                                div("btn-group") {
+                                    a("#", classes = "btn " + if (pl.curatedAt == null) "btn-green" else "btn-expert") {
+                                        val text = ((if (pl.curatedAt == null) "" else "Un-") + "Curate")
+                                        attrs.title = text
+                                        attrs.attributes["aria-label"] = text
+                                        attrs.onClickFunction = {
+                                            it.preventDefault()
+                                            curate(pl.playlistId, pl.curatedAt == null)
+                                        }
+                                        +text
+                                    }
+                                }
+                            }
+                            div("list-group") {
+                                img("Cover", pl.playlistImage512 ?: pl.playlistImage) { }
+                                div("list-group-item d-flex justify-content-between") {
+                                    +"Name"
+                                    span("text-truncate ms-4") {
+                                        +pl.name
+                                    }
+                                }
+                                routeLink(pl.owner.profileLink(), className = "list-group-item d-flex justify-content-between") {
+                                    +"Created by"
+                                    span("text-truncate ms-4") {
+                                        attrs.title = pl.owner.name
+                                        +pl.owner.name
+                                    }
+                                }
+                                pl.curator?.let { curator ->
+                                    div("list-group-item d-flex justify-content-between") {
+                                        +"Curated by"
+                                        span("text-truncate ms-4") {
+                                            +curator.name
+                                        }
+                                    }
+                                }
+                                div("list-group-item d-flex justify-content-between") {
+                                    +"Maps"
+                                    span("text-truncate ms-4") {
+                                        +(state.maps?.size ?: 0).toString()
+                                    }
+                                }
+                                if (pl.description.isNotBlank()) {
+                                    div("list-group-item ws-normal text-break") {
+                                        textToContent(pl.description)
+                                    }
+                                }
+                            }
+                            div("btn-group d-flex") {
+                                a(pl.downloadURL, classes = "btn btn-success") {
+                                    +"Download"
+                                }
+                                a("bsplaylist://playlist/${pl.downloadURL}/beatsaver-${pl.playlistId}.bplist", classes = "btn btn-info") {
+                                    +"One-Click"
+                                }
+                            }
+                            if ((state.maps?.size ?: 0) > 0) {
+                                div("list-group") {
+                                    div("list-group-item ws-normal") {
+                                        div("mb-1") {
+                                            +"Mappers"
+                                        }
+                                        state.maps?.let { maps ->
+                                            maps
+                                                .flatMap { (it.map.collaborators ?: listOf()) + it.map.uploader }
+                                                .groupBy { it.id }.entries.map {
+                                                    it.value.size to it.value.first()
+                                                }.sortedByDescending { it.first }.mapIndexed { idx, it ->
+                                                    if (idx > 0) {
+                                                        +", "
+                                                    }
+                                                    routeLink(it.second.profileLink()) {
+                                                        +it.second.name
+                                                    }
+                                                }
                                         }
                                     }
                                 }
                             }
                         }
-                    } else {
-                        div("playlist") {
-                            state.maps?.map {
-                                beatmapInfo {
-                                    obj = it.map
-                                    version = it.map.publishedVersion()
-                                    modal = modalRef
-                                    audio = this@Playlist.audio
+                    }
+                    div("col-lg-8") {
+                        if (state.playlist?.owner?.id == userData?.userId && state.playlist?.type?.orderable == true) {
+                            DragDropContext {
+                                attrs.onDragEnd = {
+                                    it.destination?.let { dest ->
+                                        reorderMaps(it.source.index, dest.index)
+                                    }
+                                }
+                                droppable("playlist") {
+                                    attrs.classes = setOf("playlist")
+                                    state.maps?.mapIndexed { idx, it ->
+                                        draggable(it.map.id, idx) {
+                                            attrs.classes = setOf("drag-beatmap")
+
+                                            beatmapInfo {
+                                                obj = it.map
+                                                version = it.map.publishedVersion()
+                                                audio = this@Playlist.audio
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            div("playlist") {
+                                state.maps?.map {
+                                    beatmapInfo {
+                                        obj = it.map
+                                        version = it.map.publishedVersion()
+                                        audio = this@Playlist.audio
+                                    }
                                 }
                             }
                         }

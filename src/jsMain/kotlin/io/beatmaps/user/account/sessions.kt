@@ -9,13 +9,12 @@ import io.beatmaps.api.SessionRevokeRequest
 import io.beatmaps.api.SessionsData
 import io.beatmaps.api.SiteSession
 import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
+import io.beatmaps.index.modalContext
 import kotlinx.html.ButtonType
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import react.Props
-import react.RefObject
 import react.dom.button
 import react.dom.div
 import react.dom.h5
@@ -28,6 +27,7 @@ import react.dom.tbody
 import react.dom.td
 import react.dom.tr
 import react.fc
+import react.useContext
 import react.useState
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -135,13 +135,14 @@ val sessionRowCommon = fc<SessionRowProps> { props ->
 
 external interface ManageSessionsProps : Props {
     var sessions: SessionsData
-    var modal: RefObject<ModalComponent>
     var removeSessionCallback: (SessionInfo) -> Unit
     var revokeAllCallback: () -> Unit
 }
 
 val manageSessions = fc<ManageSessionsProps> { props ->
     val (full, setFull) = useState<Boolean>()
+
+    val modal = useContext(modalContext)
 
     div(classes = "user-form") {
         h5("mt-5") {
@@ -183,7 +184,7 @@ val manageSessions = fc<ManageSessionsProps> { props ->
                     button(classes = "d-inline-block btn btn-danger ms-2 m-0", type = ButtonType.submit) {
                         attrs.onClickFunction = {
                             it.preventDefault()
-                            props.modal.current?.showDialog(
+                            modal?.current?.showDialog(
                                 ModalData(
                                     "Are you sure?",
                                     "This will completely log out of BeatSaver on every device you're currently logged in on.",

@@ -7,6 +7,7 @@ import io.beatmaps.api.MapTestplay
 import io.beatmaps.api.MapVersion
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
+import io.beatmaps.index.modalContext
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -70,15 +71,18 @@ class RecentTestplays : RComponent<Props, RecentTestplaysState>() {
             ref = modalRef
         }
 
-        table("table table-dark search-results") {
-            tbody {
-                state.testplays?.forEach { rt ->
-                    recentTestplayRow {
-                        map = rt.mapDetail
-                        version = rt.version
-                        feedback = rt.testplay.feedback
-                        time = rt.testplay.feedbackAt.toString()
-                        modal = modalRef
+        modalContext.Provider {
+            attrs.value = modalRef
+
+            table("table table-dark search-results") {
+                tbody {
+                    state.testplays?.forEach { rt ->
+                        recentTestplayRow {
+                            map = rt.mapDetail
+                            version = rt.version
+                            feedback = rt.testplay.feedback
+                            time = rt.testplay.feedbackAt.toString()
+                        }
                     }
                 }
             }

@@ -16,8 +16,8 @@ import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.json
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
+import io.beatmaps.index.modalContext
 import io.beatmaps.playlist.addToPlaylist
 import io.beatmaps.shared.bookmarkButton
 import io.beatmaps.shared.errors
@@ -32,7 +32,6 @@ import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.RefObject
 import react.dom.a
 import react.dom.button
 import react.dom.div
@@ -49,7 +48,6 @@ import kotlin.collections.set
 
 external interface MapInfoProps : Props {
     var mapInfo: MapDetail
-    var modal: RefObject<ModalComponent>
     var reloadMap: () -> Unit
     var deleteMap: () -> Unit
     var updateMapinfo: (MapDetail) -> Unit
@@ -68,6 +66,8 @@ val mapInfo = fc<MapInfoProps> { props ->
     val userData = useContext(globalContext)
     val loggedInId = userData?.userId
     val isOwnerLocal = loggedInId == props.mapInfo.uploader.id
+
+    val modal = useContext(modalContext)
 
     @Suppress("UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
     fun recall() {
@@ -142,8 +142,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                     props.mapInfo.mainVersion()?.let { version ->
                         if (userData != null) {
                             addToPlaylist {
-                                map = props.mapInfo
-                                modal = props.modal
+                                attrs.map = props.mapInfo
                             }
                             bookmarkButton {
                                 attrs.bookmarked = props.mapInfo.bookmarked == true
@@ -157,7 +156,6 @@ val mapInfo = fc<MapInfoProps> { props ->
                         links {
                             attrs.map = props.mapInfo
                             attrs.version = version
-                            attrs.modal = props.modal
                         }
 
                         if (userData?.curator == true || isOwnerLocal) {
@@ -187,7 +185,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                                 attrs.onClickFunction = {
                                     it.preventDefault()
                                     if (!isCurated) {
-                                        props.modal.current?.showDialog(
+                                        modal?.current?.showDialog(
                                             ModalData(
                                                 "Curate map",
                                                 bodyCallback = {
@@ -202,7 +200,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                                             )
                                         )
                                     } else {
-                                        props.modal.current?.showDialog(
+                                        modal?.current?.showDialog(
                                             ModalData(
                                                 "Uncurate map",
                                                 bodyCallback = {
@@ -242,7 +240,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                                 attrs.attributes["aria-label"] = "Delete"
                                 attrs.onClickFunction = {
                                     it.preventDefault()
-                                    props.modal.current?.showDialog(
+                                    modal?.current?.showDialog(
                                         ModalData(
                                             "Delete map",
                                             bodyCallback = {
@@ -325,7 +323,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                             button(classes = "btn btn-danger m-1") {
                                 attrs.disabled = loading
                                 attrs.onClickFunction = {
-                                    props.modal.current?.showDialog(
+                                    modal?.current?.showDialog(
                                         ModalData(
                                             "Are you sure?",
                                             "This will hide your map from other players until you publish a new version",
@@ -339,7 +337,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                             button(classes = "btn btn-danger m-1") {
                                 attrs.disabled = loading
                                 attrs.onClickFunction = {
-                                    props.modal.current?.showDialog(
+                                    modal?.current?.showDialog(
                                         ModalData(
                                             "Are you sure?",
                                             "You won't be able to recover this map after you delete it",

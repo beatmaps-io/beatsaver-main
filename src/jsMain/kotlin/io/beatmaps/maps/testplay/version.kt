@@ -10,15 +10,14 @@ import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.StateUpdate
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.ModalData
+import io.beatmaps.index.modalContext
 import io.beatmaps.util.textToContent
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.RefObject
 import react.dom.article
 import react.dom.button
 import react.dom.div
@@ -28,6 +27,7 @@ import react.dom.p
 import react.dom.small
 import react.dom.strong
 import react.fc
+import react.useContext
 import react.useRef
 import react.useState
 
@@ -43,7 +43,6 @@ external interface VersionProps : Props {
     var state: EMapState?
     var scheduledAt: Instant?
     var reloadMap: () -> Unit
-    var modal: RefObject<ModalComponent>
     var allowPublish: Boolean?
 }
 private const val testplayEnabled = false
@@ -58,6 +57,8 @@ val version = fc<VersionProps> { props ->
     val (scheduleAt, setScheduleAt) = useState<Instant?>(null)
 
     val textareaRef = useRef<HTMLTextAreaElement>()
+
+    val modal = useContext(modalContext)
 
     fun mapState(nextState: EMapState) {
         setLoadingState(true)
@@ -114,7 +115,7 @@ val version = fc<VersionProps> { props ->
                         if (props.allowPublish == true) {
                             button(classes = "btn btn-danger m-1") {
                                 attrs.onClickFunction = {
-                                    props.modal.current?.showDialog(
+                                    modal?.current?.showDialog(
                                         ModalData(
                                             "Are you sure?",
                                             buttons = listOf(ModalButton("Publish", "primary") { mapState(EMapState.Published) }, ModalButton("Cancel")),

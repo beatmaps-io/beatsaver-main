@@ -4,15 +4,15 @@ import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
 import io.beatmaps.Config
-import io.beatmaps.UserData
-import io.beatmaps.WithRouterProps
+import io.beatmaps.History
 import io.beatmaps.api.ReviewsResponse
+import io.beatmaps.globalContext
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
+import io.beatmaps.index.modalContext
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.review.CommentsInfiniteScroll
-import kotlinx.browser.window
 import kotlinx.dom.hasClass
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
@@ -20,10 +20,7 @@ import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.url.URLSearchParams
-import react.RBuilder
-import react.RComponent
-import react.State
-import react.createRef
+import react.Props
 import react.dom.button
 import react.dom.form
 import react.dom.input
@@ -33,53 +30,59 @@ import react.dom.td
 import react.dom.th
 import react.dom.thead
 import react.dom.tr
+import react.fc
 import react.ref
-import react.setState
+import react.router.useLocation
+import react.router.useNavigate
+import react.useContext
+import react.useEffect
+import react.useEffectOnce
+import react.useRef
+import react.useState
 
-external interface ModReviewProps : WithRouterProps {
-    var userData: UserData?
-}
+val modReview = fc<Props> {
+    val (user, setUser) = useState("")
+    val (resultsKey, setResultsKey) = useState(Any())
 
-external interface ModReviewState : State {
-    var resultsKey: Any
-    var user: String?
-}
+    val userData = useContext(globalContext)
+    val history = History(useNavigate())
+    val location = useLocation()
 
-class ModReview : RComponent<ModReviewProps, ModReviewState>() {
-    private val resultsTable = createRef<HTMLElement>()
-    private val modalRef = createRef<ModalComponent>()
-    private val userRef = createRef<HTMLInputElement>()
+    val resultsTable = useRef<HTMLElement>()
+    val modalRef = useRef<ModalComponent>()
+    val userRef = useRef<HTMLInputElement>()
 
-    override fun componentDidMount() {
+    useEffectOnce {
         setPageTitle("Review Moderation")
 
-        if (props.userData?.curator != true) {
-            props.history.push("/")
+        if (userData?.curator != true) {
+            history.push("/")
         }
-
-        updateFromURL()
     }
 
-    override fun componentDidUpdate(prevProps: ModReviewProps, prevState: ModReviewState, snapshot: Any) {
-        updateFromURL()
-    }
-
-    private fun updateFromURL() {
-        val user = URLSearchParams(window.location.search).let { u ->
+    useEffect {
+        val userLocal = URLSearchParams(location.search).let { u ->
             u.get("user") ?: ""
         }
 
         userRef.current?.value = user
 
-        if (user != state.user) {
-            setState {
-                this.user = user
-                resultsKey = Any()
-            }
-        }
+        setUser(userLocal)
     }
 
-    private val loadPage = { toLoad: Int, token: CancelTokenSource ->
+    useEffect(user) {
+        setResultsKey(Any())
+    }
+
+    fun urlExtension(): String {
+        val params = listOfNotNull(
+            userRef.current?.value?.let { if (it.isNotBlank()) "user=$it" else null }
+        )
+
+        return if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
+    }
+
+    val loadPage = { toLoad: Int, token: CancelTokenSource ->
         Axios.get<ReviewsResponse>(
             "${Config.apibase}/review/latest/$toLoad" + urlExtension(),
             generateConfig<String, ReviewsResponse>(token.token)
@@ -88,10 +91,12 @@ class ModReview : RComponent<ModReviewProps, ModReviewState>() {
         }
     }
 
-    override fun RBuilder.render() {
-        modal {
-            ref = modalRef
-        }
+    modal {
+        ref = modalRef
+    }
+
+    modalContext.Provider {
+        attrs.value = modalRef
 
         form {
             table("table table-dark table-striped-3 modreview") {
@@ -117,7 +122,7 @@ class ModReview : RComponent<ModReviewProps, ModReviewState>() {
                                 attrs.onClickFunction = {
                                     it.preventDefault()
 
-                                    props.history.push("/modreview" + urlExtension())
+                                    history.push("/modreview" + urlExtension())
                                 }
 
                                 +"Filter"
@@ -130,7 +135,7 @@ class ModReview : RComponent<ModReviewProps, ModReviewState>() {
                     key = "modreviewTable"
 
                     child(CommentsInfiniteScroll::class) {
-                        attrs.resultsKey = state.resultsKey
+                        attrs.resultsKey = resultsKey
                         attrs.rowHeight = 95.5
                         attrs.itemsPerPage = 20
                         attrs.container = resultsTable
@@ -141,10 +146,9 @@ class ModReview : RComponent<ModReviewProps, ModReviewState>() {
                         attrs.renderElement = InfiniteScrollElementRenderer {
                             modReviewEntryRenderer {
                                 attrs.entry = it
-                                attrs.modal = modalRef
                                 attrs.setUser = { userStr ->
                                     userRef.current?.value = userStr
-                                    props.history.push("/modreview" + urlExtension())
+                                    history.push("/modreview" + urlExtension())
                                 }
                             }
                         }
@@ -153,17 +157,4 @@ class ModReview : RComponent<ModReviewProps, ModReviewState>() {
             }
         }
     }
-
-    private fun urlExtension(): String {
-        val params = listOfNotNull(
-            userRef.current?.value?.let { if (it.isNotBlank()) "user=$it" else null }
-        )
-
-        return if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
-    }
 }
-
-fun RBuilder.modreview(handler: ModReviewProps.() -> Unit) =
-    child(ModReview::class) {
-        this.attrs(handler)
-    }

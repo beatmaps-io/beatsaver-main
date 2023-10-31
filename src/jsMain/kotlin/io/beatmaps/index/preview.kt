@@ -1,5 +1,6 @@
 package io.beatmaps.index
 
+import io.beatmaps.UserData
 import io.beatmaps.previewBaseUrl
 import io.beatmaps.util.textToContent
 import kotlinx.browser.window
@@ -14,7 +15,9 @@ import org.w3c.dom.HTMLIFrameElement
 import react.Props
 import react.RBuilder
 import react.RComponent
+import react.RefObject
 import react.State
+import react.createContext
 import react.createRef
 import react.dom.RDOMBuilder
 import react.dom.button
@@ -26,6 +29,8 @@ import react.setState
 external interface ModalState : State {
     var modal: ModalData?
 }
+
+val modalContext = createContext<RefObject<ModalComponent>?>(null)
 
 data class ModalData(val titleText: String, val bodyText: String = "", val buttons: List<ModalButton>, val large: Boolean = false, val bodyCallback: (RDOMBuilder<DIV>.(HTMLDivElement?) -> Unit)? = null)
 data class ModalButton(val text: String, val color: String = "secondary", val callback: () -> Unit = {})
