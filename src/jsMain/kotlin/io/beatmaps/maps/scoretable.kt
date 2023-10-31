@@ -51,7 +51,7 @@ val scoreTable = fc<ScoreTableProps> { props ->
             setLoading(true)
 
             Axios.get<LeaderboardData>(
-                "${Config.apibase}/scores/${props.mapKey}/${page}?difficulty=${props.selected?.difficulty?.idx ?: 9}" +
+                "${Config.apibase}/scores/${props.mapKey}/$page?difficulty=${props.selected?.difficulty?.idx ?: 9}" +
                     "&gameMode=${props.selected?.characteristic?.ordinal ?: 0}&type=${props.type}",
                 generateConfig<String, LeaderboardData>(token?.token)
             ).then {

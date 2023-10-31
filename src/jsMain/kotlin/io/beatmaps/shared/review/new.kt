@@ -15,8 +15,6 @@ import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.RBuilder
-import react.RComponent
 import react.dom.a
 import react.dom.br
 import react.dom.button
