@@ -11,11 +11,9 @@ fun ClassName(className: String?) = className?.let { ClassName(it) }
 
 fun RBuilder.routeLink(href: String, className: String? = null, block: RHandler<PropsWithChildren>?) {
     Link {
-        attrs {
-            this.to = href
-            this.replace = false
-            this.className = ClassName(className)
-        }
+        attrs.to = href
+        attrs.replace = false
+        attrs.className = ClassName(className)
         block?.invoke(this)
     }
 }

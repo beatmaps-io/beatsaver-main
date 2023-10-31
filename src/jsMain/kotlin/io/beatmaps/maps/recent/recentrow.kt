@@ -55,9 +55,9 @@ class RecentTestplayRow : RComponent<RecentTestplayRowProps, RecentTestplayRowSt
     override fun RBuilder.render() {
         beatmapTableRow {
             key = props.map.id
-            map = props.map
-            version = props.version
-            modal = props.modal
+            attrs.map = props.map
+            attrs.version = props.version
+            attrs.modal = props.modal
         }
 
         tr {

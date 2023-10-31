@@ -69,15 +69,15 @@ class ReviewTable : RComponent<ReviewTableProps, ReviewTableState>() {
                 props.map?.let { map ->
                     if (userData != null && !userData.suspended && userData.userId != props.mapUploaderId) {
                         newReview {
-                            mapId = map
-                            userId = userData.userId
-                            existingReview = state.existingReview
-                            setExistingReview = { nv ->
+                            attrs.mapId = map
+                            attrs.userId = userData.userId
+                            attrs.existingReview = state.existingReview
+                            attrs.setExistingReview = { nv ->
                                 setState {
                                     existingReview = nv
                                 }
                             }
-                            reloadList = {
+                            attrs.reloadList = {
                                 setState {
                                     resultsKey = Any()
                                 }

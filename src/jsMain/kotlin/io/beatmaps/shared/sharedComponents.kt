@@ -166,8 +166,7 @@ val links = fc<LinksProps> { props ->
         }
     }
     oneclick {
-        mapId = props.map.id
-        this.modal = modal
+        attrs.mapId = props.map.id
     }
     props.version?.let { v ->
         downloadZip {
