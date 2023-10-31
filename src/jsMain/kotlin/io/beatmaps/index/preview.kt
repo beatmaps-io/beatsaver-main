@@ -1,6 +1,5 @@
 package io.beatmaps.index
 
-import io.beatmaps.UserData
 import io.beatmaps.previewBaseUrl
 import io.beatmaps.util.textToContent
 import kotlinx.browser.window

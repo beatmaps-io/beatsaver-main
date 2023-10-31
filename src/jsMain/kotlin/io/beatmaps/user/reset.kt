@@ -65,7 +65,6 @@ val resetPage = fc<Props> {
                 }.catch {
                     // Cancelled request
                     setLoading(false)
-
                 }
             }
             errors {
