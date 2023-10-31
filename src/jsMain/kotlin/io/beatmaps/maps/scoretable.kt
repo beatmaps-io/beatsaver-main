@@ -69,7 +69,6 @@ val scoreTable = fc<ScoreTableProps> { props ->
                     setLoading(false)
                 }
             }.catch {
-                console.log("Cancelled?")
                 // Cancelled request
             }
         }
