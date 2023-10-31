@@ -118,8 +118,11 @@ val playlistSearchEditor = fc<PSEProps> { props ->
     }
 
     useEffect(props.config) {
+        val mappers = props.config.searchParams.mappers
+        if (mappers.isEmpty()) return@useEffect
+
         Axios.get<List<UserDetail>>(
-            "${Config.apibase}/users/ids/${props.config.searchParams.mappers.joinToString(",")}",
+            "${Config.apibase}/users/ids/${mappers.joinToString(",")}",
             generateConfig<String, List<UserDetail>>()
         ).then {
             setCurrentMappers(it.data)
@@ -261,7 +264,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
             }
 
             tags {
-                attrs.default = tags
+                attrs.default = props.config.searchParams.tags
                 attrs.callback = {
                     setTags(it)
                 }

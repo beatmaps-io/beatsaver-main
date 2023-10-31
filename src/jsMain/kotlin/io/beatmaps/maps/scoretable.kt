@@ -11,15 +11,11 @@ import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.fixedStr
 import kotlinx.browser.window
-import kotlinx.html.TBODY
 import kotlinx.html.ThScope
 import kotlinx.html.js.onScrollFunction
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 import react.Props
-import react.RBuilder
-import react.RComponent
-import react.State
-import react.createRef
 import react.dom.a
 import react.dom.div
 import react.dom.img
@@ -28,7 +24,11 @@ import react.dom.tbody
 import react.dom.th
 import react.dom.thead
 import react.dom.tr
-import react.setState
+import react.fc
+import react.useEffect
+import react.useEffectOnce
+import react.useRef
+import react.useState
 
 external interface ScoreTableProps : Props {
     var mapKey: String
@@ -36,149 +36,45 @@ external interface ScoreTableProps : Props {
     var type: LeaderboardType
 }
 
-external interface ScoreTableState : State {
-    var page: Int?
-    var loading: Boolean?
-    var scores: List<LeaderboardScore>?
-    var scroll: Int?
-    var uid: String?
-    var token: CancelTokenSource?
-}
+val scoreTable = fc<ScoreTableProps> { props ->
+    val (uid, setUid) = useState<String?>(null)
+    val (scroll, setScroll) = useState(0.0)
+    val (loading, setLoading) = useState(false)
+    val (page, setPage) = useState(1)
+    val (token, setToken) = useState<CancelTokenSource?>(null)
+    val (scores, setScores) = useState(listOf<LeaderboardScore>())
 
-class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
-    private val myRef = createRef<TBODY>()
+    val myRef = useRef<HTMLElement>()
 
-    override fun componentWillMount() {
-        setState {
-            token = Axios.CancelToken.source()
-        }
-    }
+    val loadNextPage = {
+        if (!loading) {
+            setLoading(true)
 
-    override fun componentDidMount() {
-        window.addEventListener("scroll", handleScroll)
+            Axios.get<LeaderboardData>(
+                "${Config.apibase}/scores/${props.mapKey}/$page?difficulty=${props.selected?.difficulty?.idx ?: 9}" +
+                    "&gameMode=${props.selected?.characteristic?.ordinal ?: 0}&type=${props.type}",
+                generateConfig<String, LeaderboardData>(token?.token)
+            ).then {
+                val newScores = it.data
 
-        loadNextPage()
-    }
+                if (newScores.scores.isNotEmpty()) {
+                    setScores(scores.plus(newScores.scores))
+                    setLoading(false)
+                    setPage(page + 1)
+                    setUid(newScores.uid)
 
-    override fun componentWillUpdate(nextProps: ScoreTableProps, nextState: ScoreTableState) {
-        if (nextProps.selected != props.selected || nextProps.type != props.type) {
-            state.token?.let { it.cancel("Another request started") }
-
-            nextState.apply {
-                scores = listOf()
-                page = 1
-                loading = false
-                scroll = 0
-                uid = null
-                token = Axios.CancelToken.source()
-            }
-
-            window.setTimeout(::loadNextPage, 0)
-        }
-    }
-
-    private fun loadNextPage() {
-        if (state.loading == true) return
-
-        setState {
-            loading = true
-        }
-
-        Axios.get<LeaderboardData>(
-            "${Config.apibase}/scores/${props.mapKey}/${state.page ?: 1}?difficulty=${props.selected?.difficulty?.idx ?: 9}" +
-                "&gameMode=${props.selected?.characteristic?.ordinal ?: 0}&type=${props.type}",
-            generateConfig<String, LeaderboardData>(state.token?.token)
-        ).then {
-            val newScores = it.data
-
-            if (newScores.scores.isNotEmpty()) {
-                setState {
-                    page = (page ?: 1) + 1
-                    loading = false
-                    scores = (scores ?: listOf()).plus(newScores.scores)
-                    uid = newScores.uid
+                    myRef.current?.scrollTop = scroll
+                } else if (newScores.valid) {
+                    setUid(newScores.uid)
+                    setLoading(false)
                 }
-
-                myRef.current?.asDynamic().scrollTop = state.scroll
-
-                if (state.page?.let { p -> p < 3 } != false) {
-                    loadNextPage()
-                }
-            } else if (newScores.valid) {
-                setState {
-                    uid = newScores.uid
-                    loading = false
-                }
-            }
-        }.catch {
-            // Cancelled request
-        }
-    }
-
-    override fun RBuilder.render() {
-        div("scores col-lg-8") {
-            table("table table-striped table-dark") {
-                thead {
-                    tr {
-                        th(scope = ThScope.col) { +"#" }
-                        th(scope = ThScope.col) { +"Player" }
-                        th(scope = ThScope.col) { +"Score" }
-                        th(scope = ThScope.col) { +"Mods" }
-                        th(scope = ThScope.col) { +"%" }
-                        th(scope = ThScope.col) { +"PP" }
-                        th(scope = ThScope.col) {
-                            state.uid?.let { uid ->
-                                a("${props.type.url}$uid", "_blank") {
-                                    img(props.type.name, src = "/static/${props.type.name.lowercase()}.svg") { }
-                                }
-                            }
-                        }
-                    }
-                }
-                tbody {
-                    ref = myRef
-                    attrs.onScrollFunction = handleScroll
-                    state.scores?.forEachIndexed { idx, it ->
-                        val maxScore = props.selected?.maxScore ?: 0
-                        score {
-                            key = idx.toString()
-                            position = idx + 1
-                            playerId = it.playerId
-                            name = it.name
-                            pp = it.pp
-                            score = it.score
-                            scoreColor = scoreColor(it.score, maxScore)
-                            mods = it.mods
-                            percentage = ((it.score * 100L) / maxScore.toFloat()).fixedStr(2) + "%"
-                        }
-                    }
-                }
+            }.catch {
+                // Cancelled request
             }
         }
     }
 
-    override fun componentWillUnmount() {
-        window.removeEventListener("scroll", handleScroll)
-    }
-
-    private val handleScroll = { _: Event ->
-        val trigger = 100
-        if (myRef.current != null) {
-            val clientHeight = myRef.current.asDynamic().clientHeight as Int
-            val scrollTop = myRef.current.asDynamic().scrollTop as Int
-            val scrollHeight = myRef.current.asDynamic().scrollHeight as Int
-
-            setState {
-                scroll = scrollTop
-            }
-
-            if (scrollHeight - (scrollTop + clientHeight) < trigger) {
-                loadNextPage()
-            }
-        }
-    }
-
-    private fun scoreColor(score: Int, maxScore: Int) =
+    fun scoreColor(score: Int, maxScore: Int) =
         (score / maxScore.toFloat()).let {
             when {
                 it > 0.9 -> "text-info"
@@ -188,9 +84,82 @@ class ScoreTable : RComponent<ScoreTableProps, ScoreTableState>() {
                 else -> "text-danger"
             }
         }
-}
 
-fun RBuilder.scoreTable(handler: ScoreTableProps.() -> Unit) =
-    child(ScoreTable::class) {
-        this.attrs(handler)
+    val handleScroll = { _: Event ->
+        val trigger = 100
+        if (myRef.current != null) {
+            val clientHeight = myRef.current?.clientHeight ?: 0
+            val scrollTop = myRef.current?.scrollTop ?: 0.0
+            val scrollHeight = myRef.current?.scrollHeight ?: 0
+
+            setScroll(scrollTop)
+
+            if (scrollHeight - (scrollTop + clientHeight) < trigger) {
+                loadNextPage()
+            }
+        }
     }
+
+    useEffectOnce {
+        window.addEventListener("scroll", handleScroll)
+        cleanup {
+            window.removeEventListener("scroll", handleScroll)
+        }
+    }
+
+    useEffect(token, page) {
+        // Always load at least 2 pages
+        if (token != null && page < 3) loadNextPage()
+    }
+
+    useEffect(props.selected, props.type) {
+        token?.cancel("Another request started")
+
+        setScores(listOf())
+        setLoading(false)
+        setScroll(0.0)
+        setUid(null)
+        setPage(1)
+        setToken(Axios.CancelToken.source())
+    }
+
+    div("scores col-lg-8") {
+        table("table table-striped table-dark") {
+            thead {
+                tr {
+                    th(scope = ThScope.col) { +"#" }
+                    th(scope = ThScope.col) { +"Player" }
+                    th(scope = ThScope.col) { +"Score" }
+                    th(scope = ThScope.col) { +"Mods" }
+                    th(scope = ThScope.col) { +"%" }
+                    th(scope = ThScope.col) { +"PP" }
+                    th(scope = ThScope.col) {
+                        uid?.let { uid1 ->
+                            a("${props.type.url}$uid1", "_blank") {
+                                img(props.type.name, src = "/static/${props.type.name.lowercase()}.svg") { }
+                            }
+                        }
+                    }
+                }
+            }
+            tbody {
+                ref = myRef
+                attrs.onScrollFunction = handleScroll
+                scores.forEachIndexed { idx, it ->
+                    val maxScore = props.selected?.maxScore ?: 0
+                    score {
+                        key = idx.toString()
+                        attrs.position = idx + 1
+                        attrs.playerId = it.playerId
+                        attrs.name = it.name
+                        attrs.pp = it.pp
+                        attrs.score = it.score
+                        attrs.scoreColor = scoreColor(it.score, maxScore)
+                        attrs.mods = it.mods
+                        attrs.percentage = ((it.score * 100L) / maxScore.toFloat()).fixedStr(2) + "%"
+                    }
+                }
+            }
+        }
+    }
+}

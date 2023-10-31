@@ -169,9 +169,9 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
                             }
                         } else if (version != null && it.deletedAt == null) {
                             scoreTable {
-                                mapKey = version.hash
-                                selected = state.selectedDiff
-                                type = leaderBoardType
+                                attrs.mapKey = version.hash
+                                attrs.selected = state.selectedDiff
+                                attrs.type = leaderBoardType
                             }
                         }
                     }

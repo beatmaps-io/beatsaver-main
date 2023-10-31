@@ -15,10 +15,6 @@ import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.RBuilder
-import react.RComponent
-import react.State
-import react.createRef
 import react.dom.a
 import react.dom.br
 import react.dom.button
@@ -26,7 +22,10 @@ import react.dom.div
 import react.dom.p
 import react.dom.span
 import react.dom.textarea
-import react.setState
+import react.fc
+import react.useEffectOnce
+import react.useRef
+import react.useState
 
 external interface NewReviewProps : Props {
     var mapId: String
@@ -36,18 +35,16 @@ external interface NewReviewProps : Props {
     var reloadList: (() -> Unit)?
 }
 
-external interface NewReviewState : State {
-    var reviewLength: Int?
-    var sentiment: ReviewSentiment?
-    var focusIcon: Boolean?
-    var loading: Boolean?
-}
+val newReview = fc<NewReviewProps> { props ->
+    val (loading, setLoading) = useState(false)
+    val (sentiment, setSentiment) = useState<ReviewSentiment?>(null)
+    val (focusIcon, setFocusIcon) = useState(false)
+    val (reviewLength, setReviewLength) = useState(0)
 
-class NewReview : RComponent<NewReviewProps, NewReviewState>() {
-    private val captchaRef = createRef<ReCAPTCHA>()
-    private val textareaRef = createRef<HTMLTextAreaElement>()
+    val captchaRef = useRef<ReCAPTCHA>()
+    val textareaRef = useRef<HTMLTextAreaElement>()
 
-    override fun componentDidMount() {
+    useEffectOnce {
         axiosGet<String>("${Config.apibase}/review/single/${props.mapId}/${props.userId}").then {
             props.setExistingReview?.invoke(true)
         }.catch {
@@ -57,109 +54,87 @@ class NewReview : RComponent<NewReviewProps, NewReviewState>() {
         }
     }
 
-    override fun RBuilder.render() {
-        recaptcha(captchaRef)
+    recaptcha(captchaRef)
 
-        if (props.existingReview == false) {
-            div("card mb-2") {
-                div("card-body") {
-                    sentimentPicker {
-                        attrs.sentiment = state.sentiment
-                        attrs.updateSentiment = {
-                            setState {
-                                sentiment = it
+    if (props.existingReview == false) {
+        div("card mb-2") {
+            div("card-body") {
+                sentimentPicker {
+                    attrs.sentiment = sentiment
+                    attrs.updateSentiment = {
+                        setSentiment(it)
+                    }
+                }
+                sentiment?.let { currentSentiment ->
+                    p("my-2") {
+                        +"Comment (required)"
+                        button(classes = "ms-1 fas fa-info-circle fa-button") {
+                            attrs.onClickFunction = {
+                                setFocusIcon(!focusIcon)
+                            }
+                        }
+                        div("tooltip fade" + if (focusIcon) " show" else " d-none") {
+                            div("tooltip-arrow") {}
+                            div("tooltip-inner") {
+                                +"Learn how to provide constructive map feedback "
+                                a("https://bsaber.com/how-to-write-constructive-map-reviews/", target = "_blank") {
+                                    +"here"
+                                }
+                                +"."
+                                br {}
+                                +"Reviews are subject to the "
+                                a("/policy/tos", target = "_blank") {
+                                    +"TOS"
+                                }
+                                +"."
                             }
                         }
                     }
-                    state.sentiment?.let { currentSentiment ->
-                        p("my-2") {
-                            +"Comment (required)"
-                            button(classes = "ms-1 fas fa-info-circle fa-button") {
-                                attrs.onClickFunction = {
-                                    setState {
-                                        focusIcon = focusIcon != true
-                                    }
-                                }
-                            }
-                            div("tooltip fade" + if (state.focusIcon == true) " show" else " d-none") {
-                                div("tooltip-arrow") {}
-                                div("tooltip-inner") {
-                                    +"Learn how to provide constructive map feedback "
-                                    a("https://bsaber.com/how-to-write-constructive-map-reviews/", target = "_blank") {
-                                        +"here"
-                                    }
-                                    +"."
-                                    br {}
-                                    +"Reviews are subject to the "
-                                    a("/policy/tos", target = "_blank") {
-                                        +"TOS"
-                                    }
-                                    +"."
-                                }
+                    textarea(classes = "form-control") {
+                        key = "description"
+                        ref = textareaRef
+                        attrs.id = "description"
+                        attrs.rows = "5"
+                        attrs.maxLength = "${ReviewConstants.MAX_LENGTH}"
+                        attrs.disabled = loading == true
+                        attrs.onChangeFunction = {
+                            setReviewLength((it.target as HTMLTextAreaElement).value.length)
+                        }
+                    }
+                    span("badge badge-" + if (reviewLength > ReviewConstants.MAX_LENGTH - 20) "danger" else "dark") {
+                        attrs.id = "count_message"
+                        +"$reviewLength / ${ReviewConstants.MAX_LENGTH}"
+                    }
+                    button(classes = "btn btn-info mt-1 float-end") {
+                        attrs.disabled = reviewLength < 1 || loading
+                        attrs.onClickFunction = {
+                            val newReview = textareaRef.current?.value ?: ""
+
+                            setLoading(true)
+
+                            captchaRef.current?.executeAsync()?.then { captcha ->
+                                Axios.put<ActionResponse>(
+                                    "${Config.apibase}/review/single/${props.mapId}/${props.userId}",
+                                    PutReview(newReview, currentSentiment, captcha),
+                                    generateConfig<PutReview, ActionResponse>()
+                                )
+                            }?.then({ r ->
+                                setLoading(false)
+
+                                if (!r.data.success) return@then
+
+                                setSentiment(null)
+                                setReviewLength(0)
+                                props.setExistingReview?.invoke(true)
+                                props.reloadList?.invoke()
+                            }) {
+                                setLoading(false)
                             }
                         }
-                        textarea(classes = "form-control") {
-                            key = "description"
-                            ref = textareaRef
-                            attrs.id = "description"
-                            attrs.rows = "5"
-                            attrs.maxLength = "${ReviewConstants.MAX_LENGTH}"
-                            attrs.disabled = state.loading == true
-                            attrs.onChangeFunction = {
-                                setState {
-                                    reviewLength = (it.target as HTMLTextAreaElement).value.length
-                                }
-                            }
-                        }
-                        val currentLength = state.reviewLength ?: 0
-                        span("badge badge-" + if (currentLength > ReviewConstants.MAX_LENGTH - 20) "danger" else "dark") {
-                            attrs.id = "count_message"
-                            +"$currentLength / ${ReviewConstants.MAX_LENGTH}"
-                        }
-                        button(classes = "btn btn-info mt-1 float-end") {
-                            attrs.disabled = state.sentiment == null || currentLength < 1 || state.loading == true
-                            attrs.onClickFunction = {
-                                val newReview = textareaRef.current?.value ?: ""
-
-                                setState {
-                                    loading = true
-                                }
-
-                                captchaRef.current?.executeAsync()?.then { captcha ->
-                                    Axios.put<ActionResponse>(
-                                        "${Config.apibase}/review/single/${props.mapId}/${props.userId}",
-                                        PutReview(newReview, currentSentiment, captcha),
-                                        generateConfig<PutReview, ActionResponse>()
-                                    )
-                                }?.then({ r ->
-                                    setState {
-                                        loading = false
-                                    }
-
-                                    if (!r.data.success) return@then
-
-                                    setState {
-                                        sentiment = null
-                                        reviewLength = null
-                                    }
-                                    props.setExistingReview?.invoke(true)
-                                    props.reloadList?.invoke()
-                                }) {
-                                    setState {
-                                        loading = false
-                                    }
-                                }
-                            }
-                            +"Leave Review"
-                        }
+                        +"Leave Review"
                     }
                 }
             }
         }
     }
 }
-
-fun RBuilder.newReview(handler: NewReviewProps.() -> Unit) =
-    child(NewReview::class) {
-        this.attrs(handler)
-    }
