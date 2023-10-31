@@ -11,9 +11,9 @@ import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.fixedStr
 import kotlinx.browser.window
-import kotlinx.html.TBODY
 import kotlinx.html.ThScope
 import kotlinx.html.js.onScrollFunction
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 import react.Props
 import react.dom.a
@@ -38,13 +38,13 @@ external interface ScoreTableProps : Props {
 
 val scoreTable = fc<ScoreTableProps> { props ->
     val (uid, setUid) = useState<String?>(null)
-    val (scroll, setScroll) = useState(0)
+    val (scroll, setScroll) = useState(0.0)
     val (loading, setLoading) = useState(false)
     val (page, setPage) = useState(1)
     val (token, setToken) = useState<CancelTokenSource?>(null)
     val (scores, setScores) = useState(listOf<LeaderboardScore>())
 
-    val myRef = useRef<TBODY>()
+    val myRef = useRef<HTMLElement>()
 
     val loadNextPage = {
         if (!loading) {
@@ -63,7 +63,7 @@ val scoreTable = fc<ScoreTableProps> { props ->
                     setPage(page + 1)
                     setUid(newScores.uid)
 
-                    myRef.current?.asDynamic().scrollTop = scroll
+                    myRef.current?.scrollTop = scroll
                 } else if (newScores.valid) {
                     setUid(newScores.uid)
                     setLoading(false)
@@ -88,9 +88,9 @@ val scoreTable = fc<ScoreTableProps> { props ->
     val handleScroll = { _: Event ->
         val trigger = 100
         if (myRef.current != null) {
-            val clientHeight = myRef.current.asDynamic().clientHeight as Int
-            val scrollTop = myRef.current.asDynamic().scrollTop as Int
-            val scrollHeight = myRef.current.asDynamic().scrollHeight as Int
+            val clientHeight = myRef.current?.clientHeight ?: 0
+            val scrollTop = myRef.current?.scrollTop ?: 0.0
+            val scrollHeight = myRef.current?.scrollHeight ?: 0
 
             setScroll(scrollTop)
 
@@ -117,7 +117,7 @@ val scoreTable = fc<ScoreTableProps> { props ->
 
         setScores(listOf())
         setLoading(false)
-        setScroll(0)
+        setScroll(0.0)
         setUid(null)
         setPage(1)
         setToken(Axios.CancelToken.source())
