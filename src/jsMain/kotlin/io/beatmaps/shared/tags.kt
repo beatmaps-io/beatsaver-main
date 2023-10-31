@@ -14,6 +14,7 @@ import react.dom.div
 import react.dom.h4
 import react.fc
 import react.useEffect
+import react.useEffectOnce
 import react.useState
 
 external interface TagsProps : Props {
@@ -35,11 +36,11 @@ val tags = fc<TagsProps> { props ->
         }
     }
 
-    useEffect(listOf(props.default)) {
+    useEffect(props.default) {
         props.default?.let { setSelected(it) }
     }
 
-    useEffect(listOf<Any>()) {
+    useEffectOnce {
         document.addEventListener("keyup", handleShift)
         document.addEventListener("keydown", handleShift)
         cleanup {
