@@ -4,7 +4,7 @@ import external.ReactDatesInit
 import io.beatmaps.index.HomePage
 import io.beatmaps.maps.MapPage
 import io.beatmaps.maps.recent.recentTestplays
-import io.beatmaps.modlog.ModLog
+import io.beatmaps.modlog.modlog
 import io.beatmaps.modreview.ModReview
 import io.beatmaps.nav.viewportMinWidthPolyfill
 import io.beatmaps.playlist.MultiAddPlaylist
@@ -112,9 +112,7 @@ class App : RComponent<Props, State>() {
                     recentTestplays { }
                 }
                 bsroute("/modlog") {
-                    withRouter(ModLog::class) {
-                        userData = useContext(globalContext)
-                    }
+                    modlog { }
                 }
                 bsroute("/modreview") {
                     withRouter(ModReview::class) {

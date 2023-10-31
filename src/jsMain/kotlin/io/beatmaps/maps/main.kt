@@ -7,7 +7,6 @@ import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.ReviewConstants
-import io.beatmaps.globalContext
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
 import io.beatmaps.maps.testplay.testplay
@@ -83,96 +82,89 @@ class MapPage : RComponent<MapPageProps, MapPageState>() {
     }
 
     override fun RBuilder.render() {
-        globalContext.Consumer { userData ->
-            state.map?.let {
-                val version = it.publishedVersion()
-                val loggedInLocal = userData?.userId
-                val isOwnerLocal = loggedInLocal == it.uploader.id
+        state.map?.let {
+            val version = it.publishedVersion()
 
-                if (version == null && it.deletedAt == null) {
-                    testplay {
-                        mapInfo = it
-                        isOwner = isOwnerLocal
-                        loggedInId = loggedInLocal
-                        refreshPage = {
-                            loadMap()
-                            window.scrollTo(0.0, 0.0)
+            if (version == null && it.deletedAt == null) {
+                testplay {
+                    attrs.mapInfo = it
+                    attrs.refreshPage = {
+                        loadMap()
+                        window.scrollTo(0.0, 0.0)
+                    }
+                    attrs.history = props.history
+                    attrs.updateMapinfo = {
+                        setState {
+                            map = it
                         }
-                        history = props.history
+                    }
+                }
+            } else {
+                modal {
+                    ref = modalRef
+                }
+
+                mapInfo {
+                    attrs {
+                        mapInfo = it
+                        modal = modalRef
+                        reloadMap = ::loadMap
+                        deleteMap = {
+                            props.history.push("/profile")
+                        }
                         updateMapinfo = {
                             setState {
                                 map = it
                             }
                         }
                     }
-                } else {
-                    modal {
-                        ref = modalRef
-                    }
-
-                    mapInfo {
-                        attrs {
-                            mapInfo = it
-                            isOwner = isOwnerLocal
-                            modal = modalRef
-                            reloadMap = ::loadMap
-                            deleteMap = {
-                                props.history.push("/profile")
-                            }
-                            updateMapinfo = {
+                }
+                div("row mt-3") {
+                    val leaderBoardType = state.type ?: LeaderboardType.fromName(localStorage["maps.leaderboardType"]) ?: LeaderboardType.ScoreSaber
+                    val showComments = ReviewConstants.COMMENTS_ENABLED && state.comments ?: (localStorage["maps.showComments"] == "true")
+                    div("col-lg-4 text-nowrap") {
+                        mapPageNav {
+                            attrs.map = it
+                            attrs.comments = showComments
+                            attrs.setComments = {
+                                localStorage["maps.showComments"] = "true"
                                 setState {
-                                    map = it
+                                    comments = true
+                                }
+                            }
+                            attrs.type = leaderBoardType
+                            attrs.setType = { lt ->
+                                localStorage["maps.leaderboardType"] = lt.name
+                                localStorage["maps.showComments"] = "false"
+                                setState {
+                                    type = lt
+                                    comments = false
+                                }
+                            }
+                        }
+
+                        infoTable {
+                            map = it
+                            selected = state.selectedDiff
+                            changeSelectedDiff = {
+                                setState {
+                                    selectedDiff = it
                                 }
                             }
                         }
                     }
-                    div("row mt-3") {
-                        val leaderBoardType = state.type ?: LeaderboardType.fromName(localStorage["maps.leaderboardType"]) ?: LeaderboardType.ScoreSaber
-                        val showComments = ReviewConstants.COMMENTS_ENABLED && state.comments ?: (localStorage["maps.showComments"] == "true")
-                        div("col-lg-4 text-nowrap") {
-                            mapPageNav {
-                                attrs.map = it
-                                attrs.comments = showComments
-                                attrs.setComments = {
-                                    localStorage["maps.showComments"] = "true"
-                                    setState {
-                                        comments = true
-                                    }
-                                }
-                                attrs.type = leaderBoardType
-                                attrs.setType = { lt ->
-                                    localStorage["maps.leaderboardType"] = lt.name
-                                    localStorage["maps.showComments"] = "false"
-                                    setState {
-                                        type = lt
-                                        comments = false
-                                    }
-                                }
-                            }
 
-                            infoTable {
-                                map = it
-                                selected = state.selectedDiff
-                                changeSelectedDiff = {
-                                    setState {
-                                        selectedDiff = it
-                                    }
-                                }
-                            }
+                    if (showComments) {
+                        reviewTable {
+                            map = it.id
+                            mapUploaderId = it.uploader.id
+                            modal = modalRef
                         }
-
-                        if (showComments) {
-                            reviewTable {
-                                map = it.id
-                                mapUploaderId = it.uploader.id
-                                modal = modalRef
-                            }
-                        } else if (version != null && it.deletedAt == null) {
-                            scoreTable {
-                                attrs.mapKey = version.hash
-                                attrs.selected = state.selectedDiff
-                                attrs.type = leaderBoardType
-                            }
+                    } else if (version != null && it.deletedAt == null) {
+                        scoreTable {
+                            attrs.mapKey = version.hash
+                            attrs.selected = state.selectedDiff
+                            attrs.type = leaderBoardType
                         }
                     }
                 }

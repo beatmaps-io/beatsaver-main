@@ -9,6 +9,7 @@ import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.common.toQuery
 import io.beatmaps.common.toTagSet
 import io.beatmaps.dateFormat
+import io.beatmaps.globalContext
 import io.beatmaps.shared.ExtraContentRenderer
 import io.beatmaps.shared.FilterCategory
 import io.beatmaps.shared.FilterInfo
@@ -205,24 +206,28 @@ class HomePage : RComponent<HomePageProps, HomePageState>() {
             }
         }
 
-        div("position-absolute btn-group") {
-            attrs.jsStyle {
-                position = "absolute"
-                right = "10px"
-                bottom = "10px"
-            }
+        globalContext.Consumer { userData ->
+            if (userData != null) {
+                div("position-absolute btn-group") {
+                    attrs.jsStyle {
+                        position = "absolute"
+                        right = "10px"
+                        bottom = "10px"
+                    }
 
-            button(type = ButtonType.button, classes = "btn btn-sm btn-primary") {
-                attrs.title = "Create playlist from search"
-                attrs.onClickFunction = {
-                    it.preventDefault()
+                    button(type = ButtonType.button, classes = "btn btn-sm btn-primary") {
+                        attrs.title = "Create playlist from search"
+                        attrs.onClickFunction = {
+                            it.preventDefault()
 
-                    props.history.go(
-                        "/playlists/new",
-                        stateNavOptions(state.searchParams?.toPlaylistConfig(), false)
-                    )
+                            props.history.go(
+                                "/playlists/new",
+                                stateNavOptions(state.searchParams?.toPlaylistConfig(), false)
+                            )
+                        }
+                        i("fas fa-list-ul") { }
+                    }
                 }
-                i("fas fa-list-ul") { }
             }
         }
     }

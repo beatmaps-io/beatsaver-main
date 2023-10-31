@@ -7,58 +7,46 @@ import io.beatmaps.index.modal
 import io.beatmaps.maps.infoTable
 import io.beatmaps.maps.mapInfo
 import react.Props
-import react.RBuilder
-import react.RComponent
-import react.State
-import react.createRef
+import react.fc
 import react.ref
+import react.useRef
 
 external interface TestplayProps : Props {
     var mapInfo: MapDetail
-    var isOwner: Boolean
-    var loggedInId: Int?
     var refreshPage: () -> Unit
     var history: History
     var updateMapinfo: (MapDetail) -> Unit
 }
 
-class Testplay : RComponent<TestplayProps, State>() {
-    private val modalRef = createRef<ModalComponent>()
+val testplay = fc<TestplayProps> { props ->
+    val modalRef = useRef<ModalComponent>()
 
-    override fun RBuilder.render() {
-        modal {
-            ref = modalRef
-        }
-        mapInfo {
-            attrs {
-                mapInfo = props.mapInfo
-                isOwner = props.isOwner
-                modal = modalRef
-                reloadMap = props.refreshPage
-                deleteMap = {
-                    props.history.push("/profile")
-                }
-                updateMapinfo = props.updateMapinfo
-            }
-        }
-        infoTable {
-            map = props.mapInfo
-            horizontal = true
-            selected = null
-            changeSelectedDiff = { }
-        }
-        timeline {
+    modal {
+        ref = modalRef
+    }
+    mapInfo {
+        attrs {
             mapInfo = props.mapInfo
-            isOwner = props.isOwner
-            loggedInId = props.loggedInId
+            modal = modalRef
+            reloadMap = props.refreshPage
+            deleteMap = {
+                props.history.push("/profile")
+            }
+            updateMapinfo = props.updateMapinfo
+        }
+    }
+    infoTable {
+        map = props.mapInfo
+        horizontal = true
+        selected = null
+        changeSelectedDiff = { }
+    }
+    timeline {
+        attrs {
+            mapInfo = props.mapInfo
             reloadMap = props.refreshPage
             modal = modalRef
             history = props.history
         }
     }
 }
-
-fun RBuilder.testplay(handler: TestplayProps.() -> Unit) =
-    child(Testplay::class) {
-        this.attrs(handler)
-    }
