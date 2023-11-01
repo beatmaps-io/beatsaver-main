@@ -195,7 +195,7 @@ val playlistPage = fc<Props> {
                                                 p {
                                                     +"Are you sure? This action cannot be reversed."
                                                 }
-                                                if (userData?.admin == true) {
+                                                if (userData.admin) {
                                                     p {
                                                         +"Reason for action:"
                                                     }
