@@ -64,7 +64,7 @@ val collaboratorPicker = fc<CollaboratorPickerProps> { props ->
         }
 
         userSearch {
-            attrs.excludeUsers = collaborators?.map { it.id }
+            attrs.excludeUsers = (collaborators ?: listOf()).map { it.id }.plus(props.map.uploader.id)
             attrs.disabled = props.disabled
             attrs.callback = { newUser ->
                 Axios.post<String>(
