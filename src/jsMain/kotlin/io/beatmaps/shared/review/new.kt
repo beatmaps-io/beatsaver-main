@@ -19,6 +19,7 @@ import react.dom.a
 import react.dom.br
 import react.dom.button
 import react.dom.div
+import react.dom.key
 import react.dom.p
 import react.dom.span
 import react.dom.textarea
@@ -91,7 +92,7 @@ val newReview = fc<NewReviewProps> { props ->
                         }
                     }
                     textarea(classes = "form-control") {
-                        key = "description"
+                        attrs.key = "description"
                         ref = textareaRef
                         attrs.id = "description"
                         attrs.rows = "5"

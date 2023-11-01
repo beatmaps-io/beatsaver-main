@@ -214,9 +214,9 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                 title,
                 bodyCallback = {
                     followList {
-                        scrollParent = it
-                        this.following = following
-                        this.followedBy = followedBy
+                        attrs.scrollParent = it
+                        attrs.following = following
+                        attrs.followedBy = followedBy
                     }
                 },
                 buttons = listOf(
@@ -512,36 +512,33 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             val detail = state.userDetail
             if (detail != null) {
                 playlistTable {
-                    own = userId == null
-                    this.userId = detail.id
-                    history = props.history
-                    visible = state.state == ProfileTab.PLAYLISTS
+                    attrs.userId = detail.id
+                    attrs.visible = state.state == ProfileTab.PLAYLISTS
                 }
                 if (state.startup == true) {
                     beatmapTable {
-                        key = "maps-${state.state}"
-                        user = userId ?: loggedInLocal ?: 0
-                        wip = state.state == ProfileTab.UNPUBLISHED
-                        curated = state.state == ProfileTab.CURATED
-                        history = props.history
-                        visible = state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED || state.state == ProfileTab.CURATED
+                        attrs.key = "maps-${state.state}"
+                        attrs.user = userId ?: loggedInLocal ?: 0
+                        attrs.wip = state.state == ProfileTab.UNPUBLISHED
+                        attrs.curated = state.state == ProfileTab.CURATED
+                        attrs.visible = state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED || state.state == ProfileTab.CURATED
                     }
                 }
             }
 
             if (state.state == ProfileTab.REVIEWS) {
                 reviewTable {
-                    userDetail = detail
-                    fullWidth = true
-                    modal = modalRef
+                    attrs.userDetail = detail
+                    attrs.fullWidth = true
                 }
             }
 
             if (state.state == ProfileTab.ACCOUNT && detail != null) {
                 if (userId == null) {
-                    account {
-                        userDetail = detail
-                        onUpdate = { loadState() }
+                    accountTab {
+                        attrs.key = "account"
+                        attrs.userDetail = detail
+                        attrs.onUpdate = { loadState() }
                     }
                 } else {
                     adminAccount {

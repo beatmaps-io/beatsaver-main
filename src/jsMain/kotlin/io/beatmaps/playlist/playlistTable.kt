@@ -4,21 +4,20 @@ import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
 import io.beatmaps.Config
-import io.beatmaps.History
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistSearchResponse
 import io.beatmaps.common.SearchOrder
-import io.beatmaps.index.encodeURIComponent
-import io.beatmaps.shared.CommonParams
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
+import io.beatmaps.shared.search.CommonParams
+import io.beatmaps.util.encodeURIComponent
 import org.w3c.dom.HTMLElement
 import react.Props
-import react.RBuilder
-import react.RComponent
-import react.State
-import react.createRef
 import react.dom.div
+import react.fc
+import react.useEffect
+import react.useRef
+import react.useState
 
 data class PlaylistSearchParams(
     override val search: String,
@@ -30,33 +29,25 @@ data class PlaylistSearchParams(
     val curated: Boolean? = null,
     val verified: Boolean? = null,
     override val sortOrder: SearchOrder
-) : CommonParams
+) : CommonParams()
 
 external interface PlaylistTableProps : Props {
     var search: PlaylistSearchParams?
     var userId: Int?
-    var own: Boolean?
-    var history: History
     var visible: Boolean?
     var updateScrollIndex: ((Int) -> Unit)?
 }
 
-external interface PlaylistTableState : State {
-    var resultsKey: Any
-}
+val playlistTable = fc<PlaylistTableProps> { props ->
+    val (resultsKey, setResultsKey) = useState(Any())
 
-class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
-    private val resultsTable = createRef<HTMLElement>()
+    val resultsTable = useRef<HTMLElement>()
 
-    override fun componentWillUpdate(nextProps: PlaylistTableProps, nextState: PlaylistTableState) {
-        if (props.userId != nextProps.userId || props.search !== nextProps.search) {
-            nextState.apply {
-                resultsKey = Any()
-            }
-        }
+    useEffect(props.userId, props.search) {
+        setResultsKey(Any())
     }
 
-    private fun getUrl(page: Int) =
+    fun getUrl(page: Int) =
         if (props.userId != null) {
             "${Config.apibase}/playlists/user/${props.userId}/$page"
         } else {
@@ -73,7 +64,7 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
             } ?: ""
         }
 
-    private val loadPage = { toLoad: Int, token: CancelTokenSource ->
+    val loadPage = { toLoad: Int, token: CancelTokenSource ->
         Axios.get<PlaylistSearchResponse>(
             getUrl(toLoad),
             generateConfig<String, PlaylistSearchResponse>(token.token)
@@ -82,15 +73,13 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
         }
     }
 
-    override fun RBuilder.render() {
-        if (props.visible == false) return
-
+    if (props.visible != false) {
         div("search-results") {
             ref = resultsTable
             key = "resultsTable"
 
             child(PlaylistInfiniteScroll::class) {
-                attrs.resultsKey = state.resultsKey
+                attrs.resultsKey = resultsKey
                 attrs.rowHeight = 80.0
                 attrs.itemsPerPage = 20
                 attrs.container = resultsTable
@@ -107,8 +96,3 @@ class PlaylistTable : RComponent<PlaylistTableProps, PlaylistTableState>() {
 }
 
 class PlaylistInfiniteScroll : InfiniteScroll<PlaylistFull>()
-
-fun RBuilder.playlistTable(handler: PlaylistTableProps.() -> Unit) =
-    child(PlaylistTable::class) {
-        this.attrs(handler)
-    }

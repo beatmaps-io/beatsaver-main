@@ -25,6 +25,7 @@ import react.dom.th
 import react.dom.thead
 import react.dom.tr
 import react.fc
+import react.key
 import react.useEffect
 import react.useEffectOnce
 import react.useRef
@@ -148,7 +149,7 @@ val scoreTable = fc<ScoreTableProps> { props ->
                 scores.forEachIndexed { idx, it ->
                     val maxScore = props.selected?.maxScore ?: 0
                     score {
-                        key = idx.toString()
+                        attrs.key = idx.toString()
                         attrs.position = idx + 1
                         attrs.playerId = it.playerId
                         attrs.name = it.name

@@ -5,13 +5,12 @@ import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.dateFormat
 import io.beatmaps.setPageTitle
-import io.beatmaps.shared.FilterCategory
-import io.beatmaps.shared.FilterInfo
-import io.beatmaps.shared.SearchParamGenerator
-import io.beatmaps.shared.buildURL
-import io.beatmaps.shared.includeIfNotNull
-import io.beatmaps.shared.queryParams
-import io.beatmaps.shared.search
+import io.beatmaps.shared.search.FilterCategory
+import io.beatmaps.shared.search.FilterInfo
+import io.beatmaps.shared.search.SearchParamGenerator
+import io.beatmaps.shared.search.search
+import io.beatmaps.util.buildURL
+import io.beatmaps.util.includeIfNotNull
 import org.w3c.dom.url.URLSearchParams
 import react.Props
 import react.fc
@@ -91,11 +90,8 @@ val playlistFeed = fc<Props> {
         updateSearchParams = ::updateSearchParams
     }
     playlistTable {
-        search = searchParams
-        own = false
-        this.history = history
-        visible = true
-        updateScrollIndex = {
+        attrs.search = searchParams
+        attrs.updateScrollIndex = {
             updateSearchParams(searchParams, if (it < 2) null else it)
         }
     }

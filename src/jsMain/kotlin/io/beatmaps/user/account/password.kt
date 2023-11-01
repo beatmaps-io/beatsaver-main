@@ -7,7 +7,7 @@ import io.beatmaps.Config
 import io.beatmaps.api.AccountRequest
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
-import io.beatmaps.shared.errors
+import io.beatmaps.shared.form.errors
 import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
 import kotlinx.html.InputType

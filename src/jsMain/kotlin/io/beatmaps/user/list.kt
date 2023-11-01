@@ -6,7 +6,7 @@ import external.Moment
 import external.generateConfig
 import external.routeLink
 import io.beatmaps.Config
-import io.beatmaps.WithRouterProps
+import io.beatmaps.History
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.fixedStr
 import io.beatmaps.common.formatTime
@@ -17,10 +17,7 @@ import io.beatmaps.shared.InfiniteScroll
 import kotlinx.datetime.Clock
 import kotlinx.html.title
 import org.w3c.dom.HTMLElement
-import react.RBuilder
-import react.RComponent
-import react.State
-import react.createRef
+import react.Props
 import react.dom.a
 import react.dom.i
 import react.dom.img
@@ -30,17 +27,21 @@ import react.dom.td
 import react.dom.th
 import react.dom.thead
 import react.dom.tr
+import react.fc
+import react.router.useNavigate
+import react.useEffectOnce
+import react.useRef
 
-external interface UserListProps : WithRouterProps
+val userList = fc<Props> {
+    val resultsTable = useRef<HTMLElement>()
 
-class UserList : RComponent<UserListProps, State>() {
-    private val resultsTable = createRef<HTMLElement>()
+    val history = History(useNavigate())
 
-    override fun componentDidMount() {
+    useEffectOnce {
         setPageTitle("Mappers")
     }
 
-    private val loadPage = { toLoad: Int, token: CancelTokenSource ->
+    val loadPage = { toLoad: Int, token: CancelTokenSource ->
         Axios.get<Array<UserDetail>>(
             "${Config.apibase}/users/list/$toLoad",
             generateConfig<String, Array<UserDetail>>(token.token)
@@ -49,113 +50,111 @@ class UserList : RComponent<UserListProps, State>() {
         }
     }
 
-    override fun RBuilder.render() {
-        table("table table-dark table-striped mappers") {
-            thead {
-                tr {
-                    th { +"#" }
-                    th { i("fas fa-image") { attrs.title = "Avatar" } }
-                    th { +"Mapper" }
-                    th { i("fas fa-tachometer-alt") { attrs.title = "Avg BPM" } }
-                    th { i("fas fa-clock") { attrs.title = "Avg Duration" } }
-                    th { i("fas fa-thumbs-up") { attrs.title = "Total Upvotes" } }
-                    th { i("fas fa-thumbs-down") { attrs.title = "Total Downvotes" } }
-                    th { i("fas fa-percentage") { attrs.title = "Ratio" } }
-                    th { i("fas fa-map-marked") { attrs.title = "Total Maps" } }
-                    th { i("fas fa-star") { attrs.title = "Ranked Maps" } }
-                    th { +"First" }
-                    th { +"Last" }
-                    th { +"Since" }
-                    th { +"Age" }
-                    th { +"Playlist" }
-                }
+    table("table table-dark table-striped mappers") {
+        thead {
+            tr {
+                th { +"#" }
+                th { i("fas fa-image") { attrs.title = "Avatar" } }
+                th { +"Mapper" }
+                th { i("fas fa-tachometer-alt") { attrs.title = "Avg BPM" } }
+                th { i("fas fa-clock") { attrs.title = "Avg Duration" } }
+                th { i("fas fa-thumbs-up") { attrs.title = "Total Upvotes" } }
+                th { i("fas fa-thumbs-down") { attrs.title = "Total Downvotes" } }
+                th { i("fas fa-percentage") { attrs.title = "Ratio" } }
+                th { i("fas fa-map-marked") { attrs.title = "Total Maps" } }
+                th { i("fas fa-star") { attrs.title = "Ranked Maps" } }
+                th { +"First" }
+                th { +"Last" }
+                th { +"Since" }
+                th { +"Age" }
+                th { +"Playlist" }
             }
-            tbody {
-                ref = resultsTable
-                key = "mapperTable"
+        }
+        tbody {
+            ref = resultsTable
+            key = "mapperTable"
 
-                child(UserInfiniteScroll::class) {
-                    attrs.rowHeight = 54.0
-                    attrs.itemsPerPage = 20
-                    attrs.headerSize = 94.0
-                    attrs.container = resultsTable
-                    attrs.loadPage = loadPage
-                    attrs.updateScrollIndex = {
-                        props.history.replace("/mappers#$it")
-                    }
-                    attrs.renderElement = IndexedInfiniteScrollElementRenderer { idx, u ->
-                        tr {
+            child(UserInfiniteScroll::class) {
+                attrs.rowHeight = 54.0
+                attrs.itemsPerPage = 20
+                attrs.headerSize = 94.0
+                attrs.container = resultsTable
+                attrs.loadPage = loadPage
+                attrs.updateScrollIndex = {
+                    history.replace("/mappers#$it")
+                }
+                attrs.renderElement = IndexedInfiniteScrollElementRenderer { idx, u ->
+                    tr {
+                        td {
+                            +"${idx+1}"
+                        }
+                        if (u != null) {
                             td {
-                                +"${idx+1}"
+                                img("${u.name} avatar", u.avatar, classes = "rounded-circle") {
+                                    attrs.width = "40"
+                                    attrs.height = "40"
+                                }
                             }
-                            if (u != null) {
+                            td {
+                                routeLink(u.profileLink()) {
+                                    +u.name
+                                }
+                            }
+                            if (u.stats != null) {
                                 td {
-                                    img("${u.name} avatar", u.avatar, classes = "rounded-circle") {
-                                        attrs.width = "40"
-                                        attrs.height = "40"
+                                    +"${u.stats.avgBpm}"
+                                }
+                                td {
+                                    +u.stats.avgDuration.formatTime()
+                                }
+                                td {
+                                    +"${u.stats.totalUpvotes}"
+                                }
+                                td {
+                                    +"${u.stats.totalDownvotes}"
+                                }
+                                td {
+                                    val total = ((u.stats.totalUpvotes + u.stats.totalDownvotes) * 0.01f)
+                                    +"${(u.stats.totalUpvotes / if (total < 0.01f) 0.01f else total).fixedStr(2)}%"
+                                }
+                                td {
+                                    +"${u.stats.totalMaps}"
+                                }
+                                td {
+                                    +"${u.stats.rankedMaps}"
+                                }
+                                td {
+                                    +Moment(u.stats.firstUpload.toString()).format(dateFormat)
+                                }
+                                td {
+                                    +Moment(u.stats.lastUpload.toString()).format(dateFormat)
+                                }
+                                td {
+                                    u.stats.lastUpload?.let {
+                                        val diff = (Clock.System.now() - it).inWholeDays
+                                        +"$diff"
                                     }
                                 }
                                 td {
-                                    routeLink(u.profileLink()) {
-                                        +u.name
-                                    }
-                                }
-                                if (u.stats != null) {
-                                    td {
-                                        +"${u.stats.avgBpm}"
-                                    }
-                                    td {
-                                        +u.stats.avgDuration.formatTime()
-                                    }
-                                    td {
-                                        +"${u.stats.totalUpvotes}"
-                                    }
-                                    td {
-                                        +"${u.stats.totalDownvotes}"
-                                    }
-                                    td {
-                                        val total = ((u.stats.totalUpvotes + u.stats.totalDownvotes) * 0.01f)
-                                        +"${(u.stats.totalUpvotes / if (total < 0.01f) 0.01f else total).fixedStr(2)}%"
-                                    }
-                                    td {
-                                        +"${u.stats.totalMaps}"
-                                    }
-                                    td {
-                                        +"${u.stats.rankedMaps}"
-                                    }
-                                    td {
-                                        +Moment(u.stats.firstUpload.toString()).format(dateFormat)
-                                    }
-                                    td {
-                                        +Moment(u.stats.lastUpload.toString()).format(dateFormat)
-                                    }
-                                    td {
-                                        u.stats.lastUpload?.let {
-                                            val diff = (Clock.System.now() - it).inWholeDays
-                                            +"$diff"
-                                        }
-                                    }
-                                    td {
-                                        if (u.stats.lastUpload != null && u.stats.firstUpload != null) {
-                                            val diff = (u.stats.lastUpload - u.stats.firstUpload).inWholeDays
-                                            +"$diff"
-                                        }
-                                    }
-                                } else {
-                                    td {
-                                        attrs.colSpan = "11"
-                                    }
-                                }
-                                td {
-                                    a("${Config.apibase}/users/id/${u.id}/playlist", "_blank", "btn btn-secondary") {
-                                        attrs.attributes["download"] = ""
-                                        i("fas fa-list") { }
+                                    if (u.stats.lastUpload != null && u.stats.firstUpload != null) {
+                                        val diff = (u.stats.lastUpload - u.stats.firstUpload).inWholeDays
+                                        +"$diff"
                                     }
                                 }
                             } else {
                                 td {
-                                    attrs.colSpan = "14"
+                                    attrs.colSpan = "11"
                                 }
+                            }
+                            td {
+                                a("${Config.apibase}/users/id/${u.id}/playlist", "_blank", "btn btn-secondary") {
+                                    attrs.attributes["download"] = ""
+                                    i("fas fa-list") { }
+                                }
+                            }
+                        } else {
+                            td {
+                                attrs.colSpan = "14"
                             }
                         }
                     }
@@ -166,8 +165,3 @@ class UserList : RComponent<UserListProps, State>() {
 }
 
 class UserInfiniteScroll : InfiniteScroll<UserDetail>()
-
-fun RBuilder.userList(handler: UserListProps.() -> Unit) =
-    child(UserList::class) {
-        this.attrs(handler)
-    }

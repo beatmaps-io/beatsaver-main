@@ -3,20 +3,20 @@ package io.beatmaps.modreview
 import external.AxiosResponse
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.util.textToContent
+import kotlinx.html.ButtonType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.RBuilder
-import react.RComponent
-import react.State
-import react.createRef
-import react.dom.a
+import react.dom.button
 import react.dom.div
+import react.dom.jsStyle
 import react.dom.span
 import react.dom.textarea
-import react.setState
+import react.fc
+import react.useRef
+import react.useState
 import kotlin.js.Promise
 
 external interface EditableTextProps : Props {
@@ -27,86 +27,68 @@ external interface EditableTextProps : Props {
     var saveText: ((String) -> Promise<AxiosResponse<ActionResponse>>?)?
     var stopEditing: ((String) -> Unit)?
     var maxLength: Int?
+    var rows: Int?
+    var btnClass: String?
+    var justify: String?
 }
 
-external interface EditableTextState : State {
-    var loading: Boolean?
-    var textLength: Int?
-}
+val editableText = fc<EditableTextProps> { props ->
+    val (loading, setLoading) = useState(false)
+    val (textLength, setTextLength) = useState(props.text?.length ?: 0)
 
-class EditableText : RComponent<EditableTextProps, EditableTextState>() {
-    private val textareaRef = createRef<HTMLTextAreaElement>()
+    val textareaRef = useRef<HTMLTextAreaElement>()
 
-    override fun componentWillMount() {
-        setState {
-            textLength = props.text?.length
-        }
-    }
+    val displayText = (props.text ?: "")
 
-    private val endLoading = { _: Throwable ->
-        setState {
-            loading = false
-        }
-    }
-
-    override fun RBuilder.render() {
-        val displayText = (props.text ?: "")
-
-        if (props.editing == true) {
-            textarea("10", classes = "form-control mt-2") {
-                attrs.id = "review"
-                attrs.disabled = state.loading == true
-                +displayText
-                ref = textareaRef
-                props.maxLength?.let { max ->
-                    attrs.maxLength = "$max"
-                }
-                attrs.onChangeFunction = {
-                    setState {
-                        textLength = (it.target as HTMLTextAreaElement).value.length
-                    }
-                }
+    if (props.editing == true) {
+        textarea((props.rows ?: 10).toString(), classes = "form-control mt-2") {
+            attrs.id = "review"
+            attrs.disabled = loading == true
+            +displayText
+            ref = textareaRef
+            props.maxLength?.let { max ->
+                attrs.maxLength = "$max"
             }
-            props.maxLength?.let {
-                val currentLength = state.textLength ?: 0
-                span("badge badge-" + if (currentLength > it - 20) "danger" else "dark") {
-                    attrs.id = "count_message"
-                    +"$currentLength / $it"
-                }
+            attrs.onChangeFunction = {
+                setTextLength((it.target as HTMLTextAreaElement).value.length)
             }
+        }
+        props.maxLength?.let {
+            span("badge badge-" + if (textLength > it - 20) "danger" else "dark") {
+                attrs.id = "count_message"
+                +"$textLength / $it"
+            }
+        }
 
-            a(classes = "btn btn-primary mt-1 float-end") {
+        div("d-grid") {
+            button(classes = "btn " + (props.btnClass ?: "btn-primary mt-1"), type = ButtonType.submit) {
+                attrs.jsStyle {
+                    justifySelf = props.justify ?: "end"
+                }
                 attrs.onClickFunction = {
                     val newReview = textareaRef.current?.value ?: ""
-                    if (state.loading != true) {
-                        setState {
-                            loading = true
-                        }
+                    if (!loading) {
+                        setLoading(true)
 
                         props.saveText?.invoke(newReview)?.then({
-                            setState {
-                                loading = false
-                            }
+                            setLoading(false)
 
                             if (it.data.success) {
                                 props.stopEditing?.invoke(newReview)
                             }
-                        }, endLoading)
+                        }, {
+                            setLoading(false)
+                        })
                     }
                 }
                 +(props.buttonText ?: "Save")
             }
-        } else if (props.renderText == true) {
-            div {
-                textToContent(displayText)
-            }
-        } else {
-            +displayText
         }
+    } else if (props.renderText == true) {
+        div {
+            textToContent(displayText)
+        }
+    } else {
+        +displayText
     }
 }
-
-fun RBuilder.editableText(handler: EditableTextProps.() -> Unit) =
-    child(EditableText::class) {
-        this.attrs(handler)
-    }

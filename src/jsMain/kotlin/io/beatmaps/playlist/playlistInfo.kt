@@ -10,8 +10,8 @@ import io.beatmaps.common.fixed
 import io.beatmaps.common.formatTime
 import io.beatmaps.common.human
 import io.beatmaps.shared.coloredCard
+import io.beatmaps.shared.map.rating
 import io.beatmaps.shared.playlistOwner
-import io.beatmaps.shared.rating
 import io.beatmaps.util.AutoSizeComponent
 import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.AutoSizeComponentState

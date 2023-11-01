@@ -10,7 +10,7 @@ import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
-import io.beatmaps.shared.errors
+import io.beatmaps.shared.form.errors
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction

@@ -4,7 +4,6 @@ import external.Axios
 import external.TimeAgo
 import external.axiosDelete
 import external.generateConfig
-import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.DeleteReview
@@ -12,20 +11,18 @@ import io.beatmaps.api.PutReview
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewSentiment
-import io.beatmaps.api.UserDetail
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.modalContext
-import io.beatmaps.shared.mapTitle
+import io.beatmaps.shared.map.mapTitle
 import io.beatmaps.shared.review.sentimentIcon
 import io.beatmaps.shared.review.sentimentPicker
-import kotlinx.html.TD
+import io.beatmaps.user.userLink
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
 import react.createRef
-import react.dom.RDOMBuilder
 import react.dom.a
 import react.dom.div
 import react.dom.i
@@ -42,7 +39,7 @@ external interface ModReviewEntryProps : Props {
     var setUser: (String) -> Unit
 }
 
-val modReviewEntryRenderer = fc<ModReviewEntryProps> {
+val modReviewEntryRenderer = fc<ModReviewEntryProps> { props ->
     val reasonRef = createRef<HTMLTextAreaElement>()
     val (hidden, setHidden) = useState(false)
     val (editing, setEditing) = useState(false)
@@ -56,32 +53,26 @@ val modReviewEntryRenderer = fc<ModReviewEntryProps> {
         val reason = reasonRef.current?.value ?: ""
         reasonRef.current?.value = ""
 
-        val mapId = it.entry?.map?.id
-        val userId = it.entry?.creator?.id
+        val mapId = props.entry?.map?.id
+        val userId = props.entry?.creator?.id
 
         axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/$mapId/$userId", DeleteReview(reason)).then({
             setHidden(true)
         }) { }
     }
 
-    fun RDOMBuilder<TD>.linkUser(userDetail: UserDetail) {
-        a("#", classes = "me-1") {
-            attrs.onClickFunction = { ev ->
-                ev.preventDefault()
-                it.setUser(userDetail.name)
-            }
-            +userDetail.name
-        }
-        routeLink(userDetail.profileLink()) {
-            i("fas fa-external-link-alt") {}
-        }
-    }
-
     if (!hidden) {
         tr {
-            it.entry?.let { review ->
+            props.entry?.let { review ->
                 td {
-                    review.creator?.let { c -> linkUser(c) }
+                    review.creator?.let { c ->
+                        userLink {
+                            attrs.user = c
+                            attrs.callback = {
+                                props.setUser(c.name)
+                            }
+                        }
+                    }
                 }
                 td {
                     if (review.map != null) {
@@ -149,7 +140,7 @@ val modReviewEntryRenderer = fc<ModReviewEntryProps> {
         tr("hiddenRow") {
             td {
                 attrs.colSpan = "5"
-                it.entry?.let { review ->
+                props.entry?.let { review ->
                     div("text-wrap text-break expand") {
                         p("card-text") {
                             if (editing) {
@@ -161,10 +152,10 @@ val modReviewEntryRenderer = fc<ModReviewEntryProps> {
                                 }
                             }
                             editableText {
-                                this.text = text ?: review.text
-                                this.editing = editing
-                                maxLength = ReviewConstants.MAX_LENGTH
-                                saveText = { newReview ->
+                                attrs.text = text ?: review.text
+                                attrs.editing = editing
+                                attrs.maxLength = ReviewConstants.MAX_LENGTH
+                                attrs.saveText = { newReview ->
                                     val newSentimentLocal = newSentiment ?: sentiment ?: review.sentiment
                                     Axios.put<ActionResponse>("${Config.apibase}/review/single/${review.map?.id}/${review.creator?.id}", PutReview(newReview, newSentimentLocal), generateConfig<PutReview, ActionResponse>()).then { r ->
                                         if (r.data.success) setSentiment(newSentimentLocal)
@@ -172,7 +163,7 @@ val modReviewEntryRenderer = fc<ModReviewEntryProps> {
                                         r
                                     }
                                 }
-                                stopEditing = { t ->
+                                attrs.stopEditing = { t ->
                                     setText(t)
                                     setEditing(false)
                                 }

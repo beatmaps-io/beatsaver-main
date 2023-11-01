@@ -13,10 +13,10 @@ import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.maps.collaboratorCard
 import io.beatmaps.maps.userSearch
-import io.beatmaps.shared.presets
-import io.beatmaps.shared.slider
-import io.beatmaps.shared.tags
-import io.beatmaps.shared.toggle
+import io.beatmaps.shared.form.slider
+import io.beatmaps.shared.form.toggle
+import io.beatmaps.shared.search.presets
+import io.beatmaps.shared.search.tags
 import kotlinx.datetime.Instant
 import kotlinx.html.InputType
 import kotlinx.html.id

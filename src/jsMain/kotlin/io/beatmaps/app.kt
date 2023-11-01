@@ -1,20 +1,20 @@
 package io.beatmaps
 
 import external.ReactDatesInit
-import io.beatmaps.index.HomePage
-import io.beatmaps.maps.MapPage
+import io.beatmaps.common.json
+import io.beatmaps.index.homePage
+import io.beatmaps.maps.mapPage
 import io.beatmaps.maps.recent.recentTestplays
 import io.beatmaps.modlog.modlog
 import io.beatmaps.modreview.modReview
 import io.beatmaps.nav.viewportMinWidthPolyfill
-import io.beatmaps.playlist.MultiAddPlaylist
-import io.beatmaps.playlist.Playlist
 import io.beatmaps.playlist.editPlaylist
+import io.beatmaps.playlist.multiAddPlaylist
 import io.beatmaps.playlist.playlistFeed
+import io.beatmaps.playlist.playlistPage
 import io.beatmaps.upload.UploadPage
 import io.beatmaps.user.ProfilePage
-import io.beatmaps.user.UserList
-import io.beatmaps.user.alerts.AlertsPage
+import io.beatmaps.user.alerts.alertsPage
 import io.beatmaps.user.authorizePage
 import io.beatmaps.user.changeEmailPage
 import io.beatmaps.user.forgotPage
@@ -22,8 +22,11 @@ import io.beatmaps.user.loginPage
 import io.beatmaps.user.pickUsernamePage
 import io.beatmaps.user.resetPage
 import io.beatmaps.user.signupPage
+import io.beatmaps.user.userList
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -39,12 +42,8 @@ fun setPageTitle(page: String) {
     document.title = "BeatSaver - $page"
 }
 
-external interface UserData {
-    val userId: Int
-    val admin: Boolean
-    val curator: Boolean
-    val suspended: Boolean
-}
+@Serializable
+data class UserData(val userId: Int = 0, val admin: Boolean = false, val curator: Boolean = false, val suspended: Boolean = false)
 
 val globalContext = createContext<UserData?>(null)
 
@@ -59,7 +58,7 @@ fun main() {
             render(root) {
                 globalContext.Provider {
                     attrs.value = document.getElementById("user-data")?.let {
-                        JSON.parse<UserData>(it.textContent ?: "")
+                        json.decodeFromString<UserData>(it.textContent ?: "{}")
                     }
                     child(App::class) { }
                 }
@@ -78,12 +77,18 @@ class App : RComponent<Props, State>() {
     override fun RBuilder.render() {
         BrowserRouter {
             Routes {
-                bsroute("/", klazz = HomePage::class)
-                bsroute("/beatsaver/:mapKey", klazz = MapPage::class) {
-                    beatsaver = true
+                bsroute("/") {
+                    homePage { }
                 }
-                bsroute("/maps/:mapKey", klazz = MapPage::class) {
-                    beatsaver = false
+                bsroute("/beatsaver/:mapKey") {
+                    mapPage {
+                        attrs.beatsaver = true
+                    }
+                }
+                bsroute("/maps/:mapKey") {
+                    mapPage {
+                        attrs.beatsaver = false
+                    }
                 }
                 bsroute("/upload", klazz = UploadPage::class)
                 bsroute("/profile") {
@@ -96,18 +101,24 @@ class App : RComponent<Props, State>() {
                         userData = useContext(globalContext)
                     }
                 }
-                bsroute("/alerts", klazz = AlertsPage::class)
+                bsroute("/alerts") {
+                    alertsPage { }
+                }
                 bsroute("/playlists") {
                     playlistFeed { }
                 }
                 bsroute("/playlists/new") {
                     editPlaylist { }
                 }
-                bsroute("/playlists/:id", klazz = Playlist::class)
+                bsroute("/playlists/:id") {
+                    playlistPage { }
+                }
                 bsroute("/playlists/:id/edit") {
                     editPlaylist { }
                 }
-                bsroute("/playlists/:id/add", klazz = MultiAddPlaylist::class)
+                bsroute("/playlists/:id/add") {
+                    multiAddPlaylist { }
+                }
                 bsroute("/test") {
                     recentTestplays { }
                 }
@@ -126,7 +137,9 @@ class App : RComponent<Props, State>() {
                 bsroute("/policy/privacy", replaceHomelink = false) {
                     div {}
                 }
-                bsroute("/mappers", klazz = UserList::class)
+                bsroute("/mappers") {
+                    userList { }
+                }
                 bsroute("/login") {
                     loginPage { }
                 }

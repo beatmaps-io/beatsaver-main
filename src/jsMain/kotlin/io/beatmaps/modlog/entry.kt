@@ -16,18 +16,14 @@ import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.UploadLimitData
 import io.beatmaps.maps.mapTag
-import io.beatmaps.shared.mapTitle
-import kotlinx.html.DIV
-import kotlinx.html.TD
+import io.beatmaps.shared.map.mapTitle
+import io.beatmaps.user.userLink
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLDivElement
 import react.Props
 import react.createRef
-import react.dom.RDOMBuilder
-import react.dom.a
 import react.dom.br
 import react.dom.div
-import react.dom.i
 import react.dom.p
 import react.dom.span
 import react.dom.td
@@ -39,42 +35,12 @@ external interface ModLogEntryProps : Props {
     var setUser: (String, String) -> Unit
 }
 
-private fun RDOMBuilder<DIV>.diffText(human: String, old: String, new: String) {
-    if (new != old) {
-        p("card-text") {
-            if (new.isNotEmpty()) {
-                +"Updated $human"
-                span("text-danger d-block") {
-                    i("fas fa-minus") {}
-                    +" $old"
-                }
-                span("text-success d-block") {
-                    i("fas fa-plus") {}
-                    +" $new"
-                }
-            } else {
-                // Shows as empty if curator is changing tags
-                +"Deleted $human"
-            }
-        }
-    }
-}
-
 val modLogEntryRenderer = fc<ModLogEntryProps> {
-    fun RDOMBuilder<TD>.linkUser(mod: Boolean, userDetail: UserDetail) {
-        a("#", classes = "me-1") {
-            attrs.onClickFunction = { ev ->
-                ev.preventDefault()
-                it.setUser(
-                    if (mod) userDetail.name else "",
-                    if (mod) "" else userDetail.name
-                )
-            }
-            +userDetail.name
-        }
-        routeLink(userDetail.profileLink()) {
-            i("fas fa-external-link-alt") {}
-        }
+    fun userCallback(mod: Boolean, userDetail: UserDetail): () -> Unit = {
+        it.setUser(
+            if (mod) userDetail.name else "",
+            if (mod) "" else userDetail.name
+        )
     }
 
     val localRef = createRef<HTMLDivElement>()
@@ -90,10 +56,16 @@ val modLogEntryRenderer = fc<ModLogEntryProps> {
                 }
             }
             td {
-                linkUser(true, it.moderator)
+                userLink {
+                    attrs.user = it.moderator
+                    attrs.callback = userCallback(true, it.moderator)
+                }
             }
             td {
-                linkUser(false, it.user)
+                userLink {
+                    attrs.user = it.user
+                    attrs.callback = userCallback(false, it.user)
+                }
             }
             td {
                 if (it.map != null) {
@@ -127,8 +99,16 @@ val modLogEntryRenderer = fc<ModLogEntryProps> {
                             val curatorEdit = it.action.newTitle.isEmpty() && it.action.newDescription.isEmpty()
 
                             if (!curatorEdit) {
-                                diffText("description", it.action.oldDescription, it.action.newDescription)
-                                diffText("title", it.action.oldTitle, it.action.newTitle)
+                                diffText {
+                                    attrs.description = "description"
+                                    attrs.old = it.action.oldDescription
+                                    attrs.new = it.action.newDescription
+                                }
+                                diffText {
+                                    attrs.description = "title"
+                                    attrs.old = it.action.oldTitle
+                                    attrs.new = it.action.newTitle
+                                }
                             }
 
                             val newTags = it.action.newTags ?: listOf()
@@ -178,9 +158,21 @@ val modLogEntryRenderer = fc<ModLogEntryProps> {
                                     +"${it.action.playlistId}"
                                 }
                             }
-                            diffText("description", it.action.oldDescription, it.action.newDescription)
-                            diffText("title", it.action.oldTitle, it.action.newTitle)
-                            diffText("public", it.action.oldPublic.toString(), it.action.newPublic.toString())
+                            diffText {
+                                attrs.description = "description"
+                                attrs.old = it.action.oldDescription
+                                attrs.new = it.action.newDescription
+                            }
+                            diffText {
+                                attrs.description = "title"
+                                attrs.old = it.action.oldTitle
+                                attrs.new = it.action.newTitle
+                            }
+                            diffText {
+                                attrs.description = "public"
+                                attrs.old = it.action.oldPublic.toString()
+                                attrs.new = it.action.newPublic.toString()
+                            }
                         }
 
                         is UnpublishData -> {
@@ -233,8 +225,16 @@ val modLogEntryRenderer = fc<ModLogEntryProps> {
                         }
 
                         is ReviewModerationData -> {
-                            diffText("text", it.action.oldText, it.action.newText)
-                            diffText("sentiment", ReviewSentiment.fromInt(it.action.oldSentiment).name, ReviewSentiment.fromInt(it.action.newSentiment).name)
+                            diffText {
+                                attrs.description = "text"
+                                attrs.old = it.action.oldText
+                                attrs.new = it.action.newText
+                            }
+                            diffText {
+                                attrs.description = "sentiment"
+                                attrs.old = ReviewSentiment.fromInt(it.action.oldSentiment).name
+                                attrs.new = ReviewSentiment.fromInt(it.action.newSentiment).name
+                            }
                         }
 
                         is RevokeSessionsData -> {

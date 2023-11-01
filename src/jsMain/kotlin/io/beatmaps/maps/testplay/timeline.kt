@@ -9,7 +9,7 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.globalContext
-import io.beatmaps.shared.errors
+import io.beatmaps.shared.form.errors
 import io.beatmaps.upload.simple
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant

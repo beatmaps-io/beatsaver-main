@@ -19,9 +19,9 @@ import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.modalContext
 import io.beatmaps.playlist.addToPlaylist
-import io.beatmaps.shared.bookmarkButton
-import io.beatmaps.shared.errors
-import io.beatmaps.shared.links
+import io.beatmaps.shared.form.errors
+import io.beatmaps.shared.map.bookmarkButton
+import io.beatmaps.shared.map.links
 import io.beatmaps.util.textToContent
 import kotlinx.browser.window
 import kotlinx.html.InputType

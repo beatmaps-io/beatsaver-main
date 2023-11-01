@@ -1,11 +1,11 @@
-package io.beatmaps.shared
+package io.beatmaps.shared.search
 
 import external.DateRangePicker
 import external.Moment
-import io.beatmaps.History
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
-import io.beatmaps.index.encodeURIComponent
+import io.beatmaps.shared.form.slider
+import io.beatmaps.shared.form.toggle
 import kotlinx.browser.document
 import kotlinx.html.ButtonType
 import kotlinx.html.DIV
@@ -36,6 +36,9 @@ import react.dom.select
 import react.dom.span
 import react.setState
 
+enum class FilterCategory {
+    NONE, GENERAL, REQUIREMENTS
+}
 data class FilterInfo<T>(val key: String, val name: String, val cat: FilterCategory, val fromParams: (T) -> Boolean)
 
 fun interface SearchParamGenerator<T : CommonParams> {
@@ -76,38 +79,6 @@ external interface SearchState<T> : State {
     var endDate: Moment?
     var filtersOpen: Boolean?
 }
-data class PresetDateRange(val startDate: Moment?, val endDate: Moment?)
-
-enum class FilterCategory {
-    NONE, GENERAL, REQUIREMENTS
-}
-
-interface CommonParams {
-    val search: String
-    val sortOrder: SearchOrder
-    val minNps: Float?
-    val maxNps: Float?
-    val from: String?
-    val to: String?
-}
-
-fun includeIfNotNull(v: Any?, name: String) = if (v != null) "$name=$v" else null
-fun CommonParams.queryParams() = listOfNotNull(
-    (if (search.isNotBlank()) "q=${encodeURIComponent(search)}" else null),
-    includeIfNotNull(maxNps, "maxNps"),
-    includeIfNotNull(minNps, "minNps"),
-    (if (sortOrder != SearchOrder.Relevance) "order=$sortOrder" else null),
-    includeIfNotNull(from, "from"),
-    includeIfNotNull(to, "to")
-).toTypedArray()
-fun <T> T.buildURL(parts: List<String>, root: String = "", row: Int?, state: T?, history: History) =
-    ((if (parts.isEmpty()) "/$root" else "?" + parts.joinToString("&")) + (row?.let { "#$it" } ?: "")).let { newUrl ->
-        if (this == state) {
-            history.replace(newUrl)
-        } else {
-            history.push(newUrl)
-        }
-    }
 
 open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchState<T>>(props) {
     private val filterRefs = props.filters.associateWith { createRef<HTMLInputElement>() }

@@ -1,4 +1,4 @@
-package io.beatmaps.shared
+package io.beatmaps.shared.form
 
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.upload.uploadError

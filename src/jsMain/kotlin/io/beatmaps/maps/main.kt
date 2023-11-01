@@ -2,7 +2,7 @@ package io.beatmaps.maps
 
 import external.axiosGet
 import io.beatmaps.Config
-import io.beatmaps.WithRouterProps
+import io.beatmaps.History
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
@@ -18,157 +18,133 @@ import kotlinx.browser.window
 import org.w3c.dom.get
 import org.w3c.dom.set
 import react.Props
-import react.RBuilder
-import react.RComponent
-import react.State
-import react.createRef
 import react.dom.div
+import react.fc
 import react.ref
-import react.setState
+import react.router.useNavigate
+import react.router.useParams
+import react.useEffect
+import react.useEffectOnce
+import react.useRef
+import react.useState
 
-external interface MapPageProps : Props, WithRouterProps {
+external interface MapPageProps : Props {
     var beatsaver: Boolean
 }
 
-external interface MapPageState : State {
-    var map: MapDetail?
-    var selectedDiff: MapDifficulty?
-    var type: LeaderboardType?
-    var comments: Boolean?
-}
+val mapPage = fc<MapPageProps> { props ->
+    val (map, setMap) = useState<MapDetail?>(null)
+    val (selectedDiff, setSelectedDiff) = useState<MapDifficulty?>(null)
+    val (type, setType) = useState<LeaderboardType?>(null)
+    val (comments, setComments) = useState<Boolean?>(null)
 
-class MapPage : RComponent<MapPageProps, MapPageState>() {
-    private val modalRef = createRef<ModalComponent>()
+    val modalRef = useRef<ModalComponent>()
+    val params = useParams()
+    val history = History(useNavigate())
 
-    override fun componentDidMount() {
-        setPageTitle("Map")
+    fun loadMap() {
+        val mapKey = params["mapKey"]
+        val subPath = if (props.beatsaver) "beatsaver" else "id"
 
-        loadMap()
-    }
-
-    override fun componentDidUpdate(prevProps: MapPageProps, prevState: MapPageState, snapshot: Any) {
-        if (prevProps.location.pathname != props.location.pathname || prevProps.params["mapKey"] != props.params["mapKey"]) {
-            // Load new map
-            loadMap()
-        }
-    }
-
-    private fun loadMap() {
-        val mapKey = props.params["mapKey"]
-        val subPath = if (props.beatsaver) {
-            "beatsaver"
-        } else {
-            "id"
-        }
-
-        setState {
-            map = null
-            selectedDiff = null
-            type = null
-            comments = null
-        }
+        setMap(null)
+        setSelectedDiff(null)
+        setType(null)
+        setComments(null)
 
         axiosGet<MapDetail>(
             "${Config.apibase}/maps/$subPath/$mapKey"
         ).then {
             val mapLocal = it.data
             setPageTitle("Map - " + mapLocal.name)
-            setState {
-                map = mapLocal
-                selectedDiff = mapLocal.publishedVersion()?.diffs?.sortedWith(compareBy<MapDifficulty> { d -> d.characteristic }.thenByDescending { d -> d.difficulty })?.first()
-            }
+            setMap(mapLocal)
+            setSelectedDiff(mapLocal.publishedVersion()?.diffs?.sortedWith(compareBy<MapDifficulty> { d -> d.characteristic }.thenByDescending { d -> d.difficulty })?.first())
         }.catch {
-            props.history.push("/")
+            history.push("/")
         }
     }
 
-    override fun RBuilder.render() {
-        state.map?.let {
-            val version = it.publishedVersion()
+    useEffectOnce {
+        setPageTitle("Map")
+    }
 
-            if (version == null && it.deletedAt == null) {
-                testplay {
-                    attrs.mapInfo = it
-                    attrs.refreshPage = {
-                        loadMap()
-                        window.scrollTo(0.0, 0.0)
-                    }
-                    attrs.history = props.history
-                    attrs.updateMapinfo = {
-                        setState {
-                            map = it
+    useEffect(params["mapKey"]) {
+        loadMap()
+    }
+
+    map?.let {
+        val version = it.publishedVersion()
+
+        if (version == null && it.deletedAt == null) {
+            testplay {
+                attrs.mapInfo = it
+                attrs.refreshPage = {
+                    loadMap()
+                    window.scrollTo(0.0, 0.0)
+                }
+                attrs.history = history
+                attrs.updateMapinfo = { map ->
+                    setMap(map)
+                }
+            }
+        } else {
+            modal {
+                ref = modalRef
+            }
+
+            modalContext.Provider {
+                attrs.value = modalRef
+
+                mapInfo {
+                    attrs {
+                        mapInfo = it
+                        reloadMap = ::loadMap
+                        deleteMap = {
+                            history.push("/profile")
+                        }
+                        updateMapinfo = { map ->
+                            setMap(map)
                         }
                     }
                 }
-            } else {
-                modal {
-                    ref = modalRef
-                }
-
-                modalContext.Provider {
-                    attrs.value = modalRef
-
-                    mapInfo {
-                        attrs {
-                            mapInfo = it
-                            reloadMap = ::loadMap
-                            deleteMap = {
-                                props.history.push("/profile")
+                div("row mt-3") {
+                    val leaderBoardType = type ?: LeaderboardType.fromName(localStorage["maps.leaderboardType"]) ?: LeaderboardType.ScoreSaber
+                    val showComments = ReviewConstants.COMMENTS_ENABLED && comments ?: (localStorage["maps.showComments"] == "true")
+                    div("col-lg-4 text-nowrap") {
+                        mapPageNav {
+                            attrs.map = it
+                            attrs.comments = showComments
+                            attrs.setComments = {
+                                localStorage["maps.showComments"] = "true"
+                                setComments(true)
                             }
-                            updateMapinfo = {
-                                setState {
-                                    map = it
-                                }
+                            attrs.type = leaderBoardType
+                            attrs.setType = { lt ->
+                                localStorage["maps.leaderboardType"] = lt.name
+                                localStorage["maps.showComments"] = "false"
+                                setType(lt)
+                                setComments(false)
+                            }
+                        }
+
+                        infoTable {
+                            attrs.map = it
+                            attrs.selected = selectedDiff
+                            attrs.changeSelectedDiff = { diff ->
+                                setSelectedDiff(diff)
                             }
                         }
                     }
-                    div("row mt-3") {
-                        val leaderBoardType = state.type ?: LeaderboardType.fromName(localStorage["maps.leaderboardType"]) ?: LeaderboardType.ScoreSaber
-                        val showComments = ReviewConstants.COMMENTS_ENABLED && state.comments ?: (localStorage["maps.showComments"] == "true")
-                        div("col-lg-4 text-nowrap") {
-                            mapPageNav {
-                                attrs.map = it
-                                attrs.comments = showComments
-                                attrs.setComments = {
-                                    localStorage["maps.showComments"] = "true"
-                                    setState {
-                                        comments = true
-                                    }
-                                }
-                                attrs.type = leaderBoardType
-                                attrs.setType = { lt ->
-                                    localStorage["maps.leaderboardType"] = lt.name
-                                    localStorage["maps.showComments"] = "false"
-                                    setState {
-                                        type = lt
-                                        comments = false
-                                    }
-                                }
-                            }
 
-                            infoTable {
-                                map = it
-                                selected = state.selectedDiff
-                                changeSelectedDiff = {
-                                    setState {
-                                        selectedDiff = it
-                                    }
-                                }
-                            }
+                    if (showComments) {
+                        reviewTable {
+                            attrs.map = it.id
+                            attrs.mapUploaderId = it.uploader.id
                         }
-
-                        if (showComments) {
-                            reviewTable {
-                                map = it.id
-                                mapUploaderId = it.uploader.id
-                                modal = modalRef
-                            }
-                        } else if (version != null && it.deletedAt == null) {
-                            scoreTable {
-                                attrs.mapKey = version.hash
-                                attrs.selected = state.selectedDiff
-                                attrs.type = leaderBoardType
-                            }
+                    } else if (version != null && it.deletedAt == null) {
+                        scoreTable {
+                            attrs.mapKey = version.hash
+                            attrs.selected = selectedDiff
+                            attrs.type = leaderBoardType
                         }
                     }
                 }

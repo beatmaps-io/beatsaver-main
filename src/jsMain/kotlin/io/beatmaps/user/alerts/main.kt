@@ -4,7 +4,7 @@ import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
 import io.beatmaps.Config
-import io.beatmaps.WithRouterProps
+import io.beatmaps.History
 import io.beatmaps.api.AlertOptionsRequest
 import io.beatmaps.api.AlertUpdateAll
 import io.beatmaps.api.UserAlert
@@ -14,8 +14,9 @@ import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
-import io.beatmaps.shared.buildURL
-import io.beatmaps.shared.includeIfNotNull
+import io.beatmaps.util.buildURL
+import io.beatmaps.util.includeIfNotNull
+import io.beatmaps.util.updateAlertDisplay
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
@@ -25,10 +26,7 @@ import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.url.URLSearchParams
-import react.RBuilder
-import react.RComponent
-import react.State
-import react.createRef
+import react.Props
 import react.dom.a
 import react.dom.div
 import react.dom.h1
@@ -37,28 +35,31 @@ import react.dom.i
 import react.dom.input
 import react.dom.label
 import react.dom.span
-import react.setState
+import react.fc
+import react.router.useLocation
+import react.router.useNavigate
+import react.useEffect
+import react.useEffectOnce
+import react.useRef
+import react.useState
 
-external interface AlertsPageProps : WithRouterProps
+val alertsPage = fc<Props> {
+    val (read, setRead) = useState(false)
+    val (filters, setFilters) = useState(listOf<EAlertType>())
+    val (alertStats, setAlertStats) = useState<UserAlertStats?>(null)
+    val (resultsKey, setResultsKey) = useState(Any())
+    val (hiddenAlerts, setHiddenAlerts) = useState(listOf<Int>())
+    val (forceHide, setForceHide) = useState(false)
+    val (loading, setLoading) = useState(false)
 
-external interface AlertsPageState : State {
-    var read: Boolean?
-    var filters: List<EAlertType>?
-    var alertStats: UserAlertStats?
-    var resultsKey: Any?
-    var hiddenAlerts: List<Int>?
-    var forceHide: Boolean?
-    var loading: Boolean?
-}
+    val resultsColumn = useRef<HTMLElement>()
 
-class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
-    private val resultsColumn = createRef<HTMLElement>()
+    val location = useLocation()
+    val history = History(useNavigate())
 
-    override fun componentDidMount() {
+    useEffectOnce {
         setPageTitle("Alerts")
-    }
 
-    override fun componentWillMount() {
         Axios.get<String>(
             "${Config.apibase}/alerts/stats",
             generateConfig<String, String>()
@@ -67,32 +68,28 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
             val data = json.decodeFromString<UserAlertStats>(it.data)
             updateAlertDisplay(data)
 
-            setState {
-                alertStats = data
-            }
+            setAlertStats(data)
         }.catch {
             if (it.asDynamic().response?.status == 401) {
-                props.history.push("/login")
+                history.push("/login")
             }
         }
     }
 
-    override fun componentWillReceiveProps(nextProps: AlertsPageProps) {
-        setState {
-            URLSearchParams(nextProps.location.search).let { u ->
-                read = u.get("read")?.toBoolean()
-                filters = u.get("type")?.split(",")?.mapNotNull { EAlertType.fromLower(it) }
-            }
-
-            resultsKey = Any()
-            hiddenAlerts = listOf()
-            forceHide = null
+    useEffect(location) {
+        URLSearchParams(location.search).let { u ->
+            setRead(u.get("read").toBoolean())
+            setFilters((u.get("type") ?: "").split(",").mapNotNull { EAlertType.fromLower(it) })
         }
+
+        setResultsKey(Any())
+        setHiddenAlerts(listOf())
+        setForceHide(false)
     }
 
-    private val loadPage = { toLoad: Int, token: CancelTokenSource ->
-        val type = if (state.read == true) "read" else "unread"
-        val typeFilter = if (state.filters?.any() == true) "?type=${state.filters?.joinToString(",") { it.name.lowercase() }}" else ""
+    val loadPage = { toLoad: Int, token: CancelTokenSource ->
+        val type = if (read == true) "read" else "unread"
+        val typeFilter = if (filters.any()) "?type=${filters.joinToString(",") { it.name.lowercase() }}" else ""
         Axios.get<List<UserAlert>>(
             "${Config.apibase}/alerts/$type/$toLoad$typeFilter",
             generateConfig<String, List<UserAlert>>(token.token)
@@ -101,17 +98,17 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
         }
     }
 
-    private fun toURL(read: Boolean? = state.read, filters: List<EAlertType>? = state.filters) {
+    fun toURL(readLocal: Boolean? = read, filtersLocal: List<EAlertType>? = filters) {
         buildURL(
             listOfNotNull(
-                includeIfNotNull(read, "read"),
-                if (filters?.any() == true) "type=${filters.joinToString(",") { it.name.lowercase() }}" else null
+                includeIfNotNull(readLocal, "read"),
+                if (filtersLocal?.any() == true) "type=${filtersLocal.joinToString(",") { it.name.lowercase() }}" else null
             ),
-            "alerts", null, null, props.history
+            "alerts", null, null, history
         )
     }
 
-    private fun markAll() =
+    fun markAll() =
         Axios.post<UserAlertStats>(
             "${Config.apibase}/alerts/markall",
             AlertUpdateAll(true),
@@ -119,157 +116,149 @@ class AlertsPage : RComponent<AlertsPageProps, AlertsPageState>() {
         ).then {
             updateAlertDisplay(it.data)
 
-            setState {
-                alertStats = it.data
-                forceHide = true
-            }
+            setAlertStats(it.data)
+            setForceHide(true)
         }.catch {
             // Bad request
         }
 
-    private fun setOptions(curationAlerts: Boolean, reviewAlerts: Boolean) {
-        setState { loading = true }
+    fun setOptions(curationAlerts: Boolean, reviewAlerts: Boolean) {
+        setLoading(true)
         Axios.post<String>("${Config.apibase}/alerts/options", AlertOptionsRequest(curationAlerts, reviewAlerts), generateConfig<AlertOptionsRequest, String>()).then {
-            setState {
-                loading = false
-                alertStats = alertStats?.copy(
+            setLoading(false)
+            setAlertStats(
+                alertStats?.copy(
                     curationAlerts = curationAlerts, reviewAlerts = reviewAlerts
                 )
-            }
+            )
         }.catch {
-            setState { loading = false }
+            setLoading(false)
         }
     }
 
-    override fun RBuilder.render() {
-        val stats = state.alertStats
-        div("row") {
-            h1("col-lg-8") {
-                +"Alerts & Notifications"
+    div("row") {
+        h1("col-lg-8") {
+            +"Alerts & Notifications"
+        }
+        div("col-lg-4 d-flex") {
+            if (!read && alertStats?.let { it.unread > 0 } == true) {
+                a("#", classes = "mark-read") {
+                    attrs.onClickFunction = { e ->
+                        e.preventDefault()
+                        markAll()
+                    }
+                    +"Mark all as read"
+                }
             }
-            div("col-lg-4 d-flex") {
-                if (state.read != true && stats?.let { it.unread > 0 } == true) {
-                    a("#", classes = "mark-read") {
-                        attrs.onClickFunction = { e ->
-                            e.preventDefault()
-                            markAll()
+        }
+    }
+    div("row") {
+        div("col-lg-4 alert-nav") {
+            div("list-group") {
+                alertsListItem {
+                    attrs.active = !read
+                    attrs.count = alertStats?.unread
+                    attrs.icon = "fa-envelope"
+                    attrs.text = "Unread"
+                    attrs.action = {
+                        toURL(false)
+                    }
+                }
+                alertsListItem {
+                    attrs.active = read
+                    attrs.count = alertStats?.read
+                    attrs.icon = "fa-envelope-open"
+                    attrs.text = "Read"
+                    attrs.action = {
+                        toURL(true)
+                    }
+                }
+            }
+            h6("mt-3") {
+                +"Filters"
+            }
+            div("list-group") {
+                alertStats?.byType?.forEach { (type, count) ->
+                    alertsListItem {
+                        attrs.active = filters.contains(type)
+                        attrs.count = count
+                        attrs.icon = type.icon
+                        attrs.text = type.readable()
+                        attrs.action = {
+                            toURL(
+                                filtersLocal = if (filters.contains(type)) {
+                                    filters.minus(type)
+                                } else {
+                                    filters.plus(type)
+                                }
+                            )
                         }
-                        +"Mark all as read"
+                    }
+                }
+            }
+            h6("mt-3") {
+                +"Preferences"
+            }
+            if (alertStats != null) {
+                div("list-group") {
+                    label("list-group-item list-group-item-action d-flex justify-content-between align-items-center") {
+                        attrs.htmlFor = "pref-map-curation"
+                        attrs.role = "button"
+                        span {
+                            i("fas ${EAlertType.Curation.icon} me-2") {}
+                            +"Map Curation"
+                        }
+                        span("form-switch") {
+                            input(InputType.checkBox, classes = "form-check-input") {
+                                attrs.id = "pref-map-curation"
+                                attrs.disabled = loading
+                                attrs.defaultChecked = alertStats.curationAlerts
+                                attrs.onChangeFunction = { ev ->
+                                    setOptions((ev.target as HTMLInputElement).checked, alertStats.reviewAlerts)
+                                }
+                            }
+                        }
+                    }
+                    label("list-group-item list-group-item-action d-flex justify-content-between align-items-center") {
+                        attrs.htmlFor = "pref-map-review"
+                        attrs.role = "button"
+                        span {
+                            i("fas ${EAlertType.Review.icon} me-2") {}
+                            +"Map Review"
+                        }
+                        span("form-switch") {
+                            input(InputType.checkBox, classes = "form-check-input") {
+                                attrs.id = "pref-map-review"
+                                attrs.disabled = loading
+                                attrs.defaultChecked = alertStats.reviewAlerts
+                                attrs.onChangeFunction = { ev ->
+                                    setOptions(alertStats.curationAlerts, (ev.target as HTMLInputElement).checked)
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
-        div("row") {
-            div("col-lg-4 alert-nav") {
-                div("list-group") {
-                    alertsListItem {
-                        attrs.active = state.read != true
-                        attrs.count = stats?.unread
-                        attrs.icon = "fa-envelope"
-                        attrs.text = "Unread"
-                        attrs.action = {
-                            toURL(false)
-                        }
-                    }
-                    alertsListItem {
-                        attrs.active = state.read == true
-                        attrs.count = stats?.read
-                        attrs.icon = "fa-envelope-open"
-                        attrs.text = "Read"
-                        attrs.action = {
-                            toURL(true)
-                        }
-                    }
-                }
-                h6("mt-3") {
-                    +"Filters"
-                }
-                div("list-group") {
-                    stats?.byType?.forEach { (type, count) ->
-                        alertsListItem {
-                            attrs.active = state.filters?.contains(type) == true
-                            attrs.count = count
-                            attrs.icon = type.icon
-                            attrs.text = type.readable()
-                            attrs.action = {
-                                toURL(
-                                    filters = if (state.filters?.contains(type) == true) {
-                                        state.filters?.minus(type)
-                                    } else {
-                                        (state.filters ?: emptyList()).plus(type)
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-                h6("mt-3") {
-                    +"Preferences"
-                }
-                if (stats != null) {
-                    div("list-group") {
-                        label("list-group-item list-group-item-action d-flex justify-content-between align-items-center") {
-                            attrs.htmlFor = "pref-map-curation"
-                            attrs.role = "button"
-                            span {
-                                i("fas ${EAlertType.Curation.icon} me-2") {}
-                                +"Map Curation"
-                            }
-                            span("form-switch") {
-                                input(InputType.checkBox, classes = "form-check-input") {
-                                    attrs.id = "pref-map-curation"
-                                    attrs.disabled = state.loading == true
-                                    attrs.defaultChecked = stats.curationAlerts
-                                    attrs.onChangeFunction = { ev ->
-                                        setOptions((ev.target as HTMLInputElement).checked, stats.reviewAlerts)
-                                    }
-                                }
-                            }
-                        }
-                        label("list-group-item list-group-item-action d-flex justify-content-between align-items-center") {
-                            attrs.htmlFor = "pref-map-review"
-                            attrs.role = "button"
-                            span {
-                                i("fas ${EAlertType.Review.icon} me-2") {}
-                                +"Map Review"
-                            }
-                            span("form-switch") {
-                                input(InputType.checkBox, classes = "form-check-input") {
-                                    attrs.id = "pref-map-review"
-                                    attrs.disabled = state.loading == true
-                                    attrs.defaultChecked = stats.reviewAlerts
-                                    attrs.onChangeFunction = { ev ->
-                                        setOptions(stats.curationAlerts, (ev.target as HTMLInputElement).checked)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            div("col-lg-8 vstack alerts") {
-                ref = resultsColumn
-                key = "resultsColumn"
+        div("col-lg-8 vstack alerts") {
+            ref = resultsColumn
+            key = "resultsColumn"
 
-                child(AlertInfiniteScroll::class) {
-                    attrs.resultsKey = state.resultsKey
-                    attrs.rowHeight = 114.0
-                    attrs.itemsPerPage = 20
-                    attrs.container = resultsColumn
-                    attrs.loadPage = loadPage
-                    attrs.renderElement = InfiniteScrollElementRenderer {
-                        alert {
-                            alert = it
-                            read = state.read
-                            hidden = (state.forceHide == true && it?.type != EAlertType.Collaboration) ||
-                                state.hiddenAlerts?.contains(it?.hashCode()) ?: false
-                            markAlert = { stats ->
-                                setState {
-                                    alertStats = stats
-                                    it?.hashCode()?.let { hc ->
-                                        hiddenAlerts = (hiddenAlerts ?: emptyList()) + hc
-                                    }
-                                }
+            child(AlertInfiniteScroll::class) {
+                attrs.resultsKey = resultsKey
+                attrs.rowHeight = 114.0
+                attrs.itemsPerPage = 20
+                attrs.container = resultsColumn
+                attrs.loadPage = loadPage
+                attrs.renderElement = InfiniteScrollElementRenderer {
+                    alert {
+                        attrs.alert = it
+                        attrs.read = read
+                        attrs.hidden = (forceHide && it?.type != EAlertType.Collaboration) || hiddenAlerts.contains(it?.hashCode())
+                        attrs.markAlert = { stats ->
+                            setAlertStats(stats)
+                            it?.hashCode()?.let { hc ->
+                                setHiddenAlerts(hiddenAlerts + hc)
                             }
                         }
                     }

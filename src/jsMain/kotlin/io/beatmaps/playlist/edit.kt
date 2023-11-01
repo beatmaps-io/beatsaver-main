@@ -19,8 +19,8 @@ import io.beatmaps.common.json
 import io.beatmaps.globalContext
 import io.beatmaps.readState
 import io.beatmaps.setPageTitle
-import io.beatmaps.shared.errors
-import io.beatmaps.shared.toggle
+import io.beatmaps.shared.form.errors
+import io.beatmaps.shared.form.toggle
 import io.beatmaps.upload.UploadRequestConfig
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
