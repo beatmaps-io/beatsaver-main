@@ -4,7 +4,6 @@ import external.Axios
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
-import io.beatmaps.globalContext
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
@@ -19,7 +18,6 @@ import react.dom.img
 import react.dom.input
 import react.dom.span
 import react.fc
-import react.useContext
 import react.useRef
 import react.useState
 
@@ -33,7 +31,6 @@ external interface UserSearchProps : Props {
 val userSearch = fc<UserSearchProps> { props ->
     val (foundUsers, setFoundUsers) = useState<List<UserDetail>?>(null)
     val inputRef = useRef<HTMLInputElement>()
-    val userData = useContext(globalContext)
 
     form("", classes = "search") {
         input(InputType.search, classes = "form-control") {
@@ -58,7 +55,7 @@ val userSearch = fc<UserSearchProps> { props ->
     }
 
     foundUsers?.filter {
-        it.id != userData?.userId && props.excludeUsers?.contains(it.id) != true
+        props.excludeUsers?.contains(it.id) != true
     }?.let { users ->
         div("search-results") {
             if (users.isNotEmpty()) {
