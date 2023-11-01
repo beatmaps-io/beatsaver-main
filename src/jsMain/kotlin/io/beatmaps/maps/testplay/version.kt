@@ -54,18 +54,18 @@ val version = fc<VersionProps> { props ->
     val (text, setText) = useState(props.feedback)
     val (time, setTime) = useState(props.time)
     val (scheduledAt, setScheduledAt) = useState(props.scheduledAt)
-    val (scheduleAt, setScheduleAt) = useState<Instant?>(null)
+    val scheduleAt = useRef<Instant>(null)
 
     val textareaRef = useRef<HTMLTextAreaElement>()
 
     val modal = useContext(modalContext)
 
-    fun mapState(nextState: EMapState) {
+    val mapState = { nextState: EMapState ->
         setLoadingState(true)
 
-        Axios.post<String>("${Config.apibase}/testplay/state", StateUpdate(props.hash, nextState, props.mapId, scheduleAt = scheduleAt), generateConfig<StateUpdate, String>()).then({
+        Axios.post<String>("${Config.apibase}/testplay/state", StateUpdate(props.hash, nextState, props.mapId, scheduleAt = scheduleAt.current), generateConfig<StateUpdate, String>()).then({
             if (nextState == EMapState.Published) {
-                if (scheduleAt == null) {
+                if (scheduleAt.current == null) {
                     props.reloadMap()
                     null
                 } else {
@@ -76,7 +76,7 @@ val version = fc<VersionProps> { props ->
             }?.let {
                 setState(it)
                 setLoadingState(false)
-                setScheduledAt(scheduleAt)
+                setScheduledAt(scheduleAt.current)
             }
         }) {
             setLoadingState(false)
@@ -121,10 +121,10 @@ val version = fc<VersionProps> { props ->
                                             buttons = listOf(ModalButton("Publish", "primary") { mapState(EMapState.Published) }, ModalButton("Cancel")),
                                             large = true
                                         ) {
-                                            setScheduleAt(null)
+                                            scheduleAt.current = null
                                             publishModal {
                                                 attrs.callback = {
-                                                    setScheduleAt(it)
+                                                    scheduleAt.current = it
                                                 }
                                             }
                                         }
