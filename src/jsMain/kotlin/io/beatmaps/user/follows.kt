@@ -12,12 +12,11 @@ import io.beatmaps.util.userTitles
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import react.Props
-import react.RBuilder
-import react.RComponent
-import react.State
-import react.createRef
 import react.dom.div
-import react.setState
+import react.fc
+import react.useEffect
+import react.useRef
+import react.useState
 
 external interface FollowListProps : Props {
     var scrollParent: HTMLDivElement?
@@ -25,22 +24,16 @@ external interface FollowListProps : Props {
     var followedBy: Int?
 }
 
-external interface FollowListState : State {
-    var resultsKey: Any
-}
+val followList = fc<FollowListProps> { props ->
+    val (resultsKey, setResultsKey) = useState(Any())
 
-class FollowList : RComponent<FollowListProps, FollowListState>() {
-    private val resultRef = createRef<HTMLElement>()
+    val resultRef = useRef<HTMLElement>()
 
-    override fun componentWillUpdate(nextProps: FollowListProps, nextState: FollowListState) {
-        if (props.following != nextProps.following || props.followedBy != nextProps.followedBy) {
-            setState {
-                resultsKey = Any()
-            }
-        }
+    useEffect(props.following, props.followedBy) {
+        setResultsKey(Any())
     }
 
-    private fun getUrl(page: Int): String {
+    fun getUrl(page: Int): String {
         return "${Config.apibase}/users" +
             when {
                 props.following != null -> "/following/${props.following}/$page"
@@ -49,7 +42,7 @@ class FollowList : RComponent<FollowListProps, FollowListState>() {
             }
     }
 
-    private val loadPage = { toLoad: Int, token: CancelTokenSource ->
+    val loadPage = { toLoad: Int, token: CancelTokenSource ->
         Axios.get<Array<UserDetail>>(
             getUrl(toLoad),
             generateConfig<String, Array<UserDetail>>(token.token)
@@ -58,26 +51,24 @@ class FollowList : RComponent<FollowListProps, FollowListState>() {
         }
     }
 
-    override fun RBuilder.render() {
-        div {
-            ref = resultRef
+    div {
+        ref = resultRef
 
-            child(FollowerInfiniteScroll::class) {
-                attrs.resultsKey = state.resultsKey
-                attrs.rowHeight = 73.5
-                attrs.itemsPerPage = 20
-                attrs.container = resultRef
-                attrs.scrollParent = props.scrollParent
-                attrs.headerSize = 0.0
-                attrs.loadPage = loadPage
-                attrs.renderElement = InfiniteScrollElementRenderer { u ->
-                    if (u != null) {
-                        userCard {
-                            attrs.id = u.id
-                            attrs.avatar = u.avatar
-                            attrs.username = u.name
-                            attrs.titles = userTitles(u)
-                        }
+        child(FollowerInfiniteScroll::class) {
+            attrs.resultsKey = resultsKey
+            attrs.rowHeight = 73.5
+            attrs.itemsPerPage = 20
+            attrs.container = resultRef
+            attrs.scrollParent = props.scrollParent
+            attrs.headerSize = 0.0
+            attrs.loadPage = loadPage
+            attrs.renderElement = InfiniteScrollElementRenderer { u ->
+                if (u != null) {
+                    userCard {
+                        attrs.id = u.id
+                        attrs.avatar = u.avatar
+                        attrs.username = u.name
+                        attrs.titles = userTitles(u)
                     }
                 }
             }
@@ -86,8 +77,3 @@ class FollowList : RComponent<FollowListProps, FollowListState>() {
 }
 
 class FollowerInfiniteScroll : InfiniteScroll<UserDetail>()
-
-fun RBuilder.followList(handler: FollowListProps.() -> Unit) =
-    child(FollowList::class) {
-        this.attrs(handler)
-    }

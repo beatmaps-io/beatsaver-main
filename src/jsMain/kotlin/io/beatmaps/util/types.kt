@@ -7,8 +7,10 @@ import io.beatmaps.common.SearchParamsPlaylist
 import io.beatmaps.common.json
 import io.beatmaps.index.SearchParams
 import kotlinx.datetime.Instant
+import kotlinx.html.CommonAttributeGroupFacade
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
+import org.w3c.dom.events.Event
 import kotlin.io.encoding.Base64
 
 fun String.toInstant() = Instant.parse(Moment(this).toISOString())
@@ -21,6 +23,14 @@ fun parseJwt(jwt: String): JsonObject {
     val jsonPayload = Base64.decode(base64Url).decodeToString()
     return json.parseToJsonElement(jsonPayload).jsonObject
 }
+
+var CommonAttributeGroupFacade.onTransitionEndFunction: (Event) -> Unit
+    get() = throw UnsupportedOperationException("You can't read variable onTransitionEnd")
+    set(newValue) {
+        consumer.onTagEvent(this, "ontransitionend", newValue)
+    }
+
+val hashRegex = Regex("^[A-F0-9]{40}$", RegexOption.IGNORE_CASE)
 
 fun SearchParams?.toPlaylistConfig() = SearchParamsPlaylist(
     this?.search ?: "",

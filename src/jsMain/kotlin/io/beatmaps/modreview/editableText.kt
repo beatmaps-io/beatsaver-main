@@ -3,13 +3,15 @@ package io.beatmaps.modreview
 import external.AxiosResponse
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.util.textToContent
+import kotlinx.html.ButtonType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.dom.a
+import react.dom.button
 import react.dom.div
+import react.dom.jsStyle
 import react.dom.span
 import react.dom.textarea
 import react.fc
@@ -25,6 +27,9 @@ external interface EditableTextProps : Props {
     var saveText: ((String) -> Promise<AxiosResponse<ActionResponse>>?)?
     var stopEditing: ((String) -> Unit)?
     var maxLength: Int?
+    var rows: Int?
+    var btnClass: String?
+    var justify: String?
 }
 
 val editableText = fc<EditableTextProps> { props ->
@@ -36,7 +41,7 @@ val editableText = fc<EditableTextProps> { props ->
     val displayText = (props.text ?: "")
 
     if (props.editing == true) {
-        textarea("10", classes = "form-control mt-2") {
+        textarea((props.rows ?: 10).toString(), classes = "form-control mt-2") {
             attrs.id = "review"
             attrs.disabled = loading == true
             +displayText
@@ -55,24 +60,29 @@ val editableText = fc<EditableTextProps> { props ->
             }
         }
 
-        a(classes = "btn btn-primary mt-1 float-end") {
-            attrs.onClickFunction = {
-                val newReview = textareaRef.current?.value ?: ""
-                if (!loading) {
-                    setLoading(true)
-
-                    props.saveText?.invoke(newReview)?.then({
-                        setLoading(false)
-
-                        if (it.data.success) {
-                            props.stopEditing?.invoke(newReview)
-                        }
-                    }, {
-                        setLoading(false)
-                    })
+        div("d-grid") {
+            button(classes = "btn " + (props.btnClass ?: "btn-primary mt-1"), type = ButtonType.submit) {
+                attrs.jsStyle {
+                    justifySelf = props.justify ?: "end"
                 }
+                attrs.onClickFunction = {
+                    val newReview = textareaRef.current?.value ?: ""
+                    if (!loading) {
+                        setLoading(true)
+
+                        props.saveText?.invoke(newReview)?.then({
+                            setLoading(false)
+
+                            if (it.data.success) {
+                                props.stopEditing?.invoke(newReview)
+                            }
+                        }, {
+                            setLoading(false)
+                        })
+                    }
+                }
+                +(props.buttonText ?: "Save")
             }
-            +(props.buttonText ?: "Save")
         }
     } else if (props.renderText == true) {
         div {

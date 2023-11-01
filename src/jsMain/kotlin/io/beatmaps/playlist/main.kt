@@ -90,11 +90,8 @@ val playlistFeed = fc<Props> {
         updateSearchParams = ::updateSearchParams
     }
     playlistTable {
-        search = searchParams
-        own = false
-        this.history = history
-        visible = true
-        updateScrollIndex = {
+        attrs.search = searchParams
+        attrs.updateScrollIndex = {
             updateSearchParams(searchParams, if (it < 2) null else it)
         }
     }

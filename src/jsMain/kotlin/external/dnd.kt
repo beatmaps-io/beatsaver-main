@@ -1,6 +1,6 @@
 package external
 
-import io.beatmaps.playlist.onTransitionEndFunction
+import io.beatmaps.util.onTransitionEndFunction
 import kotlinext.js.asJsObject
 import kotlinext.js.getOwnPropertyNames
 import kotlinx.html.DIV

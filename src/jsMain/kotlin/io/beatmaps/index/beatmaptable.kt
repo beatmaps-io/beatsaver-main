@@ -16,9 +16,10 @@ import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.search.CommonParams
 import io.beatmaps.util.encodeURIComponent
+import io.beatmaps.util.hashRegex
+import io.beatmaps.util.useAudio
 import kotlinx.browser.window
 import kotlinx.datetime.Instant
-import org.w3c.dom.Audio
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
@@ -28,7 +29,6 @@ import react.dom.p
 import react.fc
 import react.router.useNavigate
 import react.useEffect
-import react.useEffectOnce
 import react.useRef
 import react.useState
 
@@ -60,27 +60,15 @@ data class SearchParams(
     val tags: MapTagSet
 ) : CommonParams()
 
-private val hashRegex = Regex("^[A-F0-9]{40}$", RegexOption.IGNORE_CASE)
-
 val beatmapTable = fc<BeatmapTableProps> { props ->
     val (user, setUser) = useState<UserDetail?>(null)
     val (resultsKey, setResultsKey) = useState(Any())
     val (minTime, setMinTime) = useState<Instant?>(null)
 
     val resultsTable = useRef<HTMLElement>()
-    val audio = useRef(
-        Audio().also {
-            it.volume = 0.4
-        }
-    )
+    val audio = useAudio()
 
     val history = History(useNavigate())
-
-    useEffectOnce {
-        cleanup {
-            audio.current?.pause()
-        }
-    }
 
     useEffect(props.user, props.wip, props.curated, props.search) {
         setUser(null)
