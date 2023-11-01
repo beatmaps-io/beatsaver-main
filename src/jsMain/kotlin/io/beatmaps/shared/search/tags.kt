@@ -61,7 +61,7 @@ val tags = fc<TagsProps> { props ->
 
             if (it.type != MapTagType.None) {
                 mapTag {
-                    attrs.selected = selected.any { x -> x.value.contains(it) } || selected.isEmpty() || highlightAll
+                    attrs.selected = selected.any { x -> x.value.contains(it) } || highlightAll
                     attrs.excluded = selected[false]?.contains(it) == true
                     attrs.tag = it
 
