@@ -4,7 +4,6 @@ import external.Axios
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
-import io.beatmaps.globalContext
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
