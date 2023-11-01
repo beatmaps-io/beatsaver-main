@@ -1,8 +1,11 @@
 package io.beatmaps.maps.testplay
 
-import external.Moment
 import external.reactFor
+import io.beatmaps.util.toInstant
 import kotlinx.datetime.Instant
+import kotlinx.datetime.internal.JSJoda.DateTimeFormatter
+import kotlinx.datetime.internal.JSJoda.LocalDateTime
+import kotlinx.datetime.internal.JSJoda.ZoneId
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
@@ -24,6 +27,8 @@ external interface PublishModalProps : Props {
 
 val publishModal = fc<PublishModalProps> { props ->
     val (publishType, setPublishType) = useState(false)
+
+    val format = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm")
 
     p {
         +"This will make your map visible to everyone"
@@ -74,12 +79,12 @@ val publishModal = fc<PublishModalProps> { props ->
                 if (publishType) {
                     input(InputType.dateTimeLocal, classes = "form-control m-2") {
                         attrs.id = "scheduleAt"
-                        val nowStr = Moment().format("YYYY-MM-DDTHH:mm")
+                        val nowStr = LocalDateTime.now(ZoneId.SYSTEM).format(format)
                         attrs.defaultValue = nowStr
                         attrs.min = nowStr
                         attrs.onChangeFunction = {
                             val textVal = (it.target as HTMLInputElement).value
-                            props.callback(if (textVal.isEmpty()) null else Instant.parse(Moment(textVal).toISOString()))
+                            props.callback(if (textVal.isEmpty()) null else textVal.toInstant())
                         }
                     }
                 }
