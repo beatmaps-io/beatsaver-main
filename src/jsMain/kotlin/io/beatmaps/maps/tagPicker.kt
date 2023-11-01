@@ -11,6 +11,7 @@ import react.fc
 fun interface TagPickerHeadingRenderer {
     fun RBuilder.invoke(info: Map<MapTagType, Int>)
 }
+
 external interface TagPickerProps : Props {
     var classes: String?
     var tags: Set<MapTag>?

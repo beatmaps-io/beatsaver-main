@@ -15,7 +15,7 @@ import io.beatmaps.api.SessionInfo
 import io.beatmaps.api.SessionRevokeRequest
 import io.beatmaps.api.SessionsData
 import io.beatmaps.api.UserDetail
-import io.beatmaps.shared.errors
+import io.beatmaps.shared.form.errors
 import io.beatmaps.upload.UploadRequestConfig
 import io.beatmaps.user.account.accountEmail
 import io.beatmaps.user.account.changePassword
@@ -45,6 +45,7 @@ import react.dom.form
 import react.dom.h5
 import react.dom.hr
 import react.dom.input
+import react.dom.key
 import react.dom.label
 import react.dom.span
 import react.dom.textarea
@@ -203,7 +204,7 @@ class AccountComponent : RComponent<AccountComponentProps, AccountComponentState
                     +"Description"
                 }
                 textarea(classes = "form-control") {
-                    key = "description"
+                    attrs.key = "description"
                     attrs.id = "description"
                     attrs.value = state.description
                     attrs.rows = "5"

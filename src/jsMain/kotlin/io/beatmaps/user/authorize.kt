@@ -6,7 +6,7 @@ import io.beatmaps.api.OauthScope
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
-import io.beatmaps.shared.errors
+import io.beatmaps.shared.form.errors
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.html.FormMethod

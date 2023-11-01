@@ -2,64 +2,17 @@ package io.beatmaps.user
 
 import external.routeLink
 import io.beatmaps.setPageTitle
-import io.beatmaps.shared.errors
+import io.beatmaps.shared.form.errors
 import kotlinx.browser.window
-import kotlinx.html.ButtonType
 import kotlinx.html.FormMethod
-import kotlinx.html.InputType
 import org.w3c.dom.url.URLSearchParams
 import react.Props
-import react.PropsWithChildren
-import react.dom.a
-import react.dom.button
 import react.dom.div
 import react.dom.form
 import react.dom.hr
 import react.dom.i
-import react.dom.input
-import react.dom.p
-import react.dom.span
 import react.fc
 import react.useEffectOnce
-
-external interface LoginFormProps : PropsWithChildren {
-    var buttonText: String
-    var discordLink: String?
-}
-
-val loginForm = fc<LoginFormProps> { props ->
-    a(href = props.discordLink ?: "/discord", classes = "btn discord-btn") {
-        span {
-            i("fab fa-discord") {}
-            +" Sign in with discord"
-        }
-    }
-    p {
-        +"OR"
-    }
-    props.children()
-    input(type = InputType.text, classes = "form-control") {
-        key = "username"
-        attrs.name = "username"
-        attrs.placeholder = "Username"
-        attrs.required = true
-        attrs.autoFocus = true
-        attrs.attributes["autocomplete"] = "username"
-    }
-    input(type = InputType.password, classes = "form-control") {
-        key = "password"
-        attrs.name = "password"
-        attrs.placeholder = "Password"
-        attrs.required = true
-        attrs.attributes["autocomplete"] = "current-password"
-    }
-    div("d-grid") {
-        button(classes = "btn btn-success", type = ButtonType.submit) {
-            i("fas fa-sign-in-alt") {}
-            +" ${props.buttonText}"
-        }
-    }
-}
 
 val loginPage = fc<Props> {
     useEffectOnce {

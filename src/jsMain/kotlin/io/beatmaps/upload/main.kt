@@ -12,20 +12,16 @@ import io.beatmaps.common.MapTag
 import io.beatmaps.maps.TagPickerHeadingRenderer
 import io.beatmaps.maps.tagPicker
 import io.beatmaps.setPageTitle
-import io.beatmaps.shared.errors
+import io.beatmaps.shared.form.errors
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onBlurFunction
 import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
-import react.Props
 import react.RBuilder
 import react.RComponent
-import react.Ref
 import react.State
 import react.createRef
 import react.dom.a
@@ -42,68 +38,7 @@ import react.dom.p
 import react.dom.strong
 import react.dom.textarea
 import react.dom.ul
-import react.fc
 import react.setState
-
-external interface DropInfo : Props {
-    var getRootProps: () -> DropRootProps
-    var getInputProps: () -> DropInputProps
-}
-
-external interface DropRootProps : Props {
-    var ref: Ref<*>
-    var onKeyDown: (Event) -> Unit
-    var onFocus: (Event) -> Unit
-    var onBlur: (Event) -> Unit
-    var onClick: (Event) -> Unit
-    var onDragEnter: (Event) -> Unit
-    var onDragOver: (Event) -> Unit
-    var onDragLeave: (Event) -> Unit
-    var onDrop: (Event) -> Unit
-    var tabIndex: Int?
-}
-
-external interface DropInputProps : Props {
-    var ref: Ref<*>
-    var accept: String?
-    var type: String
-    var multiple: Boolean
-    var onChange: (Event) -> Unit
-    var onClick: (Event) -> Unit
-    var autoComplete: String?
-    var tabIndex: Int
-}
-
-external interface UploadErrorProps : Props {
-    var info: UploadValidationInfo
-}
-
-val uploadError = fc<UploadErrorProps> { props ->
-    props.info.property.forEachIndexed { idx, it ->
-        if (idx > 0) {
-            +"."
-        }
-
-        it.descriptor?.also { d ->
-            a("#") {
-                attrs.onClickFunction = { e ->
-                    e.preventDefault()
-                }
-                attrs.title = it.name
-                +d
-            }
-        } ?: run {
-            +it.name
-        }
-        if (it.index != null) {
-            +"[${it.index}]"
-        }
-    }
-    if (props.info.property.isNotEmpty()) {
-        +": "
-    }
-    +props.info.message
-}
 
 class UploadRequestConfig(block: (AxiosProgress) -> Unit) : AxiosRequestConfig {
     override var onUploadProgress: ((progressEvent: AxiosProgress) -> Unit)? = block

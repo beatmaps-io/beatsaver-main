@@ -6,14 +6,12 @@ import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ChangeEmailRequest
-import io.beatmaps.common.json
-import io.beatmaps.shared.errors
+import io.beatmaps.shared.form.errors
+import io.beatmaps.util.parseJwt
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onSubmitFunction
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.w3c.dom.HTMLInputElement
 import react.Props
@@ -27,17 +25,6 @@ import react.router.useNavigate
 import react.router.useParams
 import react.useRef
 import react.useState
-import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
-
-external fun decodeURIComponent(encodedURI: String): String
-
-@OptIn(ExperimentalEncodingApi::class)
-fun parseJwt(jwt: String): JsonObject {
-    val base64Url = jwt.split('.')[1]
-    val jsonPayload = Base64.decode(base64Url).decodeToString()
-    return json.parseToJsonElement(jsonPayload).jsonObject
-}
 
 val changeEmailPage = fc<Props> {
     val (loading, setLoading) = useState(false)

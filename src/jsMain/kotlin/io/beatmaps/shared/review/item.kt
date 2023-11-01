@@ -194,11 +194,11 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                             }
                         }
                         editableText {
-                            text = state.text ?: rv.text
-                            editing = state.editing
-                            renderText = true
-                            maxLength = ReviewConstants.MAX_LENGTH
-                            saveText = { newReview ->
+                            attrs.text = state.text ?: rv.text
+                            attrs.editing = state.editing
+                            attrs.renderText = true
+                            attrs.maxLength = ReviewConstants.MAX_LENGTH
+                            attrs.saveText = { newReview ->
                                 val newSentiment = state.newSentiment ?: sentimentLocal
                                 Axios.put<ActionResponse>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->
                                     if (r.data.success) {
@@ -210,7 +210,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                     r
                                 }
                             }
-                            stopEditing = { t ->
+                            attrs.stopEditing = { t ->
                                 setState {
                                     text = t
                                     editing = false

@@ -1,26 +1,23 @@
 package io.beatmaps.index
 
-import external.Moment
 import io.beatmaps.History
 import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
-import io.beatmaps.common.SearchParamsPlaylist
 import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.common.toQuery
 import io.beatmaps.common.toTagSet
 import io.beatmaps.dateFormat
 import io.beatmaps.globalContext
-import io.beatmaps.shared.ExtraContentRenderer
-import io.beatmaps.shared.FilterCategory
-import io.beatmaps.shared.FilterInfo
-import io.beatmaps.shared.SearchParamGenerator
-import io.beatmaps.shared.buildURL
-import io.beatmaps.shared.includeIfNotNull
-import io.beatmaps.shared.queryParams
-import io.beatmaps.shared.search
-import io.beatmaps.shared.tags
+import io.beatmaps.shared.search.ExtraContentRenderer
+import io.beatmaps.shared.search.FilterCategory
+import io.beatmaps.shared.search.FilterInfo
+import io.beatmaps.shared.search.SearchParamGenerator
+import io.beatmaps.shared.search.search
+import io.beatmaps.shared.search.tags
 import io.beatmaps.stateNavOptions
-import kotlinx.datetime.Instant
+import io.beatmaps.util.buildURL
+import io.beatmaps.util.includeIfNotNull
+import io.beatmaps.util.toPlaylistConfig
 import kotlinx.html.ButtonType
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
@@ -50,27 +47,6 @@ val mapFilters = listOf<FilterInfo<SearchParams>>(
     FilterInfo("noodle", "Noodle", FilterCategory.REQUIREMENTS) { it.noodle == true },
     FilterInfo("me", "Mapping Extensions", FilterCategory.REQUIREMENTS) { it.me == true },
     FilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true }
-)
-
-fun String.toInstant() = Instant.parse(Moment(this).toISOString())
-
-fun SearchParams?.toPlaylistConfig() = SearchParamsPlaylist(
-    this?.search ?: "",
-    this?.automapper,
-    this?.minNps,
-    this?.maxNps,
-    this?.chroma,
-    this?.sortOrder ?: SearchOrder.Latest,
-    this?.from?.toInstant(),
-    this?.to?.toInstant(),
-    this?.noodle,
-    this?.ranked,
-    this?.curated,
-    this?.verified,
-    this?.fullSpread,
-    this?.me,
-    this?.cinema,
-    this?.tags ?: mapOf()
 )
 
 val homePage = fc<Props> {
@@ -185,9 +161,8 @@ val homePage = fc<Props> {
         }
 
         beatmapTable {
-            search = searchParams
-            this.history = history
-            updateScrollIndex = {
+            attrs.search = searchParams
+            attrs.updateScrollIndex = {
                 updateSearchParams(searchParams, if (it < 2) null else it)
             }
         }

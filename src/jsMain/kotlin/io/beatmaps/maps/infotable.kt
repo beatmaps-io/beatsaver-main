@@ -7,7 +7,7 @@ import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.common.fixedStr
 import io.beatmaps.common.formatTime
-import io.beatmaps.shared.uploader
+import io.beatmaps.shared.map.uploader
 import kotlinx.html.DIV
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.role
@@ -26,16 +26,6 @@ external interface InfoTableProps : Props {
     var horizontal: Boolean?
     var selected: MapDifficulty?
     var changeSelectedDiff: ((MapDifficulty) -> Unit)?
-}
-
-fun RDOMBuilder<*>.diffImg(diff: MapDifficulty) {
-    val humanText = diff.characteristic.human()
-
-    img(humanText, "/static/icons/${humanText.lowercase()}.svg", classes = "mode") {
-        attrs.title = diff.difficulty.human() + " " + diff.characteristic.human()
-        attrs.width = "16"
-        attrs.height = "16"
-    }
 }
 
 val infoTable = fc<InfoTableProps> { props ->
@@ -69,7 +59,9 @@ val infoTable = fc<InfoTableProps> { props ->
                 props.changeSelectedDiff?.invoke(diff)
             }
 
-            diffImg(diff)
+            diffImg {
+                attrs.diff = diff
+            }
 
             +diff.difficulty.human()
 

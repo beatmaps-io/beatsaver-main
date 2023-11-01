@@ -8,10 +8,10 @@ import io.beatmaps.History
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistSearchResponse
 import io.beatmaps.common.SearchOrder
-import io.beatmaps.index.encodeURIComponent
-import io.beatmaps.shared.CommonParams
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
+import io.beatmaps.shared.search.CommonParams
+import io.beatmaps.util.encodeURIComponent
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.RBuilder
@@ -30,7 +30,7 @@ data class PlaylistSearchParams(
     val curated: Boolean? = null,
     val verified: Boolean? = null,
     override val sortOrder: SearchOrder
-) : CommonParams
+) : CommonParams()
 
 external interface PlaylistTableProps : Props {
     var search: PlaylistSearchParams?

@@ -1,4 +1,4 @@
-package io.beatmaps.shared
+package io.beatmaps.shared.search
 
 import external.Moment
 import kotlinx.html.js.onClickFunction
@@ -6,6 +6,8 @@ import react.Props
 import react.dom.button
 import react.dom.div
 import react.fc
+
+data class PresetDateRange(val startDate: Moment?, val endDate: Moment?)
 
 val presetsMap = mapOf(
     "Last 24h" to PresetDateRange(Moment().subtract(1, "day"), null),

@@ -14,8 +14,9 @@ import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
-import io.beatmaps.shared.buildURL
-import io.beatmaps.shared.includeIfNotNull
+import io.beatmaps.util.buildURL
+import io.beatmaps.util.includeIfNotNull
+import io.beatmaps.util.updateAlertDisplay
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction

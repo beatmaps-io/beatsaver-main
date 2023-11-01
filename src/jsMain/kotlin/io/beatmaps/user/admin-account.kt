@@ -13,7 +13,7 @@ import io.beatmaps.api.UserSuspendRequest
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.modalContext
-import io.beatmaps.shared.errors
+import io.beatmaps.shared.form.errors
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id

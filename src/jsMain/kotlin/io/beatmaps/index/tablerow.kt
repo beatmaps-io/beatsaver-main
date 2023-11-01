@@ -3,9 +3,9 @@ package io.beatmaps.index
 import external.routeLink
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
-import io.beatmaps.shared.diffIcons
-import io.beatmaps.shared.links
-import io.beatmaps.shared.uploaderWithInfo
+import io.beatmaps.shared.map.diffIcons
+import io.beatmaps.shared.map.links
+import io.beatmaps.shared.map.uploaderWithInfo
 import react.Props
 import react.dom.img
 import react.dom.p

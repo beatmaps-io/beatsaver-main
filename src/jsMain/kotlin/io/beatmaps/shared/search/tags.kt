@@ -1,4 +1,4 @@
-package io.beatmaps.shared
+package io.beatmaps.shared.search
 
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.MapTagSet

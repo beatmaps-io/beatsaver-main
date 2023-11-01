@@ -519,12 +519,11 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                 }
                 if (state.startup == true) {
                     beatmapTable {
-                        key = "maps-${state.state}"
-                        user = userId ?: loggedInLocal ?: 0
-                        wip = state.state == ProfileTab.UNPUBLISHED
-                        curated = state.state == ProfileTab.CURATED
-                        history = props.history
-                        visible = state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED || state.state == ProfileTab.CURATED
+                        attrs.key = "maps-${state.state}"
+                        attrs.user = userId ?: loggedInLocal ?: 0
+                        attrs.wip = state.state == ProfileTab.UNPUBLISHED
+                        attrs.curated = state.state == ProfileTab.CURATED
+                        attrs.visible = state.state == ProfileTab.UNPUBLISHED || state.state == ProfileTab.PUBLISHED || state.state == ProfileTab.CURATED
                     }
                 }
             }
