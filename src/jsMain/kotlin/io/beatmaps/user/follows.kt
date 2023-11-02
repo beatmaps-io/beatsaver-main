@@ -15,7 +15,6 @@ import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
 import react.fc
-import react.useEffect
 import react.useRef
 import react.useState
 
