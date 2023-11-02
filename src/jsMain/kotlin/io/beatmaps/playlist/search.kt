@@ -260,10 +260,6 @@ val playlistSearchEditor = fc<PSEProps> { props ->
             }
         }
         div("col-4 mb-3") {
-            h4 {
-                +"Tags"
-            }
-
             tags {
                 attrs.default = props.config.searchParams.tags
                 attrs.callback = {

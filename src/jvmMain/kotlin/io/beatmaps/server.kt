@@ -134,16 +134,29 @@ suspend fun ApplicationCall.genericPage(statusCode: HttpStatusCode = HttpStatusC
     }
 }
 
-val migrationType = System.getenv("DISABLE_TEST_MIGRATIONS") != null
+enum class DbMigrationType(val folder: String) {
+    None(""), Standard("db/migration"), Test("db");
+
+    companion object {
+        val fromEnv = when {
+            System.getenv("DISABLE_MIGRATIONS") != null -> None
+            System.getenv("DISABLE_TEST_MIGRATIONS") == null -> Test
+            else -> Standard
+        }
+    }
+}
 
 fun main() {
     setupLogging()
     setupDB(app = "BeatSaver Main").let { ds ->
-        Flyway.configure()
-            .dataSource(ds)
-            .locations(if (migrationType) "db/migration" else "db")
-            .load()
-            .migrate()
+        val type = DbMigrationType.fromEnv
+        if (type != DbMigrationType.None) {
+            Flyway.configure()
+                .dataSource(ds)
+                .locations(type.folder)
+                .load()
+                .migrate()
+        }
     }
 
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::beatmapsio).start(wait = true)

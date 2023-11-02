@@ -50,14 +50,7 @@ val mapFilters = listOf<FilterInfo<SearchParams>>(
 )
 
 val homePage = fc<Props> {
-    val (searchParams, setSearchParams) = useState<SearchParams?>(null)
-    val (tags, setTags) = useState<MapTagSet?>(null)
-
-    val modalRef = useRef<ModalComponent>()
     val location = useLocation()
-    val history = History(useNavigate())
-
-    val userData = useContext(globalContext)
 
     fun fromURL() = URLSearchParams(location.search).let { params ->
         SearchParams(
@@ -79,6 +72,14 @@ val homePage = fc<Props> {
             params.get("tags")?.toQuery()?.toTagSet() ?: mapOf()
         )
     }
+
+    val (searchParams, setSearchParams) = useState(fromURL())
+    val (tags, setTags) = useState<MapTagSet?>(null)
+
+    val modalRef = useRef<ModalComponent>()
+    val history = History(useNavigate())
+
+    val userData = useContext(globalContext)
 
     fun updateSearchParams(searchParamsLocal: SearchParams?, row: Int?) {
         if (searchParamsLocal == null) return

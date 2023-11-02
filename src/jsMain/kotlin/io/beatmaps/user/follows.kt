@@ -8,13 +8,13 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.userCard
+import io.beatmaps.util.useDidUpdateEffect
 import io.beatmaps.util.userTitles
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
 import react.fc
-import react.useEffect
 import react.useRef
 import react.useState
 
@@ -29,7 +29,7 @@ val followList = fc<FollowListProps> { props ->
 
     val resultRef = useRef<HTMLElement>()
 
-    useEffect(props.following, props.followedBy) {
+    useDidUpdateEffect(props.following, props.followedBy) {
         setResultsKey(Any())
     }
 

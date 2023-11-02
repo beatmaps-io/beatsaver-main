@@ -21,7 +21,7 @@ external interface CollaboratorPickerProps : Props {
 }
 
 val collaboratorPicker = fc<CollaboratorPickerProps> { props ->
-    val (collaborators, setCollaborators) = useState<List<CollaborationDetail>?>(null)
+    val (collaborators, setCollaborators) = useState(listOf<CollaborationDetail>())
 
     fun updateCollaborators() {
         Axios.get<List<CollaborationDetail>>(
@@ -41,7 +41,7 @@ val collaboratorPicker = fc<CollaboratorPickerProps> { props ->
             +"Collaborators"
         }
 
-        if (collaborators != null) {
+        if (collaborators.isNotEmpty()) {
             div("collaborator-cards") {
                 collaborators.forEach { c ->
                     if (c.collaborator == null) return@forEach
@@ -64,7 +64,7 @@ val collaboratorPicker = fc<CollaboratorPickerProps> { props ->
         }
 
         userSearch {
-            attrs.excludeUsers = (collaborators ?: listOf()).map { it.id }.plus(props.map.uploader.id)
+            attrs.excludeUsers = collaborators.mapNotNull { it.collaborator?.id }.plus(props.map.uploader.id)
             attrs.disabled = props.disabled
             attrs.callback = { newUser ->
                 Axios.post<String>(

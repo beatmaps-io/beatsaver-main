@@ -11,12 +11,12 @@ import io.beatmaps.globalContext
 import io.beatmaps.index.modalContext
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
+import io.beatmaps.util.useDidUpdateEffect
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
 import react.fc
 import react.useContext
-import react.useEffect
 import react.useRef
 import react.useState
 
@@ -34,7 +34,7 @@ val reviewTable = fc<ReviewTableProps> { props ->
     val resultsTable = useRef<HTMLElement>()
     val modal = useContext(modalContext)
 
-    useEffect(props.map) {
+    useDidUpdateEffect(props.map) {
         setResultsKey(Any())
     }
 
