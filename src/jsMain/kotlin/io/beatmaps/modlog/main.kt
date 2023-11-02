@@ -11,6 +11,7 @@ import io.beatmaps.globalContext
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
+import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.dom.hasClass
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
@@ -41,11 +42,6 @@ import react.useRef
 import react.useState
 
 val modlog = fc<Props> {
-    val (mod, setMod) = useState("")
-    val (user, setUser) = useState("")
-    val (type, setType) = useState<ModLogOpType?>(null)
-    val (resultsKey, setResultsKey) = useState(Any())
-
     val resultsTable = useRef<HTMLElement>()
 
     val modRef = useRef<HTMLInputElement>()
@@ -56,6 +52,15 @@ val modlog = fc<Props> {
     val history = History(useNavigate())
     val location = useLocation()
 
+    val (modLocal, userLocal, typeLocal) = URLSearchParams(location.search).let { u ->
+        Triple(u.get("mod") ?: "", u.get("user") ?: "", ModLogOpType.fromName(u.get("type") ?: ""))
+    }
+
+    val (mod, setMod) = useState(modLocal)
+    val (user, setUser) = useState(userLocal)
+    val (type, setType) = useState(typeLocal)
+    val (resultsKey, setResultsKey) = useState(Any())
+
     useEffectOnce {
         setPageTitle("ModLog")
 
@@ -64,11 +69,7 @@ val modlog = fc<Props> {
         }
     }
 
-    useEffect {
-        val (modLocal, userLocal, typeLocal) = URLSearchParams(location.search).let { u ->
-            Triple(u.get("mod") ?: "", u.get("user") ?: "", ModLogOpType.fromName(u.get("type") ?: ""))
-        }
-
+    useEffect(location) {
         modRef.current?.value = modLocal
         userRef.current?.value = userLocal
         typeRef.current?.value = typeLocal?.name ?: ""
@@ -78,7 +79,7 @@ val modlog = fc<Props> {
         setType(typeLocal)
     }
 
-    useEffect(mod, user, type) {
+    useDidUpdateEffect(mod, user, type) {
         setResultsKey(Any())
     }
 
@@ -98,6 +99,13 @@ val modlog = fc<Props> {
             generateConfig<String, Array<ModLogEntry>>(token.token)
         ).then {
             return@then it.data.toList()
+        }
+    }
+
+    fun updateHistory() {
+        val ext = urlExtension()
+        if (location.search != ext) {
+            history.push("/modlog$ext")
         }
     }
 
@@ -150,8 +158,7 @@ val modlog = fc<Props> {
                         button(type = ButtonType.submit, classes = "btn btn-primary") {
                             attrs.onClickFunction = {
                                 it.preventDefault()
-
-                                history.push("/modlog" + urlExtension())
+                                updateHistory()
                             }
 
                             +"Filter"
@@ -178,7 +185,7 @@ val modlog = fc<Props> {
                             attrs.setUser = { modStr, userStr ->
                                 modRef.current?.value = modStr
                                 userRef.current?.value = userStr
-                                history.push("/modlog" + urlExtension())
+                                updateHistory()
                             }
                         }
                     }

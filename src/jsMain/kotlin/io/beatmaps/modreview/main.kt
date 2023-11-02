@@ -13,6 +13,7 @@ import io.beatmaps.index.modalContext
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.review.CommentsInfiniteScroll
+import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.dom.hasClass
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
@@ -41,9 +42,6 @@ import react.useRef
 import react.useState
 
 val modReview = fc<Props> {
-    val (user, setUser) = useState("")
-    val (resultsKey, setResultsKey) = useState(Any())
-
     val userData = useContext(globalContext)
     val history = History(useNavigate())
     val location = useLocation()
@@ -51,6 +49,12 @@ val modReview = fc<Props> {
     val resultsTable = useRef<HTMLElement>()
     val modalRef = useRef<ModalComponent>()
     val userRef = useRef<HTMLInputElement>()
+
+    val userLocal = URLSearchParams(location.search).let { u ->
+        u.get("user") ?: ""
+    }
+
+    val (user, setUser) = useState(userLocal)
 
     useEffectOnce {
         setPageTitle("Review Moderation")
@@ -60,18 +64,10 @@ val modReview = fc<Props> {
         }
     }
 
-    useEffect {
-        val userLocal = URLSearchParams(location.search).let { u ->
-            u.get("user") ?: ""
-        }
-
+    useEffect(location) {
         userRef.current?.value = user
 
         setUser(userLocal)
-    }
-
-    useEffect(user) {
-        setResultsKey(Any())
     }
 
     fun urlExtension(): String {
@@ -135,7 +131,7 @@ val modReview = fc<Props> {
                     key = "modreviewTable"
 
                     child(CommentsInfiniteScroll::class) {
-                        attrs.resultsKey = resultsKey
+                        attrs.resultsKey = user
                         attrs.rowHeight = 95.5
                         attrs.itemsPerPage = 20
                         attrs.container = resultsTable

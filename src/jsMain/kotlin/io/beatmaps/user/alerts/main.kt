@@ -17,6 +17,8 @@ import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.util.buildURL
 import io.beatmaps.util.includeIfNotNull
 import io.beatmaps.util.updateAlertDisplay
+import io.beatmaps.util.useDidUpdateEffect
+import io.beatmaps.util.useObjectMemoize
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
@@ -44,8 +46,15 @@ import react.useRef
 import react.useState
 
 val alertsPage = fc<Props> {
-    val (read, setRead) = useState(false)
-    val (filters, setFilters) = useState(listOf<EAlertType>())
+    val location = useLocation()
+    val params = URLSearchParams(location.search)
+
+    val (newRead, newFilters) = params.get("read").toBoolean() to
+        (params.get("type") ?: "").split(",").mapNotNull { EAlertType.fromLower(it) }
+
+    val (read, setRead) = useState(newRead)
+    val (filters, setFilters) = useState(newFilters)
+
     val (alertStats, setAlertStats) = useState<UserAlertStats?>(null)
     val (resultsKey, setResultsKey) = useState(Any())
     val (hiddenAlerts, setHiddenAlerts) = useState(listOf<Int>())
@@ -53,8 +62,6 @@ val alertsPage = fc<Props> {
     val (loading, setLoading) = useState(false)
 
     val resultsColumn = useRef<HTMLElement>()
-
-    val location = useLocation()
     val history = History(useNavigate())
 
     useEffectOnce {
@@ -77,18 +84,18 @@ val alertsPage = fc<Props> {
     }
 
     useEffect(location) {
-        URLSearchParams(location.search).let { u ->
-            setRead(u.get("read").toBoolean())
-            setFilters((u.get("type") ?: "").split(",").mapNotNull { EAlertType.fromLower(it) })
-        }
+        setRead(newRead)
+        setFilters(newFilters)
+    }
 
+    useDidUpdateEffect(read, useObjectMemoize(filters)) {
         setResultsKey(Any())
         setHiddenAlerts(listOf())
         setForceHide(false)
     }
 
     val loadPage = { toLoad: Int, token: CancelTokenSource ->
-        val type = if (read == true) "read" else "unread"
+        val type = if (read) "read" else "unread"
         val typeFilter = if (filters.any()) "?type=${filters.joinToString(",") { it.name.lowercase() }}" else ""
         Axios.get<List<UserAlert>>(
             "${Config.apibase}/alerts/$type/$toLoad$typeFilter",

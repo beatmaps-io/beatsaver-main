@@ -8,7 +8,6 @@ import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.asList
 import org.w3c.dom.events.Event
-import org.w3c.dom.get
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -58,7 +57,6 @@ external interface InfiniteScrollState<T> : State {
 }
 
 open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScrollState<T>>() {
-    private val emptyPage = List<T?>(20) { null }
     private fun lastPage() = min(
         state.finalPage ?: Int.MAX_VALUE,
         (state.pages?.maxByOrNull { it.key }?.key ?: 0).let { alt ->
@@ -210,8 +208,10 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
         return newPage
     }
 
+    private fun filteredChildren() = props.container.current?.children?.asList()?.filter(props.childFilter ?: { true })
+
     private fun currentItem(): Int {
-        props.container.current?.children?.asList()?.filter(props.childFilter ?: { true })?.forEachIndexed { idx, it ->
+        filteredChildren()?.forEachIndexed { idx, it ->
             val rect = it.getBoundingClientRect()
             if (rect.top >= headerSize()) {
                 return idx
@@ -222,7 +222,7 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
 
     private fun scrollTo(idx: Int) {
         val scrollTo = if (idx == 0) { 0.0 } else {
-            val top = props.container.current?.children?.get(idx)?.getBoundingClientRect()?.top ?: 0.0
+            val top = filteredChildren()?.get(idx)?.getBoundingClientRect()?.top ?: 0.0
             val offset = props.scrollParent?.scrollTop ?: window.pageYOffset
             top + offset - beforeContent()
         }
@@ -230,6 +230,8 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
     }
 
     override fun RBuilder.render() {
+        val emptyPage = List<T?>(props.itemsPerPage) { null }
+
         for (pIdx in 0..lastPage()) {
             (state.pages?.get(pIdx) ?: emptyPage).forEachIndexed userLoop@{ localIdx, it ->
                 val idx = (pIdx * props.itemsPerPage) + localIdx

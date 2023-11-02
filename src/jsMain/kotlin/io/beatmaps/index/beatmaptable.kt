@@ -18,6 +18,8 @@ import io.beatmaps.shared.search.CommonParams
 import io.beatmaps.util.encodeURIComponent
 import io.beatmaps.util.hashRegex
 import io.beatmaps.util.useAudio
+import io.beatmaps.util.useDidUpdateEffect
+import io.beatmaps.util.useObjectMemoize
 import kotlinx.browser.window
 import kotlinx.datetime.Instant
 import org.w3c.dom.HTMLElement
@@ -63,14 +65,14 @@ data class SearchParams(
 val beatmapTable = fc<BeatmapTableProps> { props ->
     val (user, setUser) = useState<UserDetail?>(null)
     val (resultsKey, setResultsKey) = useState(Any())
-    val (minTime, setMinTime) = useState<Instant?>(null)
+    val minTimeRef = useRef<Instant>(null)
 
     val resultsTable = useRef<HTMLElement>()
     val audio = useAudio()
 
     val history = History(useNavigate())
 
-    useEffect(props.user, props.wip, props.curated, props.search) {
+    useDidUpdateEffect(props.user, props.wip, props.curated, useObjectMemoize(props.search)) {
         setUser(null)
         setResultsKey(Any())
     }
@@ -97,7 +99,7 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
             "${Config.apibase}/search/text/$page?sortOrder=Curated&curator=${props.user}&automapper=true"
         } else if (props.user != null) {
             "${Config.apibase}/maps/collaborations/${props.user}?" +
-                (if (minTime != null) "&before=$minTime" else "")
+                (minTimeRef.current?.let { "&before=$it" } ?: "")
         } else {
             props.search?.let { search ->
                 val tagStr = search.tags.toQuery()
@@ -149,8 +151,8 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
             }
 
             val newMin = it.data.docs?.mapNotNull { doc -> doc.uploaded }?.minOrNull()
-            if (newMin != null && (minTime == null || newMin < minTime)) {
-                setMinTime(newMin)
+            if (newMin != null && (minTimeRef.current?.let { minTime -> newMin < minTime } != false)) {
+                minTimeRef.current = newMin
             }
             return@then it.data.docs
         }
