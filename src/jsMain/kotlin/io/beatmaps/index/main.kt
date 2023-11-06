@@ -8,6 +8,7 @@ import io.beatmaps.common.toQuery
 import io.beatmaps.common.toTagSet
 import io.beatmaps.dateFormat
 import io.beatmaps.globalContext
+import io.beatmaps.setPageTitle
 import io.beatmaps.shared.search.ExtraContentRenderer
 import io.beatmaps.shared.search.FilterCategory
 import io.beatmaps.shared.search.FilterInfo
@@ -33,6 +34,7 @@ import react.router.useLocation
 import react.router.useNavigate
 import react.useContext
 import react.useEffect
+import react.useEffectOnce
 import react.useRef
 import react.useState
 
@@ -71,6 +73,10 @@ val homePage = fc<Props> {
             params.get("cinema")?.toBoolean(),
             params.get("tags")?.toQuery()?.toTagSet() ?: mapOf()
         )
+    }
+
+    useEffectOnce {
+        setPageTitle("Home")
     }
 
     val (searchParams, setSearchParams) = useState(fromURL())

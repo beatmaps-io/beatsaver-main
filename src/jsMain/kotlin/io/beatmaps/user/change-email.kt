@@ -6,6 +6,7 @@ import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ChangeEmailRequest
+import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import io.beatmaps.util.parseJwt
 import kotlinx.html.ButtonType
@@ -23,6 +24,7 @@ import react.dom.label
 import react.fc
 import react.router.useNavigate
 import react.router.useParams
+import react.useEffectOnce
 import react.useRef
 import react.useState
 
@@ -34,6 +36,10 @@ val changeEmailPage = fc<Props> {
     val history = History(useNavigate())
 
     val (parsedJwt, _) = useState(parseJwt(params["jwt"] ?: ""))
+
+    useEffectOnce {
+        setPageTitle("Change Email")
+    }
 
     div("login-form card border-dark") {
         div("card-header") {
