@@ -62,7 +62,7 @@ val playlistFeed = fc<Props> {
                     includeIfNotNull(curated, "curated"),
                     includeIfNotNull(verified, "verified")
                 ),
-                "playlists", row, searchParams, history
+                "playlists", row, searchParamsLocal, history
             )
         }
 
