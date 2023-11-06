@@ -10,6 +10,7 @@ import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.Playlist
 import io.beatmaps.api.PlaylistBatchRequest
 import io.beatmaps.common.jsonIgnoreUnknown
+import io.beatmaps.setPageTitle
 import io.beatmaps.util.hashRegex
 import kotlinx.browser.window
 import kotlinx.html.InputType
@@ -35,6 +36,7 @@ import react.dom.textarea
 import react.fc
 import react.router.useNavigate
 import react.router.useParams
+import react.useEffectOnce
 import react.useRef
 import react.useState
 
@@ -46,6 +48,10 @@ val multiAddPlaylist = fc<Props> {
 
     val history = History(useNavigate())
     val params = useParams()
+
+    useEffectOnce {
+        setPageTitle("Playlist - Multi-Add")
+    }
 
     fun doAdd(queue: List<List<String>>) {
         if (queue.isEmpty()) {

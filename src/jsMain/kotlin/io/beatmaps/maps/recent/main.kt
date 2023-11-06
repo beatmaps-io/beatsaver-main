@@ -8,6 +8,7 @@ import io.beatmaps.api.MapVersion
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
 import io.beatmaps.index.modalContext
+import io.beatmaps.setPageTitle
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -30,6 +31,7 @@ class RecentTestplays : RComponent<Props, RecentTestplaysState>() {
     private val modalRef = createRef<ModalComponent>()
 
     override fun componentDidMount() {
+        setPageTitle("Testplays")
         loadNextPage()
     }
 
