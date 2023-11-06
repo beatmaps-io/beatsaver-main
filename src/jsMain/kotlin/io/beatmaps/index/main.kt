@@ -169,7 +169,7 @@ val homePage = fc<Props> {
         }
 
         if (userData != null) {
-            div("position-absolute btn-group") {
+            div("position-fixed btn-group") {
                 attrs.jsStyle {
                     position = "absolute"
                     right = "10px"
