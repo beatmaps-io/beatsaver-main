@@ -39,22 +39,24 @@ external interface ScoreTableProps : Props {
 
 val scoreTable = fc<ScoreTableProps> { props ->
     val (uid, setUid) = useState<String?>(null)
-    val (scroll, setScroll) = useState(0.0)
     val (loading, setLoading) = useState(false)
     val (page, setPage) = useState(1)
-    val (token, setToken) = useState<CancelTokenSource?>(null)
     val (scores, setScores) = useState(listOf<LeaderboardScore>())
 
     val myRef = useRef<HTMLElement>()
 
-    val loadNextPage = {
+    val scroll = useRef(0.0)
+    val tokenRef = useRef<CancelTokenSource>(Axios.CancelToken.source())
+    val loadNextPageRef = useRef<() -> Unit>()
+
+    loadNextPageRef.current = {
         if (!loading) {
             setLoading(true)
 
             Axios.get<LeaderboardData>(
                 "${Config.apibase}/scores/${props.mapKey}/$page?difficulty=${props.selected?.difficulty?.idx ?: 9}" +
                     "&gameMode=${props.selected?.characteristic?.ordinal ?: 0}&type=${props.type}",
-                generateConfig<String, LeaderboardData>(token?.token)
+                generateConfig<String, LeaderboardData>(tokenRef.current?.token)
             ).then {
                 val newScores = it.data
 
@@ -64,10 +66,9 @@ val scoreTable = fc<ScoreTableProps> { props ->
                     setPage(page + 1)
                     setUid(newScores.uid)
 
-                    myRef.current?.scrollTop = scroll
+                    myRef.current?.scrollTop = scroll.current ?: 0.0
                 } else if (newScores.valid) {
                     setUid(newScores.uid)
-                    setLoading(false)
                 }
             }.catch {
                 // Cancelled request
@@ -93,10 +94,10 @@ val scoreTable = fc<ScoreTableProps> { props ->
             val scrollTop = myRef.current?.scrollTop ?: 0.0
             val scrollHeight = myRef.current?.scrollHeight ?: 0
 
-            setScroll(scrollTop)
+            scroll.current = scrollTop
 
             if (scrollHeight - (scrollTop + clientHeight) < trigger) {
-                loadNextPage()
+                loadNextPageRef.current?.invoke()
             }
         }
     }
@@ -108,20 +109,23 @@ val scoreTable = fc<ScoreTableProps> { props ->
         }
     }
 
-    useEffect(token, page) {
+    useEffect(page) {
         // Always load at least 2 pages
-        if (token != null && page < 3) loadNextPage()
+        if (page < 3) loadNextPageRef.current?.invoke()
     }
 
     useEffect(props.selected, props.type) {
-        token?.cancel("Another request started")
+        tokenRef.current = Axios.CancelToken.source()
 
         setScores(listOf())
+        scroll.current = 0.0
         setLoading(false)
-        setScroll(0.0)
         setUid(null)
         setPage(1)
-        setToken(Axios.CancelToken.source())
+
+        cleanup {
+            tokenRef.current?.cancel("Another request started")
+        }
     }
 
     div("scores col-lg-8") {
