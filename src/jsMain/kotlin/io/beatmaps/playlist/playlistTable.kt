@@ -44,7 +44,7 @@ val playlistTable = fc<PlaylistTableProps> { props ->
 
     val resultsTable = useRef<HTMLElement>()
 
-    useDidUpdateEffect(props.userId, useObjectMemoize(props.search)) {
+    useDidUpdateEffect(props.userId, props.search) {
         setResultsKey(Any())
     }
 

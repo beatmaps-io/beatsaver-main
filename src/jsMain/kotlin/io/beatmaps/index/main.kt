@@ -8,6 +8,7 @@ import io.beatmaps.common.toQuery
 import io.beatmaps.common.toTagSet
 import io.beatmaps.dateFormat
 import io.beatmaps.globalContext
+import io.beatmaps.playlist.PlaylistSearchParams
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.search.ExtraContentRenderer
 import io.beatmaps.shared.search.FilterCategory
@@ -79,8 +80,8 @@ val homePage = fc<Props> {
         setPageTitle("Home")
     }
 
-    val (searchParams, setSearchParams) = useState(fromURL())
     val (tags, setTags) = useState<MapTagSet?>(null)
+    val (searchParams, setSearchParams) = useState(fromURL())
 
     val modalRef = useRef<ModalComponent>()
     val history = History(useNavigate())
@@ -115,7 +116,8 @@ val homePage = fc<Props> {
     }
 
     useEffect(location.search) {
-        setSearchParams(fromURL())
+        val newParams = fromURL()
+        if (newParams != searchParams) setSearchParams(newParams)
     }
 
     modal {

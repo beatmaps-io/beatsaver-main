@@ -72,7 +72,7 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
 
     val history = History(useNavigate())
 
-    useDidUpdateEffect(props.user, props.wip, props.curated, useObjectMemoize(props.search)) {
+    useDidUpdateEffect(props.user, props.wip, props.curated, props.search) {
         setUser(null)
         setResultsKey(Any())
     }
