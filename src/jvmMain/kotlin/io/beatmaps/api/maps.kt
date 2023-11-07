@@ -13,6 +13,7 @@ import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
@@ -444,7 +445,7 @@ fun Route.mapDetailRoute() {
                     Playlist.joinMaps {
                         PlaylistMap.mapId eq mapId.toInt(16)
                     }.select {
-                        Playlist.owner eq it.userId and Playlist.deletedAt.isNull()
+                        Playlist.owner eq it.userId and Playlist.deletedAt.isNull() and (Playlist.type neq EPlaylistType.Search)
                     }.orderBy(Playlist.createdAt, SortOrder.DESC).map { row ->
                         PlaylistDao.wrapRow(row) to (row.getOrNull(PlaylistMap.id) != null)
                     }
