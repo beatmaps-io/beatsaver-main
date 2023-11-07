@@ -6,7 +6,6 @@ import kotlinx.browser.window
 import kotlinx.dom.addClass
 import kotlinx.dom.removeClass
 import kotlinx.html.ButtonType
-import kotlinx.html.DIV
 import kotlinx.html.hidden
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLDivElement
@@ -18,7 +17,6 @@ import react.RefObject
 import react.State
 import react.createContext
 import react.createRef
-import react.dom.RDOMBuilder
 import react.dom.button
 import react.dom.div
 import react.dom.h5
@@ -31,7 +29,7 @@ external interface ModalState : State {
 
 val modalContext = createContext<RefObject<ModalComponent>?>(null)
 
-data class ModalData(val titleText: String, val bodyText: String = "", val buttons: List<ModalButton>, val large: Boolean = false, val bodyCallback: (RDOMBuilder<DIV>.(HTMLDivElement?) -> Unit)? = null)
+data class ModalData(val titleText: String, val bodyText: String = "", val buttons: List<ModalButton>, val large: Boolean = false, val bodyCallback: (RBuilder.(HTMLDivElement?) -> Unit)? = null)
 data class ModalButton(val text: String, val color: String = "secondary", val callback: () -> Unit = {})
 
 class ModalComponent : RComponent<Props, ModalState>() {
@@ -84,6 +82,10 @@ class ModalComponent : RComponent<Props, ModalState>() {
                     {
                         md.hidden = true
                         bd.hidden = true
+
+                        setState {
+                            modal = null
+                        }
                     },
                     200
                 )
