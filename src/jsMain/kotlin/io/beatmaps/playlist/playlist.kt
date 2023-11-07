@@ -5,6 +5,7 @@ import external.DragAndDrop.DragDropContext
 import external.draggable
 import external.droppable
 import external.generateConfig
+import external.invoke
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
@@ -28,6 +29,7 @@ import io.beatmaps.util.useAudio
 import kotlinx.html.classes
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
+import kotlinx.serialization.SerializationException
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.xhr.FormData
 import react.Props
@@ -42,15 +44,16 @@ import react.ref
 import react.router.useNavigate
 import react.router.useParams
 import react.useContext
+import react.useEffect
 import react.useEffectOnce
 import react.useRef
 import react.useState
 import kotlin.math.ceil
 
 val playlistPage = fc<Props> {
-    val (loading, setLoading) = useState(false)
     val (playlist, setPlaylist) = useState<PlaylistFull?>(null)
     val (maps, setMaps) = useState(listOf<MapDetailWithOrder>())
+    val tokenRef = useRef(Axios.CancelToken.source())
 
     val modalRef = useRef<ModalComponent>()
     val reasonRef = useRef<HTMLTextAreaElement>()
@@ -63,26 +66,24 @@ val playlistPage = fc<Props> {
     val params = useParams()
     val id = params["id"]
 
-    fun loadPage(page: Int? = 0) {
-        if (loading) return
-        setLoading(true)
-
+    fun loadPage(mapsLocal: List<MapDetailWithOrder> = listOf(), page: Int? = 0) {
         Axios.get<PlaylistPage>(
             "${Config.apibase}/playlists/id/$id/$page",
-            generateConfig<String, PlaylistPage>()
+            generateConfig<String, PlaylistPage>(tokenRef.current?.token)
         ).then {
             setPageTitle("Playlist - ${it.data.playlist?.name}")
-            setLoading(false)
             setPlaylist(it.data.playlist)
-            it.data.maps?.let { newMaps ->
-                setMaps(maps.plus(newMaps).sortedBy { m -> m.order })
-            }
+            val newMaps = mapsLocal.plus(it.data.maps ?: listOf())
+            setMaps(newMaps.sortedBy { m -> m.order })
 
             if ((it.data.maps?.size ?: 0) >= itemsPerPage) {
-                loadPage((page ?: 0) + 1)
+                loadPage(newMaps, (page ?: 0) + 1)
             }
         }.catch {
-            history.push("/")
+            when (it) {
+                is SerializationException -> history.push("/")
+                else -> {} // Ignore
+            }
         }
     }
 
@@ -129,8 +130,6 @@ val playlistPage = fc<Props> {
     }
 
     fun delete() {
-        setLoading(true)
-
         val data = FormData()
         data.append("deleted", "true")
         data.append("reason", reasonRef.current?.value ?: "")
@@ -141,11 +140,9 @@ val playlistPage = fc<Props> {
         ).then { r ->
             if (r.status == 200) {
                 history.push(playlist?.owner?.profileLink("playlists") ?: "/")
-            } else {
-                setLoading(false)
             }
         }.catch {
-            setLoading(false)
+            // Do nothing
         }
     }
 
@@ -157,8 +154,19 @@ val playlistPage = fc<Props> {
 
     useEffectOnce {
         setPageTitle("Playlist")
+    }
 
-        loadPage()
+    useEffect(params) {
+        tokenRef.current = Axios.CancelToken.source()
+        setPlaylist(null)
+        setMaps(listOf())
+        cleanup {
+            tokenRef.current?.cancel("Another request started")
+        }
+    }
+
+    useEffect(playlist) {
+        if (playlist == null) loadPage()
     }
 
     modal {
