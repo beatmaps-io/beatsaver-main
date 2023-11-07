@@ -19,7 +19,6 @@ import io.beatmaps.util.encodeURIComponent
 import io.beatmaps.util.hashRegex
 import io.beatmaps.util.useAudio
 import io.beatmaps.util.useDidUpdateEffect
-import io.beatmaps.util.useObjectMemoize
 import kotlinx.browser.window
 import kotlinx.datetime.Instant
 import org.w3c.dom.HTMLElement

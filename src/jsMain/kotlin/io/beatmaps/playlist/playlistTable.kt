@@ -12,7 +12,6 @@ import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.search.CommonParams
 import io.beatmaps.util.encodeURIComponent
 import io.beatmaps.util.useDidUpdateEffect
-import io.beatmaps.util.useObjectMemoize
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div

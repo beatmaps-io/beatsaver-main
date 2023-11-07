@@ -8,7 +8,6 @@ import io.beatmaps.common.toQuery
 import io.beatmaps.common.toTagSet
 import io.beatmaps.dateFormat
 import io.beatmaps.globalContext
-import io.beatmaps.playlist.PlaylistSearchParams
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.search.ExtraContentRenderer
 import io.beatmaps.shared.search.FilterCategory
