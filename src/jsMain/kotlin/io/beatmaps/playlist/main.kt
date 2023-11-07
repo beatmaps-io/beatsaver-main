@@ -49,7 +49,8 @@ val playlistFeed = fc<Props> {
     val (searchParams, setSearchParams) = useState(fromURL())
 
     useEffect(location) {
-        setSearchParams(fromURL())
+        val newParams = fromURL()
+        if (newParams != searchParams) setSearchParams(newParams)
     }
 
     fun updateSearchParams(searchParamsLocal: PlaylistSearchParams?, row: Int?) {

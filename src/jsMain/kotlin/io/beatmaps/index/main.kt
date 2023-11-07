@@ -79,8 +79,8 @@ val homePage = fc<Props> {
         setPageTitle("Home")
     }
 
-    val (searchParams, setSearchParams) = useState(fromURL())
     val (tags, setTags) = useState<MapTagSet?>(null)
+    val (searchParams, setSearchParams) = useState(fromURL())
 
     val modalRef = useRef<ModalComponent>()
     val history = History(useNavigate())
@@ -115,7 +115,8 @@ val homePage = fc<Props> {
     }
 
     useEffect(location.search) {
-        setSearchParams(fromURL())
+        val newParams = fromURL()
+        if (newParams != searchParams) setSearchParams(newParams)
     }
 
     modal {

@@ -12,7 +12,6 @@ import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.search.CommonParams
 import io.beatmaps.util.encodeURIComponent
 import io.beatmaps.util.useDidUpdateEffect
-import io.beatmaps.util.useObjectMemoize
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
@@ -44,7 +43,7 @@ val playlistTable = fc<PlaylistTableProps> { props ->
 
     val resultsTable = useRef<HTMLElement>()
 
-    useDidUpdateEffect(props.userId, useObjectMemoize(props.search)) {
+    useDidUpdateEffect(props.userId, props.search) {
         setResultsKey(Any())
     }
 

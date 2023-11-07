@@ -19,7 +19,6 @@ import io.beatmaps.util.encodeURIComponent
 import io.beatmaps.util.hashRegex
 import io.beatmaps.util.useAudio
 import io.beatmaps.util.useDidUpdateEffect
-import io.beatmaps.util.useObjectMemoize
 import kotlinx.browser.window
 import kotlinx.datetime.Instant
 import org.w3c.dom.HTMLElement
@@ -72,7 +71,7 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
 
     val history = History(useNavigate())
 
-    useDidUpdateEffect(props.user, props.wip, props.curated, useObjectMemoize(props.search)) {
+    useDidUpdateEffect(props.user, props.wip, props.curated, props.search) {
         setUser(null)
         setResultsKey(Any())
     }
