@@ -160,6 +160,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                         if (s == null) {
                             li("nav-item") {
                                 a("/login", classes = "nav-link auto-router") {
+                                    id = "login"
                                     +"Login"
                                 }
                             }

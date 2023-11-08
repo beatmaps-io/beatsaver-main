@@ -12,6 +12,7 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
+import kotlinx.html.id
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.Props
@@ -93,6 +94,7 @@ val signupPage = fc<Props> {
                 input(type = InputType.text, classes = "form-control") {
                     key = "username"
                     ref = usernameRef
+                    attrs.id = "username"
                     attrs.placeholder = "Username"
                     attrs.required = true
                     attrs.autoFocus = true
@@ -103,6 +105,7 @@ val signupPage = fc<Props> {
                 input(type = InputType.email, classes = "form-control mb-3") {
                     key = "email"
                     ref = emailRef
+                    attrs.id = "email"
                     attrs.name = "email"
                     attrs.placeholder = "Email"
                     attrs.required = true
@@ -110,6 +113,7 @@ val signupPage = fc<Props> {
                 input(type = InputType.password, classes = "form-control") {
                     key = "password"
                     ref = passwordRef
+                    attrs.id = "password"
                     attrs.placeholder = "Password"
                     attrs.required = true
                     attrs.attributes["autocomplete"] = "new-password"
@@ -117,6 +121,7 @@ val signupPage = fc<Props> {
                 input(type = InputType.password, classes = "form-control") {
                     key = "password2"
                     ref = password2Ref
+                    attrs.id = "password2"
                     attrs.placeholder = "Repeat Password"
                     attrs.required = true
                     attrs.attributes["autocomplete"] = "new-password"

@@ -56,7 +56,7 @@ val loginPage = fc<Props> {
             }
             hr {}
             div("d-grid") {
-                routeLink("/register", className = "btn btn-primary") {
+                routeLink("/register", className = "btn btn-primary", id = "register") {
                     i("fas fa-user-plus") {}
                     +" Sign up new account"
                 }

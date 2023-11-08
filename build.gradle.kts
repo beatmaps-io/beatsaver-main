@@ -157,6 +157,8 @@ kotlin {
                 implementation(kotlin("test-junit"))
 
                 implementation("io.ktor:ktor-server-test-host:$ktorVersion")
+                implementation("com.microsoft.playwright:playwright:1.39.0")
+                implementation("com.appmattus.fixture:fixture:1.2.0")
             }
         }
         val jsMain by getting {
