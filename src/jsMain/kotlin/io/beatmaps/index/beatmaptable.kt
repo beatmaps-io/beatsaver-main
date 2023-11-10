@@ -98,27 +98,27 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
             "${Config.apibase}/search/text/$page?sortOrder=Curated&curator=${props.user}&automapper=true"
         } else if (props.user != null) {
             "${Config.apibase}/maps/collaborations/${props.user}?" +
-                (minTimeRef.current?.let { "&before=$it" } ?: "")
+                    (minTimeRef.current?.let { "&before=$it" } ?: "")
         } else {
             props.search?.let { search ->
                 val tagStr = search.tags.toQuery()
 
                 "${Config.apibase}/search/text/$page?sortOrder=${search.sortOrder}" +
-                    (if (search.automapper != null) "&automapper=${search.automapper}" else "") +
-                    (if (search.chroma != null) "&chroma=${search.chroma}" else "") +
-                    (if (search.noodle != null) "&noodle=${search.noodle}" else "") +
-                    (if (search.me != null) "&me=${search.me}" else "") +
-                    (if (search.cinema != null) "&cinema=${search.cinema}" else "") +
-                    (if (search.ranked != null) "&ranked=${search.ranked}" else "") +
-                    (if (search.curated != null) "&curated=${search.curated}" else "") +
-                    (if (search.verified != null) "&verified=${search.verified}" else "") +
-                    (if (search.fullSpread != null) "&fullSpread=${search.fullSpread}" else "") +
-                    (if (search.search.isNotBlank()) "&q=${encodeURIComponent(search.search)}" else "") +
-                    (if (search.maxNps != null) "&maxNps=${search.maxNps}" else "") +
-                    (if (search.minNps != null) "&minNps=${search.minNps}" else "") +
-                    (if (search.from != null) "&from=${search.from}" else "") +
-                    (if (search.to != null) "&to=${search.to}" else "") +
-                    (if (tagStr.isNotEmpty()) "&tags=$tagStr" else "")
+                        (if (search.automapper != null) "&automapper=${search.automapper}" else "") +
+                        (if (search.chroma != null) "&chroma=${search.chroma}" else "") +
+                        (if (search.noodle != null) "&noodle=${search.noodle}" else "") +
+                        (if (search.me != null) "&me=${search.me}" else "") +
+                        (if (search.cinema != null) "&cinema=${search.cinema}" else "") +
+                        (if (search.ranked != null) "&ranked=${search.ranked}" else "") +
+                        (if (search.curated != null) "&curated=${search.curated}" else "") +
+                        (if (search.verified != null) "&verified=${search.verified}" else "") +
+                        (if (search.fullSpread != null) "&fullSpread=${search.fullSpread}" else "") +
+                        (if (search.search.isNotBlank()) "&q=${encodeURIComponent(search.search)}" else "") +
+                        (if (search.maxNps != null) "&maxNps=${search.maxNps}" else "") +
+                        (if (search.minNps != null) "&minNps=${search.minNps}" else "") +
+                        (if (search.from != null) "&from=${search.from}" else "") +
+                        (if (search.to != null) "&to=${search.to}" else "") +
+                        (if (tagStr.isNotEmpty()) "&tags=$tagStr" else "")
             } ?: ""
         }
 
@@ -188,7 +188,7 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
                     beatmapInfo {
                         obj = it
                         version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
-                        this.audio = audio.current
+                        this.audio = audio
                     }
                 }
                 attrs.updateScrollIndex = props.updateScrollIndex

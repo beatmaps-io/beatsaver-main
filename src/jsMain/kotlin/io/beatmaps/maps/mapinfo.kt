@@ -19,10 +19,12 @@ import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.modalContext
 import io.beatmaps.playlist.addToPlaylist
+import io.beatmaps.shared.audioPreview
 import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.map.bookmarkButton
 import io.beatmaps.shared.map.links
 import io.beatmaps.util.textToContent
+import io.beatmaps.util.useAudio
 import kotlinx.browser.window
 import kotlinx.html.InputType
 import kotlinx.html.id
@@ -36,7 +38,6 @@ import react.dom.a
 import react.dom.button
 import react.dom.div
 import react.dom.i
-import react.dom.img
 import react.dom.input
 import react.dom.p
 import react.dom.textarea
@@ -57,6 +58,7 @@ val mapInfo = fc<MapInfoProps> { props ->
     val inputRef = useRef<HTMLInputElement>()
     val textareaRef = useRef<HTMLTextAreaElement>()
     val reasonRef = useRef<HTMLTextAreaElement>()
+    val audio = useAudio()
 
     val (tags, setTags) = useState(props.mapInfo.tags.toSet())
     val (loading, setLoading) = useState(false)
@@ -270,9 +272,10 @@ val mapInfo = fc<MapInfoProps> { props ->
             }
         }
         div("card-body mapinfo") {
-            img("Cover Image", props.mapInfo.mainVersion()?.coverURL) {
-                attrs.width = "200"
-                attrs.height = "200"
+            audioPreview { 
+                version = props.mapInfo.mainVersion()
+                size = "200"
+                this.audio = audio
             }
             div("card-text clearfix") {
                 if (editing) {

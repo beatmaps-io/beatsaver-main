@@ -8,10 +8,10 @@ fun useAudio() = useRef(
     Audio().also {
         it.volume = 0.4
     }
-).also { audio ->
+).also {
     useEffectOnce {
         cleanup {
-            audio.current?.pause()
+            it.current?.pause()
         }
     }
 }

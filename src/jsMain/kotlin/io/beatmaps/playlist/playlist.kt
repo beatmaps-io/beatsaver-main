@@ -318,7 +318,7 @@ val playlistPage = fc<Props> {
                                     beatmapInfo {
                                         obj = it.map
                                         version = it.map.publishedVersion()
-                                        this.audio = audio.current
+                                        this.audio = audio
                                     }
                                 }
                             }
@@ -330,7 +330,7 @@ val playlistPage = fc<Props> {
                             beatmapInfo {
                                 obj = it.map
                                 version = it.map.publishedVersion()
-                                this.audio = audio.current
+                                this.audio = audio
                             }
                         }
                     }
