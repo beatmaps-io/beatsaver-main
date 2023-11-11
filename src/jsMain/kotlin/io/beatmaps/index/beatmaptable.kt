@@ -188,7 +188,7 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
                     beatmapInfo {
                         obj = it
                         version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
-                        this.audio = audio.current
+                        this.audio = audio
                     }
                 }
                 attrs.updateScrollIndex = props.updateScrollIndex

@@ -1666,6 +1666,20 @@ small.alert-count {
       display: none;
     }
   }
+
+  &.large {
+    width: 200px;
+    height: 200px;
+
+    i {
+      margin-top: 89px;
+    }
+
+    .pie {
+      left: 75px !important;
+      top: 75px !important;
+    }
+  }
 }
 
 .btn-close {
