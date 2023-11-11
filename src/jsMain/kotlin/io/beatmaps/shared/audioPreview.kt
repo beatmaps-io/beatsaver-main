@@ -96,7 +96,7 @@ class AudioPreview : RComponent<AudioPreviewProps, AudioPreviewState>() {
     }
 
     override fun RBuilder.render() {
-        div("audio-progress" + if(props.size == AudioPreviewSize.Large) " large" else "") {
+        div("audio-progress" + if (props.size == AudioPreviewSize.Large) " large" else "") {
             attrs.onClickFunction = toggleAudio
             ref = audioContainerRef
             i("fas fa-play") { }

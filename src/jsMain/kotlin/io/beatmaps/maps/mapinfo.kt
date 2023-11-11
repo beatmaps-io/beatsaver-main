@@ -273,7 +273,7 @@ val mapInfo = fc<MapInfoProps> { props ->
             }
         }
         div("card-body mapinfo") {
-            audioPreview { 
+            audioPreview {
                 version = props.mapInfo.mainVersion()
                 size = AudioPreviewSize.Large
                 this.audio = audio
