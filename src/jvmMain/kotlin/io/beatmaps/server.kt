@@ -109,6 +109,7 @@ import java.io.File
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.util.logging.Logger
+import javax.sql.DataSource
 import kotlin.time.Duration.Companion.nanoseconds
 
 suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) =
@@ -150,16 +151,18 @@ fun main() {
     setupLogging()
     setupDB(app = "BeatSaver Main").let { ds ->
         val type = DbMigrationType.fromEnv
-        if (type != DbMigrationType.None) {
-            Flyway.configure()
-                .dataSource(ds)
-                .locations(type.folder)
-                .load()
-                .migrate()
-        }
+        if (type != DbMigrationType.None) migrateDB(ds, type)
     }
 
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::beatmapsio).start(wait = true)
+}
+
+fun migrateDB(ds: DataSource, type: DbMigrationType) {
+    Flyway.configure()
+        .dataSource(ds)
+        .locations(type.folder)
+        .load()
+        .migrate()
 }
 
 fun Application.beatmapsio() {

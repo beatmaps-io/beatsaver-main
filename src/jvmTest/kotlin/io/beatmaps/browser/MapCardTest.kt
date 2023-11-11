@@ -10,6 +10,7 @@ import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.Test
+import java.lang.Integer.toHexString
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
@@ -97,6 +98,52 @@ class MapCardTest : BrowserTestBase() {
 
                     bookmark.click()
                     assertEquals(0, countBookmarks())
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `Can copy bsr code from search`() = testSuspend {
+        bmTest {
+            val (username, mapId) = transaction {
+                val (userId, username) = createUser()
+                val (mapId, _) = createMap(userId)
+
+                username to mapId
+            }
+
+            navigate("/")
+            homePage {
+                search("mapper:$username")
+
+                getMap(0) {
+                    bsr.click()
+                }
+            }
+
+            val bsr = clipboard()
+            assertEquals("!bsr ${toHexString(mapId)}", bsr)
+        }
+    }
+
+    @Test
+    fun `Has correct download links in search`() = testSuspend {
+        bmTest {
+            val (username, mapId, hash) = transaction {
+                val (userId, username) = createUser()
+                val (mapId, hash) = createMap(userId)
+
+                Triple(username, mapId, hash)
+            }
+
+            navigate("/")
+            homePage {
+                search("mapper:$username")
+
+                getMap(0) {
+                    assertEquals("beatsaver://${toHexString(mapId)}", oneClick.getAttribute("href"))
+                    assertEquals("https://beatsaver.com/cdn/$hash.zip", download.getAttribute("href"))
                 }
             }
         }

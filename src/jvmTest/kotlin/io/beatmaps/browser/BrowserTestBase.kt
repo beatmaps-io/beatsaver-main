@@ -4,9 +4,14 @@ import com.microsoft.playwright.Browser
 import com.microsoft.playwright.BrowserType
 import com.microsoft.playwright.Playwright
 import com.microsoft.playwright.Route
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
+import io.beatmaps.DbMigrationType
 import io.beatmaps.beatmapsio
+import io.beatmaps.common.db.BMPGDialect
 import io.beatmaps.common.db.setupDB
 import io.beatmaps.login.Session
+import io.beatmaps.migrateDB
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -23,6 +28,8 @@ import io.ktor.server.sessions.set
 import io.ktor.server.testing.TestApplication
 import io.ktor.util.toMap
 import kotlinx.coroutines.runBlocking
+import org.flywaydb.core.Flyway
+import org.jetbrains.exposed.sql.Database
 import org.junit.AfterClass
 import org.junit.BeforeClass
 
@@ -30,10 +37,12 @@ abstract class BrowserTestBase {
     private val testHost = "https://dev.beatsaver.com"
 
     protected suspend fun bmTest(block: suspend BrowserDsl.() -> Unit) {
-        val page = browser.newPage(
-            Browser.NewPageOptions()
+        val context = browser.newContext(
+            Browser.NewContextOptions()
                 .setViewportSize(1920, 919)
+                .setPermissions(listOf("clipboard-read"))
         )
+        val page = context.newPage()
         page.route("$testHost/**", routeViaClient(client))
         block(BrowserDsl(testHost, client, page))
         page.close()
@@ -74,10 +83,13 @@ abstract class BrowserTestBase {
     companion object {
         @JvmStatic
         private lateinit var playwright: Playwright
+
         @JvmStatic
         protected lateinit var browser: Browser
+
         @JvmStatic
         protected lateinit var testApp: TestApplication
+
         @JvmStatic
         protected lateinit var client: HttpClient
 
@@ -87,12 +99,14 @@ abstract class BrowserTestBase {
         @BeforeClass
         fun launchBrowser() {
             testApp = TestApplication {
-                setupDB(app = "BeatSaver Tests")
+                val ds = setupDB(app = "BeatSaver Tests")
+                migrateDB(ds, DbMigrationType.Test)
 
                 application {
                     beatmapsio()
                 }
 
+                // Extra routes to support tests
                 routing {
                     get("/login-test/{id?}") {
                         val id = call.parameters["id"]?.toIntOrNull() ?: 1
@@ -107,7 +121,10 @@ abstract class BrowserTestBase {
                 install(HttpCookies)
             }
             playwright = Playwright.create()
-            browser = playwright.chromium().launch(BrowserType.LaunchOptions().setHeadless(headless))
+            browser = playwright.chromium().launch(
+                BrowserType.LaunchOptions()
+                    .setHeadless(headless)
+            )
         }
 
         @JvmStatic
