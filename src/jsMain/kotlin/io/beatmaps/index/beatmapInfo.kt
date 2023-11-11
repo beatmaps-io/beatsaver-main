@@ -11,6 +11,7 @@ import io.beatmaps.common.fixed
 import io.beatmaps.common.formatTime
 import io.beatmaps.globalContext
 import io.beatmaps.playlist.addToPlaylist
+import io.beatmaps.shared.AudioPreviewSize
 import io.beatmaps.shared.audioPreview
 import io.beatmaps.shared.coloredCard
 import io.beatmaps.shared.map.bookmarkButton
@@ -67,7 +68,7 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
                     div {
                         audioPreview {
                             version = props.version
-                            size = "100"
+                            size = AudioPreviewSize.Small
                             audio = props.audio
                         }
                         rating {

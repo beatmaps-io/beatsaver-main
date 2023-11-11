@@ -1605,12 +1605,11 @@ small.alert-count {
 .audio-progress {
   background: rgba(0, 0, 0, 0);
   position: absolute;
+  width: 100px;
+  height: 100px;
   z-index: 10;
   transition: background-color 0.2s;
   cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 
   &.playing, &:hover {
     background: rgba(0, 0, 0, 0.6);
@@ -1634,6 +1633,9 @@ small.alert-count {
 
   i {
     transition: opacity 0.2s;
+    width: 100%;
+    margin-top: 39px;
+    text-align: center;
     color: #DDD;
     opacity: 0;
     font-size: 22px;
@@ -1662,6 +1664,20 @@ small.alert-count {
 
     .right-side {
       display: none;
+    }
+  }
+
+  &.large {
+    width: 200px;
+    height: 200px;
+
+    i {
+      margin-top: 89px;
+    }
+
+    .pie {
+      left: 75px !important;
+      top: 75px !important;
     }
   }
 }

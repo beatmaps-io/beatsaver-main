@@ -15,12 +15,16 @@ import react.createRef
 import react.dom.div
 import react.dom.i
 import react.dom.img
-import react.dom.jsStyle
 import react.setState
+
+enum class AudioPreviewSize(val size: String) {
+    Small("100"),
+    Large("200")
+}
 
 external interface AudioPreviewProps : Props {
     var version: MapVersion?
-    var size: String
+    var size: AudioPreviewSize
     var audio: RefObject<Audio>
 }
 
@@ -92,9 +96,7 @@ class AudioPreview : RComponent<AudioPreviewProps, AudioPreviewState>() {
     }
 
     override fun RBuilder.render() {
-        div("audio-progress") {
-            attrs.jsStyle["height"] = props.size + "px"
-            attrs.jsStyle["width"] = props.size + "px"
+        div("audio-progress" + if(props.size == AudioPreviewSize.Large) " large" else "") {
             attrs.onClickFunction = toggleAudio
             ref = audioContainerRef
             i("fas fa-play") { }
@@ -109,8 +111,8 @@ class AudioPreview : RComponent<AudioPreviewProps, AudioPreviewState>() {
             }
         }
         img(src = props.version?.coverURL, alt = "Cover Image", classes = "cover") {
-            attrs.width = props.size
-            attrs.height = props.size
+            attrs.width = props.size.size
+            attrs.height = props.size.size
         }
     }
 }

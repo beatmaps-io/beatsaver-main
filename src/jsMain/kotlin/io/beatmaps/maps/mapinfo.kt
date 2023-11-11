@@ -19,6 +19,7 @@ import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.modalContext
 import io.beatmaps.playlist.addToPlaylist
+import io.beatmaps.shared.AudioPreviewSize
 import io.beatmaps.shared.audioPreview
 import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.map.bookmarkButton
@@ -274,7 +275,7 @@ val mapInfo = fc<MapInfoProps> { props ->
         div("card-body mapinfo") {
             audioPreview { 
                 version = props.mapInfo.mainVersion()
-                size = "200"
+                size = AudioPreviewSize.Large
                 this.audio = audio
             }
             div("card-text clearfix") {
