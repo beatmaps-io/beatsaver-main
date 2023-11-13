@@ -1,6 +1,7 @@
 package io.beatmaps.browser.util
 
 import com.appmattus.kotlinfixture.kotlinFixture
+import io.beatmaps.api.LeaderboardScore
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.api.ECharacteristic
@@ -17,7 +18,11 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.random.Random
 
 abstract class FixtureHelpers {
-    val fixture = kotlinFixture()
+    val fixture = kotlinFixture {
+        property(LeaderboardScore::mods) {
+            listOf("NF")
+        }
+    }
 
     fun createUser(): Pair<Int, String> {
         val now = Clock.System.now().epochSeconds
