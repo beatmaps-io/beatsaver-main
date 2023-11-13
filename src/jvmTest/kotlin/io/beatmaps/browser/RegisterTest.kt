@@ -9,7 +9,6 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.Ignore
 import org.junit.Test
-import java.util.UUID
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -56,21 +55,19 @@ class RegisterTest : BrowserTestBase() {
     @Test
     @Ignore
     fun takeScreenshots() = testSuspend {
-        val screenshotPrefix = UUID.randomUUID().toString()
-
         bmTest {
             navigate("/")
-            screenshot(screenshotPrefix)
+            screenshot("home")
             homePage {
                 getMap(0) {
                     mapPageLink.click()
                 }
             }
-            screenshot(screenshotPrefix)
+            screenshot("map")
             pageHeader {
                 login.click()
             }
-            screenshot(screenshotPrefix)
+            screenshot("login")
         }
     }
 }

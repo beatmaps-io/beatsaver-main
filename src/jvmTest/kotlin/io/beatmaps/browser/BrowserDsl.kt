@@ -11,8 +11,6 @@ import io.beatmaps.browser.page.RegisterPage
 import io.beatmaps.browser.util.FixtureHelpers
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
-import kotlinx.datetime.Clock
-import java.nio.file.Paths
 
 class BrowserDsl(private val testHost: String, private val client: HttpClient, private val page: Page) : FixtureHelpers() {
     fun navigate(url: String) {
@@ -38,9 +36,10 @@ class BrowserDsl(private val testHost: String, private val client: HttpClient, p
         page.waitForTimeout(t)
     }
 
-    fun screenshot(prefix: String) {
-        val time = Clock.System.now().toEpochMilliseconds()
-        page.screenshot(Page.ScreenshotOptions().setPath(Paths.get("screenshots/$prefix-$time.png")))
+    fun screenshot(name: String) {
+        /*val css = client.get("/static/main.css").bodyAsText()
+        private val percy = Percy(page)
+        percy.snapshot(name, percyCSS = css)*/
     }
 
     val modals = Modals(page)

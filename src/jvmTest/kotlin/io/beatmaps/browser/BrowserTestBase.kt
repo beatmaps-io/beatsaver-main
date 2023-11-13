@@ -4,11 +4,8 @@ import com.microsoft.playwright.Browser
 import com.microsoft.playwright.BrowserType
 import com.microsoft.playwright.Playwright
 import com.microsoft.playwright.Route
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 import io.beatmaps.DbMigrationType
 import io.beatmaps.beatmapsio
-import io.beatmaps.common.db.BMPGDialect
 import io.beatmaps.common.db.setupDB
 import io.beatmaps.login.Session
 import io.beatmaps.migrateDB
@@ -28,8 +25,6 @@ import io.ktor.server.sessions.set
 import io.ktor.server.testing.TestApplication
 import io.ktor.util.toMap
 import kotlinx.coroutines.runBlocking
-import org.flywaydb.core.Flyway
-import org.jetbrains.exposed.sql.Database
 import org.junit.AfterClass
 import org.junit.BeforeClass
 
@@ -52,31 +47,27 @@ abstract class BrowserTestBase {
         runBlocking {
             val original = it.request().url()
 
-            if (original.startsWith(testHost)) {
-                val newUrl = original.substringAfter(testHost)
-                val response = when (it.request().method()) {
-                    "POST" -> client.post(newUrl) {
-                        setBody(it.request().postDataBuffer())
-                        it.request().headersArray().forEach {
-                            header(it.name, it.value)
-                        }
-                    }
-                    else -> client.get(newUrl) {
-                        it.request().headersArray().forEach {
-                            header(it.name, it.value)
-                        }
+            val newUrl = original.substringAfter(testHost)
+            val response = when (it.request().method()) {
+                "POST" -> client.post(newUrl) {
+                    setBody(it.request().postDataBuffer())
+                    it.request().headersArray().forEach {
+                        header(it.name, it.value)
                     }
                 }
-
-                it.fulfill(
-                    Route.FulfillOptions()
-                        .setStatus(response.status.value)
-                        .setBodyBytes(response.body())
-                        .setHeaders(response.headers.toMap().mapValues { it.value.first() })
-                )
-            } else {
-                it.resume()
+                else -> client.get(newUrl) {
+                    it.request().headersArray().forEach {
+                        header(it.name, it.value)
+                    }
+                }
             }
+
+            it.fulfill(
+                Route.FulfillOptions()
+                    .setStatus(response.status.value)
+                    .setBodyBytes(response.body())
+                    .setHeaders(response.headers.toMap().mapValues { it.value.first() })
+            )
         }
     }
 
