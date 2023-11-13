@@ -13,9 +13,11 @@ import io.beatmaps.common.fixedStr
 import kotlinx.browser.window
 import kotlinx.html.ThScope
 import kotlinx.html.js.onScrollFunction
+import kotlinx.js.jso
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 import react.Props
+import react.RefObject
 import react.dom.a
 import react.dom.div
 import react.dom.img
@@ -37,36 +39,56 @@ external interface ScoreTableProps : Props {
     var type: LeaderboardType
 }
 
+external interface ScoreTableRef {
+    var loading: Boolean
+    var page: Int
+    var scroll: Double
+    var token: CancelTokenSource
+}
+
+fun RefObject<ScoreTableRef>.update(block: ScoreTableRef.() -> Unit) = current?.let {
+    block(it)
+}
+
 val scoreTable = fc<ScoreTableProps> { props ->
     val (uid, setUid) = useState<String?>(null)
-    val (loading, setLoading) = useState(false)
-    val (page, setPage) = useState(1)
+    val state = useRef<ScoreTableRef>(jso())
     val (scores, setScores) = useState(listOf<LeaderboardScore>())
 
     val myRef = useRef<HTMLElement>()
+    val scoresRef = useRef(scores)
 
-    val scroll = useRef(0.0)
-    val tokenRef = useRef<CancelTokenSource>(Axios.CancelToken.source())
-    val loadNextPageRef = useRef<() -> Unit>()
+    useEffect(scores) {
+        scoresRef.current = scores
+    }
 
-    loadNextPageRef.current = {
-        if (!loading) {
-            setLoading(true)
+    fun loadNextPage() {
+        if (state.current?.loading != true) {
+            state.update {
+                loading = true
+            }
 
             Axios.get<LeaderboardData>(
-                "${Config.apibase}/scores/${props.mapKey}/$page?difficulty=${props.selected?.difficulty?.idx ?: 9}" +
+                "${Config.apibase}/scores/${props.mapKey}/${state.current?.page}?difficulty=${props.selected?.difficulty?.idx ?: 9}" +
                     "&gameMode=${props.selected?.characteristic?.ordinal ?: 0}&type=${props.type}",
-                generateConfig<String, LeaderboardData>(tokenRef.current?.token)
-            ).then {
-                val newScores = it.data
+                generateConfig<String, LeaderboardData>(state.current?.token?.token)
+            ).then { res ->
+                val newScores = res.data
 
                 if (newScores.scores.isNotEmpty()) {
-                    setScores(scores.plus(newScores.scores))
-                    setLoading(false)
-                    setPage(page + 1)
+                    state.update {
+                        loading = false
+                        page += 1
+                    }
+
+                    setScores((scoresRef.current ?: listOf()).plus(newScores.scores))
                     setUid(newScores.uid)
 
-                    myRef.current?.scrollTop = scroll.current ?: 0.0
+                    myRef.current?.scrollTop = state.current?.scroll ?: 0.0
+
+                    if (state.current?.let { s -> s.page < 3 } == true) {
+                        loadNextPage()
+                    }
                 } else if (newScores.valid) {
                     setUid(newScores.uid)
                 }
@@ -94,10 +116,12 @@ val scoreTable = fc<ScoreTableProps> { props ->
             val scrollTop = myRef.current?.scrollTop ?: 0.0
             val scrollHeight = myRef.current?.scrollHeight ?: 0
 
-            scroll.current = scrollTop
+            state.update {
+                scroll = scrollTop
+            }
 
             if (scrollHeight - (scrollTop + clientHeight) < trigger) {
-                loadNextPageRef.current?.invoke()
+                loadNextPage()
             }
         }
     }
@@ -109,22 +133,21 @@ val scoreTable = fc<ScoreTableProps> { props ->
         }
     }
 
-    useEffect(page) {
-        // Always load at least 2 pages
-        if (page < 3) loadNextPageRef.current?.invoke()
-    }
-
     useEffect(props.selected, props.type) {
-        tokenRef.current = Axios.CancelToken.source()
+        state.update {
+            token = Axios.CancelToken.source()
+            loading = false
+            scroll = 0.0
+            page = 1
+        }
 
         setScores(listOf())
-        scroll.current = 0.0
-        setLoading(false)
         setUid(null)
-        setPage(1)
+
+        loadNextPage()
 
         cleanup {
-            tokenRef.current?.cancel("Another request started")
+            state.current?.token?.cancel("Another request started")
         }
     }
 
