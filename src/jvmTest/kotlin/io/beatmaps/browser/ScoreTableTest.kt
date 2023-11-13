@@ -13,7 +13,7 @@ import kotlin.test.assertEquals
 
 class ScoreTableTest : BrowserTestBase() {
     @Test
-    fun `Can load scores`() = testSuspend {
+    fun `Can switch scoreboard after loading empty scores`() = testSuspend {
         bmTest {
             mock("/api/scores/**", LeaderboardData.serializer()) {
                 println("Requested scores ${it.url()}")
@@ -59,7 +59,7 @@ class ScoreTableTest : BrowserTestBase() {
 
                 // Switch to reviews
                 tabs.reviews.click()
-                reviews.header.waitFor()
+                waitUntilGone(scores.elem)
             }
         }
     }

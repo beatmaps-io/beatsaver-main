@@ -27,6 +27,6 @@ class MapPage(page: Page) : PageBase(page) {
     }
 
     class Reviews(element: Locator) : ElementBase(element) {
-        val header = element(":scope > card")
+        val header = element(":scope > .card")
     }
 }

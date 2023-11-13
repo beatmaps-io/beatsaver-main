@@ -12,7 +12,6 @@ abstract class PageBase(private val page: Page) : PlaywrightBase() {
     override fun element(selector: String): Locator = page.locator(selector)
 }
 
-abstract class ElementBase(private val elem: Locator) : PlaywrightBase() {
+abstract class ElementBase(val elem: Locator) : PlaywrightBase() {
     override fun element(selector: String): Locator = elem.locator(selector)
-    fun waitFor() = elem.waitFor()
 }
