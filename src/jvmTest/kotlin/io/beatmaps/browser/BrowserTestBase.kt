@@ -73,23 +73,21 @@ abstract class BrowserTestBase {
 
     companion object {
         @JvmStatic
-        private lateinit var playwright: Playwright
+        private val playwright by lazy {
+            Playwright.create()
+        }
 
         @JvmStatic
-        protected lateinit var browser: Browser
+        protected val browser: Browser by lazy {
+            playwright.chromium().launch(
+                BrowserType.LaunchOptions()
+                    .setHeadless(headless)
+            )
+        }
 
         @JvmStatic
-        protected lateinit var testApp: TestApplication
-
-        @JvmStatic
-        protected lateinit var client: HttpClient
-
-        private val headless = System.getenv("BUILD_NUMBER") != null
-
-        @JvmStatic
-        @BeforeClass
-        fun launchBrowser() {
-            testApp = TestApplication {
+        protected val testApp by lazy {
+            TestApplication {
                 val ds = setupDB(app = "BeatSaver Tests")
                 migrateDB(ds, DbMigrationType.Test)
 
@@ -105,24 +103,18 @@ abstract class BrowserTestBase {
                     }
                 }
             }
-            client = testApp.createClient {
+        }
+
+        @JvmStatic
+        protected val client by lazy {
+            testApp.createClient {
                 install(ContentNegotiation) {
                     json()
                 }
                 install(HttpCookies)
             }
-            playwright = Playwright.create()
-            browser = playwright.chromium().launch(
-                BrowserType.LaunchOptions()
-                    .setHeadless(headless)
-            )
         }
 
-        @JvmStatic
-        @AfterClass
-        fun closeBrowser() {
-            playwright.close()
-            testApp.stop()
-        }
+        private val headless = System.getenv("BUILD_NUMBER") != null
     }
 }

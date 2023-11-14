@@ -16,7 +16,6 @@ class ScoreTableTest : BrowserTestBase() {
     fun `Can switch scoreboard after loading empty scores`() = testSuspend {
         bmTest {
             mock("/api/scores/**", LeaderboardData.serializer()) {
-                println("Requested scores ${it.url()}")
                 val uri = URI(it.url())
                 // val page = uri.path.split("/").last().toInt()
                 val scoresaber = uri.query.endsWith("ScoreSaber")

@@ -11,5 +11,5 @@ class RegisterPage(page: Page) : PageBase(page) {
     val passwordField = id("password")
     val repeatPasswordField = id("password2")
 
-    val register = element("button")
+    val register = element(".card-body button")
 }
