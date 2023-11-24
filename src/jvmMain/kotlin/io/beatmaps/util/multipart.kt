@@ -35,12 +35,12 @@ suspend fun ApplicationCall.handleMultipart(cb: suspend (PartData.FileItem) -> U
 
                     verifyResponse.isSuccess || throw UploadException("Could not verify user [${verifyResponse.errorCodes.joinToString(", ")}]")
                 }
-            }
-
-            dataMap[part.name.toString()] = if (part.value.startsWith("{") && part.value.endsWith("}")) {
-                json.parseToJsonElement(part.value)
             } else {
-                JsonPrimitive(part.value)
+                dataMap[part.name.toString()] = if (part.value.startsWith("{") && part.value.endsWith("}")) {
+                    json.parseToJsonElement(part.value)
+                } else {
+                    JsonPrimitive(part.value)
+                }
             }
         } else if (part is PartData.FileItem) {
             cb(part)
