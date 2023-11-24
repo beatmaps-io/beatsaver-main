@@ -47,12 +47,14 @@ interface IPlaylistUpdate {
     val description: String?
     val type: String?
 }
+
 @Serializable
 data class PlaylistCreateMultipart(
     override val name: String? = null,
     override val description: String? = null,
     override val type: String? = null
 ) : IPlaylistUpdate
+
 @Serializable
 data class PlaylistEditMultipart(
     override val name: String? = null,

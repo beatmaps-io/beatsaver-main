@@ -51,6 +51,7 @@ import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toKotlinInstant
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import net.coobird.thumbnailator.Thumbnails
 import net.coobird.thumbnailator.tasks.UnsupportedFormatException
@@ -83,6 +84,15 @@ class UploadMap
 
 @Location("/avatar")
 class UploadAvatar
+
+@Serializable
+data class MapUploadMultipart(
+    val mapId: Int? = null,
+    val title: String? = null,
+    val description: String? = null,
+    val tags: String? = null,
+    val beatsage: String? = null
+)
 
 private val uploadLogger = Logger.getLogger("bmio.Upload")
 
@@ -194,13 +204,6 @@ fun Route.uploadController() {
         }
 
         multipart.recaptchaSuccess || throw UploadException("Missing recaptcha?")
-        data class MapUploadMultipart(
-            val mapId: Int? = null,
-            val title: String? = null,
-            val description: String? = null,
-            val tags: String? = null,
-            val beatsage: String? = null
-        )
         val data = multipart.get<MapUploadMultipart>()
 
         val newMapId = transaction {

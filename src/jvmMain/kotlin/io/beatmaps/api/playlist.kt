@@ -5,6 +5,7 @@ import de.nielsfalk.ktor.swagger.Description
 import de.nielsfalk.ktor.swagger.Ignore
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.api.playlist.playlistCreate
+import io.beatmaps.api.playlist.playlistCurate
 import io.beatmaps.api.playlist.playlistMaps
 import io.beatmaps.api.playlist.playlistSearch
 import io.beatmaps.api.playlist.playlistSingle
@@ -130,4 +131,5 @@ fun Route.playlistRoute() {
     playlistSingle()
     playlistMaps()
     playlistCreate()
+    playlistCurate()
 }
