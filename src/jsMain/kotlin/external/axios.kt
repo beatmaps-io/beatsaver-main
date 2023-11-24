@@ -3,7 +3,6 @@
 package external
 
 import io.beatmaps.common.json
-import io.beatmaps.common.jsonLenient
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlin.js.Promise
@@ -143,7 +142,7 @@ inline fun <reified T, reified U> generateConfig(ct: CancelToken? = null) = obje
         if (it is U) {
             it
         } else {
-            jsonLenient.decodeFromString(it)
+            json.decodeFromString(it)
         }
     }
 }

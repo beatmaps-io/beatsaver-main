@@ -118,7 +118,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
                 +"Max upload size"
             }
             select("form-select") {
-                arrayOf(0, 15, 30).forEach {
+                UserAdminRequest.allowedUploadSizes.forEach {
                     option {
                         +"$it"
                     }
