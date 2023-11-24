@@ -23,15 +23,14 @@ import io.ktor.server.routing.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.server.testing.TestApplication
+import io.ktor.test.dispatcher.testSuspend
 import io.ktor.util.toMap
 import kotlinx.coroutines.runBlocking
-import org.junit.AfterClass
-import org.junit.BeforeClass
 
 abstract class BrowserTestBase {
     private val testHost = "https://dev.beatsaver.com"
 
-    protected suspend fun bmTest(block: suspend BrowserDsl.() -> Unit) {
+    protected fun bmTest(block: suspend BrowserDsl.() -> Unit) = testSuspend {
         val context = browser.newContext(
             Browser.NewContextOptions()
                 .setViewportSize(1920, 919)
@@ -44,10 +43,10 @@ abstract class BrowserTestBase {
     }
 
     private fun routeViaClient(client: HttpClient) = { it: Route ->
-        runBlocking {
-            val original = it.request().url()
+        val original = it.request().url()
+        val newUrl = original.substringAfter(testHost)
 
-            val newUrl = original.substringAfter(testHost)
+        runBlocking {
             val response = when (it.request().method()) {
                 "POST" -> client.post(newUrl) {
                     setBody(it.request().postDataBuffer())
@@ -99,7 +98,7 @@ abstract class BrowserTestBase {
                 routing {
                     get("/login-test/{id?}") {
                         val id = call.parameters["id"]?.toIntOrNull() ?: 1
-                        call.sessions.set(Session(id, userEmail = "test@example.com", userName = "test"))
+                        call.sessions.set(Session(id, userEmail = "test@example.com", userName = "test", uniqueName = "test"))
                     }
                 }
             }
