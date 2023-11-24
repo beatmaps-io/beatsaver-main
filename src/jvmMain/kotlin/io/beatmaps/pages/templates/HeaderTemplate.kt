@@ -178,6 +178,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 }
                             }
                             li("nav-item dropdown") {
+                                id = "dropdown-new"
                                 a("#", classes = "nav-link dropdown-toggle no-caret") {
                                     title = "New"
                                     i("fas fa-plus-square")

@@ -339,8 +339,7 @@ fun Route.userRoute() {
                 ActionResponse(false, listOf("Not an admin"))
             } else {
                 val req = call.receive<UserAdminRequest>()
-                val allowedUploadSizes = arrayOf(0, 15, 30)
-                if (allowedUploadSizes.contains(req.maxUploadSize)) {
+                if (UserAdminRequest.allowedUploadSizes.contains(req.maxUploadSize)) {
                     transaction {
                         fun runUpdate() =
                             User.update({

@@ -8,7 +8,7 @@ abstract class PlaywrightBase {
     protected fun id(id: String) = element("#$id")
 }
 
-abstract class PageBase(private val page: Page) : PlaywrightBase() {
+abstract class PageBase(protected val page: Page) : PlaywrightBase() {
     override fun element(selector: String): Locator = page.locator(selector)
 }
 

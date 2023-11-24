@@ -4,7 +4,6 @@ import ch.compile.recaptcha.ReCaptchaVerify
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PatreonTier
 import io.beatmaps.api.UploadValidationInfo
-import io.beatmaps.api.handleMultipart
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.api.toTier
 import io.beatmaps.common.Config
@@ -38,15 +37,13 @@ import io.beatmaps.common.zip.ZipHelperException
 import io.beatmaps.common.zip.sharedInsert
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session
+import io.beatmaps.util.handleMultipart
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.content.PartData
-import io.ktor.http.content.forEachPart
 import io.ktor.http.content.streamProvider
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.locations.post
-import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
@@ -54,6 +51,7 @@ import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toKotlinInstant
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import net.coobird.thumbnailator.Thumbnails
 import net.coobird.thumbnailator.tasks.UnsupportedFormatException
@@ -75,7 +73,6 @@ import java.nio.file.Files
 import java.security.DigestOutputStream
 import java.security.MessageDigest
 import java.util.logging.Logger
-import kotlin.collections.set
 import kotlin.math.roundToInt
 
 val uploadDir = File(System.getenv("UPLOAD_DIR") ?: "S:\\A")
@@ -87,6 +84,15 @@ class UploadMap
 
 @Location("/avatar")
 class UploadAvatar
+
+@Serializable
+data class MapUploadMultipart(
+    val mapId: Int? = null,
+    val title: String? = null,
+    val description: String? = null,
+    val tags: String? = null,
+    val beatsage: String? = null
+)
 
 private val uploadLogger = Logger.getLogger("bmio.Upload")
 
@@ -109,28 +115,21 @@ fun Route.uploadController() {
     post<UploadAvatar> {
         requireAuthorization { sess ->
             try {
-                val multipart = call.receiveMultipart()
-                val dataMap = mutableMapOf<String, String>()
-
                 val filename = "${sess.userId}.jpg"
                 val localFile = File(localAvatarFolder(), filename)
 
-                multipart.forEachPart { part ->
-                    if (part is PartData.FormItem) {
-                        dataMap[part.name.toString()] = part.value
-                    } else if (part is PartData.FileItem) {
-                        part.streamProvider().use { its ->
-                            Thumbnails
-                                .of(its)
-                                .size(128, 128)
-                                .outputFormat("JPEG")
-                                .outputQuality(0.8)
-                                .toFile(localFile)
+                call.handleMultipart { part ->
+                    part.streamProvider().use { its ->
+                        Thumbnails
+                            .of(its)
+                            .size(128, 128)
+                            .outputFormat("JPEG")
+                            .outputQuality(0.8)
+                            .toFile(localFile)
 
-                            transaction {
-                                User.update({ User.id eq sess.userId }) {
-                                    it[avatar] = "${Config.cdnBase("", true)}/avatar/$filename"
-                                }
+                        transaction {
+                            User.update({ User.id eq sess.userId }) {
+                                it[avatar] = "${Config.cdnBase("", true)}/avatar/$filename"
                             }
                         }
                     }
@@ -205,6 +204,7 @@ fun Route.uploadController() {
         }
 
         multipart.recaptchaSuccess || throw UploadException("Missing recaptcha?")
+        val data = multipart.get<MapUploadMultipart>()
 
         val newMapId = transaction {
             // Process upload
@@ -245,7 +245,7 @@ fun Route.uploadController() {
 
             val newMap = try {
                 fun insertOrUpdate() =
-                    multipart.dataMap["mapId"]?.toInt()?.let { mapId ->
+                    data.mapId?.let { mapId ->
                         fun updateIt() = Beatmap.updateReturning(
                             {
                                 (Beatmap.id eq mapId) and (Beatmap.uploader eq session.userId)
@@ -273,10 +273,10 @@ fun Route.uploadController() {
                             }
                         }
                     } ?: Beatmap.insertAndGetId {
-                        it[name] = (multipart.dataMap["title"] ?: "").take(1000)
-                        it[description] = (multipart.dataMap["description"] ?: "").take(10000)
+                        it[name] = (data.title ?: "").take(1000)
+                        it[description] = (data.description ?: "").take(10000)
 
-                        val tagsList = (multipart.dataMap["tags"] ?: "").split(',').mapNotNull { t -> MapTag.fromSlug(t) }.toSet()
+                        val tagsList = (data.tags ?: "").split(',').mapNotNull { t -> MapTag.fromSlug(t) }.toSet()
                         val tooMany = tagsList.groupBy { t -> t.type }.mapValues { t -> t.value.size }.withDefault { 0 }.let { byType ->
                             MapTag.maxPerType.any { type -> byType.getValue(type.key) > type.value }
                         }
@@ -288,7 +288,7 @@ fun Route.uploadController() {
 
                         setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
 
-                        val declaredAsAI = (multipart.dataMap["beatsage"] ?: "").isNotEmpty()
+                        val declaredAsAI = !data.beatsage.isNullOrEmpty()
                         it[automapper] = declaredAsAI || extractedInfo.score < -4
                         it[ai] = declaredAsAI
 

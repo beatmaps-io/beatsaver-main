@@ -99,7 +99,11 @@ data class ChangeEmailRequest(val jwt: String, val password: String)
 data class AccountRequest(val currentPassword: String? = null, val password: String? = null, val password2: String? = null)
 
 @Serializable
-data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val curator: Boolean, val curatorTab: Boolean, val verifiedMapper: Boolean)
+data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val curator: Boolean, val curatorTab: Boolean, val verifiedMapper: Boolean) {
+    companion object {
+        val allowedUploadSizes = arrayOf(0, 15, 30, 50)
+    }
+}
 
 @Serializable
 data class UserSuspendRequest(val userId: Int, val suspended: Boolean, val reason: String?)

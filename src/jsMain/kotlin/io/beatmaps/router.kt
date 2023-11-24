@@ -2,7 +2,6 @@ package io.beatmaps
 
 import history.Location
 import io.beatmaps.common.json
-import io.beatmaps.common.jsonLenient
 import io.beatmaps.nav.manageNav
 import kotlinx.browser.document
 import kotlinx.browser.localStorage
@@ -50,7 +49,7 @@ abstract class NO(override var replace: Boolean?) : NavigateOptions {
 object ReplaceNavOption : NO(true)
 object NewNavOption : NO(false)
 
-inline fun <reified T> Location.readState() = (state as? String)?.let { jsonLenient.decodeFromString<T>(it) }
+inline fun <reified T> Location.readState() = (state as? String)?.let { json.decodeFromString<T>(it) }
 
 class History(private val navigation: NavigateFunction) {
     fun push(location: String) = go(location, NewNavOption)

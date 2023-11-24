@@ -3,8 +3,8 @@ import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
-    kotlin("multiplatform") version "1.8.22"
-    kotlin("plugin.serialization") version "1.8.22"
+    kotlin("multiplatform") version "1.9.20"
+    kotlin("plugin.serialization") version "1.9.20"
     id("io.miret.etienne.sass") version "1.1.2"
     id("org.flywaydb.flyway") version "9.2.2"
     id("org.jlleitschuh.gradle.ktlint") version "11.5.1"
@@ -64,7 +64,7 @@ kotlin {
             languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
                 implementation("io.beatmaps:BeatMaps-CommonMP:1.0.+")
             }
         }
@@ -84,7 +84,7 @@ kotlin {
                 optIn("kotlinx.coroutines.DelicateCoroutinesApi")
             }
             dependencies {
-                api(kotlin("reflect", "1.8.22"))
+                api(kotlin("reflect", "1.9.20"))
 
                 // Core
                 implementation("io.ktor:ktor-utils:$ktorVersion")
@@ -159,6 +159,7 @@ kotlin {
                 implementation("io.ktor:ktor-server-test-host:$ktorVersion")
                 implementation("com.microsoft.playwright:playwright:1.39.0")
                 implementation("com.appmattus.fixture:fixture:1.2.0")
+                implementation("net.lingala.zip4j:zip4j:2.11.6-SNAPSHOT")
             }
         }
         val jsMain by getting {
