@@ -224,9 +224,9 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                 id = "site-notice"
                 div("container flex-nowrap") {
                     div("navbar-text flex-grow-1 text-center") {
-                        +"BeastSaber Curation Team now recruiting enthusiastic casual players - "
-                        a("https://docs.google.com/forms/d/e/1FAIpQLSeHzYQY8WTGQ3kxcM3dy4eEj6k0ttnUUjbs84GQ5slcFanU_A/viewform", target = "_blank") {
-                            +"click here to apply"
+                        +"Beasties Awards 2023 are here! Nominate your favorite maps today! "
+                        a("https://forms.gle/cM51iChi6NtogN9s7", target = "_blank") {
+                            +"https://forms.gle/cM51iChi6NtogN9s7"
                         }
                     }
                     button(type = ButtonType.button, classes = "btn-close btn-close-white") { }

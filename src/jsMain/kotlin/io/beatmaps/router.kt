@@ -144,13 +144,13 @@ private fun initWithHistory(history: History, replaceHomelink: Boolean = true) {
     })
 
     (document.getElementById("site-notice") as? HTMLElement)?.let { banner ->
-        if (localStorage["banner"] != "2") {
+        if (localStorage["banner"] != "3") {
             banner.style.display = "block"
 
             val closeButton = banner.getElementsByTagName("button")[0]
             closeButton?.addEventListener("click", {
                 banner.style.opacity = "0"
-                localStorage["banner"] = "2"
+                localStorage["banner"] = "3"
 
                 setTimeout({
                     banner.style.display = "none"
