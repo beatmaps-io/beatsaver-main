@@ -11,6 +11,7 @@ import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.MapTag
+import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
@@ -35,6 +36,7 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.isUploader
 import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -74,8 +76,8 @@ class MapsApi {
     @Location("/maps/curate")
     data class Curate(val api: MapsApi)
 
-    @Location("/maps/validate")
-    data class Validate(val api: MapsApi)
+    @Location("/maps/declareai")
+    data class DeclareAi(val api: MapsApi)
 
     @Location("/maps/wip/{page}")
     data class WIP(val page: Long = 0, val api: MapsApi)
@@ -263,26 +265,29 @@ fun Route.mapDetailRoute() {
         }
     }
 
-    post<MapsApi.Validate> {
+    post<MapsApi.DeclareAi> {
         call.response.header("Access-Control-Allow-Origin", "*")
         requireAuthorization { user ->
-            if (!user.isAdmin()) {
-                call.respond(HttpStatusCode.BadRequest)
-            } else {
-                val mapUpdate = call.receive<ValidateMap>()
-
-                val result = transaction {
+            val mapUpdate = call.receive<AiDeclaration>()
+            val result = transaction {
+                if (!user.isAdmin() && !(isUploader(mapUpdate.id, user.userId) && mapUpdate.automapper)) {
+                    false
+                } else {
                     Beatmap.update({
                         (Beatmap.id eq mapUpdate.id)
                     }) {
-                        it[automapper] = mapUpdate.automapper
+                        it[declaredAi] = when {
+                            !mapUpdate.automapper && user.isAdmin() -> AiDeclarationType.None
+                            mapUpdate.automapper && user.isAdmin() -> AiDeclarationType.Admin
+                            else -> AiDeclarationType.Uploader
+                        }
                         it[updatedAt] = NowExpression(updatedAt.columnType)
                     } > 0
                 }
-
-                if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated.ai", null, mapUpdate.id)
-                call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
             }
+
+            if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated.ai", null, mapUpdate.id)
+            call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
         }
     }
 
@@ -749,7 +754,7 @@ fun Route.mapDetailRoute() {
                             .select {
                                 Beatmap.deletedAt.isNull()
                                     .let { q ->
-                                        if (it.automapper != true) q.and(Beatmap.automapper eq false) else q
+                                        if (it.automapper != true) q.and(Beatmap.declaredAi eq AiDeclarationType.None) else q
                                     }
                                     .notNull(it.before) { o -> sortField less o.toJavaInstant() }
                                     .notNull(it.after) { o -> sortField greater o.toJavaInstant() }

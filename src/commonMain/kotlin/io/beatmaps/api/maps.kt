@@ -3,6 +3,7 @@
 package io.beatmaps.api
 
 import io.beatmaps.common.MapTag
+import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.ECharacteristicSerializer
 import io.beatmaps.common.api.EDifficulty
@@ -45,7 +46,8 @@ data class MapDetail(
     val deletedAt: Instant? = null,
     val tags: List<MapTag> = listOf(),
     val bookmarked: Boolean? = null,
-    val collaborators: List<UserDetail>? = null
+    val collaborators: List<UserDetail>? = null,
+    val declaredAi: AiDeclarationType
 ) {
     fun intId() = id.toInt(16)
     fun latestVersion() = versions.maxByOrNull { it.createdAt }
