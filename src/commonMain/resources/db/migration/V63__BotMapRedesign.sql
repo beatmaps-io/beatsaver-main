@@ -16,3 +16,7 @@ FROM beatmap AS b
 WHERE beatmap."mapId" = b."mapId"
   AND v.state = 'Published'
   AND v."sageScore" < 0;
+
+UPDATE beatmap
+SET "declaredAi" = 'Uploader'
+WHERE beatmap.ai
