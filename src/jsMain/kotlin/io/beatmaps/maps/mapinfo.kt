@@ -134,6 +134,22 @@ val mapInfo = fc<MapInfoProps> { props ->
 
     val deleted = props.mapInfo.deletedAt != null
 
+    if (props.mapInfo.let { it.declaredAi == AiDeclarationType.SageScore && userData?.userId == it.uploader.id }) {
+        div("alert alert-danger alert-dismissible") {
+            +"This map was automatically flagged as an AI-generated map. If you believe this was a mistake, please report it in the "
+            a("https://discord.gg/rjVDapkMmj", classes = "alert-link") {
+                +"BeatSaver Discord server"
+            }
+            +"."
+            button(classes = "btn-close") {
+                attrs.onClickFunction = {
+                    it.preventDefault()
+                    declareAi(true)
+                }
+            }
+        }
+    }
+
     div("card") {
         div("card-header d-flex" + if (deleted) " bg-danger" else "") {
             if (editing) {
