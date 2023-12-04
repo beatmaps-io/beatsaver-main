@@ -36,7 +36,6 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
-import io.beatmaps.util.isUploader
 import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -270,20 +269,23 @@ fun Route.mapDetailRoute() {
         requireAuthorization { user ->
             val mapUpdate = call.receive<AiDeclaration>()
             val result = transaction {
-                if (!user.isAdmin() && !(isUploader(mapUpdate.id, user.userId) && mapUpdate.automapper)) {
-                    false
-                } else {
-                    Beatmap.update({
-                        (Beatmap.id eq mapUpdate.id)
-                    }) {
-                        it[declaredAi] = when {
-                            !mapUpdate.automapper && user.isAdmin() -> AiDeclarationType.None
-                            mapUpdate.automapper && user.isAdmin() -> AiDeclarationType.Admin
-                            else -> AiDeclarationType.Uploader
+                val admin = user.isAdmin()
+                Beatmap.update({
+                    (Beatmap.id eq mapUpdate.id).let { q ->
+                        if (admin) {
+                            q // If current user is admin don't check the user
+                        } else {
+                            q and (Beatmap.uploader eq user.userId)
                         }
-                        it[updatedAt] = NowExpression(updatedAt.columnType)
-                    } > 0
-                }
+                    }
+                }) {
+                    it[declaredAi] = when {
+                        !mapUpdate.automapper && admin -> AiDeclarationType.None
+                        mapUpdate.automapper && admin -> AiDeclarationType.Admin
+                        else -> AiDeclarationType.Uploader
+                    }
+                    it[updatedAt] = NowExpression(updatedAt.columnType)
+                } > 0
             }
 
             if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated.ai", null, mapUpdate.id)

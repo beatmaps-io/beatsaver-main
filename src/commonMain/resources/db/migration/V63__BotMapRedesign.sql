@@ -7,7 +7,7 @@ CREATE TYPE public.aiDeclarationType AS ENUM
 );
 
 ALTER TABLE beatmap
-    ADD "declaredAi" aiDeclarationType;
+    ADD "declaredAi" aiDeclarationType NOT NULL DEFAULT 'None';
 
 UPDATE beatmap
 SET "declaredAi" = 'SageScore'
