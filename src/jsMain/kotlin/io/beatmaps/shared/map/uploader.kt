@@ -28,10 +28,7 @@ val uploaderWithInfo = fc<UploaderProps> { props ->
     uploader {
         attrs.map = props.map
     }
-    botInfo {
-        attrs.version = props.version
-        attrs.automapper = props.map.automapper
-    }
+    if (props.map.declaredAi.markAsBot) botInfo { }
     if (props.version?.state == EMapState.Published) {
         +" - "
         TimeAgo.default {
