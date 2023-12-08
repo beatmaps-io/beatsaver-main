@@ -77,6 +77,9 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 a("/?order=Latest", classes = "dropdown-item auto-router") {
                                     +"Newest"
                                 }
+                                a("/?order=Oldest", classes = "dropdown-item auto-router") {
+                                    +"Oldest"
+                                }
                             }
                         }
                         if (s?.testplay == true) {
