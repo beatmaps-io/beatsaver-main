@@ -5,7 +5,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./db:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: beatmaps
       POSTGRES_USER: beatmaps
@@ -16,7 +16,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - ./mongo:/data/db
+      - mongo_data:/data/db
       - ./src/commonMain/resources/mongo:/docker-entrypoint-initdb.d:ro
     environment:
       MONGO_INITDB_ROOT_USERNAME: "root"
@@ -25,3 +25,6 @@ services:
       MONGO_USER: "beatmaps"
       MONGO_PASSWORD: "insecure-password"
     restart: always
+volumes:
+  db_data:
+  mongo_data:
