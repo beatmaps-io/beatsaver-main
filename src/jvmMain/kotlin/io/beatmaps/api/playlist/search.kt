@@ -114,6 +114,7 @@ fun Route.playlistSearch() {
             SearchOrder.Relevance -> listOf(searchInfo.similarRank to SortOrder.DESC, Playlist.createdAt to SortOrder.DESC)
             SearchOrder.Rating, SearchOrder.Latest -> listOf(Playlist.createdAt to SortOrder.DESC)
             SearchOrder.Curated -> listOf(Playlist.curatedAt to SortOrder.DESC_NULLS_LAST, Playlist.createdAt to SortOrder.DESC)
+            SearchOrder.Oldest -> TODO()
         }.toTypedArray()
 
         newSuspendedTransaction {
