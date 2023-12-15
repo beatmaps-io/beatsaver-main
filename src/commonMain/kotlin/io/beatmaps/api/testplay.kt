@@ -11,7 +11,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable data class CurateMap(val id: Int, val curated: Boolean = false, val reason: String? = null)
 
-@Serializable data class ValidateMap(val id: Int, val automapper: Boolean = false)
+@Serializable data class AiDeclaration(val id: Int, val automapper: Boolean = false)
 
 @Serializable data class StateUpdate(val hash: String, val state: EMapState, val mapId: Int, val reason: String? = null, val scheduleAt: Instant? = null)
 

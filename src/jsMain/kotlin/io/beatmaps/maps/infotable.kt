@@ -113,9 +113,8 @@ val infoTable = fc<InfoTableProps> { props ->
                 +" (${props.map.metadata.levelAuthorName})"
             }
         }
-        val score = publishedVersion?.sageScore ?: 0
-        if (score < -4 || props.map.automapper) {
-            infoItem("AI", if (score < -4) "Bot" else "Unsure")
+        if (props.map.declaredAi.markAsBot) {
+            infoItem("AI", "Bot")
         }
 
         div(itemClasses) {
