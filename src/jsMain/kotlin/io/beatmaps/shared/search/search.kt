@@ -5,7 +5,6 @@ import external.Moment
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
-import io.beatmaps.maps.mapTag
 import io.beatmaps.shared.form.slider
 import io.beatmaps.shared.form.toggle
 import kotlinx.browser.document
