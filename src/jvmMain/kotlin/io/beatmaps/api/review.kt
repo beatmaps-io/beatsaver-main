@@ -40,7 +40,6 @@ import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -130,11 +129,12 @@ fun Route.reviewRoute() {
             try {
                 Review
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                    .joinUploader()
                     .joinVersions(false)
                     .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
                     .slice(Review.columns + reviewerAlias.columns)
                     .select {
-                        Review.mapId eq it.id.toInt(16) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
+                        User.reviewsEnabled and (Review.mapId eq it.id.toInt(16)) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
                     .orderBy(
                         Review.curatedAt to SortOrder.DESC_NULLS_LAST,
@@ -165,7 +165,7 @@ fun Route.reviewRoute() {
                     .joinUploader()
                     .joinCurator()
                     .select {
-                        Review.userId eq it.id and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
+                        User.reviewsEnabled and (Review.userId eq it.id) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
                     .orderBy(
                         Review.createdAt, SortOrder.DESC
@@ -247,6 +247,11 @@ fun Route.reviewRoute() {
                         val map = Beatmap.joinUploader().select {
                             Beatmap.id eq updateMapId
                         }.complexToBeatmap().single()
+
+                        if (!map.uploader.reviewsEnabled) {
+                            call.respond(ActionResponse(false, listOf("Uploader is not accepting reviews")))
+                            return@newSuspendedTransaction false
+                        }
 
                         if (map.uploaderId.value == single.userId) {
                             // Can't review your own map

@@ -15,6 +15,7 @@ import io.beatmaps.util.useDidUpdateEffect
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
+import react.dom.p
 import react.fc
 import react.useContext
 import react.useRef
@@ -22,7 +23,7 @@ import react.useState
 
 external interface ReviewTableProps : Props {
     var map: String?
-    var mapUploaderId: Int?
+    var uploader: UserDetail?
     var userDetail: UserDetail?
     var fullWidth: Boolean?
 }
@@ -53,13 +54,22 @@ val reviewTable = fc<ReviewTableProps> { props ->
         }
     }
 
+    if (props.uploader?.reviewsEnabled == false) {
+        div(if (props.fullWidth == true) "" else " col-lg-8") {
+            p("text-danger-light text-center p-3") {
+                +"The uploader of this map has opted out of receiving reviews."
+            }
+        }
+        return@fc
+    }
+
     div("reviews" + if (props.fullWidth == true) "" else " col-lg-8") {
         ref = resultsTable
         key = "resultsTable"
 
         globalContext.Consumer { userData ->
             props.map?.let { map ->
-                if (userData != null && !userData.suspended && userData.userId != props.mapUploaderId) {
+                if (userData != null && !userData.suspended && userData.userId != props.uploader?.id) {
                     newReview {
                         attrs.mapId = map
                         attrs.userId = userData.userId
