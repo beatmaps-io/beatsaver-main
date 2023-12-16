@@ -193,13 +193,13 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                             if (filters.isEmpty()) {
                                 +"Filters"
                             } else {
-                                +filters.map {
+                                +filters.joinToString(", ") {
                                     if (it.startsWith("!")) {
                                         "!" + MapTag.fromSlug(it.removePrefix("!"))
                                     } else {
-                                        MapTag.fromSlug(it) ?: it
+                                        (MapTag.fromSlug(it) ?: it).toString()
                                     }
-                                }.joinToString(", ")
+                                }
                             }
                         }
                         i("fas fa-angle-" + if (state.filtersOpen == true) "up" else "down") {}
