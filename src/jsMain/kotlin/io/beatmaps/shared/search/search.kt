@@ -2,8 +2,10 @@ package io.beatmaps.shared.search
 
 import external.DateRangePicker
 import external.Moment
+import io.beatmaps.common.MapTag
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
+import io.beatmaps.maps.mapTag
 import io.beatmaps.shared.form.slider
 import io.beatmaps.shared.form.toggle
 import kotlinx.browser.document
@@ -192,7 +194,13 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                             if (filters.isEmpty()) {
                                 +"Filters"
                             } else {
-                                +filters.joinToString(", ")
+                                +filters.map {
+                                    if (it.startsWith("!")) {
+                                        "!" + MapTag.fromSlug(it.removePrefix("!"))
+                                    } else {
+                                        MapTag.fromSlug(it)
+                                    }
+                                }.joinToString(", ")
                             }
                         }
                         i("fas fa-angle-" + if (state.filtersOpen == true) "up" else "down") {}
