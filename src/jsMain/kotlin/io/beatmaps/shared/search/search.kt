@@ -198,7 +198,7 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                                     if (it.startsWith("!")) {
                                         "!" + MapTag.fromSlug(it.removePrefix("!"))
                                     } else {
-                                        MapTag.fromSlug(it)
+                                        MapTag.fromSlug(it) ?: it
                                     }
                                 }.joinToString(", ")
                             }
