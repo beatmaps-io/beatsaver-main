@@ -199,7 +199,7 @@ application {
 }
 
 flyway {
-    url = "jdbc:postgresql://localhost:5432/beatmaps"
+    url = "jdbc:postgresql://localhost:1358/beatmaps"
     user = "beatmaps"
     password = "insecure-password"
     val locs = mutableListOf("filesystem:$projectDir/src/commonMain/resources/db/migration")

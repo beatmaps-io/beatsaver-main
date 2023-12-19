@@ -3,12 +3,12 @@ services:
   db:
     image: iamtopcat/postgres:master-b71
     ports:
-      - "5432:5432"
+      - "1358:1358"
     volumes:
       - ./db:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: beatmaps
-      POSTGRES_USER: beatmaps
+      POSTGRES_DB: "beatmaps"
+      POSTGRES_USER: "beatmaps"
       POSTGRES_PASSWORD: "insecure-password"
     restart: always
   sessions:
