@@ -1,5 +1,6 @@
 package io.beatmaps.util
 
+import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Beatmap
@@ -72,7 +73,7 @@ class BeatsageCleanse(val app: Application) : TimerTask() {
                     }
                     .slice(Beatmap.id)
                     .select {
-                        Beatmap.deletedAt.isNull() and Beatmap.automapper and (Beatmap.updatedAt less Instant.now().minus(90L, ChronoUnit.DAYS))
+                        Beatmap.deletedAt.isNull() and (Beatmap.declaredAi neq AiDeclarationType.None) and (Beatmap.updatedAt less Instant.now().minus(90L, ChronoUnit.DAYS))
                     }
                     .orderBy(Beatmap.updatedAt to SortOrder.ASC)
                     .limit(5)

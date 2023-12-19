@@ -8,6 +8,7 @@ import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.SearchOrder
+import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.applyToQuery
 import io.beatmaps.common.db.PgConcat
@@ -246,8 +247,8 @@ fun Route.searchRoute() {
                                             // Doesn't quite make sense but we want to exclude beat sage by default
                                             when (it.automapper) {
                                                 true -> q
-                                                false -> q.and(Beatmap.automapper eq true)
-                                                null -> q.and(Beatmap.automapper eq false)
+                                                false -> q.and(Beatmap.declaredAi neq AiDeclarationType.None)
+                                                null -> q.and(Beatmap.declaredAi eq AiDeclarationType.None)
                                             }
                                         }
                                         .notNull(searchInfo.userSubQuery) { o -> Beatmap.uploader inSubQuery o }

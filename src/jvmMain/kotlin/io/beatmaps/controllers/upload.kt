@@ -10,6 +10,7 @@ import io.beatmaps.common.Config
 import io.beatmaps.common.CopyException
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.beatsaber.MapInfo
 import io.beatmaps.common.copyToSuspend
@@ -289,8 +290,11 @@ fun Route.uploadController() {
                         setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
 
                         val declaredAsAI = !data.beatsage.isNullOrEmpty()
-                        it[automapper] = declaredAsAI || extractedInfo.score < -4
-                        it[ai] = declaredAsAI
+                        it[declaredAi] = when {
+                            declaredAsAI -> AiDeclarationType.Uploader
+                            extractedInfo.score < 0 -> AiDeclarationType.SageScore
+                            else -> AiDeclarationType.None
+                        }
 
                         it[plays] = 0
                     }

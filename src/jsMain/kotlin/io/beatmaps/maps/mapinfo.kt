@@ -4,6 +4,7 @@ import external.Axios
 import external.AxiosResponse
 import external.generateConfig
 import io.beatmaps.Config
+import io.beatmaps.api.AiDeclaration
 import io.beatmaps.api.BookmarkRequest
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.ErrorResponse
@@ -11,7 +12,7 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.SimpleMapInfoUpdate
 import io.beatmaps.api.StateUpdate
-import io.beatmaps.api.ValidateMap
+import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.json
 import io.beatmaps.globalContext
@@ -111,10 +112,10 @@ val mapInfo = fc<MapInfoProps> { props ->
         }
     }
 
-    fun validate(automapper: Boolean = true) {
+    fun declareAi(automapper: Boolean = true) {
         setLoading(true)
 
-        Axios.post<String>("${Config.apibase}/maps/validate", ValidateMap(props.mapInfo.intId(), automapper), generateConfig<ValidateMap, String>()).then({
+        Axios.post<String>("${Config.apibase}/maps/declareai", AiDeclaration(props.mapInfo.intId(), automapper), generateConfig<AiDeclaration, String>()).then({
             props.reloadMap()
         }) {
             setLoading(false)
@@ -132,6 +133,22 @@ val mapInfo = fc<MapInfoProps> { props ->
     }
 
     val deleted = props.mapInfo.deletedAt != null
+
+    if (props.mapInfo.let { it.declaredAi == AiDeclarationType.SageScore && userData?.userId == it.uploader.id }) {
+        div("alert alert-danger alert-dismissible") {
+            +"This map was automatically flagged as an AI-generated map. If you believe this was a mistake, please report it in the "
+            a("https://discord.gg/rjVDapkMmj", classes = "alert-link") {
+                +"BeatSaver Discord server"
+            }
+            +"."
+            button(classes = "btn-close") {
+                attrs.onClickFunction = {
+                    it.preventDefault()
+                    declareAi(true)
+                }
+            }
+        }
+    }
 
     div("card") {
         div("card-header d-flex" + if (deleted) " bg-danger" else "") {
@@ -230,13 +247,14 @@ val mapInfo = fc<MapInfoProps> { props ->
                         }
                         if (userData?.admin == true) {
                             a("#") {
-                                attrs.title = if (props.mapInfo.automapper) "Flag as Human-made Map" else "Flag as AI-assisted Map"
-                                attrs.attributes["aria-label"] = if (props.mapInfo.automapper) "Validate" else "Invalidate"
+                                val tooltip = if (props.mapInfo.declaredAi.markAsBot) "Flag as Human-made Map" else "Flag as AI-assisted Map"
+                                attrs.title = tooltip
+                                attrs.attributes["aria-label"] = tooltip
                                 attrs.onClickFunction = {
                                     it.preventDefault()
-                                    if (!loading) validate(!props.mapInfo.automapper)
+                                    if (!loading) declareAi(!props.mapInfo.declaredAi.markAsBot)
                                 }
-                                i("fas " + if (props.mapInfo.automapper) "fa-user-check text-success" else "fa-user-times text-danger-light") { }
+                                i("fas " + if (props.mapInfo.declaredAi.markAsBot) "fa-user-check text-success" else "fa-user-times text-danger-light") { }
                             }
                             a("#") {
                                 attrs.title = "Delete"

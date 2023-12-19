@@ -2,6 +2,7 @@ package io.beatmaps.util
 
 import io.beatmaps.api.MapVersion
 import io.beatmaps.api.from
+import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EMapState
@@ -69,12 +70,14 @@ fun publishVersion(mapId: Int, hash: String, rb: RabbitMQInstance?, additionalCa
             }
         )
 
-        Beatmap
+        val map = Beatmap
             .joinUploader()
             .select {
                 (Beatmap.id eq mapId) and (Beatmap.lastPublishedAt.isNull())
-            }.firstOrNull()?.let {
-                pushAlerts(BeatmapDao.wrapRow(it), rb)
+            }.firstOrNull()
+            ?.let { BeatmapDao.wrapRow(it) }
+            ?.also {
+                pushAlerts(it, rb)
             }
 
         // Set published time for sorting, but don't allow gaming the system
@@ -96,12 +99,13 @@ fun publishVersion(mapId: Int, hash: String, rb: RabbitMQInstance?, additionalCa
                     .map { diff -> diff.difficulty }
                     .distinct().count() == 5
 
-                // Because of magical typing reasons this can't be one line
-                // They actually call completely different setting functions
-                if (originalState.sageScore != null && originalState.sageScore < -4) {
-                    it[automapper] = true
-                } else {
-                    it[automapper] = ai
+                // Only override None and SageScore
+                if (map?.declaredAi?.override == true) {
+                    it[declaredAi] = if (originalState.sageScore != null && originalState.sageScore < 0) {
+                        AiDeclarationType.SageScore
+                    } else {
+                        AiDeclarationType.None
+                    }
                 }
             },
             Beatmap.uploaded
