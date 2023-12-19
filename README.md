@@ -26,7 +26,9 @@ Contains both backend code for uploading and managing maps, the beatsaver API an
 - `COVER_DIR` Directory cover images will get served from
 - `AUDIO_DIR` Directory preview audio will get served from
 - `AVATAR_DIR` Directory avatars will get served from
-- `PLAYLIST_COVER_DIR` Directory playlist covers will get served from
+- `PLAYLIST_COVER_DIR` Directory playlist covers will get served from. Must have two subfolders:
+  - 256
+  - 512
 - `UPLOAD_DIR` Directory files get uploaded to before being processed
 
 Zips, covers and audio files must be placed in a subfolder that is named with their first character
