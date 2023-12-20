@@ -1,5 +1,6 @@
 package io.beatmaps.util
 
+import io.beatmaps.common.Folders
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
@@ -7,9 +8,6 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.joinVersions
-import io.beatmaps.common.localAudioFolder
-import io.beatmaps.common.localCoverFolder
-import io.beatmaps.common.localFolder
 import io.beatmaps.common.pub
 import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.JoinType
@@ -48,9 +46,9 @@ class BeatsageCleanse(val app: Application) : TimerTask() {
                     }.limit(10)
                 ).forEach { version ->
                     val digest = version.hash
-                    val file = File(localFolder(digest), "$digest.zip")
-                    val imageFile = File(localCoverFolder(digest), "$digest.jpg")
-                    val audioFile = File(localAudioFolder(digest), "$digest.mp3")
+                    val file = File(Folders.localFolder(digest), "$digest.zip")
+                    val imageFile = File(Folders.localCoverFolder(digest), "$digest.jpg")
+                    val audioFile = File(Folders.localAudioFolder(digest), "$digest.mp3")
 
                     file.delete()
                     imageFile.delete()

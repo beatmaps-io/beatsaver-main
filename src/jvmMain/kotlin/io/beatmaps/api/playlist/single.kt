@@ -17,6 +17,7 @@ import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
 import io.beatmaps.api.optionalAuthorization
 import io.beatmaps.api.parseSearchQuery
+import io.beatmaps.common.Folders
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.AiDeclarationType
@@ -47,7 +48,6 @@ import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
-import io.beatmaps.common.localPlaylistCoverFolder
 import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -300,7 +300,7 @@ fun Route.playlistSingle() {
             if (playlist != null && (playlist.type.anonymousAllowed || playlist.owner.id == sess?.userId)) {
                 val localFile = when (playlist.type) {
                     EPlaylistType.System -> bookmarksIcon
-                    else -> File(localPlaylistCoverFolder(), "${playlist.playlistId}.jpg").readBytes()
+                    else -> File(Folders.localPlaylistCoverFolder(), "${playlist.playlistId}.jpg").readBytes()
                 }
                 val imageStr = Base64.getEncoder().encodeToString(localFile)
 

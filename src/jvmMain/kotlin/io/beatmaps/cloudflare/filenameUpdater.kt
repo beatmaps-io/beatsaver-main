@@ -1,6 +1,7 @@
 package io.beatmaps.cloudflare
 
 import io.beatmaps.common.CDNUpdate
+import io.beatmaps.common.Folders
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.consumeAck
@@ -8,7 +9,6 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.downloadFilename
-import io.beatmaps.common.localFolder
 import io.beatmaps.common.rabbitOptional
 import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.JoinType
@@ -94,7 +94,7 @@ private fun uploadToR2(update: CDNUpdate, r2Client: IR2Bucket) {
         ).map { it.hash }
     }
 
-    toUpload.map { File(localFolder(it), "$it.zip") }.filter { it.exists() }.map {
+    toUpload.map { File(Folders.localFolder(it), "$it.zip") }.filter { it.exists() }.map {
         r2Client.uploadFile(it)
     }
 

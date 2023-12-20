@@ -8,6 +8,7 @@ import io.beatmaps.api.requireAuthorization
 import io.beatmaps.api.toTier
 import io.beatmaps.common.Config
 import io.beatmaps.common.CopyException
+import io.beatmaps.common.Folders
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.OptionalProperty
 import io.beatmaps.common.api.AiDeclarationType
@@ -24,10 +25,6 @@ import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.handlePatreon
 import io.beatmaps.common.dbo.joinPatreon
-import io.beatmaps.common.localAudioFolder
-import io.beatmaps.common.localAvatarFolder
-import io.beatmaps.common.localCoverFolder
-import io.beatmaps.common.localFolder
 import io.beatmaps.common.or
 import io.beatmaps.common.pub
 import io.beatmaps.common.zip.ExtractedInfo
@@ -117,7 +114,7 @@ fun Route.uploadController() {
         requireAuthorization { sess ->
             try {
                 val filename = "${sess.userId}.jpg"
-                val localFile = File(localAvatarFolder(), filename)
+                val localFile = File(Folders.localAvatarFolder(), filename)
 
                 call.handleMultipart { part ->
                     part.streamProvider().use { its ->
@@ -211,9 +208,9 @@ fun Route.uploadController() {
             // Process upload
             val fx = "%0" + md.digestLength * 2 + "x"
             val digest = String.format(fx, BigInteger(1, md.digest()))
-            val newFile = File(localFolder(digest), "$digest.zip")
-            val newImageFile = File(localCoverFolder(digest), "$digest.jpg")
-            val newAudioFile = File(localAudioFolder(digest), "$digest.mp3")
+            val newFile = File(Folders.localFolder(digest), "$digest.zip")
+            val newImageFile = File(Folders.localCoverFolder(digest), "$digest.jpg")
+            val newAudioFile = File(Folders.localAudioFolder(digest), "$digest.mp3")
 
             val existsAlready = Versions.select {
                 Versions.hash eq digest
