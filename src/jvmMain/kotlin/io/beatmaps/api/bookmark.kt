@@ -141,7 +141,7 @@ fun Route.bookmarkRoute() {
                         .joinVersions(false)
                         .joinUploader()
                         .joinCurator()
-                        .select { reviewerAlias[User.id] eq sess.userId }
+                        .select { Beatmap.deletedAt.isNull() and (reviewerAlias[User.id] eq sess.userId) }
                         .orderBy(PlaylistMap.order)
                         .limit(it.page, it.pageSize.coerceIn(1, 100))
                         .complexToBeatmap()
