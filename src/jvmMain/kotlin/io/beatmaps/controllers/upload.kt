@@ -73,7 +73,6 @@ import java.security.MessageDigest
 import java.util.logging.Logger
 import kotlin.math.roundToInt
 
-val uploadDir = File(System.getenv("UPLOAD_DIR") ?: "S:\\A")
 val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
 val reCaptchaVerify = System.getenv("RECAPTCHA_SECRET")?.let { ReCaptchaVerify(it) }
 
@@ -161,7 +160,7 @@ fun Route.uploadController() {
         currentWipCount < maxWips || throw UploadException(PatreonTier.maxWipsMessage)
 
         val file = File(
-            uploadDir,
+            Folders.uploadTempFolder(),
             "upload-${System.currentTimeMillis()}-${session.userId.hashCode()}.zip"
         )
 

@@ -84,7 +84,7 @@ fun Route.playlistCreate() {
                         its.copyToSuspend(tmp, sizeLimit = 10 * 1024 * 1024)
 
                         thumbnailSizes.forEach { s ->
-                            files[s] = File(io.beatmaps.controllers.uploadDir, "upload-${java.lang.System.currentTimeMillis()}-${sess.userId.hashCode()}-$s.jpg").also { localFile ->
+                            files[s] = File(Folders.uploadTempFolder(), "upload-${java.lang.System.currentTimeMillis()}-${sess.userId.hashCode()}-$s.jpg").also { localFile ->
                                 net.coobird.thumbnailator.Thumbnails
                                     .of(tmp.toByteArray().inputStream())
                                     .size(s, s)
