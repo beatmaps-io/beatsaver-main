@@ -1,6 +1,7 @@
 package io.beatmaps.api
 
 import io.beatmaps.common.Config
+import io.beatmaps.common.Folders
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
@@ -10,7 +11,6 @@ import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.TestplayDao
 import io.beatmaps.common.dbo.VersionsDao
-import io.beatmaps.common.localPlaylistCoverFolder
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toKotlinInstant
@@ -115,7 +115,7 @@ fun PlaylistFull.Companion.from(other: PlaylistDao, stats: PlaylistStats?, cdnPr
         PlaylistFull(
             other.id.value, other.name, other.description,
             if (other.type == EPlaylistType.System) "/static/favicon/android-chrome-512x512.png" else "${Config.cdnBase(actualPrefix)}/playlist/${other.id.value}.jpg",
-            if (File(localPlaylistCoverFolder(512), "${other.id.value}.jpg").exists()) "${Config.cdnBase(actualPrefix)}/playlist/512/${other.id.value}.jpg" else null,
+            if (File(Folders.localPlaylistCoverFolder(512), "${other.id.value}.jpg").exists()) "${Config.cdnBase(actualPrefix)}/playlist/512/${other.id.value}.jpg" else null,
             UserDetail.from(other.owner),
             other.curator?.let {
                 UserDetail.from(it)
