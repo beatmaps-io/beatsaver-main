@@ -49,11 +49,11 @@ val authorizePage = fc<Props> {
 
             setLoading(false)
             setUsername(data.name)
-            setUsername(data.avatar)
+            setAvatar(data.avatar)
         }.catch {
             setLoading(false)
             setUsername(null)
-            setUsername(null)
+            setAvatar(null)
         }
     }
 
