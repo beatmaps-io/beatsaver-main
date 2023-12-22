@@ -35,7 +35,6 @@ import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
-import java.util.logging.Logger
 
 @Location("/api")
 class BookmarksApi {
@@ -104,8 +103,6 @@ fun removeBookmark(mapId: Int, playlistId: Int) =
     }
 
 fun Route.bookmarkRoute() {
-    val logger = Logger.getLogger("bmio.routes.bookmarkRoute")
-
     post<BookmarksApi.Bookmark> {
         val req = call.receive<BookmarkRequest>()
 
@@ -133,28 +130,23 @@ fun Route.bookmarkRoute() {
 
     get<BookmarksApi.Bookmarks> {
         requireAuthorization(OauthScope.BOOKMARKS) { sess ->
-            try {
-                val maps = transaction {
-                    PlaylistMap
-                        .join(reviewerAlias, JoinType.LEFT, PlaylistMap.playlistId, reviewerAlias[User.bookmarksId])
-                        .join(Beatmap, JoinType.LEFT, PlaylistMap.mapId, Beatmap.id)
-                        .joinVersions(false)
-                        .joinUploader()
-                        .joinCurator()
-                        .select { Beatmap.deletedAt.isNull() and (reviewerAlias[User.id] eq sess.userId) }
-                        .orderBy(PlaylistMap.order)
-                        .limit(it.page, it.pageSize.coerceIn(1, 100))
-                        .complexToBeatmap()
-                        .map {
-                            MapDetail.from(it, cdnPrefix())
-                        }
-                }
-
-                call.respond(BookmarkResponse(maps))
-            } catch (e: NullPointerException) {
-                logger.severe { "Error getting bookmarks for ${sess.userId}, page ${it.page} (${it.pageSize})" }
-                e.printStackTrace()
+            val maps = transaction {
+                PlaylistMap
+                    .join(reviewerAlias, JoinType.LEFT, PlaylistMap.playlistId, reviewerAlias[User.bookmarksId])
+                    .join(Beatmap, JoinType.LEFT, PlaylistMap.mapId, Beatmap.id)
+                    .joinVersions(false)
+                    .joinUploader()
+                    .joinCurator()
+                    .select { Beatmap.deletedAt.isNull() and (reviewerAlias[User.id] eq sess.userId) }
+                    .orderBy(PlaylistMap.order)
+                    .limit(it.page, it.pageSize.coerceIn(1, 100))
+                    .complexToBeatmap()
+                    .map {
+                        MapDetail.from(it, cdnPrefix())
+                    }
             }
+
+            call.respond(BookmarkResponse(maps))
         }
     }
 }
