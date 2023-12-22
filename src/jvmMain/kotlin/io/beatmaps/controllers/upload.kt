@@ -32,6 +32,7 @@ import io.beatmaps.common.zip.RarException
 import io.beatmaps.common.zip.ZipHelper
 import io.beatmaps.common.zip.ZipHelper.Companion.openZip
 import io.beatmaps.common.zip.ZipHelperException
+import io.beatmaps.common.zip.ZipHelperWithAudio
 import io.beatmaps.common.zip.sharedInsert
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session
@@ -358,7 +359,7 @@ fun Route.uploadController() {
     }
 }
 
-fun ZipHelper.validateFiles(dos: DigestOutputStream) =
+fun ZipHelperWithAudio.validateFiles(dos: DigestOutputStream) =
     info.let {
         // Add files referenced in info.dat to whitelist
         ExtractedInfo(findAllowedFiles(it), dos, it, scoreMap())
