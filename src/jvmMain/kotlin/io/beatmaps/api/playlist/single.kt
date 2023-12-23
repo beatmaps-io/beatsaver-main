@@ -7,6 +7,7 @@ import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDetailWithOrder
 import io.beatmaps.api.OauthScope
+import io.beatmaps.api.Playlist
 import io.beatmaps.api.PlaylistApi
 import io.beatmaps.api.PlaylistCustomData
 import io.beatmaps.api.PlaylistFull
@@ -32,7 +33,6 @@ import io.beatmaps.common.db.lateral
 import io.beatmaps.common.db.lessEqF
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
-import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
@@ -66,6 +66,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.util.Base64
+import io.beatmaps.common.dbo.Playlist as PlaylistTable
 
 fun Route.playlistSingle() {
     fun performSearchForPlaylist(config: SearchPlaylistConfig, cdnPrefix: String, page: Long, pageSize: Int = 20): List<MapDetailWithOrder> {
@@ -157,21 +158,21 @@ fun Route.playlistSingle() {
 
     fun getDetail(id: Int, cdnPrefix: String, userId: Int?, isAdmin: Boolean, page: Long?): PlaylistPage? {
         val detailPage = transaction {
-            val playlist = Playlist
+            val playlist = PlaylistTable
                 .joinMaps()
                 .joinOwner()
                 .joinPlaylistCurator()
-                .slice(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all)
+                .slice(PlaylistTable.columns + User.columns + curatorAlias.columns + PlaylistTable.Stats.all)
                 .select {
-                    (Playlist.id eq id).let {
+                    (PlaylistTable.id eq id).let {
                         if (isAdmin) {
                             it
                         } else {
-                            it and Playlist.deletedAt.isNull()
+                            it and PlaylistTable.deletedAt.isNull()
                         }
                     }
                 }
-                .groupBy(Playlist.id, User.id, curatorAlias[User.id])
+                .groupBy(PlaylistTable.id, User.id, curatorAlias[User.id])
                 .handleOwner()
                 .handleCurator()
                 .firstOrNull()?.let {
@@ -247,11 +248,11 @@ fun Route.playlistSingle() {
     get<PlaylistApi.Download> { req ->
         val (playlist, playlistSongs) = transaction {
             fun getPlaylist() =
-                Playlist
+                PlaylistTable
                     .joinPlaylistCurator()
                     .joinOwner()
                     .select {
-                        (Playlist.id eq req.id) and Playlist.deletedAt.isNull()
+                        (PlaylistTable.id eq req.id) and PlaylistTable.deletedAt.isNull()
                     }
                     .handleOwner()
                     .handleCurator()
@@ -307,7 +308,7 @@ fun Route.playlistSingle() {
                 val cleanName = cleanString("BeatSaver - ${playlist.name}.bplist")
                 call.response.headers.append(HttpHeaders.ContentDisposition, "attachment; filename=\"${cleanName}\"")
                 call.respond(
-                    io.beatmaps.api.Playlist(
+                    Playlist(
                         playlist.name,
                         playlist.owner.name,
                         playlist.description,
