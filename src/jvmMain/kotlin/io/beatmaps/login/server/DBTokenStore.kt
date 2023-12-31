@@ -29,9 +29,9 @@ object DBTokenStore : TokenStore {
     override fun accessToken(token: String) =
         transaction {
             AccessTokenTable
-                .join(RefreshTokenTable, JoinType.LEFT, AccessTokenTable.refreshToken, RefreshTokenTable.id)
-                .join(OauthClient, JoinType.LEFT, AccessTokenTable.clientId, OauthClient.clientId)
-                .join(User, JoinType.LEFT, AccessTokenTable.userName, User.id)
+                .join(RefreshTokenTable, JoinType.INNER, AccessTokenTable.refreshToken, RefreshTokenTable.id)
+                .join(OauthClient, JoinType.INNER, AccessTokenTable.clientId, OauthClient.clientId)
+                .join(User, JoinType.INNER, AccessTokenTable.userName, User.id)
                 .select {
                     AccessTokenTable.id eq token
                 }
@@ -70,7 +70,7 @@ object DBTokenStore : TokenStore {
     override fun refreshToken(token: String) =
         transaction {
             RefreshTokenTable
-                .join(User, JoinType.LEFT, RefreshTokenTable.userName, User.id)
+                .join(User, JoinType.INNER, RefreshTokenTable.userName, User.id)
                 .select {
                     RefreshTokenTable.id eq token
                 }.singleOrNull()?.let {
@@ -139,9 +139,9 @@ object DBTokenStore : TokenStore {
     override fun tokenInfo(token: String) =
         transaction {
             AccessTokenTable
-                .join(RefreshTokenTable, JoinType.LEFT, AccessTokenTable.refreshToken, RefreshTokenTable.id)
-                .join(OauthClient, JoinType.LEFT, AccessTokenTable.clientId, OauthClient.clientId)
-                .join(User, JoinType.LEFT, AccessTokenTable.userName, User.id)
+                .join(RefreshTokenTable, JoinType.INNER, AccessTokenTable.refreshToken, RefreshTokenTable.id)
+                .join(OauthClient, JoinType.INNER, AccessTokenTable.clientId, OauthClient.clientId)
+                .join(User, JoinType.INNER, AccessTokenTable.userName, User.id)
                 .select {
                     AccessTokenTable.id eq token
                 }

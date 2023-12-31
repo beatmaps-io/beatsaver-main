@@ -4,6 +4,7 @@ import io.beatmaps.common.IPlaylistConfig
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.fixed
 import kotlinx.datetime.Instant
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -20,7 +21,13 @@ data class Playlist(
 data class PlaylistSong(val key: String? = null, val hash: String, val songName: String? = null)
 
 @Serializable
-data class PlaylistCustomData(val syncURL: String)
+data class PlaylistCustomData(
+    val syncURL: String? = null,
+    @SerialName("AllowDuplicates")
+    val allowDuplicates: Boolean = true,
+    @SerialName("ReadOnly")
+    val readonly: Boolean = false
+)
 
 @Serializable
 data class PlaylistBasic(val playlistId: Int, val playlistImage: String, val name: String, val type: EPlaylistType, val owner: Int, val config: IPlaylistConfig? = null)
