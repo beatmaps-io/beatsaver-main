@@ -213,7 +213,7 @@ val alertsPage = fc<Props> {
                         attrs.role = "button"
                         span {
                             i("fas ${EAlertType.Curation.icon} me-2") {}
-                            +"Followed Curations"
+                            +"Map Curation"
                         }
                         span("form-switch") {
                             input(InputType.checkBox, classes = "form-check-input") {
