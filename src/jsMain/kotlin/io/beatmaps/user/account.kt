@@ -11,6 +11,7 @@ import io.beatmaps.Config
 import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.AccountType
 import io.beatmaps.api.ActionResponse
+import io.beatmaps.api.ReviewOptRequest
 import io.beatmaps.api.SessionInfo
 import io.beatmaps.api.SessionRevokeRequest
 import io.beatmaps.api.SessionsData
@@ -42,6 +43,7 @@ import react.dom.h5
 import react.dom.hr
 import react.dom.input
 import react.dom.label
+import react.dom.span
 import react.fc
 import react.useEffect
 import react.useRef
@@ -59,6 +61,8 @@ val accountTab = fc<AccountComponentProps> { props ->
     val (userLoading, setUserLoading) = useState(false)
 
     val (descriptionErrors, setDescriptionErrors) = useState(listOf<String>())
+
+    val (reviewOptErrors, setReviewOptErrors) = useState(listOf<String>())
 
     val (uploading, setUploading) = useState(false)
     val avatarRef = useRef<HTMLInputElement>()
@@ -187,6 +191,36 @@ val accountTab = fc<AccountComponentProps> { props ->
                         }
                     } else {
                         Promise.reject(IllegalStateException("Description unchanged"))
+                    }
+                }
+            }
+        }
+        errors {
+            attrs.errors = reviewOptErrors
+        }
+        div("mb-3") {
+            label("form-label me-3") {
+                attrs.reactFor = "reviews-enabled"
+                +"Reviews Enabled"
+            }
+            span("form-switch") {
+                input(InputType.checkBox, classes = "form-check-input") {
+                    attrs.id = "reviews-enabled"
+                    attrs.defaultChecked = props.userDetail.reviewsEnabled
+                    attrs.onChangeFunction = { ev ->
+                        Axios.post<ActionResponse>(
+                            "${Config.apibase}/users/reviews-opt",
+                            ReviewOptRequest((ev.target as HTMLInputElement).checked),
+                            generateConfig<ReviewOptRequest, ActionResponse>()
+                        ).then {
+                            if (it.data.success) {
+                                props.onUpdate()
+                            } else {
+                                setReviewOptErrors(it.data.errors)
+                            }
+
+                            it
+                        }
                     }
                 }
             }

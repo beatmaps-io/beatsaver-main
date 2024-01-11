@@ -158,7 +158,7 @@ val infoTable = fc<InfoTableProps> { props ->
         props.map.stats.let { stats ->
             infoItem("Rating", "${stats.upvotes} / ${stats.downvotes} (${stats.scoreOneDP}%)")
 
-            if (ReviewConstants.COMMENTS_ENABLED) {
+            if (ReviewConstants.COMMENTS_ENABLED && props.map.uploader.reviewsEnabled) {
                 div(itemClasses) {
                     +"Reviews"
                     span("text-truncate ms-4") {

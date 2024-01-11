@@ -155,7 +155,8 @@ fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: Use
         other.id.value, other.uniqueName ?: other.name, if (description) other.description else null, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
         getAvatar(other), stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
         admin = other.admin, curator = other.curator, curatorTab = other.curatorTab, verifiedMapper = other.verifiedMapper, suspendedAt = other.suspendedAt?.toKotlinInstant(),
-        playlistUrl = "${Config.apiBase(true)}/users/id/${other.id.value}/playlist", patreon = if (patreon) other.patreon.toTier() else null
+        playlistUrl = "${Config.apiBase(true)}/users/id/${other.id.value}/playlist", patreon = if (patreon) other.patreon.toTier() else null,
+        reviewsEnabled = other.reviewsEnabled
     )
 
 fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null, description: Boolean = false, patreon: Boolean = false) =
@@ -202,6 +203,9 @@ class UsersApi {
 
     @Location("/description")
     data class Description(val api: UsersApi)
+
+    @Location("/reviews-opt")
+    data class ReviewsOpt(val api: UsersApi)
 
     @Location("/admin")
     data class Admin(val api: UsersApi)
@@ -326,6 +330,24 @@ fun Route.userRoute() {
 
             if (success > 0) {
                 // Success
+                call.respond(ActionResponse(true, listOf()))
+            } else {
+                call.respond(ActionResponse(false, listOf("Something went wrong")))
+            }
+        }
+    }
+
+    post<UsersApi.ReviewsOpt> {
+        requireAuthorization { sess ->
+            val req = call.receive<ReviewOptRequest>()
+
+            val success = transaction {
+                User.update({ User.id eq sess.userId }) {
+                    it[reviewsEnabled] = req.enableReviews
+                }
+            }
+
+            if (success > 0) {
                 call.respond(ActionResponse(true, listOf()))
             } else {
                 call.respond(ActionResponse(false, listOf("Something went wrong")))
@@ -1003,7 +1025,8 @@ fun Route.userRoute() {
                         it[Beatmap.uploaded.min()]?.toKotlinInstant(),
                         it[Beatmap.uploaded.max()]?.toKotlinInstant()
                     ),
-                    type = if (dao.discordId != null) AccountType.DISCORD else AccountType.SIMPLE
+                    type = if (dao.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
+                    reviewsEnabled = dao.reviewsEnabled
                 )
             }
         }
