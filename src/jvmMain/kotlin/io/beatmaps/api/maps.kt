@@ -236,10 +236,10 @@ fun Route.mapDetailRoute() {
                                     }
 
                                     Alert.insert(
-                                        "Map Curated",
+                                        "Followed Curations",
                                         "@${user.uniqueName} just curated #${toHexString(mapUpdate.id)}: **${it.name}**.\n" +
                                             "*\"${it.description.replace(Regex("\n+"), " ").take(100)}...\"*",
-                                        EAlertType.MapCurated,
+                                        EAlertType.FollowedCurations,
                                         recipients
                                     )
                                     updateAlertCount(recipients.plus(it.uploader.id.value))
