@@ -151,7 +151,7 @@ val scoreTable = fc<ScoreTableProps> { props ->
         }
     }
 
-    div("scores col-lg-8") {
+    div("scores") {
         table("table table-striped table-dark") {
             thead {
                 tr {
