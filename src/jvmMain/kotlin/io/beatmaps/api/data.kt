@@ -30,7 +30,7 @@ fun getActualPrefixForTime(cdnPrefix: String, time: Instant, r2: Boolean = false
 
 fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
     toHexString(other.id.value), other.name, other.description,
-    UserDetail.from(other.uploader), MapDetailMetadata.from(other), MapStats.from(other), other.uploaded?.toKotlinInstant(), other.automapper, other.ranked, other.qualified,
+    UserDetail.from(other.uploader), MapDetailMetadata.from(other), MapStats.from(other), other.uploaded?.toKotlinInstant(), other.declaredAi.markAsBot, other.ranked, other.qualified,
     other.versions.values.map { MapVersion.from(it, cdnPrefix) }.partition { it.state == EMapState.Published }.let {
         // Once a map is published hide previous versions
         it.first.ifEmpty {

@@ -112,7 +112,7 @@ private fun deleteFromR2(update: CDNUpdate, r2Client: IR2Bucket) {
         VersionsDao.wrapRows(
             Versions.join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id).select {
                 // Uploaded, deleted or beatsage or not published
-                (Versions.r2 eq true) and (Versions.mapId eq update.mapId) and ((Beatmap.deletedAt.isNotNull()) or (Beatmap.declaredAi eq AiDeclarationType.None) or (Versions.state neq EMapState.Published))
+                (Versions.r2 eq true) and (Versions.mapId eq update.mapId) and ((Beatmap.deletedAt.isNotNull()) or (Beatmap.declaredAi neq AiDeclarationType.None) or (Versions.state neq EMapState.Published))
             }
         ).map { it.hash }
     }
