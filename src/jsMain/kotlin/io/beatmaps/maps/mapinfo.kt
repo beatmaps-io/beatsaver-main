@@ -14,6 +14,7 @@ import io.beatmaps.api.SimpleMapInfoUpdate
 import io.beatmaps.api.StateUpdate
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.api.MapAttr
 import io.beatmaps.common.json
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
@@ -22,6 +23,7 @@ import io.beatmaps.index.modalContext
 import io.beatmaps.playlist.addToPlaylist
 import io.beatmaps.shared.AudioPreviewSize
 import io.beatmaps.shared.audioPreview
+import io.beatmaps.shared.coloredCard
 import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.map.bookmarkButton
 import io.beatmaps.shared.map.links
@@ -32,7 +34,6 @@ import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
-import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
@@ -150,7 +151,21 @@ val mapInfo = fc<MapInfoProps> { props ->
         }
     }
 
-    div("card") {
+    val mapAttrs = listOfNotNull(
+        if (props.mapInfo.ranked) MapAttr.Ranked else null,
+        if (props.mapInfo.qualified && !props.mapInfo.ranked) MapAttr.Qualified else null,
+        if (props.mapInfo.curator != null) MapAttr.Curated else null
+    ).ifEmpty {
+        listOfNotNull(
+            if (props.mapInfo.uploader.verifiedMapper) MapAttr.Verified else null
+        )
+    }
+
+    coloredCard {
+        attrs.color = mapAttrs.joinToString(" ") { it.color }
+        attrs.title = mapAttrs.joinToString(" + ") { it.name }
+        attrs.classes = "m-0"
+
         div("card-header d-flex" + if (deleted) " bg-danger" else "") {
             if (editing) {
                 +"Edit map"

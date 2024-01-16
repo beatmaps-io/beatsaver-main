@@ -24,7 +24,6 @@ external interface ReviewTableProps : Props {
     var map: String?
     var mapUploaderId: Int?
     var userDetail: UserDetail?
-    var fullWidth: Boolean?
 }
 
 val reviewTable = fc<ReviewTableProps> { props ->
@@ -53,7 +52,7 @@ val reviewTable = fc<ReviewTableProps> { props ->
         }
     }
 
-    div("reviews" + if (props.fullWidth == true) "" else " col-lg-8") {
+    div("reviews") {
         ref = resultsTable
         key = "resultsTable"
 
