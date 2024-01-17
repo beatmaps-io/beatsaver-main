@@ -343,7 +343,9 @@ val mapInfo = fc<MapInfoProps> { props ->
                         }
                     }
                 } else {
-                    textToContent(props.mapInfo.description)
+                    p("text-break") {
+                        textToContent(props.mapInfo.description)
+                    }
                 }
             }
 
