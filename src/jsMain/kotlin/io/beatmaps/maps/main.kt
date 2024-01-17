@@ -119,7 +119,7 @@ val mapPage = fc<MapPageProps> { props ->
                         }
                     }
 
-                    div("col-lg-8 text-nowrap") {
+                    div("col-lg-8") {
                         mapPageNav {
                             attrs.map = it
                             attrs.comments = showComments
