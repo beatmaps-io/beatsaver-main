@@ -98,8 +98,8 @@ val mapPage = fc<MapPageProps> { props ->
                     attrs {
                         mapInfo = it
                         reloadMap = ::loadMap
-                        deleteMap = {
-                            history.push("/profile")
+                        deleteMap = { self ->
+                            history.push("/profile" + if (!self) "/${it.uploader.id}" else "")
                         }
                         updateMapinfo = { map ->
                             setMap(map)
