@@ -99,7 +99,7 @@ val mapPage = fc<MapPageProps> { props ->
                         mapInfo = it
                         reloadMap = ::loadMap
                         deleteMap = {
-                            history.push("/profile")
+                            history.push("/profile/${it.uploader.id}")
                         }
                         updateMapinfo = { map ->
                             setMap(map)
