@@ -53,7 +53,7 @@ import kotlin.collections.set
 external interface MapInfoProps : Props {
     var mapInfo: MapDetail
     var reloadMap: () -> Unit
-    var deleteMap: () -> Unit
+    var deleteMap: (Boolean) -> Unit
     var updateMapinfo: (MapDetail) -> Unit
 }
 
@@ -97,7 +97,7 @@ val mapInfo = fc<MapInfoProps> { props ->
         setLoading(true)
 
         Axios.post<String>("${Config.apibase}/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.value?.trim()), generateConfig<MapInfoUpdate, String>()).then({
-            props.deleteMap()
+            props.deleteMap(props.mapInfo.uploader.id == userData?.userId)
         }) {
             setLoading(false)
         }

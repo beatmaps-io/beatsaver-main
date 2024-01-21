@@ -33,8 +33,8 @@ val testplay = fc<TestplayProps> { props ->
             attrs {
                 mapInfo = props.mapInfo
                 reloadMap = props.refreshPage
-                deleteMap = {
-                    props.history.push("/profile")
+                deleteMap = { self ->
+                    props.history.push("/profile" + if (!self) "/${props.mapInfo.uploader.id}" else "")
                 }
                 updateMapinfo = props.updateMapinfo
             }
