@@ -4,6 +4,7 @@ import external.Axios
 import external.AxiosResponse
 import external.generateConfig
 import io.beatmaps.Config
+import io.beatmaps.api.AiDeclaration
 import io.beatmaps.api.BookmarkRequest
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.ErrorResponse
@@ -11,8 +12,9 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.SimpleMapInfoUpdate
 import io.beatmaps.api.StateUpdate
-import io.beatmaps.api.ValidateMap
+import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.api.MapAttr
 import io.beatmaps.common.json
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
@@ -21,6 +23,7 @@ import io.beatmaps.index.modalContext
 import io.beatmaps.playlist.addToPlaylist
 import io.beatmaps.shared.AudioPreviewSize
 import io.beatmaps.shared.audioPreview
+import io.beatmaps.shared.coloredCard
 import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.map.bookmarkButton
 import io.beatmaps.shared.map.links
@@ -31,7 +34,6 @@ import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
-import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
@@ -51,7 +53,7 @@ import kotlin.collections.set
 external interface MapInfoProps : Props {
     var mapInfo: MapDetail
     var reloadMap: () -> Unit
-    var deleteMap: () -> Unit
+    var deleteMap: (Boolean) -> Unit
     var updateMapinfo: (MapDetail) -> Unit
 }
 
@@ -95,7 +97,7 @@ val mapInfo = fc<MapInfoProps> { props ->
         setLoading(true)
 
         Axios.post<String>("${Config.apibase}/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.value?.trim()), generateConfig<MapInfoUpdate, String>()).then({
-            props.deleteMap()
+            props.deleteMap(props.mapInfo.uploader.id == userData?.userId)
         }) {
             setLoading(false)
         }
@@ -111,10 +113,10 @@ val mapInfo = fc<MapInfoProps> { props ->
         }
     }
 
-    fun validate(automapper: Boolean = true) {
+    fun declareAi(automapper: Boolean = true) {
         setLoading(true)
 
-        Axios.post<String>("${Config.apibase}/maps/validate", ValidateMap(props.mapInfo.intId(), automapper), generateConfig<ValidateMap, String>()).then({
+        Axios.post<String>("${Config.apibase}/maps/declareai", AiDeclaration(props.mapInfo.intId(), automapper), generateConfig<AiDeclaration, String>()).then({
             props.reloadMap()
         }) {
             setLoading(false)
@@ -133,7 +135,37 @@ val mapInfo = fc<MapInfoProps> { props ->
 
     val deleted = props.mapInfo.deletedAt != null
 
-    div("card") {
+    if (props.mapInfo.let { it.declaredAi == AiDeclarationType.SageScore && userData?.userId == it.uploader.id }) {
+        div("alert alert-danger alert-dismissible") {
+            +"This map was automatically flagged as an AI-generated map. If you believe this was a mistake, please report it in the "
+            a("https://discord.gg/rjVDapkMmj", classes = "alert-link") {
+                +"BeatSaver Discord server"
+            }
+            +"."
+            button(classes = "btn-close") {
+                attrs.onClickFunction = {
+                    it.preventDefault()
+                    declareAi(true)
+                }
+            }
+        }
+    }
+
+    val mapAttrs = listOfNotNull(
+        if (props.mapInfo.ranked) MapAttr.Ranked else null,
+        if (props.mapInfo.qualified && !props.mapInfo.ranked) MapAttr.Qualified else null,
+        if (props.mapInfo.curator != null) MapAttr.Curated else null
+    ).ifEmpty {
+        listOfNotNull(
+            if (props.mapInfo.uploader.verifiedMapper) MapAttr.Verified else null
+        )
+    }
+
+    coloredCard {
+        attrs.color = mapAttrs.joinToString(" ") { it.color }
+        attrs.title = mapAttrs.joinToString(" + ") { it.name }
+        attrs.classes = "m-0"
+
         div("card-header d-flex" + if (deleted) " bg-danger" else "") {
             if (editing) {
                 +"Edit map"
@@ -230,13 +262,14 @@ val mapInfo = fc<MapInfoProps> { props ->
                         }
                         if (userData?.admin == true) {
                             a("#") {
-                                attrs.title = if (props.mapInfo.automapper) "Flag as Human-made Map" else "Flag as AI-assisted Map"
-                                attrs.attributes["aria-label"] = if (props.mapInfo.automapper) "Validate" else "Invalidate"
+                                val tooltip = if (props.mapInfo.declaredAi.markAsBot) "Flag as Human-made Map" else "Flag as AI-assisted Map"
+                                attrs.title = tooltip
+                                attrs.attributes["aria-label"] = tooltip
                                 attrs.onClickFunction = {
                                     it.preventDefault()
-                                    if (!loading) validate(!props.mapInfo.automapper)
+                                    if (!loading) declareAi(!props.mapInfo.declaredAi.markAsBot)
                                 }
-                                i("fas " + if (props.mapInfo.automapper) "fa-user-check text-success" else "fa-user-times text-danger-light") { }
+                                i("fas " + if (props.mapInfo.declaredAi.markAsBot) "fa-user-check text-success" else "fa-user-times text-danger-light") { }
                             }
                             a("#") {
                                 attrs.title = "Delete"
@@ -310,7 +343,9 @@ val mapInfo = fc<MapInfoProps> { props ->
                         }
                     }
                 } else {
-                    textToContent(props.mapInfo.description)
+                    p("text-break") {
+                        textToContent(props.mapInfo.description)
+                    }
                 }
             }
 

@@ -7,6 +7,7 @@ import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDetailWithOrder
 import io.beatmaps.api.OauthScope
+import io.beatmaps.api.Playlist
 import io.beatmaps.api.PlaylistApi
 import io.beatmaps.api.PlaylistCustomData
 import io.beatmaps.api.PlaylistFull
@@ -17,8 +18,10 @@ import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
 import io.beatmaps.api.optionalAuthorization
 import io.beatmaps.api.parseSearchQuery
+import io.beatmaps.common.Folders
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SearchPlaylistConfig
+import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.applyToQuery
@@ -30,7 +33,6 @@ import io.beatmaps.common.db.lateral
 import io.beatmaps.common.db.lessEqF
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
-import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
@@ -46,7 +48,6 @@ import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
-import io.beatmaps.common.localPlaylistCoverFolder
 import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -65,6 +66,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.util.Base64
+import io.beatmaps.common.dbo.Playlist as PlaylistTable
 
 fun Route.playlistSingle() {
     fun performSearchForPlaylist(config: SearchPlaylistConfig, cdnPrefix: String, page: Long, pageSize: Int = 20): List<MapDetailWithOrder> {
@@ -117,8 +119,8 @@ fun Route.playlistSingle() {
                                         // Doesn't quite make sense but we want to exclude beat sage by default
                                         when (params.automapper) {
                                             true -> q
-                                            false -> q.and(Beatmap.automapper eq true)
-                                            null -> q.and(Beatmap.automapper eq false)
+                                            false -> q.and(Beatmap.declaredAi neq AiDeclarationType.None)
+                                            null -> q.and(Beatmap.declaredAi eq AiDeclarationType.None)
                                         }
                                     }
                                     .notNull(searchInfo.userSubQuery) { o -> Beatmap.uploader inSubQuery o }
@@ -156,21 +158,21 @@ fun Route.playlistSingle() {
 
     fun getDetail(id: Int, cdnPrefix: String, userId: Int?, isAdmin: Boolean, page: Long?): PlaylistPage? {
         val detailPage = transaction {
-            val playlist = Playlist
+            val playlist = PlaylistTable
                 .joinMaps()
                 .joinOwner()
                 .joinPlaylistCurator()
-                .slice(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all)
+                .slice(PlaylistTable.columns + User.columns + curatorAlias.columns + PlaylistTable.Stats.all)
                 .select {
-                    (Playlist.id eq id).let {
+                    (PlaylistTable.id eq id).let {
                         if (isAdmin) {
                             it
                         } else {
-                            it and Playlist.deletedAt.isNull()
+                            it and PlaylistTable.deletedAt.isNull()
                         }
                     }
                 }
-                .groupBy(Playlist.id, User.id, curatorAlias[User.id])
+                .groupBy(PlaylistTable.id, User.id, curatorAlias[User.id])
                 .handleOwner()
                 .handleCurator()
                 .firstOrNull()?.let {
@@ -246,11 +248,11 @@ fun Route.playlistSingle() {
     get<PlaylistApi.Download> { req ->
         val (playlist, playlistSongs) = transaction {
             fun getPlaylist() =
-                Playlist
+                PlaylistTable
                     .joinPlaylistCurator()
                     .joinOwner()
                     .select {
-                        (Playlist.id eq req.id) and Playlist.deletedAt.isNull()
+                        (PlaylistTable.id eq req.id) and PlaylistTable.deletedAt.isNull()
                     }
                     .handleOwner()
                     .handleCurator()
@@ -299,14 +301,14 @@ fun Route.playlistSingle() {
             if (playlist != null && (playlist.type.anonymousAllowed || playlist.owner.id == sess?.userId)) {
                 val localFile = when (playlist.type) {
                     EPlaylistType.System -> bookmarksIcon
-                    else -> File(localPlaylistCoverFolder(), "${playlist.playlistId}.jpg").readBytes()
+                    else -> File(Folders.localPlaylistCoverFolder(), "${playlist.playlistId}.jpg").readBytes()
                 }
                 val imageStr = Base64.getEncoder().encodeToString(localFile)
 
                 val cleanName = cleanString("BeatSaver - ${playlist.name}.bplist")
                 call.response.headers.append(HttpHeaders.ContentDisposition, "attachment; filename=\"${cleanName}\"")
                 call.respond(
-                    io.beatmaps.api.Playlist(
+                    Playlist(
                         playlist.name,
                         playlist.owner.name,
                         playlist.description,

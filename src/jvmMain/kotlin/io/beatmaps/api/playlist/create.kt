@@ -8,13 +8,13 @@ import io.beatmaps.api.from
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
+import io.beatmaps.common.Folders
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
-import io.beatmaps.common.localPlaylistCoverFolder
 import io.beatmaps.controllers.UploadException
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
@@ -84,7 +84,7 @@ fun Route.playlistCreate() {
                         its.copyToSuspend(tmp, sizeLimit = 10 * 1024 * 1024)
 
                         thumbnailSizes.forEach { s ->
-                            files[s] = File(io.beatmaps.controllers.uploadDir, "upload-${java.lang.System.currentTimeMillis()}-${sess.userId.hashCode()}-$s.jpg").also { localFile ->
+                            files[s] = File(Folders.uploadTempFolder(), "upload-${java.lang.System.currentTimeMillis()}-${sess.userId.hashCode()}-$s.jpg").also { localFile ->
                                 net.coobird.thumbnailator.Thumbnails
                                     .of(tmp.toByteArray().inputStream())
                                     .size(s, s)
@@ -124,7 +124,7 @@ fun Route.playlistCreate() {
                 }
 
                 files.forEach { (s, temp) ->
-                    val localFile = File(localPlaylistCoverFolder(s), "$newId.jpg")
+                    val localFile = File(Folders.localPlaylistCoverFolder(s), "$newId.jpg")
                     Files.move(temp.toPath(), localFile.toPath())
                 }
 
@@ -157,7 +157,7 @@ fun Route.playlistCreate() {
                     its.copyToSuspend(tmp, sizeLimit = 10 * 1024 * 1024)
 
                     thumbnailSizes.forEach { s ->
-                        val localFile = File(localPlaylistCoverFolder(s), "${req.id}.jpg")
+                        val localFile = File(Folders.localPlaylistCoverFolder(s), "${req.id}.jpg")
 
                         Thumbnails
                             .of(tmp.toByteArray().inputStream())

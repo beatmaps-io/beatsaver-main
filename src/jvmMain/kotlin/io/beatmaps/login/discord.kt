@@ -4,12 +4,12 @@ import io.beatmaps.api.UserCrypto
 import io.beatmaps.api.alertCount
 import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.Config
+import io.beatmaps.common.Folders
 import io.beatmaps.common.client
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
-import io.beatmaps.common.localAvatarFolder
 import io.ktor.client.call.body
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
@@ -76,7 +76,7 @@ suspend fun downloadDiscordAvatar(discordAvatar: String, discordId: Long): Strin
     }.body<ByteArray>()
 
     val fileName = UserCrypto.getHash(discordId.toString(), discordSecret)
-    val localFile = File(localAvatarFolder(), "$fileName.png")
+    val localFile = File(Folders.localAvatarFolder(), "$fileName.png")
     localFile.writeBytes(bytes)
 
     return "${Config.cdnBase("", true)}/avatar/$fileName.png"

@@ -1,13 +1,14 @@
 package io.beatmaps.cloudflare
 
 import io.beatmaps.common.CDNUpdate
+import io.beatmaps.common.Folders
+import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.downloadFilename
-import io.beatmaps.common.localFolder
 import io.beatmaps.common.rabbitOptional
 import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.JoinType
@@ -88,12 +89,12 @@ private fun uploadToR2(update: CDNUpdate, r2Client: IR2Bucket) {
         VersionsDao.wrapRows(
             Versions.join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id).select {
                 // Not uploaded, not beatsage, published
-                (Versions.r2 neq true) and (Versions.mapId eq update.mapId) and (Beatmap.automapper eq false) and (Versions.state eq EMapState.Published)
+                (Versions.r2 neq true) and (Versions.mapId eq update.mapId) and (Beatmap.declaredAi eq AiDeclarationType.None) and (Versions.state eq EMapState.Published)
             }
         ).map { it.hash }
     }
 
-    toUpload.map { File(localFolder(it), "$it.zip") }.filter { it.exists() }.map {
+    toUpload.map { File(Folders.localFolder(it), "$it.zip") }.filter { it.exists() }.map {
         r2Client.uploadFile(it)
     }
 
@@ -111,7 +112,7 @@ private fun deleteFromR2(update: CDNUpdate, r2Client: IR2Bucket) {
         VersionsDao.wrapRows(
             Versions.join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id).select {
                 // Uploaded, deleted or beatsage or not published
-                (Versions.r2 eq true) and (Versions.mapId eq update.mapId) and ((Beatmap.deletedAt.isNotNull()) or (Beatmap.automapper eq true) or (Versions.state neq EMapState.Published))
+                (Versions.r2 eq true) and (Versions.mapId eq update.mapId) and ((Beatmap.deletedAt.isNotNull()) or (Beatmap.declaredAi neq AiDeclarationType.None) or (Versions.state neq EMapState.Published))
             }
         ).map { it.hash }
     }
