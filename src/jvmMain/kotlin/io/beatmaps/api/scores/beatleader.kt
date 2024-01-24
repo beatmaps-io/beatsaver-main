@@ -44,6 +44,7 @@ data class BLLeaderboardScore(
         player,
         rank,
         modifiedScore,
+        accuracy,
         pp,
         modifiers.split(',').filter { it.isNotEmpty() }
     )
