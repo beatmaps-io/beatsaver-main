@@ -175,7 +175,7 @@ val scoreTable = fc<ScoreTableProps> { props ->
                 attrs.onScrollFunction = handleScroll
                 scores.forEachIndexed { idx, it ->
                     val maxScore = props.selected?.maxScore ?: 0
-                    val accuracy = it.accuracy ?: ((it.score * 100L) / maxScore.toFloat())
+                    val accuracy = it.accuracy ?: (it.score / maxScore.toFloat())
                     score {
                         attrs.key = idx.toString()
                         attrs.position = idx + 1
