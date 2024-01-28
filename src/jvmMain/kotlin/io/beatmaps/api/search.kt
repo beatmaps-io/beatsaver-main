@@ -139,12 +139,14 @@ class SearchParams(
                 SearchOrder.Relevance
             originalOrder == SearchOrder.Rating -> SearchOrder.Rating
             originalOrder == SearchOrder.Curated -> SearchOrder.Curated
+            originalOrder == SearchOrder.Oldest -> SearchOrder.Oldest
             else -> SearchOrder.Latest
         }
 
     fun sortArgsFor(searchOrder: SearchOrder) = when (searchOrder) {
         SearchOrder.Relevance -> listOf(similarRank to SortOrder.DESC, Beatmap.score to SortOrder.DESC, Beatmap.uploaded to SortOrder.DESC)
         SearchOrder.Rating -> listOf(Beatmap.score to SortOrder.DESC, Beatmap.uploaded to SortOrder.DESC)
+        SearchOrder.Oldest -> listOf(Beatmap.createdAt to SortOrder.ASC)
         SearchOrder.Latest -> listOf(Beatmap.uploaded to SortOrder.DESC)
         SearchOrder.Curated -> listOf(Beatmap.curatedAt to SortOrder.DESC_NULLS_LAST, Beatmap.uploaded to SortOrder.DESC)
     }.toTypedArray()

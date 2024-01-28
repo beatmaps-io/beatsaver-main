@@ -19,6 +19,7 @@ import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.greaterEqF
 import io.beatmaps.common.db.lessEqF
+import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.curatorAlias
@@ -44,6 +45,7 @@ import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+
 
 fun Route.playlistSearch() {
     options<PlaylistApi.ByUploadDate> {
@@ -114,8 +116,8 @@ fun Route.playlistSearch() {
             SearchOrder.Relevance -> listOf(searchInfo.similarRank to SortOrder.DESC, Playlist.createdAt to SortOrder.DESC)
             SearchOrder.Rating, SearchOrder.Latest -> listOf(Playlist.createdAt to SortOrder.DESC)
             SearchOrder.Curated -> listOf(Playlist.curatedAt to SortOrder.DESC_NULLS_LAST, Playlist.createdAt to SortOrder.DESC)
+            SearchOrder.Oldest -> listOf(Beatmap.createdAt to SortOrder.ASC)
         }.toTypedArray()
-
         newSuspendedTransaction {
             val playlists = Playlist
                 .joinMaps()
