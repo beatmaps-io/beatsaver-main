@@ -72,6 +72,8 @@ class PlaylistApi {
         @Description("Like `before` but will get you maps more recent than the time supplied.\nYYYY-MM-DDTHH:MM:SS+00:00")
         val after: Instant? = null,
         val sort: LatestPlaylistSort? = LatestPlaylistSort.CREATED,
+        @Description("1 - 100") @DefaultValue("20")
+        val pageSize: Int? = 20,
         @Ignore
         val api: PlaylistApi
     )
@@ -94,7 +96,7 @@ class PlaylistApi {
 }
 
 enum class LatestPlaylistSort {
-    UPDATED, SONGS_UPDATED, CREATED
+    UPDATED, SONGS_UPDATED, CREATED, CURATED
 }
 
 fun getMaxMapForUser(userId: Int) = Coalesce(
