@@ -116,5 +116,5 @@ data class SSLeaderboardScore(
     val timeSet: String,
     val hasReplay: Boolean
 ) {
-    fun toLeaderboardScore() = LeaderboardScore(leaderboardPlayerInfo.id.toLong(), leaderboardPlayerInfo.name.replace(tagsRegex, ""), rank, modifiedScore, pp, modifiers.split(',').filter { it.isNotEmpty() })
+    fun toLeaderboardScore() = LeaderboardScore(leaderboardPlayerInfo.id.toLong(), leaderboardPlayerInfo.name.replace(tagsRegex, ""), rank, modifiedScore, null, pp, modifiers.split(',').filter { it.isNotEmpty() })
 }
