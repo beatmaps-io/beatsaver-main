@@ -98,8 +98,8 @@ val scoreTable = fc<ScoreTableProps> { props ->
         }
     }
 
-    fun scoreColor(score: Int, maxScore: Int) =
-        (score / maxScore.toFloat()).let {
+    fun scoreColor(accuracy: Float) =
+        accuracy.let {
             when {
                 it > 0.9 -> "text-info"
                 it > 0.8 -> "text-success"
@@ -175,6 +175,7 @@ val scoreTable = fc<ScoreTableProps> { props ->
                 attrs.onScrollFunction = handleScroll
                 scores.forEachIndexed { idx, it ->
                     val maxScore = props.selected?.maxScore ?: 0
+                    val accuracy = it.accuracy ?: (it.score / maxScore.toFloat())
                     score {
                         attrs.key = idx.toString()
                         attrs.position = idx + 1
@@ -182,9 +183,9 @@ val scoreTable = fc<ScoreTableProps> { props ->
                         attrs.name = it.name
                         attrs.pp = it.pp
                         attrs.score = it.score
-                        attrs.scoreColor = scoreColor(it.score, maxScore)
+                        attrs.scoreColor = scoreColor(accuracy)
                         attrs.mods = it.mods
-                        attrs.percentage = ((it.score * 100L) / maxScore.toFloat()).fixedStr(2) + "%"
+                        attrs.percentage = (accuracy * 100f).fixedStr(2) + "%"
                     }
                 }
             }
