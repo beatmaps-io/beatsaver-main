@@ -529,7 +529,6 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             if (state.state == ProfileTab.REVIEWS) {
                 reviewTable {
                     attrs.userDetail = detail
-                    attrs.fullWidth = true
                 }
             }
 

@@ -59,8 +59,10 @@ fun Route.playlistSearch() {
                 null, LatestPlaylistSort.CREATED -> Playlist.createdAt
                 LatestPlaylistSort.SONGS_UPDATED -> Playlist.songsChangedAt
                 LatestPlaylistSort.UPDATED -> Playlist.updatedAt
+                LatestPlaylistSort.CURATED -> Playlist.curatedAt
             }
 
+            val pageSize = (it.pageSize ?: 20).coerceIn(1, 100)
             val playlists = transaction {
                 Playlist
                     .joinMaps()
@@ -75,21 +77,18 @@ fun Route.playlistSearch() {
                                     (Playlist.deletedAt.isNull() and (sess?.let { s -> Playlist.owner eq s.userId or (Playlist.type eq EPlaylistType.Public) } ?: (Playlist.type eq EPlaylistType.Public)))
                                         .notNull(it.before) { o -> sortField less o.toJavaInstant() }
                                         .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
+                                        .let { q ->
+                                            if (it.sort == LatestPlaylistSort.CURATED) q.and(Playlist.curatedAt.isNotNull()) else q
+                                        }
                                 }
                                 .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
-                                .limit(20)
+                                .limit(pageSize)
                         )
                     }
                     .groupBy(Playlist.id, User.id, curatorAlias[User.id])
                     .handleOwner()
                     .handleCurator()
-                    .sortedByDescending { row ->
-                        when (it.sort) {
-                            null, LatestPlaylistSort.CREATED -> row[Playlist.createdAt]
-                            LatestPlaylistSort.SONGS_UPDATED -> row[Playlist.songsChangedAt]
-                            LatestPlaylistSort.UPDATED -> row[Playlist.updatedAt]
-                        }
-                    }
+                    .sortedByDescending { row -> row[sortField] }
                     .map { playlist ->
                         PlaylistFull.from(playlist, cdnPrefix())
                     }

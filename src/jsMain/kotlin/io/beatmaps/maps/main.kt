@@ -98,8 +98,8 @@ val mapPage = fc<MapPageProps> { props ->
                     attrs {
                         mapInfo = it
                         reloadMap = ::loadMap
-                        deleteMap = {
-                            history.push("/profile")
+                        deleteMap = { self ->
+                            history.push("/profile" + if (!self) "/${it.uploader.id}" else "")
                         }
                         updateMapinfo = { map ->
                             setMap(map)
@@ -110,6 +110,16 @@ val mapPage = fc<MapPageProps> { props ->
                     val leaderBoardType = type ?: LeaderboardType.fromName(localStorage["maps.leaderboardType"]) ?: LeaderboardType.ScoreSaber
                     val showComments = ReviewConstants.COMMENTS_ENABLED && comments ?: (localStorage["maps.showComments"] == "true")
                     div("col-lg-4 text-nowrap") {
+                        infoTable {
+                            attrs.map = it
+                            attrs.selected = selectedDiff
+                            attrs.changeSelectedDiff = { diff ->
+                                setSelectedDiff(diff)
+                            }
+                        }
+                    }
+
+                    div("col-lg-8") {
                         mapPageNav {
                             attrs.map = it
                             attrs.comments = showComments
@@ -126,25 +136,17 @@ val mapPage = fc<MapPageProps> { props ->
                             }
                         }
 
-                        infoTable {
-                            attrs.map = it
-                            attrs.selected = selectedDiff
-                            attrs.changeSelectedDiff = { diff ->
-                                setSelectedDiff(diff)
+                        if (showComments) {
+                            reviewTable {
+                                attrs.map = it.id
+                                attrs.mapUploaderId = it.uploader.id
                             }
-                        }
-                    }
-
-                    if (showComments) {
-                        reviewTable {
-                            attrs.map = it.id
-                            attrs.mapUploaderId = it.uploader.id
-                        }
-                    } else if (version != null && it.deletedAt == null) {
-                        scoreTable {
-                            attrs.mapKey = version.hash
-                            attrs.selected = selectedDiff
-                            attrs.type = leaderBoardType
+                        } else if (version != null && it.deletedAt == null) {
+                            scoreTable {
+                                attrs.mapKey = version.hash
+                                attrs.selected = selectedDiff
+                                attrs.type = leaderBoardType
+                            }
                         }
                     }
                 }
