@@ -74,7 +74,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
         ),
         "Requirements" to listOf(
             PlaylistSearchBooleanFilter("chroma", "Chroma") { it.chroma },
-            PlaylistSearchBooleanFilter("noodle", "Noodle") { it.noodle },
+            PlaylistSearchBooleanFilter("noodle", "Noodle Extensions") { it.noodle },
             PlaylistSearchBooleanFilter("me", "Mapping Extensions") { it.me },
             PlaylistSearchBooleanFilter("cinema", "Cinema") { it.cinema }
         )

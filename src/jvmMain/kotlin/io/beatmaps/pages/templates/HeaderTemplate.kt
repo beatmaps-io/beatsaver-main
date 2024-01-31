@@ -98,7 +98,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                         }
                                     }
                                     a("/modreview", classes = "dropdown-item auto-router") {
-                                        +"Reviews"
+                                        +"Reviews Log"
                                     }
                                 }
                             }
