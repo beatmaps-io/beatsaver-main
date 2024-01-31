@@ -244,6 +244,29 @@ table.search-results {
     }
   }
 
+  .del-beatmap {
+    display: table;
+    box-sizing: border-box;
+
+    .beatmap {
+        display: table-cell;
+        box-sizing: border-box;
+    }
+
+    .del-beatmap-button-cell {
+        display: table-cell;
+        box-sizing: border-box;
+        vertical-align: middle;
+
+        .del-beatmap-button {
+            margin: 5px;
+            border-radius: .25rem;
+            background-color: #990000;
+            padding: 5px;
+        }
+    }
+  }
+
   .playlist-card {
     width: 100%;
     height: 80px;

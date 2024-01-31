@@ -315,12 +315,30 @@ val playlistPage = fc<Props> {
                                 draggable(it.map.id, idx) {
                                     attrs.classes = setOf("drag-beatmap")
 
-                                    beatmapInfo {
-                                        obj = it.map
-                                        version = it.map.publishedVersion()
-                                        this.audio = audio
+                                    div("del-beatmap") {
+                                        beatmapInfo {
+                                            obj = it.map
+                                            version = it.map.publishedVersion()
+                                            this.audio = audio
+                                        }
+                                        div("del-beatmap-button-cell") {
+                                            div("del-beatmap-button fa fa-times") {
+
+                                            }
+                                        }
                                     }
                                 }
+                            }
+                        }
+                    }
+                } else if (playlist?.owner?.id == userData?.userId){
+                    div("playlist") {
+                        // TO DO
+                        maps.map {
+                            beatmapInfo {
+                                obj = it.map
+                                version = it.map.publishedVersion()
+                                this.audio = audio
                             }
                         }
                     }
