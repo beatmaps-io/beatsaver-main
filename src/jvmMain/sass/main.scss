@@ -262,10 +262,22 @@ table.search-results {
             margin: 5px;
             border-radius: .25rem;
             background-color: #990000;
+            color: #FFFFFF;
             padding: 5px;
+
+            &:hover {
+                background-color: #CC0000;
+            }
         }
     }
   }
+
+  .del-beatmap-hidden {
+       height: 0px;
+       opacity: 0;
+       margin: -1px 5px;
+  }
+
 
   .playlist-card {
     width: 100%;

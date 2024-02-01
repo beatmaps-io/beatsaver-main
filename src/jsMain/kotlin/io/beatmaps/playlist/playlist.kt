@@ -315,17 +315,11 @@ val playlistPage = fc<Props> {
                                 draggable(it.map.id, idx) {
                                     attrs.classes = setOf("drag-beatmap")
 
-                                    div("del-beatmap") {
-                                        beatmapInfo {
-                                            obj = it.map
-                                            version = it.map.publishedVersion()
-                                            this.audio = audio
-                                        }
-                                        div("del-beatmap-button-cell") {
-                                            div("del-beatmap-button fa fa-times") {
-
-                                            }
-                                        }
+                                    removeMapPlaylist {
+                                        attrs.obj = it.map
+                                        attrs.audio = audio
+                                        attrs.playlistKey = playlist.playlistId
+                                        attrs.mapId = it.map.id
                                     }
                                 }
                             }
@@ -333,12 +327,12 @@ val playlistPage = fc<Props> {
                     }
                 } else if (playlist?.owner?.id == userData?.userId){
                     div("playlist") {
-                        // TO DO
                         maps.map {
-                            beatmapInfo {
-                                obj = it.map
-                                version = it.map.publishedVersion()
-                                this.audio = audio
+                            removeMapPlaylist {
+                                attrs.obj = it.map
+                                attrs.audio = audio
+                                attrs.playlistKey = playlist!!.playlistId
+                                attrs.mapId = it.map.id
                             }
                         }
                     }
