@@ -20,11 +20,13 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
+fun UserDao.toIdentity() =
+    Identity(id.value.toString(), mapOf("object" to this))
+
 object DBTokenStore : TokenStore {
     private val codes = mutableMapOf<String, CodeToken>()
 
-    private fun createIdentity(username: Int?, user: UserDao) =
-        Identity(username.toString(), mapOf("object" to user))
+    private fun createIdentity(username: Int?, user: UserDao) = user.toIdentity()
 
     override fun accessToken(token: String) =
         transaction {

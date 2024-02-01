@@ -43,6 +43,7 @@ $link-decoration: none;
 $link-hover-decoration: underline;
 $table-group-separator-color: #434343;
 $enable-smooth-scroll: false;
+$form-feedback-invalid-color: $danger-light;
 
 $theme-colors: (
   "primary":      $primary,
@@ -1595,6 +1596,21 @@ small.alert-count {
       width: 59px;
     }
   }
+}
+.quest-code {
+  text-align: center;
+  font-size: 36px;
+}
+.card-body .code-complete {
+  display: block;
+  font-size: 128px;
+  color: $success;
+  margin: 10px 0 30px;
+}
+.quest-errors {
+  height: 36px;
+  margin-top: -1rem;
+  padding-top: 0.25rem;
 }
 .oauthicon {
   width: 50px;
