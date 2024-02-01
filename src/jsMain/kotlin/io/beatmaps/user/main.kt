@@ -386,7 +386,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                             }
                                             routeLink("/modreview?user=${state.userDetail?.name}", className = "btn btn-secondary") {
                                                 i("fas fa-heartbeat") { }
-                                                +"ReviewsLog"
+                                                +"Review Log"
                                             }
                                         }
                                     }
