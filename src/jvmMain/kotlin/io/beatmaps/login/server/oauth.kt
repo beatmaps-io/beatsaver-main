@@ -1,6 +1,7 @@
 package io.beatmaps.login.server
 
 import io.beatmaps.api.OauthScope
+import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.genericPage
@@ -16,18 +17,21 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.html.meta
 import nl.myndocs.oauth2.authenticator.Credentials
 import nl.myndocs.oauth2.client.Client
+import nl.myndocs.oauth2.device.DeviceCodeUrlGenerator
+import nl.myndocs.oauth2.device.UUIDDeviceCodeConverter
 import nl.myndocs.oauth2.identity.Identity
 import nl.myndocs.oauth2.identity.IdentityService
 import nl.myndocs.oauth2.ktor.feature.Oauth2ServerFeature
 import nl.myndocs.oauth2.token.RefreshToken
 import nl.myndocs.oauth2.token.converter.RefreshTokenConverter
+import nl.myndocs.oauth2.tokenstore.inmemory.InMemoryDeviceCodeStore
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Instant
 import java.util.UUID
 
-fun Application.installOauth2() {
+fun Application.installOauth2(deviceCodeStore: InMemoryDeviceCodeStore) {
     install(Oauth2ServerFeature) {
         authenticationCallback = { call, callRouter ->
             if (call.request.httpMethod == HttpMethod.Get) {
@@ -71,6 +75,7 @@ fun Application.installOauth2() {
         tokenEndpoint = "/api/oauth2/token"
         authorizationEndpoint = "/oauth2/authorize"
         tokenInfoEndpoint = "/api/oauth2/identity"
+        deviceCodeEndpoint = "/oauth2/devicecode"
 
         identityService = object : IdentityService {
             override fun allowedScopes(forClient: Client, identity: Identity, scopes: Set<String>) = scopes
@@ -108,5 +113,13 @@ fun Application.installOauth2() {
                 )
             }
         }
+
+        this.deviceCodeStore = deviceCodeStore
+        deviceCodeConverter = UUIDDeviceCodeConverter(
+            deviceCodeUrlGenerator = object : DeviceCodeUrlGenerator {
+                override fun getUrl() = Config.siteBase() + "/quest"
+                override fun getUrl(code: String) = getUrl() + "?code=$code"
+            }
+        )
     }
 }

@@ -15,6 +15,7 @@ import io.beatmaps.api.collaborationRoute
 import io.beatmaps.api.mapDetailRoute
 import io.beatmaps.api.modLogRoute
 import io.beatmaps.api.playlistRoute
+import io.beatmaps.api.questRoute
 import io.beatmaps.api.reviewRoute
 import io.beatmaps.api.scores.ScoreSaberServerException
 import io.beatmaps.api.scoresRoute
@@ -101,6 +102,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.html.HEAD
 import nl.myndocs.oauth2.exception.InvalidGrantException
+import nl.myndocs.oauth2.tokenstore.inmemory.InMemoryDeviceCodeStore
 import org.flywaydb.core.Flyway
 import org.valiktor.ConstraintViolationException
 import org.valiktor.i18n.toMessage
@@ -390,7 +392,8 @@ fun Application.beatmapsio() {
         playlistStats()
         emailQueue()
     }
-    installOauth2()
+    val deviceCodeStore = InMemoryDeviceCodeStore()
+    installOauth2(deviceCodeStore)
 
     scheduleTask()
     scheduleCleanser()
@@ -417,6 +420,7 @@ fun Application.beatmapsio() {
         reviewRoute()
         bookmarkRoute()
         collaborationRoute()
+        questRoute(deviceCodeStore)
 
         mapController()
         userController()
