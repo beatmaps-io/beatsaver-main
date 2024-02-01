@@ -46,7 +46,7 @@ val mapFilters = listOf<FilterInfo<SearchParams>>(
     FilterInfo("fs", "Full Spread", FilterCategory.GENERAL) { it.fullSpread == true },
 
     FilterInfo("chroma", "Chroma", FilterCategory.REQUIREMENTS) { it.chroma == true },
-    FilterInfo("noodle", "Noodle", FilterCategory.REQUIREMENTS) { it.noodle == true },
+    FilterInfo("noodle", "Noodle Extensions", FilterCategory.REQUIREMENTS) { it.noodle == true },
     FilterInfo("me", "Mapping Extensions", FilterCategory.REQUIREMENTS) { it.me == true },
     FilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true }
 )
