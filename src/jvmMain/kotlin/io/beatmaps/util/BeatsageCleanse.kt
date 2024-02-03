@@ -9,6 +9,7 @@ import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
@@ -22,17 +23,10 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Timer
 import java.util.TimerTask
-import java.util.logging.Level
-import java.util.logging.Logger
 
-private val schedulerLogger = Logger.getLogger("bmio.BeatsageCleanse")
+class BeatsageCleanse(private val app: Application) : TimerTask() {
+    private val logger = KotlinLogging.logger {}
 
-fun Application.scheduleCleanser() {
-    val cleanserEnabled = System.getenv("CLEANSE_ENABLED") == "true"
-    if (cleanserEnabled) Timer("BeatSage Cleanse").scheduleAtFixedRate(BeatsageCleanse(this), 5000L, 60 * 1000L)
-}
-
-class BeatsageCleanse(val app: Application) : TimerTask() {
     override fun run() {
         try {
             transaction {
@@ -60,7 +54,7 @@ class BeatsageCleanse(val app: Application) : TimerTask() {
                         u[deletedAt] = NowExpression(deletedAt.columnType)
                     }
 
-                    schedulerLogger.log(Level.INFO, "Permanently deleted $digest")
+                    logger.info { "Permanently deleted $digest" }
                 }
             }
 
@@ -83,13 +77,20 @@ class BeatsageCleanse(val app: Application) : TimerTask() {
                 }, Beatmap.id)?.map {
                     it[Beatmap.id].value
                 }?.onEach {
-                    schedulerLogger.log(Level.INFO, "Deleted old beatsage map #${toHexString(it)}")
+                    logger.info { "Deleted old beatsage map #${toHexString(it)}" }
                 }
             }?.forEach {
                 app.pub("beatmaps", "maps.$it.updated.deleted", null, it)
             }
         } catch (e: Exception) {
-            schedulerLogger.log(Level.SEVERE, "Exception while running task", e)
+            logger.error(e) { "Exception while running task" }
+        }
+    }
+
+    companion object {
+        fun Application.scheduleCleanser() {
+            val cleanserEnabled = System.getenv("CLEANSE_ENABLED") == "true"
+            if (cleanserEnabled) Timer("BeatSage Cleanse").scheduleAtFixedRate(BeatsageCleanse(this), 5000L, 60 * 1000L)
         }
     }
 }

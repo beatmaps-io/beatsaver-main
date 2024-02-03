@@ -51,15 +51,16 @@ import io.beatmaps.login.discordLogin
 import io.beatmaps.login.installOauth
 import io.beatmaps.login.installSessions
 import io.beatmaps.login.patreon.patreonLink
+import io.beatmaps.login.server.TokenStoreCleaner.Companion.scheduleTokenCleanup
 import io.beatmaps.login.server.installOauth2
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
+import io.beatmaps.util.BeatsageCleanse.Companion.scheduleCleanser
+import io.beatmaps.util.CheckScheduled.Companion.scheduleTask
 import io.beatmaps.util.alertsThread
 import io.beatmaps.util.downloadsThread
 import io.beatmaps.util.playlistStats
 import io.beatmaps.util.reviewListeners
-import io.beatmaps.util.scheduleCleanser
-import io.beatmaps.util.scheduleTask
 import io.beatmaps.websockets.mapUpdateEnricher
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -397,6 +398,7 @@ fun Application.beatmapsio() {
 
     scheduleTask()
     scheduleCleanser()
+    scheduleTokenCleanup()
 
     routing {
         get("/") {
