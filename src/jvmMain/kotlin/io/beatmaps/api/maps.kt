@@ -760,9 +760,7 @@ fun Route.mapDetailRoute() {
                                     .let { q ->
                                         if (it.automapper != true) q.and(Beatmap.declaredAi eq AiDeclarationType.None) else q
                                     }
-                                    .let { q ->
-                                        if (it.verified != null) q.and(User.verifiedMapper eq it.verified) else q
-                                    }
+                                    .notNull(it.verified) { o -> User.verifiedMapper eq o }
                                     .notNull(it.before) { o -> sortField less o.toJavaInstant() }
                                     .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
                                     .let { q ->
