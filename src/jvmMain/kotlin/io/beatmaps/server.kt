@@ -103,6 +103,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.html.HEAD
 import nl.myndocs.oauth2.exception.InvalidGrantException
+import nl.myndocs.oauth2.exception.OauthException
+import nl.myndocs.oauth2.exception.toMap
 import nl.myndocs.oauth2.tokenstore.inmemory.InMemoryDeviceCodeStore
 import org.flywaydb.core.Flyway
 import org.valiktor.ConstraintViolationException
@@ -327,6 +329,10 @@ fun Application.beatmapsio() {
 
         exception<InvalidGrantException> {
             call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
+        }
+
+        exception<OauthException> {
+            call.respond(HttpStatusCode.BadRequest, it.toMap())
         }
 
         exception<Throwable> { cause ->
