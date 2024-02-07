@@ -754,6 +754,7 @@ fun Route.mapDetailRoute() {
                     Beatmap.id.inSubQuery(
                         Beatmap
                             .joinVersions()
+                            .joinUploader()
                             .slice(Beatmap.id)
                             .select {
                                 Beatmap.deletedAt.isNull()
