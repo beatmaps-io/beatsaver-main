@@ -15,29 +15,26 @@ import react.dom.a
 import react.dom.div
 import react.dom.i
 import react.fc
-import react.useState
 
 external interface RemoveMapPlaylistProps : Props {
     var obj: MapDetail
     var audio: MutableRefObject<Audio>
     var playlistKey: Int
     var mapId: String
+    var removeMap: (() -> Unit)?
 }
 
 var removeMapPlaylist = fc<RemoveMapPlaylistProps> { props ->
-    val (hidden, setHidden) = useState<Boolean?>(false)
-
     fun remove() {
         Axios.post<String>(
             "${Config.apibase}/playlists/id/${props.playlistKey}/add",
             PlaylistMapRequest(props.mapId, false),
             generateConfig<PlaylistMapRequest, String>()
         )
-
-        setHidden(true)
+        props.removeMap?.invoke()
     }
 
-    val classes = if(hidden == false) {"del-beatmap"} else {"del-beatmap-hidden"}
+    val classes = "del-beatmap"
 
     div(classes) {
         beatmapInfo {

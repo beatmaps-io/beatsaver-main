@@ -3,7 +3,7 @@ services:
   db:
     image: iamtopcat/postgres:master-b71
     ports:
-      - "1358:1358"
+      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     environment:
@@ -21,8 +21,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: "root"
       MONGO_INITDB_ROOT_PASSWORD: "insecure-password"
-      MONGO_INITDB_DATABASE: "beatmaps"
-      MONGO_USER: "beatmaps"
+      MONGO_INITDB_DATABASE: beatmaps
+      MONGO_USER: beatmaps
       MONGO_PASSWORD: "insecure-password"
     restart: always
 volumes:
