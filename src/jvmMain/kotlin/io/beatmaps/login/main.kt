@@ -24,6 +24,7 @@ import io.ktor.server.locations.get
 import io.ktor.server.locations.post
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.queryString
+import io.ktor.server.request.uri
 import io.ktor.server.request.userAgent
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
@@ -83,6 +84,15 @@ class Oauth2 {
 
     @Location("/authorize/not-me")
     class NotMe(val api: Oauth2)
+}
+
+@Location("/quest")
+class Quest {
+    @Location("")
+    class CodeLogin(val api: Quest)
+
+    @Location("/not-me")
+    class NotMe(val api: Quest)
 }
 
 @Location("/register")
@@ -153,6 +163,14 @@ fun Route.authRoute() {
                 call.respondRedirect(newPrincipal.redirect)
             }
         }
+        post<Quest.CodeLogin> {
+            call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
+                val user = newPrincipal.user
+                call.sessions.set(Session.fromUser(user, newPrincipal.alertCount, call = call))
+
+                call.respondRedirect(call.request.uri)
+            }
+        }
     }
 
     get<Oauth2.AuthorizeSuccess> {
@@ -183,6 +201,15 @@ fun Route.authRoute() {
     get<Oauth2.NotMe> {
         call.sessions.clear<Session>()
         call.respondRedirect("/oauth2/authorize?" + call.request.queryString())
+    }
+
+    get<Quest.CodeLogin> {
+        genericPage()
+    }
+
+    get<Quest.NotMe> {
+        call.sessions.clear<Session>()
+        call.respondRedirect("/quest?" + call.request.queryString())
     }
 
     get<Steam> {

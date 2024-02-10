@@ -12,13 +12,14 @@ import io.beatmaps.playlist.editPlaylist
 import io.beatmaps.playlist.multiAddPlaylist
 import io.beatmaps.playlist.playlistFeed
 import io.beatmaps.playlist.playlistPage
+import io.beatmaps.quest.quest
 import io.beatmaps.upload.UploadPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.alerts.alertsPage
-import io.beatmaps.user.authorizePage
 import io.beatmaps.user.changeEmailPage
 import io.beatmaps.user.forgotPage
 import io.beatmaps.user.loginPage
+import io.beatmaps.user.oauth.authorizePage
 import io.beatmaps.user.pickUsernamePage
 import io.beatmaps.user.resetPage
 import io.beatmaps.user.signupPage
@@ -26,7 +27,6 @@ import io.beatmaps.user.userList
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -160,6 +160,9 @@ class App : RComponent<Props, State>() {
                 }
                 bsroute("/username") {
                     pickUsernamePage { }
+                }
+                bsroute("/quest") {
+                    quest { }
                 }
                 bsroute("*") {
                     notFound { }

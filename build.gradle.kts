@@ -98,6 +98,7 @@ kotlin {
                 implementation("io.ktor:ktor-client-apache:$ktorVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.0")
                 implementation("ch.qos.logback:logback-classic:1.2.3")
+                implementation("io.github.oshai:kotlin-logging:6.0.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.6.4")
                 implementation("io.jsonwebtoken:jjwt-impl:0.11.2")
@@ -147,7 +148,7 @@ kotlin {
                 implementation("nl.myndocs:oauth2-server-core:$myndocsOauthVersion")
                 implementation("nl.myndocs:oauth2-server-ktor:$myndocsOauthVersion")
                 // In memory dependencies
-                implementation("nl.myndocs:oauth2-server-token-store-inmemory:$myndocsOauthVersion")
+                implementation("nl.myndocs:oauth2-server-device-code-store-inmemory:$myndocsOauthVersion")
 
                 runtimeOnly(files("BeatMaps-BeatSage-1.0-SNAPSHOT.jar"))
             }

@@ -112,6 +112,8 @@ fun Route.discordLogin() {
             req.state?.let { String(hex(it)) }.orEmpty().let { query ->
                 if (query.isNotEmpty() && query.contains("client_id")) {
                     call.respondRedirect("/oauth2/authorize/success$query")
+                } else if (query.isNotEmpty() && query.contains("code")) {
+                    call.respondRedirect("/quest$query")
                 } else {
                     call.respondRedirect("/")
                 }

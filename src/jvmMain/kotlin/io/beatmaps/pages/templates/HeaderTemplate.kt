@@ -58,7 +58,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                     +"Curated Maps"
                                 }
                                 a("/?verified=true", classes = "dropdown-item auto-router") {
-                                    +"From Verifed Mappers"
+                                    +"From Verified Mappers"
                                 }
                                 a("/?ranked=true", classes = "dropdown-item auto-router") {
                                     +"Ranked Maps"
@@ -94,11 +94,11 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 div("dropdown-menu") {
                                     if (s.admin) {
                                         a("/modlog", classes = "dropdown-item auto-router") {
-                                            +"ModLog"
+                                            +"Mod Log"
                                         }
                                     }
                                     a("/modreview", classes = "dropdown-item auto-router") {
-                                        +"Reviews"
+                                        +"Review Log"
                                     }
                                 }
                             }

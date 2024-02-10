@@ -20,11 +20,11 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
+fun UserDao.toIdentity() =
+    Identity(id.value.toString(), mapOf("object" to this))
+
 object DBTokenStore : TokenStore {
     private val codes = mutableMapOf<String, CodeToken>()
-
-    private fun createIdentity(username: Int?, user: UserDao) =
-        Identity(username.toString(), mapOf("object" to user))
 
     override fun accessToken(token: String) =
         transaction {
@@ -47,7 +47,7 @@ object DBTokenStore : TokenStore {
             row[AccessTokenTable.id].value,
             row[AccessTokenTable.type],
             row[AccessTokenTable.expiration],
-            createIdentity(row[AccessTokenTable.userName], UserDao.wrapRow(row)),
+            UserDao.wrapRow(row).toIdentity(),
             row[AccessTokenTable.clientId],
             row[AccessTokenTable.scope].split(",").toSet(),
             refreshToken(row)
@@ -81,7 +81,7 @@ object DBTokenStore : TokenStore {
     private fun refreshToken(row: ResultRow) = RefreshToken(
         row[RefreshTokenTable.id].value,
         row[RefreshTokenTable.expiration],
-        createIdentity(row[RefreshTokenTable.userName], UserDao.wrapRow(row)),
+        UserDao.wrapRow(row).toIdentity(),
         row[RefreshTokenTable.clientId],
         row[RefreshTokenTable.scope].split(",").toSet()
     )
@@ -121,6 +121,8 @@ object DBTokenStore : TokenStore {
     }
 
     override fun storeCodeToken(codeToken: CodeToken) {
+        // Remove expired codes
+        codes.entries.removeAll { it.value.expired() }
         codes[codeToken.codeToken] = codeToken
     }
 

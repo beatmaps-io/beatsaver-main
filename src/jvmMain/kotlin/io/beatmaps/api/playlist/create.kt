@@ -52,7 +52,8 @@ interface IPlaylistUpdate {
 data class PlaylistCreateMultipart(
     override val name: String? = null,
     override val description: String? = null,
-    override val type: String? = null
+    override val type: String? = null,
+    val config: SearchPlaylistConfig? = null
 ) : IPlaylistUpdate
 
 @Serializable
@@ -85,7 +86,7 @@ fun Route.playlistCreate() {
 
                         thumbnailSizes.forEach { s ->
                             files[s] = File(Folders.uploadTempFolder(), "upload-${java.lang.System.currentTimeMillis()}-${sess.userId.hashCode()}-$s.jpg").also { localFile ->
-                                net.coobird.thumbnailator.Thumbnails
+                                Thumbnails
                                     .of(tmp.toByteArray().inputStream())
                                     .size(s, s)
                                     .outputFormat("JPEG")
@@ -104,7 +105,8 @@ fun Route.playlistCreate() {
                     "",
                     data.name ?: "",
                     typeFromReq(data, sess),
-                    sess.userId
+                    sess.userId,
+                    data.config
                 )
 
                 validate(toCreate) {
@@ -115,11 +117,12 @@ fun Route.playlistCreate() {
                 }
 
                 val newId = transaction {
-                    io.beatmaps.common.dbo.Playlist.insertAndGetId {
+                    Playlist.insertAndGetId {
                         it[name] = toCreate.name
                         it[description] = data.description ?: ""
                         it[owner] = toCreate.owner
                         it[type] = toCreate.type
+                        it[config] = toCreate.config
                     }
                 }
 

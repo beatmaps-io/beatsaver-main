@@ -15,6 +15,7 @@ import io.beatmaps.api.collaborationRoute
 import io.beatmaps.api.mapDetailRoute
 import io.beatmaps.api.modLogRoute
 import io.beatmaps.api.playlistRoute
+import io.beatmaps.api.questRoute
 import io.beatmaps.api.reviewRoute
 import io.beatmaps.api.scores.ScoreSaberServerException
 import io.beatmaps.api.scoresRoute
@@ -50,15 +51,16 @@ import io.beatmaps.login.discordLogin
 import io.beatmaps.login.installOauth
 import io.beatmaps.login.installSessions
 import io.beatmaps.login.patreon.patreonLink
+import io.beatmaps.login.server.TokenStoreCleaner.Companion.scheduleTokenCleanup
 import io.beatmaps.login.server.installOauth2
 import io.beatmaps.pages.GenericPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
+import io.beatmaps.util.BeatsageCleanse.Companion.scheduleCleanser
+import io.beatmaps.util.CheckScheduled.Companion.scheduleTask
 import io.beatmaps.util.alertsThread
 import io.beatmaps.util.downloadsThread
 import io.beatmaps.util.playlistStats
 import io.beatmaps.util.reviewListeners
-import io.beatmaps.util.scheduleCleanser
-import io.beatmaps.util.scheduleTask
 import io.beatmaps.websockets.mapUpdateEnricher
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -101,6 +103,9 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.html.HEAD
 import nl.myndocs.oauth2.exception.InvalidGrantException
+import nl.myndocs.oauth2.exception.OauthException
+import nl.myndocs.oauth2.exception.toMap
+import nl.myndocs.oauth2.tokenstore.inmemory.InMemoryDeviceCodeStore
 import org.flywaydb.core.Flyway
 import org.valiktor.ConstraintViolationException
 import org.valiktor.i18n.toMessage
@@ -326,6 +331,10 @@ fun Application.beatmapsio() {
             call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
         }
 
+        exception<OauthException> {
+            call.respond(HttpStatusCode.BadRequest, it.toMap())
+        }
+
         exception<Throwable> { cause ->
             call.respond(HttpStatusCode.InternalServerError, "Internal Server Error")
             errorLogger.severe(cause.message)
@@ -390,10 +399,12 @@ fun Application.beatmapsio() {
         playlistStats()
         emailQueue()
     }
-    installOauth2()
+    val deviceCodeStore = InMemoryDeviceCodeStore()
+    installOauth2(deviceCodeStore)
 
     scheduleTask()
     scheduleCleanser()
+    scheduleTokenCleanup()
 
     routing {
         get("/") {
@@ -417,6 +428,7 @@ fun Application.beatmapsio() {
         reviewRoute()
         bookmarkRoute()
         collaborationRoute()
+        questRoute(deviceCodeStore)
 
         mapController()
         userController()
