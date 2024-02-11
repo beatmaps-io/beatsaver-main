@@ -321,9 +321,7 @@ val playlistPage = fc<Props> {
                                         attrs.playlistKey = playlist.playlistId
                                         attrs.mapId = it.map.id
                                         attrs.removeMap = {
-                                            val mutableList = maps.toMutableList()
-                                            mutableList.remove(it)
-                                            setMaps(mutableList)
+                                            setMaps(maps - it)
                                         }
                                     }
                                 }
@@ -339,9 +337,7 @@ val playlistPage = fc<Props> {
                                 attrs.playlistKey = playlist!!.playlistId
                                 attrs.mapId = it.map.id
                                 attrs.removeMap = {
-                                    val mutableList = maps.toMutableList()
-                                    mutableList.remove(it)
-                                    setMaps(mutableList)
+                                    setMaps(maps - it)
                                 }
                             }
                         }

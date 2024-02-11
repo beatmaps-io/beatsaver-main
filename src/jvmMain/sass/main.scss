@@ -254,21 +254,21 @@ table.search-results {
         box-sizing: border-box;
     }
 
-    .del-beatmap-button-cell {
+    .del-beatmap-btn-cell {
         display: table-cell;
         box-sizing: border-box;
         vertical-align: middle;
 
-        .del-beatmap-button {
+        .del-beatmap-btn {
             margin: 5px;
             border-radius: .25rem;
-            background-color: #990000;
-            color: #FFFFFF;
+            //background-color: #990000;
+            //color: #FFFFFF;
             padding: 5px;
 
-            &:hover {
-                background-color: #CC0000;
-            }
+            //&:hover {
+            //    background-color: #CC0000;
+            //}
         }
     }
   }

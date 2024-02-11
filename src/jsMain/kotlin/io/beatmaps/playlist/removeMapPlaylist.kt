@@ -42,8 +42,8 @@ var removeMapPlaylist = fc<RemoveMapPlaylistProps> { props ->
             version = props.obj.publishedVersion()
             this.audio = props.audio
         }
-        div("del-beatmap-button-cell") {
-            a("#", classes = "del-beatmap-button") {
+        div("del-beatmap-btn-cell") {
+            a("#", classes = "btn btn-danger") {
                 attrs.onClickFunction = {
                     it.preventDefault()
                     remove()
