@@ -1283,7 +1283,7 @@ fun Route.userRoute() {
                 .orderBy(User.seniorCurator, SortOrder.DESC)
                 .limit(50)
                 .map { row ->
-                    UserDetail.from(row)
+                    UserDetail.from(row, description = true)
                 }
         }
 
