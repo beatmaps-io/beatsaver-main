@@ -49,11 +49,13 @@ external interface AdminAccountComponentProps : Props {
 val adminAccount = fc<AdminAccountComponentProps> { props ->
     val maxUploadRef = useRef<HTMLSelectElement>()
     val curatorRef = useRef<HTMLInputElement>()
+    val seniorCuratorRef = useRef<HTMLInputElement>()
     val curatorTabRef = useRef<HTMLInputElement>()
     val verifiedMapperRef = useRef<HTMLInputElement>()
     val reasonRef = useRef<HTMLTextAreaElement>()
 
     val (loading, setLoading) = useState(false)
+    val (curator, setCurator) = useState(props.userDetail.curator == true)
     val (success, setSuccess) = useState(false)
     val (errors, setErrors) = useState(listOf<String>())
     val (uploadLimit, setUploadLimit) = useState(props.userDetail.uploadLimit ?: 1)
@@ -62,6 +64,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
 
     useEffectOnce {
         curatorRef.current?.checked = props.userDetail.curator == true
+        seniorCuratorRef.current?.checked = props.userDetail.seniorCurator == true
         curatorTabRef.current?.checked = props.userDetail.curatorTab
         verifiedMapperRef.current?.checked = props.userDetail.verifiedMapper
     }
@@ -136,10 +139,26 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
                     attrs.id = "curator"
                     attrs.disabled = loading
                     ref = curatorRef
+                    attrs.onChangeFunction = {
+                        setCurator(curatorRef.current?.checked ?: false)
+                        seniorCuratorRef.current?.apply { checked = checked && curatorRef.current?.checked ?: false}
+                    }
                 }
                 label("form-check-label") {
                     attrs.reactFor = "curator"
                     +"Curator"
+                }
+            }
+            div("form-check form-switch mb-3 mt-3") {
+                key = "senior-curator"
+                input(InputType.checkBox, classes = "form-check-input") {
+                    attrs.id = "senior-curator"
+                    attrs.disabled = loading || !curator
+                    ref = seniorCuratorRef
+                }
+                label("form-check-label") {
+                    attrs.reactFor = "senior-curator"
+                    +"Senior Curator"
                 }
             }
             div("form-check form-switch mb-3 mt-3") {
@@ -182,6 +201,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
                                 props.userDetail.id,
                                 uploadLimit,
                                 curatorRef.current?.checked ?: false,
+                                seniorCuratorRef.current?.checked ?: false,
                                 curatorTabRef.current?.checked ?: false,
                                 verifiedMapperRef.current?.checked ?: false
                             ),
