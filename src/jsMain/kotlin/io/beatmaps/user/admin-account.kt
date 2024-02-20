@@ -141,7 +141,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
                     ref = curatorRef
                     attrs.onChangeFunction = {
                         setCurator(curatorRef.current?.checked ?: false)
-                        seniorCuratorRef.current?.apply { checked = checked && curatorRef.current?.checked ?: false}
+                        seniorCuratorRef.current?.apply { checked = checked && curatorRef.current?.checked ?: false }
                     }
                 }
                 label("form-check-label") {
