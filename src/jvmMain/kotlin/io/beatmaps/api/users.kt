@@ -250,6 +250,9 @@ class UsersApi {
 
     @Location("/search")
     data class Search(val api: UsersApi, val q: String? = "")
+
+    @Location("/curators")
+    data class Curators(val api: UsersApi)
 }
 
 fun followData(uploaderId: Int, userId: Int?): UserFollowData {
@@ -1260,6 +1263,25 @@ fun Route.userRoute() {
                 }
                 .orderBy(length(User.uniqueName), SortOrder.ASC)
                 .limit(10)
+                .map { row ->
+                    UserDetail.from(row)
+                }
+        }
+
+        call.respond(users)
+    }
+
+    options<UsersApi.Curators> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
+    }
+    get<UsersApi.Curators> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        val users = transaction {
+            User
+                .select { User.curator eq Op.TRUE }
+                .orderBy(User.seniorCurator, SortOrder.DESC)
+                .limit(50)
                 .map { row ->
                     UserDetail.from(row)
                 }
