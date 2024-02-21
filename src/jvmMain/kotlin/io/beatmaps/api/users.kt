@@ -46,6 +46,7 @@ import io.beatmaps.login.MongoSession
 import io.beatmaps.login.Session
 import io.beatmaps.login.cookieName
 import io.beatmaps.login.server.DBTokenStore
+import io.beatmaps.util.updateAlertCount
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.Header
@@ -920,7 +921,7 @@ fun Route.userRoute() {
             }
 
             transaction {
-                val shouldAlert = Follows.select { Follows.userId eq req.userId }.empty()
+                val shouldAlert = Follows.select { (Follows.userId eq req.userId) and (Follows.followerId eq user.userId) }.empty()
 
                 Follows.upsert(conflictIndex = Follows.link) { follow ->
                     follow[userId] = req.userId
@@ -930,18 +931,17 @@ fun Route.userRoute() {
                     follow[curation] = req.curation
                     follow[following] = req.following
                 }
-                val followedUser = if (shouldAlert) {
-                    User.select { User.id eq req.userId }.first().let { r -> UserDao.wrapRow(r) }
-                } else {
-                    null
-                }
-                if (followedUser?.followAlerts == true) {
-                    Alert.insert(
-                        "New Follower",
-                        "@${user.uniqueName} is now following you!",
-                        EAlertType.Follow,
-                        req.userId
+                if (shouldAlert) {
+                    val followedUser = UserDao.wrapRow(User.select { User.id eq req.userId }.single())
+
+                    if (followedUser.followAlerts) {
+                        Alert.insert(
+                            "New Follower",
+                            "@${user.uniqueName} is now following you!",
+                            EAlertType.Follow,
+                            req.userId
                     )
+                    updateAlertCount(req.userId)
                 }
             }
             call.respond(HttpStatusCode.OK)
