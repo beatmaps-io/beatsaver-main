@@ -154,7 +154,7 @@ fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: Use
     UserDetail(
         other.id.value, other.uniqueName ?: other.name, if (description) other.description else null, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
         getAvatar(other), stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
-        admin = other.admin, curator = other.curator, curatorTab = other.curatorTab, verifiedMapper = other.verifiedMapper, suspendedAt = other.suspendedAt?.toKotlinInstant(),
+        admin = other.admin, curator = other.curator, seniorCurator = other.seniorCurator, curatorTab = other.curatorTab, verifiedMapper = other.verifiedMapper, suspendedAt = other.suspendedAt?.toKotlinInstant(),
         playlistUrl = "${Config.apiBase(true)}/users/id/${other.id.value}/playlist", patreon = if (patreon) other.patreon.toTier() else null
     )
 
@@ -250,6 +250,9 @@ class UsersApi {
 
     @Location("/search")
     data class Search(val api: UsersApi, val q: String? = "")
+
+    @Location("/curators")
+    data class Curators(val api: UsersApi)
 }
 
 fun followData(uploaderId: Int, userId: Int?): UserFollowData {
@@ -347,6 +350,7 @@ fun Route.userRoute() {
                             }) { u ->
                                 u[uploadLimit] = req.maxUploadSize
                                 u[curator] = req.curator
+                                u[seniorCurator] = req.curator && req.seniorCurator
                                 u[verifiedMapper] = req.verifiedMapper
                                 u[curatorTab] = req.curatorTab
                             } > 0
@@ -1261,6 +1265,25 @@ fun Route.userRoute() {
                 .limit(10)
                 .map { row ->
                     UserDetail.from(row)
+                }
+        }
+
+        call.respond(users)
+    }
+
+    options<UsersApi.Curators> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        call.respond(HttpStatusCode.OK)
+    }
+    get<UsersApi.Curators> {
+        call.response.header("Access-Control-Allow-Origin", "*")
+        val users = transaction {
+            User
+                .select { User.curator eq Op.TRUE }
+                .orderBy(User.seniorCurator, SortOrder.DESC)
+                .limit(50)
+                .map { row ->
+                    UserDetail.from(row, description = true)
                 }
         }
 
