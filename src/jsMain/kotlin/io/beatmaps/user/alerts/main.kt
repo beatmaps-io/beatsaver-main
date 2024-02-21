@@ -24,7 +24,6 @@ import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.role
-import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.url.URLSearchParams
@@ -129,13 +128,13 @@ val alertsPage = fc<Props> {
             // Bad request
         }
 
-    fun setOptions(curationAlerts: Boolean, reviewAlerts: Boolean) {
+    fun setOptions(curationAlerts: Boolean, reviewAlerts: Boolean, followAlerts: Boolean) {
         setLoading(true)
-        Axios.post<String>("${Config.apibase}/alerts/options", AlertOptionsRequest(curationAlerts, reviewAlerts), generateConfig<AlertOptionsRequest, String>()).then {
+        Axios.post<String>("${Config.apibase}/alerts/options", AlertOptionsRequest(curationAlerts, reviewAlerts, followAlerts), generateConfig<AlertOptionsRequest, String>()).then {
             setLoading(false)
             setAlertStats(
                 alertStats?.copy(
-                    curationAlerts = curationAlerts, reviewAlerts = reviewAlerts
+                    curationAlerts = curationAlerts, reviewAlerts = reviewAlerts, followAlerts = followAlerts
                 )
             )
         }.catch {
@@ -221,7 +220,11 @@ val alertsPage = fc<Props> {
                                 attrs.disabled = loading
                                 attrs.defaultChecked = alertStats.curationAlerts
                                 attrs.onChangeFunction = { ev ->
-                                    setOptions((ev.target as HTMLInputElement).checked, alertStats.reviewAlerts)
+                                    setOptions(
+                                        (ev.target as HTMLInputElement).checked,
+                                        alertStats.reviewAlerts,
+                                        alertStats.followAlerts
+                                    )
                                 }
                             }
                         }
@@ -239,7 +242,33 @@ val alertsPage = fc<Props> {
                                 attrs.disabled = loading
                                 attrs.defaultChecked = alertStats.reviewAlerts
                                 attrs.onChangeFunction = { ev ->
-                                    setOptions(alertStats.curationAlerts, (ev.target as HTMLInputElement).checked)
+                                    setOptions(
+                                        alertStats.curationAlerts,
+                                        (ev.target as HTMLInputElement).checked,
+                                        alertStats.followAlerts
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    label("list-group-item list-group-item-action d-flex justify-content-between align-items-center") {
+                        attrs.htmlFor = "pref-follow"
+                        attrs.role = "button"
+                        span {
+                            i("fas ${EAlertType.Follow.icon} me-2") {}
+                            +"Follows"
+                        }
+                        span("form-switch") {
+                            input(InputType.checkBox, classes = "form-check-input") {
+                                attrs.id = "pref-follow"
+                                attrs.disabled = loading
+                                attrs.defaultChecked = alertStats.followAlerts
+                                attrs.onChangeFunction = { ev ->
+                                    setOptions(
+                                        alertStats.curationAlerts,
+                                        alertStats.reviewAlerts,
+                                        (ev.target as HTMLInputElement).checked
+                                    )
                                 }
                             }
                         }

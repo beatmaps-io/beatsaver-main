@@ -168,7 +168,7 @@ fun Route.alertsRoute() {
         requireAuthorization(OauthScope.ALERTS) { sess ->
             val (statParts, user) = transaction { getStats(sess.userId) to UserDao[sess.userId] }
 
-            call.respond(UserAlertStats.fromParts(statParts).copy(reviewAlerts = user.reviewAlerts, curationAlerts = user.curationAlerts))
+            call.respond(UserAlertStats.fromParts(statParts).copy(reviewAlerts = user.reviewAlerts, curationAlerts = user.curationAlerts, followAlerts = user.followAlerts))
         }
     }
 
@@ -182,6 +182,7 @@ fun Route.alertsRoute() {
                 }) {
                     it[reviewAlerts] = req.reviewAlerts
                     it[curationAlerts] = req.curationAlerts
+                    it[followAlerts] = req.followAlerts
                 }
             }
 
@@ -194,7 +195,7 @@ fun Route.alertsRoute() {
             val user = transaction { UserDao[sess.userId] }
 
             updateAlertCount(sess.userId)
-            call.respond(UserAlertStats.fromParts(stats).copy(reviewAlerts = user.reviewAlerts, curationAlerts = user.curationAlerts))
+            call.respond(UserAlertStats.fromParts(stats).copy(reviewAlerts = user.reviewAlerts, curationAlerts = user.curationAlerts, followAlerts = user.followAlerts))
         } else {
             call.respond(HttpStatusCode.BadRequest)
         }

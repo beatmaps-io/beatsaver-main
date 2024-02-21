@@ -11,6 +11,7 @@ import io.beatmaps.common.PasswordChangedData
 import io.beatmaps.common.RevokeSessionsData
 import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UploadLimitData
+import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
@@ -21,6 +22,7 @@ import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.db.length
 import io.beatmaps.common.db.startsWith
 import io.beatmaps.common.db.upsert
+import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
@@ -95,7 +97,6 @@ import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.count
-import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.max
@@ -919,21 +920,30 @@ fun Route.userRoute() {
             }
 
             transaction {
-                if (req.following) {
-                    Follows.upsert(conflictIndex = Follows.link) { follow ->
-                        follow[userId] = req.userId
-                        follow[followerId] = user.userId
-                        follow[since] = NowExpression(since.columnType)
-                        follow[upload] = req.upload
-                        follow[curation] = req.curation
-                    }
+                val shouldAlert = Follows.select { Follows.userId eq req.userId }.empty()
+
+                Follows.upsert(conflictIndex = Follows.link) { follow ->
+                    follow[userId] = req.userId
+                    follow[followerId] = user.userId
+                    follow[since] = NowExpression(since.columnType)
+                    follow[upload] = req.upload
+                    follow[curation] = req.curation
+                    follow[following] = req.following
+                }
+                val followedUser = if (shouldAlert) {
+                    User.select { User.id eq req.userId }.first().let { r -> UserDao.wrapRow(r) }
                 } else {
-                    Follows.deleteWhere {
-                        (Follows.userId eq req.userId) and (Follows.followerId eq user.userId)
-                    }
+                    null
+                }
+                if (followedUser?.followAlerts == true) {
+                    Alert.insert(
+                        "New Follower",
+                        "@${user.uniqueName} is now following you!",
+                        EAlertType.Follow,
+                        req.userId
+                    )
                 }
             }
-
             call.respond(HttpStatusCode.OK)
         }
     }
@@ -1211,7 +1221,7 @@ fun Route.userRoute() {
     fun getFollowerData(page: Long, joinOn: Column<EntityID<Int>>, condition: SqlExpressionBuilder.() -> Op<Boolean>) = transaction {
         val followsSubquery = Follows
             .slice(joinOn, Follows.since)
-            .select(condition)
+            .select { condition() and Follows.following }
             .limit(page)
             .orderBy(Follows.since, SortOrder.DESC)
             .alias("fs")
