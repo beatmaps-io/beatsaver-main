@@ -232,7 +232,7 @@ fun Route.mapDetailRoute() {
                                     }
 
                                     val recipients = Follows.select {
-                                        Follows.userId eq user.userId and Follows.curation
+                                        Follows.userId eq user.userId and Follows.curation and Follows.following
                                     }.map { row ->
                                         row[Follows.followerId].value
                                     }

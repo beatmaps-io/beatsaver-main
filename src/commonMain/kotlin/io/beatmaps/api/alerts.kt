@@ -20,14 +20,15 @@ data class UserAlertStats(
     val read: Int,
     val byType: Map<EAlertType, Int>,
     val curationAlerts: Boolean,
-    val reviewAlerts: Boolean
+    val reviewAlerts: Boolean,
+    val followAlerts: Boolean
 ) {
     companion object {
         fun fromParts(statParts: List<StatPart>) = UserAlertStats(
             statParts.filter { !it.isRead }.sumOf { it.count }.toInt(),
             statParts.filter { it.isRead }.sumOf { it.count }.toInt(),
             statParts.groupBy { it.type }.mapValues { it.value.sumOf { v -> v.count }.toInt() },
-            curationAlerts = false, reviewAlerts = false
+            curationAlerts = false, reviewAlerts = false, followAlerts = false
         )
     }
 }
@@ -38,7 +39,7 @@ data class StatPart(val type: EAlertType, val isRead: Boolean, val count: Long)
 data class AlertUpdate(val id: Int, val read: Boolean)
 
 @Serializable
-data class AlertOptionsRequest(val curationAlerts: Boolean, val reviewAlerts: Boolean)
+data class AlertOptionsRequest(val curationAlerts: Boolean, val reviewAlerts: Boolean, val followAlerts: Boolean)
 
 @Serializable
 data class AlertUpdateAll(val read: Boolean)

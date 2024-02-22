@@ -121,7 +121,7 @@ fun publishVersion(mapId: Int, hash: String, rb: RabbitMQInstance?, additionalCa
 
 fun pushAlerts(map: BeatmapDao, rb: RabbitMQInstance?) {
     val recipients = Follows.select {
-        Follows.userId eq map.uploaderId and Follows.upload
+        Follows.userId eq map.uploaderId and Follows.upload and Follows.following
     }.map { row ->
         row[Follows.followerId].value
     }
