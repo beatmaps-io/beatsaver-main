@@ -20,7 +20,6 @@ external interface RemoveMapPlaylistProps : Props {
     var obj: MapDetail
     var audio: MutableRefObject<Audio>
     var playlistKey: Int
-    var mapId: String
     var removeMap: (() -> Unit)?
 }
 
@@ -28,7 +27,7 @@ var removeMapPlaylist = fc<RemoveMapPlaylistProps> { props ->
     fun remove() {
         Axios.post<String>(
             "${Config.apibase}/playlists/id/${props.playlistKey}/add",
-            PlaylistMapRequest(props.mapId, false),
+            PlaylistMapRequest(props.obj.id, false),
             generateConfig<PlaylistMapRequest, String>()
         )
         props.removeMap?.invoke()

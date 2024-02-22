@@ -319,7 +319,6 @@ val playlistPage = fc<Props> {
                                         attrs.obj = it.map
                                         attrs.audio = audio
                                         attrs.playlistKey = playlist.playlistId
-                                        attrs.mapId = it.map.id
                                         attrs.removeMap = {
                                             setMaps(maps - it)
                                         }
