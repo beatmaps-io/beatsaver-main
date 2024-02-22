@@ -315,10 +315,14 @@ val playlistPage = fc<Props> {
                                 draggable(it.map.id, idx) {
                                     attrs.classes = setOf("drag-beatmap")
 
-                                    beatmapInfo {
-                                        obj = it.map
-                                        version = it.map.publishedVersion()
-                                        this.audio = audio
+                                    removeMapPlaylist {
+                                        attrs.obj = it.map
+                                        attrs.audio = audio
+                                        attrs.playlistKey = playlist.playlistId
+                                        attrs.mapId = it.map.id
+                                        attrs.removeMap = {
+                                            setMaps(maps - it)
+                                        }
                                     }
                                 }
                             }

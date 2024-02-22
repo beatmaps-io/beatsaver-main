@@ -245,6 +245,22 @@ table.search-results {
     }
   }
 
+  .del-beatmap {
+    display: table;
+    box-sizing: border-box;
+
+    .beatmap {
+        display: table-cell;
+        box-sizing: border-box;
+    }
+
+    .del-beatmap-btn-cell {
+        display: table-cell;
+        box-sizing: border-box;
+        vertical-align: middle;
+    }
+  }
+
   .playlist-card {
     width: 100%;
     height: 80px;
