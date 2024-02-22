@@ -328,20 +328,6 @@ val playlistPage = fc<Props> {
                             }
                         }
                     }
-                } else if (playlist != null && playlist.owner.id == userData?.userId) {
-                    div("playlist") {
-                        maps.map {
-                            removeMapPlaylist {
-                                attrs.obj = it.map
-                                attrs.audio = audio
-                                attrs.playlistKey = playlist.playlistId
-                                attrs.mapId = it.map.id
-                                attrs.removeMap = {
-                                    setMaps(maps - it)
-                                }
-                            }
-                        }
-                    }
                 } else {
                     div("playlist") {
                         maps.map {
