@@ -275,7 +275,7 @@ fun followData(uploaderId: Int, userId: Int?): UserFollowData {
 
     return Follows
         .slice(userColumn, followerColumn, followingColumn, uploadColumn, curationColumn).select {
-            userFilter or followerFilter
+            Follows.following and (userFilter or followerFilter)
         }
         .single().let {
             UserFollowData(it[userColumn], it[followerColumn], it[followingColumn], it[uploadColumn], it[curationColumn])
