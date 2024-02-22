@@ -940,8 +940,9 @@ fun Route.userRoute() {
                             "@${user.uniqueName} is now following you!",
                             EAlertType.Follow,
                             req.userId
-                    )
-                    updateAlertCount(req.userId)
+                        )
+                        updateAlertCount(req.userId)
+                    }
                 }
             }
             call.respond(HttpStatusCode.OK)
