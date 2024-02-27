@@ -577,6 +577,7 @@ fun Route.mapDetailRoute() {
                 .joinVersions(true)
                 .joinUploader()
                 .joinCurator()
+                .joinCollaborators()
                 .select {
                     Beatmap.id.inList(mapIds) and (Beatmap.deletedAt.isNull())
                 }
