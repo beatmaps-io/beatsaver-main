@@ -1291,7 +1291,7 @@ fun Route.userRoute() {
         val users = transaction {
             User
                 .select { User.curator eq Op.TRUE }
-                .orderBy(User.seniorCurator, SortOrder.DESC)
+                .orderBy(User.seniorCurator to SortOrder.DESC, User.name to SortOrder.ASC)
                 .limit(50)
                 .map { row ->
                     UserDetail.from(row, description = true)
