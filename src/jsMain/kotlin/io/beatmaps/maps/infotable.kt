@@ -149,6 +149,18 @@ val infoTable = fc<InfoTableProps> { props ->
         }
 
         if (publishedVersion != null) {
+            if (publishedVersion.diffs.any { it.me || it.ne || it.chroma || it.cinema }) {
+                div(itemClasses) {
+                    +"Requirements"
+                    span("text-truncate ms-4") {
+                        mapRequirements {
+                            attrs.margins = "ms-2"
+                            attrs.version = publishedVersion
+                        }
+                    }
+                }
+            }
+
             props.map.metadata.let { metadata ->
                 infoItem("Song Length", metadata.duration.formatTime())
                 infoItem("BPM", "${metadata.bpm}")
