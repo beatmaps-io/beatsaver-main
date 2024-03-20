@@ -151,7 +151,7 @@ val infoTable = fc<InfoTableProps> { props ->
         if (publishedVersion != null) {
             if (publishedVersion.diffs.any { it.me || it.ne || it.chroma || it.cinema }) {
                 div(itemClasses) {
-                    +"Requirements"
+                    +"Mods"
                     span("text-truncate ms-4") {
                         mapRequirements {
                             attrs.margins = "ms-2"
