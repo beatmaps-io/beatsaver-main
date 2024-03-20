@@ -184,7 +184,7 @@ fun Route.playlistSingle() {
                     performSearchForPlaylist(playlist.config, cdnPrefix, page)
                 } else {
                     val mapsSubQuery = PlaylistMap
-                        .join(Beatmap, JoinType.INNER, PlaylistMap.mapId, Beatmap.id)
+                        .join(Beatmap, JoinType.INNER, PlaylistMap.mapId, Beatmap.id) { Beatmap.deletedAt.isNull() }
                         .joinVersions()
                         .slice(PlaylistMap.mapId, PlaylistMap.order)
                         .select {
