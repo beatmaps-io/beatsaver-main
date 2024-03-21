@@ -46,6 +46,14 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
     private fun bookmark(bookmarked: Boolean) =
         Axios.post<String>("${Config.apibase}/bookmark", BookmarkRequest(props.obj?.id, bookmarked = bookmarked), generateConfig<BookmarkRequest, String>())
 
+    override fun componentDidUpdate(prevProps: BeatmapInfoProps, prevState: BeatMapInfoState, snapshot: Any) {
+        if (prevProps.version != props.version) {
+            setState {
+                bookmarked = null
+            }
+        }
+    }
+
     override fun RBuilder.render() {
         props.obj?.let { map ->
             val mapAttrs = listOfNotNull(
