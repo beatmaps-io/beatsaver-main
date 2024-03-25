@@ -146,8 +146,15 @@ val alertsPage = fc<Props> {
         h1("col-lg-8") {
             +"Alerts & Notifications"
         }
-        div("col-lg-4 d-flex") {
+        div("col-4 d-flex") {
             if (!read && alertStats?.let { it.unread > 0 } == true) {
+                a("#", classes = "alert-playlist") {
+                    attrs.onClickFunction = { e ->
+                        e.preventDefault()
+
+                    }
+                    +"Generate playlist"
+                }
                 a("#", classes = "mark-read") {
                     attrs.onClickFunction = { e ->
                         e.preventDefault()
