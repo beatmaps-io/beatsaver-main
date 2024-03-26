@@ -7,6 +7,7 @@ import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session
@@ -118,9 +119,12 @@ fun Route.mapController() {
             headerTemplate = {
                 try {
                     transaction {
-                        Beatmap.joinVersions().select {
-                            Beatmap.id eq it.key.toInt(16) and Beatmap.deletedAt.isNull()
-                        }.limit(1).complexToBeatmap().map { MapDetail.from(it, cdnPrefix()) }.firstOrNull()
+                        Beatmap
+                            .joinCollaborators()
+                            .joinVersions()
+                            .select {
+                                Beatmap.id eq it.key.toInt(16) and Beatmap.deletedAt.isNull()
+                            }.limit(1).complexToBeatmap().map { MapDetail.from(it, cdnPrefix()) }.firstOrNull()
                     }?.let {
                         meta("og:type", "website")
                         meta("og:site_name", "BeatSaver")
@@ -128,6 +132,27 @@ fun Route.mapController() {
                         meta("og:url", "${Config.siteBase()}/maps/${it.id}")
                         meta("og:image", it.publishedVersion()?.coverURL)
                         meta("og:description", it.description.take(400))
+                        
+                        // Joining mappers together for the og:author field so that:
+                        // 1. Uploader will be first
+                        // 2. All non-last collaborators will be joined with ", "
+                        // 3. The last collaborator will be joined with ", and "  
+                        val authors = mutableListOf(it.uploader.name)
+                        it.collaborators?.let { collaborators ->
+                            if (collaborators.isNotEmpty()) {
+                                authors.addAll(collaborators.dropLast(1).map { it.name })
+                                authors.add("and ${collaborators.last().name}")
+                            }
+                        }
+                        val authorString = authors.joinToString(", ")
+                        meta("og:author", authorString)
+
+                        // There can only be one URL so we only add it when there is no collaborator
+                        // Otherwise, it may be confusing
+                        if (it.collaborators == null || it.collaborators.size == 0) {
+                            meta("og:author:url", "${Config.siteBase()}/profile/${it.uploader.id}")
+                        }
+                        
                     }
                 } catch (_: NumberFormatException) {
                     // key isn't an int
