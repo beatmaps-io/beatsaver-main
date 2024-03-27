@@ -136,7 +136,7 @@ fun Route.mapController() {
                         // Joining mappers together for the og:author field so that:
                         // 1. Uploader will be first
                         // 2. All non-last collaborators will be joined with ", "
-                        // 3. The last collaborator will be joined with " and "  
+                        // 3. The last collaborator will be joined with " and "
                         val authors = (listOf(it.uploader) + it.collaborators.orEmpty()).map { u -> u.name }
                         val authorString = authors.reduceIndexed { index, acc, s -> "$acc${if (index == authors.lastIndex) " and" else ","} $s" }
                         meta("og:author", authorString)
