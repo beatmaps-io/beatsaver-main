@@ -132,19 +132,13 @@ fun Route.mapController() {
                         meta("og:url", "${Config.siteBase()}/maps/${it.id}")
                         meta("og:image", it.publishedVersion()?.coverURL)
                         meta("og:description", it.description.take(400))
-                        
+
                         // Joining mappers together for the og:author field so that:
                         // 1. Uploader will be first
                         // 2. All non-last collaborators will be joined with ", "
-                        // 3. The last collaborator will be joined with ", and "  
-                        val authors = mutableListOf(it.uploader.name)
-                        it.collaborators?.let { collaborators ->
-                            if (collaborators.isNotEmpty()) {
-                                authors.addAll(collaborators.dropLast(1).map { it.name })
-                                authors.add("and ${collaborators.last().name}")
-                            }
-                        }
-                        val authorString = authors.joinToString(", ")
+                        // 3. The last collaborator will be joined with " and "  
+                        val authors = (listOf(it.uploader) + it.collaborators.orEmpty()).map { u -> u.name }
+                        val authorString = authors.reduceIndexed { index, acc, s -> "$acc${if (index == authors.lastIndex) " and" else ","} $s" }
                         meta("og:author", authorString)
 
                         // There can only be one URL so we only add it when there is no collaborator
