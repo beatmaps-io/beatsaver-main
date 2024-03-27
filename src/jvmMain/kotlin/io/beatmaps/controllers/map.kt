@@ -146,7 +146,6 @@ fun Route.mapController() {
                         if (it.collaborators == null || it.collaborators.size == 0) {
                             meta("og:author:url", "${Config.siteBase()}/profile/${it.uploader.id}")
                         }
-                        
                     }
                 } catch (_: NumberFormatException) {
                     // key isn't an int
