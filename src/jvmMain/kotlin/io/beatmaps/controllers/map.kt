@@ -143,7 +143,7 @@ fun Route.mapController() {
 
                         // There can only be one URL so we only add it when there is no collaborator
                         // Otherwise, it may be confusing
-                        if (!it.collaborators.isNullOrEmpty()) {
+                        if (it.collaborators.isNullOrEmpty()) {
                             meta("og:author:url", "${Config.siteBase()}/profile/${it.uploader.id}")
                         }
                     }
