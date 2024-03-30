@@ -255,7 +255,7 @@ fun Route.reviewRoute() {
                             return@newSuspendedTransaction false
                         }
 
-                        val isCollaborator = map.collaborators.values.any {singleCollaborator ->
+                        val isCollaborator = map.collaborators.values.any { singleCollaborator ->
                             singleCollaborator.id.value == single.userId
                         }
 
