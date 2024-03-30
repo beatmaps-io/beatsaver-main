@@ -50,6 +50,8 @@ fun Route.playlistController() {
                     meta("og:url", "${Config.siteBase()}/playlists/${it.playlistId}")
                     meta("og:image", it.playlistImage)
                     meta("og:description", it.description.take(400))
+                    meta("og:author", it.owner.name)
+                    meta("og:author:url", "${Config.siteBase()}/profile/${it.owner.id}")
                 }
             }
         )
