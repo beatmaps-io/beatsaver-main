@@ -120,12 +120,20 @@ fun Route.collaborationRoute() {
                         row[Follows.followerId].value
                     }
 
+                    val nonRecipients = Follows.select {
+                        Follows.userId eq map.uploaderId and Follows.following
+                    }.map { row ->
+                        row[Follows.followerId].value
+                    } + listOf(map.uploaderId.value)
+
+                    val finalRecipients = recipients - nonRecipients.toSet()
+
                     Alert.insert(
                         "New Map Collaboration",
                         "@${sess.uniqueName} collaborated with @${map.uploader.uniqueName} on #${Integer.toHexString(map.id.value)}: **${map.name}**.\n" +
                                 "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
                         EAlertType.MapRelease,
-                        recipients
+                        finalRecipients
                     )
                 }
 
