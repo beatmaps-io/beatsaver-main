@@ -97,7 +97,8 @@ private val pipelineLogger = Logger.getLogger("bmio.Pipeline")
 suspend fun <T> PipelineContext<*, ApplicationCall>.optionalAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(Session?) -> T) {
     block(
         checkOauthHeader(scope)?.let { u ->
-            (u.identity?.metadata?.get("object") as? UserDao)?.let { Session.fromUser(it) }
+            // alertCount is not transmitted here and would require another fetch
+            (u.identity?.metadata?.get("object") as? UserDao)?.let { Session.fromUser(it, null, u.clientId) }
         } ?: call.sessions.get()
     )
 }
