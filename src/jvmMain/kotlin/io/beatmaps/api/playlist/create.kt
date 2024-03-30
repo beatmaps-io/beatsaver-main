@@ -97,7 +97,11 @@ fun Route.playlistCreate() {
                     }
                 }
 
-                multipart.recaptchaSuccess || throw UploadException("Missing recaptcha?")
+                // OAuth2 API Accesses should circumvent the recaptcha check as they cannot perform the captcha, are trusted and their access can be revoked on abuse
+                if (sess.oauth2ClientId == null) {
+                    multipart.recaptchaSuccess || throw UploadException("Missing recaptcha?")
+                }
+
                 val data = multipart.get<PlaylistCreateMultipart>()
 
                 val toCreate = PlaylistBasic(
