@@ -16,6 +16,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
+import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
@@ -244,13 +245,23 @@ fun Route.reviewRoute() {
                             r[sentiment] = update.sentiment.dbValue
                         }
                     } else {
-                        val map = Beatmap.joinUploader().select {
+                        val map = Beatmap.joinUploader().joinCollaborators().select {
                             Beatmap.id eq updateMapId
                         }.complexToBeatmap().single()
 
                         if (map.uploaderId.value == single.userId) {
                             // Can't review your own map
                             call.respond(ActionResponse(false, listOf("Own map")))
+                            return@newSuspendedTransaction false
+                        }
+
+                        val isCollaborator = map.collaborators.values.any {singleCollaborator ->
+                            singleCollaborator.id.value == single.userId
+                        }
+
+                        if (isCollaborator) {
+                            // Can't review maps that you collaborated on
+                            call.respond(ActionResponse(false, listOf("You're a collaborator of this map")))
                             return@newSuspendedTransaction false
                         }
 
