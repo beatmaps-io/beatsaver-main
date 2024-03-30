@@ -122,7 +122,7 @@ fun Route.collaborationRoute() {
 
                     Alert.insert(
                         "New Map Collaboration",
-                        "@${map.uploader.uniqueName} collaborated on #${Integer.toHexString(map.id.value)}: **${map.name}**.\n" +
+                        "@${sess.uniqueName} collaborated with @${map.uploader.uniqueName} on #${Integer.toHexString(map.id.value)}: **${map.name}**.\n" +
                                 "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
                         EAlertType.MapRelease,
                         recipients
