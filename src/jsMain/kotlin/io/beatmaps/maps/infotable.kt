@@ -129,7 +129,7 @@ val infoTable = fc<InfoTableProps> { props ->
         }
 
         props.map.curator?.let { curator ->
-            infoItem("Curated by", curator.name, curator.profileLink("curated"))
+            infoItem("Curated by", curator.name, curator.profileLink("curations"))
         }
 
         if (props.map.tags.isNotEmpty()) {
