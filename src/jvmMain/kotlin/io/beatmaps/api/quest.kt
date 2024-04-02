@@ -4,6 +4,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.login.server.DBClientService
 import io.beatmaps.login.server.toIdentity
+import io.beatmaps.util.requireAuthorization
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -40,7 +41,7 @@ fun Route.questRoute(deviceCodeStore: InMemoryDeviceCodeStore) {
     post<QuestApi.Complete> {
         val req = call.receive<QuestComplete>()
 
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             newSuspendedTransaction {
                 User.select {
                     (User.id eq sess.userId)

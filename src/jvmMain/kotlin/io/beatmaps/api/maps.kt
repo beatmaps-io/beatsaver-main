@@ -36,6 +36,7 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.requireAuthorization
 import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -191,7 +192,7 @@ fun Route.mapDetailRoute() {
 
     post<MapsApi.Curate> {
         call.response.header("Access-Control-Allow-Origin", "*")
-        requireAuthorization { user ->
+        requireAuthorization { _, user ->
             if (!user.isCurator()) {
                 call.respond(HttpStatusCode.BadRequest)
             } else {
@@ -268,7 +269,7 @@ fun Route.mapDetailRoute() {
 
     post<MapsApi.DeclareAi> {
         call.response.header("Access-Control-Allow-Origin", "*")
-        requireAuthorization { user ->
+        requireAuthorization { _, user ->
             val mapUpdate = call.receive<AiDeclaration>()
             val result = transaction {
                 val admin = user.isAdmin()
@@ -297,7 +298,7 @@ fun Route.mapDetailRoute() {
 
     post<MapsApi.Update> {
         call.response.header("Access-Control-Allow-Origin", "*")
-        requireAuthorization { user ->
+        requireAuthorization { _, user ->
             val mapUpdate = call.receive<MapInfoUpdate>()
 
             val tooMany = mapUpdate.tags?.groupBy { it.type }?.mapValues { it.value.size }?.withDefault { 0 }?.let { byType ->
@@ -367,7 +368,7 @@ fun Route.mapDetailRoute() {
 
     post<MapsApi.TagUpdate> {
         call.response.header("Access-Control-Allow-Origin", "*")
-        requireAuthorization { user ->
+        requireAuthorization { _, user ->
             val mapUpdate = call.receive<SimpleMapInfoUpdate>()
 
             val tooMany = mapUpdate.tags?.groupBy { it.type }?.mapValues { it.value.size }?.withDefault { 0 }?.let { byType ->
@@ -448,13 +449,13 @@ fun Route.mapDetailRoute() {
     get<MapsApi.InPlaylists> {
         val mapId = it.id
 
-        requireAuthorization {
+        requireAuthorization { _, sess ->
             try {
                 transaction {
                     Playlist.joinMaps {
                         PlaylistMap.mapId eq mapId.toInt(16)
                     }.select {
-                        Playlist.owner eq it.userId and Playlist.deletedAt.isNull() and (Playlist.type neq EPlaylistType.Search)
+                        Playlist.owner eq sess.userId and Playlist.deletedAt.isNull() and (Playlist.type neq EPlaylistType.Search)
                     }.orderBy(Playlist.createdAt, SortOrder.DESC).map { row ->
                         PlaylistDao.wrapRow(row) to (row.getOrNull(PlaylistMap.id) != null)
                     }
@@ -606,7 +607,7 @@ fun Route.mapDetailRoute() {
     }
 
     get<MapsApi.WIP> { r ->
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val beatmaps = transaction {
                 Beatmap
                     .joinVersions(true, state = null)

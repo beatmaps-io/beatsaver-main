@@ -16,7 +16,6 @@ import io.beatmaps.api.PlaylistSong
 import io.beatmaps.api.from
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
-import io.beatmaps.api.optionalAuthorization
 import io.beatmaps.api.parseSearchQuery
 import io.beatmaps.common.Folders
 import io.beatmaps.common.SearchOrder
@@ -49,6 +48,7 @@ import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.optionalAuthorization
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -226,7 +226,7 @@ fun Route.playlistSingle() {
     }
 
     get<PlaylistApi.Detail> { req ->
-        optionalAuthorization(OauthScope.PLAYLISTS) { sess ->
+        optionalAuthorization(OauthScope.PLAYLISTS) { _, sess ->
             getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, null)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
         }
     }
@@ -239,7 +239,7 @@ fun Route.playlistSingle() {
     get<PlaylistApi.DetailWithPage>("Get playlist detail".responds(ok<PlaylistPage>(), notFound())) { req ->
         call.response.header("Access-Control-Allow-Origin", "*")
 
-        optionalAuthorization(OauthScope.PLAYLISTS) { sess ->
+        optionalAuthorization(OauthScope.PLAYLISTS) { _, sess ->
             getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, req.page)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
         }
     }
@@ -297,7 +297,7 @@ fun Route.playlistSingle() {
             }
         }
 
-        optionalAuthorization(OauthScope.PLAYLISTS) { sess ->
+        optionalAuthorization(OauthScope.PLAYLISTS) { _, sess ->
             if (playlist != null && (playlist.type.anonymousAllowed || playlist.owner.id == sess?.userId)) {
                 val localFile = when (playlist.type) {
                     EPlaylistType.System -> bookmarksIcon

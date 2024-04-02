@@ -5,7 +5,6 @@ import io.beatmaps.api.PlaylistApi
 import io.beatmaps.api.PlaylistBasic
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.from
-import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.Folders
@@ -19,6 +18,7 @@ import io.beatmaps.controllers.UploadException
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.handleMultipart
+import io.beatmaps.util.requireAuthorization
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.streamProvider
 import io.ktor.server.application.call
@@ -75,7 +75,7 @@ val thumbnailSizes = listOf(256, 512)
 
 fun Route.playlistCreate() {
     post<PlaylistApi.Create> {
-        requireAuthorization(io.beatmaps.api.OauthScope.ADMIN_PLAYLISTS) { sess ->
+        requireAuthorization(io.beatmaps.api.OauthScope.ADMIN_PLAYLISTS) { authType, sess ->
             val files = mutableMapOf<Int, File>()
 
             try {
@@ -97,7 +97,7 @@ fun Route.playlistCreate() {
                     }
                 }
 
-                multipart.recaptchaSuccess || throw UploadException("Missing recaptcha?")
+                multipart.validRecaptcha(authType) || throw UploadException("Missing recaptcha?")
                 val data = multipart.get<PlaylistCreateMultipart>()
 
                 val toCreate = PlaylistBasic(
@@ -141,7 +141,7 @@ fun Route.playlistCreate() {
     }
 
     post<PlaylistApi.Edit> { req ->
-        requireAuthorization(OauthScope.ADMIN_PLAYLISTS) { sess ->
+        requireAuthorization(OauthScope.ADMIN_PLAYLISTS) { _, sess ->
             val query = (Playlist.id eq req.id and Playlist.deletedAt.isNull()).let { q ->
                 if (sess.isAdmin()) {
                     q

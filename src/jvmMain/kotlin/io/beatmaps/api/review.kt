@@ -22,7 +22,9 @@ import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
 import io.beatmaps.common.pub
+import io.beatmaps.util.captchaIfPresent
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.requireAuthorization
 import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -214,7 +216,7 @@ fun Route.reviewRoute() {
     }
 
     put<ReviewApi.Single> { single ->
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val update = call.receive<PutReview>()
             val updateMapId = single.mapId.toInt(16)
             val newText = update.text.take(ReviewConstants.MAX_LENGTH)
@@ -309,7 +311,7 @@ fun Route.reviewRoute() {
     }
 
     delete<ReviewApi.Single> { single ->
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val deleteReview = call.receive<DeleteReview>()
             val mapId = single.mapId.toInt(16)
 
@@ -352,7 +354,7 @@ fun Route.reviewRoute() {
     }
 
     post<ReviewApi.Curate> {
-        requireAuthorization { user ->
+        requireAuthorization { _, user ->
             if (!user.isCurator()) {
                 call.respond(HttpStatusCode.BadRequest)
             } else {

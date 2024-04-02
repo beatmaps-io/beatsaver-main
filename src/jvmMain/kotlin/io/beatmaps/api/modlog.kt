@@ -8,6 +8,7 @@ import io.beatmaps.common.dbo.ModLogDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.curatorAlias
+import io.beatmaps.util.requireAuthorization
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -36,7 +37,7 @@ class ModLogApi {
 
 fun Route.modLogRoute() {
     get<ModLogApi.ModLog> {
-        requireAuthorization { user ->
+        requireAuthorization { _, user ->
             if (!user.isAdmin()) {
                 call.respond(HttpStatusCode.BadRequest)
             } else {

@@ -66,6 +66,8 @@ fun RElementBuilder<DropzoneProps>.simple(
                     } else {
                         history.push("/maps/${r.data}")
                     }
+                } else if (r.status == 401) {
+                    errorsBlock(listOf(UploadValidationInfo("Not logged in")))
                 } else if (r.status == 413) {
                     errorsBlock(listOf(UploadValidationInfo("Zip file too big")))
                 } else {

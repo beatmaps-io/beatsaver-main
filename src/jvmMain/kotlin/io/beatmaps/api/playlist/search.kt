@@ -12,7 +12,6 @@ import io.beatmaps.api.PlaylistSearchResponse
 import io.beatmaps.api.from
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
-import io.beatmaps.api.optionalAuthorization
 import io.beatmaps.api.parseSearchQuery
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.EPlaylistType
@@ -27,6 +26,7 @@ import io.beatmaps.common.dbo.handleOwner
 import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.optionalAuthorization
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.options
@@ -54,7 +54,7 @@ fun Route.playlistSearch() {
     get<PlaylistApi.ByUploadDate>("Get playlists ordered by created/updated".responds(ok<PlaylistSearchResponse>())) {
         call.response.header("Access-Control-Allow-Origin", "*")
 
-        optionalAuthorization(OauthScope.PLAYLISTS) { sess ->
+        optionalAuthorization(OauthScope.PLAYLISTS) { _, sess ->
             val sortField = when (it.sort) {
                 null, LatestPlaylistSort.CREATED -> Playlist.createdAt
                 LatestPlaylistSort.SONGS_UPDATED -> Playlist.songsChangedAt
@@ -169,7 +169,7 @@ fun Route.playlistSearch() {
     get<PlaylistApi.ByUser>("Get playlists by user".responds(ok<PlaylistSearchResponse>())) { req ->
         call.response.header("Access-Control-Allow-Origin", "*")
 
-        optionalAuthorization(OauthScope.PLAYLISTS) { sess ->
+        optionalAuthorization(OauthScope.PLAYLISTS) { _, sess ->
             fun <T> doQuery(table: FieldSet = Playlist, groupBy: Array<Column<*>> = arrayOf(Playlist.id), block: (ResultRow) -> T) =
                 transaction {
                     table
