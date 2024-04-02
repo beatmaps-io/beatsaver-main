@@ -15,8 +15,9 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 
-data class MultipartRequest(val dataMap: JsonElement, val recaptchaSuccess: Boolean) {
+data class MultipartRequest(val dataMap: JsonElement, private val recaptchaSuccess: Boolean) {
     inline fun <reified T> get() = json.decodeFromJsonElement<T>(dataMap)
+    fun validRecaptcha(authType: AuthType) = authType == AuthType.Oauth || recaptchaSuccess
 }
 
 suspend fun ApplicationCall.handleMultipart(cb: suspend (PartData.FileItem) -> Unit): MultipartRequest {

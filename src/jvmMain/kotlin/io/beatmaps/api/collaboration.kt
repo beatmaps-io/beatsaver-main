@@ -9,6 +9,7 @@ import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.collaboratorAlias
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.isUploader
+import io.beatmaps.util.requireAuthorization
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -56,7 +57,7 @@ class CollaborationApi {
 
 fun Route.collaborationRoute() {
     post<CollaborationApi.CollaborationRequest> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val req = call.receive<CollaborationRequestData>()
 
             val success = transaction {
@@ -77,7 +78,7 @@ fun Route.collaborationRoute() {
     }
 
     post<CollaborationApi.CollaborationResponse> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val req = call.receive<CollaborationResponseData>()
 
             val success = transaction {
@@ -99,7 +100,7 @@ fun Route.collaborationRoute() {
     }
 
     post<CollaborationApi.CollaborationRemove> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val req = call.receive<CollaborationRemoveData>()
 
             val success = transaction {
@@ -114,7 +115,7 @@ fun Route.collaborationRoute() {
     }
 
     get<CollaborationApi.Collaborations> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val mapId = it.id.toInt(16)
 
             val collaborations = transaction {

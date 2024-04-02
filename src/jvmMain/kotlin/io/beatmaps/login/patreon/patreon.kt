@@ -1,6 +1,5 @@
 package io.beatmaps.login.patreon
 
-import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.client
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.upsert
@@ -8,6 +7,7 @@ import io.beatmaps.common.dbo.Patreon
 import io.beatmaps.common.dbo.PatreonLog
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.json
+import io.beatmaps.util.requireAuthorization
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
@@ -30,7 +30,6 @@ import io.ktor.server.routing.Route
 import io.ktor.util.hex
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNames
 import kotlinx.serialization.json.JsonObject
@@ -119,7 +118,7 @@ abstract class PatreonFields {
 fun Route.patreonLink() {
     authenticate("patreon") {
         get<PatreonLink> {
-            requireAuthorization { sess ->
+            requireAuthorization { _, sess ->
                 val principal = call.authentication.principal<OAuthAccessTokenResponse.OAuth2>() ?: error("No principal")
 
                 val include = listOf("memberships", "memberships.currently_entitled_tiers")

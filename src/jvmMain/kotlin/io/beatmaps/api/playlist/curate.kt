@@ -3,10 +3,10 @@ package io.beatmaps.api.playlist
 import io.beatmaps.api.CuratePlaylist
 import io.beatmaps.api.PlaylistApi
 import io.beatmaps.api.from
-import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.requireAuthorization
 import io.ktor.server.application.call
 import io.ktor.server.locations.post
 import io.ktor.server.request.receive
@@ -18,7 +18,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Route.playlistCurate() {
     post<PlaylistApi.Curate> {
-        requireAuthorization { user ->
+        requireAuthorization { _, user ->
             if (!user.isCurator()) {
                 call.respond(io.ktor.http.HttpStatusCode.BadRequest)
             } else {

@@ -1,6 +1,5 @@
 package io.beatmaps.api
 
-import ch.compile.recaptcha.model.SiteVerifyResponse
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
@@ -26,12 +25,12 @@ import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.common.rb
-import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.controllers.userWipCount
-import io.beatmaps.login.Session
-import io.beatmaps.login.server.DBTokenStore
+import io.beatmaps.util.captchaIfPresent
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.optionalAuthorization
 import io.beatmaps.util.publishVersion
+import io.beatmaps.util.requireAuthorization
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.get
@@ -39,24 +38,17 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.auth.HttpAuthHeader
 import io.ktor.http.contentType
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
-import io.ktor.server.auth.parseAuthorizationHeader
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.locations.post
 import io.ktor.server.plugins.BadRequestException
-import io.ktor.server.plugins.origin
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
-import io.ktor.server.sessions.get
-import io.ktor.server.sessions.sessions
 import io.ktor.util.pipeline.PipelineContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Index
@@ -69,7 +61,6 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
-import java.util.logging.Logger
 
 @Location("/api/testplay")
 class TestplayApi {
@@ -91,66 +82,6 @@ class TestplayApi {
     @Location("/mark")
     data class Mark(val api: TestplayApi)
 }
-
-private val pipelineLogger = Logger.getLogger("bmio.Pipeline")
-
-suspend fun <T> PipelineContext<*, ApplicationCall>.optionalAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(Session?) -> T) {
-    block(
-        checkOauthHeader(scope)?.let { u ->
-            (u.identity?.metadata?.get("object") as? UserDao)?.let { Session.fromUser(it) }
-        } ?: call.sessions.get()
-    )
-}
-
-suspend fun <T> PipelineContext<*, ApplicationCall>.requireAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(Session) -> T) {
-    optionalAuthorization(scope) {
-        if (it == null) {
-            call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
-        } else {
-            block(it)
-        }
-    }
-}
-
-fun PipelineContext<*, ApplicationCall>.checkOauthHeader(scope: OauthScope? = null) =
-    call.request.parseAuthorizationHeader().let { authHeader ->
-        if (authHeader is HttpAuthHeader.Single) {
-            val token = DBTokenStore.accessToken(authHeader.blob)
-
-            when (token?.expired()) {
-                true -> DBTokenStore.revokeAccessToken(token.accessToken).let { null }
-                false -> {
-                    if (token.scopes.contains(scope?.tag)) {
-                        token
-                    } else { null }
-                }
-                null -> null
-            }
-        } else { null }
-    }
-
-suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(captcha: String, block: suspend PipelineContext<*, ApplicationCall>.() -> T, error: (suspend PipelineContext<*, ApplicationCall>.(SiteVerifyResponse) -> T)? = null) =
-    if (reCaptchaVerify == null) {
-        pipelineLogger.warning("ReCAPTCHA not setup. Allowing request anyway")
-        block()
-    } else {
-        withContext(Dispatchers.IO) {
-            reCaptchaVerify.verify(captcha, call.request.origin.remoteHost)
-        }.let { result ->
-            if (result.isSuccess) {
-                block()
-            } else {
-                error?.invoke(this, result) ?: throw BadRequestException("Bad captcha")
-            }
-        }
-    }
-
-suspend fun <T> PipelineContext<*, ApplicationCall>.captchaIfPresent(captcha: String?, block: suspend PipelineContext<*, ApplicationCall>.() -> T) =
-    if (captcha != null) {
-        this.requireCaptcha(captcha, block)
-    } else {
-        block()
-    }
 
 @Serializable
 data class AuthRequest(val steamId: String? = null, val oculusId: String? = null, val proof: String)
@@ -248,25 +179,25 @@ suspend fun validateOculusToken(oculusId: String, proof: String) = try {
 
 fun Route.testplayRoute() {
     post<TestplayApi.Queue> { req ->
-        requireAuthorization(OauthScope.TESTPLAY) { sess ->
+        requireAuthorization(OauthScope.TESTPLAY) { _, sess ->
             call.respond(getTestplayQueue(sess.userId, false, req.page))
         }
     }
 
     get<TestplayApi.Queue> { req ->
-        optionalAuthorization(OauthScope.TESTPLAY) { sess ->
+        optionalAuthorization(OauthScope.TESTPLAY) { _, sess ->
             call.respond(getTestplayQueue(sess?.userId, req.includePlayed, req.page))
         }
     }
 
     get<TestplayApi.Recent> { req ->
-        requireAuthorization(OauthScope.TESTPLAY) { sess ->
+        requireAuthorization(OauthScope.TESTPLAY) { _, sess ->
             call.respond(getTestplayRecent(sess.userId, req.page))
         }
     }
 
     post<TestplayApi.State> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val newState = call.receive<StateUpdate>().let {
                 if (it.state == EMapState.Published && it.scheduleAt != null) {
                     it.copy(state = EMapState.Scheduled)
@@ -333,7 +264,7 @@ fun Route.testplayRoute() {
     }
 
     post<TestplayApi.Version> {
-        requireAuthorization(OauthScope.TESTPLAY) { sess ->
+        requireAuthorization(OauthScope.TESTPLAY) { _, sess ->
             val update = call.receive<FeedbackUpdate>()
 
             val valid = transaction {
@@ -367,7 +298,7 @@ fun Route.testplayRoute() {
     }
 
     post<TestplayApi.Mark> {
-        requireAuthorization(OauthScope.TESTPLAY) { sess ->
+        requireAuthorization(OauthScope.TESTPLAY) { _, sess ->
             val mark = call.receive<MarkRequest>()
 
             transaction {
@@ -408,7 +339,7 @@ fun Route.testplayRoute() {
     }
 
     post<TestplayApi.Feedback> {
-        requireAuthorization(OauthScope.TESTPLAY) { sess ->
+        requireAuthorization(OauthScope.TESTPLAY) { _, sess ->
             val update = call.receive<FeedbackUpdate>()
 
             captchaIfPresent(update.captcha) {
@@ -417,14 +348,14 @@ fun Route.testplayRoute() {
 
                     if (update.captcha == null) {
                         Testplay.update({ (Testplay.versionId eq wrapAsExpressionNotNull(subQuery)) and (Testplay.userId eq sess.userId) }) { t ->
-                            t[feedbackAt] = NowExpression(feedbackAt.columnType)
+                            t[feedbackAt] = NowExpression(feedbackAt)
                             t[feedback] = update.feedback
                         }
                     } else {
                         Testplay.upsert(conflictIndex = Index(listOf(Testplay.versionId, Testplay.userId), true, "user_version_unique")) { t ->
                             t[versionId] = wrapAsExpressionNotNull<Int>(subQuery)
                             t[userId] = sess.userId
-                            t[feedbackAt] = NowExpression(feedbackAt.columnType)
+                            t[feedbackAt] = NowExpression(feedbackAt)
                             t[feedback] = update.feedback
                         }
                     }

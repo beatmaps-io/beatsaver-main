@@ -19,6 +19,7 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
 import io.beatmaps.common.pub
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.requireAuthorization
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
@@ -106,7 +107,7 @@ fun Route.bookmarkRoute() {
     post<BookmarksApi.Bookmark> {
         val req = call.receive<BookmarkRequest>()
 
-        requireAuthorization(OauthScope.BOOKMARKS) { sess ->
+        requireAuthorization(OauthScope.BOOKMARKS) { _, sess ->
 
             val (updateCount, playlistId) = transaction {
                 (req.key?.toIntOrNull(16) ?: req.hash?.let { mapIdForHash(it) })?.let { mapId ->
@@ -129,7 +130,7 @@ fun Route.bookmarkRoute() {
     }
 
     get<BookmarksApi.Bookmarks> {
-        requireAuthorization(OauthScope.BOOKMARKS) { sess ->
+        requireAuthorization(OauthScope.BOOKMARKS) { _, sess ->
             val maps = transaction {
                 PlaylistMap
                     .join(reviewerAlias, JoinType.LEFT, PlaylistMap.playlistId, reviewerAlias[User.bookmarksId])
