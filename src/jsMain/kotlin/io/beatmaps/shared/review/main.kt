@@ -24,6 +24,7 @@ external interface ReviewTableProps : Props {
     var map: String?
     var mapUploaderId: Int?
     var userDetail: UserDetail?
+    var collaborators: List<UserDetail>?
 }
 
 val reviewTable = fc<ReviewTableProps> { props ->
@@ -58,7 +59,10 @@ val reviewTable = fc<ReviewTableProps> { props ->
 
         globalContext.Consumer { userData ->
             props.map?.let { map ->
-                if (userData != null && !userData.suspended && userData.userId != props.mapUploaderId) {
+                val userIsCollaborator = props.collaborators?.any { singleCollaborator ->
+                    singleCollaborator.id == userData?.userId
+                } ?: false
+                if (userData != null && !userData.suspended && userData.userId != props.mapUploaderId && !userIsCollaborator) {
                     newReview {
                         attrs.mapId = map
                         attrs.userId = userData.userId
