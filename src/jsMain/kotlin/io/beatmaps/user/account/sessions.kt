@@ -39,6 +39,7 @@ val manageSessions = fc<ManageSessionsProps> { props ->
                 tbody {
                     props.sessions.oauth.forEach {
                         oauthRow {
+                            key = it.id
                             attrs.session = it
                             attrs.removeSessionCallback = props.removeSessionCallback
                         }
@@ -46,6 +47,7 @@ val manageSessions = fc<ManageSessionsProps> { props ->
 
                     props.sessions.site.forEach {
                         siteRow {
+                            key = it.id
                             attrs.session = it
                             attrs.removeSessionCallback = props.removeSessionCallback
                         }
