@@ -89,7 +89,7 @@ val accountTab = fc<AccountComponentProps> { props ->
 
     fun revokeAll() {
         axiosDelete<SessionRevokeRequest, String>("${Config.apibase}/users/sessions", SessionRevokeRequest(site = true)).then {
-            setSessions(SessionsData(listOf(), sessions?.site?.filter { c -> c.current } ?: listOf()))
+            setSessions(SessionsData(sessions?.oauth ?: listOf(), sessions?.site?.filter { c -> c.current } ?: listOf()))
         }
     }
 
