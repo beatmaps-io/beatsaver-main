@@ -42,7 +42,7 @@ suspend fun <T> PipelineContext<*, ApplicationCall>.optionalAuthorization(scope:
 
 suspend fun <T> PipelineContext<*, ApplicationCall>.requireAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(AuthType, Session) -> T) {
     optionalAuthorization(scope) { type, sess ->
-        if (sess == null) {
+        if (type == AuthType.None || sess == null) {
             call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
         } else {
             block(type, sess)
