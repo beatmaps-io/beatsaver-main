@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+import io.beatmaps.common.api.ReviewSentiment
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
@@ -33,16 +34,3 @@ data class ReviewDetail(
 @Serializable data class CurateReview(val id: Int, val curated: Boolean = false)
 
 @Serializable data class DeleteReview(val reason: String)
-
-enum class ReviewSentiment(val dbValue: Int, val emoji: String) {
-    POSITIVE(1, "\uD83D\uDC9A"), NEGATIVE(-1, "\uD83D\uDC94"), NEUTRAL(0, "\uD83D\uDC9B");
-
-    companion object {
-        fun fromInt(x: Int) =
-            when (x) {
-                POSITIVE.dbValue -> POSITIVE
-                NEGATIVE.dbValue -> NEGATIVE
-                else -> NEUTRAL
-            }
-    }
-}
