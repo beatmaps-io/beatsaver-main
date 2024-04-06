@@ -9,7 +9,7 @@ import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.PutReview
 import io.beatmaps.api.ReviewConstants
-import io.beatmaps.api.ReviewSentiment
+import io.beatmaps.common.api.ReviewSentiment
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction

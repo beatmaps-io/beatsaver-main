@@ -10,7 +10,7 @@ import io.beatmaps.api.DeleteReview
 import io.beatmaps.api.PutReview
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
-import io.beatmaps.api.ReviewSentiment
+import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.modalContext

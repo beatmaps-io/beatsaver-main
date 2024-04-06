@@ -3,7 +3,6 @@ package io.beatmaps.modlog
 import external.TimeAgo
 import external.routeLink
 import io.beatmaps.api.ModLogEntry
-import io.beatmaps.api.ReviewSentiment
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.DeletedPlaylistData
@@ -15,6 +14,7 @@ import io.beatmaps.common.RevokeSessionsData
 import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.UploadLimitData
+import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.maps.mapTag
 import io.beatmaps.shared.map.mapTitle
 import io.beatmaps.user.userLink

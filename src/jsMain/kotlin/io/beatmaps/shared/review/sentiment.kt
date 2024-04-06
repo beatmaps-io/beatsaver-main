@@ -1,6 +1,6 @@
 package io.beatmaps.shared.review
 
-import io.beatmaps.api.ReviewSentiment
+import io.beatmaps.common.api.ReviewSentiment
 import kotlinx.html.js.onClickFunction
 import react.Props
 import react.dom.button
