@@ -1,8 +1,8 @@
 package io.beatmaps.api
 
+import io.beatmaps.common.api.ReviewSentiment
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
-import io.beatmaps.common.api.ReviewSentiment
 
 class ReviewConstants {
     companion object {
