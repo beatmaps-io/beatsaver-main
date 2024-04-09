@@ -55,6 +55,7 @@ data class SearchParams(
     val ranked: Boolean?,
     val curated: Boolean?,
     val verified: Boolean?,
+    val followed: Boolean?,
     val fullSpread: Boolean?,
     val me: Boolean?,
     val cinema: Boolean?,
@@ -112,6 +113,7 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
                     (if (search.ranked != null) "&ranked=${search.ranked}" else "") +
                     (if (search.curated != null) "&curated=${search.curated}" else "") +
                     (if (search.verified != null) "&verified=${search.verified}" else "") +
+                    (if (search.followed != null) "&followed=${search.followed}" else "") +
                     (if (search.fullSpread != null) "&fullSpread=${search.fullSpread}" else "") +
                     (if (search.search.isNotBlank()) "&q=${encodeURIComponent(search.search)}" else "") +
                     (if (search.maxNps != null) "&maxNps=${search.maxNps}" else "") +

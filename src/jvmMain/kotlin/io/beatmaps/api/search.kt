@@ -22,6 +22,7 @@ import io.beatmaps.common.db.unaccentLiteral
 import io.beatmaps.common.db.wildcard
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
+import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.bookmark
@@ -85,6 +86,7 @@ class SearchApi {
         val ranked: Boolean? = null,
         val curated: Boolean? = null,
         val verified: Boolean? = null,
+        val followed: Boolean? = null,
         val fullSpread: Boolean? = null,
         val minDuration: Int? = null,
         val maxDuration: Int? = null,
@@ -197,6 +199,16 @@ fun Route.searchRoute() {
         val sortArgs = searchInfo.sortArgsFor(actualSortOrder)
 
         newSuspendedTransaction {
+            val followingSubQuery = if (it.followed == true) {
+                requireAuthorization { user ->
+                    Follows
+                        .slice(Follows.userId)
+                        .select { Follows.followerId eq user.userId }
+                }
+            } else {
+                null
+            }
+
             if (searchInfo.escapedQuery != null && searchInfo.escapedQuery.startsWith("key:")) {
                 Beatmap
                     .slice(Beatmap.id)
@@ -252,6 +264,7 @@ fun Route.searchRoute() {
                                             }
                                         }
                                         .notNull(searchInfo.userSubQuery) { o -> Beatmap.uploader inSubQuery o }
+                                        .notNull(followingSubQuery) { o -> Beatmap.uploader inSubQuery o }
                                         .notNull(it.chroma) { o -> Beatmap.chroma eq o }
                                         .notNull(it.noodle) { o -> Beatmap.noodle eq o }
                                         .notNull(it.ranked) { o -> Beatmap.ranked eq o }

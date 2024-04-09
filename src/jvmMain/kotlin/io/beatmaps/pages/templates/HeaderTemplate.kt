@@ -60,6 +60,11 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 a("/?verified=true", classes = "dropdown-item auto-router") {
                                     +"From Verified Mappers"
                                 }
+                                if (s != null) {
+                                    a("/?followed=true", classes = "dropdown-item auto-router") {
+                                        +"From Mappers You Follow"
+                                    }
+                                }
                                 a("/?ranked=true", classes = "dropdown-item auto-router") {
                                     +"Ranked Maps"
                                 }
