@@ -37,6 +37,7 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.toQuery
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.requireAuthorization
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -200,7 +201,7 @@ fun Route.searchRoute() {
 
         newSuspendedTransaction {
             val followingSubQuery = if (it.followed == true) {
-                requireAuthorization { user ->
+                requireAuthorization { _, user ->
                     Follows
                         .slice(Follows.userId)
                         .select { Follows.followerId eq user.userId }
