@@ -46,6 +46,8 @@ import io.beatmaps.login.MongoSession
 import io.beatmaps.login.Session
 import io.beatmaps.login.cookieName
 import io.beatmaps.login.server.DBTokenStore
+import io.beatmaps.util.requireAuthorization
+import io.beatmaps.util.requireCaptcha
 import io.beatmaps.util.updateAlertCount
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.ExpiredJwtException
@@ -275,7 +277,7 @@ fun followData(uploaderId: Int, userId: Int?): UserFollowData {
 
     return Follows
         .slice(userColumn, followerColumn, followingColumn, uploadColumn, curationColumn).select {
-            userFilter or followerFilter
+            Follows.following and (userFilter or followerFilter)
         }
         .single().let {
             UserFollowData(it[userColumn], it[followerColumn], it[followingColumn], it[uploadColumn], it[curationColumn])
@@ -285,7 +287,7 @@ fun followData(uploaderId: Int, userId: Int?): UserFollowData {
 fun Route.userRoute() {
     val usernameRegex = Regex("^[._\\-A-Za-z0-9]{3,50}$")
     post<UsersApi.Username> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val req = call.receive<AccountDetailReq>()
 
             if (!usernameRegex.matches(req.textContent)) {
@@ -316,7 +318,7 @@ fun Route.userRoute() {
     }
 
     post<UsersApi.Description> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val req = call.receive<AccountDetailReq>()
 
             val success = transaction {
@@ -339,7 +341,7 @@ fun Route.userRoute() {
     }
 
     post<UsersApi.Admin> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             if (!sess.isAdmin()) {
                 ActionResponse(false, listOf("Not an admin"))
             } else {
@@ -384,7 +386,7 @@ fun Route.userRoute() {
     }
 
     post<UsersApi.Suspend> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             if (!sess.isAdmin()) {
                 ActionResponse(false, listOf("Not an admin"))
             } else {
@@ -547,12 +549,12 @@ fun Route.userRoute() {
     }
 
     get<UsersApi.Sessions> {
-        requireAuthorization {
+        requireAuthorization { _, sess ->
             val oauthSessions = transaction {
                 RefreshTokenTable
                     .join(OauthClient, JoinType.INNER, RefreshTokenTable.clientId, OauthClient.clientId)
                     .select {
-                        (RefreshTokenTable.userName eq it.userId) and (RefreshTokenTable.expiration greater Clock.System.now().toJavaInstant())
+                        (RefreshTokenTable.userName eq sess.userId) and (RefreshTokenTable.expiration greater Clock.System.now().toJavaInstant())
                     }
                     .orderBy(RefreshTokenTable.expiration to SortOrder.DESC)
                     .map { row ->
@@ -568,7 +570,7 @@ fun Route.userRoute() {
 
             val sessionId = call.request.cookies[cookieName]
             val siteSessions = if (MongoClient.connected) {
-                MongoClient.sessions.find(MongoSession::session / Session::userId eq it.userId)
+                MongoClient.sessions.find(MongoSession::session / Session::userId eq sess.userId)
                     .sort(descending(MongoSession::expireAt))
                     .map { row ->
                         SiteSession(
@@ -585,7 +587,7 @@ fun Route.userRoute() {
     }
 
     delete<UsersApi.Sessions> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val req = call.receive<SessionRevokeRequest>()
             val userId = req.userId ?: sess.userId
             val sessionId = call.request.cookies[cookieName]
@@ -622,7 +624,7 @@ fun Route.userRoute() {
     }
 
     delete<UsersApi.SessionsById> { byId ->
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val req = call.receive<SessionRevokeRequest>()
             val userId = req.userId ?: sess.userId
             val id = UserCrypto.decrypt(byId.id)
@@ -663,7 +665,7 @@ fun Route.userRoute() {
     }
 
     post<UsersApi.Email> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val req = call.receive<EmailRequest>()
 
             val response = requireCaptcha(
@@ -871,7 +873,7 @@ fun Route.userRoute() {
     }
 
     post<UsersApi.Me> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val req = call.receive<AccountRequest>()
 
             val response = if (req.password == null || req.currentPassword == null) {
@@ -912,7 +914,7 @@ fun Route.userRoute() {
     }
 
     post<UsersApi.Follow> {
-        requireAuthorization { user ->
+        requireAuthorization { _, user ->
             val req = call.receive<UserFollowRequest>()
 
             if (req.userId == user.userId && req.following) {
@@ -1133,14 +1135,14 @@ fun Route.userRoute() {
         UserDao.wrapRow(User.joinPatreon().select(where).handlePatreon().firstOrNull() ?: throw NotFoundException())
 
     get<UsersApi.Me> {
-        requireAuthorization {
+        requireAuthorization { _, sess ->
             val detail = transaction {
                 val user = userBy {
-                    User.id eq it.userId
+                    User.id eq sess.userId
                 }
 
                 val dualAccount = user.discordId != null && user.email != null && user.uniqueName != null
-                val followData = followData(it.userId, it.userId)
+                val followData = followData(sess.userId, sess.userId)
 
                 UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let { usr ->
                     if (dualAccount) {
@@ -1255,7 +1257,7 @@ fun Route.userRoute() {
     }
 
     get<UsersApi.FollowedBy> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             if (it.user != sess.userId) call.respond(HttpStatusCode.Forbidden)
 
             val users = getFollowerData(it.page, Follows.userId) {
@@ -1291,7 +1293,7 @@ fun Route.userRoute() {
         val users = transaction {
             User
                 .select { User.curator eq Op.TRUE }
-                .orderBy(User.seniorCurator, SortOrder.DESC)
+                .orderBy(User.seniorCurator to SortOrder.DESC, User.name to SortOrder.ASC)
                 .limit(50)
                 .map { row ->
                     UserDetail.from(row, description = true)

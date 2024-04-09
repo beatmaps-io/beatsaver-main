@@ -94,19 +94,18 @@ class TestplayApi {
 
 private val pipelineLogger = Logger.getLogger("bmio.Pipeline")
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.optionalAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(Session?) -> T): T? {
-    return block(
+suspend fun <T> PipelineContext<*, ApplicationCall>.optionalAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(Session?) -> T) {
+    block(
         checkOauthHeader(scope)?.let { u ->
             (u.identity?.metadata?.get("object") as? UserDao)?.let { Session.fromUser(it) }
         } ?: call.sessions.get()
     )
 }
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.requireAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(Session) -> T): T? {
-    return optionalAuthorization(scope) {
+suspend fun <T> PipelineContext<*, ApplicationCall>.requireAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(Session) -> T) {
+    optionalAuthorization(scope) {
         if (it == null) {
             call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
-            null
         } else {
             block(it)
         }

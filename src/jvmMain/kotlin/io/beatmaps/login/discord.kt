@@ -2,7 +2,6 @@ package io.beatmaps.login
 
 import io.beatmaps.api.UserCrypto
 import io.beatmaps.api.alertCount
-import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.Config
 import io.beatmaps.common.Folders
 import io.beatmaps.common.client
@@ -10,6 +9,7 @@ import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.util.requireAuthorization
 import io.ktor.client.call.body
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
@@ -121,7 +121,7 @@ fun Route.discordLogin() {
         }
 
         get("/discord-link") {
-            requireAuthorization { sess ->
+            requireAuthorization { _, sess ->
                 val data = call.getDiscordData()
 
                 newSuspendedTransaction {

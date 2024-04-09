@@ -129,7 +129,7 @@ val infoTable = fc<InfoTableProps> { props ->
         }
 
         props.map.curator?.let { curator ->
-            infoItem("Curated by", curator.name, curator.profileLink("curated"))
+            infoItem("Curated by", curator.name, curator.profileLink("curations"))
         }
 
         if (props.map.tags.isNotEmpty()) {
@@ -151,7 +151,7 @@ val infoTable = fc<InfoTableProps> { props ->
         if (publishedVersion != null) {
             if (publishedVersion.diffs.any { it.me || it.ne || it.chroma || it.cinema }) {
                 div(itemClasses) {
-                    +"Requirements"
+                    +"Mods"
                     span("text-truncate ms-4") {
                         mapRequirements {
                             attrs.margins = "ms-2"

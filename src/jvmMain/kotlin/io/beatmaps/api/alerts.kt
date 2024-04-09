@@ -11,6 +11,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.requireAuthorization
 import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
@@ -124,7 +125,7 @@ fun Route.alertsRoute() {
     }
 
     get<AlertsApi.Unread> {
-        requireAuthorization(OauthScope.ALERTS) { user ->
+        requireAuthorization(OauthScope.ALERTS) { _, user ->
             val alerts = getAlerts(user.userId, false, it.page, EAlertType.fromList(it.type))
 
             call.respond(alerts)
@@ -132,7 +133,7 @@ fun Route.alertsRoute() {
     }
 
     get<AlertsApi.Read> {
-        requireAuthorization(OauthScope.ALERTS) { user ->
+        requireAuthorization(OauthScope.ALERTS) { _, user ->
             val alerts = getAlerts(user.userId, true, it.page, EAlertType.fromList(it.type))
 
             call.respond(alerts)
@@ -165,7 +166,7 @@ fun Route.alertsRoute() {
         }
 
     get<AlertsApi.Stats> {
-        requireAuthorization(OauthScope.ALERTS) { sess ->
+        requireAuthorization(OauthScope.ALERTS) { _, sess ->
             val (statParts, user) = transaction { getStats(sess.userId) to UserDao[sess.userId] }
 
             call.respond(UserAlertStats.fromParts(statParts).copy(reviewAlerts = user.reviewAlerts, curationAlerts = user.curationAlerts, followAlerts = user.followAlerts))
@@ -173,7 +174,7 @@ fun Route.alertsRoute() {
     }
 
     post<AlertsApi.Options> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val req = call.receive<AlertOptionsRequest>()
 
             transaction {
@@ -203,7 +204,7 @@ fun Route.alertsRoute() {
     post<AlertsApi.Mark> {
         val req = call.receive<AlertUpdate>()
 
-        requireAuthorization(OauthScope.MARK_ALERTS) { user ->
+        requireAuthorization(OauthScope.MARK_ALERTS) { _, user ->
             val stats = transaction {
                 val result = AlertRecipient
                     .join(Alert, JoinType.INNER, AlertRecipient.alertId, Alert.id)
@@ -231,7 +232,7 @@ fun Route.alertsRoute() {
     post<AlertsApi.MarkAll> {
         val req = call.receive<AlertUpdateAll>()
 
-        requireAuthorization(OauthScope.MARK_ALERTS) { user ->
+        requireAuthorization(OauthScope.MARK_ALERTS) { _, user ->
             val stats = transaction {
                 val result = AlertRecipient.update({
                     AlertRecipient.readAt.run { if (req.read) isNull() else isNotNull() } and

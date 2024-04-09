@@ -4,7 +4,6 @@ import ch.compile.recaptcha.ReCaptchaVerify
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PatreonTier
 import io.beatmaps.api.UploadValidationInfo
-import io.beatmaps.api.requireAuthorization
 import io.beatmaps.api.toTier
 import io.beatmaps.common.Config
 import io.beatmaps.common.CopyException
@@ -37,6 +36,7 @@ import io.beatmaps.common.zip.sharedInsert
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session
 import io.beatmaps.util.handleMultipart
+import io.beatmaps.util.requireAuthorization
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.streamProvider
 import io.ktor.server.application.call
@@ -111,7 +111,7 @@ fun Route.uploadController() {
     }
 
     post<UploadAvatar> {
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             try {
                 val filename = "${sess.userId}.jpg"
                 val localFile = File(Folders.localAvatarFolder(), filename)
@@ -141,221 +141,222 @@ fun Route.uploadController() {
     }
 
     post<UploadMap> {
-        val session = call.sessions.get<Session>() ?: throw UploadException("Not logged in")
-        val (user, patreon, currentWipCount) = transaction {
-            val user = UserDao.wrapRow(
-                User.joinPatreon().select { User.id eq session.userId }.handlePatreon().first()
+        requireAuthorization { authType, session ->
+            val (user, patreon, currentWipCount) = transaction {
+                val user = UserDao.wrapRow(
+                    User.joinPatreon().select { User.id eq session.userId }.handlePatreon().first()
+                )
+
+                Triple(user, user.patreon, userWipCount(session.userId))
+            }
+
+            // Throw error if user is missing a username
+            (user.active && user.uniqueName != null) || throw UploadException("Please pick a username to complete your account")
+
+            // Don't allow suspended users to upload
+            user.suspendedAt == null || throw UploadException("Suspended account")
+
+            // Limit WIP maps
+            val maxWips = (patreon.toTier() ?: PatreonTier.None).maxWips
+            currentWipCount < maxWips || throw UploadException(PatreonTier.maxWipsMessage)
+
+            val file = File(
+                Folders.uploadTempFolder(),
+                "upload-${System.currentTimeMillis()}-${session.userId.hashCode()}.zip"
             )
 
-            Triple(user, user.patreon, userWipCount(session.userId))
-        }
+            val md = MessageDigest.getInstance("SHA1")
+            var extractedInfoTmp: ExtractedInfo? = null
 
-        // Throw error if user is missing a username
-        (user.active && user.uniqueName != null) || throw UploadException("Please pick a username to complete your account")
-
-        // Don't allow suspended users to upload
-        user.suspendedAt == null || throw UploadException("Suspended account")
-
-        // Limit WIP maps
-        val maxWips = (patreon.toTier() ?: PatreonTier.None).maxWips
-        currentWipCount < maxWips || throw UploadException(PatreonTier.maxWipsMessage)
-
-        val file = File(
-            Folders.uploadTempFolder(),
-            "upload-${System.currentTimeMillis()}-${session.userId.hashCode()}.zip"
-        )
-
-        val md = MessageDigest.getInstance("SHA1")
-        var extractedInfoTmp: ExtractedInfo? = null
-
-        val multipart = call.handleMultipart { part ->
-            uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
-            extractedInfoTmp = part.streamProvider().use { its ->
-                try {
-                    file.outputStream().buffered().use {
-                        its.copyToSuspend(it, sizeLimit = user.uploadLimit * 1024 * 1024)
-                    }.run {
-                        DigestOutputStream(OutputStream.nullOutputStream(), md).use { dos ->
-                            openZip(file) {
-                                validateFiles(dos)
+            val multipart = call.handleMultipart { part ->
+                uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
+                extractedInfoTmp = part.streamProvider().use { its ->
+                    try {
+                        file.outputStream().buffered().use {
+                            its.copyToSuspend(it, sizeLimit = user.uploadLimit * 1024 * 1024)
+                        }.run {
+                            DigestOutputStream(OutputStream.nullOutputStream(), md).use { dos ->
+                                openZip(file) {
+                                    validateFiles(dos)
+                                }
                             }
                         }
+                    } catch (e: RarException) {
+                        file.delete()
+                        throw UploadException("Don't upload rar files. Use the package button in your map editor.")
+                    } catch (e: SerializationException) {
+                        e.printStackTrace()
+                        file.delete()
+                        throw UploadException("Could not parse json")
+                    } catch (e: ZipHelperException) {
+                        file.delete()
+                        throw UploadException(e.msg)
+                    } catch (e: CopyException) {
+                        file.delete()
+                        throw UploadException("Zip file too big")
+                    } catch (e: Exception) {
+                        file.delete()
+                        throw e
                     }
-                } catch (e: RarException) {
+                }
+            }
+
+            multipart.validRecaptcha(authType) || throw UploadException("Missing recaptcha?")
+            val data = multipart.get<MapUploadMultipart>()
+
+            val newMapId = transaction {
+                // Process upload
+                val fx = "%0" + md.digestLength * 2 + "x"
+                val digest = String.format(fx, BigInteger(1, md.digest()))
+                val newFile = File(Folders.localFolder(digest), "$digest.zip")
+                val newImageFile = File(Folders.localCoverFolder(digest), "$digest.jpg")
+                val newAudioFile = File(Folders.localAudioFolder(digest), "$digest.mp3")
+
+                val existsAlready = Versions.select {
+                    Versions.hash eq digest
+                }.count() > 0
+
+                val extractedInfo = extractedInfoTmp ?: throw UploadException("Internal error 1")
+
+                if (existsAlready) {
                     file.delete()
-                    throw UploadException("Don't upload rar files. Use the package button in your map editor.")
-                } catch (e: SerializationException) {
-                    e.printStackTrace()
+                    throw UploadException("Map already uploaded")
+                }
+
+                if (!session.testplay && !allowUploads) {
                     file.delete()
-                    throw UploadException("Could not parse json")
-                } catch (e: ZipHelperException) {
-                    file.delete()
-                    throw UploadException(e.msg)
-                } catch (e: CopyException) {
-                    file.delete()
-                    throw UploadException("Zip file too big")
+                    throw UploadException("Your map is fine but we're not accepting uploads yet")
+                }
+
+                fun setBasicMapInfo(
+                    setFloat: (column: Column<Float>, value: Float) -> Unit,
+                    setInt: (column: Column<Int>, value: Int) -> Unit,
+                    setString: (column: Column<String>, value: String) -> Unit
+                ) {
+                    setFloat(Beatmap.bpm, extractedInfo.mapInfo._beatsPerMinute.or(0f))
+                    setInt(Beatmap.duration, extractedInfo.duration.roundToInt())
+                    setString(Beatmap.songName, extractedInfo.mapInfo._songName.or(""))
+                    setString(Beatmap.songSubName, extractedInfo.mapInfo._songSubName.or(""))
+                    setString(Beatmap.levelAuthorName, extractedInfo.mapInfo._levelAuthorName.or(""))
+                    setString(Beatmap.songAuthorName, extractedInfo.mapInfo._songAuthorName.or(""))
+                }
+
+                val newMap = try {
+                    fun insertOrUpdate() =
+                        data.mapId?.let { mapId ->
+                            fun updateIt() = Beatmap.updateReturning(
+                                {
+                                    (Beatmap.id eq mapId) and (Beatmap.uploader eq session.userId)
+                                },
+                                {
+                                    setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
+                                    it[updatedAt] = NowExpression(updatedAt.columnType)
+                                },
+                                Beatmap.id
+                            )?.firstOrNull()?.let { it[Beatmap.id] } ?: throw UploadException("Map doesn't exist to add version")
+
+                            updateIt().also {
+                                val latestVersions = VersionsDao.wrapRows(
+                                    Versions.select {
+                                        (Versions.mapId eq mapId)
+                                    }.orderBy(Versions.uploaded, SortOrder.DESC).limit(2)
+                                ).toList()
+
+                                if (latestVersions.size > 1) {
+                                    // Check time since one before previous upload = 2 uploads / day / map
+                                    val hoursUntilNext = 12 - Clock.System.now().minus(latestVersions[1].uploaded.toKotlinInstant()).inWholeHours
+                                    if (hoursUntilNext > 0) {
+                                        throw UploadException("Please wait another $hoursUntilNext hours before uploading another version")
+                                    }
+                                }
+                            }
+                        } ?: Beatmap.insertAndGetId {
+                            it[name] = (data.title ?: "").take(1000)
+                            it[description] = (data.description ?: "").take(10000)
+
+                            val tagsList = (data.tags ?: "").split(',').mapNotNull { t -> MapTag.fromSlug(t) }.toSet()
+                            val tooMany = tagsList.groupBy { t -> t.type }.mapValues { t -> t.value.size }.withDefault { 0 }.let { byType ->
+                                MapTag.maxPerType.any { type -> byType.getValue(type.key) > type.value }
+                            }
+
+                            if (!tooMany) {
+                                it[tags] = tagsList.filter { t -> t != MapTag.None }.map { t -> t.slug }.toTypedArray()
+                            }
+                            it[uploader] = EntityID(session.userId, User)
+
+                            setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
+
+                            val declaredAsAI = !data.beatsage.isNullOrEmpty()
+                            it[declaredAi] = when {
+                                declaredAsAI -> AiDeclarationType.Uploader
+                                extractedInfo.score < 0 -> AiDeclarationType.SageScore
+                                else -> AiDeclarationType.None
+                            }
+
+                            it[plays] = 0
+                        }
+
+                    insertOrUpdate().also {
+                        // How is a file here if it hasn't been uploaded before?
+                        if (newFile.exists()) {
+                            newFile.delete()
+                        }
+
+                        Files.move(file.toPath(), newFile.toPath())
+                    }
                 } catch (e: Exception) {
                     file.delete()
                     throw e
                 }
-            }
-        }
 
-        multipart.recaptchaSuccess || throw UploadException("Missing recaptcha?")
-        val data = multipart.get<MapUploadMultipart>()
+                try {
+                    extractedInfo.thumbnail?.let {
+                        newImageFile.writeBytes(it.toByteArray())
+                    } ?: throw UploadException("Internal error 2")
 
-        val newMapId = transaction {
-            // Process upload
-            val fx = "%0" + md.digestLength * 2 + "x"
-            val digest = String.format(fx, BigInteger(1, md.digest()))
-            val newFile = File(Folders.localFolder(digest), "$digest.zip")
-            val newImageFile = File(Folders.localCoverFolder(digest), "$digest.jpg")
-            val newAudioFile = File(Folders.localAudioFolder(digest), "$digest.mp3")
+                    extractedInfo.preview?.let {
+                        newAudioFile.writeBytes(it.toByteArray())
+                    } ?: throw UploadException("Internal error 3")
 
-            val existsAlready = Versions.select {
-                Versions.hash eq digest
-            }.count() > 0
+                    // Pretty much guaranteed to be set
+                    val sli = extractedInfo.songLengthInfo ?: throw UploadException("Couldn't determine song length")
 
-            val extractedInfo = extractedInfoTmp ?: throw UploadException("Internal error 1")
+                    val newVersion = Versions.insertAndGetId {
+                        it[mapId] = newMap
+                        it[key64] = null
+                        it[hash] = digest
+                        it[state] = EMapState.Uploaded
+                        it[sageScore] = extractedInfo.score
+                    }
 
-            if (existsAlready) {
-                file.delete()
-                throw UploadException("Map already uploaded")
-            }
+                    extractedInfo.diffs.forEach { cLoop ->
+                        cLoop.value.forEach { dLoop ->
+                            val diffInfo = dLoop.key
+                            val bsdiff = dLoop.value
 
-            if (!session.testplay && !allowUploads) {
-                file.delete()
-                throw UploadException("Your map is fine but we're not accepting uploads yet")
-            }
+                            Difficulty.insertAndGetId {
+                                it[mapId] = newMap
+                                it[versionId] = newVersion
 
-            fun setBasicMapInfo(
-                setFloat: (column: Column<Float>, value: Float) -> Unit,
-                setInt: (column: Column<Int>, value: Int) -> Unit,
-                setString: (column: Column<String>, value: String) -> Unit
-            ) {
-                setFloat(Beatmap.bpm, extractedInfo.mapInfo._beatsPerMinute.or(0f))
-                setInt(Beatmap.duration, extractedInfo.duration.roundToInt())
-                setString(Beatmap.songName, extractedInfo.mapInfo._songName.or(""))
-                setString(Beatmap.songSubName, extractedInfo.mapInfo._songSubName.or(""))
-                setString(Beatmap.levelAuthorName, extractedInfo.mapInfo._levelAuthorName.or(""))
-                setString(Beatmap.songAuthorName, extractedInfo.mapInfo._songAuthorName.or(""))
-            }
-
-            val newMap = try {
-                fun insertOrUpdate() =
-                    data.mapId?.let { mapId ->
-                        fun updateIt() = Beatmap.updateReturning(
-                            {
-                                (Beatmap.id eq mapId) and (Beatmap.uploader eq session.userId)
-                            },
-                            {
-                                setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
-                                it[updatedAt] = NowExpression(updatedAt.columnType)
-                            },
-                            Beatmap.id
-                        )?.firstOrNull()?.let { it[Beatmap.id] } ?: throw UploadException("Map doesn't exist to add version")
-
-                        updateIt().also {
-                            val latestVersions = VersionsDao.wrapRows(
-                                Versions.select {
-                                    (Versions.mapId eq mapId)
-                                }.orderBy(Versions.uploaded, SortOrder.DESC).limit(2)
-                            ).toList()
-
-                            if (latestVersions.size > 1) {
-                                // Check time since one before previous upload = 2 uploads / day / map
-                                val hoursUntilNext = 12 - Clock.System.now().minus(latestVersions[1].uploaded.toKotlinInstant()).inWholeHours
-                                if (hoursUntilNext > 0) {
-                                    throw UploadException("Please wait another $hoursUntilNext hours before uploading another version")
-                                }
+                                sharedInsert(it, diffInfo, bsdiff, extractedInfo.mapInfo, sli)
+                                it[characteristic] = cLoop.key.enumValue()
+                                it[difficulty] = dLoop.key.enumValue()
                             }
                         }
-                    } ?: Beatmap.insertAndGetId {
-                        it[name] = (data.title ?: "").take(1000)
-                        it[description] = (data.description ?: "").take(10000)
-
-                        val tagsList = (data.tags ?: "").split(',').mapNotNull { t -> MapTag.fromSlug(t) }.toSet()
-                        val tooMany = tagsList.groupBy { t -> t.type }.mapValues { t -> t.value.size }.withDefault { 0 }.let { byType ->
-                            MapTag.maxPerType.any { type -> byType.getValue(type.key) > type.value }
-                        }
-
-                        if (!tooMany) {
-                            it[tags] = tagsList.filter { t -> t != MapTag.None }.map { t -> t.slug }.toTypedArray()
-                        }
-                        it[uploader] = EntityID(session.userId, User)
-
-                        setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
-
-                        val declaredAsAI = !data.beatsage.isNullOrEmpty()
-                        it[declaredAi] = when {
-                            declaredAsAI -> AiDeclarationType.Uploader
-                            extractedInfo.score < 0 -> AiDeclarationType.SageScore
-                            else -> AiDeclarationType.None
-                        }
-
-                        it[plays] = 0
                     }
 
-                insertOrUpdate().also {
-                    // How is a file here if it hasn't been uploaded before?
-                    if (newFile.exists()) {
-                        newFile.delete()
-                    }
-
-                    Files.move(file.toPath(), newFile.toPath())
+                    newMap.value
+                } catch (e: Exception) {
+                    if (newFile.exists()) newFile.delete()
+                    if (newImageFile.exists()) newImageFile.delete()
+                    if (newAudioFile.exists()) newAudioFile.delete()
+                    throw e
                 }
-            } catch (e: Exception) {
-                file.delete()
-                throw e
             }
 
-            try {
-                extractedInfo.thumbnail?.let {
-                    newImageFile.writeBytes(it.toByteArray())
-                } ?: throw UploadException("Internal error 2")
-
-                extractedInfo.preview?.let {
-                    newAudioFile.writeBytes(it.toByteArray())
-                } ?: throw UploadException("Internal error 3")
-
-                // Pretty much guaranteed to be set
-                val sli = extractedInfo.songLengthInfo ?: throw UploadException("Couldn't determine song length")
-
-                val newVersion = Versions.insertAndGetId {
-                    it[mapId] = newMap
-                    it[key64] = null
-                    it[hash] = digest
-                    it[state] = EMapState.Uploaded
-                    it[sageScore] = extractedInfo.score
-                }
-
-                extractedInfo.diffs.forEach { cLoop ->
-                    cLoop.value.forEach { dLoop ->
-                        val diffInfo = dLoop.key
-                        val bsdiff = dLoop.value
-
-                        Difficulty.insertAndGetId {
-                            it[mapId] = newMap
-                            it[versionId] = newVersion
-
-                            sharedInsert(it, diffInfo, bsdiff, extractedInfo.mapInfo, sli)
-                            it[characteristic] = cLoop.key.enumValue()
-                            it[difficulty] = dLoop.key.enumValue()
-                        }
-                    }
-                }
-
-                newMap.value
-            } catch (e: Exception) {
-                if (newFile.exists()) newFile.delete()
-                if (newImageFile.exists()) newImageFile.delete()
-                if (newAudioFile.exists()) newAudioFile.delete()
-                throw e
-            }
+            call.pub("beatmaps", "maps.$newMapId.updated.upload", null, newMapId)
+            call.respond(toHexString(newMapId))
         }
-
-        call.pub("beatmaps", "maps.$newMapId.updated.upload", null, newMapId)
-        call.respond(toHexString(newMapId))
     }
 }
 

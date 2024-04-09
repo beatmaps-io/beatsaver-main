@@ -9,7 +9,6 @@ import io.beatmaps.api.PlaylistApi
 import io.beatmaps.api.PlaylistBatchRequest
 import io.beatmaps.api.PlaylistMapRequest
 import io.beatmaps.api.getMaxMap
-import io.beatmaps.api.requireAuthorization
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
@@ -20,6 +19,7 @@ import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
+import io.beatmaps.util.requireAuthorization
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.post
@@ -75,7 +75,7 @@ fun Route.playlistMaps() {
         applyPlaylistChange(pId, inPlaylist, LiteralOp(Beatmap.id.columnType, EntityID(mapId, Beatmap)), newOrder)
 
     post<PlaylistApi.Batch, PlaylistBatchRequest>("Add or remove up to 100 maps to a playlist. Requires OAUTH".responds(ok<ActionResponse>())) { req, pbr ->
-        requireAuthorization(OauthScope.MANAGE_PLAYLISTS) { sess ->
+        requireAuthorization(OauthScope.MANAGE_PLAYLISTS) { _, sess ->
             val validKeys = (pbr.keys ?: listOf()).mapNotNull { key -> key.toIntOrNull(16) }
             val hashesOrEmpty = pbr.hashes?.map { it.lowercase() } ?: listOf()
             if (hashesOrEmpty.size + validKeys.size > 100) {
@@ -164,7 +164,7 @@ fun Route.playlistMaps() {
     }
 
     post<PlaylistApi.Add> { req ->
-        requireAuthorization(OauthScope.MANAGE_PLAYLISTS) { sess ->
+        requireAuthorization(OauthScope.MANAGE_PLAYLISTS) { _, sess ->
             val pmr = call.receive<PlaylistMapRequest>()
             try {
                 transaction {

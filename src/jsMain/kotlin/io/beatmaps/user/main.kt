@@ -529,6 +529,8 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             if (state.state == ProfileTab.REVIEWS) {
                 reviewTable {
                     attrs.userDetail = detail
+                    // There may be collaborators passed here, however they are not passed here as they are not required
+                    // And would just result in the purposeless loading of additional data
                 }
             }
 

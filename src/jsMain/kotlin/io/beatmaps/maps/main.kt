@@ -140,6 +140,7 @@ val mapPage = fc<MapPageProps> { props ->
                             reviewTable {
                                 attrs.map = it.id
                                 attrs.mapUploaderId = it.uploader.id
+                                attrs.collaborators = it.collaborators
                             }
                         } else if (version != null && it.deletedAt == null) {
                             scoreTable {

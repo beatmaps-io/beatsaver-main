@@ -3,6 +3,7 @@ package io.beatmaps.api
 import io.beatmaps.common.ReviewDeleteData
 import io.beatmaps.common.ReviewModerationData
 import io.beatmaps.common.api.EAlertType
+import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
@@ -16,12 +17,15 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
+import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
 import io.beatmaps.common.pub
+import io.beatmaps.util.captchaIfPresent
 import io.beatmaps.util.cdnPrefix
+import io.beatmaps.util.requireAuthorization
 import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -40,7 +44,6 @@ import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -213,7 +216,7 @@ fun Route.reviewRoute() {
     }
 
     put<ReviewApi.Single> { single ->
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val update = call.receive<PutReview>()
             val updateMapId = single.mapId.toInt(16)
             val newText = update.text.take(ReviewConstants.MAX_LENGTH)
@@ -244,13 +247,23 @@ fun Route.reviewRoute() {
                             r[sentiment] = update.sentiment.dbValue
                         }
                     } else {
-                        val map = Beatmap.joinUploader().select {
+                        val map = Beatmap.joinUploader().joinCollaborators().select {
                             Beatmap.id eq updateMapId
                         }.complexToBeatmap().single()
 
                         if (map.uploaderId.value == single.userId) {
                             // Can't review your own map
                             call.respond(ActionResponse(false, listOf("Own map")))
+                            return@newSuspendedTransaction false
+                        }
+
+                        val isCollaborator = map.collaborators.values.any { singleCollaborator ->
+                            singleCollaborator.id.value == single.userId
+                        }
+
+                        if (isCollaborator) {
+                            // Can't review maps that you collaborated on
+                            call.respond(ActionResponse(false, listOf("You're a collaborator of this map")))
                             return@newSuspendedTransaction false
                         }
 
@@ -298,7 +311,7 @@ fun Route.reviewRoute() {
     }
 
     delete<ReviewApi.Single> { single ->
-        requireAuthorization { sess ->
+        requireAuthorization { _, sess ->
             val deleteReview = call.receive<DeleteReview>()
             val mapId = single.mapId.toInt(16)
 
@@ -341,7 +354,7 @@ fun Route.reviewRoute() {
     }
 
     post<ReviewApi.Curate> {
-        requireAuthorization { user ->
+        requireAuthorization { _, user ->
             if (!user.isCurator()) {
                 call.respond(HttpStatusCode.BadRequest)
             } else {
