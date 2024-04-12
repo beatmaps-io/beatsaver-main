@@ -31,20 +31,19 @@ enum class AuthType {
 private fun sessionFromToken(token: AccessToken) = (token.identity?.metadata?.get("object") as? UserDao)
     ?.let { Session.fromUser(it, oauth2ClientId = token.clientId) }
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.optionalAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(AuthType, Session?) -> T): T? {
+suspend fun <T> PipelineContext<*, ApplicationCall>.optionalAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(AuthType, Session?) -> T) {
     // Oauth
-    return checkOauthHeader(scope)?.let(::sessionFromToken)?.let { block(AuthType.Oauth, it) }
+    checkOauthHeader(scope)?.let(::sessionFromToken)?.also { block(AuthType.Oauth, it) }
         // Session
-        ?: call.sessions.get<Session>()?.let { block(AuthType.Session, it) }
+        ?: call.sessions.get<Session>()?.also { block(AuthType.Session, it) }
         // Fallback
         ?: run { block(AuthType.None, null) }
 }
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.requireAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(AuthType, Session) -> T): T? {
-    return optionalAuthorization(scope) { type, sess ->
+suspend fun <T> PipelineContext<*, ApplicationCall>.requireAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(AuthType, Session) -> T) {
+    optionalAuthorization(scope) { type, sess ->
         if (type == AuthType.None || sess == null) {
             call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
-            null
         } else {
             block(type, sess)
         }

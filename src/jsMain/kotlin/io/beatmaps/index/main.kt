@@ -38,8 +38,6 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-
-
 val homePage = fc<Props> {
     val location = useLocation()
 
