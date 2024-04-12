@@ -243,12 +243,7 @@ fun Route.searchRoute() {
                                         Versions
                                             .let { q ->
                                                 if (needsDiff) {
-                                                    q.join(
-                                                        Difficulty,
-                                                        JoinType.INNER,
-                                                        Versions.id,
-                                                        Difficulty.versionId
-                                                    )
+                                                    q.join(Difficulty, JoinType.INNER, Versions.id, Difficulty.versionId)
                                                 } else {
                                                     q
                                                 }
