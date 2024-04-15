@@ -214,8 +214,7 @@ fun Route.searchRoute() {
                     Beatmap
                         .slice(Beatmap.id)
                         .select {
-                            Beatmap.id eq searchInfo.escapedQuery.substring(4)
-                                .toInt(16) and (Beatmap.deletedAt.isNull())
+                            Beatmap.id eq searchInfo.escapedQuery.substring(4).toInt(16) and (Beatmap.deletedAt.isNull())
                         }
                         .limit(1).firstOrNull()?.let { r ->
                             call.respond(SearchResponse(redirect = toHexString(r[Beatmap.id].value)))
