@@ -241,7 +241,8 @@ fun Route.searchRoute() {
                                     .crossJoin(
                                         Versions
                                             .let { q ->
-                                                if (needsDiff) q.join(Difficulty, JoinType.INNER, Versions.id, Difficulty.versionId) else q}
+                                                if (needsDiff) q.join(Difficulty, JoinType.INNER, Versions.id, Difficulty.versionId) else q
+                                            }
                                             .slice(intLiteral(1))
                                             .select {
                                                 (Versions.mapId eq Beatmap.id) and (Versions.state eq EMapState.Published)
