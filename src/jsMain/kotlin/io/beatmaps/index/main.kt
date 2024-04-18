@@ -38,19 +38,6 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val mapFilters = listOf<FilterInfo<SearchParams>>(
-    FilterInfo("bot", "AI", FilterCategory.GENERAL) { it.automapper == true },
-    FilterInfo("ranked", "Ranked", FilterCategory.GENERAL) { it.ranked == true },
-    FilterInfo("curated", "Curated", FilterCategory.GENERAL) { it.curated == true },
-    FilterInfo("verified", "Verified Mapper", FilterCategory.GENERAL) { it.verified == true },
-    FilterInfo("fs", "Full Spread", FilterCategory.GENERAL) { it.fullSpread == true },
-
-    FilterInfo("chroma", "Chroma", FilterCategory.REQUIREMENTS) { it.chroma == true },
-    FilterInfo("noodle", "Noodle Extensions", FilterCategory.REQUIREMENTS) { it.noodle == true },
-    FilterInfo("me", "Mapping Extensions", FilterCategory.REQUIREMENTS) { it.me == true },
-    FilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true }
-)
-
 val homePage = fc<Props> {
     val location = useLocation()
 
@@ -68,6 +55,7 @@ val homePage = fc<Props> {
             params.get("ranked")?.toBoolean(),
             params.get("curated")?.toBoolean(),
             params.get("verified")?.toBoolean(),
+            params.get("followed")?.toBoolean(),
             params.get("fullSpread")?.toBoolean(),
             params.get("me")?.toBoolean(),
             params.get("cinema")?.toBoolean(),
@@ -87,6 +75,20 @@ val homePage = fc<Props> {
 
     val userData = useContext(globalContext)
 
+    val mapFilters = listOfNotNull<FilterInfo<SearchParams>>(
+        FilterInfo("bot", "AI", FilterCategory.GENERAL) { it.automapper == true },
+        FilterInfo("ranked", "Ranked", FilterCategory.GENERAL) { it.ranked == true },
+        FilterInfo("curated", "Curated", FilterCategory.GENERAL) { it.curated == true },
+        FilterInfo("verified", "Verified Mapper", FilterCategory.GENERAL) { it.verified == true },
+        if (userData != null) FilterInfo("followed", "From Mappers You Follow ", FilterCategory.GENERAL) { it.followed == true } else null,
+        FilterInfo("fs", "Full Spread", FilterCategory.GENERAL) { it.fullSpread == true },
+
+        FilterInfo("chroma", "Chroma", FilterCategory.REQUIREMENTS) { it.chroma == true },
+        FilterInfo("noodle", "Noodle Extensions", FilterCategory.REQUIREMENTS) { it.noodle == true },
+        FilterInfo("me", "Mapping Extensions", FilterCategory.REQUIREMENTS) { it.me == true },
+        FilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true }
+    )
+
     fun updateSearchParams(searchParamsLocal: SearchParams?, row: Int?) {
         if (searchParamsLocal == null) return
 
@@ -105,6 +107,7 @@ val homePage = fc<Props> {
                     includeIfNotNull(cinema, "cinema"),
                     includeIfNotNull(automapper, "auto"),
                     includeIfNotNull(fullSpread, "fullSpread"),
+                    includeIfNotNull(followed, "followed"),
                     (if (tagStr.isNotEmpty()) "tags=$tagStr" else null)
                 ),
                 "", row, searchParams, history
@@ -145,6 +148,7 @@ val homePage = fc<Props> {
                     if (isFiltered("ranked")) true else null,
                     if (isFiltered("curated")) true else null,
                     if (isFiltered("verified")) true else null,
+                    if (isFiltered("followed")) true else null,
                     if (isFiltered("fs")) true else null,
                     if (isFiltered("me")) true else null,
                     if (isFiltered("cinema")) true else null,
