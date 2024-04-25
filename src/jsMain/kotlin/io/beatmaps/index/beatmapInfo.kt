@@ -47,6 +47,8 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
         Axios.post<String>("${Config.apibase}/bookmark", BookmarkRequest(props.obj?.id, bookmarked = bookmarked), generateConfig<BookmarkRequest, String>())
 
     override fun componentDidUpdate(prevProps: BeatmapInfoProps, prevState: BeatMapInfoState, snapshot: Any) {
+        super.componentDidUpdate(prevProps, prevState, snapshot)
+
         if (prevProps.version != props.version) {
             setState {
                 bookmarked = null
