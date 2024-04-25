@@ -148,7 +148,7 @@ val homePage = fc<Props> {
                     if (isFiltered("ranked")) true else null,
                     if (isFiltered("curated")) true else null,
                     if (isFiltered("verified")) true else null,
-                    if (isFiltered("followed")) true else null,
+                    if (userData != null && isFiltered("followed")) true else null,
                     if (isFiltered("fs")) true else null,
                     if (isFiltered("me")) true else null,
                     if (isFiltered("cinema")) true else null,
