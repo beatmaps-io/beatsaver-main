@@ -29,6 +29,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinBookmarked
+import io.beatmaps.common.dbo.joinCollaborations
 import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
@@ -682,11 +683,12 @@ fun Route.mapDetailRoute() {
         val sess = call.sessions.get<Session>()
         val pageSize = (it.pageSize ?: 20).coerceIn(1, 100)
         val beatmaps = transaction {
-            val collabQuery = Collaboration
+            val collabQuery = Beatmap
+                .joinCollaborations()
                 .joinVersions(column = Collaboration.mapId)
                 .slice(Collaboration.mapId, Collaboration.uploadedAt)
                 .select {
-                    (Collaboration.collaboratorId eq it.id and Collaboration.accepted)
+                    (Collaboration.collaboratorId eq it.id and Collaboration.accepted and Beatmap.deletedAt.isNull())
                         .notNull(it.before) { o -> Collaboration.uploadedAt less o.toJavaInstant() }
                 }
                 .orderBy(Collaboration.uploadedAt to SortOrder.DESC)
