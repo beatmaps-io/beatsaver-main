@@ -136,8 +136,7 @@ fun Route.collaborationRoute() {
                 } else {
                     Collaboration.deleteWhere {
                         Collaboration.id eq req.collaborationId and (Collaboration.collaboratorId eq sess.userId)
-                    }
-                    true
+                    } > 0
                 }
             }
 
