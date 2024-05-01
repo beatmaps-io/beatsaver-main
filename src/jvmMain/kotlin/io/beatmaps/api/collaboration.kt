@@ -26,6 +26,7 @@ import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
@@ -85,59 +86,59 @@ fun Route.collaborationRoute() {
             val req = call.receive<CollaborationResponseData>()
 
             val success = transaction {
-                val mapId =
-                    if (req.accepted) {
-                        Collaboration.updateReturning(
-                            {
-                                Collaboration.id eq req.collaborationId and (Collaboration.collaboratorId eq sess.userId)
-                            },
-                            {
-                                it[accepted] = true
-                            },
-                            Collaboration.mapId
-                        )
-                    } else {
-                        Collaboration.deleteWhere {
+                if (req.accepted) {
+                    val mapId = Collaboration.updateReturning(
+                        {
                             Collaboration.id eq req.collaborationId and (Collaboration.collaboratorId eq sess.userId)
-                        }
-
-                        null
-                    }.let {
+                        },
+                        {
+                            it[accepted] = true
+                        },
+                        Collaboration.mapId
+                    ).let {
                         it?.firstOrNull()
                     }
 
-                if (mapId != null) {
-                    // Generate alert for followers of the collaborator.
-                    val map = mapId.let {
-                        BeatmapDao.wrapRow(Beatmap.select {
-                            Beatmap.id eq it[Collaboration.mapId].value
-                        }.single())
+                    if (mapId != null) {
+                        // Generate alert for followers of the collaborator.
+                        val map = mapId.let {
+                            BeatmapDao.wrapRow(Beatmap.select {
+                                Beatmap.id eq it[Collaboration.mapId].value
+                            }.single())
+                        }
+
+                        val followsAlias = Follows.alias("f2")
+                        val recipients = Follows
+                            .join(followsAlias, JoinType.LEFT, followsAlias[Follows.followerId], Follows.followerId) {
+                                (followsAlias[Follows.userId] eq map.uploaderId) and followsAlias[Follows.following]
+                            }.select {
+                                followsAlias[Follows.id].isNull() and (Follows.followerId neq map.uploaderId) and
+                                        (Follows.userId eq sess.userId) and Follows.upload and Follows.following
+                            }.map { row ->
+                                row[Follows.followerId].value
+                            } - listOf(map.uploaderId.value).toSet()
+
+                        Alert.insert(
+                                    "New Map Collaboration",
+                                    "@${sess.uniqueName} collaborated with @${map.uploader.uniqueName} on #${
+                                        Integer.toHexString(
+                                            map.id.value
+                                        )
+                                    }: **${map.name}**.\n" +
+                                            "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                    EAlertType.MapRelease,
+                                    recipients
+                                )
+                        true
+                    } else {
+                        false
                     }
-
-                    val recipients = Follows.select {
-                        Follows.userId eq sess.userId and Follows.upload and Follows.following
-                    }.map { row ->
-                        row[Follows.followerId].value
+                } else {
+                    Collaboration.deleteWhere {
+                        Collaboration.id eq req.collaborationId and (Collaboration.collaboratorId eq sess.userId)
                     }
-
-                    val nonRecipients = Follows.select {
-                        Follows.userId eq map.uploaderId and Follows.following
-                    }.map { row ->
-                        row[Follows.followerId].value
-                    } + listOf(map.uploaderId.value)
-
-                    val finalRecipients = recipients - nonRecipients.toSet() asd
-
-                    Alert.insert(
-                        "New Map Collaboration",
-                        "@${sess.uniqueName} collaborated with @${map.uploader.uniqueName} on #${Integer.toHexString(map.id.value)}: **${map.name}**.\n" +
-                                "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
-                        EAlertType.MapRelease,
-                        finalRecipients
-                    )
+                    true
                 }
-
-                mapId != null
             }
 
             call.respond(if (success) HttpStatusCode.OK else HttpStatusCode.Unauthorized)
