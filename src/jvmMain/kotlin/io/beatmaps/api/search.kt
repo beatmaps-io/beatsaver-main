@@ -58,6 +58,7 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.intLiteral
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.lang.Integer.toHexString
@@ -268,7 +269,7 @@ fun Route.searchRoute() {
                                             .notNull(followingSubQuery) { o -> Beatmap.uploader inSubQuery o }
                                             .notNull(it.chroma) { o -> Beatmap.chroma eq o }
                                             .notNull(it.noodle) { o -> Beatmap.noodle eq o }
-                                            .notNull(it.ranked) { o -> Beatmap.ranked eq o }
+                                            .notNull(it.ranked) { o -> (Beatmap.ranked eq o) or (Beatmap.blRanked eq o) }
                                             .notNull(it.curated) { o -> with(Beatmap.curatedAt) { if (o) isNotNull() else isNull() } }
                                             .notNull(it.verified) { o -> User.verifiedMapper eq o }
                                             .notNull(it.fullSpread) { o -> Beatmap.fullSpread eq o }

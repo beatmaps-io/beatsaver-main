@@ -49,7 +49,9 @@ fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
     other.collaborators.values.map {
         UserDetail.from(it)
     }.ifEmpty { null },
-    other.declaredAi
+    other.declaredAi,
+    other.blRanked,
+    other.blQualified
 )
 fun MapDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(BeatmapDao.wrapRow(row), cdnPrefix)
 
