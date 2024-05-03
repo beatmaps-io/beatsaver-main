@@ -18,6 +18,7 @@ import io.beatmaps.shared.map.bookmarkButton
 import io.beatmaps.shared.map.diffIcons
 import io.beatmaps.shared.map.links
 import io.beatmaps.shared.map.mapTitle
+import io.beatmaps.shared.map.rankedStatus
 import io.beatmaps.shared.map.rating
 import io.beatmaps.shared.map.uploaderWithInfo
 import io.beatmaps.util.AutoSizeComponent
@@ -59,8 +60,7 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
     override fun RBuilder.render() {
         props.obj?.let { map ->
             val mapAttrs = listOfNotNull(
-                if (map.ranked) MapAttr.Ranked else null,
-                if (map.qualified && !map.ranked) MapAttr.Qualified else null,
+                if (map.ranked || map.blRanked) MapAttr.Ranked else null,
                 if (map.curator != null) MapAttr.Curated else null
             ).ifEmpty {
                 listOfNotNull(
@@ -103,6 +103,11 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
                         div("diffs") {
                             diffIcons {
                                 attrs.diffs = props.version?.diffs
+                            }
+                        }
+                        div("ranked-statuses") {
+                            rankedStatus {
+                                attrs.map = map
                             }
                         }
                     }

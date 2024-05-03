@@ -991,7 +991,7 @@ fun Route.userRoute() {
                     Beatmap.bpm.avg(),
                     Beatmap.score.avg(3),
                     Beatmap.duration.avg(0),
-                    countWithFilter(Beatmap.ranked),
+                    countWithFilter(Beatmap.ranked or Beatmap.blRanked),
                     Beatmap.uploaded.min(),
                     Beatmap.uploaded.max()
                 )
@@ -1013,7 +1013,7 @@ fun Route.userRoute() {
                         dao.upvotes,
                         it[Beatmap.downVotesInt.sum()] ?: 0,
                         it[Beatmap.id.count()].toInt(),
-                        it[countWithFilter(Beatmap.ranked)],
+                        it[countWithFilter(Beatmap.ranked or Beatmap.blRanked)],
                         it[Beatmap.bpm.avg()]?.toFloat() ?: 0f,
                         it[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f,
                         it[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
