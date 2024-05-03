@@ -194,6 +194,8 @@ table.search-results {
     .info {
       padding-left: 10px;
       flex: 1;
+      display: flex;
+      flex-direction: column;
 
       > a {
         font-weight: bold;
@@ -1722,6 +1724,28 @@ small.alert-count {
   color: #b52a1c;
   text-decoration: underline;
   text-decoration-style: dashed;
+}
+
+.ranked-statuses {
+  margin-top: auto;
+  display: block;
+  box-sizing: border-box;
+
+  .ranked-status {
+    display: inline-block;
+    font-size: .7rem;
+    margin: .4rem .5rem 0 0;
+    padding: 3px 5px;
+    border-radius: 3px;
+    background-color: $secondary;
+
+    img {
+      width: 16px;
+      height: 16px;
+      margin-right: 4px;
+      margin-top: -2px;
+    }
+  }
 }
 
 @include media-breakpoint-up(xxl) {
