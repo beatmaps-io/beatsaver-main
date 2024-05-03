@@ -104,7 +104,8 @@ data class MapDifficulty(
     val paritySummary: MapParitySummary,
     val stars: Float? = null,
     val maxScore: Int,
-    val label: String? = null
+    val label: String? = null,
+    val blStars: Float? = null
 ) { companion object }
 
 @Serializable

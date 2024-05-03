@@ -1042,6 +1042,8 @@ div.mapstats {
 
 .mapstats .stats {
   width: 239px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   line-height: normal;
   margin-left: auto;
 }
@@ -1053,8 +1055,19 @@ div.mapstats {
   padding: 3px 0 0;
 }
 
-.mapstats img, .mapstats .diff-stars i {
+.mapstats img, .mapstats .diff-stars abbr {
   margin-right: 3px;
+  font-family: monospace;
+  text-decoration: none;
+}
+
+.mapstats .diff-stars i {
+  margin-left: 3px;
+}
+
+.mapstats .rowspan-2 {
+  grid-row: 1 / 3;
+  margin-top: 13px;
 }
 
 .list-group-item.stat-hard { background: rgba($orange, 0.1); }
@@ -1204,9 +1217,6 @@ div.mapstats {
 }
 li.KeyboardShortcutRow {
   margin-bottom: 4px;
-}
-.mapstats .diff-stars {
-  padding-top: 14px;
 }
 .card.bg-danger, .card.bg-secondary {
   .card-text > a {
