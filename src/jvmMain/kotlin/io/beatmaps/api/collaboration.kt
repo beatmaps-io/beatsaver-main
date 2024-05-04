@@ -111,12 +111,15 @@ fun Route.collaborationRoute() {
                         val recipients = Follows
                             .join(followsAlias, JoinType.LEFT, followsAlias[Follows.followerId], Follows.followerId) {
                                 (followsAlias[Follows.userId] eq map.uploaderId) and followsAlias[Follows.following]
-                            }.select {
+                            }
+                            .slice(Follows.followerId)
+                            .select {
                                 followsAlias[Follows.id].isNull() and (Follows.followerId neq map.uploaderId) and
                                         (Follows.userId eq sess.userId) and Follows.upload and Follows.following
-                            }.map { row ->
+                            }
+                            .map { row ->
                                 row[Follows.followerId].value
-                            } - listOf(map.uploaderId.value).toSet()
+                            }
 
                         Alert.insert(
                                     "New Map Collaboration",
