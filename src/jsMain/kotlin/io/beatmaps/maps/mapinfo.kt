@@ -152,8 +152,7 @@ val mapInfo = fc<MapInfoProps> { props ->
     }
 
     val mapAttrs = listOfNotNull(
-        if (props.mapInfo.ranked) MapAttr.Ranked else null,
-        if (props.mapInfo.qualified && !props.mapInfo.ranked) MapAttr.Qualified else null,
+        if (props.mapInfo.ranked || props.mapInfo.blRanked) MapAttr.Ranked else null,
         if (props.mapInfo.curator != null) MapAttr.Curated else null
     ).ifEmpty {
         listOfNotNull(
