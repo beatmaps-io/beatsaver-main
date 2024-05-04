@@ -103,9 +103,11 @@ fun Route.collaborationRoute() {
                     if (mapId != null) {
                         // Generate alert for followers of the collaborator.
                         val map = mapId.let {
-                            BeatmapDao.wrapRow(Beatmap.select {
-                                Beatmap.id eq it[Collaboration.mapId].value
-                            }.single())
+                            BeatmapDao.wrapRow(
+                                Beatmap.select {
+                                    Beatmap.id eq it[Collaboration.mapId].value
+                                }.single()
+                            )
                         }
 
                         val followsAlias = Follows.alias("f2")
@@ -116,23 +118,23 @@ fun Route.collaborationRoute() {
                             .slice(Follows.followerId)
                             .select {
                                 followsAlias[Follows.id].isNull() and (Follows.followerId neq map.uploaderId) and
-                                        (Follows.userId eq sess.userId) and Follows.upload and Follows.following
+                                    (Follows.userId eq sess.userId) and Follows.upload and Follows.following
                             }
                             .map { row ->
                                 row[Follows.followerId].value
                             }
 
                         Alert.insert(
-                                    "New Map Collaboration",
-                                    "@${sess.uniqueName} collaborated with @${map.uploader.uniqueName} on #${
-                                        Integer.toHexString(
-                                            map.id.value
-                                        )
-                                    }: **${map.name}**.\n" +
-                                            "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
-                                    EAlertType.MapRelease,
-                                    recipients
+                            "New Map Collaboration",
+                            "@${sess.uniqueName} collaborated with @${map.uploader.uniqueName} on #${
+                                Integer.toHexString(
+                                    map.id.value
                                 )
+                            }: **${map.name}**.\n" +
+                                "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
+                            EAlertType.MapRelease,
+                            recipients
+                        )
                         true
                     } else {
                         false
