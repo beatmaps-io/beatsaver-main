@@ -15,6 +15,7 @@ import kotlinx.html.title
 import react.Props
 import react.dom.RDOMBuilder
 import react.dom.a
+import react.dom.abbr
 import react.dom.div
 import react.dom.i
 import react.dom.img
@@ -67,16 +68,31 @@ val infoTable = fc<InfoTableProps> { props ->
 
             div("stats") {
                 diff.stars?.let {
-                    span("diff-stars") {
+                    span("diff-stars" + if (diff.blStars == null) " rowspan-2" else "") {
+                        abbr {
+                            attrs.title = "ScoreSaber"
+                            +"SS"
+                        }
+                        +it.fixedStr(2)
                         i("fas fa-star") {}
-                        +it.toString()
                     }
-                } ?: mapItem("error", "Parity errors", diff.paritySummary.errors)
+                } ?: diff.blStars ?: mapItem("error", "Parity errors", diff.paritySummary.errors)
 
                 mapItem("notes", "Notes", diff.notes)
                 mapItem("bombs", "Bombs", diff.bombs)
                 mapItem("walls", "Walls", diff.obstacles)
-                diff.stars ?: mapItem("warn", "Parity warnings", diff.paritySummary.warns)
+
+                diff.blStars?.let {
+                    span("diff-stars" + if (diff.stars == null) " rowspan-2" else "") {
+                        abbr {
+                            attrs.title = "BeatLeader"
+                            +"BL"
+                        }
+                        +it.fixedStr(2)
+                        i("fas fa-star") {}
+                    }
+                } ?: diff.stars ?: mapItem("warn", "Parity warnings", diff.paritySummary.warns)
+
                 mapItem("njs", "Note jump speed", diff.njs.toString())
                 mapItem("nps", "Notes per second", diff.nps.fixedStr(2))
                 mapItem("lights", "Lights", diff.events)
