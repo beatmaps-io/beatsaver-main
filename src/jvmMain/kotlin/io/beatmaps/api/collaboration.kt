@@ -1,9 +1,14 @@
 package io.beatmaps.api
 
+import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.db.NowExpression
+import io.beatmaps.common.db.updateReturning
+import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.CollaborationDao
+import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.collaboratorAlias
@@ -22,12 +27,12 @@ import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
 
 fun CollaborationDetail.Companion.from(row: ResultRow, cdnPrefix: String) = CollaborationDao.wrapRow(row).let {
     CollaborationDetail(
@@ -83,11 +88,55 @@ fun Route.collaborationRoute() {
 
             val success = transaction {
                 if (req.accepted) {
-                    Collaboration.update({
-                        Collaboration.id eq req.collaborationId and (Collaboration.collaboratorId eq sess.userId)
-                    }) {
-                        it[accepted] = true
-                    } > 0
+                    val mapId = Collaboration.updateReturning(
+                        {
+                            Collaboration.id eq req.collaborationId and (Collaboration.collaboratorId eq sess.userId)
+                        },
+                        {
+                            it[accepted] = true
+                        },
+                        Collaboration.mapId
+                    ).let {
+                        it?.firstOrNull()
+                    }
+
+                    if (mapId != null) {
+                        // Generate alert for followers of the collaborator.
+                        val map = mapId.let {
+                            BeatmapDao.wrapRow(Beatmap.select {
+                                Beatmap.id eq it[Collaboration.mapId].value
+                            }.single())
+                        }
+
+                        val followsAlias = Follows.alias("f2")
+                        val recipients = Follows
+                            .join(followsAlias, JoinType.LEFT, followsAlias[Follows.followerId], Follows.followerId) {
+                                (followsAlias[Follows.userId] eq map.uploaderId) and followsAlias[Follows.following]
+                            }
+                            .slice(Follows.followerId)
+                            .select {
+                                followsAlias[Follows.id].isNull() and (Follows.followerId neq map.uploaderId) and
+                                        (Follows.userId eq sess.userId) and Follows.upload and Follows.following
+                            }
+                            .map { row ->
+                                row[Follows.followerId].value
+                            }
+
+                        Alert.insert(
+                                    "New Map Collaboration",
+                                    "@${sess.uniqueName} collaborated with @${map.uploader.uniqueName} on #${
+                                        Integer.toHexString(
+                                            map.id.value
+                                        )
+                                    }: **${map.name}**.\n" +
+                                            "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                    EAlertType.MapRelease,
+                                    recipients
+                                )
+                        true
+                    } else {
+                        false
+                    }
                 } else {
                     Collaboration.deleteWhere {
                         Collaboration.id eq req.collaborationId and (Collaboration.collaboratorId eq sess.userId)
