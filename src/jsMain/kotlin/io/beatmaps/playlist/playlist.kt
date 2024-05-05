@@ -251,7 +251,7 @@ val playlistPage = fc<Props> {
                             }
                         }
                         pl.curator?.let { curator ->
-                            div("list-group-item d-flex justify-content-between") {
+                            routeLink(curator.profileLink("curations"), className = "list-group-item d-flex justify-content-between") {
                                 +"Curated by"
                                 span("text-truncate ms-4") {
                                     +curator.name
