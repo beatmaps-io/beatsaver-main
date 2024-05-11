@@ -30,7 +30,11 @@ class CheckScheduled(private val rb: RabbitMQInstance) : TimerTask() {
                 ).mapNotNull {
                     schedulerLogger.info { "Scheduler publishing ${it.hash}" }
                     runBlocking { delay(1L) }
-                    if (publishVersion(it.mapId.value, it.hash, rb)) it else null
+                    // Undeceiver: I am not adding the "alert on update" parameter to the database because it feels like too much effort for
+                    // the extremely unlikely case that someone published a map, then unpublished it, then republished it, but scheduled it for release,
+                    // and also doesn't want the alert to go out. If this ever happens, the alert will go out regardless (if it's scheduled it's likely it's a big deal).
+                    // The parameter can be passed here no problems, but then we'd have to save it in the database when scheduling.
+                    if (publishVersion(it.mapId.value, it.hash, true, rb)) it else null
                 }
             }.forEach {
                 rb.publish("beatmaps", "maps.${it.mapId.value}.updated.state", null, it.mapId.value)

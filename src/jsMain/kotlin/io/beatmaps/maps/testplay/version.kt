@@ -55,6 +55,7 @@ val version = fc<VersionProps> { props ->
     val (time, setTime) = useState(props.time)
     val (scheduledAt, setScheduledAt) = useState(props.scheduledAt)
     val scheduleAt = useRef<Instant>(null)
+    val alert = useRef<Boolean>(true)
 
     val textareaRef = useRef<HTMLTextAreaElement>()
 
@@ -63,7 +64,7 @@ val version = fc<VersionProps> { props ->
     val mapState = { nextState: EMapState ->
         setLoadingState(true)
 
-        Axios.post<String>("${Config.apibase}/testplay/state", StateUpdate(props.hash, nextState, props.mapId, scheduleAt = scheduleAt.current), generateConfig<StateUpdate, String>()).then({
+        Axios.post<String>("${Config.apibase}/testplay/state", StateUpdate(props.hash, nextState, props.mapId, scheduleAt = scheduleAt.current, alert = alert.current), generateConfig<StateUpdate, String>()).then({
             if (nextState == EMapState.Published) {
                 if (scheduleAt.current == null) {
                     props.reloadMap()
@@ -123,8 +124,11 @@ val version = fc<VersionProps> { props ->
                                         ) {
                                             scheduleAt.current = null
                                             publishModal {
-                                                attrs.callback = {
+                                                attrs.callbackScheduleAt = {
                                                     scheduleAt.current = it
+                                                }
+                                                attrs.callbackAlert = {
+                                                    alert.current = it
                                                 }
                                             }
                                         }

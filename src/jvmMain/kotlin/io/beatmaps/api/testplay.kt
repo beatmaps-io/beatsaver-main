@@ -214,7 +214,7 @@ fun Route.testplayRoute() {
                 )
 
                 if (newState.state == EMapState.Published) {
-                    publishVersion(newState.mapId, newState.hash, call.rb()) {
+                    publishVersion(newState.mapId, newState.hash, newState.alert, call.rb()) {
                         it and (Beatmap.uploader eq sess.userId)
                     }
                 } else {
