@@ -77,8 +77,7 @@ fun publishVersion(mapId: Int, hash: String, alert: Boolean?, rb: RabbitMQInstan
             }.firstOrNull()
             ?.let { BeatmapDao.wrapRow(it) }
             ?.also {
-                if (alert == true)
-                {
+                if (alert == true) {
                     pushAlerts(it, rb)
                 }
             }
@@ -133,17 +132,15 @@ fun pushAlerts(map: BeatmapDao, rb: RabbitMQInstance?) {
         Alert.insert(
             "New Map Release",
             "@${map.uploader.uniqueName} just released #${toHexString(map.id.value)}: **${map.name}**.\n" +
-                    "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
+                "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
             EAlertType.MapRelease,
             recipients
         )
-    }
-    else
-    {
+    } else {
         Alert.insert(
             "Map Updated",
             "@${map.uploader.uniqueName} just updated #${toHexString(map.id.value)}: **${map.name}**.\n" +
-                    "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
+                "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
             EAlertType.MapRelease,
             recipients
         )
