@@ -128,22 +128,13 @@ fun pushAlerts(map: BeatmapDao, rb: RabbitMQInstance?) {
         row[Follows.followerId].value
     }
 
-    if (map.lastPublishedAt == null) {
-        Alert.insert(
-            "New Map Release",
-            "@${map.uploader.uniqueName} just released #${toHexString(map.id.value)}: **${map.name}**.\n" +
-                "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
-            EAlertType.MapRelease,
-            recipients
-        )
-    } else {
-        Alert.insert(
-            "Map Updated",
-            "@${map.uploader.uniqueName} just updated #${toHexString(map.id.value)}: **${map.name}**.\n" +
-                "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
-            EAlertType.MapRelease,
-            recipients
-        )
-    }
+    val (title, adjective) = if (map.lastPublishedAt == null) ("New Map Release" to "released") else ("Map Updated" to "updated")
+    Alert.insert(
+        title,
+        "@${map.uploader.uniqueName} just $adjective #${toHexString(map.id.value)}: **${map.name}**.\n" +
+            "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
+        EAlertType.MapRelease,
+        recipients
+    )
     updateAlertCount(rb, recipients)
 }

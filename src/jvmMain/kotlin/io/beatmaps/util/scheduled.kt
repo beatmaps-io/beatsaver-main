@@ -30,11 +30,6 @@ class CheckScheduled(private val rb: RabbitMQInstance) : TimerTask() {
                 ).mapNotNull {
                     schedulerLogger.info { "Scheduler publishing ${it.hash}" }
                     runBlocking { delay(1L) }
-                    // Undeceiver: I am not adding the "alert" parameter to the database because it feels like too much effort for
-                    // the unlikely case that someone scheduled a map for release but doesn't want to notify followers,
-                    // If this ever happens, the alert will go out regardless (if it's scheduled it's likely it's a big deal).
-                    // If we did want to consider the parameter, it can be passed here without any problem,
-                    // but then we'd have to save it in the database when scheduling. Can be done, not doing it now.
                     if (publishVersion(it.mapId.value, it.hash, true, rb)) it else null
                 }
             }.forEach {
