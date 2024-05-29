@@ -12,7 +12,6 @@ import io.ktor.server.application.install
 import io.ktor.server.request.httpMethod
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
-import io.ktor.util.StringValues
 import kotlinx.coroutines.runBlocking
 import kotlinx.html.meta
 import nl.myndocs.oauth2.authenticator.Credentials
@@ -26,7 +25,7 @@ import nl.myndocs.oauth2.token.RefreshToken
 import nl.myndocs.oauth2.token.converter.RefreshTokenConverter
 import nl.myndocs.oauth2.tokenstore.inmemory.InMemoryDeviceCodeStore
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Instant
 import java.util.UUID
@@ -36,7 +35,7 @@ fun Application.installOauth2(deviceCodeStore: InMemoryDeviceCodeStore) {
         authenticationCallback = { call, callRouter ->
             if (call.request.httpMethod == HttpMethod.Get) {
                 val userSession = call.sessions.get<Session>()
-                val reqClientId = (call.parameters as StringValues)["client_id"]
+                val reqClientId = call.parameters["client_id"]
 
                 if (reqClientId != null && userSession?.oauth2ClientId == reqClientId) {
                     callRouter.route(BSCallContext(call), Credentials(userSession.userId.toString(), ""))
@@ -84,7 +83,7 @@ fun Application.installOauth2(deviceCodeStore: InMemoryDeviceCodeStore) {
 
             override fun validCredentials(forClient: Client, identity: Identity, password: String) =
                 transaction {
-                    !User.select { (User.id eq identity.username.toInt()) and User.active }.empty()
+                    !User.selectAll().where { (User.id eq identity.username.toInt()) and User.active }.empty()
                 }
         }
 

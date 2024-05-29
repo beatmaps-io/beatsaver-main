@@ -26,17 +26,17 @@ import io.ktor.server.locations.post
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
-import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Expression
-import org.jetbrains.exposed.sql.LiteralOp
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.floatLiteral
+import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.postgresql.util.PSQLException
 
@@ -54,7 +54,7 @@ fun Route.playlistMaps() {
         throw e
     }
 
-    fun applyPlaylistChange(pId: Int, inPlaylist: Boolean, mapId: Expression<EntityID<Int>>, newOrder: Float? = null) =
+    fun applyPlaylistChange(pId: Int, inPlaylist: Boolean, mapId: Expression<Int>, newOrder: Float? = null) =
         catchNullRelation {
             if (inPlaylist) {
                 PlaylistMap.upsert(conflictIndex = PlaylistMap.link) {
@@ -66,13 +66,13 @@ fun Route.playlistMaps() {
                 true
             } else {
                 PlaylistMap.deleteWhere {
-                    (PlaylistMap.playlistId eq pId) and (PlaylistMap.mapId eq mapId)
+                    (playlistId eq pId) and (PlaylistMap.mapId eq mapId)
                 }.let { res -> res > 0 }
             }
         }
 
     fun applyPlaylistChange(pId: Int, inPlaylist: Boolean, mapId: Int, newOrder: Float? = null) =
-        applyPlaylistChange(pId, inPlaylist, LiteralOp(Beatmap.id.columnType, EntityID(mapId, Beatmap)), newOrder)
+        applyPlaylistChange(pId, inPlaylist, intLiteral(mapId), newOrder)
 
     post<PlaylistApi.Batch, PlaylistBatchRequest>("Add or remove up to 100 maps to a playlist. Requires OAUTH".responds(ok<ActionResponse>())) { req, pbr ->
         requireAuthorization(OauthScope.MANAGE_PLAYLISTS) { _, sess ->
@@ -104,8 +104,8 @@ fun Route.playlistMaps() {
                             val playlist = PlaylistDao.wrapRow(row)
                             val maxMap =
                                 PlaylistMap
-                                    .slice(PlaylistMap.order)
-                                    .select {
+                                    .select(PlaylistMap.order)
+                                    .where {
                                         PlaylistMap.playlistId eq playlist.id.value
                                     }
                                     .orderBy(PlaylistMap.order, SortOrder.DESC)
@@ -117,15 +117,15 @@ fun Route.playlistMaps() {
 
                             val lookup = Beatmap
                                 .joinVersions(false, state = null)
-                                .slice(Versions.hash, Beatmap.id)
-                                .select {
+                                .select(Versions.hash, Beatmap.id)
+                                .where {
                                     Beatmap.deletedAt.isNull() and (Beatmap.id.inList(validKeys) or Versions.hash.inList(hashesOrEmpty))
                                 }.associate {
                                     it[Versions.hash].lowercase() to it[Beatmap.id].value
                                 }
-                            val unorderedMapids = lookup.values.toSet()
+                            val unorderedMapIds = lookup.values.toSet()
 
-                            val mapIds = validKeys.filter { unorderedMapids.contains(it) } +
+                            val mapIds = validKeys.filter { unorderedMapIds.contains(it) } +
                                 hashesOrEmpty.mapNotNull { if (lookup.containsKey(it) && !validKeys.contains(lookup[it])) lookup[it] else null }
 
                             val result = if (mapIds.size != (hashesOrEmpty + validKeys).size && pbr.ignoreUnknown != true) {
@@ -139,7 +139,7 @@ fun Route.playlistMaps() {
                                 }.size
                             } else {
                                 PlaylistMap.deleteWhere {
-                                    (PlaylistMap.playlistId eq playlist.id.value) and (PlaylistMap.mapId.inList(mapIds))
+                                    (playlistId eq playlist.id.value) and (mapId.inList(mapIds))
                                 }
                             }
 

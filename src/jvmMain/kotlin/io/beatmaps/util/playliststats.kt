@@ -10,7 +10,7 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.rabbitOptional
 import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.publish
@@ -21,8 +21,8 @@ fun Application.playlistStats() {
         consumeAck("bm.mapPlaylistTrigger", Int::class) { _, mapId ->
             transaction {
                 PlaylistMapDao.wrapRows(
-                    PlaylistMap
-                        .select {
+                    PlaylistMap.selectAll()
+                        .where {
                             PlaylistMap.mapId eq mapId
                         }
                 ).toList()
@@ -36,7 +36,8 @@ fun Application.playlistStats() {
                 val beatmaps = Beatmap
                     .joinVersions()
                     .join(PlaylistMap, JoinType.INNER, Beatmap.id, PlaylistMap.mapId)
-                    .select {
+                    .selectAll()
+                    .where {
                         PlaylistMap.playlistId eq playlistId
                     }
                     .complexToBeatmap()

@@ -12,7 +12,7 @@ import io.ktor.server.locations.get
 import io.ktor.server.routing.Route
 import kotlinx.html.meta
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 
 @Location("/playlists")
@@ -40,7 +40,7 @@ fun Route.playlistController() {
         genericPage(
             headerTemplate = {
                 transaction {
-                    Playlist.select {
+                    Playlist.selectAll().where {
                         (Playlist.id eq it.id) and Playlist.deletedAt.isNull() and (Playlist.type eq EPlaylistType.Public)
                     }.limit(1).map { PlaylistFull.from(it, cdnPrefix()) }.firstOrNull()
                 }?.let {

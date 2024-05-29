@@ -37,7 +37,7 @@ import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.util.Base64
@@ -132,7 +132,8 @@ fun Route.cdnRoute() {
             transaction {
                 Beatmap
                     .join(Versions, JoinType.INNER, onColumn = Beatmap.id, otherColumn = Versions.mapId)
-                    .select {
+                    .selectAll()
+                    .where {
                         val unsignedQuery = if (signed) {
                             Op.TRUE
                         } else {
@@ -161,7 +162,8 @@ fun Route.cdnRoute() {
         val res = try {
             transaction {
                 Beatmap.joinVersions(false)
-                    .select {
+                    .selectAll()
+                    .where {
                         Beatmap.id eq it.file.toInt(16) and Beatmap.deletedAt.isNull()
                     }.limit(1)
                     .complexToBeatmap()
@@ -198,8 +200,8 @@ fun Route.cdnRoute() {
         try {
             transaction {
                 VersionsDao.wrapRows(
-                    Beatmap.joinVersions(false)
-                        .select {
+                    Beatmap.joinVersions(false).selectAll()
+                        .where {
                             Beatmap.id eq it.file.toInt(16) and Beatmap.deletedAt.isNull()
                         }.limit(1)
                 ).firstOrNull()?.hash

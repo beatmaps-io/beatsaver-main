@@ -6,12 +6,12 @@ import nl.myndocs.oauth2.client.AuthorizedGrantType
 import nl.myndocs.oauth2.client.Client
 import nl.myndocs.oauth2.client.ClientService
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object DBClientService : ClientService {
     fun getClient(clientId: String, clientSecret: String? = null) = transaction {
-        OauthClient.select {
+        OauthClient.selectAll().where {
             (OauthClient.clientId eq clientId).let { q ->
                 if (clientSecret != null) {
                     q and (OauthClient.secret eq clientSecret)
@@ -37,7 +37,7 @@ object DBClientService : ClientService {
 
     override fun validClient(client: Client, clientSecret: String): Boolean {
         return transaction {
-            !OauthClient.select { (OauthClient.clientId eq client.clientId) and (OauthClient.secret eq clientSecret) }.empty()
+            !OauthClient.selectAll().where { (OauthClient.clientId eq client.clientId) and (OauthClient.secret eq clientSecret) }.empty()
         }
     }
 }

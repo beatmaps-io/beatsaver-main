@@ -18,7 +18,7 @@ import io.ktor.server.request.uri
 import io.ktor.server.response.respondRedirect
 import io.ktor.util.StringValues
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class SimpleUserPrincipal(val user: UserDao, val alertCount: Int, val redirect: String) : Principal
@@ -50,7 +50,7 @@ fun Application.installOauth() {
             }
             validate { credentials ->
                 transaction {
-                    User.select {
+                    User.selectAll().where {
                         if (credentials.name.contains('@')) {
                             (User.email eq credentials.name) and User.discordId.isNull()
                         } else {

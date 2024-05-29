@@ -24,7 +24,7 @@ import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.QueryParameter
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.RabbitMQInstance
 import java.lang.Integer.toHexString
@@ -33,7 +33,7 @@ import java.time.Instant
 
 fun publishVersion(mapId: Int, hash: String, rb: RabbitMQInstance?, additionalCallback: (Op<Boolean>) -> Op<Boolean> = { it }): Boolean {
     val publishingVersion = VersionsDao.wrapRow(
-        Versions.select {
+        Versions.selectAll().where {
             Versions.hash eq hash
         }.single()
     )
@@ -65,14 +65,15 @@ fun publishVersion(mapId: Int, hash: String, rb: RabbitMQInstance?, additionalCa
         if (!valid) return@also
 
         val stats = DifficultyDao.wrapRows(
-            Difficulty.select {
+            Difficulty.selectAll().where {
                 Difficulty.versionId eq publishingVersion.id
             }
         )
 
         val map = Beatmap
             .joinUploader()
-            .select {
+            .selectAll()
+            .where {
                 (Beatmap.id eq mapId) and (Beatmap.lastPublishedAt.isNull())
             }.firstOrNull()
             ?.let { BeatmapDao.wrapRow(it) }
@@ -120,7 +121,7 @@ fun publishVersion(mapId: Int, hash: String, rb: RabbitMQInstance?, additionalCa
 }
 
 fun pushAlerts(map: BeatmapDao, rb: RabbitMQInstance?) {
-    val recipients = Follows.select {
+    val recipients = Follows.selectAll().where {
         Follows.userId eq map.uploaderId and Follows.upload and Follows.following
     }.map { row ->
         row[Follows.followerId].value

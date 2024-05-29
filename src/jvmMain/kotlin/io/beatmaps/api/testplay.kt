@@ -58,6 +58,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
@@ -105,13 +106,14 @@ fun PipelineContext<*, ApplicationCall>.getTestplayQueue(userId: Int?, includePl
     Beatmap
         .joinVersions(true) { Versions.state eq EMapState.Testplay }
         .joinUploader()
-        .select {
+        .selectAll()
+        .where {
             Beatmap.id.inSubQuery(
                 Versions.let {
                     if (includePlayed || userId == null) {
                         it
-                            .slice(Versions.mapId)
-                            .select {
+                            .select(Versions.mapId)
+                            .where {
                                 Versions.state eq EMapState.Testplay
                             }
                     } else {
@@ -120,8 +122,8 @@ fun PipelineContext<*, ApplicationCall>.getTestplayQueue(userId: Int?, includePl
                                 Testplay, JoinType.LEFT, onColumn = Versions.id, otherColumn = Testplay.versionId,
                                 additionalConstraint = { Testplay.userId eq userId }
                             )
-                            .slice(Versions.mapId)
-                            .select {
+                            .select(Versions.mapId)
+                            .where {
                                 Testplay.id.isNull() and (Versions.state eq EMapState.Testplay)
                             }
                     }
@@ -144,7 +146,8 @@ fun PipelineContext<*, ApplicationCall>.getTestplayRecent(userId: Int, page: Lon
         .join(Difficulty, JoinType.INNER, Versions.id, Difficulty.versionId)
         .join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id)
         .join(User, JoinType.INNER, Beatmap.uploader, User.id)
-        .select {
+        .selectAll()
+        .where {
             Testplay.userId eq userId
         }
         .orderBy(
@@ -210,7 +213,7 @@ fun Route.testplayRoute() {
 
             val valid = transaction {
                 val user = UserDao.wrapRow(
-                    User.joinPatreon().select { User.id eq sess.userId }.handlePatreon().first()
+                    User.joinPatreon().selectAll().where { User.id eq sess.userId }.handlePatreon().first()
                 )
 
                 if (newState.state == EMapState.Published) {
@@ -248,7 +251,7 @@ fun Route.testplayRoute() {
                                 newState.mapId,
                                 UnpublishData(newState.reason),
                                 wrapAsExpressionNotNull(
-                                    Beatmap.slice(Beatmap.uploader).select { Beatmap.id eq newState.mapId }.limit(1)
+                                    Beatmap.select(Beatmap.uploader).where { Beatmap.id eq newState.mapId }.limit(1)
                                 )
                             )
                         }
@@ -325,7 +328,7 @@ fun Route.testplayRoute() {
                             t[versionId] = versionIdVal
                         } else {
                             t[versionId] = wrapAsExpressionNotNull<Int>(
-                                Versions.slice(Versions.id).select {
+                                Versions.select(Versions.id).where {
                                     Versions.hash eq mark.hash
                                 }.limit(1)
                             )
@@ -344,7 +347,7 @@ fun Route.testplayRoute() {
 
             captchaIfPresent(update.captcha) {
                 transaction {
-                    val subQuery = Versions.slice(Versions.id).select { Versions.hash eq update.hash }
+                    val subQuery = Versions.select(Versions.id).where { Versions.hash eq update.hash }
 
                     if (update.captcha == null) {
                         Testplay.update({ (Testplay.versionId eq wrapAsExpressionNotNull(subQuery)) and (Testplay.userId eq sess.userId) }) { t ->

@@ -97,7 +97,7 @@ kotlin {
                 implementation("io.ktor:ktor-server-conditional-headers:$ktorVersion")
                 implementation("io.ktor:ktor-client-apache:$ktorVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.0")
-                implementation("ch.qos.logback:logback-classic:1.2.3")
+                implementation("ch.qos.logback:logback-classic:1.5.6")
                 implementation("io.github.oshai:kotlin-logging:6.0.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.6.4")

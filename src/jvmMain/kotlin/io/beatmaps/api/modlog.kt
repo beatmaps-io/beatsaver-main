@@ -19,7 +19,7 @@ import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.lang.Integer.toHexString
 
@@ -46,7 +46,8 @@ fun Route.modLogRoute() {
                         .join(curatorAlias, JoinType.LEFT, ModLog.opBy, curatorAlias[User.id])
                         .join(User, JoinType.LEFT, ModLog.targetUser, User.id)
                         .join(Beatmap, JoinType.LEFT, ModLog.opOn, Beatmap.id)
-                        .select {
+                        .selectAll()
+                        .where {
                             Op.TRUE
                                 .notNull(it.mod) { m -> curatorAlias[User.uniqueName] eq m }
                                 .notNull(it.user) { u -> User.uniqueName eq u }

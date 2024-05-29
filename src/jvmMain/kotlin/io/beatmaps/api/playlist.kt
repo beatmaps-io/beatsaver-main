@@ -103,8 +103,8 @@ fun getMaxMapForUser(userId: Int) = Coalesce(
     wrapAsExpressionNotNull(
         PlaylistMap
             .join(User, JoinType.RIGHT, User.bookmarksId, PlaylistMap.playlistId)
-            .slice(PlaylistMap.order.plus(1f))
-            .select {
+            .select(PlaylistMap.order.plus(1f))
+            .where {
                 User.id eq userId
             }
             .orderBy(PlaylistMap.order, SortOrder.DESC)
@@ -117,8 +117,8 @@ fun getMaxMapForUser(userId: Int) = Coalesce(
 fun getMaxMap(id: Int) = Coalesce(
     wrapAsExpressionNotNull(
         PlaylistMap
-            .slice(PlaylistMap.order.plus(1f))
-            .select {
+            .select(PlaylistMap.order.plus(1f))
+            .where {
                 PlaylistMap.playlistId eq id
             }
             .orderBy(PlaylistMap.order, SortOrder.DESC)

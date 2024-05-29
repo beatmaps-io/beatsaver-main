@@ -10,7 +10,7 @@ import io.ktor.server.application.Application
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import pl.jutupe.ktor_rabbitmq.RabbitMQInstance
 import pl.jutupe.ktor_rabbitmq.publish
@@ -24,7 +24,7 @@ class CheckScheduled(private val rb: RabbitMQInstance) : TimerTask() {
         try {
             transaction {
                 VersionsDao.wrapRows(
-                    Versions.select {
+                    Versions.selectAll().where {
                         Versions.state eq EMapState.Scheduled and (Versions.scheduledAt lessEq NowExpression(Versions.scheduledAt))
                     }
                 ).mapNotNull {

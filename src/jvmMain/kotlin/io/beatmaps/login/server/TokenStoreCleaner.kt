@@ -4,6 +4,7 @@ import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.AccessTokenTable
 import io.beatmaps.common.dbo.RefreshTokenTable
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.Timer
@@ -14,11 +15,11 @@ class TokenStoreCleaner : TimerTask() {
         try {
             transaction {
                 AccessTokenTable.deleteWhere {
-                    AccessTokenTable.expiration less NowExpression(AccessTokenTable.expiration)
+                    expiration less NowExpression(expiration)
                 }
 
                 RefreshTokenTable.deleteWhere {
-                    RefreshTokenTable.expiration less NowExpression(RefreshTokenTable.expiration)
+                    expiration less NowExpression(expiration)
                 }
             }
         } catch (e: Exception) {

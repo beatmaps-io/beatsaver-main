@@ -27,11 +27,13 @@ import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun CollaborationDetail.Companion.from(row: ResultRow, cdnPrefix: String) = CollaborationDao.wrapRow(row).let {
@@ -72,7 +74,7 @@ fun Route.collaborationRoute() {
                             it[mapId] = req.mapId
                             it[collaboratorId] = req.collaboratorId
                             it[requestedAt] = NowExpression(requestedAt.columnType)
-                            it[uploadedAt] = Beatmap.slice(Beatmap.uploaded).select { Beatmap.id eq req.mapId }
+                            it[uploadedAt] = Beatmap.select(Beatmap.uploaded).where { Beatmap.id eq req.mapId }
                         }
                     }
                 }
@@ -104,7 +106,7 @@ fun Route.collaborationRoute() {
                         // Generate alert for followers of the collaborator.
                         val map = mapId.let {
                             BeatmapDao.wrapRow(
-                                Beatmap.select {
+                                Beatmap.selectAll().where {
                                     Beatmap.id eq it[Collaboration.mapId].value
                                 }.single()
                             )
@@ -115,8 +117,8 @@ fun Route.collaborationRoute() {
                             .join(followsAlias, JoinType.LEFT, followsAlias[Follows.followerId], Follows.followerId) {
                                 (followsAlias[Follows.userId] eq map.uploaderId) and followsAlias[Follows.following]
                             }
-                            .slice(Follows.followerId)
-                            .select {
+                            .select(Follows.followerId)
+                            .where {
                                 followsAlias[Follows.id].isNull() and (Follows.followerId neq map.uploaderId) and
                                     (Follows.userId eq sess.userId) and Follows.upload and Follows.following
                             }
@@ -141,7 +143,7 @@ fun Route.collaborationRoute() {
                     }
                 } else {
                     Collaboration.deleteWhere {
-                        Collaboration.id eq req.collaborationId and (Collaboration.collaboratorId eq sess.userId)
+                        id eq req.collaborationId and (collaboratorId eq sess.userId)
                     } > 0
                 }
             }
@@ -157,7 +159,7 @@ fun Route.collaborationRoute() {
             val success = transaction {
                 (isUploader(req.mapId, sess.userId) || sess.isAdmin()) &&
                     Collaboration.deleteWhere {
-                        Collaboration.mapId eq req.mapId and (Collaboration.collaboratorId eq req.collaboratorId)
+                        mapId eq req.mapId and (collaboratorId eq req.collaboratorId)
                     } > 0
             }
 
@@ -173,7 +175,8 @@ fun Route.collaborationRoute() {
                 if (isUploader(mapId, sess.userId) || sess.admin) {
                     Collaboration
                         .join(collaboratorAlias, JoinType.LEFT, Collaboration.collaboratorId, collaboratorAlias[User.id])
-                        .select {
+                        .selectAll()
+                        .where {
                             Collaboration.mapId eq mapId
                         }
                         .orderBy(Collaboration.accepted, SortOrder.DESC)

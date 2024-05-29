@@ -87,7 +87,7 @@ fun Application.reviewListeners() {
     rabbitOptional {
         val avg = Review.sentiment.avgWithFilter(Review.deletedAt.isNull(), 3).alias("sentiment")
         val count = Review.sentiment.countWithFilter(Review.deletedAt.isNull()).alias("reviews")
-        val reviewSubquery = Review.slice(avg, count, Review.mapId).selectAll().groupBy(Review.mapId).alias("r")
+        val reviewSubquery = Review.select(avg, count, Review.mapId).groupBy(Review.mapId).alias("r")
 
         consumeAck("bm.sentiment", ReviewUpdateInfo::class) { _, r ->
             transaction {
@@ -111,7 +111,8 @@ fun Application.reviewListeners() {
                         .joinVersions()
                         .joinUploader()
                         .joinCurator()
-                        .select {
+                        .selectAll()
+                        .where {
                             Review.mapId eq r.mapId and (Review.userId eq r.userId)
                         }.singleOrNull()?.let { row ->
                             reviewToComplex(row, "") to VersionsDao.wrapRow(row)
