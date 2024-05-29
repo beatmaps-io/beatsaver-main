@@ -136,7 +136,7 @@ class MapCardTest : BrowserTestBase() {
 
             getMap(0) {
                 assertEquals("beatsaver://${toHexString(mapId)}", oneClick.getAttribute("href"))
-                assertEquals("https://beatsaver.com/cdn/$hash.zip", download.getAttribute("href"))
+                assertEquals("http://localhost:8080/cdn/$hash.zip", download.getAttribute("href"))
             }
         }
     }
