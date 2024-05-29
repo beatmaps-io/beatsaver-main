@@ -7,7 +7,7 @@ enum class LeaderboardType(val url: String) {
     BeatLeader("https://www.beatleader.xyz/leaderboard/global/");
 
     companion object {
-        private val map = LeaderboardType.values().associateBy(LeaderboardType::name)
+        private val map = entries.associateBy(LeaderboardType::name)
         fun fromName(name: String?) = map[name]
     }
 }

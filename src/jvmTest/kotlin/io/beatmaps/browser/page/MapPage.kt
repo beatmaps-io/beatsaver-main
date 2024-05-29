@@ -4,14 +4,14 @@ import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 
 class MapPage(page: Page) : PageBase(page) {
-    val tabs = Tabs(element(".nav-btn-group"))
+    val tabs = Tabs(element(".nav-minimal"))
     val scores = Scores(element(".scores"))
     val reviews = Reviews(element(".reviews"))
 
     class Tabs(element: Locator) : ElementBase(element) {
-        val scoresaber = element("*[for='nav-ss']")
-        val beatleader = element("*[for='nav-bl']")
-        val reviews = element("*[for='nav-rv']")
+        val scoresaber = element("#nav-ss")
+        val beatleader = element("#nav-bl")
+        val reviews = element("#nav-rv")
     }
 
     class Scores(element: Locator) : ElementBase(element) {
