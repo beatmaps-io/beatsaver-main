@@ -64,7 +64,8 @@ class AlertsApi {
 
 fun alertCount(userId: Int) = AlertRecipient
     .join(Collaboration, JoinType.FULL) { Op.FALSE }
-    .select {
+    .select(AlertRecipient.id)
+    .where {
         (AlertRecipient.recipientId eq userId and AlertRecipient.readAt.isNull()) or
             (Collaboration.collaboratorId eq userId and not(Collaboration.accepted))
     }.count().toInt()
@@ -86,15 +87,15 @@ fun Route.alertsRoute() {
         val (s0, s1) = intLiteral(0).alias("s") to intLiteral(1).alias("s")
 
         val collabQuery = Collaboration
-            .slice(s0, Collaboration.id, Collaboration.requestedAt)
-            .select {
+            .select(s0, Collaboration.id, Collaboration.requestedAt)
+            .where {
                 Collaboration.collaboratorId eq userId and not(Collaboration.accepted)
             }
 
         val alertQuery = AlertRecipient
             .join(Alert, JoinType.LEFT, AlertRecipient.alertId, Alert.id)
-            .slice(s1, AlertRecipient.alertId, Alert.sentAt)
-            .select {
+            .select(s1, AlertRecipient.alertId, Alert.sentAt)
+            .where {
                 AlertRecipient.recipientId eq userId and AlertRecipient.readAt.run { if (read) isNotNull() else isNull() } and
                     if (type != null) { Alert.type.inList(type) } else Op.TRUE
             }
@@ -143,8 +144,8 @@ fun Route.alertsRoute() {
     fun getStats(userId: Int) = AlertRecipient
         .join(Alert, JoinType.LEFT, AlertRecipient.alertId, Alert.id)
         .join(Collaboration, JoinType.FULL) { Op.FALSE }
-        .slice(AlertRecipient.id.count(), AlertRecipient.readAt.isNull(), Alert.type, Collaboration.id.count())
-        .select {
+        .select(AlertRecipient.id.count(), AlertRecipient.readAt.isNull(), Alert.type, Collaboration.id.count())
+        .where {
             (AlertRecipient.recipientId eq userId) or
                 (Collaboration.collaboratorId eq userId and not(Collaboration.accepted))
         }

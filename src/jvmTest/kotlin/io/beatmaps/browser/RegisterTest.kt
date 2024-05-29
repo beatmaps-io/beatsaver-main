@@ -4,7 +4,7 @@ import com.toxicbakery.bcrypt.Bcrypt
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import kotlinx.datetime.Clock
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.Ignore
 import org.junit.Test
@@ -41,7 +41,7 @@ class RegisterTest : BrowserTestBase() {
             assertContains(body.innerText(), "success")
 
             val dao = transaction {
-                UserDao.wrapRow(User.select { User.uniqueName eq "test-$now-$fuzz" }.single())
+                UserDao.wrapRow(User.selectAll().where { User.uniqueName eq "test-$now-$fuzz" }.single())
             }
 
             assertEquals(dao.email, "test-$now-$fuzz@beatsaver.com")

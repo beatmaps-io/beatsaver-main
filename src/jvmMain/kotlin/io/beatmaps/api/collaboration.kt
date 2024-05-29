@@ -2,7 +2,6 @@ package io.beatmaps.api
 
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.db.NowExpression
-import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
@@ -12,6 +11,7 @@ import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.collaboratorAlias
+import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.isUploader
 import io.beatmaps.util.requireAuthorization
@@ -27,12 +27,15 @@ import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.sql.vendors.ForUpdateOption
 
 fun CollaborationDetail.Companion.from(row: ResultRow, cdnPrefix: String) = CollaborationDao.wrapRow(row).let {
     CollaborationDetail(
@@ -72,7 +75,7 @@ fun Route.collaborationRoute() {
                             it[mapId] = req.mapId
                             it[collaboratorId] = req.collaboratorId
                             it[requestedAt] = NowExpression(requestedAt.columnType)
-                            it[uploadedAt] = Beatmap.slice(Beatmap.uploaded).select { Beatmap.id eq req.mapId }
+                            it[uploadedAt] = Beatmap.select(Beatmap.uploaded).where { Beatmap.id eq req.mapId }
                         }
                     }
                 }
@@ -88,35 +91,38 @@ fun Route.collaborationRoute() {
 
             val success = transaction {
                 if (req.accepted) {
-                    val mapId = Collaboration.updateReturning(
-                        {
+                    val (collab, map) = Collaboration
+                        .join(Beatmap, JoinType.LEFT, Collaboration.mapId, Beatmap.id) { Beatmap.deletedAt.isNull() }
+                        .joinUploader()
+                        .selectAll()
+                        .where {
                             Collaboration.id eq req.collaborationId and (Collaboration.collaboratorId eq sess.userId)
-                        },
-                        {
-                            it[accepted] = true
-                        },
-                        Collaboration.mapId
-                    ).let {
-                        it?.firstOrNull()
-                    }
+                        }
+                        .forUpdate(ForUpdateOption.PostgreSQL.ForUpdate(null, Collaboration))
+                        .singleOrNull()
+                        ?.let {
+                            UserDao.wrapRow(it)
+                            CollaborationDao.wrapRow(it) to BeatmapDao.wrapRow(it)
+                        } ?: (null to null)
 
-                    if (mapId != null) {
-                        // Generate alert for followers of the collaborator.
-                        val map = mapId.let {
-                            BeatmapDao.wrapRow(
-                                Beatmap.select {
-                                    Beatmap.id eq it[Collaboration.mapId].value
-                                }.single()
-                            )
+                    if (collab?.accepted == true) {
+                        true
+                    } else if (map != null && collab != null) {
+                        // Set to accepted
+                        Collaboration.update({
+                            Collaboration.id eq collab.id
+                        }) {
+                            it[accepted] = true
                         }
 
+                        // Generate alert for followers of the collaborator.
                         val followsAlias = Follows.alias("f2")
                         val recipients = Follows
                             .join(followsAlias, JoinType.LEFT, followsAlias[Follows.followerId], Follows.followerId) {
                                 (followsAlias[Follows.userId] eq map.uploaderId) and followsAlias[Follows.following]
                             }
-                            .slice(Follows.followerId)
-                            .select {
+                            .select(Follows.followerId)
+                            .where {
                                 followsAlias[Follows.id].isNull() and (Follows.followerId neq map.uploaderId) and
                                     (Follows.userId eq sess.userId) and Follows.upload and Follows.following
                             }
@@ -141,7 +147,7 @@ fun Route.collaborationRoute() {
                     }
                 } else {
                     Collaboration.deleteWhere {
-                        Collaboration.id eq req.collaborationId and (Collaboration.collaboratorId eq sess.userId)
+                        id eq req.collaborationId and (collaboratorId eq sess.userId)
                     } > 0
                 }
             }
@@ -157,7 +163,7 @@ fun Route.collaborationRoute() {
             val success = transaction {
                 (isUploader(req.mapId, sess.userId) || sess.isAdmin()) &&
                     Collaboration.deleteWhere {
-                        Collaboration.mapId eq req.mapId and (Collaboration.collaboratorId eq req.collaboratorId)
+                        mapId eq req.mapId and (collaboratorId eq req.collaboratorId)
                     } > 0
             }
 
@@ -173,7 +179,8 @@ fun Route.collaborationRoute() {
                 if (isUploader(mapId, sess.userId) || sess.admin) {
                     Collaboration
                         .join(collaboratorAlias, JoinType.LEFT, Collaboration.collaboratorId, collaboratorAlias[User.id])
-                        .select {
+                        .selectAll()
+                        .where {
                             Collaboration.mapId eq mapId
                         }
                         .orderBy(Collaboration.accepted, SortOrder.DESC)

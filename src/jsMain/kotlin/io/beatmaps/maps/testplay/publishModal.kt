@@ -22,7 +22,8 @@ import react.fc
 import react.useState
 
 external interface PublishModalProps : Props {
-    var callback: (Instant?) -> Unit
+    var callbackScheduleAt: (Instant?) -> Unit
+    var callbackAlert: (Boolean) -> Unit
 }
 
 val publishModal = fc<PublishModalProps> { props ->
@@ -55,7 +56,7 @@ val publishModal = fc<PublishModalProps> { props ->
                     attrs.value = "now"
                     attrs.defaultChecked = true
                     attrs.onChangeFunction = {
-                        props.callback(null)
+                        props.callbackScheduleAt(null)
                         setPublishType(false)
                     }
                 }
@@ -84,11 +85,25 @@ val publishModal = fc<PublishModalProps> { props ->
                         attrs.min = nowStr
                         attrs.onChangeFunction = {
                             val textVal = (it.target as HTMLInputElement).value
-                            props.callback(if (textVal.isEmpty()) null else textVal.toInstant())
+                            props.callbackScheduleAt(if (textVal.isEmpty()) null else textVal.toInstant())
                         }
                     }
                 }
             }
+        }
+    }
+    div("form-check form-switch d-inline-block me-2") {
+        input(InputType.checkBox, classes = "form-check-input") {
+            attrs.defaultChecked = true
+            attrs.id = "alertUpdate"
+            attrs.onChangeFunction = {
+                val boolVal = (it.currentTarget as HTMLInputElement).checked
+                props.callbackAlert(boolVal)
+            }
+        }
+        label("form-check-label") {
+            attrs.reactFor = "alertUpdate"
+            +"Notify followers"
         }
     }
 }

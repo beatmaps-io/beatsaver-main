@@ -14,7 +14,7 @@ import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.File
@@ -87,7 +87,7 @@ private suspend fun updateDownloadFilename(update: CDNUpdate, beatsaverKVStore: 
 private fun uploadToR2(update: CDNUpdate, r2Client: IR2Bucket) {
     val toUpload = transaction {
         VersionsDao.wrapRows(
-            Versions.join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id).select {
+            Versions.join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id).selectAll().where {
                 // Not uploaded, not beatsage, published
                 (Versions.r2 neq true) and (Versions.mapId eq update.mapId) and (Beatmap.declaredAi eq AiDeclarationType.None) and (Versions.state eq EMapState.Published)
             }
@@ -110,7 +110,7 @@ private fun uploadToR2(update: CDNUpdate, r2Client: IR2Bucket) {
 private fun deleteFromR2(update: CDNUpdate, r2Client: IR2Bucket) {
     val toDelete = transaction {
         VersionsDao.wrapRows(
-            Versions.join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id).select {
+            Versions.join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id).selectAll().where {
                 // Uploaded, deleted or beatsage or not published
                 (Versions.r2 eq true) and (Versions.mapId eq update.mapId) and ((Beatmap.deletedAt.isNotNull()) or (Beatmap.declaredAi neq AiDeclarationType.None) or (Versions.state neq EMapState.Published))
             }

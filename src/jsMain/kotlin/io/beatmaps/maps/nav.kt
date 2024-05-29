@@ -3,6 +3,7 @@ package io.beatmaps.maps
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.ReviewConstants
+import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
 import react.Props
 import react.dom.a
@@ -27,6 +28,7 @@ val mapPageNav = fc<MapPageNavProps> {
 
         li("nav-item") {
             a("#", classes = "nav-link" + if (ssChecked) " active" else "") {
+                attrs.id = "nav-ss"
                 attrs.onClickFunction = { e ->
                     e.preventDefault()
                     it.setType?.invoke(LeaderboardType.ScoreSaber)
@@ -39,6 +41,7 @@ val mapPageNav = fc<MapPageNavProps> {
 
         li("nav-item") {
             a("#", classes = "nav-link" + if (blChecked) " active" else "") {
+                attrs.id = "nav-bl"
                 attrs.onClickFunction = { e ->
                     e.preventDefault()
                     it.setType?.invoke(LeaderboardType.BeatLeader)
@@ -52,6 +55,7 @@ val mapPageNav = fc<MapPageNavProps> {
         if (ReviewConstants.COMMENTS_ENABLED) {
             li("nav-item") {
                 a("#", classes = "nav-link" + if (rvChecked) " active" else "") {
+                    attrs.id = "nav-rv"
                     attrs.onClickFunction = { e ->
                         e.preventDefault()
                         it.setComments?.invoke()

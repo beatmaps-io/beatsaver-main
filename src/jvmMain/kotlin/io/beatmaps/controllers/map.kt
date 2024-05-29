@@ -26,7 +26,7 @@ import kotlinx.datetime.Clock
 import kotlinx.html.meta
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.lang.Integer.toHexString
 import java.net.URLEncoder
@@ -91,7 +91,8 @@ fun Route.mapController() {
         transaction {
             Beatmap
                 .join(Versions, JoinType.INNER, onColumn = Beatmap.id, otherColumn = Versions.mapId)
-                .select {
+                .selectAll()
+                .where {
                     (Versions.hash eq it.hash) and Beatmap.deletedAt.isNull()
                 }
                 .complexToBeatmap()
@@ -122,7 +123,8 @@ fun Route.mapController() {
                         Beatmap
                             .joinCollaborators()
                             .joinVersions()
-                            .select {
+                            .selectAll()
+                            .where {
                                 Beatmap.id eq it.key.toInt(16) and Beatmap.deletedAt.isNull()
                             }.limit(1).complexToBeatmap().map { MapDetail.from(it, cdnPrefix()) }.firstOrNull()
                     }?.let {
@@ -157,7 +159,7 @@ fun Route.mapController() {
     get<BeatmapController.RedirectOld> {
         try {
             transaction {
-                Beatmap.select {
+                Beatmap.selectAll().where {
                     Beatmap.id eq it.key.toInt(16)
                 }.limit(1).map { MapDetail.from(it, "") }.firstOrNull()
             }?.let {

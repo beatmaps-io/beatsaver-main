@@ -30,10 +30,12 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
@@ -84,7 +86,7 @@ fun getNewId(userId: Int) =
     }
 
 fun mapIdForHash(hash: String) =
-    Beatmap.joinVersions(false).slice(Beatmap.id).select {
+    Beatmap.joinVersions(false).select(Beatmap.id).where {
         Beatmap.deletedAt.isNull() and (Versions.hash eq hash.lowercase())
     }.firstOrNull()?.let {
         it[Beatmap.id].value
@@ -138,7 +140,8 @@ fun Route.bookmarkRoute() {
                     .joinVersions(false)
                     .joinUploader()
                     .joinCurator()
-                    .select { Beatmap.deletedAt.isNull() and (reviewerAlias[User.id] eq sess.userId) }
+                    .selectAll()
+                    .where { Beatmap.deletedAt.isNull() and (reviewerAlias[User.id] eq sess.userId) }
                     .orderBy(PlaylistMap.order)
                     .limit(it.page, it.pageSize.coerceIn(1, 100))
                     .complexToBeatmap()

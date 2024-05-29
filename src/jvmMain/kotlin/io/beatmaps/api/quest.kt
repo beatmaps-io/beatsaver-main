@@ -13,7 +13,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import nl.myndocs.oauth2.tokenstore.inmemory.InMemoryDeviceCodeStore
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 @Location("/api/quest")
@@ -43,7 +43,7 @@ fun Route.questRoute(deviceCodeStore: InMemoryDeviceCodeStore) {
 
         requireAuthorization { _, sess ->
             newSuspendedTransaction {
-                User.select {
+                User.selectAll().where {
                     (User.id eq sess.userId)
                 }.firstOrNull()?.let { UserDao.wrapRow(it) }
             }?.let { user ->

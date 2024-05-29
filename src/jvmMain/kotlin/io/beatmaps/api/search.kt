@@ -20,7 +20,6 @@ import io.beatmaps.common.db.similar
 import io.beatmaps.common.db.unaccent
 import io.beatmaps.common.db.unaccentLiteral
 import io.beatmaps.common.db.wildcard
-import io.beatmaps.common.dbo.AccessTokenTable.slice
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
@@ -51,6 +50,7 @@ import io.ktor.server.sessions.sessions
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.sql.CustomFunction
+import org.jetbrains.exposed.sql.EqOp
 import org.jetbrains.exposed.sql.ExpressionWithColumnType
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
@@ -59,7 +59,6 @@ import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.lang.Integer.toHexString
 import java.util.logging.Logger
@@ -120,8 +119,8 @@ class SearchParams(
     val userSubQuery by lazy {
         if (mappers.isNotEmpty()) {
             User
-                .slice(User.id)
-                .select {
+                .select(User.id)
+                .where {
                     User.uniqueName inList mappers.map { m -> m.substring(7) }
                 }
         } else {
@@ -205,16 +204,16 @@ fun Route.searchRoute() {
             newSuspendedTransaction {
                 val followingSubQuery = if (user != null && it.followed == true) {
                     Follows
-                        .slice(Follows.userId)
-                        .select { Follows.followerId eq user.userId }
+                        .select(Follows.userId)
+                        .where { Follows.followerId eq user.userId }
                 } else {
                     null
                 }
 
                 if (searchInfo.escapedQuery != null && searchInfo.escapedQuery.startsWith("key:")) {
                     Beatmap
-                        .slice(Beatmap.id)
-                        .select {
+                        .select(Beatmap.id)
+                        .where {
                             Beatmap.id eq searchInfo.escapedQuery.substring(4).toInt(16) and (Beatmap.deletedAt.isNull())
                         }
                         .limit(1).firstOrNull()?.let { r ->
@@ -230,12 +229,12 @@ fun Route.searchRoute() {
                         .joinCurator()
                         .joinBookmarked(sess?.userId)
                         .joinCollaborators()
-                        .slice(
+                        .select(
                             (if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) +
                                 Beatmap.columns + Versions.columns + Difficulty.columns + User.columns +
                                 curatorAlias.columns + bookmark.columns + collaboratorAlias.columns
                         )
-                        .select {
+                        .where {
                             Beatmap.id.inSubQuery(
                                 Beatmap
                                     .joinUploader()
@@ -244,17 +243,17 @@ fun Route.searchRoute() {
                                             .let { q ->
                                                 if (needsDiff) q.join(Difficulty, JoinType.INNER, Versions.id, Difficulty.versionId) else q
                                             }
-                                            .slice(intLiteral(1))
-                                            .select {
-                                                (Versions.mapId eq Beatmap.id) and (Versions.state eq EMapState.Published)
+                                            .select(intLiteral(1))
+                                            .where {
+                                                EqOp(Versions.mapId, Beatmap.id) and (Versions.state eq EMapState.Published)
                                                     .notNull(it.minNps) { o -> (Difficulty.nps greaterEqF o) }
                                                     .notNull(it.maxNps) { o -> (Difficulty.nps lessEqF o) }
                                             }
                                             .limit(1)
                                             .lateral().alias("diff")
                                     )
-                                    .slice(Beatmap.id)
-                                    .select {
+                                    .select(Beatmap.id)
+                                    .where {
                                         Beatmap.deletedAt.isNull()
                                             .let { q -> searchInfo.applyQuery(q) }
                                             .let { q ->

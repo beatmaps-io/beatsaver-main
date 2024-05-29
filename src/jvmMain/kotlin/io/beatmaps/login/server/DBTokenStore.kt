@@ -15,9 +15,10 @@ import nl.myndocs.oauth2.token.RefreshToken
 import nl.myndocs.oauth2.token.TokenStore
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun UserDao.toIdentity() =
@@ -32,7 +33,8 @@ object DBTokenStore : TokenStore {
                 .join(RefreshTokenTable, JoinType.INNER, AccessTokenTable.refreshToken, RefreshTokenTable.id)
                 .join(OauthClient, JoinType.INNER, AccessTokenTable.clientId, OauthClient.clientId)
                 .join(User, JoinType.INNER, AccessTokenTable.userName, User.id)
-                .select {
+                .selectAll()
+                .where {
                     AccessTokenTable.id eq token
                 }
                 .singleOrNull()?.let {
@@ -71,7 +73,8 @@ object DBTokenStore : TokenStore {
         transaction {
             RefreshTokenTable
                 .join(User, JoinType.INNER, RefreshTokenTable.userName, User.id)
-                .select {
+                .selectAll()
+                .where {
                     RefreshTokenTable.id eq token
                 }.singleOrNull()?.let {
                     refreshToken(it)
@@ -89,7 +92,7 @@ object DBTokenStore : TokenStore {
     override fun revokeAccessToken(token: String) {
         transaction {
             AccessTokenTable.deleteWhere {
-                AccessTokenTable.id eq token
+                id eq token
             }
         }
     }
@@ -97,7 +100,7 @@ object DBTokenStore : TokenStore {
     override fun revokeRefreshToken(token: String) {
         transaction {
             RefreshTokenTable.deleteWhere {
-                RefreshTokenTable.id eq token
+                id eq token
             }
         }
     }
@@ -144,7 +147,8 @@ object DBTokenStore : TokenStore {
                 .join(RefreshTokenTable, JoinType.INNER, AccessTokenTable.refreshToken, RefreshTokenTable.id)
                 .join(OauthClient, JoinType.INNER, AccessTokenTable.clientId, OauthClient.clientId)
                 .join(User, JoinType.INNER, AccessTokenTable.userName, User.id)
-                .select {
+                .selectAll()
+                .where {
                     AccessTokenTable.id eq token
                 }
                 .singleOrNull()?.let {
@@ -162,12 +166,12 @@ object DBTokenStore : TokenStore {
         transaction {
             AccessTokenTable
                 .deleteWhere {
-                    AccessTokenTable.userName eq userId
+                    userName eq userId
                 }
 
             RefreshTokenTable
                 .deleteWhere {
-                    RefreshTokenTable.userName eq userId
+                    userName eq userId
                 }
         }
     }

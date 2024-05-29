@@ -16,7 +16,7 @@ import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import kotlinx.html.meta
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
@@ -47,7 +47,7 @@ class AlertController
 fun Route.userController() {
     get<UploaderController.RedirectOld> {
         transaction {
-            User.select {
+            User.selectAll().where {
                 User.hash eq it.key
             }.firstOrNull()?.let { UserDao.wrapRow(it) }
         }?.let {
@@ -73,7 +73,7 @@ fun Route.userController() {
                 headerTemplate = {
                     if (it.id != null) {
                         transaction {
-                            User.select {
+                            User.selectAll().where {
                                 User.id eq it.id and User.active
                             }.limit(1).map { u -> UserDetail.from(u) }.firstOrNull()
                         }?.let { detail ->
@@ -92,7 +92,7 @@ fun Route.userController() {
 
     get<UserController.RedirectName> {
         transaction {
-            User.select {
+            User.selectAll().where {
                 (User.uniqueName eq it.name) and User.active
             }.firstOrNull()?.let { UserDao.wrapRow(it) }
         }?.let {

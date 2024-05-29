@@ -58,11 +58,12 @@ import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import kotlinx.datetime.toJavaInstant
+import org.jetbrains.exposed.sql.EqOp
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.intLiteral
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.util.Base64
@@ -88,12 +89,12 @@ fun Route.playlistSingle() {
                 .joinUploader()
                 .joinCurator()
                 .joinCollaborators()
-                .slice(
+                .select(
                     (if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) +
                         Beatmap.columns + Versions.columns + Difficulty.columns + User.columns +
                         curatorAlias.columns + collaboratorAlias.columns
                 )
-                .select {
+                .where {
                     Beatmap.id.inSubQuery(
                         Beatmap
                             .joinUploader()
@@ -102,17 +103,17 @@ fun Route.playlistSingle() {
                                     .let { q ->
                                         if (needsDiff) q.join(Difficulty, JoinType.INNER, Versions.id, Difficulty.versionId) else q
                                     }
-                                    .slice(intLiteral(1))
-                                    .select {
-                                        (Versions.mapId eq Beatmap.id) and (Versions.state eq EMapState.Published)
+                                    .select(intLiteral(1))
+                                    .where {
+                                        EqOp(Versions.mapId, Beatmap.id) and (Versions.state eq EMapState.Published)
                                             .notNull(params.minNps) { o -> (Difficulty.nps greaterEqF o) }
                                             .notNull(params.maxNps) { o -> (Difficulty.nps lessEqF o) }
                                     }
                                     .limit(1)
                                     .lateral().alias("diff")
                             )
-                            .slice(Beatmap.id)
-                            .select {
+                            .select(Beatmap.id)
+                            .where {
                                 Beatmap.deletedAt.isNull()
                                     .let { q -> searchInfo.applyQuery(q) }
                                     .let { q ->
@@ -162,8 +163,8 @@ fun Route.playlistSingle() {
                 .joinMaps()
                 .joinOwner()
                 .joinPlaylistCurator()
-                .slice(PlaylistTable.columns + User.columns + curatorAlias.columns + PlaylistTable.Stats.all)
-                .select {
+                .select(PlaylistTable.columns + User.columns + curatorAlias.columns + PlaylistTable.Stats.all)
+                .where {
                     (PlaylistTable.id eq id).let {
                         if (isAdmin) {
                             it
@@ -186,8 +187,8 @@ fun Route.playlistSingle() {
                     val mapsSubQuery = PlaylistMap
                         .join(Beatmap, JoinType.INNER, PlaylistMap.mapId, Beatmap.id) { Beatmap.deletedAt.isNull() }
                         .joinVersions()
-                        .slice(PlaylistMap.mapId, PlaylistMap.order)
-                        .select {
+                        .select(PlaylistMap.mapId, PlaylistMap.order)
+                        .where {
                             (PlaylistMap.playlistId eq id)
                         }
                         .orderBy(PlaylistMap.order)
@@ -202,7 +203,8 @@ fun Route.playlistSingle() {
                         .joinCollaborators()
                         .joinCurator()
                         .joinBookmarked(userId)
-                        .select {
+                        .selectAll()
+                        .where {
                             (Beatmap.deletedAt.isNull())
                         }
                         .complexToBeatmap {
@@ -251,7 +253,8 @@ fun Route.playlistSingle() {
                 PlaylistTable
                     .joinPlaylistCurator()
                     .joinOwner()
-                    .select {
+                    .selectAll()
+                    .where {
                         (PlaylistTable.id eq req.id) and PlaylistTable.deletedAt.isNull()
                     }
                     .handleOwner()
@@ -264,7 +267,8 @@ fun Route.playlistSingle() {
                 PlaylistMap
                     .join(Beatmap, JoinType.INNER, PlaylistMap.mapId, Beatmap.id)
                     .joinVersions()
-                    .select {
+                    .selectAll()
+                    .where {
                         (PlaylistMap.playlistId eq req.id) and (Beatmap.deletedAt.isNull())
                     }
                     .orderBy(PlaylistMap.order)

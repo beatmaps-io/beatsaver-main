@@ -129,8 +129,8 @@ fun Route.discordLogin() {
                         .join(Beatmap, JoinType.LEFT, User.id, Beatmap.uploader) {
                             Beatmap.deletedAt.isNull()
                         }
-                        .slice(User.discordId, User.email, Beatmap.id.count())
-                        .select {
+                        .select(User.discordId, User.email, Beatmap.id.count())
+                        .where {
                             (User.discordId eq data.id) and User.active
                         }
                         .groupBy(User.id)

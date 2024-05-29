@@ -26,10 +26,12 @@ import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import kotlin.test.Test
@@ -75,7 +77,7 @@ class PlaylistTest {
                 it[type] = EPlaylistType.Private
             }
 
-            val maps = Beatmap.joinVersions().select {
+            val maps = Beatmap.joinVersions().selectAll().where {
                 Beatmap.deletedAt.isNull()
             }.limit(2).complexToBeatmap().map {
                 MapDetail.from(it, "")
@@ -122,7 +124,7 @@ class PlaylistTest {
             }
 
             val maps = transaction {
-                PlaylistMap.slice(PlaylistMap.mapId).select {
+                PlaylistMap.select(PlaylistMap.mapId).where {
                     PlaylistMap.playlistId eq playlistId
                 }.map { row -> row[PlaylistMap.mapId].value }.toSet()
             }
@@ -151,7 +153,7 @@ class PlaylistTest {
                 it[type] = EPlaylistType.Private
             }
 
-            val maps = Beatmap.joinVersions().select {
+            val maps = Beatmap.joinVersions().selectAll().where {
                 Beatmap.deletedAt.isNull()
             }.limit(2).complexToBeatmap().map {
                 MapDetail.from(it, "")
@@ -205,7 +207,7 @@ class PlaylistTest {
             }
 
             val maps = transaction {
-                PlaylistMap.slice(PlaylistMap.mapId).select {
+                PlaylistMap.select(PlaylistMap.mapId).where {
                     PlaylistMap.playlistId eq plId
                 }.map { row -> row[PlaylistMap.mapId].value }.toSet()
             }

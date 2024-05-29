@@ -12,7 +12,7 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.rabbitOptional
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.application
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import pl.jutupe.ktor_rabbitmq.publish
 import java.lang.Integer.toHexString
@@ -30,7 +30,8 @@ fun Route.mapUpdateEnricher() {
                     .joinVersions(true, state = null)
                     .joinUploader()
                     .joinCurator()
-                    .select {
+                    .selectAll()
+                    .where {
                         Beatmap.id eq mapId
                     }
                     .complexToBeatmap()

@@ -207,7 +207,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                             setOrder(SearchOrder.fromString((ev.target as HTMLSelectElement).value) ?: SearchOrder.Relevance)
                         }
                     }
-                    SearchOrder.values().filter { SortOrderTarget.Map in it.targets }.forEach {
+                    SearchOrder.entries.filter { SortOrderTarget.Map in it.targets }.forEach {
                         option {
                             attrs.value = it.toString()
                             attrs.selected = it == order

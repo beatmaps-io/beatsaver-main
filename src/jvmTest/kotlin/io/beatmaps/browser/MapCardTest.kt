@@ -6,7 +6,7 @@ import io.beatmaps.common.dbo.PlaylistMap
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.Test
 import java.lang.Integer.toHexString
@@ -64,7 +64,7 @@ class MapCardTest : BrowserTestBase() {
         }
 
         transaction {
-            val count = PlaylistMap.select { PlaylistMap.playlistId eq playlistId }.count()
+            val count = PlaylistMap.selectAll().where { PlaylistMap.playlistId eq playlistId }.count()
             assertEquals(1, count)
         }
     }
@@ -80,7 +80,8 @@ class MapCardTest : BrowserTestBase() {
         fun countBookmarks() = transaction {
             Playlist
                 .joinMaps(JoinType.INNER)
-                .select { Playlist.type eq EPlaylistType.System and (Playlist.owner eq userId) }
+                .selectAll()
+                .where { Playlist.type eq EPlaylistType.System and (Playlist.owner eq userId) }
                 .count()
         }
 
@@ -135,7 +136,7 @@ class MapCardTest : BrowserTestBase() {
 
             getMap(0) {
                 assertEquals("beatsaver://${toHexString(mapId)}", oneClick.getAttribute("href"))
-                assertEquals("https://beatsaver.com/cdn/$hash.zip", download.getAttribute("href"))
+                assertEquals("http://localhost:8080/cdn/$hash.zip", download.getAttribute("href"))
             }
         }
     }

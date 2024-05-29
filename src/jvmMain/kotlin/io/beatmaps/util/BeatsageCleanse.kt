@@ -15,6 +15,7 @@ import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.File
@@ -33,7 +34,7 @@ class BeatsageCleanse(private val app: Application) : TimerTask() {
                 // This query is probably fairly slow but as we only run it once per minute (and could run it less often)
                 // it probably doesn't need optimisation
                 VersionsDao.wrapRows(
-                    Versions.join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id).select {
+                    Versions.join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id).selectAll().where {
                         // Version not deleted, beatsage, beatmap is deleted
                         (Versions.deletedAt.isNull()) and (Versions.sageScore lessEq (-10).toShort()) and
                             (Beatmap.deletedAt less Instant.now().minus(7L, ChronoUnit.DAYS))
@@ -63,8 +64,8 @@ class BeatsageCleanse(private val app: Application) : TimerTask() {
                     .joinVersions {
                         Versions.sageScore less (-10).toShort()
                     }
-                    .slice(Beatmap.id)
-                    .select {
+                    .select(Beatmap.id)
+                    .where {
                         Beatmap.deletedAt.isNull() and (Beatmap.declaredAi neq AiDeclarationType.None) and (Beatmap.updatedAt less Instant.now().minus(90L, ChronoUnit.DAYS))
                     }
                     .orderBy(Beatmap.updatedAt to SortOrder.ASC)

@@ -39,6 +39,7 @@ import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -87,7 +88,7 @@ fun Route.voteRoute() {
                     it[steam] = body.steam
                 }
 
-                val voteTotals = Votes.slice(Count(Votes.vote), Votes.vote).select {
+                val voteTotals = Votes.select(Count(Votes.vote), Votes.vote).where {
                     Votes.mapId eq body.mapId
                 }.groupBy(Votes.vote).toList().associateBy({ it[Votes.vote] }, { it[Count(Votes.vote)] })
 
@@ -122,7 +123,7 @@ fun Route.voteRoute() {
 
         consumeAck("maptouv", Int::class) { _, mapId ->
             transaction {
-                Beatmap.slice(Beatmap.uploader).select {
+                Beatmap.select(Beatmap.uploader).where {
                     Beatmap.id eq mapId
                 }.firstOrNull()?.let { it[Beatmap.uploader].value }
             }.let {
@@ -134,8 +135,8 @@ fun Route.voteRoute() {
             transaction {
                 val subQuery = Beatmap
                     .joinVersions()
-                    .slice(coalesce(Beatmap.upVotesInt.sum(), intLiteral(0)).alias("votes"))
-                    .select {
+                    .select(coalesce(Beatmap.upVotesInt.sum(), intLiteral(0)).alias("votes"))
+                    .where {
                         Beatmap.uploader eq body and Beatmap.deletedAt.isNull()
                     }
 
@@ -153,7 +154,7 @@ fun Route.voteRoute() {
 
         val voteSummary = transaction {
             val updatedMaps =
-                Beatmap.joinVersions(false).select {
+                Beatmap.joinVersions(false).selectAll().where {
                     Beatmap.lastVoteAt greaterEq req.since.toJavaInstant()
                 }.complexToBeatmap()
 
@@ -180,7 +181,7 @@ fun Route.voteRoute() {
 
         newSuspendedTransaction {
             try {
-                val mapIdArr = Versions.slice(Versions.mapId).select {
+                val mapIdArr = Versions.select(Versions.mapId).where {
                     Versions.hash eq req.hash.lowercase()
                 }.limit(1).toList()
 

@@ -121,7 +121,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
     private val onHashChange = { _: Event? ->
         val hash = window.location.hash.substring(1)
         val tabContext = TabContext(props.params["userId"]?.toIntOrNull())
-        val newState = ProfileTab.values().firstOrNull { hash == it.tabText.lowercase() && it.condition(props, tabContext, state) } ?: state.state
+        val newState = ProfileTab.entries.firstOrNull { hash == it.tabText.lowercase() && it.condition(props, tabContext, state) } ?: state.state
         setState {
             state = newState
         }
@@ -167,9 +167,9 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         val hash = window.location.hash.substring(1)
         val tabContext = TabContext(props.params["userId"]?.toIntOrNull())
         setState {
-            state = ProfileTab.values().firstOrNull {
+            state = ProfileTab.entries.firstOrNull {
                 hash == it.tabText.lowercase() && it.condition(props, tabContext, this)
-            } ?: ProfileTab.values().firstOrNull { it.bootCondition() && it.condition(props, tabContext, this) } ?: run {
+            } ?: ProfileTab.entries.firstOrNull { it.bootCondition() && it.condition(props, tabContext, this) } ?: run {
                 if (ProfileTab.UNPUBLISHED.condition(props, tabContext, this)) {
                     ProfileTab.UNPUBLISHED
                 } else {
@@ -344,7 +344,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                                             input(InputType.checkBox, classes = "form-check-input me-2") {
                                                                 attrs.id = "follow-uploads"
                                                                 attrs.disabled = state.loading == true
-                                                                attrs.defaultChecked = fd.upload
+                                                                attrs.checked = fd.upload
                                                                 attrs.onChangeFunction = { ev ->
                                                                     val newUpload = (ev.target as HTMLInputElement).checked
                                                                     setFollowStatus(fd.following || newUpload || fd.curation, newUpload, fd.curation)
@@ -361,7 +361,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                                             input(InputType.checkBox, classes = "form-check-input me-2") {
                                                                 attrs.id = "follow-curations"
                                                                 attrs.disabled = state.loading == true
-                                                                attrs.defaultChecked = fd.curation
+                                                                attrs.checked = fd.curation
                                                                 attrs.onChangeFunction = { ev ->
                                                                     val newCuration = (ev.target as HTMLInputElement).checked
                                                                     setFollowStatus(fd.following || fd.upload || newCuration, fd.upload, newCuration)
@@ -476,7 +476,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             val userId = props.params["userId"]?.toIntOrNull()
             ul("nav nav-minimal mb-3") {
                 val tabContext = TabContext(userId)
-                ProfileTab.values().forEach { tab ->
+                ProfileTab.entries.forEach { tab ->
                     if (!tab.condition(props, tabContext, state)) return@forEach
 
                     li("nav-item") {

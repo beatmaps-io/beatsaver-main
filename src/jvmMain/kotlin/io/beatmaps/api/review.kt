@@ -46,6 +46,7 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -104,7 +105,8 @@ fun Route.reviewRoute() {
                     .joinVersions(false)
                     .joinUploader()
                     .joinCurator()
-                    .select {
+                    .selectAll()
+                    .where {
                         Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                             .notNull(it.before) { o -> Review.createdAt less o.toJavaInstant() }
                             .notNull(it.user) { u -> reviewerAlias[User.uniqueName] eq u }
@@ -135,8 +137,8 @@ fun Route.reviewRoute() {
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
                     .joinVersions(false)
                     .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
-                    .slice(Review.columns + reviewerAlias.columns)
-                    .select {
+                    .select(Review.columns + reviewerAlias.columns)
+                    .where {
                         Review.mapId eq it.id.toInt(16) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
                     .orderBy(
@@ -167,7 +169,8 @@ fun Route.reviewRoute() {
                     .joinVersions(false)
                     .joinUploader()
                     .joinCurator()
-                    .select {
+                    .selectAll()
+                    .where {
                         Review.userId eq it.id and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
                     .orderBy(
@@ -195,8 +198,8 @@ fun Route.reviewRoute() {
                 Review
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
                     .joinVersions(false)
-                    .slice(Review.columns)
-                    .select {
+                    .select(Review.columns)
+                    .where {
                         Review.mapId eq it.mapId.toInt(16) and (Review.userId eq it.userId) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
                     .singleOrNull()
@@ -235,7 +238,7 @@ fun Route.reviewRoute() {
                     }
 
                     val oldData = if (single.userId != sess.userId) {
-                        ReviewDao.wrapRow(Review.select { Review.mapId eq updateMapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }.single())
+                        ReviewDao.wrapRow(Review.selectAll().where { Review.mapId eq updateMapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }.single())
                     } else {
                         null
                     }
@@ -247,7 +250,7 @@ fun Route.reviewRoute() {
                             r[sentiment] = update.sentiment.dbValue
                         }
                     } else {
-                        val map = Beatmap.joinUploader().joinCollaborators().select {
+                        val map = Beatmap.joinUploader().joinCollaborators().selectAll().where {
                             Beatmap.id eq updateMapId
                         }.complexToBeatmap().single()
 

@@ -288,7 +288,7 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                                 }
                             }
                         }
-                        SearchOrder.values().filter { props.sortOrderTarget in it.targets }.forEach {
+                        SearchOrder.entries.filter { props.sortOrderTarget in it.targets }.forEach {
                             option {
                                 attrs.value = it.toString()
                                 attrs.selected = state.order == it

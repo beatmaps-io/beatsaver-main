@@ -32,7 +32,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import org.valiktor.functions.hasSize
@@ -151,7 +151,7 @@ fun Route.playlistCreate() {
             }
 
             val beforePlaylist = transaction {
-                Playlist.select(query).firstOrNull()?.let { PlaylistFull.from(it, cdnPrefix()) }
+                Playlist.selectAll().where(query).firstOrNull()?.let { PlaylistFull.from(it, cdnPrefix()) }
             } ?: throw UploadException("Playlist not found")
 
             val multipart = call.handleMultipart { part ->

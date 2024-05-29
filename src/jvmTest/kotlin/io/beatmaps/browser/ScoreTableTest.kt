@@ -42,13 +42,13 @@ class ScoreTableTest : BrowserTestBase() {
         navigate("/maps/${toHexString(mapId)}")
         mapPage {
             // Scoresaber should be the default
-            assertThat(tabs.scoresaber).hasClass(Pattern.compile("btn-primary"))
+            assertThat(tabs.scoresaber).hasClass(Pattern.compile("active"))
             scores.externalLink.waitFor()
             assertEquals(0, scores.count())
 
             // Switch to beatleader
             tabs.beatleader.click()
-            assertThat(tabs.beatleader).hasClass(Pattern.compile("btn-primary"))
+            assertThat(tabs.beatleader).hasClass(Pattern.compile("active"))
 
             // Wait for beatleader scores
             scores.externalLink.waitFor()

@@ -60,7 +60,7 @@ import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.ByteArrayOutputStream
@@ -97,7 +97,7 @@ private val uploadLogger = Logger.getLogger("bmio.Upload")
 fun userWipCount(userId: Int) = Beatmap
     .join(Versions, JoinType.LEFT, onColumn = Beatmap.id, otherColumn = Versions.mapId) {
         Versions.state eq EMapState.Published
-    }.select {
+    }.selectAll().where {
         Beatmap.uploader eq userId and Beatmap.deletedAt.isNull() and Versions.id.isNull()
     }.count()
 
@@ -144,7 +144,7 @@ fun Route.uploadController() {
         requireAuthorization { authType, session ->
             val (user, patreon, currentWipCount) = transaction {
                 val user = UserDao.wrapRow(
-                    User.joinPatreon().select { User.id eq session.userId }.handlePatreon().first()
+                    User.joinPatreon().selectAll().where { User.id eq session.userId }.handlePatreon().first()
                 )
 
                 Triple(user, user.patreon, userWipCount(session.userId))
@@ -212,7 +212,7 @@ fun Route.uploadController() {
                 val newImageFile = File(Folders.localCoverFolder(digest), "$digest.jpg")
                 val newAudioFile = File(Folders.localAudioFolder(digest), "$digest.mp3")
 
-                val existsAlready = Versions.select {
+                val existsAlready = Versions.selectAll().where {
                     Versions.hash eq digest
                 }.count() > 0
 
@@ -257,7 +257,7 @@ fun Route.uploadController() {
 
                             updateIt().also {
                                 val latestVersions = VersionsDao.wrapRows(
-                                    Versions.select {
+                                    Versions.selectAll().where {
                                         (Versions.mapId eq mapId)
                                     }.orderBy(Versions.uploaded, SortOrder.DESC).limit(2)
                                 ).toList()
@@ -280,7 +280,7 @@ fun Route.uploadController() {
                             }
 
                             if (!tooMany) {
-                                it[tags] = tagsList.filter { t -> t != MapTag.None }.map { t -> t.slug }.toTypedArray()
+                                it[tags] = tagsList.filter { t -> t != MapTag.None }.map { t -> t.slug }
                             }
                             it[uploader] = EntityID(session.userId, User)
 
