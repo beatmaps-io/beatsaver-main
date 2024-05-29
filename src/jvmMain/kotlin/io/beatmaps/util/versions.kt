@@ -31,7 +31,7 @@ import java.lang.Integer.toHexString
 import java.math.BigDecimal
 import java.time.Instant
 
-fun publishVersion(mapId: Int, hash: String, rb: RabbitMQInstance?, additionalCallback: (Op<Boolean>) -> Op<Boolean> = { it }): Boolean {
+fun publishVersion(mapId: Int, hash: String, alert: Boolean?, rb: RabbitMQInstance?, additionalCallback: (Op<Boolean>) -> Op<Boolean> = { it }): Boolean {
     val publishingVersion = VersionsDao.wrapRow(
         Versions.selectAll().where {
             Versions.hash eq hash
@@ -74,11 +74,13 @@ fun publishVersion(mapId: Int, hash: String, rb: RabbitMQInstance?, additionalCa
             .joinUploader()
             .selectAll()
             .where {
-                (Beatmap.id eq mapId) and (Beatmap.lastPublishedAt.isNull())
+                (Beatmap.id eq mapId)
             }.firstOrNull()
             ?.let { BeatmapDao.wrapRow(it) }
             ?.also {
-                pushAlerts(it, rb)
+                if (alert == true) {
+                    pushAlerts(it, rb)
+                }
             }
 
         // Set published time for sorting, but don't allow gaming the system
@@ -127,9 +129,10 @@ fun pushAlerts(map: BeatmapDao, rb: RabbitMQInstance?) {
         row[Follows.followerId].value
     }
 
+    val (title, adjective) = if (map.lastPublishedAt == null) ("New Map Release" to "released") else ("Map Updated" to "updated")
     Alert.insert(
-        "New Map Release",
-        "@${map.uploader.uniqueName} just released #${toHexString(map.id.value)}: **${map.name}**.\n" +
+        title,
+        "@${map.uploader.uniqueName} just $adjective #${toHexString(map.id.value)}: **${map.name}**.\n" +
             "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
         EAlertType.MapRelease,
         recipients
