@@ -2,7 +2,6 @@ package io.beatmaps.api
 
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.db.NowExpression
-import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
@@ -12,6 +11,7 @@ import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.collaboratorAlias
+import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.isUploader
 import io.beatmaps.util.requireAuthorization
@@ -32,9 +32,10 @@ import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.sql.vendors.ForUpdateOption
 
 fun CollaborationDetail.Companion.from(row: ResultRow, cdnPrefix: String) = CollaborationDao.wrapRow(row).let {
     CollaborationDetail(
@@ -90,28 +91,31 @@ fun Route.collaborationRoute() {
 
             val success = transaction {
                 if (req.accepted) {
-                    val mapId = Collaboration.updateReturning(
-                        {
+                    val (collab, map) = Collaboration
+                        .join(Beatmap, JoinType.LEFT, Collaboration.mapId, Beatmap.id) { Beatmap.deletedAt.isNull() }
+                        .joinUploader()
+                        .selectAll()
+                        .where {
                             Collaboration.id eq req.collaborationId and (Collaboration.collaboratorId eq sess.userId)
-                        },
-                        {
-                            it[accepted] = true
-                        },
-                        Collaboration.mapId
-                    ).let {
-                        it?.firstOrNull()
-                    }
+                        }
+                        .forUpdate(ForUpdateOption.PostgreSQL.ForUpdate(null, Collaboration))
+                        .singleOrNull()
+                        ?.let {
+                            UserDao.wrapRow(it)
+                            CollaborationDao.wrapRow(it) to BeatmapDao.wrapRow(it)
+                        } ?: (null to null)
 
-                    if (mapId != null) {
-                        // Generate alert for followers of the collaborator.
-                        val map = mapId.let {
-                            BeatmapDao.wrapRow(
-                                Beatmap.selectAll().where {
-                                    Beatmap.id eq it[Collaboration.mapId].value
-                                }.single()
-                            )
+                    if (collab?.accepted == true) {
+                        true
+                    } else if (map != null && collab != null) {
+                        // Set to accepted
+                        Collaboration.update({
+                            Collaboration.id eq collab.id
+                        }) {
+                            it[accepted] = true
                         }
 
+                        // Generate alert for followers of the collaborator.
                         val followsAlias = Follows.alias("f2")
                         val recipients = Follows
                             .join(followsAlias, JoinType.LEFT, followsAlias[Follows.followerId], Follows.followerId) {
