@@ -344,7 +344,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                                             input(InputType.checkBox, classes = "form-check-input me-2") {
                                                                 attrs.id = "follow-uploads"
                                                                 attrs.disabled = state.loading == true
-                                                                attrs.defaultChecked = fd.upload
+                                                                attrs.checked = fd.upload
                                                                 attrs.onChangeFunction = { ev ->
                                                                     val newUpload = (ev.target as HTMLInputElement).checked
                                                                     setFollowStatus(fd.following || newUpload || fd.curation, newUpload, fd.curation)
@@ -361,7 +361,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                                             input(InputType.checkBox, classes = "form-check-input me-2") {
                                                                 attrs.id = "follow-curations"
                                                                 attrs.disabled = state.loading == true
-                                                                attrs.defaultChecked = fd.curation
+                                                                attrs.checked = fd.curation
                                                                 attrs.onChangeFunction = { ev ->
                                                                     val newCuration = (ev.target as HTMLInputElement).checked
                                                                     setFollowStatus(fd.following || fd.upload || newCuration, fd.upload, newCuration)
@@ -476,7 +476,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
             val userId = props.params["userId"]?.toIntOrNull()
             ul("nav nav-minimal mb-3") {
                 val tabContext = TabContext(userId)
-                ProfileTab.values().forEach { tab ->
+                ProfileTab.entries.forEach { tab ->
                     if (!tab.condition(props, tabContext, state)) return@forEach
 
                     li("nav-item") {
