@@ -140,7 +140,7 @@ val modlog = fc<Props> {
                             attrs.attributes["aria-label"] = "Type"
                             ref = typeRef
 
-                            ModLogOpType.values().forEach {
+                            ModLogOpType.entries.forEach {
                                 option {
                                     attrs.value = it.toString()
                                     attrs.selected = type == it

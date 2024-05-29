@@ -11,7 +11,7 @@ enum class OauthScope(val tag: String, val description: String) {
     MARK_ALERTS("alerts.mark", "Mark your alerts as read/unread");
 
     companion object {
-        private val map = values().associateBy(OauthScope::tag)
+        private val map = entries.associateBy(OauthScope::tag)
         fun fromTag(tag: String) = map[tag]
     }
 }

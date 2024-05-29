@@ -121,7 +121,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
     private val onHashChange = { _: Event? ->
         val hash = window.location.hash.substring(1)
         val tabContext = TabContext(props.params["userId"]?.toIntOrNull())
-        val newState = ProfileTab.values().firstOrNull { hash == it.tabText.lowercase() && it.condition(props, tabContext, state) } ?: state.state
+        val newState = ProfileTab.entries.firstOrNull { hash == it.tabText.lowercase() && it.condition(props, tabContext, state) } ?: state.state
         setState {
             state = newState
         }
@@ -167,9 +167,9 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         val hash = window.location.hash.substring(1)
         val tabContext = TabContext(props.params["userId"]?.toIntOrNull())
         setState {
-            state = ProfileTab.values().firstOrNull {
+            state = ProfileTab.entries.firstOrNull {
                 hash == it.tabText.lowercase() && it.condition(props, tabContext, this)
-            } ?: ProfileTab.values().firstOrNull { it.bootCondition() && it.condition(props, tabContext, this) } ?: run {
+            } ?: ProfileTab.entries.firstOrNull { it.bootCondition() && it.condition(props, tabContext, this) } ?: run {
                 if (ProfileTab.UNPUBLISHED.condition(props, tabContext, this)) {
                     ProfileTab.UNPUBLISHED
                 } else {

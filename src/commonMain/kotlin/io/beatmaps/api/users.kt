@@ -15,7 +15,7 @@ enum class PatreonTier(val pledge: Int, val supporting: Boolean, val title: Stri
 
     companion object {
         const val maxWipsMessage = "Too many unpublished maps. Either delete or publish your existing maps. To gain additional unpublished slots become a site supporter."
-        fun fromPledge(pledge: Int) = values().filter { it.pledge >= pledge }.minBy { it.pledge }
+        fun fromPledge(pledge: Int) = entries.filter { it.pledge >= pledge }.minBy { it.pledge }
     }
 }
 
