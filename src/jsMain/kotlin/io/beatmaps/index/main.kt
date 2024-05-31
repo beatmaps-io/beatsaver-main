@@ -1,12 +1,12 @@
 package io.beatmaps.index
 
+import io.beatmaps.Config.dateFormat
 import io.beatmaps.History
 import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.common.toQuery
 import io.beatmaps.common.toTagSet
-import io.beatmaps.dateFormat
 import io.beatmaps.globalContext
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.search.ExtraContentRenderer

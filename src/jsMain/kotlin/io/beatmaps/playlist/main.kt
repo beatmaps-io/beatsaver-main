@@ -1,9 +1,9 @@
 package io.beatmaps.playlist
 
+import io.beatmaps.Config.dateFormat
 import io.beatmaps.History
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
-import io.beatmaps.dateFormat
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.search.FilterCategory
 import io.beatmaps.shared.search.FilterInfo

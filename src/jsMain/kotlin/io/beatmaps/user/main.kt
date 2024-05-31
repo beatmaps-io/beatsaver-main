@@ -61,7 +61,6 @@ import react.dom.th
 import react.dom.thead
 import react.dom.tr
 import react.dom.ul
-import react.key
 import react.ref
 import react.setState
 

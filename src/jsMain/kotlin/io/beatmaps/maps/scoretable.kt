@@ -10,10 +10,10 @@ import io.beatmaps.api.LeaderboardScore
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.fixedStr
+import js.objects.jso
 import kotlinx.browser.window
 import kotlinx.html.ThScope
 import kotlinx.html.js.onScrollFunction
-import kotlinx.js.jso
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 import react.Props
@@ -27,7 +27,6 @@ import react.dom.th
 import react.dom.thead
 import react.dom.tr
 import react.fc
-import react.key
 import react.useEffect
 import react.useEffectOnce
 import react.useRef

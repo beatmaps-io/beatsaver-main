@@ -1,13 +1,11 @@
 package io.beatmaps
 
-import history.Location
 import io.beatmaps.common.json
 import io.beatmaps.nav.manageNav
+import js.objects.jso
 import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
-import kotlinx.js.jso
-import kotlinx.js.timers.setTimeout
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import org.w3c.dom.HTMLAnchorElement
@@ -24,32 +22,27 @@ import react.fc
 import react.react
 import react.router.NavigateFunction
 import react.router.NavigateOptions
-import react.router.Params
-import react.router.Route
+import react.router.RouteObject
 import react.router.useLocation
 import react.router.useNavigate
 import react.router.useParams
+import remix.run.router.Location
+import remix.run.router.Params
+import web.timers.setTimeout
 import kotlin.reflect.KClass
 
 external interface WithRouterProps : Props {
     var history: History
-    var location: Location
+    var location: Location<*>
     var params: Params
 }
 
-inline fun <reified T> stateNavOptions(obj: T, replace: Boolean? = null) = object : NavigateOptions {
-    override var replace = replace
-    override var state: Any? = json.encodeToString(obj)
+inline fun <reified T> stateNavOptions(obj: T, r: Boolean? = null) = jso<NavigateOptions> {
+    replace = r
+    state = json.encodeToString(obj)
 }
 
-abstract class NO(override var replace: Boolean?) : NavigateOptions {
-    override var state: Any? = null
-}
-
-object ReplaceNavOption : NO(true)
-object NewNavOption : NO(false)
-
-inline fun <reified T> Location.readState() = (state as? String)?.let { json.decodeFromString<T>(it) }
+inline fun <reified T> Location<*>.readState() = (state as? String)?.let { json.decodeFromString<T>(it) }
 
 class History(private val navigation: NavigateFunction) {
     fun push(location: String) = go(location, NewNavOption)
@@ -57,6 +50,16 @@ class History(private val navigation: NavigateFunction) {
 
     fun go(location: String, nav: NavigateOptions) {
         navigation.invoke(location, nav)
+    }
+
+    companion object {
+        val ReplaceNavOption = jso<NavigateOptions> {
+            replace = true
+        }
+
+        val NewNavOption = jso<NavigateOptions> {
+            replace = false
+        }
     }
 }
 
@@ -71,49 +74,18 @@ fun <P : WithRouterProps> RBuilder.withRouter(klazz: KClass<out Component<P, *>>
         }
     )
 
-fun <P : WithRouterProps> RBuilder.bsroute(
-    path: String,
-    klazz: KClass<out Component<P, *>>,
-    handler: (P.() -> Unit)? = null
-) {
-    bsroute(path) {
-        withRouter(klazz) {
-            handler?.invoke(this)
-        }
-    }
-}
-
-fun <P : Props> RBuilder.bsroute(
-    path: String,
-    klazz: KClass<out Component<P, *>>,
-    handler: (P.() -> Unit)? = null
-) {
-    bsroute(path) {
-        child(
-            klazz.react,
-            jso {
-                handler?.invoke(this)
-            }
-        )
-    }
-}
-
-fun RBuilder.bsroute(
+fun bsroute(
     path: String,
     replaceHomelink: Boolean = true,
     render: RBuilder.() -> Unit
-) {
-    Route {
-        attrs.path = path
-
-        // Create a dummy functional component that manages fixing the headers
-        attrs.element = createElement(
-            fc {
-                initWithHistory(History(useNavigate()), replaceHomelink)
-                render()
-            }
-        )
-    }
+) = jso<RouteObject> {
+    this.path = path
+    element = createElement(
+        fc {
+            initWithHistory(History(useNavigate()), replaceHomelink)
+            render()
+        }
+    )
 }
 
 // Page setup
