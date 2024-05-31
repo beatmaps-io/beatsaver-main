@@ -1,11 +1,11 @@
 package external
 
-import csstype.ClassName
 import kotlinx.html.LABEL
 import react.PropsWithChildren
 import react.RBuilder
 import react.RHandler
 import react.router.dom.Link
+import web.cssom.ClassName
 
 fun ClassName(className: String?) = className?.let { ClassName(it) }
 

@@ -171,10 +171,10 @@ kotlin {
                 optIn("kotlin.io.encoding.ExperimentalEncodingApi")
             }
             dependencies {
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-extensions:1.0.1-pre.323-kotlin-1.6.10")
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-legacy:17.0.2-pre.323-kotlin-1.6.10")
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom-legacy:17.0.2-pre.323-kotlin-1.6.10")
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:6.2.2-pre.323-kotlin-1.6.10")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-extensions:1.0.1-pre.736")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-legacy:18.3.1-pre.736")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom-legacy:18.3.1-pre.736")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:6.23.0-pre.736")
                 implementation(npm("react-timeago", "5.2.0"))
                 implementation(npm("react-dropzone", "11.2.4"))
                 implementation(npm("react-beautiful-dnd", "13.1.0"))
@@ -222,9 +222,9 @@ tasks.getByName<CompileSass>("compileSass") {
 }
 
 tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
-    outputFileName = "output.js"
+    mainOutputFileName.set("output.js")
     sourceMaps = true
-    destinationDirectory = file("$buildDir/processedResources/jvm/main/assets")
+    outputDirectory.set(layout.buildDirectory.file("processedResources/jvm/main/assets").get().asFile)
 }
 
 tasks.withType<AbstractCopyTask> {
@@ -239,9 +239,9 @@ tasks.getByName<Jar>("jvmJar") {
     dependsOn(tasks.getByName("jsBrowserProductionWebpack"), tasks.getByName("compileSass"))
     val jsBrowserProductionWebpack = tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack")
 
-    from(jsBrowserProductionWebpack.destinationDirectory)
-    listOf(jsBrowserProductionWebpack.outputFileName, jsBrowserProductionWebpack.outputFileName + ".map", "modules.js", "modules.js.map").forEach {
-        from(File(jsBrowserProductionWebpack.destinationDirectory, it))
+    from(jsBrowserProductionWebpack.outputDirectory.get())
+    listOf(jsBrowserProductionWebpack.mainOutputFileName.get(), jsBrowserProductionWebpack.mainOutputFileName.get() + ".map", "modules.js", "modules.js.map").forEach {
+        from(File(jsBrowserProductionWebpack.outputDirectory.get().asFile, it))
     }
 }
 

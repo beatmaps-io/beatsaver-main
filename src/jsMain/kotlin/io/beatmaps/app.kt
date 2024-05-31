@@ -13,7 +13,7 @@ import io.beatmaps.playlist.multiAddPlaylist
 import io.beatmaps.playlist.playlistFeed
 import io.beatmaps.playlist.playlistPage
 import io.beatmaps.quest.quest
-import io.beatmaps.upload.UploadPage
+import io.beatmaps.upload.uploadPage
 import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.alerts.alertsPage
 import io.beatmaps.user.changeEmailPage
@@ -24,19 +24,19 @@ import io.beatmaps.user.pickUsernamePage
 import io.beatmaps.user.resetPage
 import io.beatmaps.user.signupPage
 import io.beatmaps.user.userList
-import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.serialization.Serializable
 import react.Props
-import react.RBuilder
-import react.RComponent
-import react.State
 import react.createContext
+import react.createElement
+import react.dom.client.createRoot
 import react.dom.div
-import react.dom.render
-import react.router.Routes
-import react.router.dom.BrowserRouter
+import react.fc
+import react.router.dom.RouterProvider
+import react.router.dom.createBrowserRouter
 import react.useContext
+import react.useEffectOnce
+import web.dom.document
 
 fun setPageTitle(page: String) {
     document.title = "BeatSaver - $page"
@@ -49,125 +49,127 @@ val globalContext = createContext<UserData?>(null)
 
 object Config {
     const val apibase = "/api"
+    const val dateFormat = "YYYY-MM-DD"
 }
 
 fun main() {
     ReactDatesInit // This actually needs to be referenced I guess
     window.onload = {
         document.getElementById("root")?.let { root ->
-            render(root) {
-                globalContext.Provider {
-                    attrs.value = document.getElementById("user-data")?.let {
-                        json.decodeFromString<UserData>(it.textContent ?: "{}")
-                    }
-                    child(App::class) { }
-                }
-            }
+            createRoot(root).render(createElement(app))
         }
     }
 }
 
-const val dateFormat = "YYYY-MM-DD"
+val appRouter = createBrowserRouter(
+    arrayOf(
+        bsroute("/") {
+            homePage { }
+        },
+        bsroute("/beatsaver/:mapKey") {
+            mapPage {
+                attrs.beatsaver = true
+            }
+        },
+        bsroute("/maps/:mapKey") {
+            mapPage {
+                attrs.beatsaver = false
+            }
+        },
+        bsroute("/upload") {
+            uploadPage { }
+        },
+        bsroute("/profile") {
+            withRouter(ProfilePage::class) {
+                userData = useContext(globalContext)
+            }
+        },
+        bsroute("/profile/:userId") {
+            withRouter(ProfilePage::class) {
+                userData = useContext(globalContext)
+            }
+        },
+        bsroute("/alerts") {
+            alertsPage { }
+        },
+        bsroute("/playlists") {
+            playlistFeed { }
+        },
+        bsroute("/playlists/new") {
+            editPlaylist { }
+        },
+        bsroute("/playlists/:id") {
+            playlistPage { }
+        },
+        bsroute("/playlists/:id/edit") {
+            editPlaylist { }
+        },
+        bsroute("/playlists/:id/add") {
+            multiAddPlaylist { }
+        },
+        bsroute("/test") {
+            recentTestplays { }
+        },
+        bsroute("/modlog") {
+            modlog { }
+        },
+        bsroute("/modreview") {
+            modReview { }
+        },
+        bsroute("/policy/dmca", replaceHomelink = false) {
+            div {}
+        },
+        bsroute("/policy/tos", replaceHomelink = false) {
+            div {}
+        },
+        bsroute("/policy/privacy", replaceHomelink = false) {
+            div {}
+        },
+        bsroute("/mappers") {
+            userList { }
+        },
+        bsroute("/login") {
+            loginPage { }
+        },
+        bsroute("/oauth2/authorize") {
+            authorizePage { }
+        },
+        bsroute("/register") {
+            signupPage { }
+        },
+        bsroute("/forgot") {
+            forgotPage { }
+        },
+        bsroute("/reset/:jwt") {
+            resetPage { }
+        },
+        bsroute("/change-email/:jwt") {
+            changeEmailPage { }
+        },
+        bsroute("/username") {
+            pickUsernamePage { }
+        },
+        bsroute("/quest") {
+            quest { }
+        },
+        bsroute("*") {
+            notFound { }
+        }
+    )
+)
 
-class App : RComponent<Props, State>() {
-    override fun componentDidMount() {
+val app = fc<Props> {
+    useEffectOnce {
         viewportMinWidthPolyfill()
     }
 
-    override fun RBuilder.render() {
-        BrowserRouter {
-            Routes {
-                bsroute("/") {
-                    homePage { }
-                }
-                bsroute("/beatsaver/:mapKey") {
-                    mapPage {
-                        attrs.beatsaver = true
-                    }
-                }
-                bsroute("/maps/:mapKey") {
-                    mapPage {
-                        attrs.beatsaver = false
-                    }
-                }
-                bsroute("/upload", klazz = UploadPage::class)
-                bsroute("/profile") {
-                    withRouter(ProfilePage::class) {
-                        userData = useContext(globalContext)
-                    }
-                }
-                bsroute("/profile/:userId") {
-                    withRouter(ProfilePage::class) {
-                        userData = useContext(globalContext)
-                    }
-                }
-                bsroute("/alerts") {
-                    alertsPage { }
-                }
-                bsroute("/playlists") {
-                    playlistFeed { }
-                }
-                bsroute("/playlists/new") {
-                    editPlaylist { }
-                }
-                bsroute("/playlists/:id") {
-                    playlistPage { }
-                }
-                bsroute("/playlists/:id/edit") {
-                    editPlaylist { }
-                }
-                bsroute("/playlists/:id/add") {
-                    multiAddPlaylist { }
-                }
-                bsroute("/test") {
-                    recentTestplays { }
-                }
-                bsroute("/modlog") {
-                    modlog { }
-                }
-                bsroute("/modreview") {
-                    modReview { }
-                }
-                bsroute("/policy/dmca", replaceHomelink = false) {
-                    div {}
-                }
-                bsroute("/policy/tos", replaceHomelink = false) {
-                    div {}
-                }
-                bsroute("/policy/privacy", replaceHomelink = false) {
-                    div {}
-                }
-                bsroute("/mappers") {
-                    userList { }
-                }
-                bsroute("/login") {
-                    loginPage { }
-                }
-                bsroute("/oauth2/authorize") {
-                    authorizePage { }
-                }
-                bsroute("/register") {
-                    signupPage { }
-                }
-                bsroute("/forgot") {
-                    forgotPage { }
-                }
-                bsroute("/reset/:jwt") {
-                    resetPage { }
-                }
-                bsroute("/change-email/:jwt") {
-                    changeEmailPage { }
-                }
-                bsroute("/username") {
-                    pickUsernamePage { }
-                }
-                bsroute("/quest") {
-                    quest { }
-                }
-                bsroute("*") {
-                    notFound { }
-                }
-            }
+    globalContext.Provider {
+        attrs.value = kotlinx.browser.document.getElementById("user-data")?.let {
+            json.decodeFromString<UserData>(it.textContent ?: "{}")
+        }
+
+        RouterProvider {
+            attrs.router = appRouter
         }
     }
 }

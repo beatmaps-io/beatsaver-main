@@ -6,11 +6,11 @@ import external.Moment
 import external.generateConfig
 import external.routeLink
 import io.beatmaps.Config
+import io.beatmaps.Config.dateFormat
 import io.beatmaps.History
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.fixedStr
 import io.beatmaps.common.formatTime
-import io.beatmaps.dateFormat
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.IndexedInfiniteScrollElementRenderer
 import io.beatmaps.shared.InfiniteScroll

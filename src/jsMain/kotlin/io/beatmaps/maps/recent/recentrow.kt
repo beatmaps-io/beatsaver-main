@@ -21,7 +21,6 @@ import react.dom.div
 import react.dom.td
 import react.dom.textarea
 import react.dom.tr
-import react.key
 import react.setState
 
 external interface RecentTestplayRowProps : Props {
