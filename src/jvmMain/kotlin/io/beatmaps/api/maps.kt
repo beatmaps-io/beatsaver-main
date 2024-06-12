@@ -571,10 +571,13 @@ fun Route.mapDetailRoute() {
     get<MapsApi.ByHash>("Get map(s) for a map hash".responds(ok<MapDetail>(), notFound())) {
         call.response.header("Access-Control-Allow-Origin", "*")
         val r = transaction {
+            val rawHashes = it.hash.lowercase().split(',', ignoreCase = false).take(50)
+            val singleRequest = rawHashes.size <= 1
+
             val versions = Versions
                 .select(Versions.mapId, Versions.hash)
                 .where {
-                    Versions.hash.inList(it.hash.lowercase().split(',', ignoreCase = false).take(50))
+                    Versions.hash.inList(rawHashes)
                 }
             val versionMapping = versions.associate { it[Versions.hash] to it[Versions.mapId].value }
             val mapIds = versionMapping.values.toHashSet()
@@ -593,9 +596,8 @@ fun Route.mapDetailRoute() {
                     MapDetail.from(it, cdnPrefix())
                 }.let { maps ->
                     val assocMaps = maps.associateBy { it.id }
-                    when (maps.size) {
-                        0 -> null
-                        1 -> maps.first()
+                    when (singleRequest) {
+                        true -> maps.firstOrNull()
                         else -> {
                             versionMapping.mapValues {
                                 assocMaps[toHexString(it.value)]
