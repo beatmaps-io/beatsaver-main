@@ -599,8 +599,10 @@ fun Route.mapDetailRoute() {
                     when (singleRequest) {
                         true -> maps.firstOrNull()
                         else -> {
-                            versionMapping.mapValues {
-                                assocMaps[toHexString(it.value)]
+                            rawHashes.associateWith {
+                                versionMapping[it]?.let { mapId ->
+                                    assocMaps[toHexString(mapId)]
+                                }
                             }
                         }
                     }
