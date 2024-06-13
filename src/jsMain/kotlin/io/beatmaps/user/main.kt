@@ -192,7 +192,7 @@ val profilePage = fc<Props> { props ->
     }
 
     useEffect(location.pathname, params["userId"]) {
-        val onHashChange = { _ : Event ->
+        val onHashChange = { _: Event ->
             val hash = window.location.hash.substring(1)
             val tabContext = TabContext(params["userId"]?.toIntOrNull())
             val newState = ProfileTab.entries.firstOrNull { hash == it.tabText.lowercase() && it.condition(userData, tabContext, userDetail) } ?: tabState
