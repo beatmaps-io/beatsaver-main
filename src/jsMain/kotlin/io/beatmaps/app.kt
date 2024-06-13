@@ -14,13 +14,13 @@ import io.beatmaps.playlist.playlistFeed
 import io.beatmaps.playlist.playlistPage
 import io.beatmaps.quest.quest
 import io.beatmaps.upload.uploadPage
-import io.beatmaps.user.ProfilePage
 import io.beatmaps.user.alerts.alertsPage
 import io.beatmaps.user.changeEmailPage
 import io.beatmaps.user.forgotPage
 import io.beatmaps.user.loginPage
 import io.beatmaps.user.oauth.authorizePage
 import io.beatmaps.user.pickUsernamePage
+import io.beatmaps.user.profilePage
 import io.beatmaps.user.resetPage
 import io.beatmaps.user.signupPage
 import io.beatmaps.user.userList
@@ -34,7 +34,6 @@ import react.dom.div
 import react.fc
 import react.router.dom.RouterProvider
 import react.router.dom.createBrowserRouter
-import react.useContext
 import react.useEffectOnce
 import web.dom.document
 
@@ -80,14 +79,10 @@ val appRouter = createBrowserRouter(
             uploadPage { }
         },
         bsroute("/profile") {
-            withRouter(ProfilePage::class) {
-                userData = useContext(globalContext)
-            }
+            profilePage { }
         },
         bsroute("/profile/:userId") {
-            withRouter(ProfilePage::class) {
-                userData = useContext(globalContext)
-            }
+            profilePage { }
         },
         bsroute("/alerts") {
             alertsPage { }
