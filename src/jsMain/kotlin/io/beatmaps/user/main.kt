@@ -192,7 +192,7 @@ val profilePage = fc<Props> { props ->
     }
 
     useEffect(location.pathname, params["userId"]) {
-        val onHashChange: (Event) -> Unit = { _ :Event ->
+        val onHashChange = { _ : Event ->
             val hash = window.location.hash.substring(1)
             val tabContext = TabContext(params["userId"]?.toIntOrNull())
             val newState = ProfileTab.entries.firstOrNull { hash == it.tabText.lowercase() && it.condition(userData, tabContext, userDetail) } ?: tabState
@@ -486,7 +486,7 @@ val profilePage = fc<Props> { props ->
             }
             if (startup) {
                 beatmapTable {
-                    attrs.key = "maps-${tabState}"
+                    attrs.key = "maps-$tabState"
                     attrs.user = userId ?: loggedInLocal ?: 0
                     attrs.wip = tabState == ProfileTab.UNPUBLISHED
                     attrs.curated = tabState == ProfileTab.CURATED
