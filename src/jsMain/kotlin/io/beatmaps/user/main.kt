@@ -182,9 +182,9 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
         window.addEventListener("hashchange", onHashChange)
     }
 
-    private fun setFollowStatus(following: Boolean, upload: Boolean, curation: Boolean) {
+    private fun setFollowStatus(following: Boolean, upload: Boolean, curation: Boolean, collab: Boolean) {
         setState { loading = true }
-        val req = UserFollowRequest(state.userDetail?.id ?: 0, following, upload, curation)
+        val req = UserFollowRequest(state.userDetail?.id ?: 0, following, upload, curation, collab)
         Axios.post<UserFollowRequest>("${Config.apibase}/users/follow", req, generateConfig<UserFollowRequest, String>()).then({
             setState {
                 loading = false
@@ -201,7 +201,8 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                     followData?.follows,
                     following,
                     upload,
-                    curation
+                    curation,
+                    collab
                 )
             }
         }) { }
@@ -313,7 +314,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                                     attrs.disabled = state.loading == true
                                                     attrs.onClickFunction = { e ->
                                                         e.preventDefault()
-                                                        setFollowStatus(!fd.following, !fd.following, !fd.following)
+                                                        setFollowStatus(!fd.following, !fd.following, !fd.following, !fd.following)
                                                     }
 
                                                     if (fd.following) {
@@ -346,7 +347,7 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                                                 attrs.checked = fd.upload
                                                                 attrs.onChangeFunction = { ev ->
                                                                     val newUpload = (ev.target as HTMLInputElement).checked
-                                                                    setFollowStatus(fd.following || newUpload || fd.curation, newUpload, fd.curation)
+                                                                    setFollowStatus(fd.following || newUpload || fd.curation || fd.collab, newUpload, fd.curation, fd.collab)
                                                                 }
                                                             }
                                                             +"Uploads"
@@ -363,10 +364,28 @@ class ProfilePage : RComponent<ProfilePageProps, ProfilePageState>() {
                                                                 attrs.checked = fd.curation
                                                                 attrs.onChangeFunction = { ev ->
                                                                     val newCuration = (ev.target as HTMLInputElement).checked
-                                                                    setFollowStatus(fd.following || fd.upload || newCuration, fd.upload, newCuration)
+                                                                    setFollowStatus(fd.following || fd.upload || newCuration || fd.collab, fd.upload, newCuration, fd.collab)
                                                                 }
                                                             }
                                                             +"Curations"
+                                                        }
+
+                                                        label("dropdown-item") {
+                                                            attrs.htmlFor = "follow-collabs"
+                                                            attrs.role = "button"
+                                                            attrs.onClickFunction = {
+                                                                it.stopPropagation()
+                                                            }
+                                                            input(InputType.checkBox, classes = "form-check-input me-2") {
+                                                                attrs.id = "follow-collabs"
+                                                                attrs.disabled = state.loading == true
+                                                                attrs.checked = fd.collab
+                                                                attrs.onChangeFunction = { ev ->
+                                                                    val newCollab = (ev.target as HTMLInputElement).checked
+                                                                    setFollowStatus(fd.following || fd.upload || fd.curation || newCollab, fd.upload, fd.curation, newCollab)
+                                                                }
+                                                            }
+                                                            +"Collabs"
                                                         }
                                                     }
                                                 }

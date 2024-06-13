@@ -124,7 +124,7 @@ fun Route.collaborationRoute() {
                             .select(Follows.followerId)
                             .where {
                                 followsAlias[Follows.id].isNull() and (Follows.followerId neq map.uploaderId) and
-                                    (Follows.userId eq sess.userId) and Follows.upload and Follows.following
+                                    (Follows.userId eq sess.userId) and Follows.collab and Follows.following
                             }
                             .map { row ->
                                 row[Follows.followerId].value
