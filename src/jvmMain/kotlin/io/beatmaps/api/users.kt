@@ -39,6 +39,7 @@ import io.beatmaps.common.dbo.UserLog
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.handlePatreon
+import io.beatmaps.common.dbo.joinCollaborations
 import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.sendEmail
@@ -1034,7 +1035,7 @@ fun Route.userRoute() {
     get<UsersApi.UserPlaylist> {
         val (maps, user) = transaction {
             Beatmap.joinVersions()
-                .join(Collaboration, JoinType.LEFT, onColumn = Beatmap.id, otherColumn = Collaboration.mapId)
+                .joinCollaborations()
                 .selectAll().where {
                     ((Beatmap.uploader eq it.id) or (Collaboration.collaboratorId eq it.id)) and Beatmap.deletedAt.isNull()
                 }.complexToBeatmap().sortedByDescending { b -> b.uploaded } to User.selectAll().where { User.id eq it.id and User.active }.firstOrNull()?.let { row -> UserDetail.from(row) }
