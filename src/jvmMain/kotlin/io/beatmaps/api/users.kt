@@ -24,6 +24,7 @@ import io.beatmaps.common.db.startsWith
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.ModLog
@@ -105,7 +106,6 @@ import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.min
 import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -1033,9 +1033,11 @@ fun Route.userRoute() {
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     get<UsersApi.UserPlaylist> {
         val (maps, user) = transaction {
-            Beatmap.joinVersions().selectAll().where {
-                Beatmap.uploader eq it.id and Beatmap.deletedAt.isNull()
-            }.complexToBeatmap().sortedByDescending { b -> b.uploaded } to User.selectAll().where { User.id eq it.id and User.active }.firstOrNull()?.let { row -> UserDetail.from(row) }
+            Beatmap.joinVersions()
+                .join(Collaboration, JoinType.LEFT, onColumn = Beatmap.id, otherColumn = Collaboration.mapId)
+                .selectAll().where {
+                    ((Beatmap.uploader eq it.id) or (Collaboration.collaboratorId eq it.id)) and Beatmap.deletedAt.isNull()
+                }.complexToBeatmap().sortedByDescending { b -> b.uploaded } to User.selectAll().where { User.id eq it.id and User.active }.firstOrNull()?.let { row -> UserDetail.from(row) }
         }
 
         if (user == null) {
