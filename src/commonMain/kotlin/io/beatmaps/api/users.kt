@@ -69,7 +69,8 @@ data class UserFollowData(
     val follows: Int?,
     val following: Boolean,
     val upload: Boolean,
-    val curation: Boolean
+    val curation: Boolean,
+    val collab: Boolean
 )
 
 @Serializable
@@ -110,7 +111,7 @@ data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val curator
 data class UserSuspendRequest(val userId: Int, val suspended: Boolean, val reason: String?)
 
 @Serializable
-data class UserFollowRequest(val userId: Int, val following: Boolean, val upload: Boolean, val curation: Boolean)
+data class UserFollowRequest(val userId: Int, val following: Boolean, val upload: Boolean, val curation: Boolean, val collab: Boolean)
 
 @Serializable
 data class SessionRevokeRequest(val userId: Int? = null, val site: Boolean? = null, val reason: String? = null)

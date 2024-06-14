@@ -154,9 +154,10 @@ val profilePage = fc<Props> { props ->
         )
     }
 
-    fun setFollowStatus(following: Boolean, upload: Boolean, curation: Boolean) {
+    fun setFollowStatus(following: Boolean, upload: Boolean, curation: Boolean, collab: Boolean) {
         setLoading(true)
-        val req = UserFollowRequest(userDetail?.id ?: 0, following, upload, curation)
+        val req = UserFollowRequest(userDetail?.id ?: 0, following, upload, curation, collab)
+
         Axios.post<UserFollowRequest>("${Config.apibase}/users/follow", req, generateConfig<UserFollowRequest, String>()).then({
             setLoading(false)
             setFollowData(
@@ -173,7 +174,8 @@ val profilePage = fc<Props> { props ->
                     followData?.follows,
                     following,
                     upload,
-                    curation
+                    curation,
+                    collab
                 )
             )
         }) { }
@@ -294,7 +296,7 @@ val profilePage = fc<Props> { props ->
                                                 attrs.disabled = loading
                                                 attrs.onClickFunction = { e ->
                                                     e.preventDefault()
-                                                    setFollowStatus(!fd.following, !fd.following, !fd.following)
+                                                    setFollowStatus(!fd.following, !fd.following, !fd.following, !fd.following)
                                                 }
 
                                                 if (fd.following) {
@@ -326,7 +328,7 @@ val profilePage = fc<Props> { props ->
                                                             attrs.checked = fd.upload
                                                             attrs.onChangeFunction = { ev ->
                                                                 val newUpload = (ev.target as HTMLInputElement).checked
-                                                                setFollowStatus(fd.following || newUpload || fd.curation, newUpload, fd.curation)
+                                                                setFollowStatus(fd.following || newUpload || fd.curation || fd.collab, newUpload, fd.curation, fd.collab)
                                                             }
                                                         }
                                                         +"Uploads"
@@ -344,10 +346,28 @@ val profilePage = fc<Props> { props ->
                                                             attrs.checked = fd.curation
                                                             attrs.onChangeFunction = { ev ->
                                                                 val newCuration = (ev.target as HTMLInputElement).checked
-                                                                setFollowStatus(fd.following || fd.upload || newCuration, fd.upload, newCuration)
+                                                                setFollowStatus(fd.following || fd.upload || newCuration || fd.collab, fd.upload, newCuration, fd.collab)
                                                             }
                                                         }
                                                         +"Curations"
+                                                    }
+                                                    label("dropdown-item") {
+                                                        attrs.htmlFor = "follow-collabs"
+                                                        attrs.role = "button"
+                                                        attrs.onClickFunction = {
+                                                            it.stopPropagation()
+                                                        }
+                                                        input(InputType.checkBox, classes = "form-check-input me-2") {
+                                                            key = "follow-collabs-${fd.collab}"
+                                                            attrs.id = "follow-collabs"
+                                                            attrs.disabled = loading
+                                                            attrs.checked = fd.collab
+                                                            attrs.onChangeFunction = { ev ->
+                                                                val newCollab = (ev.target as HTMLInputElement).checked
+                                                                setFollowStatus(fd.following || fd.upload || fd.curation || newCollab, fd.upload, fd.curation, newCollab)
+                                                            }
+                                                        }
+                                                        +"Collabs"
                                                     }
                                                 }
                                             }

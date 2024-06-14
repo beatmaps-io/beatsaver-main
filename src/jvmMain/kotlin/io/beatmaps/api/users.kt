@@ -274,13 +274,14 @@ fun followData(uploaderId: Int, userId: Int?): UserFollowData {
     fun followingColumn(column: Column<Boolean>) = countWithFilter(userFilter and followerFilter and column) greater intLiteral(0)
     val uploadColumn = followingColumn(Follows.upload)
     val curationColumn = followingColumn(Follows.curation)
+    val collabColumn = followingColumn(Follows.collab)
 
     return Follows
-        .select(userColumn, followerColumn, followingColumn, uploadColumn, curationColumn).where {
+        .select(userColumn, followerColumn, followingColumn, uploadColumn, curationColumn, collabColumn).where {
             Follows.following and (userFilter or followerFilter)
         }
         .single().let {
-            UserFollowData(it[userColumn], it[followerColumn], it[followingColumn], it[uploadColumn], it[curationColumn])
+            UserFollowData(it[userColumn], it[followerColumn], it[followingColumn], it[uploadColumn], it[curationColumn], it[collabColumn])
         }
 }
 
@@ -932,6 +933,7 @@ fun Route.userRoute() {
                     follow[since] = NowExpression(since.columnType)
                     follow[upload] = req.upload
                     follow[curation] = req.curation
+                    follow[collab] = req.collab
                     follow[following] = req.following
                 }
                 if (shouldAlert) {
