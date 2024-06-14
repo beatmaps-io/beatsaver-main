@@ -20,6 +20,7 @@ import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.joinUploader
 import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.NoOpConversion
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.QueryParameter
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
@@ -30,6 +31,8 @@ import pl.jutupe.ktor_rabbitmq.RabbitMQInstance
 import java.lang.Integer.toHexString
 import java.math.BigDecimal
 import java.time.Instant
+
+fun <T> QueryParameter<T>.withColumnType() = NoOpConversion(this, this.sqlType)
 
 fun publishVersion(mapId: Int, hash: String, alert: Boolean?, rb: RabbitMQInstance?, additionalCallback: (Op<Boolean>) -> Op<Boolean> = { it }): Boolean {
     val publishingVersion = VersionsDao.wrapRow(
@@ -46,8 +49,8 @@ fun publishVersion(mapId: Int, hash: String, alert: Boolean?, rb: RabbitMQInstan
         }) {
             val exp = Expression.build {
                 case()
-                    .When(Versions.hash eq hash, QueryParameter(EMapState.Published, Versions.state.columnType))
-                    .Else(QueryParameter(EMapState.Uploaded, Versions.state.columnType))
+                    .When(Versions.hash eq hash, QueryParameter(EMapState.Published, Versions.state.columnType).withColumnType())
+                    .Else(QueryParameter(EMapState.Uploaded, Versions.state.columnType).withColumnType())
             }
 
             val exp2 = Expression.build {
