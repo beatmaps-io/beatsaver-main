@@ -363,7 +363,7 @@ fun Route.uploadController() {
 fun ZipHelperWithAudio.validateFiles(dos: DigestOutputStream) =
     info.let {
         // Add files referenced in info.dat to whitelist
-        ExtractedInfo(findAllowedFiles(it), dos, it, scoreMap())
+        ExtractedInfo(findAllowedFiles(it), ByteArrayOutputStream(), it, scoreMap())
     }.also { p ->
         // Rename audio file if it ends in .ogg
         val (newFiles, newFilesOriginalCase) = oggToEgg(p)
@@ -372,11 +372,12 @@ fun ZipHelperWithAudio.validateFiles(dos: DigestOutputStream) =
         val prefix = infoPrefix()
         val withoutPrefix = newFiles.map { its -> its.removePrefix(prefix.lowercase()) }.toSet()
 
-        val output = p.mapInfo.toJson().toByteArray()
-        dos.write(output)
-
         // Validate info.dat
         p.mapInfo.validate(withoutPrefix, p, audioFile, ::fromInfo)
+
+        val output = p.mapInfo.toJson().toByteArray()
+        dos.write(output)
+        p.toHash.writeTo(dos)
 
         // Generate 10 second preview
         p.preview = ByteArrayOutputStream().also {
