@@ -215,7 +215,7 @@ fun Route.alertsRoute() {
                             (AlertRecipient.recipientId eq user.userId)
                     }) {
                         if (req.read) {
-                            it[AlertRecipient.readAt] = NowExpression(AlertRecipient.readAt.columnType)
+                            it[AlertRecipient.readAt] = NowExpression(AlertRecipient.readAt)
                         } else {
                             it[AlertRecipient.readAt] = null
                         }
@@ -240,7 +240,7 @@ fun Route.alertsRoute() {
                         (AlertRecipient.recipientId eq user.userId)
                 }) {
                     if (req.read) {
-                        it[readAt] = NowExpression(readAt.columnType)
+                        it[readAt] = NowExpression(readAt)
                     } else {
                         it[readAt] = null
                     }

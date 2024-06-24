@@ -296,9 +296,9 @@ fun Route.userRoute() {
             } else {
                 val success = transaction {
                     try {
-                        User.update({ User.id eq sess.userId and (User.uniqueName.isNull() or User.renamedAt.lessEq(DateMinusDays(NowExpression(User.renamedAt.columnType), 1))) }) { u ->
+                        User.update({ User.id eq sess.userId and (User.uniqueName.isNull() or User.renamedAt.lessEq(DateMinusDays(NowExpression(User.renamedAt), 1))) }) { u ->
                             u[uniqueName] = req.textContent
-                            u[renamedAt] = Expression.build { case().When(uniqueName eq req.textContent, renamedAt).Else(NowExpression(renamedAt.columnType)) }
+                            u[renamedAt] = Expression.build { case().When(uniqueName eq req.textContent, renamedAt).Else(NowExpression(renamedAt)) }
                         }
                     } catch (e: ExposedSQLException) {
                         -1
@@ -398,7 +398,7 @@ fun Route.userRoute() {
                             User.id eq req.userId
                         }) { u ->
                             if (req.suspended) {
-                                u[suspendedAt] = NowExpression(suspendedAt.columnType)
+                                u[suspendedAt] = NowExpression(suspendedAt)
                             } else {
                                 u[suspendedAt] = null
                             }
@@ -764,7 +764,7 @@ fun Route.userRoute() {
                                 User.id eq userId
                             }) {
                                 it[email] = newEmail
-                                it[emailChangedAt] = NowExpression(emailChangedAt.columnType)
+                                it[emailChangedAt] = NowExpression(emailChangedAt)
                             } > 0
 
                             if (success) {
@@ -930,7 +930,7 @@ fun Route.userRoute() {
                 Follows.upsert(conflictIndex = Follows.link) { follow ->
                     follow[userId] = req.userId
                     follow[followerId] = user.userId
-                    follow[since] = NowExpression(since.columnType)
+                    follow[since] = NowExpression(since)
                     follow[upload] = req.upload
                     follow[curation] = req.curation
                     follow[collab] = req.collab

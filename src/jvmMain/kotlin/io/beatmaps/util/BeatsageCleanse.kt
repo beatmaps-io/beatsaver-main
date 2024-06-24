@@ -52,7 +52,7 @@ class BeatsageCleanse(private val app: Application) : TimerTask() {
                     Versions.update({
                         Versions.hash eq digest
                     }) { u ->
-                        u[deletedAt] = NowExpression(deletedAt.columnType)
+                        u[deletedAt] = NowExpression(deletedAt)
                     }
 
                     logger.info { "Permanently deleted $digest" }
@@ -74,7 +74,7 @@ class BeatsageCleanse(private val app: Application) : TimerTask() {
                 Beatmap.updateReturning({
                     Beatmap.id inSubQuery(subQuery) and Beatmap.deletedAt.isNull()
                 }, {
-                    it[deletedAt] = NowExpression(deletedAt.columnType)
+                    it[deletedAt] = NowExpression(deletedAt)
                 }, Beatmap.id)?.map {
                     it[Beatmap.id].value
                 }?.onEach {

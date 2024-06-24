@@ -250,7 +250,7 @@ fun Route.uploadController() {
                                 },
                                 {
                                     setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
-                                    it[updatedAt] = NowExpression(updatedAt.columnType)
+                                    it[updatedAt] = NowExpression(updatedAt)
                                 },
                                 Beatmap.id
                             )?.firstOrNull()?.let { it[Beatmap.id] } ?: throw UploadException("Map doesn't exist to add version")
