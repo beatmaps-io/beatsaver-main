@@ -24,6 +24,7 @@ import io.beatmaps.common.db.startsWith
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.ModLog
@@ -110,6 +111,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.union
 import org.jetbrains.exposed.sql.update
 import org.litote.kmongo.and
 import org.litote.kmongo.descending
@@ -235,7 +237,7 @@ class UsersApi {
     data class SessionsById(val id: String, val api: UsersApi)
 
     @Location("/id/{id}/playlist/{filename?}")
-    data class UserPlaylist(val id: Int, val filename: String? = null, val api: UsersApi)
+    data class UserPlaylist(val id: Int, val filename: String? = null, val collabs: Boolean = true, val api: UsersApi)
 
     @Location("/find/{id}")
     data class Find(val id: String, val api: UsersApi)
@@ -1033,9 +1035,19 @@ fun Route.userRoute() {
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     get<UsersApi.UserPlaylist> {
         val (maps, user) = transaction {
-            Beatmap.joinVersions().selectAll().where {
-                Beatmap.uploader eq it.id and Beatmap.deletedAt.isNull()
-            }.complexToBeatmap().sortedByDescending { b -> b.uploaded } to User.selectAll().where { User.id eq it.id and User.active }.firstOrNull()?.let { row -> UserDetail.from(row) }
+            Beatmap.joinVersions()
+                .selectAll().where {
+                    Beatmap.id.inSubQuery(
+                        Beatmap.select(Beatmap.id).where { (Beatmap.uploader eq it.id) and Beatmap.deletedAt.isNull() }
+                            .let { q ->
+                                if (it.collabs) {
+                                    q.union(Collaboration.select(Collaboration.mapId).where { Collaboration.collaboratorId eq it.id and Collaboration.accepted })
+                                } else {
+                                    q
+                                }
+                            }
+                    )
+                }.complexToBeatmap().sortedByDescending { b -> b.uploaded } to User.selectAll().where { User.id eq it.id and User.active }.firstOrNull()?.let { row -> UserDetail.from(row) }
         }
 
         if (user == null) {
