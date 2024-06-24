@@ -1787,6 +1787,19 @@ body:has(.embed) {
       }
     }
   }
+
+  .missing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 145px;
+    color: $light;
+    font-size: 1rem;
+    font-weight: bold;
+    font-variant: small-caps;
+    border: solid $light 1px;
+    border-radius: calc(0.25rem - 1px);
+  }
 }
 
 @include media-breakpoint-up(xxl) {
