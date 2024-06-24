@@ -17,6 +17,7 @@ import react.useContext
 external interface LinksProps : Props {
     var map: MapDetail
     var version: MapVersion?
+    var limited: Boolean?
 }
 
 val links = fc<LinksProps> { props ->
@@ -24,6 +25,11 @@ val links = fc<LinksProps> { props ->
 
     copyBsr {
         attrs.map = props.map
+    }
+    if (props.limited != true) {
+        copyEmbed {
+            attrs.map = props.map
+        }
     }
     val version = props.version
     val altLink = if (version?.state == EMapState.Published) {
