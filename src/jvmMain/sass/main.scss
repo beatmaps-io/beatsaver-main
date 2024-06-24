@@ -1770,22 +1770,73 @@ body:has(.embed) {
 
 .embed {
   width: 100vw;
+  height: 100vh;
 
-  .beatmap .card {
-    margin: 0;
-    .info {
-      overflow: hidden;
+  .beatmap {
+    height: 100vh !important;
 
-      a, p, .diffs {
+    .card {
+      margin: 0;
+      height: 100vh !important;
+
+      .info {
         overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
 
-        span.badge {
-          font-size: 0 !important;
+        a, p, .diffs {
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+
+          span.badge {
+            font-size: 0 !important;
+          }
         }
       }
     }
+  }
+
+  .missing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    color: $light;
+    font-size: 1rem;
+    font-weight: bold;
+    font-variant: small-caps;
+    border: solid $light 1px;
+    border-radius: calc(0.25rem - 1px);
+  }
+}
+
+.multiple-choice {
+  display: flex;
+  margin-block: .375rem;
+
+  input[type=radio] {
+    display: none;
+  }
+
+  label {
+    display: inline-block;
+    padding: .25rem .5rem;
+    color: white;
+    font-size: 0.7rem;
+    border: white 1px solid;
+    margin-right: -1px; // compensating for the double border
+    cursor: pointer;
+
+    &:first-of-type {
+      border-radius: 4px 0 0 4px;
+    }
+    &:last-of-type {
+      border-radius: 0 4px 4px 0;
+    }
+  }
+
+  input[type=radio]:checked + label {
+    color: black;
+    background-color: white;
   }
 }
 

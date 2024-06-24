@@ -9,10 +9,13 @@ import io.beatmaps.common.toQuery
 import io.beatmaps.common.toTagSet
 import io.beatmaps.globalContext
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.search.BooleanFilterInfo
 import io.beatmaps.shared.search.ExtraContentRenderer
 import io.beatmaps.shared.search.FilterCategory
 import io.beatmaps.shared.search.FilterInfo
+import io.beatmaps.shared.search.MultipleChoiceFilterInfo
 import io.beatmaps.shared.search.SearchParamGenerator
+import io.beatmaps.shared.search.getByKeyOrNull
 import io.beatmaps.shared.search.search
 import io.beatmaps.shared.search.tags
 import io.beatmaps.stateNavOptions
@@ -75,18 +78,28 @@ val homePage = fc<Props> {
 
     val userData = useContext(globalContext)
 
-    val mapFilters = listOfNotNull<FilterInfo<SearchParams>>(
-        FilterInfo("bot", "AI", FilterCategory.GENERAL) { it.automapper == true },
-        FilterInfo("ranked", "Ranked", FilterCategory.GENERAL) { it.ranked == true },
-        FilterInfo("curated", "Curated", FilterCategory.GENERAL) { it.curated == true },
-        FilterInfo("verified", "Verified Mapper", FilterCategory.GENERAL) { it.verified == true },
-        if (userData != null) FilterInfo("followed", "From Mappers You Follow ", FilterCategory.GENERAL) { it.followed == true } else null,
-        FilterInfo("fs", "Full Spread", FilterCategory.GENERAL) { it.fullSpread == true },
+    val mapFilters = listOfNotNull<FilterInfo<SearchParams, *>>(
+        MultipleChoiceFilterInfo(
+            "bot",
+            "AI",
+            FilterCategory.GENERAL,
+            mapOf(
+                "All" to true,
+                "Human" to null,
+                "AI" to false
+            ),
+            null
+        ) { it.automapper },
+        BooleanFilterInfo("ranked", "Ranked", FilterCategory.GENERAL) { it.ranked == true },
+        BooleanFilterInfo("curated", "Curated", FilterCategory.GENERAL) { it.curated == true },
+        BooleanFilterInfo("verified", "Verified Mapper", FilterCategory.GENERAL) { it.verified == true },
+        if (userData != null) BooleanFilterInfo("followed", "From Mappers You Follow ", FilterCategory.GENERAL) { it.followed == true } else null,
+        BooleanFilterInfo("fs", "Full Spread", FilterCategory.GENERAL) { it.fullSpread == true },
 
-        FilterInfo("chroma", "Chroma", FilterCategory.REQUIREMENTS) { it.chroma == true },
-        FilterInfo("noodle", "Noodle Extensions", FilterCategory.REQUIREMENTS) { it.noodle == true },
-        FilterInfo("me", "Mapping Extensions", FilterCategory.REQUIREMENTS) { it.me == true },
-        FilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true }
+        BooleanFilterInfo("chroma", "Chroma", FilterCategory.REQUIREMENTS) { it.chroma == true },
+        BooleanFilterInfo("noodle", "Noodle Extensions", FilterCategory.REQUIREMENTS) { it.noodle == true },
+        BooleanFilterInfo("me", "Mapping Extensions", FilterCategory.REQUIREMENTS) { it.me == true },
+        BooleanFilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true }
     )
 
     fun updateSearchParams(searchParamsLocal: SearchParams?, row: Int?) {
@@ -137,7 +150,7 @@ val homePage = fc<Props> {
             paramsFromPage = SearchParamGenerator {
                 SearchParams(
                     inputRef.current?.value?.trim() ?: "",
-                    if (isFiltered("bot")) true else null,
+                    state.filterMap?.getByKeyOrNull("bot") as? Boolean?,
                     if (state.minNps?.let { it > 0 } == true) state.minNps else null,
                     if (state.maxNps?.let { it < props.maxNps } == true) state.maxNps else null,
                     if (isFiltered("chroma")) true else null,

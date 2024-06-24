@@ -4,6 +4,7 @@ import external.DateRangePicker
 import external.Moment
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
+import io.beatmaps.shared.form.multipleChoice
 import io.beatmaps.shared.form.slider
 import io.beatmaps.shared.form.toggle
 import kotlinx.browser.document
@@ -39,7 +40,16 @@ import react.setState
 enum class FilterCategory {
     NONE, GENERAL, REQUIREMENTS
 }
-data class FilterInfo<T>(val key: String, val name: String, val cat: FilterCategory, val fromParams: (T) -> Boolean)
+interface FilterInfo<T, V> {
+    val key: String
+    val name: String
+    val cat: FilterCategory
+    val fromParams: (T) -> V
+}
+
+class BooleanFilterInfo<T>(override val key: String, override val name: String, override val cat: FilterCategory, override val fromParams: (T) -> Boolean) : FilterInfo<T, Boolean>
+
+class MultipleChoiceFilterInfo<T, V>(override val key: String, override val name: String, override val cat: FilterCategory, val choices: Map<String, V>, val default: V, override val fromParams: (T) -> V) : FilterInfo<T, V>
 
 fun interface SearchParamGenerator<T : CommonParams> {
     fun Search<T>.get(): T
@@ -57,11 +67,14 @@ fun RDOMBuilder<DIV>.invokeECR(renderer: ExtraContentRenderer?) {
     }
 }
 
+fun <T : FilterInfo<*, *>, V> Map<T, V>.getByKeyOrNull(key: String): V? =
+    entries.firstOrNull { it.key.key == key }?.value
+
 external interface SearchProps<T : CommonParams> : Props {
     var typedState: T?
     var sortOrderTarget: SortOrderTarget
     var maxNps: Int
-    var filters: List<FilterInfo<T>>
+    var filters: List<FilterInfo<T, *>>
     var paramsFromPage: SearchParamGenerator<T>
     var updateSearchParams: (T, Int?) -> Unit
     var updateUI: ((T?) -> Unit)?
@@ -72,7 +85,7 @@ external interface SearchProps<T : CommonParams> : Props {
 external interface SearchState<T> : State {
     var minNps: Float?
     var maxNps: Float?
-    var filterMap: MutableMap<FilterInfo<T>, Boolean>?
+    var filterMap: MutableMap<FilterInfo<T, *>, Any?>?
     var order: SearchOrder?
     var focusedInput: String?
     var startDate: Moment?
@@ -114,10 +127,15 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
         sortRef.current?.selectedIndex = (fromParams?.sortOrder ?: SearchOrder.Relevance).idx
 
         setState {
-            filterRefs.forEach {
-                val newState = fromParams?.let { params -> it.key.fromParams(params) } ?: false
-                it.value.current?.checked = newState
-                filterMap?.put(it.key, newState)
+            filterRefs.forEach { (filter, filterRef) ->
+                if (filter is BooleanFilterInfo) {
+                    val newState = fromParams?.let { params -> filter.fromParams(params) } ?: false
+                    filterRef.current?.checked = newState
+                    filterMap?.put(filter, newState)
+                } else if (filter is MultipleChoiceFilterInfo) {
+                    val newState = fromParams?.let { params -> filter.fromParams(params) }
+                    filterMap?.put(filter, newState)
+                }
             }
 
             minNps = fromParams?.minNps ?: 0f
@@ -147,9 +165,13 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
     }
 
     fun isFiltered(s: String) =
-        props.filters.first { it.key == s }.let { filter ->
-            state.filterMap?.get(filter) ?: false
-        }
+        state.filterMap?.entries?.firstOrNull { it.key.key == s }?.let { (filter, value) ->
+            when (filter) {
+                is BooleanFilterInfo -> value as? Boolean ?: false
+                is MultipleChoiceFilterInfo -> value != filter.default
+                else -> false
+            }
+        } ?: false
 
     override fun RBuilder.render() {
         form("") {
@@ -186,7 +208,13 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                         }
                         ref = dropdownRef
                         span {
-                            val filters = filterRefs.filter { state.filterMap?.get(it.key) ?: false }.map { it.key.name } +
+                            val filters = state.filterMap.orEmpty().entries.filter { (filter, value) ->
+                                when (filter) {
+                                    is BooleanFilterInfo -> value as? Boolean ?: false
+                                    is MultipleChoiceFilterInfo -> value != filter.default
+                                    else -> false
+                                }
+                            }.map { it.key.name } +
                                 (props.filterTexts?.invoke() ?: listOf())
 
                             if (filters.isEmpty()) {
@@ -202,25 +230,37 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
 
                         div("d-flex") {
                             div {
-                                filterRefs.entries.fold(FilterCategory.NONE) { cat, filter ->
-                                    if (cat != filter.key.cat) {
+                                filterRefs.entries.fold(FilterCategory.NONE) { cat, (filter, filterRef) ->
+                                    if (cat != filter.cat) {
                                         h4(if (cat == FilterCategory.NONE) "" else "mt-4") {
-                                            +filter.key.cat.toString()
+                                            +filter.cat.toString()
                                         }
                                     }
 
-                                    toggle {
-                                        attrs.id = filter.key.key
-                                        attrs.text = filter.key.name
-                                        attrs.ref = filter.value
-                                        attrs.block = {
-                                            setState {
-                                                filterMap?.put(filter.key, it)
+                                    if (filter is BooleanFilterInfo) {
+                                        toggle {
+                                            attrs.id = filter.key
+                                            attrs.text = filter.name
+                                            attrs.ref = filterRef
+                                            attrs.block = {
+                                                setState {
+                                                    filterMap?.put(filter, it)
+                                                }
+                                            }
+                                        }
+                                    } else if (filter is MultipleChoiceFilterInfo) {
+                                        multipleChoice(filter.choices) {
+                                            name = filter.key
+                                            selectedValue = state.filterMap?.getByKeyOrNull(filter.key) ?: filter.default
+                                            block = {
+                                                setState {
+                                                    filterMap?.put(filter, it)
+                                                }
                                             }
                                         }
                                     }
 
-                                    filter.key.cat
+                                    filter.cat
                                 }
                             }
 

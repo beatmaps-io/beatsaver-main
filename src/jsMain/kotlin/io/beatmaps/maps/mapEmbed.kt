@@ -2,14 +2,12 @@ package io.beatmaps.maps
 
 import external.axiosGet
 import io.beatmaps.Config
-import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.index.beatmapInfo
 import io.beatmaps.util.useAudio
 import react.Props
 import react.dom.div
 import react.fc
-import react.router.useNavigate
 import react.router.useParams
 import react.useEffect
 import react.useState
@@ -18,7 +16,6 @@ val mapEmbed = fc<Props> {
     val (map, setMap) = useState<MapDetail?>(null)
 
     val params = useParams()
-    val history = History(useNavigate())
     val audio = useAudio()
 
     fun loadMap() {
@@ -30,9 +27,7 @@ val mapEmbed = fc<Props> {
             "${Config.apibase}/maps/id/$mapKey"
         ).then {
             setMap(it.data)
-        }.catch {
-            history.push("/")
-        }
+        }.catch { }
     }
 
     useEffect(params["mapKey"]) {
@@ -40,10 +35,16 @@ val mapEmbed = fc<Props> {
     }
 
     div("embed") {
-        beatmapInfo {
-            this.obj = map
-            this.version = map?.mainVersion()
-            this.audio = audio
+        if (map != null) {
+            beatmapInfo {
+                this.obj = map
+                this.version = map.mainVersion()
+                this.audio = audio
+            }
+        } else {
+            div("card missing") {
+                +"Missing beatmap"
+            }
         }
     }
 }

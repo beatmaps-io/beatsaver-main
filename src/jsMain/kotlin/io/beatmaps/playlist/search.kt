@@ -13,6 +13,7 @@ import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.maps.collaboratorCard
 import io.beatmaps.maps.userSearch
+import io.beatmaps.shared.form.multipleChoice
 import io.beatmaps.shared.form.slider
 import io.beatmaps.shared.form.toggle
 import io.beatmaps.shared.search.presets
@@ -24,6 +25,7 @@ import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import react.Props
+import react.StateSetter
 import react.createElement
 import react.dom.attrs
 import react.dom.defaultValue
@@ -47,11 +49,18 @@ external interface PSEProps : Props {
 
 val mapCounts = listOf(10, 20, 50, 100, 200, 500)
 
-data class PlaylistSearchBooleanFilter(val id: String, val text: String, val filter: (SearchParamsPlaylist) -> Boolean?) {
+interface PlaylistSearchFilter<T> {
+    val id: String
+}
+
+class PlaylistSearchBooleanFilter(override val id: String, val text: String, val filter: (SearchParamsPlaylist) -> Boolean?) : PlaylistSearchFilter<Boolean?> {
     val ref = useRef<HTMLInputElement>()
 }
 
+class PlaylistSearchMultipleChoiceFilter<T>(override val id: String, val choices: Map<String, T>, val getter: T, val setter: StateSetter<T>) : PlaylistSearchFilter<T>
+
 val playlistSearchEditor = fc<PSEProps> { props ->
+    val (automapper, setAutomapper) = useState(props.config.searchParams.automapper)
     val (minNps, setMinNps) = useState(props.config.searchParams.minNps ?: 0f)
     val (maxNps, setMaxNps) = useState(props.config.searchParams.maxNps ?: 16f)
     val (startDate, setStartDate) = useState(props.config.searchParams.from?.let { Moment(it.toString()) })
@@ -66,7 +75,16 @@ val playlistSearchEditor = fc<PSEProps> { props ->
 
     val filters = listOf(
         "General" to listOf(
-            PlaylistSearchBooleanFilter("automapper", "AI") { it.automapper },
+            PlaylistSearchMultipleChoiceFilter(
+                "automapper",
+                mapOf(
+                    "All" to true,
+                    "Human" to null,
+                    "AI" to false
+                ),
+                automapper,
+                setAutomapper
+            ),
             PlaylistSearchBooleanFilter("ranked", "Ranked") { it.ranked },
             PlaylistSearchBooleanFilter("curated", "Curated") { it.curated },
             PlaylistSearchBooleanFilter("verified", "Verified Mapper") { it.verified },
@@ -82,17 +100,22 @@ val playlistSearchEditor = fc<PSEProps> { props ->
 
     val searchRef = useRef<HTMLInputElement>()
 
-    fun fromFilter(s: String) =
-        filters.flatMap { it.second }.firstOrNull { it.id == s }?.ref?.current?.checked.let { b ->
+    fun fromFilter(s: String): Boolean? {
+        val filter = filters.flatMap { it.second }.firstOrNull { it.id == s }
+
+        if (filter !is PlaylistSearchBooleanFilter) return null
+
+        return filter.ref.current?.checked.let { b ->
             if (b != true) null else true
         }
+    }
 
     fun doCallback() {
         props.callback(
             SearchPlaylistConfig(
                 SearchParamsPlaylist(
                     searchRef.current?.value ?: "",
-                    fromFilter("automapper"),
+                    automapper,
                     if (minNps > 0) minNps else null,
                     if (maxNps < 16) maxNps else null,
                     fromFilter("chroma"),
@@ -114,7 +137,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
         )
     }
 
-    useEffect(minNps, maxNps, startDate, endDate, order, mapCount, tags, currentMappers) {
+    useEffect(automapper, minNps, maxNps, startDate, endDate, order, mapCount, tags, currentMappers) {
         doCallback()
     }
 
@@ -246,14 +269,24 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                 }
 
                 s.second.forEach { f ->
-                    toggle {
-                        attrs.id = f.id
-                        attrs.disabled = props.loading
-                        attrs.default = f.filter(props.config.searchParams)
-                        attrs.text = f.text
-                        attrs.ref = f.ref
-                        attrs.block = {
-                            doCallback()
+                    if (f is PlaylistSearchBooleanFilter) {
+                        toggle {
+                            attrs.id = f.id
+                            attrs.disabled = props.loading
+                            attrs.default = f.filter(props.config.searchParams)
+                            attrs.text = f.text
+                            attrs.ref = f.ref
+                            attrs.block = {
+                                doCallback()
+                            }
+                        }
+                    } else if (f is PlaylistSearchMultipleChoiceFilter) {
+                        multipleChoice(f.choices) {
+                            name = f.id
+                            selectedValue = f.getter
+                            block = {
+                                f.setter(it)
+                            }
                         }
                     }
                 }
