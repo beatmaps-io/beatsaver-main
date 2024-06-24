@@ -36,8 +36,9 @@ val links = fc<LinksProps> { props ->
     a(altLink) {
         attrs.title = "Preview"
         attrs.attributes["aria-label"] = "Preview"
+        attrs.target = "_top"
         attrs.onClickFunction = {
-            it.preventDefault()
+            if (modal?.current != null) it.preventDefault()
 
             if (props.version?.state == EMapState.Published) {
                 modal?.current?.showById(props.map.id)
