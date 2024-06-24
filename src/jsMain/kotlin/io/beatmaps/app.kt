@@ -3,6 +3,7 @@ package io.beatmaps
 import external.ReactDatesInit
 import io.beatmaps.common.json
 import io.beatmaps.index.homePage
+import io.beatmaps.maps.mapEmbed
 import io.beatmaps.maps.mapPage
 import io.beatmaps.maps.recent.recentTestplays
 import io.beatmaps.modlog.modlog
@@ -74,6 +75,9 @@ val appRouter = createBrowserRouter(
             mapPage {
                 attrs.beatsaver = false
             }
+        },
+        bsroute("/maps/:mapKey/embed") {
+            mapEmbed { }
         },
         bsroute("/upload") {
             uploadPage { }

@@ -17,6 +17,7 @@ import react.useContext
 external interface LinksProps : Props {
     var map: MapDetail
     var version: MapVersion?
+    var limited: Boolean?
 }
 
 val links = fc<LinksProps> { props ->
@@ -24,6 +25,11 @@ val links = fc<LinksProps> { props ->
 
     copyBsr {
         attrs.map = props.map
+    }
+    if (props.limited != true) {
+        copyEmbed {
+            attrs.map = props.map
+        }
     }
     val version = props.version
     val altLink = if (version?.state == EMapState.Published) {
@@ -36,8 +42,9 @@ val links = fc<LinksProps> { props ->
     a(altLink) {
         attrs.title = "Preview"
         attrs.attributes["aria-label"] = "Preview"
+        attrs.target = "_top"
         attrs.onClickFunction = {
-            it.preventDefault()
+            if (modal?.current != null) it.preventDefault()
 
             if (props.version?.state == EMapState.Published) {
                 modal?.current?.showById(props.map.id)

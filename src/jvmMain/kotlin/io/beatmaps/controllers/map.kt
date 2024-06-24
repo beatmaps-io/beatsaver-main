@@ -9,6 +9,7 @@ import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.emptyPage
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session
 import io.beatmaps.previewBaseUrl
@@ -39,6 +40,9 @@ class MapController {
 
     @Location("/viewer/{hash}")
     data class Viewer(val hash: String, val api: MapController)
+
+    @Location("/{key}/embed")
+    data class Embed(val key: String, val api: MapController)
 }
 
 @Location("/beatsaver")
@@ -154,6 +158,10 @@ fun Route.mapController() {
                 }
             }
         )
+    }
+
+    get<MapController.Embed> {
+        emptyPage()
     }
 
     get<BeatmapController.RedirectOld> {

@@ -28,6 +28,28 @@ val copyBsr = fc<CopyBSProps> { props ->
     }
 }
 
+val copyEmbed = fc<CopyBSProps> { props ->
+    a("#") {
+        //language=html
+        val iframe = """
+            <iframe 
+                src="${window.location.origin}/maps/${props.map.id}/embed" 
+                width="600" height="145" 
+                style="border: none; border-radius: 4px;"></iframe>
+        """.trimIndent()
+
+        attrs.title = "Copy Embed Code"
+        attrs.attributes["aria-label"] = "Copy Embed Code"
+        attrs.onClickFunction = {
+            it.preventDefault()
+            setClipboard(iframe)
+        }
+        i("fas fa-code text-info") {
+            attrs.attributes["aria-hidden"] = "true"
+        }
+    }
+}
+
 private fun setClipboard(str: String) {
     val tempElement = document.createElement("span")
     tempElement.textContent = str

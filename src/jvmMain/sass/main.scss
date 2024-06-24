@@ -161,7 +161,7 @@ table.search-results {
     overflow: hidden;
   }
 }
-.search-results, .playlist {
+.search-results, .playlist, .embed {
   .beatmap.loading, .playlist-card.loading {
     background: #262626;
     border: 5px solid transparent;
@@ -434,7 +434,7 @@ table.search-results {
     }
   }
 }
-.search-results, .playlist {
+.search-results, .playlist, .embed {
   word-break: break-word;
   a {
     font-size: 14px;
@@ -1526,7 +1526,7 @@ small.alert-count {
 }
 
 @include media-breakpoint-up(lg) {
-  .search-results {
+  .search-results, .embed {
     img.mode {
       margin-right: 0;
     }
@@ -1755,6 +1755,50 @@ small.alert-count {
       margin-right: 4px;
       margin-top: -2px;
     }
+  }
+}
+
+body:has(.embed) {
+  padding: 0;
+
+  #root {
+    margin: 0;
+    padding: 0;
+    max-width: 100vw;
+  }
+}
+
+.embed {
+  width: 100vw;
+
+  .beatmap .card {
+    margin: 0;
+    .info {
+      overflow: hidden;
+
+      a, p, .diffs {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+
+        span.badge {
+          font-size: 0 !important;
+        }
+      }
+    }
+  }
+
+  .missing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 145px;
+    color: $light;
+    font-size: 1rem;
+    font-weight: bold;
+    font-variant: small-caps;
+    border: solid $light 1px;
+    border-radius: calc(0.25rem - 1px);
   }
 }
 

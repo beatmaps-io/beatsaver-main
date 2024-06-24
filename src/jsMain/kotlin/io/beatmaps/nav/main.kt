@@ -13,8 +13,11 @@ import org.w3c.dom.asList
 data class DropDown(val menu: HTMLElement, val button: HTMLElement, var shouldClose: Boolean = false)
 
 fun manageNav() {
-    val navButton = document.getElementById("navbar-button") as HTMLButtonElement
-    val navMenu = document.getElementById("navbar") as HTMLDivElement
+    val navButton = document.getElementById("navbar-button") as? HTMLButtonElement
+    val navMenu = document.getElementById("navbar") as? HTMLDivElement
+
+    if (navMenu == null || navButton == null) return
+
     navButton.onclick = {
         it.preventDefault()
         val expanding = !navMenu.hasClass("show")
