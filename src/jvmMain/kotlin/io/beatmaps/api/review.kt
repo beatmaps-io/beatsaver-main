@@ -245,7 +245,7 @@ fun Route.reviewRoute() {
 
                     if (update.captcha == null) {
                         Review.update({ Review.mapId eq updateMapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }) { r ->
-                            r[updatedAt] = NowExpression(updatedAt.columnType)
+                            r[updatedAt] = NowExpression(updatedAt)
                             r[text] = newText
                             r[sentiment] = update.sentiment.dbValue
                         }
@@ -275,8 +275,8 @@ fun Route.reviewRoute() {
                             r[userId] = single.userId
                             r[text] = newText
                             r[sentiment] = update.sentiment.dbValue
-                            r[createdAt] = NowExpression(createdAt.columnType)
-                            r[updatedAt] = NowExpression(updatedAt.columnType)
+                            r[createdAt] = NowExpression(createdAt)
+                            r[updatedAt] = NowExpression(updatedAt)
                             r[deletedAt] = null
                         }
 
@@ -325,7 +325,7 @@ fun Route.reviewRoute() {
 
             transaction {
                 val result = Review.updateReturning({ Review.mapId eq mapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }, { r ->
-                    r[deletedAt] = NowExpression(deletedAt.columnType)
+                    r[deletedAt] = NowExpression(deletedAt)
                 }, Review.text, Review.sentiment)
 
                 if (!result.isNullOrEmpty() && single.userId != sess.userId) {
@@ -369,7 +369,7 @@ fun Route.reviewRoute() {
                             (Review.id eq reviewUpdate.id) and (if (reviewUpdate.curated) Review.curatedAt.isNull() else Review.curatedAt.isNotNull()) and Review.deletedAt.isNull()
                         }, {
                             if (reviewUpdate.curated) {
-                                it[curatedAt] = NowExpression(curatedAt.columnType)
+                                it[curatedAt] = NowExpression(curatedAt)
                             } else {
                                 it[curatedAt] = null
                             }

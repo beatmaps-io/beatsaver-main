@@ -75,7 +75,7 @@ fun getNewId(userId: Int) =
             it[name] = "Bookmarks"
             it[description] = "Maps you've bookmarked, automatically updated."
             it[owner] = userId
-            it[songsChangedAt] = NowExpression(songsChangedAt.columnType)
+            it[songsChangedAt] = NowExpression(songsChangedAt)
         }
     ) {
         get(Playlist.id).value.also { playlistId ->

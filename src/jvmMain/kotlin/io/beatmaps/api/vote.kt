@@ -84,7 +84,7 @@ fun Route.voteRoute() {
                     it[mapId] = body.mapId
                     it[userId] = body.userId
                     it[vote] = body.direction
-                    it[updatedAt] = NowExpression(updatedAt.columnType)
+                    it[updatedAt] = NowExpression(updatedAt)
                     it[steam] = body.steam
                 }
 
@@ -107,7 +107,7 @@ fun Route.voteRoute() {
                         it[score] = scoreWeighted.toBigDecimal()
                         it[upVotesInt] = upVotes.toInt()
                         it[downVotesInt] = downVotes.toInt()
-                        it[lastVoteAt] = NowExpression(lastVoteAt.columnType)
+                        it[lastVoteAt] = NowExpression(lastVoteAt)
                     },
                     Beatmap.uploader
                 )?.firstOrNull()?.let {

@@ -132,7 +132,7 @@ fun Route.patreonLink() {
                     PatreonLog.insert {
                         it[type] = "login"
                         it[text] = responseText
-                        it[time] = NowExpression(time.columnType)
+                        it[time] = NowExpression(time)
                     }
                 }
 
@@ -182,7 +182,7 @@ fun Route.patreonLink() {
             PatreonLog.insert {
                 it[type] = event ?: ""
                 it[text] = hookContent
-                it[time] = NowExpression(time.columnType)
+                it[time] = NowExpression(time)
             }
         }
 

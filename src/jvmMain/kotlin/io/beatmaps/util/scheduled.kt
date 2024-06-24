@@ -7,8 +7,6 @@ import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.rabbitOptional
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.Application
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -29,7 +27,6 @@ class CheckScheduled(private val rb: RabbitMQInstance) : TimerTask() {
                     }
                 ).mapNotNull {
                     schedulerLogger.info { "Scheduler publishing ${it.hash}" }
-                    runBlocking { delay(1L) }
                     if (publishVersion(it.mapId.value, it.hash, true, rb)) it else null
                 }
             }.forEach {
