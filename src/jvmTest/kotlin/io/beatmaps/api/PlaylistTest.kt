@@ -136,7 +136,7 @@ class PlaylistTest {
         transaction {
             PlaylistMap.deleteWhere { PlaylistMap.playlistId eq playlistId }
             Playlist.update({ Playlist.id eq playlistId }) {
-                it[deletedAt] = NowExpression(deletedAt.columnType)
+                it[deletedAt] = NowExpression(deletedAt)
             }
         }
     }
@@ -217,9 +217,9 @@ class PlaylistTest {
         }
 
         transaction {
-            PlaylistMap.deleteWhere { PlaylistMap.playlistId eq plId }
+            PlaylistMap.deleteWhere { playlistId eq plId }
             Playlist.update({ Playlist.id eq plId }) {
-                it[deletedAt] = NowExpression(deletedAt.columnType)
+                it[deletedAt] = NowExpression(deletedAt)
             }
         }
     }
