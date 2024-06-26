@@ -138,6 +138,7 @@ val scoreTable = fc<ScoreTableProps> { props ->
             page = 1
         }
 
+        scoresRef.current = listOf()
         setScores(listOf())
         setUid(null)
 
