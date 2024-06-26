@@ -1770,19 +1770,26 @@ body:has(.embed) {
 
 .embed {
   width: 100vw;
+  height: 100vh;
 
-  .beatmap .card {
-    margin: 0;
-    .info {
-      overflow: hidden;
+  .beatmap {
+    height: 100vh !important;
 
-      a, p, .diffs {
+    .card {
+      margin: 0;
+      height: 100vh !important;
+
+      .info {
         overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
 
-        span.badge {
-          font-size: 0 !important;
+        a, p, .diffs {
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+
+          span.badge {
+            font-size: 0 !important;
+          }
         }
       }
     }
@@ -1792,7 +1799,7 @@ body:has(.embed) {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 145px;
+    height: 100vh;
     color: $light;
     font-size: 1rem;
     font-weight: bold;
