@@ -3,7 +3,7 @@ package io.beatmaps.api.scores
 import io.beatmaps.api.LeaderboardData
 import io.beatmaps.common.SSGameMode
 import io.beatmaps.common.api.EDifficulty
-import io.beatmaps.common.jackson
+import io.beatmaps.common.jsonIgnoreUnknown
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.plugins.ClientRequestException
@@ -12,9 +12,8 @@ import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.cookies.AcceptAllCookiesStorage
 import io.ktor.client.plugins.cookies.HttpCookies
-import io.ktor.http.ContentType
 import io.ktor.serialization.JsonConvertException
-import io.ktor.serialization.jackson.JacksonConverter
+import io.ktor.serialization.kotlinx.json.json
 import java.net.URISyntaxException
 
 val scoresCookies = AcceptAllCookiesStorage()
@@ -29,8 +28,7 @@ val scoresClient = HttpClient(Apache) {
         requestTimeoutMillis = 20000
     }
     install(ContentNegotiation) {
-        val converter = JacksonConverter(jackson)
-        register(ContentType.Application.Json, converter)
+        json(jsonIgnoreUnknown)
     }
 }
 

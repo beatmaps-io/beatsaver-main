@@ -9,6 +9,7 @@ import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.rabbitOptional
 import io.ktor.server.application.Application
+import kotlinx.serialization.builtins.serializer
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -18,7 +19,7 @@ import java.math.BigDecimal
 
 fun Application.playlistStats() {
     rabbitOptional {
-        consumeAck("bm.mapPlaylistTrigger", Int::class) { _, mapId ->
+        consumeAck("bm.mapPlaylistTrigger", Int.serializer()) { _, mapId ->
             transaction {
                 PlaylistMapDao.wrapRows(
                     PlaylistMap.selectAll()
@@ -31,7 +32,7 @@ fun Application.playlistStats() {
             }
         }
 
-        consumeAck("bm.playlistStats", Int::class) { _, playlistId ->
+        consumeAck("bm.playlistStats", Int.serializer()) { _, playlistId ->
             transaction {
                 val beatmaps = Beatmap
                     .joinVersions()

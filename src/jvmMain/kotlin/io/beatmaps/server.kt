@@ -32,7 +32,6 @@ import io.beatmaps.common.db.setupDB
 import io.beatmaps.common.emailQueue
 import io.beatmaps.common.genericQueueConfig
 import io.beatmaps.common.installMetrics
-import io.beatmaps.common.jackson
 import io.beatmaps.common.json
 import io.beatmaps.common.rabbitHost
 import io.beatmaps.common.setupAMQP
@@ -65,9 +64,7 @@ import io.beatmaps.websockets.mapUpdateEnricher
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.EntityTagVersion
-import io.ktor.serialization.ContentConverter
-import io.ktor.serialization.jackson.JacksonConverter
-import io.ktor.serialization.kotlinx.KotlinxSerializationConverter
+import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
@@ -93,9 +90,6 @@ import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.util.converters.DataConversionException
 import io.ktor.util.pipeline.PipelineContext
-import io.ktor.util.reflect.TypeInfo
-import io.ktor.utils.io.ByteReadChannel
-import io.ktor.utils.io.charsets.Charset
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -175,27 +169,7 @@ fun migrateDB(ds: DataSource, type: DbMigrationType) {
 
 fun Application.beatmapsio() {
     install(ContentNegotiation) {
-        val kotlinx = KotlinxSerializationConverter(json)
-        val jsConv = JacksonConverter(jackson)
-
-        register(
-            ContentType.Application.Json,
-            object : ContentConverter {
-                override suspend fun deserialize(charset: Charset, typeInfo: TypeInfo, content: ByteReadChannel) =
-                    try {
-                        kotlinx.deserialize(charset, typeInfo, content)
-                    } catch (e: Exception) {
-                        null
-                    } ?: jsConv.deserialize(charset, typeInfo, content)
-
-                override suspend fun serializeNullable(contentType: ContentType, charset: Charset, typeInfo: TypeInfo, value: Any?) =
-                    try {
-                        kotlinx.serializeNullable(contentType, charset, typeInfo, value)
-                    } catch (e: Exception) {
-                        null
-                    } ?: jsConv.serializeNullable(contentType, charset, typeInfo, value)
-            }
-        )
+        json(json)
     }
 
     install(SwaggerSupport) {

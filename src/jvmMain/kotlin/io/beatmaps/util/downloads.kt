@@ -53,7 +53,7 @@ fun PipelineContext<*, ApplicationCall>.cdnPrefix(): String {
 
 fun Application.downloadsThread() {
     rabbitOptional {
-        consumeAck("bm.downloadCount", DownloadInfo::class) { _, dl ->
+        consumeAck("bm.downloadCount", DownloadInfo.serializer(), 50) { _, dl ->
             try {
                 transaction {
                     if (dl.type == DownloadType.HASH) {

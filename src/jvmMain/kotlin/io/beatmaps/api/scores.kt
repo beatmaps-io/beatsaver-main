@@ -2,6 +2,7 @@ package io.beatmaps.api
 
 import io.beatmaps.api.scores.BeatLeaderScores
 import io.beatmaps.api.scores.ScoreSaberScores
+import io.beatmaps.api.scores.scoresClient
 import io.beatmaps.common.Config
 import io.beatmaps.common.SSGameMode
 import io.beatmaps.common.api.EDifficulty
@@ -29,8 +30,8 @@ class ScoresApi {
 
 fun Route.scoresRoute() {
     val lookup = mapOf(
-        LeaderboardType.ScoreSaber to ScoreSaberScores(),
-        LeaderboardType.BeatLeader to BeatLeaderScores()
+        LeaderboardType.ScoreSaber to ScoreSaberScores(scoresClient),
+        LeaderboardType.BeatLeader to BeatLeaderScores(scoresClient)
     )
 
     options<ScoresApi.Leaderboard> {

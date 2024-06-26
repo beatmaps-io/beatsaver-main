@@ -11,6 +11,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.util.pipeline.PipelineContext
+import kotlinx.serialization.builtins.serializer
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.litote.kmongo.div
@@ -32,7 +33,7 @@ fun PipelineContext<*, ApplicationCall>.updateAlertCount(userId: Int) = updateAl
 
 fun Application.alertsThread() {
     rabbitOptional {
-        consumeAck("bm.alertCount", Int::class) { _, userId ->
+        consumeAck("bm.alertCount", Int.serializer()) { _, userId ->
             val alertCount = transaction {
                 alertCount(userId)
             }

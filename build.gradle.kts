@@ -121,15 +121,13 @@ kotlin {
 
                 // Database drivers
                 implementation("org.postgresql:postgresql:42.5.0")
-                implementation("pl.jutupe:ktor-rabbitmq:0.4.5")
+                implementation("pl.jutupe:ktor-rabbitmq:0.5.19")
                 implementation("com.rabbitmq:amqp-client:5.9.0")
                 implementation("org.litote.kmongo:kmongo-serialization:4.9.0")
 
                 // Serialization
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
                 implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
-                implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
-                implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.6.1")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
 
                 // Multimedia
@@ -158,6 +156,8 @@ kotlin {
                 implementation(kotlin("test-junit"))
 
                 implementation("io.ktor:ktor-server-test-host:$ktorVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
+                implementation("io.ktor:ktor-client-mock:$ktorVersion")
                 implementation("com.microsoft.playwright:playwright:1.39.0")
                 implementation("com.appmattus.fixture:fixture:1.2.0")
                 implementation("net.lingala.zip4j:zip4j:2.11.6-SNAPSHOT")
