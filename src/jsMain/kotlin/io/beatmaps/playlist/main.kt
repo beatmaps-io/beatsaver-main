@@ -5,6 +5,7 @@ import io.beatmaps.History
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.search.BooleanFilterInfo
 import io.beatmaps.shared.search.FilterCategory
 import io.beatmaps.shared.search.FilterInfo
 import io.beatmaps.shared.search.SearchParamGenerator
@@ -20,9 +21,9 @@ import react.useEffect
 import react.useEffectOnce
 import react.useState
 
-val playlistFilters = listOf<FilterInfo<PlaylistSearchParams>>(
-    FilterInfo("curated", "Curated", FilterCategory.GENERAL) { it.curated == true },
-    FilterInfo("verified", "Verified Mapper", FilterCategory.GENERAL) { it.verified == true }
+val playlistFilters = listOf<FilterInfo<PlaylistSearchParams, *>>(
+    BooleanFilterInfo("curated", "Curated", FilterCategory.GENERAL) { it.curated == true },
+    BooleanFilterInfo("verified", "Verified Mapper", FilterCategory.GENERAL) { it.verified == true }
 )
 
 val playlistFeed = fc<Props> {

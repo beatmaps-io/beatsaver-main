@@ -5,6 +5,7 @@ import io.beatmaps.api.PlaylistFull
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.api.MapAttr
+import io.beatmaps.common.api.RankedFilter
 import io.beatmaps.common.asQuery
 import io.beatmaps.common.fixed
 import io.beatmaps.common.formatTime
@@ -37,7 +38,7 @@ val stats = listOf(
     },
 
     StatInfo("fa-award", { "Curated" }, { it.searchParams.curated == true }),
-    StatInfo("fa-star", { "Ranked" }, { it.searchParams.ranked == true }),
+    StatInfo("fa-star", { "Ranked" }, { it.searchParams.ranked != RankedFilter.All }),
     StatInfo("fa-certificate", { "Verified" }, { it.searchParams.verified == true }),
     StatInfo("fa-robot", { "AI Included" }, { it.searchParams.automapper == true }),
 

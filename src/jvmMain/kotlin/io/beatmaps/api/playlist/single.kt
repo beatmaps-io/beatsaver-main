@@ -16,6 +16,7 @@ import io.beatmaps.api.PlaylistSong
 import io.beatmaps.api.from
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
+import io.beatmaps.api.of
 import io.beatmaps.api.parseSearchQuery
 import io.beatmaps.common.Folders
 import io.beatmaps.common.SearchOrder
@@ -23,6 +24,7 @@ import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
+import io.beatmaps.common.api.RankedFilter
 import io.beatmaps.common.applyToQuery
 import io.beatmaps.common.asQuery
 import io.beatmaps.common.cleanString
@@ -60,9 +62,11 @@ import io.ktor.server.routing.Route
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.sql.EqOp
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.intLiteral
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
@@ -127,7 +131,13 @@ fun Route.playlistSingle() {
                                     .notNull(searchInfo.userSubQuery) { o -> Beatmap.uploader inSubQuery o }
                                     .notNull(params.chroma) { o -> Beatmap.chroma eq o }
                                     .notNull(params.noodle) { o -> Beatmap.noodle eq o }
-                                    .notNull(params.ranked) { o -> Beatmap.ranked eq o }
+                                    .notNull(params.ranked) { o ->
+                                        Op.of(o == RankedFilter.All).run {
+                                            if (o.blRanked) this or Beatmap.blRanked else this
+                                        }.run {
+                                            if (o.ssRanked) this or Beatmap.ranked else this
+                                        }
+                                    }
                                     .notNull(params.curated) { o -> with(Beatmap.curatedAt) { if (o) isNotNull() else isNull() } }
                                     .notNull(params.verified) { o -> User.verifiedMapper eq o }
                                     .notNull(params.fullSpread) { o -> Beatmap.fullSpread eq o }
