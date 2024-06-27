@@ -4,6 +4,7 @@ import external.Moment
 import io.beatmaps.History
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SearchParamsPlaylist
+import io.beatmaps.common.api.RankedFilter
 import io.beatmaps.common.json
 import io.beatmaps.index.SearchParams
 import kotlinx.datetime.Instant
@@ -42,7 +43,7 @@ fun SearchParams?.toPlaylistConfig() = SearchParamsPlaylist(
     this?.from?.toInstant(),
     this?.to?.toInstant(),
     this?.noodle,
-    this?.ranked,
+    this?.ranked ?: RankedFilter.All,
     this?.curated,
     this?.verified,
     this?.fullSpread,

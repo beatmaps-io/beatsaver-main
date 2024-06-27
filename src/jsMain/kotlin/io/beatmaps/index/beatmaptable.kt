@@ -11,6 +11,7 @@ import io.beatmaps.api.SearchResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
+import io.beatmaps.common.api.RankedFilter
 import io.beatmaps.common.toQuery
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
@@ -52,7 +53,7 @@ data class SearchParams(
     override val from: String?,
     override val to: String?,
     val noodle: Boolean?,
-    val ranked: Boolean?,
+    val ranked: RankedFilter?,
     val curated: Boolean?,
     val verified: Boolean?,
     val followed: Boolean?,

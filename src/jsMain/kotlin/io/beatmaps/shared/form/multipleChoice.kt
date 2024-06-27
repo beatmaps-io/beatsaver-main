@@ -25,7 +25,7 @@ class MultipleChoice<T> : RComponent<MultipleChoiceProps<T>, State>() {
     override fun RBuilder.render() {
         div("multiple-choice ${props.className ?: ""}") {
             props.choices.forEach { (text, value) ->
-                val id = text.lowercase()
+                val id = "${props.name}:${text.lowercase()}"
 
                 input(InputType.radio, classes = "form-check-input") {
                     attrs.id = id

@@ -11,6 +11,7 @@ import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SearchParamsPlaylist
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.SortOrderTarget
+import io.beatmaps.common.api.RankedFilter
 import io.beatmaps.maps.collaboratorCard
 import io.beatmaps.maps.userSearch
 import io.beatmaps.shared.form.multipleChoice
@@ -49,7 +50,7 @@ external interface PSEProps : Props {
 
 val mapCounts = listOf(10, 20, 50, 100, 200, 500)
 
-interface PlaylistSearchFilter<T> {
+interface PlaylistSearchFilter<out T> {
     val id: String
 }
 
@@ -65,6 +66,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
     val (maxNps, setMaxNps) = useState(props.config.searchParams.maxNps ?: 16f)
     val (startDate, setStartDate) = useState(props.config.searchParams.from?.let { Moment(it.toString()) })
     val (endDate, setEndDate) = useState(props.config.searchParams.to?.let { Moment(it.toString()) })
+    val (ranked, setRanked) = useState(props.config.searchParams.ranked)
     val (dateFocused, setDateFocused) = useState<String?>(null)
     val (order, setOrder) = useState(props.config.searchParams.sortOrder)
     val (mapCount, setMapCount) = useState(props.config.mapCount)
@@ -85,7 +87,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                 automapper,
                 setAutomapper
             ),
-            PlaylistSearchBooleanFilter("ranked", "Ranked") { it.ranked },
+            PlaylistSearchMultipleChoiceFilter("ranked", RankedFilter.entries.associateBy { it.name }, ranked, setRanked),
             PlaylistSearchBooleanFilter("curated", "Curated") { it.curated },
             PlaylistSearchBooleanFilter("verified", "Verified Mapper") { it.verified },
             PlaylistSearchBooleanFilter("fullspread", "Full Spread") { it.fullSpread }
@@ -123,7 +125,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                     startDate?.let { Instant.parse(it.toISOString()) },
                     endDate?.let { Instant.parse(it.toISOString()) },
                     fromFilter("noodle"),
-                    fromFilter("ranked"),
+                    ranked,
                     fromFilter("curated"),
                     fromFilter("verified"),
                     fromFilter("fullspread"),
@@ -137,7 +139,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
         )
     }
 
-    useEffect(automapper, minNps, maxNps, startDate, endDate, order, mapCount, tags, currentMappers) {
+    useEffect(automapper, minNps, maxNps, startDate, endDate, ranked, order, mapCount, tags, currentMappers) {
         doCallback()
     }
 
@@ -154,7 +156,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
     }
 
     div("row") {
-        div("col-6") {
+        div("col-4") {
             div("mb-3") {
                 label("form-label") {
                     attrs.reactFor = "search"
@@ -262,7 +264,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                 }
             }
         }
-        div("col-2 mb-3 ps-filter") {
+        div("col-4 mb-3 ps-filter") {
             filters.forEachIndexed { idx, s ->
                 h4(if (idx > 0) "mt-4" else "") {
                     +s.first

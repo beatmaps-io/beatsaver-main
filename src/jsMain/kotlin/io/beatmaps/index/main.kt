@@ -5,6 +5,7 @@ import io.beatmaps.History
 import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
+import io.beatmaps.common.api.RankedFilter
 import io.beatmaps.common.toQuery
 import io.beatmaps.common.toTagSet
 import io.beatmaps.globalContext
@@ -55,7 +56,7 @@ val homePage = fc<Props> {
             params.get("from"),
             params.get("to"),
             params.get("noodle")?.toBoolean(),
-            params.get("ranked")?.toBoolean(),
+            RankedFilter.fromString(params.get("ranked")) ?: RankedFilter.All,
             params.get("curated")?.toBoolean(),
             params.get("verified")?.toBoolean(),
             params.get("followed")?.toBoolean(),
@@ -90,7 +91,7 @@ val homePage = fc<Props> {
             ),
             null
         ) { it.automapper },
-        BooleanFilterInfo("ranked", "Ranked", FilterCategory.GENERAL) { it.ranked == true },
+        MultipleChoiceFilterInfo("ranked", "Ranked", FilterCategory.GENERAL, RankedFilter.entries.associateBy { it.name }, RankedFilter.All) { it.ranked },
         BooleanFilterInfo("curated", "Curated", FilterCategory.GENERAL) { it.curated == true },
         BooleanFilterInfo("verified", "Verified Mapper", FilterCategory.GENERAL) { it.verified == true },
         if (userData != null) BooleanFilterInfo("followed", "From Mappers You Follow ", FilterCategory.GENERAL) { it.followed == true } else null,
@@ -158,7 +159,7 @@ val homePage = fc<Props> {
                     state.startDate?.format(dateFormat),
                     state.endDate?.format(dateFormat),
                     if (isFiltered("noodle")) true else null,
-                    if (isFiltered("ranked")) true else null,
+                    if (isFiltered("ranked")) state.filterMap?.getByKeyOrNull("ranked") as? RankedFilter else null,
                     if (isFiltered("curated")) true else null,
                     if (isFiltered("verified")) true else null,
                     if (userData != null && isFiltered("followed")) true else null,
