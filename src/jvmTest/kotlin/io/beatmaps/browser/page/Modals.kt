@@ -5,7 +5,7 @@ import com.microsoft.playwright.Page
 
 class Modals(page: Page) : PageBase(page) {
     fun addToPlaylistModal(block: AddToPlaylistModal.() -> Unit) {
-        block(AddToPlaylistModal(element(".modal-content")))
+        block(AddToPlaylistModal(element("div.modal-content").also { it.waitFor() }))
     }
 
     class AddToPlaylistModal(element: Locator) : ElementBase(element) {

@@ -194,14 +194,14 @@ fun Route.playlistCreate() {
                         query
                     }) {
                         if (data.deleted == true) {
-                            it[deletedAt] = NowExpression(deletedAt.columnType)
+                            it[deletedAt] = NowExpression(deletedAt)
                         } else {
                             it[name] = toCreate.name
                             it[description] = newDescription
                             it[type] = toCreate.type
                             it[config] = toCreate.config
                         }
-                        it[updatedAt] = NowExpression(updatedAt.columnType)
+                        it[updatedAt] = NowExpression(updatedAt)
                     } > 0 || throw UploadException("Update failed")
                 }
 

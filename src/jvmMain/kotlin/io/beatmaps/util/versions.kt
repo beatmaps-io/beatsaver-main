@@ -30,7 +30,6 @@ import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.RabbitMQInstance
 import java.lang.Integer.toHexString
 import java.math.BigDecimal
-import java.time.Instant
 
 fun <T> QueryParameter<T>.withColumnType() = NoOpConversion(this, this.sqlType)
 
@@ -55,7 +54,7 @@ fun publishVersion(mapId: Int, hash: String, alert: Boolean?, rb: RabbitMQInstan
 
             val exp2 = Expression.build {
                 case()
-                    .When(Versions.hash eq hash, NowExpression<Instant?>(Versions.lastPublishedAt.columnType))
+                    .When(Versions.hash eq hash, NowExpression(Versions.lastPublishedAt, transactionTime = false))
                     .Else(Versions.lastPublishedAt)
             }
 
@@ -90,9 +89,9 @@ fun publishVersion(mapId: Int, hash: String, alert: Boolean?, rb: RabbitMQInstan
         Beatmap.updateReturning(
             { Beatmap.id eq mapId },
             {
-                it[uploaded] = SqlExpressionBuilder.coalesce(uploaded, NowExpression<Instant?>(uploaded.columnType))
-                it[lastPublishedAt] = NowExpression(lastPublishedAt.columnType)
-                it[updatedAt] = NowExpression(updatedAt.columnType)
+                it[uploaded] = SqlExpressionBuilder.coalesce(uploaded, NowExpression(uploaded, transactionTime = false))
+                it[lastPublishedAt] = NowExpression(lastPublishedAt, transactionTime = false)
+                it[updatedAt] = NowExpression(updatedAt, transactionTime = false)
 
                 it[chroma] = stats.any { s -> s.chroma }
                 it[noodle] = stats.any { s -> s.ne }

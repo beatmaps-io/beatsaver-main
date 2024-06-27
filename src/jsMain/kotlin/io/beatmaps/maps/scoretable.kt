@@ -55,11 +55,7 @@ val scoreTable = fc<ScoreTableProps> { props ->
     val (scores, setScores) = useState(listOf<LeaderboardScore>())
 
     val myRef = useRef<HTMLElement>()
-    val scoresRef = useRef(scores)
-
-    useEffect(scores) {
-        scoresRef.current = scores
-    }
+    val scoresRef = useRef(listOf<LeaderboardScore>())
 
     fun loadNextPage() {
         if (state.current?.loading != true) {
@@ -80,7 +76,9 @@ val scoreTable = fc<ScoreTableProps> { props ->
                         page += 1
                     }
 
-                    setScores((scoresRef.current ?: listOf()).plus(newScores.scores))
+                    val newScoreList = (scoresRef.current ?: listOf()).plus(newScores.scores)
+                    scoresRef.current = newScoreList
+                    setScores(newScoreList)
                     setUid(newScores.uid)
 
                     myRef.current?.scrollTop = state.current?.scroll ?: 0.0
@@ -140,6 +138,7 @@ val scoreTable = fc<ScoreTableProps> { props ->
             page = 1
         }
 
+        scoresRef.current = listOf()
         setScores(listOf())
         setUid(null)
 
