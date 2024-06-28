@@ -243,7 +243,7 @@ val playlistPage = fc<Props> {
                                 +pl.name
                             }
                         }
-                        routeLink(pl.owner.profileLink(), className = "list-group-item d-flex justify-content-between") {
+                        routeLink(pl.owner.profileLink("playlists"), className = "list-group-item d-flex justify-content-between") {
                             +"Created by"
                             span("text-truncate ms-4") {
                                 attrs.title = pl.owner.name
