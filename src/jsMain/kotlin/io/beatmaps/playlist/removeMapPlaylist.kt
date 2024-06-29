@@ -16,14 +16,14 @@ import react.dom.div
 import react.dom.i
 import react.fc
 
-external interface RemoveMapPlaylistProps : Props {
+external interface PlaylistMapEditableProps : Props {
     var obj: MapDetail
     var audio: MutableRefObject<Audio>
     var playlistKey: Int
     var removeMap: (() -> Unit)?
 }
 
-var removeMapPlaylist = fc<RemoveMapPlaylistProps> { props ->
+var playlistMapEditable = fc<PlaylistMapEditableProps> { props ->
     fun remove() {
         Axios.post<String>(
             "${Config.apibase}/playlists/id/${props.playlistKey}/add",
@@ -33,15 +33,14 @@ var removeMapPlaylist = fc<RemoveMapPlaylistProps> { props ->
         props.removeMap?.invoke()
     }
 
-    val classes = "del-beatmap"
-
-    div(classes) {
+    div("playlist-map") {
+        i("fas fa-grip-lines-vertical") { }
         beatmapInfo {
             obj = props.obj
             version = props.obj.publishedVersion()
             this.audio = props.audio
         }
-        div("del-beatmap-btn-cell") {
+        div("delete") {
             a("#", classes = "btn btn-danger") {
                 attrs.onClickFunction = {
                     it.preventDefault()

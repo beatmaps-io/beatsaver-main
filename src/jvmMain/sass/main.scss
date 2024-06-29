@@ -247,19 +247,37 @@ table.search-results {
     }
   }
 
-  .del-beatmap {
-    display: table;
+  .playlist-map {
+    display: flex;
+    align-items: center;
     box-sizing: border-box;
+    position: relative;
 
     .beatmap {
-        display: table-cell;
-        box-sizing: border-box;
+      display: table-cell;
+      box-sizing: border-box;
     }
 
-    .del-beatmap-btn-cell {
-        display: table-cell;
-        box-sizing: border-box;
-        vertical-align: middle;
+    .fa-grip-lines-vertical, .fa-grip-vertical {
+      font-size: 1rem;
+      color: $light;
+      visibility: hidden;
+    }
+
+    &:hover .fa-grip-lines-vertical, &:hover .fa-grip-vertical {
+      visibility: visible;
+    }
+
+    .delete {
+      position: absolute;
+      top: -.125rem;
+      right: -.25rem;
+      font-size: .7rem;
+
+      .btn {
+        font-size: .7rem;
+        padding: 0 .285rem; // This gets it to be square with this particular icon
+      }
     }
   }
 

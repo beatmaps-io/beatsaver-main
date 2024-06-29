@@ -243,7 +243,7 @@ val playlistPage = fc<Props> {
                                 +pl.name
                             }
                         }
-                        routeLink(pl.owner.profileLink(), className = "list-group-item d-flex justify-content-between") {
+                        routeLink(pl.owner.profileLink("playlists"), className = "list-group-item d-flex justify-content-between") {
                             +"Created by"
                             span("text-truncate ms-4") {
                                 attrs.title = pl.owner.name
@@ -315,7 +315,7 @@ val playlistPage = fc<Props> {
                                 draggable(it.map.id, idx) {
                                     attrs.classes = setOf("drag-beatmap")
 
-                                    removeMapPlaylist {
+                                    playlistMapEditable {
                                         attrs.obj = it.map
                                         attrs.audio = audio
                                         attrs.playlistKey = playlist.playlistId
