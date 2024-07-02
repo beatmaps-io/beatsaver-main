@@ -22,10 +22,21 @@ data class ReviewDetail(
     val createdAt: Instant,
     val updatedAt: Instant,
     val curatedAt: Instant? = null,
-    val deletedAt: Instant? = null
+    val deletedAt: Instant? = null,
+    val replies: List<ReviewReplyDetail>
 ) {
     companion object
 }
+
+@Serializable
+data class ReviewReplyDetail(
+    val id: Int,
+    val user: UserDetail,
+    val text: String,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val deletedAt: Instant? = null
+)
 
 @Serializable data class ReviewsResponse(val docs: List<ReviewDetail>)
 
@@ -34,3 +45,5 @@ data class ReviewDetail(
 @Serializable data class CurateReview(val id: Int, val curated: Boolean = false)
 
 @Serializable data class DeleteReview(val reason: String)
+
+@Serializable data class ReplyRequest(val text: String)
