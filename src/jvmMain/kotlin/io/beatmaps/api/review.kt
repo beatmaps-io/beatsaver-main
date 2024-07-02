@@ -13,6 +13,8 @@ import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Review
 import io.beatmaps.common.dbo.ReviewDao
+import io.beatmaps.common.dbo.ReviewReply
+import io.beatmaps.common.dbo.ReviewReplyDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.complexToBeatmap
@@ -40,29 +42,44 @@ import io.ktor.server.routing.Route
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import kotlinx.datetime.toKotlinInstant
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.ColumnSet
 import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.Query
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.lang.Integer.toHexString
 
-fun ReviewDetail.Companion.from(other: ReviewDao, cdnPrefix: String, beatmap: Boolean, user: Boolean) =
+fun ReviewDetail.Companion.from(other: ReviewDao, cdnPrefix: String, beatmap: Boolean = true, user: Boolean = true) =
     ReviewDetail(
         other.id.value,
         if (user) UserDetail.from(other.user) else null,
         if (beatmap) MapDetail.from(other.map, cdnPrefix) else null,
         other.text,
         ReviewSentiment.fromInt(other.sentiment),
-        other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.curatedAt?.toKotlinInstant(), other.deletedAt?.toKotlinInstant()
+        other.createdAt.toKotlinInstant(), other.updatedAt.toKotlinInstant(), other.curatedAt?.toKotlinInstant(), other.deletedAt?.toKotlinInstant(),
+        other.replies.values.map { ReviewReplyDetail.from(it) }
     )
 
-fun ReviewDetail.Companion.from(row: ResultRow, cdnPrefix: String) = from(ReviewDao.wrapRow(row), cdnPrefix, row.hasValue(Beatmap.id), row.hasValue(reviewerAlias[User.id]))
+fun ReviewReplyDetail.Companion.from(other: ReviewReplyDao) =
+    ReviewReplyDetail(
+        other.id.value,
+        UserDetail.from(other.user),
+        if (other.deletedAt == null) other.text else "",
+        other.createdAt.toKotlinInstant(),
+        other.updatedAt.toKotlinInstant(),
+        other.deletedAt?.toKotlinInstant()
+    )
+
+fun ColumnSet.joinReplies() = join(ReviewReply, JoinType.LEFT, Review.id, ReviewReply.reviewId)
 
 @Location("/api/review")
 class ReviewApi {
@@ -82,16 +99,33 @@ class ReviewApi {
     data class Curate(val api: ReviewApi)
 }
 
+@Location("/api/reply")
+class ReplyApi {
+    @Location("/create/{reviewId}")
+    data class Create(val reviewId: Int, val api: ReplyApi)
+
+    @Location("/single/{replyId}")
+    data class Single(val replyId: Int, val api: ReplyApi)
+}
+
 data class ReviewUpdateInfo(val mapId: Int, val userId: Int)
 
-fun reviewToComplex(row: ResultRow, prefix: String): ReviewDetail {
-    if (row.hasValue(reviewerAlias[User.id])) UserDao.wrapRow(row, reviewerAlias)
-    if (row.hasValue(User.id)) UserDao.wrapRow(row)
-    if (row.hasValue(curatorAlias[User.id]) && row[Beatmap.curator] != null) UserDao.wrapRow(row, curatorAlias)
-    if (row.hasValue(Beatmap.id)) BeatmapDao.wrapRow(row)
+fun Query.complexToReview() = this.fold(mutableMapOf<EntityID<Int>, ReviewDao>()) { map, row ->
+    map.also {
+        it.getOrPut(row[Review.id]) {
+            if (row.hasValue(reviewerAlias[User.id])) UserDao.wrapRow(row, reviewerAlias)
+            if (row.hasValue(User.id)) UserDao.wrapRow(row)
+            if (row.hasValue(curatorAlias[User.id]) && row[Beatmap.curator] != null) UserDao.wrapRow(row, curatorAlias)
+            if (row.hasValue(Beatmap.id)) BeatmapDao.wrapRow(row)
 
-    return ReviewDetail.from(row, prefix)
-}
+            ReviewDao.wrapRow(row)
+        }.run {
+            if (row.hasValue(ReviewReply.id) && row.getOrNull(ReviewReply.id) != null) {
+                replies.putIfAbsent(row[ReviewReply.id], ReviewReplyDao.wrapRow(row))
+            }
+        }
+    }
+}.values.toList()
 
 fun Route.reviewRoute() {
     if (!ReviewConstants.COMMENTS_ENABLED) return
@@ -115,9 +149,8 @@ fun Route.reviewRoute() {
                         Review.createdAt to SortOrder.DESC
                     )
                     .limit(it.page)
-                    .map { row ->
-                        reviewToComplex(row, cdnPrefix())
-                    }
+                    .complexToReview()
+                    .map { ReviewDetail.from(it, cdnPrefix()) }
             } catch (_: NumberFormatException) {
                 null
             }
@@ -134,10 +167,11 @@ fun Route.reviewRoute() {
         val reviews = transaction {
             try {
                 Review
+                    .joinReplies()
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
                     .joinVersions(false)
                     .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
-                    .select(Review.columns + reviewerAlias.columns)
+                    .select(Review.columns + ReviewReply.columns + reviewerAlias.columns)
                     .where {
                         Review.mapId eq it.id.toInt(16) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
@@ -146,8 +180,9 @@ fun Route.reviewRoute() {
                         Review.createdAt to SortOrder.DESC
                     )
                     .limit(it.page)
+                    .complexToReview()
                     .map {
-                        reviewToComplex(it, cdnPrefix())
+                        ReviewDetail.from(it, cdnPrefix(), beatmap = false)
                     }
             } catch (_: NumberFormatException) {
                 null
@@ -165,6 +200,7 @@ fun Route.reviewRoute() {
         val reviews = transaction {
             try {
                 Review
+                    .joinReplies()
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
                     .joinVersions(false)
                     .joinUploader()
@@ -177,8 +213,9 @@ fun Route.reviewRoute() {
                         Review.createdAt, SortOrder.DESC
                     )
                     .limit(it.page)
-                    .map { row ->
-                        reviewToComplex(row, cdnPrefix())
+                    .complexToReview()
+                    .map {
+                        ReviewDetail.from(it, cdnPrefix(), user = false)
                     }
             } catch (_: NumberFormatException) {
                 null
@@ -196,16 +233,16 @@ fun Route.reviewRoute() {
         val review = transaction {
             try {
                 Review
+                    .joinReplies()
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
                     .joinVersions(false)
-                    .select(Review.columns)
+                    .select(Review.columns + ReviewReply.columns)
                     .where {
                         Review.mapId eq it.mapId.toInt(16) and (Review.userId eq it.userId) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
+                    .complexToReview()
                     .singleOrNull()
-                    ?.let { row ->
-                        reviewToComplex(row, cdnPrefix())
-                    }
+                    ?.let { ReviewDetail.from(it, cdnPrefix()) }
             } catch (_: NumberFormatException) {
                 null
             }
@@ -326,28 +363,32 @@ fun Route.reviewRoute() {
             transaction {
                 val result = Review.updateReturning({ Review.mapId eq mapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }, { r ->
                     r[deletedAt] = NowExpression(deletedAt)
-                }, Review.text, Review.sentiment)
+                }, Review.id, Review.text, Review.sentiment)
 
-                if (!result.isNullOrEmpty() && single.userId != sess.userId) {
-                    val info = result.first().let {
-                        it[Review.text] to it[Review.sentiment]
+                if (!result.isNullOrEmpty()) {
+                    ReviewReply.deleteWhere { reviewId inList result.map { it[Review.id] } }
+
+                    if (single.userId != sess.userId) {
+                        val info = result.first().let {
+                            it[Review.text] to it[Review.sentiment]
+                        }
+
+                        ModLog.insert(
+                            sess.userId,
+                            mapId,
+                            ReviewDeleteData(deleteReview.reason, info.first, info.second),
+                            single.userId
+                        )
+
+                        Alert.insert(
+                            "Your review was deleted",
+                            "A moderator deleted your review on #${toHexString(mapId)}.\n" +
+                                "Reason: *\"${deleteReview.reason}\"*",
+                            EAlertType.ReviewDeletion,
+                            single.userId
+                        )
+                        updateAlertCount(single.userId)
                     }
-
-                    ModLog.insert(
-                        sess.userId,
-                        mapId,
-                        ReviewDeleteData(deleteReview.reason, info.first, info.second),
-                        single.userId
-                    )
-
-                    Alert.insert(
-                        "Your review was deleted",
-                        "A moderator deleted your review on #${toHexString(mapId)}.\n" +
-                            "Reason: *\"${deleteReview.reason}\"*",
-                        EAlertType.ReviewDeletion,
-                        single.userId
-                    )
-                    updateAlertCount(single.userId)
                 }
             }
 
@@ -384,6 +425,71 @@ fun Route.reviewRoute() {
 
                 call.respond(HttpStatusCode.OK)
             }
+        }
+    }
+
+    post<ReplyApi.Create> { req ->
+        requireAuthorization { _, user ->
+            if (user.suspended) call.respond(ActionResponse(false, listOf("Suspended account")))
+
+            val reply = call.receive<ReplyRequest>()
+
+            val created = newSuspendedTransaction {
+                val allowedUsers = Review
+                    .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
+                    .select(Review.userId, Beatmap.uploader)
+                    .where { Review.id eq req.reviewId }
+                    .firstOrNull()
+                    ?.let {
+                        listOf(it[Review.userId].value, it[Beatmap.uploader].value)
+                    } ?: listOf()
+
+                if (user.userId !in allowedUsers) {
+                    call.respond(ActionResponse(false, listOf("Unauthorised")))
+                    return@newSuspendedTransaction false
+                }
+
+                ReviewReply.insert {
+                    it[userId] = user.userId
+                    it[reviewId] = req.reviewId
+                    it[text] = reply.text
+                    it[createdAt] = NowExpression(createdAt)
+                    it[updatedAt] = NowExpression(updatedAt)
+                }.insertedCount > 0
+            }
+
+            if (created) {
+                call.respond(ActionResponse(true, listOf()))
+            }
+        }
+    }
+
+    put<ReplyApi.Single> {
+        requireAuthorization { _, user ->
+            val update = call.receive<ReplyRequest>()
+
+            val updated = transaction {
+                ReviewReply.update({ ReviewReply.userId eq user.userId }) {
+                    it[text] = update.text
+                    it[updatedAt] = NowExpression(updatedAt)
+                } > 0
+            }
+
+            call.respond(ActionResponse(updated, if (!updated) listOf("Failed to update") else listOf()))
+        }
+    }
+
+    delete<ReplyApi.Single> { req ->
+        requireAuthorization { _, user ->
+            val deleted = transaction {
+                ReviewReply.update({
+                    ReviewReply.id eq req.replyId and (ReviewReply.userId eq user.userId)
+                }) {
+                    it[deletedAt] = NowExpression(deletedAt)
+                } > 0
+            }
+
+            call.respond(if (deleted) HttpStatusCode.OK else HttpStatusCode.NotModified)
         }
     }
 }
