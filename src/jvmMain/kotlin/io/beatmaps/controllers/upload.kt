@@ -12,7 +12,10 @@ import io.beatmaps.common.MapTag
 import io.beatmaps.common.OptionalProperty
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.beatsaber.BaseMapInfo
 import io.beatmaps.common.beatsaber.MapInfo
+import io.beatmaps.common.beatsaber.MapInfoV4
+import io.beatmaps.common.beatsaber.toJson
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
@@ -233,12 +236,13 @@ fun Route.uploadController() {
                     setInt: (column: Column<Int>, value: Int) -> Unit,
                     setString: (column: Column<String>, value: String) -> Unit
                 ) {
-                    setFloat(Beatmap.bpm, extractedInfo.mapInfo._beatsPerMinute.or(0f))
+                    setFloat(Beatmap.bpm, extractedInfo.mapInfo.getBpm() ?: 0f)
                     setInt(Beatmap.duration, extractedInfo.duration.roundToInt())
-                    setString(Beatmap.songName, extractedInfo.mapInfo._songName.or(""))
-                    setString(Beatmap.songSubName, extractedInfo.mapInfo._songSubName.or(""))
-                    setString(Beatmap.levelAuthorName, extractedInfo.mapInfo._levelAuthorName.or(""))
-                    setString(Beatmap.songAuthorName, extractedInfo.mapInfo._songAuthorName.or(""))
+                    setString(Beatmap.songName, extractedInfo.mapInfo.getSongName() ?: "")
+                    setString(Beatmap.songSubName, extractedInfo.mapInfo.getSubName() ?: "")
+                    // TODO: Make field array??
+                    setString(Beatmap.levelAuthorName, extractedInfo.mapInfo.getLevelAuthorNames().firstOrNull() ?: "")
+                    setString(Beatmap.songAuthorName, extractedInfo.mapInfo.getSongAuthorName() ?: "")
                 }
 
                 val newMap = try {
@@ -333,13 +337,14 @@ fun Route.uploadController() {
                         cLoop.value.forEach { dLoop ->
                             val diffInfo = dLoop.key
                             val bsdiff = dLoop.value
+                            val bslights = extractedInfo.lights[cLoop.key]?.get(dLoop.key)
 
                             Difficulty.insertAndGetId {
                                 it[mapId] = newMap
                                 it[versionId] = newVersion
 
-                                sharedInsert(it, diffInfo, bsdiff, extractedInfo.mapInfo, sli)
-                                it[characteristic] = cLoop.key.enumValue()
+                                sharedInsert(it, diffInfo, bsdiff, bslights, extractedInfo.mapInfo, sli)
+                                it[characteristic] = cLoop.key
                                 it[difficulty] = dLoop.key.enumValue()
                             }
                         }
@@ -412,24 +417,16 @@ fun ZipHelperWithAudio.validateFiles(dos: DigestOutputStream) =
         }
     }
 
-fun findAllowedFiles(info: MapInfo) = (
-    listOfNotNull("info.dat", "bpminfo.dat", "cinema-video.json", info._coverImageFilename.orNull(), info._songFilename.orNull()) +
-        (info._customData.orNull()?._contributors?.orNull()?.mapNotNull { it.orNull()?._iconPath?.orNull() } ?: listOf()) +
-        info._difficultyBeatmapSets.or(listOf()).mapNotNull { set ->
-            set.orNull()?.let { setNotNull ->
-                listOfNotNull(setNotNull._customData.orNull()?._characteristicIconImageFilename?.orNull()).plus(
-                    setNotNull._difficultyBeatmaps.or(listOf()).mapNotNull { it.orNull()?._beatmapFilename?.orNull() }
-                )
-            }
-        }.flatten()
-    ).map { it.lowercase() }
+fun findAllowedFiles(info: BaseMapInfo) =
+    (listOfNotNull("info.dat", "bpminfo.dat", "cinema-video.json") + info.getExtraFiles())
+        .map { it.lowercase() }
 
 fun ZipHelper.oggToEgg(info: ExtractedInfo) =
-    info.mapInfo._songFilename.orNull()?.let { filename ->
+    info.mapInfo.getSongFilename()?.let { filename ->
         fromInfo(filename.lowercase())?.let { path ->
             if (filename.endsWith(".ogg")) {
                 val newFilename = filename.replace(Regex("\\.ogg$"), ".egg")
-                info.mapInfo = info.mapInfo.copy(_songFilename = OptionalProperty.Present(newFilename))
+                info.mapInfo = info.mapInfo.setSongFilename(newFilename)
                 moveFile(path, "/$newFilename")
                 files.minus((infoPrefix() + filename).lowercase()).plus((infoPrefix() + newFilename).lowercase()) to
                     filesOriginalCase.minus(infoPrefix() + filename)
