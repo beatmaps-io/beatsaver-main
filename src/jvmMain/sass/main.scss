@@ -196,15 +196,15 @@ table.search-results {
         background-color: $success;
         flex-grow: 1;
       }
+    }
 
-      .options {
-        display: flex;
-        flex-shrink: 0;
-        background-color: $dark;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.25rem;
-        gap: 1rem;
-      }
+    .options {
+      display: flex;
+      flex-shrink: 0;
+      background-color: $dark;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      gap: 1rem;
     }
 
     .replies {
@@ -216,13 +216,57 @@ table.search-results {
         margin-bottom: .5rem;
         padding-block: 0.25rem;
 
-        span {
+        .options {
+          transition: opacity 0.1s;
+          opacity: 0;
+        }
+
+        &:hover {
+          .options {
+            opacity: revert;
+          }
+        }
+
+        .reply-header {
+          display: flex;
+          justify-content: space-between;
+        }
+
+        .content {
           margin-left: 1.75rem;
         }
 
         .deleted {
           color: $light;
           font-style: italic;
+        }
+      }
+    }
+
+    .reply-input {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-end;
+
+      div:has(textarea) {
+        flex-grow: 1;
+      }
+
+      textarea {
+        transition: color 0.2s, background-color 0.2s;
+
+        + span {
+          transition: opacity 0.2s;
+        }
+
+        &:not(:focus) {
+          color: white;
+          background-color: transparent;
+          border-color: $secondary;
+
+          + span {
+            opacity: 0;
+          }
         }
       }
     }
