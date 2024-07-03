@@ -6,6 +6,8 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.UserDetail
 import kotlinx.datetime.Instant
 import react.Props
+import react.dom.div
+import react.dom.img
 import react.fc
 
 external interface ReviewerProps : Props {
@@ -15,20 +17,22 @@ external interface ReviewerProps : Props {
 }
 
 val reviewer = fc<ReviewerProps> { props ->
-    props.reviewer?.let { owner ->
-        routeLink(owner.profileLink("reviews")) {
-            +owner.name
+    div("owner") {
+        props.reviewer?.let { owner ->
+            img(src = owner.avatar) { }
+            routeLink(owner.profileLink("reviews")) {
+                +owner.name
+            }
         }
-        +" - "
-    }
-    props.map?.let { map ->
-        +" on "
-        routeLink("/maps/${map.id}") {
-            +map.name
+        props.map?.let { map ->
+            +" on "
+            routeLink("/maps/${map.id}") {
+                +map.name
+            }
         }
-        +" - "
-    }
-    TimeAgo.default {
-        attrs.date = props.time.toString()
+        + " - "
+        TimeAgo.default {
+            attrs.date = props.time.toString()
+        }
     }
 }
