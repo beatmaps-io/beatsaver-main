@@ -1,5 +1,7 @@
 package io.beatmaps.api
 
+import io.beatmaps.common.ReplyDeleteData
+import io.beatmaps.common.ReplyModerationData
 import io.beatmaps.common.ReviewDeleteData
 import io.beatmaps.common.ReviewModerationData
 import io.beatmaps.common.api.EAlertType
@@ -430,7 +432,7 @@ fun Route.reviewRoute() {
 
     post<ReplyApi.Create> { req ->
         requireAuthorization { _, user ->
-            if (user.suspended) call.respond(ActionResponse(false, listOf("Suspended account")))
+            if (user.suspended) return@requireAuthorization call.respond(ActionResponse(false, listOf("Suspended account")))
 
             val reply = call.receive<ReplyRequest>()
 
@@ -468,40 +470,104 @@ fun Route.reviewRoute() {
         requireAuthorization { _, user ->
             val update = call.receive<ReplyRequest>()
 
-            val updated = newSuspendedTransaction {
+            val success = newSuspendedTransaction {
                 val ownerId = ReviewReply
                     .select(ReviewReply.userId)
                     .where { ReviewReply.id eq req.replyId }
-                    .firstOrNull()?.let { it[ReviewReply.userId].value }
+                    .single().let { it[ReviewReply.userId].value }
 
                 if (ownerId != user.userId && !user.isCurator()) {
                     call.respond(ActionResponse(false, listOf("Unauthorised")))
                     return@newSuspendedTransaction false
                 }
 
-                ReviewReply.update({ ReviewReply.id eq req.replyId }) {
+                val oldData = if (ownerId != user.userId) {
+                    ReviewReplyDao.wrapRow(ReviewReply.selectAll().where { ReviewReply.id eq req.replyId and ReviewReply.deletedAt.isNull() }.single())
+                } else {
+                    null
+                }
+
+                val updated = ReviewReply.update({ ReviewReply.id eq req.replyId }) {
                     it[text] = update.text
                     it[updatedAt] = NowExpression(updatedAt)
                 } > 0
+
+                if (ownerId != user.userId && oldData != null) {
+                    val (mapId, userId) = ReviewReply
+                        .join(Review, JoinType.INNER, ReviewReply.reviewId, Review.id)
+                        .select(Review.mapId, ReviewReply.userId)
+                        .where { ReviewReply.id eq req.replyId }
+                        .single().let { it[Review.mapId].value to it[ReviewReply.userId].value  }
+
+                    ModLog.insert(
+                        user.userId,
+                        mapId,
+                        ReplyModerationData(oldData.text, update.text),
+                        userId
+                    )
+                }
+
+                updated
             }
 
-            if (updated) {
+            if (success) {
                 call.respond(ActionResponse(true, listOf()))
             }
         }
     }
 
     delete<ReplyApi.Single> { req ->
+        val delete = call.receive<DeleteReview>()
+
         requireAuthorization { _, user ->
-            val deleted = transaction {
-                ReviewReply.update({
-                    ReviewReply.id eq req.replyId and (ReviewReply.userId eq user.userId)
-                }) {
-                    it[deletedAt] = NowExpression(deletedAt)
-                } > 0
+            val success = newSuspendedTransaction {
+                val ownerId = ReviewReply
+                    .select(ReviewReply.userId)
+                    .where { ReviewReply.id eq req.replyId }
+                    .single().let { it[ReviewReply.userId].value }
+
+                if (ownerId != user.userId && !user.isCurator()) {
+                    call.respond(HttpStatusCode.Unauthorized)
+                    return@newSuspendedTransaction false
+                }
+
+                val deleted = ReviewReply
+                    .updateReturning({
+                        ReviewReply.id eq req.replyId
+                    }, {
+                        it[deletedAt] = NowExpression(deletedAt)
+                    }, *ReviewReply.columns.toTypedArray())?.firstOrNull()
+
+                deleted?.let { d ->
+                    if (ownerId != user.userId) {
+                        val mapId = Review
+                            .select(Review.mapId)
+                            .where { Review.id eq d[ReviewReply.reviewId] }
+                            .single().let { it[Review.mapId].value }
+
+                        ModLog.insert(
+                            user.userId,
+                            mapId,
+                            ReplyDeleteData(delete.reason, d[ReviewReply.text]),
+                            ownerId
+                        )
+
+                        Alert.insert(
+                            "Your reply was deleted",
+                            "A moderator deleted your reply on #${toHexString(mapId)}.\n" +
+                                "Reason: *\"${delete.reason}\"*",
+                            EAlertType.ReviewDeletion,
+                            d[ReviewReply.userId].value
+                        )
+                    }
+                }
+
+                deleted != null
             }
 
-            call.respond(if (deleted) HttpStatusCode.OK else HttpStatusCode.NotModified)
+            if (success) {
+                call.respond(HttpStatusCode.OK)
+            }
         }
     }
 }

@@ -8,6 +8,8 @@ import io.beatmaps.common.DeletedData
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.InfoEditData
+import io.beatmaps.common.ReplyDeleteData
+import io.beatmaps.common.ReplyModerationData
 import io.beatmaps.common.ReviewDeleteData
 import io.beatmaps.common.ReviewModerationData
 import io.beatmaps.common.RevokeSessionsData
@@ -234,6 +236,27 @@ val modLogEntryRenderer = fc<ModLogEntryProps> {
                                 attrs.description = "sentiment"
                                 attrs.old = ReviewSentiment.fromInt(it.action.oldSentiment).name
                                 attrs.new = ReviewSentiment.fromInt(it.action.newSentiment).name
+                            }
+                        }
+
+                        is ReplyDeleteData -> {
+                            p("card-text") {
+                                +"Deleted reply"
+                            }
+                            p("card-text") {
+                                +"Reason: ${it.action.reason}"
+                                it.action.text?.let { t ->
+                                    br {}
+                                    +"Text: $t"
+                                }
+                            }
+                        }
+
+                        is ReplyModerationData -> {
+                            diffText {
+                                attrs.description = "text"
+                                attrs.old = it.action.oldText
+                                attrs.new = it.action.newText
                             }
                         }
 
