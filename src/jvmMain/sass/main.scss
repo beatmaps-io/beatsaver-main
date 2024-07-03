@@ -201,10 +201,22 @@ table.search-results {
     .options {
       display: flex;
       flex-shrink: 0;
+      align-items: center;
       background-color: $dark;
-      padding: 0.25rem 0.5rem;
+      padding: 0 0.25rem;
       border-radius: 0.25rem;
-      gap: 1rem;
+
+      .form-switch > input {
+        cursor: pointer;
+      }
+
+      a {
+        padding: 0.25rem 0.5rem;
+      }
+
+      .form-switch {
+        padding: 0.25rem 0.5rem 0.25rem 2.5rem;
+      }
     }
 
     .replies {
@@ -213,8 +225,7 @@ table.search-results {
       border-left: solid 2px $secondary;
 
       .reply {
-        margin-bottom: .5rem;
-        padding-block: 0.25rem;
+        padding-block: 0.25rem 0.75rem;
 
         .options {
           transition: opacity 0.1s;
