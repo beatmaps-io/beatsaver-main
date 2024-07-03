@@ -30,7 +30,7 @@ val reviewer = fc<ReviewerProps> { props ->
                 +map.name
             }
         }
-        + " - "
+        +" - "
         TimeAgo.default {
             attrs.date = props.time.toString()
         }

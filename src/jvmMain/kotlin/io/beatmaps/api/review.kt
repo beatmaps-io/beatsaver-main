@@ -497,7 +497,7 @@ fun Route.reviewRoute() {
                         .join(Review, JoinType.INNER, ReviewReply.reviewId, Review.id)
                         .select(Review.mapId, ReviewReply.userId)
                         .where { ReviewReply.id eq req.replyId }
-                        .single().let { it[Review.mapId].value to it[ReviewReply.userId].value  }
+                        .single().let { it[Review.mapId].value to it[ReviewReply.userId].value }
 
                     ModLog.insert(
                         user.userId,

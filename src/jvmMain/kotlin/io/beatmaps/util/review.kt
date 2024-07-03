@@ -13,7 +13,6 @@ import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Review
 import io.beatmaps.common.dbo.User
-import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
@@ -138,9 +137,11 @@ fun Application.reviewListeners() {
                                         url = review.map?.let {
                                             "${Config.siteBase()}/maps/${it.id}"
                                         },
-                                        thumbnail = DiscordEmbed.HasUrl(review.map?.mainVersion()?.let {
-                                            "${Config.cdnBase("", true)}/${it.hash}.jpg"
-                                        }),
+                                        thumbnail = DiscordEmbed.HasUrl(
+                                            review.map?.mainVersion()?.let {
+                                                "${Config.cdnBase("", true)}/${it.hash}.jpg"
+                                            }
+                                        ),
                                         fields = listOf(
                                             DiscordEmbed.Field(
                                                 "Review",
