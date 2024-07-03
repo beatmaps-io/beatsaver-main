@@ -464,18 +464,30 @@ fun Route.reviewRoute() {
         }
     }
 
-    put<ReplyApi.Single> {
+    put<ReplyApi.Single> { req ->
         requireAuthorization { _, user ->
             val update = call.receive<ReplyRequest>()
 
-            val updated = transaction {
-                ReviewReply.update({ ReviewReply.userId eq user.userId }) {
+            val updated = newSuspendedTransaction {
+                val ownerId = ReviewReply
+                    .select(ReviewReply.userId)
+                    .where { ReviewReply.id eq req.replyId }
+                    .firstOrNull()?.let { it[ReviewReply.userId].value }
+
+                if (ownerId != user.userId && !user.isCurator()) {
+                    call.respond(ActionResponse(false, listOf("Unauthorised")))
+                    return@newSuspendedTransaction false
+                }
+
+                ReviewReply.update({ ReviewReply.id eq req.replyId }) {
                     it[text] = update.text
                     it[updatedAt] = NowExpression(updatedAt)
                 } > 0
             }
 
-            call.respond(ActionResponse(updated, if (!updated) listOf("Failed to update") else listOf()))
+            if (updated) {
+                call.respond(ActionResponse(true, listOf()))
+            }
         }
     }
 
