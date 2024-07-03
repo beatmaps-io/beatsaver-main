@@ -2,15 +2,19 @@ package io.beatmaps.shared.review
 
 import external.Axios
 import external.axiosDelete
+import external.axiosGet
 import external.generateConfig
 import external.reactFor
 import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.CurateReview
 import io.beatmaps.api.DeleteReview
+import io.beatmaps.api.MapDetail
 import io.beatmaps.api.PutReview
+import io.beatmaps.api.ReplyRequest
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
+import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
@@ -45,7 +49,7 @@ import react.setState
 
 external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
     var userId: Int
-    var mapId: String
+    var map: MapDetail?
     var modal: RefObject<ModalComponent>?
     var setExistingReview: ((Boolean) -> Unit)?
 }
@@ -54,6 +58,8 @@ external interface ReviewItemState : AutoSizeComponentState {
     var sentiment: ReviewSentiment?
     var newSentiment: ReviewSentiment?
     var text: String?
+
+    var replies: List<ReviewReplyDetail>?
 
     var editing: Boolean?
     var loading: Boolean?
@@ -78,6 +84,10 @@ val sentimentIcon = fc<SentimentIconProps> {
 class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemState>(2) {
     private val reasonRef = createRef<HTMLTextAreaElement>()
 
+    override fun componentWillReceiveProps(nextProps: ReviewItemProps) {
+        state.replies = nextProps.obj?.replies
+    }
+
     private fun curate(id: Int, curated: Boolean = true) {
         setState {
             featured = curated
@@ -92,7 +102,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
         val reason = reasonRef.current?.value ?: ""
         reasonRef.current?.value = ""
 
-        axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", DeleteReview(reason)).then({
+        axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/${props.map?.id}/${props.userId}", DeleteReview(reason)).then({
             hide()
 
             if (currentUser) props.setExistingReview?.invoke(false)
@@ -206,7 +216,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                 attrs.maxLength = ReviewConstants.MAX_LENGTH
                                 attrs.saveText = { newReview ->
                                     val newSentiment = state.newSentiment ?: sentimentLocal
-                                    Axios.put<ActionResponse>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->
+                                    Axios.put<ActionResponse>("${Config.apibase}/review/single/${props.map?.id}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->
                                         if (r.data.success) {
                                             setState {
                                                 sentiment = newSentiment
@@ -224,11 +234,29 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                 }
                             }
 
-                            if (rv.replies.any() && state.editing != true) {
+                            if (state.replies?.any() == true && state.editing != true) {
                                 div("replies") {
-                                    rv.replies.forEach {
+                                    state.replies?.forEach {
                                         reply {
                                             attrs.reply = it
+                                            attrs.modal = props.modal
+                                        }
+                                    }
+                                }
+                            }
+
+                            globalContext.Consumer { userData ->
+                                if (userData != null && (userData.userId == rv.creator?.id || userData.userId == props.map?.uploader?.id)) {
+                                    replyInput {
+                                        attrs.onSave = { reply ->
+                                            Axios.post("${Config.apibase}/reply/create/${rv.id}", ReplyRequest(reply), generateConfig<ReplyRequest, ActionResponse>())
+                                        }
+                                        attrs.onSuccess = {
+                                            axiosGet<ReviewDetail>("${Config.apibase}/review/single/${props.map?.id}/${props.userId}").then {
+                                                setState {
+                                                    replies = it.data.replies
+                                                }
+                                            }
                                         }
                                     }
                                 }

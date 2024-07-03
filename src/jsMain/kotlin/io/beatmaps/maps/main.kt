@@ -138,7 +138,7 @@ val mapPage = fc<MapPageProps> { props ->
 
                         if (showComments) {
                             reviewTable {
-                                attrs.map = it.id
+                                attrs.map = it
                                 attrs.mapUploaderId = it.uploader.id
                                 attrs.collaborators = it.collaborators
                             }
