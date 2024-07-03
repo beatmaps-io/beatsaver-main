@@ -38,6 +38,7 @@ import react.dom.i
 import react.dom.input
 import react.dom.label
 import react.dom.p
+import react.dom.span
 import react.dom.textarea
 import react.fc
 import react.setState
@@ -63,7 +64,7 @@ external interface SentimentIconProps : Props {
 }
 
 val sentimentIcon = fc<SentimentIconProps> {
-    val commonSentimentStyles = "fs-4 align-middle me-2"
+    val commonSentimentStyles = "fs-4 align-middle me-2 sentiment"
     when (it.sentiment) {
         ReviewSentiment.POSITIVE ->
             i("fas fa-heart text-success $commonSentimentStyles") {}
@@ -103,117 +104,133 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
             val featLocal = state.featured ?: (rv.curatedAt != null)
             val sentimentLocal = state.sentiment ?: rv.sentiment
             div("review-card") {
+                ref = divRef
                 style(this)
 
-                div("card" + if (featLocal) " border border-success" else "") {
-                    ref = divRef
+                div("main" + if (state.editing == true) " border-secondary" else "") {
+                    sentimentIcon {
+                        attrs.sentiment = sentimentLocal
+                    }
 
-                    div("card-header d-flex") {
-                        sentimentIcon {
-                            attrs.sentiment = sentimentLocal
-                        }
-                        div(classes = "owner") {
+                    div("content") {
+                        div("review-header") {
                             reviewer {
                                 attrs.reviewer = rv.creator
                                 attrs.map = rv.map
                                 attrs.time = rv.createdAt
                             }
-                        }
-                        globalContext.Consumer { userData ->
-                            // Show tools if commenter or curator
-                            if (userData != null && !userData.suspended && (props.userId == userData.userId || userData.curator)) {
-                                div("ms-auto flex-shrink-0") {
-                                    // Admin gets to feature and delete
-                                    if (userData.curator) {
-                                        div("form-check form-switch d-inline-block me-2") {
-                                            input(InputType.checkBox, classes = "form-check-input") {
-                                                attrs.checked = featLocal
-                                                attrs.id = "featured-${rv.id}"
-                                                attrs.onChangeFunction = {
-                                                    val current = (it.currentTarget as HTMLInputElement).checked
-                                                    curate(rv.id, current)
+
+                            if (featLocal) span("badge badge-success") { +"Featured" }
+
+                            globalContext.Consumer { userData ->
+                                // Show tools if commenter or curator
+                                if (userData != null && !userData.suspended && (props.userId == userData.userId || userData.curator)) {
+                                    div("options") {
+                                        // Admin gets to feature and delete
+                                        if (userData.curator) {
+                                            div("form-check form-switch d-inline-block") {
+                                                input(InputType.checkBox, classes = "form-check-input") {
+                                                    attrs.checked = featLocal
+                                                    attrs.id = "featured-${rv.id}"
+                                                    attrs.onChangeFunction = {
+                                                        val current = (it.currentTarget as HTMLInputElement).checked
+                                                        curate(rv.id, current)
+                                                    }
+                                                }
+                                                label("form-check-label") {
+                                                    attrs.reactFor = "featured-${rv.id}"
+                                                    +"Featured"
                                                 }
                                             }
-                                            label("form-check-label") {
-                                                attrs.reactFor = "featured-${rv.id}"
-                                                +"Featured"
-                                            }
                                         }
-                                    }
-                                    a("#") {
-                                        attrs.title = "Edit"
-                                        attrs.attributes["aria-label"] = "Edit"
-                                        attrs.onClickFunction = {
-                                            it.preventDefault()
-                                            setState {
-                                                editing = editing != true
+                                        a("#") {
+                                            attrs.title = "Edit"
+                                            attrs.attributes["aria-label"] = "Edit"
+                                            attrs.onClickFunction = {
+                                                it.preventDefault()
+                                                setState {
+                                                    editing = editing != true
+                                                }
                                             }
+                                            i("fas fa-pen text-warning") { }
                                         }
-                                        i("fas fa-pen text-warning") { }
-                                    }
-                                    a("#") {
-                                        attrs.title = "Delete"
-                                        attrs.attributes["aria-label"] = "Delete"
-                                        attrs.onClickFunction = {
-                                            it.preventDefault()
-                                            props.modal?.current?.showDialog(
-                                                ModalData(
-                                                    "Delete review",
-                                                    bodyCallback = {
-                                                        p {
-                                                            +"Are you sure? This action cannot be reversed."
-                                                        }
-                                                        if (props.userId != userData.userId) {
+                                        a("#") {
+                                            attrs.title = "Delete"
+                                            attrs.attributes["aria-label"] = "Delete"
+                                            attrs.onClickFunction = {
+                                                it.preventDefault()
+                                                props.modal?.current?.showDialog(
+                                                    ModalData(
+                                                        "Delete review",
+                                                        bodyCallback = {
                                                             p {
-                                                                +"Reason for action:"
+                                                                +"Are you sure? This action cannot be reversed."
                                                             }
-                                                            textarea(classes = "form-control") {
-                                                                ref = reasonRef
+                                                            if (props.userId != userData.userId) {
+                                                                p {
+                                                                    +"Reason for action:"
+                                                                }
+                                                                textarea(classes = "form-control") {
+                                                                    ref = reasonRef
+                                                                }
                                                             }
-                                                        }
-                                                    },
-                                                    buttons = listOf(ModalButton("YES, DELETE", "danger") { delete(userData.userId == props.userId) }, ModalButton("Cancel"))
+                                                        },
+                                                        buttons = listOf(
+                                                            ModalButton("YES, DELETE", "danger") { delete(userData.userId == props.userId) },
+                                                            ModalButton("Cancel")
+                                                        )
+                                                    )
                                                 )
-                                            )
+                                            }
+                                            i("fas fa-trash text-danger-light") { }
                                         }
-                                        i("fas fa-trash text-danger-light") { }
                                     }
                                 }
                             }
                         }
-                    }
-                    div("card-body") {
-                        if (state.editing == true) {
-                            sentimentPicker {
-                                attrs.sentiment = state.newSentiment ?: sentimentLocal
-                                attrs.updateSentiment = {
-                                    setState {
-                                        newSentiment = it
-                                    }
-                                }
-                            }
-                        }
-                        editableText {
-                            attrs.text = state.text ?: rv.text
-                            attrs.editing = state.editing
-                            attrs.renderText = true
-                            attrs.maxLength = ReviewConstants.MAX_LENGTH
-                            attrs.saveText = { newReview ->
-                                val newSentiment = state.newSentiment ?: sentimentLocal
-                                Axios.put<ActionResponse>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->
-                                    if (r.data.success) {
+                        div("review-body") {
+                            if (state.editing == true) {
+                                sentimentPicker {
+                                    attrs.sentiment = state.newSentiment ?: sentimentLocal
+                                    attrs.updateSentiment = {
                                         setState {
-                                            sentiment = newSentiment
+                                            newSentiment = it
                                         }
                                     }
-
-                                    r
                                 }
                             }
-                            attrs.stopEditing = { t ->
-                                setState {
-                                    text = t
-                                    editing = false
+                            editableText {
+                                attrs.text = state.text ?: rv.text
+                                attrs.editing = state.editing
+                                attrs.renderText = true
+                                attrs.maxLength = ReviewConstants.MAX_LENGTH
+                                attrs.saveText = { newReview ->
+                                    val newSentiment = state.newSentiment ?: sentimentLocal
+                                    Axios.put<ActionResponse>("${Config.apibase}/review/single/${props.mapId}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->
+                                        if (r.data.success) {
+                                            setState {
+                                                sentiment = newSentiment
+                                            }
+                                        }
+
+                                        r
+                                    }
+                                }
+                                attrs.stopEditing = { t ->
+                                    setState {
+                                        text = t
+                                        editing = false
+                                    }
+                                }
+                            }
+
+                            if (rv.replies.any() && state.editing != true) {
+                                div("replies") {
+                                    rv.replies.forEach {
+                                        reply {
+                                            attrs.reply = it
+                                        }
+                                    }
                                 }
                             }
                         }

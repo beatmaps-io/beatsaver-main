@@ -135,30 +135,106 @@ table.search-results {
   }
 }
 .reviews {
-  .review-card {
-    &.loading {
-      background: #262626;
-      border: 5px solid transparent;
-      border-radius: calc(0.25rem - 1px + 5px);
-      background-clip: padding-box;
-    }
-
-    .card-header .owner a {
-      padding: 0;
-      &:hover {
-        background-color: unset;
-      }
+  .owner {
+    img {
+      height: 20px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      margin-right: .5rem;
     }
 
     time {
       font-size: 10px;
     }
+  }
 
+  .review-card {
     width: 100%;
     height: 106px;
-    margin-bottom: 10px;
+    margin-bottom: 0.25rem;
     transition: height 0.2s;
     overflow: hidden;
+
+    .main {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border: 1px solid transparent;
+
+      .content {
+        flex-grow: 1;
+      }
+    }
+
+    &.loading {
+      background: #262626;
+      border: 5px solid transparent;
+      background-clip: padding-box;
+    }
+
+    .sentiment {
+      padding-top: .25rem;
+    }
+
+    .main {
+      flex-grow: 1;
+      border-radius: 0.25rem;
+    }
+
+    .review-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+
+      .owner {
+        flex-grow: 1;
+      }
+
+      .featured-bar {
+        height: 2px;
+        background-color: $success;
+        flex-grow: 1;
+      }
+
+      .options {
+        display: flex;
+        flex-shrink: 0;
+        background-color: $dark;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        gap: 1rem;
+      }
+    }
+
+    .replies {
+      margin-top: 0.5rem;
+      padding-left: 1rem;
+      border-left: solid 2px $secondary;
+
+      .reply {
+        margin-bottom: .5rem;
+        padding-block: 0.25rem;
+
+        span {
+          margin-left: 1.75rem;
+        }
+
+        .deleted {
+          color: $light;
+          font-style: italic;
+        }
+      }
+    }
+
+    &:not(:last-child, .loading)::after {
+      content: "";
+      display: block;
+      height: 2px;
+      width: 15%;
+      background-color: $secondary;
+      margin-inline: auto;
+    }
   }
 }
 .search-results, .playlist, .embed {
