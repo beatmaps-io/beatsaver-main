@@ -240,8 +240,7 @@ fun Route.uploadController() {
                     setInt(Beatmap.duration, extractedInfo.duration.roundToInt())
                     setString(Beatmap.songName, extractedInfo.mapInfo.getSongName() ?: "")
                     setString(Beatmap.songSubName, extractedInfo.mapInfo.getSubName() ?: "")
-                    // TODO: Make field array??
-                    setString(Beatmap.levelAuthorName, extractedInfo.mapInfo.getLevelAuthorNames().firstOrNull() ?: "")
+                    setString(Beatmap.levelAuthorName, extractedInfo.mapInfo.getLevelAuthorNamesString())
                     setString(Beatmap.songAuthorName, extractedInfo.mapInfo.getSongAuthorName() ?: "")
                 }
 
@@ -378,7 +377,8 @@ fun ZipHelperWithAudio.validateFiles(dos: DigestOutputStream) =
         val withoutPrefix = newFiles.map { its -> its.removePrefix(prefix.lowercase()) }.toSet()
 
         // Validate info.dat
-        p.mapInfo.validate(withoutPrefix, p, audioFile, ::fromInfo)
+        if (p.mapInfo is MapInfoV4) throw UploadException("V4 support is coming soon")
+        p.mapInfo.validate(withoutPrefix, p, audioFile, previewAudioFile, ::fromInfo)
 
         val output = p.mapInfo.toJson().toByteArray()
         dos.write(output)
