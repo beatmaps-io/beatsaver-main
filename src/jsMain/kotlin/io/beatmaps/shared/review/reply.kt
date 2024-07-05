@@ -1,6 +1,7 @@
 package io.beatmaps.shared.review
 
 import external.Axios
+import external.ReCAPTCHA
 import external.axiosDelete
 import external.generateConfig
 import io.beatmaps.Config
@@ -33,6 +34,7 @@ import react.useState
 external interface ReplyProps : Props {
     var reply: ReviewReplyDetail
     var modal: RefObject<ModalComponent>?
+    var captcha: RefObject<ReCAPTCHA>?
 }
 
 val reply = fc<ReplyProps> { props ->
@@ -115,7 +117,9 @@ val reply = fc<ReplyProps> { props ->
                     attrs.renderText = true
                     attrs.maxLength = ReviewConstants.MAX_REPLY_LENGTH
                     attrs.saveText = { newReply ->
-                        Axios.put("${Config.apibase}/reply/single/${props.reply.id}", ReplyRequest(newReply), generateConfig<ReplyRequest, ActionResponse>())
+                        props.captcha?.current?.executeAsync()?.then {
+                            Axios.put<ActionResponse>("${Config.apibase}/reply/single/${props.reply.id}", ReplyRequest(newReply, it), generateConfig<ReplyRequest, ActionResponse>())
+                        }?.then { it }
                     }
                     attrs.stopEditing = { t ->
                         setText(t)

@@ -442,32 +442,34 @@ fun Route.reviewRoute() {
 
             val reply = call.receive<ReplyRequest>()
 
-            val response = newSuspendedTransaction {
-                val allowedUsers = Review
-                    .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
-                    .select(Review.userId, Beatmap.uploader)
-                    .where { Review.id eq req.reviewId }
-                    .firstOrNull()
-                    ?.let {
-                        listOf(it[Review.userId].value, it[Beatmap.uploader].value)
-                    } ?: listOf()
+            captchaIfPresent(reply.captcha) {
+                val response = newSuspendedTransaction {
+                    val allowedUsers = Review
+                        .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
+                        .select(Review.userId, Beatmap.uploader)
+                        .where { Review.id eq req.reviewId }
+                        .firstOrNull()
+                        ?.let {
+                            listOf(it[Review.userId].value, it[Beatmap.uploader].value)
+                        } ?: listOf()
 
-                if (user.userId !in allowedUsers) {
-                    return@newSuspendedTransaction ActionResponse(false, listOf("Unauthorised"))
+                    if (user.userId !in allowedUsers) {
+                        return@newSuspendedTransaction ActionResponse(false, listOf("Unauthorised"))
+                    }
+
+                    ReviewReply.insert {
+                        it[userId] = user.userId
+                        it[reviewId] = req.reviewId
+                        it[text] = reply.text
+                        it[createdAt] = NowExpression(createdAt)
+                        it[updatedAt] = NowExpression(updatedAt)
+                    }.let {
+                        ActionResponse(it.insertedCount > 0, listOf())
+                    }
                 }
 
-                ReviewReply.insert {
-                    it[userId] = user.userId
-                    it[reviewId] = req.reviewId
-                    it[text] = reply.text
-                    it[createdAt] = NowExpression(createdAt)
-                    it[updatedAt] = NowExpression(updatedAt)
-                }.let {
-                    ActionResponse(it.insertedCount > 0, listOf())
-                }
+                call.respond(response)
             }
-
-            call.respond(response)
         }
     }
 
@@ -475,46 +477,48 @@ fun Route.reviewRoute() {
         requireAuthorization { _, user ->
             val update = call.receive<ReplyRequest>()
 
-            val response = newSuspendedTransaction {
-                val ownerId = ReviewReply
-                    .select(ReviewReply.userId)
-                    .where { ReviewReply.id eq req.replyId }
-                    .single().let { it[ReviewReply.userId].value }
-
-                if (ownerId != user.userId && !user.isCurator()) {
-                    return@newSuspendedTransaction ActionResponse(false, listOf("Unauthorised"))
-                }
-
-                val oldData = if (ownerId != user.userId) {
-                    ReviewReplyDao.wrapRow(ReviewReply.selectAll().where { ReviewReply.id eq req.replyId and ReviewReply.deletedAt.isNull() }.single())
-                } else {
-                    null
-                }
-
-                val updated = ReviewReply.update({ ReviewReply.id eq req.replyId and ReviewReply.deletedAt.isNull() }) {
-                    it[text] = update.text
-                    it[updatedAt] = NowExpression(updatedAt)
-                } > 0
-
-                if (updated && ownerId != user.userId && oldData != null) {
-                    val (mapId, userId) = ReviewReply
-                        .join(Review, JoinType.INNER, ReviewReply.reviewId, Review.id)
-                        .select(Review.mapId, ReviewReply.userId)
+            captchaIfPresent(update.captcha) {
+                val response = newSuspendedTransaction {
+                    val ownerId = ReviewReply
+                        .select(ReviewReply.userId)
                         .where { ReviewReply.id eq req.replyId }
-                        .single().let { it[Review.mapId].value to it[ReviewReply.userId].value }
+                        .single().let { it[ReviewReply.userId].value }
 
-                    ModLog.insert(
-                        user.userId,
-                        mapId,
-                        ReplyModerationData(oldData.text, update.text),
-                        userId
-                    )
+                    if (ownerId != user.userId && !user.isCurator()) {
+                        return@newSuspendedTransaction ActionResponse(false, listOf("Unauthorised"))
+                    }
+
+                    val oldData = if (ownerId != user.userId) {
+                        ReviewReplyDao.wrapRow(ReviewReply.selectAll().where { ReviewReply.id eq req.replyId and ReviewReply.deletedAt.isNull() }.single())
+                    } else {
+                        null
+                    }
+
+                    val updated = ReviewReply.update({ ReviewReply.id eq req.replyId and ReviewReply.deletedAt.isNull() }) {
+                        it[text] = update.text
+                        it[updatedAt] = NowExpression(updatedAt)
+                    } > 0
+
+                    if (updated && ownerId != user.userId && oldData != null) {
+                        val (mapId, userId) = ReviewReply
+                            .join(Review, JoinType.INNER, ReviewReply.reviewId, Review.id)
+                            .select(Review.mapId, ReviewReply.userId)
+                            .where { ReviewReply.id eq req.replyId }
+                            .single().let { it[Review.mapId].value to it[ReviewReply.userId].value }
+
+                        ModLog.insert(
+                            user.userId,
+                            mapId,
+                            ReplyModerationData(oldData.text, update.text),
+                            userId
+                        )
+                    }
+
+                    ActionResponse(updated, listOf())
                 }
 
-                ActionResponse(updated, listOf())
+                call.respond(response)
             }
-
-            call.respond(response)
         }
     }
 

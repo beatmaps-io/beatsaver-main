@@ -47,4 +47,4 @@ data class ReviewReplyDetail(
 
 @Serializable data class DeleteReview(val reason: String)
 
-@Serializable data class ReplyRequest(val text: String)
+@Serializable data class ReplyRequest(val text: String, val captcha: String? = null)

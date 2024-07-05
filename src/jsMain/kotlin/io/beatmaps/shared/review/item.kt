@@ -1,6 +1,7 @@
 package io.beatmaps.shared.review
 
 import external.Axios
+import external.ReCAPTCHA
 import external.axiosDelete
 import external.axiosGet
 import external.generateConfig
@@ -51,6 +52,7 @@ external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
     var userId: Int
     var map: MapDetail?
     var modal: RefObject<ModalComponent>?
+    var captcha: RefObject<ReCAPTCHA>?
     var setExistingReview: ((Boolean) -> Unit)?
 }
 external interface ReviewItemState : AutoSizeComponentState {
@@ -240,6 +242,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                         reply {
                                             attrs.reply = it
                                             attrs.modal = props.modal
+                                            attrs.captcha = props.captcha
                                         }
                                     }
                                 }
@@ -249,7 +252,9 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                 if (userData != null && (userData.userId == rv.creator?.id || userData.userId == props.map?.uploader?.id)) {
                                     replyInput {
                                         attrs.onSave = { reply ->
-                                            Axios.post("${Config.apibase}/reply/create/${rv.id}", ReplyRequest(reply), generateConfig<ReplyRequest, ActionResponse>())
+                                            props.captcha?.current?.executeAsync()?.then {
+                                                Axios.post<ActionResponse>("${Config.apibase}/reply/create/${rv.id}", ReplyRequest(reply, it), generateConfig<ReplyRequest, ActionResponse>())
+                                            }?.then { it }
                                         }
                                         attrs.onSuccess = {
                                             axiosGet<ReviewDetail>("${Config.apibase}/review/single/${props.map?.id}/${props.userId}").then {
