@@ -15,7 +15,7 @@ import io.ktor.server.application.call
 import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.update
 
 val cdnPrefixes = mapOf(
@@ -53,21 +53,23 @@ fun PipelineContext<*, ApplicationCall>.cdnPrefix(): String {
 
 fun Application.downloadsThread() {
     rabbitOptional {
-        consumeAck("bm.downloadCount", DownloadInfo::class) { _, dl ->
-            try {
-                transaction {
-                    if (dl.type == DownloadType.HASH) {
-                        Beatmap.join(Versions, JoinType.INNER, onColumn = Beatmap.id, Versions.mapId).update({ Versions.hash eq dl.hash }) {
-                            it[Beatmap.downloads] = incrementBy(Beatmap.downloads, 1)
+        repeat(3) {
+            consumeAck("bm.downloadCount", DownloadInfo::class) { _, dl ->
+                newSuspendedTransaction {
+                    try {
+                        if (dl.type == DownloadType.HASH) {
+                            Beatmap.join(Versions, JoinType.INNER, onColumn = Beatmap.id, Versions.mapId).update({ Versions.hash eq dl.hash }) {
+                                it[Beatmap.downloads] = incrementBy(Beatmap.downloads, 1)
+                            }
+                        } else {
+                            Beatmap.update({ Beatmap.id eq dl.hash.toInt(16) }) {
+                                it[downloads] = incrementBy(downloads, 1)
+                            }
                         }
-                    } else {
-                        Beatmap.update({ Beatmap.id eq dl.hash.toInt(16) }) {
-                            it[downloads] = incrementBy(downloads, 1)
-                        }
+                    } catch (_: NumberFormatException) {
+                        // Ignore
                     }
                 }
-            } catch (_: NumberFormatException) {
-                // Ignore
             }
         }
     }
