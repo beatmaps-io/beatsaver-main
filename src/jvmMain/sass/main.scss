@@ -1566,7 +1566,7 @@ small.alert-count {
       padding: 0;
       height: auto;
 
-      div {
+      > div {
         overflow: hidden;
         height: 0;
         transition: height 0.2s, padding 0.2s;
