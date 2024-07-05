@@ -19,6 +19,8 @@ import io.beatmaps.common.dbo.ReviewReply
 import io.beatmaps.common.dbo.ReviewReplyDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.dbo.Versions
+import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinCollaborators
@@ -124,6 +126,10 @@ fun Query.complexToReview() = this.fold(mutableMapOf<EntityID<Int>, ReviewDao>()
         }.run {
             if (row.hasValue(ReviewReply.id) && row.getOrNull(ReviewReply.id) != null) {
                 replies.putIfAbsent(row[ReviewReply.id], ReviewReplyDao.wrapRow(row))
+            }
+
+            if (row.hasValue(Versions.id)) {
+                this.map.versions.putIfAbsent(row[Versions.id], VersionsDao.wrapRow(row))
             }
         }
     }
@@ -436,7 +442,7 @@ fun Route.reviewRoute() {
 
             val reply = call.receive<ReplyRequest>()
 
-            val created = newSuspendedTransaction {
+            val response = newSuspendedTransaction {
                 val allowedUsers = Review
                     .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
                     .select(Review.userId, Beatmap.uploader)
@@ -447,8 +453,7 @@ fun Route.reviewRoute() {
                     } ?: listOf()
 
                 if (user.userId !in allowedUsers) {
-                    call.respond(ActionResponse(false, listOf("Unauthorised")))
-                    return@newSuspendedTransaction false
+                    return@newSuspendedTransaction ActionResponse(false, listOf("Unauthorised"))
                 }
 
                 ReviewReply.insert {
@@ -457,12 +462,12 @@ fun Route.reviewRoute() {
                     it[text] = reply.text
                     it[createdAt] = NowExpression(createdAt)
                     it[updatedAt] = NowExpression(updatedAt)
-                }.insertedCount > 0
+                }.let {
+                    ActionResponse(it.insertedCount > 0, listOf())
+                }
             }
 
-            if (created) {
-                call.respond(ActionResponse(true, listOf()))
-            }
+            call.respond(response)
         }
     }
 
@@ -470,15 +475,14 @@ fun Route.reviewRoute() {
         requireAuthorization { _, user ->
             val update = call.receive<ReplyRequest>()
 
-            val success = newSuspendedTransaction {
+            val response = newSuspendedTransaction {
                 val ownerId = ReviewReply
                     .select(ReviewReply.userId)
                     .where { ReviewReply.id eq req.replyId }
                     .single().let { it[ReviewReply.userId].value }
 
                 if (ownerId != user.userId && !user.isCurator()) {
-                    call.respond(ActionResponse(false, listOf("Unauthorised")))
-                    return@newSuspendedTransaction false
+                    return@newSuspendedTransaction ActionResponse(false, listOf("Unauthorised"))
                 }
 
                 val oldData = if (ownerId != user.userId) {
@@ -487,12 +491,12 @@ fun Route.reviewRoute() {
                     null
                 }
 
-                val updated = ReviewReply.update({ ReviewReply.id eq req.replyId }) {
+                val updated = ReviewReply.update({ ReviewReply.id eq req.replyId and ReviewReply.deletedAt.isNull() }) {
                     it[text] = update.text
                     it[updatedAt] = NowExpression(updatedAt)
                 } > 0
 
-                if (ownerId != user.userId && oldData != null) {
+                if (updated && ownerId != user.userId && oldData != null) {
                     val (mapId, userId) = ReviewReply
                         .join(Review, JoinType.INNER, ReviewReply.reviewId, Review.id)
                         .select(Review.mapId, ReviewReply.userId)
@@ -507,12 +511,10 @@ fun Route.reviewRoute() {
                     )
                 }
 
-                updated
+                ActionResponse(updated, listOf())
             }
 
-            if (success) {
-                call.respond(ActionResponse(true, listOf()))
-            }
+            call.respond(response)
         }
     }
 
@@ -520,20 +522,19 @@ fun Route.reviewRoute() {
         val delete = call.receive<DeleteReview>()
 
         requireAuthorization { _, user ->
-            val success = newSuspendedTransaction {
+            val response = newSuspendedTransaction {
                 val ownerId = ReviewReply
                     .select(ReviewReply.userId)
                     .where { ReviewReply.id eq req.replyId }
                     .single().let { it[ReviewReply.userId].value }
 
                 if (ownerId != user.userId && !user.isCurator()) {
-                    call.respond(HttpStatusCode.Unauthorized)
-                    return@newSuspendedTransaction false
+                    return@newSuspendedTransaction HttpStatusCode.Unauthorized
                 }
 
                 val deleted = ReviewReply
                     .updateReturning({
-                        ReviewReply.id eq req.replyId
+                        ReviewReply.id eq req.replyId and ReviewReply.deletedAt.isNull()
                     }, {
                         it[deletedAt] = NowExpression(deletedAt)
                     }, *ReviewReply.columns.toTypedArray())?.firstOrNull()
@@ -562,12 +563,10 @@ fun Route.reviewRoute() {
                     }
                 }
 
-                deleted != null
+                if (deleted != null) HttpStatusCode.OK else HttpStatusCode.NotModified
             }
 
-            if (success) {
-                call.respond(HttpStatusCode.OK)
-            }
+            call.respond(response)
         }
     }
 }

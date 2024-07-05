@@ -137,11 +137,11 @@ fun Application.reviewListeners() {
                                         url = review.map?.let {
                                             "${Config.siteBase()}/maps/${it.id}"
                                         },
-                                        thumbnail = DiscordEmbed.HasUrl(
-                                            review.map?.mainVersion()?.let {
+                                        thumbnail = review.map?.mainVersion()?.let {
+                                            DiscordEmbed.HasUrl(
                                                 "${Config.cdnBase("", true)}/${it.hash}.jpg"
-                                            }
-                                        ),
+                                            )
+                                        },
                                         fields = listOf(
                                             DiscordEmbed.Field(
                                                 "Review",
