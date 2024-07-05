@@ -9,11 +9,9 @@ import io.beatmaps.common.Config
 import io.beatmaps.common.CopyException
 import io.beatmaps.common.Folders
 import io.beatmaps.common.MapTag
-import io.beatmaps.common.OptionalProperty
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.beatsaber.BaseMapInfo
-import io.beatmaps.common.beatsaber.MapInfo
 import io.beatmaps.common.beatsaber.MapInfoV4
 import io.beatmaps.common.beatsaber.toJson
 import io.beatmaps.common.copyToSuspend
@@ -27,7 +25,6 @@ import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.handlePatreon
 import io.beatmaps.common.dbo.joinPatreon
-import io.beatmaps.common.or
 import io.beatmaps.common.pub
 import io.beatmaps.common.zip.ExtractedInfo
 import io.beatmaps.common.zip.RarException
