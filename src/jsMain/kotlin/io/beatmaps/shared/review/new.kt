@@ -4,7 +4,6 @@ import external.Axios
 import external.ReCAPTCHA
 import external.axiosGet
 import external.generateConfig
-import external.recaptcha
 import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.PutReview
