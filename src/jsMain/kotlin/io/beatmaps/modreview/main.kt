@@ -64,7 +64,7 @@ val modReview = fc<Props> {
     }
 
     useEffect(location) {
-        userRef.current?.value = user
+        userRef.current?.value = userLocal
 
         setUser(userLocal)
     }
