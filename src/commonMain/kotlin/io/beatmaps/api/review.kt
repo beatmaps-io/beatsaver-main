@@ -36,7 +36,8 @@ data class ReviewReplyDetail(
     val text: String,
     val createdAt: Instant,
     val updatedAt: Instant,
-    val deletedAt: Instant? = null
+    val deletedAt: Instant? = null,
+    var review: ReviewDetail? = null
 )
 
 @Serializable data class ReviewsResponse(val docs: List<ReviewDetail>)
@@ -48,3 +49,5 @@ data class ReviewReplyDetail(
 @Serializable data class DeleteReview(val reason: String)
 
 @Serializable data class ReplyRequest(val text: String, val captcha: String? = null)
+
+@Serializable data class RepliesResponse(val docs: List<ReviewReplyDetail>)

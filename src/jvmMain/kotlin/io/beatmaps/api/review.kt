@@ -110,6 +110,9 @@ class ReplyApi {
 
     @Location("/single/{replyId}")
     data class Single(val replyId: Int, val api: ReplyApi)
+
+    @Location("/latest/{page}")
+    data class ByDate(val before: Instant? = null, val user: String? = null, val page: Long = 0, val api: ReplyApi)
 }
 
 data class ReviewUpdateInfo(val mapId: Int, val userId: Int)
@@ -571,6 +574,44 @@ fun Route.reviewRoute() {
             }
 
             call.respond(response)
+        }
+    }
+
+    get<ReplyApi.ByDate> {
+        val replies = transaction {
+            try {
+                ReviewReply
+                    .join(reviewerAlias, JoinType.INNER, ReviewReply.userId, reviewerAlias[User.id])
+                    .join(Review, JoinType.INNER, ReviewReply.reviewId, Review.id)
+                    .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                    .selectAll()
+                    .where {
+                        ReviewReply.deletedAt.isNull() and Beatmap.deletedAt.isNull()
+                            .notNull(it.before) { o -> ReviewReply.createdAt less o.toJavaInstant() }
+                            .notNull(it.user) { u -> reviewerAlias[User.uniqueName] eq u }
+                    }
+                    .orderBy(
+                        ReviewReply.createdAt to SortOrder.DESC
+                    )
+                    .limit(it.page)
+                    .complexToReview()
+                    .map { r -> ReviewDetail.from(r, cdnPrefix()) }
+                    .flatMap { review ->
+                        review.replies.map { reply ->
+                            reply.apply {
+                                this.review = review.copy(replies = listOf())
+                            }
+                        }
+                    }
+            } catch (_: NumberFormatException) {
+                null
+            }
+        }
+
+        if (replies == null) {
+            call.respond(HttpStatusCode.NotFound)
+        } else {
+            call.respond(RepliesResponse(replies))
         }
     }
 }
