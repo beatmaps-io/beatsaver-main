@@ -1,6 +1,8 @@
 package io.beatmaps
 
 import external.ReactDatesInit
+import io.beatmaps.api.ReviewDetail
+import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.common.json
 import io.beatmaps.index.homePage
 import io.beatmaps.maps.mapEmbed
@@ -113,7 +115,14 @@ val appRouter = createBrowserRouter(
             modlog { }
         },
         bsroute("/modreview") {
-            modReview { }
+            modReview {
+                attrs.type = ReviewDetail::class
+            }
+        },
+        bsroute("/modreply") {
+            modReview {
+                attrs.type = ReviewReplyDetail::class
+            }
         },
         bsroute("/policy/dmca", replaceHomelink = false) {
             div {}

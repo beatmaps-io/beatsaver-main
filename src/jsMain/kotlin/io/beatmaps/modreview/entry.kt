@@ -1,15 +1,12 @@
 package io.beatmaps.modreview
 
-import external.Axios
+import external.AxiosResponse
 import external.TimeAgo
-import external.axiosDelete
-import external.generateConfig
-import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
-import io.beatmaps.api.DeleteReview
-import io.beatmaps.api.PutReview
+import io.beatmaps.api.CommentDetail
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
+import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalData
@@ -22,6 +19,9 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
+import react.RBuilder
+import react.RComponent
+import react.State
 import react.createRef
 import react.dom.a
 import react.dom.div
@@ -30,142 +30,166 @@ import react.dom.p
 import react.dom.td
 import react.dom.textarea
 import react.dom.tr
-import react.fc
-import react.useContext
-import react.useState
+import react.setState
+import kotlin.js.Promise
 
-external interface ModReviewEntryProps : Props {
-    var entry: ReviewDetail?
+external interface ModReviewEntryProps<T : CommentDetail> : Props {
+    var entry: T?
     var setUser: (String) -> Unit
+    var onDelete: (String) -> Promise<*>
+    var onSave: (ReviewSentiment?, String) -> Promise<AxiosResponse<ActionResponse>>?
 }
 
-val modReviewEntryRenderer = fc<ModReviewEntryProps> { props ->
-    val reasonRef = createRef<HTMLTextAreaElement>()
-    val (hidden, setHidden) = useState(false)
-    val (editing, setEditing) = useState(false)
-    val (sentiment, setSentiment) = useState(null as ReviewSentiment?)
-    val (newSentiment, setNewSentiment) = useState(null as ReviewSentiment?)
-    val (text, setText) = useState(null as String?)
+external interface ModReviewEntryState : State {
+    var hidden: Boolean
+    var editing: Boolean
+    var sentiment: ReviewSentiment?
+    var newSentiment: ReviewSentiment?
+    var text: String?
+}
 
-    val modal = useContext(modalContext)
+class ModReviewEntry<T : CommentDetail> : RComponent<ModReviewEntryProps<T>, ModReviewEntryState>() {
+    private val reasonRef = createRef<HTMLTextAreaElement>()
 
-    fun delete() {
+    private fun delete() {
         val reason = reasonRef.current?.value ?: ""
         reasonRef.current?.value = ""
 
-        val mapId = props.entry?.map?.id
-        val userId = props.entry?.creator?.id
-
-        axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/$mapId/$userId", DeleteReview(reason)).then({
-            setHidden(true)
-        }) { }
+        props.onDelete(reason).then {
+            setState {
+                hidden = true
+            }
+        }
     }
 
-    if (!hidden) {
-        tr {
-            props.entry?.let { review ->
-                td {
-                    review.creator?.let { c ->
-                        userLink {
-                            attrs.user = c
-                            attrs.callback = {
-                                props.setUser(c.name)
+    override fun RBuilder.render() {
+        if (!state.hidden) {
+            tr {
+                props.entry?.let { review ->
+                    td {
+                        review.creator?.let { c ->
+                            userLink {
+                                attrs.user = c
+                                attrs.callback = {
+                                    props.setUser(c.name)
+                                }
                             }
                         }
                     }
-                }
-                td {
-                    if (review.map != null) {
-                        mapTitle {
-                            attrs.title = review.map.name
-                            attrs.mapKey = review.map.id
+                    td {
+                        val map = when (review) {
+                            is ReviewDetail -> review.map
+                            is ReviewReplyDetail -> review.review?.map
+                            else -> null
                         }
-                    }
-                }
-                td {
-                    sentimentIcon {
-                        attrs.sentiment = sentiment ?: review.sentiment
-                    }
-                    +(sentiment ?: review.sentiment).name
-                }
-                td {
-                    TimeAgo.default {
-                        attrs.date = review.createdAt.toString()
-                    }
-                }
-                td("action-cell") {
-                    div("d-flex") {
-                        a("#") {
-                            attrs.title = "Edit"
-                            attrs.attributes["aria-label"] = "Edit"
-                            attrs.onClickFunction = { e ->
-                                e.preventDefault()
-                                setEditing(!editing)
+
+                        if (map != null) {
+                            mapTitle {
+                                attrs.title = map.name
+                                attrs.mapKey = map.id
                             }
-                            i("fas fa-pen text-warning") { }
-                        }
-                        a("#") {
-                            attrs.title = "Delete"
-                            attrs.attributes["aria-label"] = "Delete"
-                            attrs.onClickFunction = { e ->
-                                e.preventDefault()
-                                modal?.current?.showDialog(
-                                    ModalData(
-                                        "Delete review",
-                                        bodyCallback = {
-                                            p {
-                                                +"Are you sure? This action cannot be reversed."
-                                            }
-                                            p {
-                                                +"Reason for action:"
-                                            }
-                                            textarea(classes = "form-control") {
-                                                ref = reasonRef
-                                            }
-                                        },
-                                        buttons = listOf(ModalButton("YES, DELETE", "danger", ::delete), ModalButton("Cancel"))
-                                    )
-                                )
-                            }
-                            i("fas fa-trash text-danger-light") { }
                         }
                     }
+                    td {
+                        if (review is ReviewDetail) {
+                            sentimentIcon {
+                                attrs.sentiment = state.sentiment ?: review.sentiment
+                            }
+                            +(state.sentiment ?: review.sentiment).name
+                        }
+                    }
+                    td {
+                        TimeAgo.default {
+                            attrs.date = review.createdAt.toString()
+                        }
+                    }
+                    td("action-cell") {
+                        div("d-flex") {
+                            a("#") {
+                                attrs.title = "Edit"
+                                attrs.attributes["aria-label"] = "Edit"
+                                attrs.onClickFunction = { e ->
+                                    e.preventDefault()
+                                    setState {
+                                        editing = !state.editing
+                                    }
+                                }
+                                i("fas fa-pen text-warning") { }
+                            }
+                            modalContext.Consumer { modal ->
+                                a("#") {
+                                    attrs.title = "Delete"
+                                    attrs.attributes["aria-label"] = "Delete"
+                                    attrs.onClickFunction = { e ->
+                                        e.preventDefault()
+                                        modal?.current?.showDialog(
+                                            ModalData(
+                                                "Delete review",
+                                                bodyCallback = {
+                                                    p {
+                                                        +"Are you sure? This action cannot be reversed."
+                                                    }
+                                                    p {
+                                                        +"Reason for action:"
+                                                    }
+                                                    textarea(classes = "form-control") {
+                                                        ref = reasonRef
+                                                    }
+                                                },
+                                                buttons = listOf(ModalButton("YES, DELETE", "danger", ::delete), ModalButton("Cancel"))
+                                            )
+                                        )
+                                    }
+                                    i("fas fa-trash text-danger-light") { }
+                                }
+                            }
+                        }
+                    }
+                } ?: run {
+                    td {
+                        attrs.colSpan = "5"
+                    }
                 }
-            } ?: run {
+            }
+            tr("hiddenRow") {
                 td {
                     attrs.colSpan = "5"
-                }
-            }
-        }
-        tr("hiddenRow") {
-            td {
-                attrs.colSpan = "5"
-                props.entry?.let { review ->
-                    div("text-wrap text-break expand") {
-                        p("card-text") {
-                            if (editing) {
-                                sentimentPicker {
-                                    attrs.sentiment = newSentiment ?: sentiment ?: review.sentiment
-                                    attrs.updateSentiment = { newSentiment ->
-                                        setNewSentiment(newSentiment)
+                    props.entry?.let { review ->
+                        div("text-wrap text-break expand") {
+                            p("card-text") {
+                                if (state.editing && review is ReviewDetail) {
+                                    sentimentPicker {
+                                        attrs.sentiment = state.newSentiment ?: state.sentiment ?: review.sentiment
+                                        attrs.updateSentiment = { newSentiment ->
+                                            setState {
+                                                this.newSentiment = newSentiment
+                                            }
+                                        }
                                     }
                                 }
-                            }
-                            editableText {
-                                attrs.text = text ?: review.text
-                                attrs.editing = editing
-                                attrs.maxLength = ReviewConstants.MAX_LENGTH
-                                attrs.saveText = { newReview ->
-                                    val newSentimentLocal = newSentiment ?: sentiment ?: review.sentiment
-                                    Axios.put<ActionResponse>("${Config.apibase}/review/single/${review.map?.id}/${review.creator?.id}", PutReview(newReview, newSentimentLocal), generateConfig<PutReview, ActionResponse>()).then { r ->
-                                        if (r.data.success) setSentiment(newSentimentLocal)
+                                editableText {
+                                    attrs.text = state.text ?: review.text
+                                    attrs.editing = state.editing
+                                    attrs.maxLength = ReviewConstants.MAX_LENGTH
+                                    attrs.saveText = { newReview ->
+                                        val newSentimentLocal = if (review is ReviewDetail) {
+                                            state.newSentiment ?: state.sentiment ?: review.sentiment
+                                        } else {
+                                            null
+                                        }
 
-                                        r
+                                        props.onSave(newSentimentLocal, newReview)?.then { r ->
+                                            if (r.data.success) setState { sentiment = newSentimentLocal }
+
+                                            r
+                                        }
                                     }
-                                }
-                                attrs.stopEditing = { t ->
-                                    setText(t)
-                                    setEditing(false)
+                                    attrs.stopEditing = { t ->
+                                        setState {
+                                            text = t
+                                            editing = false
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -173,5 +197,11 @@ val modReviewEntryRenderer = fc<ModReviewEntryProps> { props ->
                 }
             }
         }
+    }
+}
+
+fun <T : CommentDetail> RBuilder.modReviewEntry(handler: ModReviewEntryProps<T>.() -> Unit) {
+    return child((ModReviewEntry<T>())::class) {
+        this.attrs(handler)
     }
 }

@@ -56,13 +56,13 @@ val reply = fc<ReplyProps> { props ->
     div("reply") {
         div("reply-header") {
             reviewer {
-                attrs.reviewer = props.reply.user
+                attrs.reviewer = props.reply.creator
                 attrs.time = props.reply.createdAt
             }
             if (!deleted) {
                 globalContext.Consumer { userData ->
                     // Show tools if commenter or curator
-                    if (userData != null && !userData.suspended && (props.reply.user.id == userData.userId || userData.curator)) {
+                    if (userData != null && !userData.suspended && (props.reply.creator.id == userData.userId || userData.curator)) {
                         div("options") {
                             a("#") {
                                 attrs.title = "Edit"
@@ -85,7 +85,7 @@ val reply = fc<ReplyProps> { props ->
                                                 p {
                                                     +"Are you sure? This action cannot be reversed."
                                                 }
-                                                if (props.reply.user.id != userData.userId) {
+                                                if (props.reply.creator.id != userData.userId) {
                                                     p {
                                                         +"Reason for action:"
                                                     }
