@@ -32,6 +32,7 @@ import io.beatmaps.common.pub
 import io.beatmaps.util.captchaIfPresent
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization
+import io.beatmaps.util.requireCaptcha
 import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -445,34 +446,41 @@ fun Route.reviewRoute() {
 
             val reply = call.receive<ReplyRequest>()
 
-            captchaIfPresent(reply.captcha) {
-                val response = newSuspendedTransaction {
-                    val allowedUsers = Review
-                        .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
-                        .select(Review.userId, Beatmap.uploader)
-                        .where { Review.id eq req.reviewId }
-                        .firstOrNull()
-                        ?.let {
-                            listOf(it[Review.userId].value, it[Beatmap.uploader].value)
-                        } ?: listOf()
+            if (reply.captcha == null) return@requireAuthorization call.respond(ActionResponse(false, listOf("Missing Captcha")))
 
-                    if (user.userId !in allowedUsers) {
-                        return@newSuspendedTransaction ActionResponse(false, listOf("Unauthorised"))
-                    }
+            val response = requireCaptcha(
+                reply.captcha,
+                {
+                    newSuspendedTransaction {
+                        val allowedUsers = Review
+                            .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
+                            .select(Review.userId, Beatmap.uploader)
+                            .where { Review.id eq req.reviewId }
+                            .firstOrNull()
+                            ?.let {
+                                listOf(it[Review.userId].value, it[Beatmap.uploader].value)
+                            } ?: listOf()
 
-                    ReviewReply.insert {
-                        it[userId] = user.userId
-                        it[reviewId] = req.reviewId
-                        it[text] = reply.text
-                        it[createdAt] = NowExpression(createdAt)
-                        it[updatedAt] = NowExpression(updatedAt)
-                    }.let {
-                        ActionResponse(it.insertedCount > 0, listOf())
+                        if (user.userId !in allowedUsers) {
+                            return@newSuspendedTransaction ActionResponse(false, listOf("Unauthorised"))
+                        }
+
+                        ReviewReply.insert {
+                            it[userId] = user.userId
+                            it[reviewId] = req.reviewId
+                            it[text] = reply.text
+                            it[createdAt] = NowExpression(createdAt)
+                            it[updatedAt] = NowExpression(updatedAt)
+                        }.let {
+                            ActionResponse(it.insertedCount > 0, listOf())
+                        }
                     }
                 }
-
-                call.respond(response)
+            ) { e ->
+                ActionResponse(false, e.errorCodes.map { "Captcha error: $it" })
             }
+
+            call.respond(response)
         }
     }
 
