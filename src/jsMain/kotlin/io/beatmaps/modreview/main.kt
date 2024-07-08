@@ -170,19 +170,19 @@ val modReview = fc<ModReviewProps> { props ->
                                     !it.hasClass("hiddenRow")
                                 }
                                 attrs.renderElement = InfiniteScrollElementRenderer {
-                                    modReviewEntry<ReviewDetail> {
-                                        entry = it
-                                        this.setUser = { userStr ->
+                                    modReviewEntry {
+                                        attrs.entry = it
+                                        attrs.setUser = { userStr ->
                                             userRef.current?.value = userStr
                                             history.push(location.pathname + urlExtension())
                                         }
-                                        this.onDelete = { reason ->
+                                        attrs.onDelete = { reason ->
                                             axiosDelete<DeleteReview, String>(
                                                 "${Config.apibase}/review/single/${it?.map?.id}/${it?.creator?.id}",
                                                 DeleteReview(reason)
                                             )
                                         }
-                                        this.onSave = onSave@{ sentiment, text ->
+                                        attrs.onSave = onSave@{ sentiment, text ->
                                             Axios.put(
                                                 "${Config.apibase}/review/single/${it?.map?.id}/${it?.creator?.id}",
                                                 PutReview(text, sentiment ?: return@onSave null),
@@ -213,19 +213,19 @@ val modReview = fc<ModReviewProps> { props ->
                                     !it.hasClass("hiddenRow")
                                 }
                                 attrs.renderElement = InfiniteScrollElementRenderer {
-                                    modReviewEntry<ReviewReplyDetail> {
-                                        entry = it
-                                        this.setUser = { userStr ->
+                                    modReviewEntry {
+                                        attrs.entry = it
+                                        attrs.setUser = { userStr ->
                                             userRef.current?.value = userStr
                                             history.push(location.pathname + urlExtension())
                                         }
-                                        this.onDelete = { reason ->
+                                        attrs.onDelete = { reason ->
                                             axiosDelete<DeleteReview, String>(
                                                 "${Config.apibase}/reply/single/${it?.id}",
                                                 DeleteReview(reason)
                                             )
                                         }
-                                        this.onSave = { _, text ->
+                                        attrs.onSave = { _, text ->
                                             Axios.put(
                                                 "${Config.apibase}/reply/single/${it?.id}",
                                                 ReplyRequest(text),
