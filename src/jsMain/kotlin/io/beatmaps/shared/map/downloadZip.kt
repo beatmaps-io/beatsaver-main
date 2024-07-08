@@ -6,6 +6,7 @@ import kotlinx.html.title
 import react.Props
 import react.dom.a
 import react.dom.i
+import react.dom.span
 import react.fc
 
 external interface DownloadProps : Props {
@@ -15,9 +16,11 @@ external interface DownloadProps : Props {
 
 val downloadZip = fc<DownloadProps> { props ->
     a(props.version.downloadURL) {
+        val text = "Download zip"
         attrs.rel = "noopener"
-        attrs.title = "Download zip"
-        attrs.attributes["aria-label"] = "Download zip"
+        attrs.title = text
+        attrs.attributes["aria-label"] = text
+        span("dd-text") { +text }
         i("fas fa-download text-info") {
             attrs.attributes["aria-hidden"] = "true"
         }
