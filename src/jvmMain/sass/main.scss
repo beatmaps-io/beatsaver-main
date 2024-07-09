@@ -1505,37 +1505,6 @@ small.alert-count {
       }
     }
   }
-
-  > div {
-    display: none;
-    position: absolute;
-    width: 250px;
-    background: $dropdown-bg;
-    border: $dropdown-border-width solid $dropdown-border-color;
-    margin-left: 42px;
-    padding: 6px 0;
-    z-index: 100;
-    transform: translate(-100%, 0%);
-    @include border-radius($dropdown-border-radius);
-    @include box-shadow($dropdown-box-shadow);
-    a {
-      padding: 0 10px;
-      height: 32px;
-      line-height: 32px;
-      display: flex;
-      width: 100%;
-      &:hover {
-        text-decoration: none;
-        color: $dropdown-link-hover-color;
-        @include gradient-bg($dropdown-link-hover-bg);
-      }
-      i {
-        padding: 9px 0;
-        width: 20px;
-        text-align: center;
-      }
-    }
-  }
 }
 
 @include media-breakpoint-up(sm) {
@@ -1599,6 +1568,41 @@ small.alert-count {
   }
 }
 
+@include media-breakpoint-down(lg) {
+  .thin-dd {
+    > div {
+      display: none;
+      position: absolute;
+      width: 250px;
+      background: $dropdown-bg;
+      border: $dropdown-border-width solid $dropdown-border-color;
+      margin-left: 42px;
+      padding: 6px 0;
+      z-index: 100;
+      transform: translate(-100%, 0%);
+      @include border-radius($dropdown-border-radius);
+      @include box-shadow($dropdown-box-shadow);
+      a {
+        padding: 0 10px;
+        height: 32px;
+        line-height: 32px;
+        display: flex;
+        width: 100%;
+        &:hover {
+          text-decoration: none;
+          color: $dropdown-link-hover-color;
+          @include gradient-bg($dropdown-link-hover-bg);
+        }
+        i {
+          padding: 9px 0;
+          width: 20px;
+          text-align: center;
+        }
+      }
+    }
+  }
+}
+
 @include media-breakpoint-up(lg) {
   .search-results, .embed {
     img.mode {
@@ -1651,21 +1655,6 @@ small.alert-count {
   .thin-dd {
     .dropdown-divider {
       display: none;
-    }
-    > div {
-      display: block;
-      position: unset;
-      background: none;
-      width: auto;
-      border: none;
-      margin: 0;
-      transform: none;
-      a {
-        display: inline;
-        i {
-          width: auto;
-        }
-      }
     }
     &.show > div a .dd-text {
       display: none;
