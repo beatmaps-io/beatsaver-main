@@ -17,6 +17,7 @@ import kotlinx.html.title
 import react.Props
 import react.dom.a
 import react.dom.i
+import react.dom.span
 import react.fc
 import react.useContext
 import react.useState
@@ -78,8 +79,10 @@ val addToPlaylist = fc<AddToPlaylistProps> { props ->
             openDialog()
         }
 
-        attrs.title = "Add to playlist"
-        attrs.attributes["aria-label"] = "Add to playlist"
+        val text = "Add to playlist"
+        attrs.title = text
+        attrs.attributes["aria-label"] = text
+        span("dd-text") { +text }
         i("fas fa-plus text-success") {
             attrs.attributes["aria-hidden"] = "true"
         }

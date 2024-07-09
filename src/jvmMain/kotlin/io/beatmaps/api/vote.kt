@@ -32,6 +32,7 @@ import io.ktor.server.routing.application
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.serializer
 import org.jetbrains.exposed.sql.Count
 import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
@@ -121,12 +122,12 @@ fun Route.voteRoute() {
             }
         }
 
-        consumeAck("maptouv", Int::class) { _, mapId ->
+        consumeAck("maptouv", Int.serializer()) { _, mapId ->
             transaction {
                 Beatmap.select(Beatmap.uploader).where {
                     Beatmap.id eq mapId
                 }.firstOrNull()?.let { it[Beatmap.uploader].value }
-            }.let {
+            }?.let {
                 publish("beatmaps", "user.stats.$it", null, it)
             }
         }

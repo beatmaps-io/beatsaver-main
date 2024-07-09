@@ -11,6 +11,7 @@ import kotlinx.html.title
 import react.Props
 import react.dom.a
 import react.dom.i
+import react.dom.span
 import react.fc
 import react.useContext
 
@@ -40,8 +41,9 @@ val links = fc<LinksProps> { props ->
         "#"
     }
     a(altLink) {
-        attrs.title = "Preview"
-        attrs.attributes["aria-label"] = "Preview"
+        val text = "Preview"
+        attrs.title = text
+        attrs.attributes["aria-label"] = text
         attrs.target = "_top"
         attrs.onClickFunction = {
             if (modal?.current != null) it.preventDefault()
@@ -54,6 +56,7 @@ val links = fc<LinksProps> { props ->
                 }
             }
         }
+        span("dd-text") { +text }
         i("fas fa-play text-info") {
             attrs.attributes["aria-hidden"] = "true"
         }
