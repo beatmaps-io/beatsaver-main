@@ -58,7 +58,7 @@ class PlaylistSearchBooleanFilter(override val id: String, val text: String, val
     val ref = useRef<HTMLInputElement>()
 }
 
-class PlaylistSearchMultipleChoiceFilter<T>(override val id: String, val choices: Map<String, T>, val getter: T, val setter: StateSetter<T>) : PlaylistSearchFilter<T>
+class PlaylistSearchMultipleChoiceFilter<T : Any?>(override val id: String, val choices: Map<String, T>, val getter: T, val setter: StateSetter<T>) : PlaylistSearchFilter<T>
 
 val playlistSearchEditor = fc<PSEProps> { props ->
     val (automapper, setAutomapper) = useState(props.config.searchParams.automapper)
@@ -75,7 +75,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
     val maxMappersInFilter = 30
     val (currentMappers, setCurrentMappers) = useState(listOf<UserDetail>())
 
-    val filters = listOf(
+    val filters = listOf<Pair<String, List<PlaylistSearchFilter<Any?>>>>(
         "General" to listOf(
             PlaylistSearchMultipleChoiceFilter(
                 "automapper",
@@ -283,10 +283,11 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                             }
                         }
                     } else if (f is PlaylistSearchMultipleChoiceFilter) {
-                        multipleChoice(f.choices) {
-                            name = f.id
-                            selectedValue = f.getter
-                            block = {
+                        multipleChoice {
+                            attrs.choices = f.choices
+                            attrs.name = f.id
+                            attrs.selectedValue = f.getter
+                            attrs.block = {
                                 f.setter(it)
                             }
                         }

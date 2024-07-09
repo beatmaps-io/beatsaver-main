@@ -249,10 +249,11 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                                             }
                                         }
                                     } else if (filter is MultipleChoiceFilterInfo) {
-                                        multipleChoice(filter.choices) {
-                                            name = filter.key
-                                            selectedValue = state.filterMap?.getByKeyOrNull(filter.key) ?: filter.default
-                                            block = {
+                                        multipleChoice {
+                                            attrs.choices = filter.choices
+                                            attrs.name = filter.key
+                                            attrs.selectedValue = state.filterMap?.getByKeyOrNull(filter.key) ?: filter.default
+                                            attrs.block = {
                                                 setState {
                                                     filterMap?.put(filter, it)
                                                 }
