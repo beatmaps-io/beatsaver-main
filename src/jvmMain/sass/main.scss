@@ -1827,6 +1827,37 @@ body:has(.embed) {
   }
 }
 
+.multiple-choice {
+  display: flex;
+  margin-block: .375rem;
+
+  input[type=radio] {
+    display: none;
+  }
+
+  label {
+    display: inline-block;
+    padding: .25rem .5rem;
+    color: white;
+    font-size: 0.7rem;
+    border: white 1px solid;
+    margin-right: -1px; // compensating for the double border
+    cursor: pointer;
+
+    &:first-of-type {
+      border-radius: 4px 0 0 4px;
+    }
+    &:last-of-type {
+      border-radius: 0 4px 4px 0;
+    }
+  }
+
+  input[type=radio]:checked + label {
+    color: black;
+    background-color: white;
+  }
+}
+
 @include media-breakpoint-up(xxl) {
   .search-results {
     .playlist-card {
