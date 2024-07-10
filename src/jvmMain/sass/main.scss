@@ -362,6 +362,9 @@ table.search-results {
         &:hover {
           background: #222;
         }
+        span {
+          display: none;
+        }
       }
 
       span {
@@ -1613,6 +1616,28 @@ small.alert-count {
   }
 }
 
+.thin-dd {
+  .dd i {
+    width: 20px;
+    text-align: center;
+  }
+
+  display: inline-block;
+  margin: -14px 0;
+
+  &.show {
+    > div {
+      &, a .dd-text {
+        display: block;
+      }
+      .dd-text {
+        color: #FFF;
+        flex: 1;
+      }
+    }
+  }
+}
+
 @include media-breakpoint-up(sm) {
   .filter-dropdown {
     width: 100%;
@@ -1674,6 +1699,41 @@ small.alert-count {
   }
 }
 
+@include media-breakpoint-down(lg) {
+  .thin-dd {
+    > div {
+      display: none;
+      position: absolute;
+      width: 250px;
+      background: $dropdown-bg;
+      border: $dropdown-border-width solid $dropdown-border-color;
+      margin-left: 42px;
+      padding: 6px 0;
+      z-index: 100;
+      transform: translate(-100%, 0%);
+      @include border-radius($dropdown-border-radius);
+      @include box-shadow($dropdown-box-shadow);
+      a {
+        padding: 0 10px;
+        height: 32px;
+        line-height: 32px;
+        display: flex;
+        width: 100%;
+        &:hover {
+          text-decoration: none;
+          color: $dropdown-link-hover-color;
+          @include gradient-bg($dropdown-link-hover-bg);
+        }
+        i {
+          padding: 9px 0;
+          width: 20px;
+          text-align: center;
+        }
+      }
+    }
+  }
+}
+
 @include media-breakpoint-up(lg) {
   .search-results, .embed {
     img.mode {
@@ -1721,6 +1781,21 @@ small.alert-count {
       font-size: 7px;
       width: 44px;
     }
+  }
+
+  .thin-dd {
+    .dropdown-divider {
+      display: none;
+    }
+    &.show > div a .dd-text {
+      display: none;
+    }
+  }
+  .dd-text {
+    display: none;
+  }
+  .dd {
+    display: none;
   }
 }
 
@@ -1958,6 +2033,37 @@ body:has(.embed) {
   }
 }
 
+.multiple-choice {
+  display: flex;
+  margin-block: .375rem;
+
+  input[type=radio] {
+    display: none;
+  }
+
+  label {
+    display: inline-block;
+    padding: .25rem .5rem;
+    color: white;
+    font-size: 0.7rem;
+    border: white 1px solid;
+    margin-right: -1px; // compensating for the double border
+    cursor: pointer;
+
+    &:first-of-type {
+      border-radius: 4px 0 0 4px;
+    }
+    &:last-of-type {
+      border-radius: 0 4px 4px 0;
+    }
+  }
+
+  input[type=radio]:checked + label {
+    color: black;
+    background-color: white;
+  }
+}
+
 @include media-breakpoint-up(xxl) {
   .search-results {
     .playlist-card {
@@ -1982,7 +2088,6 @@ body:has(.embed) {
   .filter-container .dropdown-menu {
     transform: translate(-148px, 0);
   }
-
 }
 
 @media (min-width: 1400px) and (min-height: 800px) {

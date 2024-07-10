@@ -10,6 +10,7 @@ import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.api.RankedFilter
 import io.beatmaps.common.applyToQuery
 import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.greaterEqF
@@ -85,7 +86,7 @@ class SearchApi {
         val to: Instant? = null,
         @Ignore val api: SearchApi,
         val noodle: Boolean? = null,
-        val ranked: Boolean? = null,
+        val ranked: RankedFilter = RankedFilter.All,
         val curated: Boolean? = null,
         val verified: Boolean? = null,
         val followed: Boolean? = null,
@@ -106,6 +107,8 @@ class SearchApi {
 }
 
 fun <T> Op<Boolean>.notNull(b: T?, block: (T) -> Op<Boolean>) = if (b == null) this else this.and(block(b))
+
+fun Op.Companion.of(b: Boolean): Op<Boolean> = if (b) Op.TRUE else Op.FALSE
 
 class SearchParams(
     val escapedQuery: String?,
@@ -268,7 +271,13 @@ fun Route.searchRoute() {
                                             .notNull(followingSubQuery) { o -> Beatmap.uploader inSubQuery o }
                                             .notNull(it.chroma) { o -> Beatmap.chroma eq o }
                                             .notNull(it.noodle) { o -> Beatmap.noodle eq o }
-                                            .notNull(it.ranked) { o -> (Beatmap.ranked eq o) or (Beatmap.blRanked eq o) }
+                                            .notNull(it.ranked) { o ->
+                                                Op.of(o == RankedFilter.All).run {
+                                                    if (o.blRanked) this or Beatmap.blRanked else this
+                                                }.run {
+                                                    if (o.ssRanked) this or Beatmap.ranked else this
+                                                }
+                                            }
                                             .notNull(it.curated) { o -> with(Beatmap.curatedAt) { if (o) isNotNull() else isNull() } }
                                             .notNull(it.verified) { o -> User.verifiedMapper eq o }
                                             .notNull(it.fullSpread) { o -> Beatmap.fullSpread eq o }

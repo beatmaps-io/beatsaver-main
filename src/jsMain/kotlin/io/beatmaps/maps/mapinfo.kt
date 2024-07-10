@@ -29,13 +29,17 @@ import io.beatmaps.shared.map.bookmarkButton
 import io.beatmaps.shared.map.links
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.useAudio
+import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
+import kotlinx.html.js.onMouseUpFunction
 import kotlinx.html.title
+import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
+import org.w3c.dom.events.Event
 import react.Props
 import react.dom.a
 import react.dom.button
@@ -43,9 +47,11 @@ import react.dom.div
 import react.dom.i
 import react.dom.input
 import react.dom.p
+import react.dom.span
 import react.dom.textarea
 import react.fc
 import react.useContext
+import react.useEffect
 import react.useRef
 import react.useState
 import kotlin.collections.set
@@ -67,6 +73,17 @@ val mapInfo = fc<MapInfoProps> { props ->
     val (loading, setLoading) = useState(false)
     val (error, setError) = useState<String?>(null)
     val (editing, setEditing) = useState(false)
+    val (dropdown, setDropdown) = useState(false)
+
+    useEffect {
+        val hideDropdown = { _: Event ->
+            setDropdown(false)
+        }
+        document.addEventListener("mouseup", hideDropdown)
+        cleanup {
+            document.removeEventListener("mouseup", hideDropdown)
+        }
+    }
 
     val userData = useContext(globalContext)
     val loggedInId = userData?.userId
@@ -174,130 +191,156 @@ val mapInfo = fc<MapInfoProps> { props ->
             div("ms-auto flex-shrink-0") {
                 if (!deleted) {
                     props.mapInfo.mainVersion()?.let { version ->
-                        if (userData != null) {
-                            addToPlaylist {
-                                attrs.map = props.mapInfo
-                            }
-                            bookmarkButton {
-                                attrs.bookmarked = props.mapInfo.bookmarked == true
-                                attrs.onClick = { e, bm ->
-                                    e.preventDefault()
-                                    if (!loading) bookmark(!bm)
-                                }
-                            }
-                        }
-
-                        links {
-                            attrs.map = props.mapInfo
-                            attrs.version = version
-                        }
-
-                        if (userData?.curator == true || isOwnerLocal) {
-                            a("#") {
-                                attrs.title = "Edit"
-                                attrs.attributes["aria-label"] = "Edit"
+                        div("thin-dd" + if (dropdown) " show" else "") {
+                            a("#", classes = "dd") {
                                 attrs.onClickFunction = {
-                                    it.preventDefault()
-                                    setEditing(!editing)
-                                    window.setTimeout(
-                                        {
-                                            inputRef.current?.value = props.mapInfo.name
-                                        },
-                                        1
-                                    )
+                                    setDropdown(!dropdown)
                                 }
-                                i("fas fa-pen text-warning") { }
+                                attrs.onMouseUpFunction = {
+                                    it.stopPropagation()
+                                }
+                                i("fas fa-ellipsis-v") { }
                             }
-                        }
-
-                        if (userData?.curator == true && !isOwnerLocal) {
-                            a("#") {
-                                val isCurated = props.mapInfo.curator != null
-                                val text = if (isCurated) "Uncurate" else "Curate"
-                                attrs.title = text
-                                attrs.attributes["aria-label"] = text
-                                attrs.onClickFunction = {
-                                    it.preventDefault()
-                                    if (!isCurated) {
-                                        modal?.current?.showDialog(
-                                            ModalData(
-                                                "Curate map",
-                                                bodyCallback = {
-                                                    p {
-                                                        +"Are you sure you want to curate this map?"
-                                                    }
-                                                },
-                                                buttons = listOf(
-                                                    ModalButton("Curate", "primary") { curate() },
-                                                    ModalButton("Cancel")
-                                                )
-                                            )
-                                        )
-                                    } else {
-                                        modal?.current?.showDialog(
-                                            ModalData(
-                                                "Uncurate map",
-                                                bodyCallback = {
-                                                    p {
-                                                        +"Are you sure you want to uncurate this map? If so, please provide a comprehensive reason."
-                                                    }
-                                                    p {
-                                                        +"Reason for action:"
-                                                    }
-                                                    textarea(classes = "form-control") {
-                                                        ref = reasonRef
-                                                    }
-                                                },
-                                                buttons = listOf(
-                                                    ModalButton("Uncurate", "primary") { curate(false) },
-                                                    ModalButton("Cancel")
-                                                )
-                                            )
-                                        )
+                            div {
+                                attrs.onMouseUpFunction = {
+                                    if (it.target == it.currentTarget || it.target.let { d -> d is HTMLDivElement && d.className == "dropdown-divider" }) {
+                                        it.stopPropagation()
                                     }
                                 }
-                                i("fas fa-award " + if (isCurated) "text-danger-light" else "text-success") { }
-                            }
-                        }
-                        if (userData?.admin == true) {
-                            a("#") {
-                                val tooltip = if (props.mapInfo.declaredAi.markAsBot) "Flag as Human-made Map" else "Flag as AI-assisted Map"
-                                attrs.title = tooltip
-                                attrs.attributes["aria-label"] = tooltip
-                                attrs.onClickFunction = {
-                                    it.preventDefault()
-                                    if (!loading) declareAi(!props.mapInfo.declaredAi.markAsBot)
+                                if (userData != null) {
+                                    addToPlaylist {
+                                        attrs.map = props.mapInfo
+                                    }
+                                    bookmarkButton {
+                                        attrs.bookmarked = props.mapInfo.bookmarked == true
+                                        attrs.onClick = { e, bm ->
+                                            e.preventDefault()
+                                            if (!loading) bookmark(!bm)
+                                        }
+                                    }
+
+                                    div("dropdown-divider") {}
                                 }
-                                i("fas " + if (props.mapInfo.declaredAi.markAsBot) "fa-user-check text-success" else "fa-user-times text-danger-light") { }
-                            }
-                            a("#") {
-                                attrs.title = "Delete"
-                                attrs.attributes["aria-label"] = "Delete"
-                                attrs.onClickFunction = {
-                                    it.preventDefault()
-                                    modal?.current?.showDialog(
-                                        ModalData(
-                                            "Delete map",
-                                            bodyCallback = {
-                                                p {
-                                                    +"Delete completely so that no more versions can be added or just unpublish the current version?"
-                                                }
-                                                p {
-                                                    +"Reason for action:"
-                                                }
-                                                textarea(classes = "form-control") {
-                                                    ref = reasonRef
-                                                }
-                                            },
-                                            buttons = listOf(
-                                                ModalButton("DELETE", "danger", ::delete),
-                                                ModalButton("Unpublish", "primary", ::recall),
-                                                ModalButton("Cancel")
+
+                                links {
+                                    attrs.map = props.mapInfo
+                                    attrs.version = version
+                                }
+
+                                if (userData?.curator == true || isOwnerLocal) {
+                                    div("dropdown-divider") {}
+
+                                    a("#") {
+                                        attrs.title = "Edit"
+                                        attrs.attributes["aria-label"] = "Edit"
+                                        attrs.onClickFunction = {
+                                            it.preventDefault()
+                                            setEditing(!editing)
+                                            window.setTimeout(
+                                                {
+                                                    inputRef.current?.value = props.mapInfo.name
+                                                },
+                                                1
                                             )
-                                        )
-                                    )
+                                        }
+                                        span("dd-text") { +"Edit" }
+                                        i("fas fa-pen text-warning") { }
+                                    }
                                 }
-                                i("fas fa-trash text-danger-light") { }
+
+                                if (userData?.curator == true && !isOwnerLocal) {
+                                    a("#") {
+                                        val isCurated = props.mapInfo.curator != null
+                                        val text = if (isCurated) "Uncurate" else "Curate"
+                                        attrs.title = text
+                                        attrs.attributes["aria-label"] = text
+                                        attrs.onClickFunction = {
+                                            it.preventDefault()
+                                            if (!isCurated) {
+                                                modal?.current?.showDialog(
+                                                    ModalData(
+                                                        "Curate map",
+                                                        bodyCallback = {
+                                                            p {
+                                                                +"Are you sure you want to curate this map?"
+                                                            }
+                                                        },
+                                                        buttons = listOf(
+                                                            ModalButton("Curate", "primary") { curate() },
+                                                            ModalButton("Cancel")
+                                                        )
+                                                    )
+                                                )
+                                            } else {
+                                                modal?.current?.showDialog(
+                                                    ModalData(
+                                                        "Uncurate map",
+                                                        bodyCallback = {
+                                                            p {
+                                                                +"Are you sure you want to uncurate this map? If so, please provide a comprehensive reason."
+                                                            }
+                                                            p {
+                                                                +"Reason for action:"
+                                                            }
+                                                            textarea(classes = "form-control") {
+                                                                ref = reasonRef
+                                                            }
+                                                        },
+                                                        buttons = listOf(
+                                                            ModalButton("Uncurate", "primary") { curate(false) },
+                                                            ModalButton("Cancel")
+                                                        )
+                                                    )
+                                                )
+                                            }
+                                        }
+                                        span("dd-text") { +text }
+                                        i("fas fa-award " + if (isCurated) "text-danger-light" else "text-success") { }
+                                    }
+                                }
+                                if (userData?.admin == true) {
+                                    a("#") {
+                                        val tooltip = if (props.mapInfo.declaredAi.markAsBot) "Flag as Human-made Map" else "Flag as AI-assisted Map"
+                                        attrs.title = tooltip
+                                        attrs.attributes["aria-label"] = tooltip
+                                        attrs.onClickFunction = {
+                                            it.preventDefault()
+                                            if (!loading) declareAi(!props.mapInfo.declaredAi.markAsBot)
+                                        }
+                                        span("dd-text") { +tooltip }
+                                        i("fas " + if (props.mapInfo.declaredAi.markAsBot) "fa-user-check text-success" else "fa-user-times text-danger-light") { }
+                                    }
+                                    a("#") {
+                                        attrs.title = "Delete"
+                                        attrs.attributes["aria-label"] = "Delete"
+                                        attrs.onClickFunction = {
+                                            it.preventDefault()
+                                            modal?.current?.showDialog(
+                                                ModalData(
+                                                    "Delete map",
+                                                    bodyCallback = {
+                                                        p {
+                                                            +"Delete completely so that no more versions can be added or just unpublish the current version?"
+                                                        }
+                                                        p {
+                                                            +"Reason for action:"
+                                                        }
+                                                        textarea(classes = "form-control") {
+                                                            ref = reasonRef
+                                                        }
+                                                    },
+                                                    buttons = listOf(
+                                                        ModalButton("DELETE", "danger", ::delete),
+                                                        ModalButton("Unpublish", "primary", ::recall),
+                                                        ModalButton("Cancel")
+                                                    )
+                                                )
+                                            )
+                                        }
+                                        span("dd-text") { +"Delete" }
+                                        i("fas fa-trash text-danger-light") { }
+                                    }
+                                }
                             }
                         }
                     }
