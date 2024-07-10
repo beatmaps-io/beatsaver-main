@@ -105,6 +105,11 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
         reasonRef.current?.value = ""
 
         axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/${props.map?.id}/${props.userId}", DeleteReview(reason)).then({
+            setState {
+                sentiment = null
+                featured = null
+                text = null
+            }
             hide()
 
             if (currentUser) props.setExistingReview?.invoke(false)
