@@ -80,7 +80,7 @@ class TOSPageTemplate : Template<BODY> {
                     }
                 }
                 p {
-                    +"The following apply to the content in user-generated reviews:"
+                    +"The following apply to the content in user-generated reviews / replies:"
                 }
                 ul {
                     listOf(
@@ -95,7 +95,7 @@ class TOSPageTemplate : Template<BODY> {
                     }
                 }
                 p {
-                    +"Reviews that violate these terms will be edited or removed and repeated violation may result in the suspension of review privileges or account access."
+                    +"Reviews or replies that violate these terms will be edited or removed and repeated violation may result in the suspension of review privileges or account access."
                 }
                 hr("my-4") {}
                 h3 {
