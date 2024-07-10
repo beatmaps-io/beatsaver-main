@@ -118,6 +118,8 @@ val reply = fc<ReplyProps> { props ->
                     attrs.maxLength = ReviewConstants.MAX_REPLY_LENGTH
                     attrs.saveText = { newReply ->
                         props.captcha?.current?.executeAsync()?.then {
+                            props.captcha?.current?.reset()
+
                             Axios.put<ActionResponse>("${Config.apibase}/reply/single/${props.reply.id}", ReplyRequest(newReply, it), generateConfig<ReplyRequest, ActionResponse>())
                         }?.then { it }
                     }

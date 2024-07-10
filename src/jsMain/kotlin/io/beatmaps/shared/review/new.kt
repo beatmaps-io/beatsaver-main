@@ -112,6 +112,8 @@ val newReview = fc<NewReviewProps> { props ->
                             setLoading(true)
 
                             props.captcha?.current?.executeAsync()?.then { captcha ->
+                                props.captcha?.current?.reset()
+
                                 Axios.put<ActionResponse>(
                                     "${Config.apibase}/review/single/${props.mapId}/${props.userId}",
                                     PutReview(newReview, currentSentiment, captcha),

@@ -253,6 +253,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                     replyInput {
                                         attrs.onSave = { reply ->
                                             props.captcha?.current?.executeAsync()?.then {
+                                                props.captcha?.current?.reset()
                                                 Axios.post<ActionResponse>("${Config.apibase}/reply/create/${rv.id}", ReplyRequest(reply, it), generateConfig<ReplyRequest, ActionResponse>())
                                             }?.then { it }
                                         }
