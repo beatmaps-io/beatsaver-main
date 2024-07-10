@@ -2,8 +2,11 @@ package io.beatmaps.shared.review
 
 import external.Axios
 import external.CancelTokenSource
+import external.ReCAPTCHA
 import external.generateConfig
+import external.recaptcha
 import io.beatmaps.Config
+import io.beatmaps.api.MapDetail
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewsResponse
 import io.beatmaps.api.UserDetail
@@ -21,7 +24,7 @@ import react.useRef
 import react.useState
 
 external interface ReviewTableProps : Props {
-    var map: String?
+    var map: MapDetail?
     var mapUploaderId: Int?
     var userDetail: UserDetail?
     var collaborators: List<UserDetail>?
@@ -34,12 +37,16 @@ val reviewTable = fc<ReviewTableProps> { props ->
     val resultsTable = useRef<HTMLElement>()
     val modal = useContext(modalContext)
 
+    val captchaRef = useRef<ReCAPTCHA>()
+
+    recaptcha(captchaRef)
+
     useDidUpdateEffect(props.map) {
         setResultsKey(Any())
     }
 
     fun getUrl(page: Int) = if (props.map != null) {
-        "${Config.apibase}/review/map/${props.map}/$page"
+        "${Config.apibase}/review/map/${props.map?.id}/$page"
     } else {
         props.userDetail?.id?.let { "${Config.apibase}/review/user/$it/$page" } ?: throw IllegalStateException()
     }
@@ -64,9 +71,10 @@ val reviewTable = fc<ReviewTableProps> { props ->
                 } ?: false
                 if (userData != null && !userData.suspended && userData.userId != props.mapUploaderId && !userIsCollaborator) {
                     newReview {
-                        attrs.mapId = map
+                        attrs.mapId = map.id
                         attrs.userId = userData.userId
                         attrs.existingReview = existingReview
+                        attrs.captcha = captchaRef
                         attrs.setExistingReview = { nv ->
                             setExistingReview(nv)
                         }
@@ -87,8 +95,9 @@ val reviewTable = fc<ReviewTableProps> { props ->
                 reviewItem {
                     obj = rv?.copy(creator = props.userDetail ?: rv.creator)
                     userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
-                    mapId = props.map ?: rv?.map?.id ?: ""
+                    map = props.map ?: rv?.map
                     this.modal = modal
+                    this.captcha = captchaRef
                     this.setExistingReview = { nv ->
                         setExistingReview(nv)
                     }
