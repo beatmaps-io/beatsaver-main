@@ -9,7 +9,7 @@ import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
-import io.beatmaps.common.jsonWithDefaults
+import io.beatmaps.common.json
 import io.beatmaps.common.rabbitOptional
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.application
@@ -53,10 +53,10 @@ fun Route.mapUpdateEnricher() {
                 publish("beatmaps", "cdn.${cdnUpdate.mapId}", null, cdnUpdate)
 
                 val wsMsg = if (map.first == null) {
-                    val subJson = jsonWithDefaults.encodeToJsonElement(map.second)
+                    val subJson = json.encodeToJsonElement(map.second)
                     MapUpdateMessage(MapUpdateMessageType.MAP_UPDATE, subJson)
                 } else {
-                    val subJson = jsonWithDefaults.encodeToJsonElement(toHexString(mapId))
+                    val subJson = json.encodeToJsonElement(toHexString(mapId))
                     MapUpdateMessage(MapUpdateMessageType.MAP_DELETE, subJson)
                 }
 
