@@ -10,7 +10,7 @@ import react.fc
 
 external interface ScoreProps : Props {
     var position: Int
-    var playerId: Long
+    var playerId: Long?
     var name: String
     var pp: Double
     var score: Int

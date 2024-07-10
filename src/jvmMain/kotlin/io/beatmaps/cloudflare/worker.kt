@@ -1,6 +1,6 @@
 package io.beatmaps.cloudflare
 
-import io.beatmaps.common.client
+import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.timeout
@@ -11,6 +11,7 @@ import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import kotlinx.serialization.Serializable
 
 interface IKVStore {
     suspend fun getKeys(): List<String>
@@ -18,8 +19,13 @@ interface IKVStore {
     suspend fun setValues(kvs: List<KeyValue>)
 }
 
-private data class KeyResponse(val success: Boolean, val result: List<Key>)
-private data class Key(val name: String)
+@Serializable
+data class KeyResponse(val success: Boolean, val result: List<Key>)
+
+@Serializable
+data class Key(val name: String)
+
+@Serializable
 data class KeyValue(val key: String, val value: String)
 
 private fun requestCommon(builder: HttpRequestBuilder, authToken: String) {
@@ -30,7 +36,7 @@ private fun requestCommon(builder: HttpRequestBuilder, authToken: String) {
     }
 }
 
-private class KVStore(val worker: Worker, val namespaceId: String) : IKVStore {
+private class KVStore(val client: HttpClient, val worker: Worker, val namespaceId: String) : IKVStore {
     @Throws(HttpRequestTimeoutException::class)
     override suspend fun getKeys() = client.get("https://api.cloudflare.com/client/v4/accounts/${worker.accountId}/storage/kv/namespaces/$namespaceId/keys") {
         requestCommon(this, worker.authToken)
@@ -54,6 +60,6 @@ private class KVStore(val worker: Worker, val namespaceId: String) : IKVStore {
     }
 }
 
-class Worker(val accountId: String, val authToken: String) {
-    fun getKVStore(namespaceId: String): IKVStore = KVStore(this, namespaceId)
+class Worker(private val client: HttpClient, val accountId: String, val authToken: String) {
+    fun getKVStore(namespaceId: String): IKVStore = KVStore(client, this, namespaceId)
 }

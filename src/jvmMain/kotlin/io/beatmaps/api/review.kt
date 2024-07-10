@@ -47,6 +47,7 @@ import io.ktor.server.routing.Route
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import kotlinx.datetime.toKotlinInstant
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.ColumnSet
 import org.jetbrains.exposed.sql.Index
@@ -116,6 +117,7 @@ class ReplyApi {
     data class ByDate(val before: Instant? = null, val user: String? = null, val page: Long = 0, val api: ReplyApi)
 }
 
+@Serializable
 data class ReviewUpdateInfo(val mapId: Int, val userId: Int)
 
 fun Query.complexToReview() = this.fold(mutableMapOf<EntityID<Int>, ReviewDao>()) { map, row ->
