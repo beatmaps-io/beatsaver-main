@@ -158,6 +158,8 @@ kotlin {
                 implementation(kotlin("test-junit"))
 
                 implementation("io.ktor:ktor-server-test-host:$ktorVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
+                implementation("io.ktor:ktor-client-mock:$ktorVersion")
                 implementation("com.microsoft.playwright:playwright:1.39.0")
                 implementation("com.appmattus.fixture:fixture:1.2.0")
                 implementation("net.lingala.zip4j:zip4j:2.11.6-SNAPSHOT")

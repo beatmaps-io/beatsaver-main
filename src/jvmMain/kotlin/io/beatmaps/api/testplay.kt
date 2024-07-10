@@ -93,11 +93,19 @@ data class MarkRequest(val hash: String, val markPlayed: Boolean = true, val rem
 @Serializable
 data class VerifyResponse(val success: Boolean, val error: String? = null)
 
+@Serializable
 data class SteamAPIResponse(val response: SteamAPIResponseObject)
+
+@Serializable
 data class SteamAPIResponseObject(val params: SteamAPIResponseParams? = null, val error: SteamAPIResponseError? = null)
+
+@Serializable
 data class SteamAPIResponseError(val errorcode: Int, val errordesc: String)
+
+@Serializable
 data class SteamAPIResponseParams(val result: String, val steamid: Long, val ownersteamid: Long, val vacbanned: Boolean, val publisherbanned: Boolean)
 
+@Serializable
 data class OculusAuthResponse(val success: Boolean, val error: String? = null)
 
 const val beatsaberAppid = 620980

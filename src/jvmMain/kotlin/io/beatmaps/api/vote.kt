@@ -67,6 +67,7 @@ data class VoteRequest(val auth: AuthRequest, val hash: String, val direction: B
 @Serializable
 data class VoteResponse(val success: Boolean, val error: String? = null)
 
+@Serializable
 data class QueuedVote(val userId: Long, val steam: Boolean, val mapId: Int, val direction: Boolean)
 
 @Serializable
@@ -132,7 +133,7 @@ fun Route.voteRoute() {
             }
         }
 
-        consumeAck("uvstats", Int::class) { _, body ->
+        consumeAck("uvstats", Int.serializer()) { _, body ->
             transaction {
                 val subQuery = Beatmap
                     .joinVersions()

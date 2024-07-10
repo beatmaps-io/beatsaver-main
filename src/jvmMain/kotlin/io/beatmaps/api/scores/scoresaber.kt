@@ -4,17 +4,19 @@ import io.beatmaps.api.LeaderboardData
 import io.beatmaps.api.LeaderboardScore
 import io.beatmaps.common.SSGameMode
 import io.beatmaps.common.api.EDifficulty
+import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.datetime.Instant
+import kotlinx.serialization.Serializable
 
-class ScoreSaberScores : RemoteScores {
+class ScoreSaberScores(private val client: HttpClient) : RemoteScores {
     private suspend fun getLeaderboardInfo(hash: String, diff: EDifficulty = EDifficulty.ExpertPlus, mode: SSGameMode = SSGameMode.SoloStandard) =
         ssTry {
-            scoresClient.get(
+            client.get(
                 "https://scoresaber.com/api/leaderboard/by-hash/$hash/info"
             ) {
                 parameter("difficulty", diff.idx)
@@ -24,7 +26,7 @@ class ScoreSaberScores : RemoteScores {
 
     private suspend fun getScores(hash: String, diff: EDifficulty = EDifficulty.ExpertPlus, mode: SSGameMode = SSGameMode.SoloStandard, page: Int = 1) =
         ssTry {
-            scoresClient.get(
+            client.get(
                 "https://scoresaber.com/api/leaderboard/by-hash/$hash/scores"
             ) {
                 parameter("difficulty", diff.idx)
@@ -53,6 +55,7 @@ class ScoreSaberScores : RemoteScores {
 
 val tagsRegex = Regex("(<([^>]+)>)")
 
+@Serializable
 data class SSLeaderboardPlayer(
     val id: String,
     val name: String,
@@ -63,6 +66,7 @@ data class SSLeaderboardPlayer(
     val role: String?
 )
 
+@Serializable
 data class SSLeaderboardInfo(
     val id: Int,
     val songHash: String,
@@ -89,15 +93,21 @@ data class SSLeaderboardInfo(
 ) {
     fun toLeaderboardData(scores: List<SSLeaderboardScore>) = LeaderboardData(
         ranked, id.toString(),
-        scores.map(SSLeaderboardScore::toLeaderboardScore).filter { it.playerId > 9000 },
+        scores.map(SSLeaderboardScore::toLeaderboardScore).filter { it.playerId != null && it.playerId > 9000 },
         positiveModifiers, true
     )
 }
 
+@Serializable
 data class SSPaged(val metadata: SSPagedMetadata, val scores: List<SSLeaderboardScore>)
+
+@Serializable
 data class SSPagedMetadata(val total: Int, val page: Int, val itemsPerPage: Int)
 
+@Serializable
 data class SSLeaderboardInfoDiff(val leaderboardId: Int, val difficulty: Int, val gameMode: String, val difficultyRaw: String)
+
+@Serializable
 data class SSLeaderboardScore(
     val id: Long,
     val leaderboardPlayerInfo: SSLeaderboardPlayer,
@@ -116,5 +126,5 @@ data class SSLeaderboardScore(
     val timeSet: String,
     val hasReplay: Boolean
 ) {
-    fun toLeaderboardScore() = LeaderboardScore(leaderboardPlayerInfo.id.toLong(), leaderboardPlayerInfo.name.replace(tagsRegex, ""), rank, modifiedScore, null, pp, modifiers.split(',').filter { it.isNotEmpty() })
+    fun toLeaderboardScore() = LeaderboardScore(leaderboardPlayerInfo.id.toLongOrNull(), leaderboardPlayerInfo.name.replace(tagsRegex, ""), rank, modifiedScore, null, pp, modifiers.split(',').filter { it.isNotEmpty() })
 }

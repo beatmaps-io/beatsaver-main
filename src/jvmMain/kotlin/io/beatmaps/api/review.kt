@@ -40,6 +40,7 @@ import io.ktor.server.routing.Route
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import kotlinx.datetime.toKotlinInstant
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
@@ -82,6 +83,7 @@ class ReviewApi {
     data class Curate(val api: ReviewApi)
 }
 
+@Serializable
 data class ReviewUpdateInfo(val mapId: Int, val userId: Int)
 
 fun reviewToComplex(row: ResultRow, prefix: String): ReviewDetail {

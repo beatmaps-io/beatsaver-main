@@ -10,6 +10,7 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.util.requireAuthorization
+import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
@@ -30,10 +31,10 @@ import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.util.StringValuesBuilder
 import io.ktor.util.hex
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.count
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -41,53 +42,61 @@ import java.io.File
 import java.util.Base64
 
 val discordSecret = System.getenv("DISCORD_HASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: byteArrayOf()
+val discordHelper = DiscordHelper(client)
 
 @Location("/discord")
 class DiscordLogin(val state: String? = null)
 
+@Serializable
 data class DiscordUserInfo(
     val username: String,
     val id: Long,
     val avatar: String?
 )
 
-fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
-    name = "discord",
-    authorizeUrl = "https://discord.com/api/oauth2/authorize",
-    accessTokenUrl = "https://discord.com/api/oauth2/token",
-    clientId = System.getenv("DISCORD_CLIENTID") ?: "",
-    clientSecret = System.getenv("DISCORD_CLIENTSECRET") ?: "",
-    requestMethod = HttpMethod.Post,
-    defaultScopes = listOf("identify"),
-    authorizeUrlInterceptor = {
-        state?.let {
-            val params = parameters as StringValuesBuilder
-            params["state"] = it
+class DiscordHelper(val client: HttpClient) {
+    fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
+        name = "discord",
+        authorizeUrl = "https://discord.com/api/oauth2/authorize",
+        accessTokenUrl = "https://discord.com/api/oauth2/token",
+        clientId = System.getenv("DISCORD_CLIENTID") ?: "",
+        clientSecret = System.getenv("DISCORD_CLIENTSECRET") ?: "",
+        requestMethod = HttpMethod.Post,
+        defaultScopes = listOf("identify"),
+        authorizeUrlInterceptor = {
+            state?.let {
+                val params = parameters as StringValuesBuilder
+                params["state"] = it
+            }
         }
+    )
+
+    suspend fun getDiscordAvatar(discordAvatar: String, discordId: Long) =
+        client.get("https://cdn.discordapp.com/avatars/$discordId/$discordAvatar.png") {
+            timeout {
+                socketTimeoutMillis = 30000
+                requestTimeoutMillis = 60000
+            }
+        }.body<ByteArray>()
+
+    suspend fun downloadDiscordAvatar(discordAvatar: String, discordId: Long): String {
+        val bytes = getDiscordAvatar(discordAvatar, discordId)
+        val fileName = UserCrypto.getHash(discordId.toString(), discordSecret)
+        val localFile = File(Folders.localAvatarFolder(), "$fileName.png")
+        localFile.writeBytes(bytes)
+
+        return "${Config.cdnBase("", true)}/avatar/$fileName.png"
     }
-)
 
-suspend fun downloadDiscordAvatar(discordAvatar: String, discordId: Long): String {
-    val bytes = client.get("https://cdn.discordapp.com/avatars/$discordId/$discordAvatar.png") {
-        timeout {
-            socketTimeoutMillis = 30000
-            requestTimeoutMillis = 60000
-        }
-    }.body<ByteArray>()
-
-    val fileName = UserCrypto.getHash(discordId.toString(), discordSecret)
-    val localFile = File(Folders.localAvatarFolder(), "$fileName.png")
-    localFile.writeBytes(bytes)
-
-    return "${Config.cdnBase("", true)}/avatar/$fileName.png"
+    suspend fun getDiscordData(token: String) =
+        client.get("https://discord.com/api/users/@me") {
+            header("Authorization", "Bearer $token")
+        }.body<DiscordUserInfo>()
 }
 
 suspend fun ApplicationCall.getDiscordData(): DiscordUserInfo {
     val principal = authentication.principal<OAuthAccessTokenResponse.OAuth2>() ?: error("No principal")
-
-    return client.get("https://discord.com/api/users/@me") {
-        header("Authorization", "Bearer ${principal.accessToken}")
-    }.body()
+    return discordHelper.getDiscordData(principal.accessToken)
 }
 
 fun Route.discordLogin() {
@@ -95,7 +104,7 @@ fun Route.discordLogin() {
         get<DiscordLogin> { req ->
             val data = call.getDiscordData()
 
-            val avatarLocal = data.avatar?.let { downloadDiscordAvatar(it, data.id) }
+            val avatarLocal = data.avatar?.let { discordHelper.downloadDiscordAvatar(it, data.id) }
 
             val (user, alertCount) = transaction {
                 val userId = User.upsert(User.discordId) {
@@ -150,7 +159,7 @@ fun Route.discordLogin() {
                         }
                     }
 
-                    val avatarLocal = data.avatar?.let { downloadDiscordAvatar(it, data.id) }
+                    val avatarLocal = data.avatar?.let { discordHelper.downloadDiscordAvatar(it, data.id) }
 
                     User.update({ User.id eq sess.userId }) {
                         it[discordId] = data.id

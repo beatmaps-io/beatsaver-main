@@ -30,7 +30,7 @@ fun Application.installOauth() {
             urlProvider = { "${Config.siteBase()}${request.uri.substringBefore("?")}" }
             providerLookup = {
                 val queryParams = request.queryParameters as StringValues
-                discordProvider(queryParams["state"])
+                discordHelper.discordProvider(queryParams["state"])
             }
         }
         oauth("patreon") {
