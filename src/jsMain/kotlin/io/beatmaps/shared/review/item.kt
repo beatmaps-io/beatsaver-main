@@ -105,6 +105,11 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
         reasonRef.current?.value = ""
 
         axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/${props.map?.id}/${props.userId}", DeleteReview(reason)).then({
+            setState {
+                sentiment = null
+                featured = null
+                text = null
+            }
             hide()
 
             if (currentUser) props.setExistingReview?.invoke(false)
@@ -253,6 +258,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                     replyInput {
                                         attrs.onSave = { reply ->
                                             props.captcha?.current?.executeAsync()?.then {
+                                                props.captcha?.current?.reset()
                                                 Axios.post<ActionResponse>("${Config.apibase}/reply/create/${rv.id}", ReplyRequest(reply, it), generateConfig<ReplyRequest, ActionResponse>())
                                             }?.then { it }
                                         }
