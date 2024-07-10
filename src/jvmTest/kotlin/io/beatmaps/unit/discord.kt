@@ -20,7 +20,6 @@ class DiscordTest : UnitTestBase() {
     @Test
     fun webhookTest() = runTest {
         val review = fixture<ReviewDetail>()
-        val hash = fixture<String>()
 
         val client = setupClient {
             respond(
@@ -33,7 +32,7 @@ class DiscordTest : UnitTestBase() {
         val url = "https://discord.com/api/webhooks/1234567/fake-webhook"
         val webhookClient = DiscordWebhookHandler(client, url)
 
-        webhookClient.post(review, hash)
+        webhookClient.post(review)
     }
 
     @Test

@@ -3,6 +3,7 @@ package io.beatmaps.unit
 import com.appmattus.kotlinfixture.decorator.nullability.NeverNullStrategy
 import com.appmattus.kotlinfixture.decorator.nullability.nullabilityStrategy
 import com.appmattus.kotlinfixture.kotlinFixture
+import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.api.scores.SSLeaderboardPlayer
 import io.beatmaps.common.jsonIgnoreUnknown
 import io.ktor.client.HttpClient
@@ -30,6 +31,7 @@ abstract class UnitTestBase {
         val fixture = kotlinFixture {
             nullabilityStrategy(NeverNullStrategy)
             property(SSLeaderboardPlayer::id) { (random.nextInt() and Int.MAX_VALUE).toString() }
+            property(ReviewReplyDetail::review) { null }
         }
     }
 }
