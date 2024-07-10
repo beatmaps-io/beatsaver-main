@@ -1,8 +1,10 @@
 package io.beatmaps.util
 
+import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewUpdateInfo
 import io.beatmaps.api.UserDetail
-import io.beatmaps.api.reviewToComplex
+import io.beatmaps.api.complexToReview
+import io.beatmaps.api.from
 import io.beatmaps.common.Config
 import io.beatmaps.common.client
 import io.beatmaps.common.consumeAck
@@ -11,7 +13,6 @@ import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Review
 import io.beatmaps.common.dbo.User
-import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
@@ -30,7 +31,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.decimalLiteral
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -114,10 +114,12 @@ fun Application.reviewListeners() {
                         .selectAll()
                         .where {
                             Review.mapId eq r.mapId and (Review.userId eq r.userId)
-                        }.singleOrNull()?.let { row ->
-                            reviewToComplex(row, "") to VersionsDao.wrapRow(row)
                         }
-                }?.let { (review, version) ->
+                        .complexToReview()
+                        .singleOrNull()?.let { row ->
+                            ReviewDetail.from(row, "")
+                        }
+                }?.let { review ->
                     client.post(webhookUrl) {
                         contentType(ContentType.Application.Json)
                         userAgent("BeatSaver")
@@ -135,7 +137,11 @@ fun Application.reviewListeners() {
                                         url = review.map?.let {
                                             "${Config.siteBase()}/maps/${it.id}"
                                         },
-                                        thumbnail = DiscordEmbed.HasUrl("${Config.cdnBase("", true)}/${version.hash}.jpg"),
+                                        thumbnail = review.map?.mainVersion()?.let {
+                                            DiscordEmbed.HasUrl(
+                                                "${Config.cdnBase("", true)}/${it.hash}.jpg"
+                                            )
+                                        },
                                         fields = listOf(
                                             DiscordEmbed.Field(
                                                 "Review",
