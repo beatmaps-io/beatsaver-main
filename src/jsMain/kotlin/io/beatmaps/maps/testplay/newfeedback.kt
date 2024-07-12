@@ -1,7 +1,7 @@
 package io.beatmaps.maps.testplay
 
 import external.Axios
-import external.ReCAPTCHA
+import external.IReCAPTCHA
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.FeedbackUpdate
@@ -23,7 +23,7 @@ import react.setState
 
 external interface NewFeedbackProps : Props {
     var hash: String
-    var captcha: RefObject<ReCAPTCHA>
+    var captcha: RefObject<IReCAPTCHA>
 }
 
 external interface NewFeedbackState : State {

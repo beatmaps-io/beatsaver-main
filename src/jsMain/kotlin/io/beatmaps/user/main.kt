@@ -37,7 +37,6 @@ import org.w3c.dom.events.Event
 import org.w3c.dom.get
 import org.w3c.dom.set
 import react.Props
-import react.createRef
 import react.dom.a
 import react.dom.b
 import react.dom.br
@@ -67,6 +66,7 @@ import react.router.useParams
 import react.useContext
 import react.useEffect
 import react.useEffectOnce
+import react.useRef
 import react.useState
 
 data class TabContext(val userId: Int?)
@@ -81,7 +81,7 @@ enum class ProfileTab(val tabText: String, val condition: (UserData?, TabContext
 }
 
 val profilePage = fc<Props> { props ->
-    val modalRef = createRef<ModalComponent>()
+    val modalRef = useRef<ModalComponent>()
     val userData = useContext(globalContext)
 
     val (startup, setStartup) = useState(false)

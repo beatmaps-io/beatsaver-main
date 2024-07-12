@@ -3,7 +3,7 @@ package io.beatmaps.upload
 import external.AxiosProgress
 import external.AxiosRequestConfig
 import external.Dropzone
-import external.ReCAPTCHA
+import external.IReCAPTCHA
 import external.reactFor
 import external.recaptcha
 import io.beatmaps.History
@@ -21,7 +21,6 @@ import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
-import react.createRef
 import react.dom.a
 import react.dom.br
 import react.dom.div
@@ -39,6 +38,7 @@ import react.dom.ul
 import react.fc
 import react.router.useNavigate
 import react.useEffectOnce
+import react.useRef
 import react.useState
 
 class UploadRequestConfig(block: (AxiosProgress) -> Unit) : AxiosRequestConfig {
@@ -57,11 +57,11 @@ val uploadPage = fc<UploadPageProps> {
     val (hasTitle, setHasTitle) = useState<Boolean>()
     val (tags, setTags) = useState(setOf<MapTag>())
 
-    val captchaRef = createRef<ReCAPTCHA>()
-    val titleRef = createRef<HTMLInputElement>()
-    val descrRef = createRef<HTMLInputElement>()
-    val beatsageRef = createRef<HTMLInputElement>()
-    val progressBarInnerRef = createRef<HTMLElement>()
+    val captchaRef = useRef<IReCAPTCHA>()
+    val titleRef = useRef<HTMLInputElement>()
+    val descrRef = useRef<HTMLInputElement>()
+    val beatsageRef = useRef<HTMLInputElement>()
+    val progressBarInnerRef = useRef<HTMLElement>()
 
     val history = History(useNavigate())
 

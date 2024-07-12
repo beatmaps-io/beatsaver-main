@@ -19,7 +19,6 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.createRef
 import react.dom.a
 import react.dom.div
 import react.dom.i
@@ -28,6 +27,7 @@ import react.dom.td
 import react.dom.textarea
 import react.dom.tr
 import react.fc
+import react.useRef
 import react.useState
 import kotlin.js.Promise
 
@@ -39,7 +39,7 @@ external interface ModReviewEntryProps : Props {
 }
 
 val modReviewEntry = fc<ModReviewEntryProps> { props ->
-    val reasonRef = createRef<HTMLTextAreaElement>()
+    val reasonRef = useRef<HTMLTextAreaElement>()
     val (hidden, setHidden) = useState(false)
     val (editing, setEditing) = useState(false)
     val (sentiment, setSentiment) = useState(null as ReviewSentiment?)

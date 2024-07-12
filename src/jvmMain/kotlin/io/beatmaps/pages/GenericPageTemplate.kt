@@ -1,5 +1,6 @@
 package io.beatmaps.pages
 
+import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.login.Session
 import io.ktor.server.html.Template
 import kotlinx.html.BODY
@@ -18,6 +19,10 @@ class GenericPageTemplate(private val s: Session?) : Template<BODY> {
                 id = "user-data"
                 +"""{"userId": ${snn.userId}, "admin": ${snn.admin}, "curator": ${snn.curator || snn.admin}, "suspended": ${snn.suspended}}"""
             }
+        }
+        div("d-none") {
+            id = "config-data"
+            +"""{"showCaptcha": ${reCaptchaVerify != null}}"""
         }
         script(src = "/static/modules.js") {}
         script(src = "/static/output.js") {}

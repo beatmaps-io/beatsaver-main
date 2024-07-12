@@ -1,7 +1,7 @@
 package io.beatmaps.shared.review
 
 import external.Axios
-import external.ReCAPTCHA
+import external.IReCAPTCHA
 import external.axiosDelete
 import external.generateConfig
 import io.beatmaps.Config
@@ -21,7 +21,6 @@ import kotlinx.html.title
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
 import react.RefObject
-import react.createRef
 import react.dom.a
 import react.dom.div
 import react.dom.i
@@ -29,12 +28,13 @@ import react.dom.p
 import react.dom.span
 import react.dom.textarea
 import react.fc
+import react.useRef
 import react.useState
 
 external interface ReplyProps : Props {
     var reply: ReviewReplyDetail
     var modal: RefObject<ModalComponent>?
-    var captcha: RefObject<ReCAPTCHA>?
+    var captcha: RefObject<IReCAPTCHA>?
 }
 
 val reply = fc<ReplyProps> { props ->
@@ -42,7 +42,7 @@ val reply = fc<ReplyProps> { props ->
     val (text, setText) = useState(props.reply.text)
     val (deleted, setDeleted) = useState(props.reply.deletedAt != null)
 
-    val reasonRef = createRef<HTMLTextAreaElement>()
+    val reasonRef = useRef<HTMLTextAreaElement>()
 
     fun delete() {
         val reason = reasonRef.current?.value ?: ""
