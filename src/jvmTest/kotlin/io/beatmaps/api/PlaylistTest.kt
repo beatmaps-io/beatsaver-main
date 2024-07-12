@@ -91,7 +91,7 @@ class PlaylistTest {
         val invalidHash = "z0f4c5dca2ea0e753abc453bed032a61758263bf"
         val invalidKey = "z"
         val notFoundHash = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        val notFoundKey = "2"
+        val notFoundKey = "aaaaaaa"
 
         val cases = listOf(
             PlaylistBatchCase(listOf(validHash, invalidHash), listOf(validKey, invalidKey), true, HttpStatusCode.OK, setOf(mapOne.intId(), mapTwo.intId()), "can insert multiple maps"),
@@ -167,7 +167,7 @@ class PlaylistTest {
         val invalidHash = "z0f4c5dca2ea0e753abc453bed032a61758263bf"
         val invalidKey = "z"
         val notFoundHash = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        val notFoundKey = "2"
+        val notFoundKey = "aaaaaaa"
 
         val cases = listOf(
             PlaylistBatchCase(listOf(validHash, invalidHash), listOf(validKey, invalidKey), true, HttpStatusCode.OK, setOf(), "can remove multiple maps"),

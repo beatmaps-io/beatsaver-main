@@ -247,6 +247,10 @@ tasks.getByName<Jar>("jvmJar") {
     }
 }
 
+tasks.getByName<Test>("jvmTest") {
+    dependsOn(tasks.getByName("jsBrowserProductionWebpack"), tasks.getByName("compileSass"))
+}
+
 ktlint {
     version.set("0.50.0")
     reporters {

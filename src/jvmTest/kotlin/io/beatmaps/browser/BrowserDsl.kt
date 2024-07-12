@@ -19,6 +19,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import kotlinx.serialization.SerializationStrategy
 import org.apache.http.entity.ContentType
+import java.nio.file.Paths
 
 class BrowserDsl(private val testHost: String, private val client: HttpClient, private val page: Page) : FixtureHelpers() {
     fun navigate(url: String) {
@@ -61,6 +62,12 @@ class BrowserDsl(private val testHost: String, private val client: HttpClient, p
     }
 
     fun screenshot(name: String) {
+        page.screenshot(
+            Page.ScreenshotOptions()
+                .setFullPage(true)
+                .setPath(Paths.get("screenshots/$name.png"))
+        )
+
         /*val css = client.get("/static/main.css").bodyAsText()
         private val percy = Percy(page)
         percy.snapshot(name, percyCSS = css)*/

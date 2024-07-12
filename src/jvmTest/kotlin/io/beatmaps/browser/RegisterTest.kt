@@ -6,7 +6,6 @@ import io.beatmaps.common.dbo.UserDao
 import kotlinx.datetime.Clock
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.junit.Ignore
 import org.junit.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -37,7 +36,11 @@ class RegisterTest : BrowserTestBase() {
 
             register.click()
 
-            waitUntilGone(usernameField)
+            try {
+                waitUntilGone(usernameField)
+            } finally {
+                screenshot("captcha")
+            }
             assertContains(body.innerText(), "success")
 
             val dao = transaction {
@@ -50,7 +53,6 @@ class RegisterTest : BrowserTestBase() {
     }
 
     @Test
-    @Ignore
     fun takeScreenshots() = bmTest {
         navigate("/")
         screenshot("home")
