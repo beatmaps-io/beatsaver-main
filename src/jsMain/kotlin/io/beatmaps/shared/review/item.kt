@@ -249,7 +249,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                             }
 
                             globalContext.Consumer { userData ->
-                                if (userData != null && (userData.userId == rv.creator?.id || userData.userId == props.map?.uploader?.id)) {
+                                if (state.editing != true && userData != null && (userData.userId == rv.creator?.id || userData.userId == props.map?.uploader?.id)) {
                                     replyInput {
                                         attrs.onSave = { reply ->
                                             props.captcha?.current?.executeAsync()?.then {
