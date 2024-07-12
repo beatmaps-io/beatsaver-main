@@ -13,9 +13,12 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.cookies.HttpCookies
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.call
@@ -59,17 +62,27 @@ abstract class BrowserTestBase {
         val newUrl = original.substringAfter(testHost)
 
         runBlocking {
+            fun shared(builder: HttpRequestBuilder, it: Route) {
+                it.request().headersArray().forEach {
+                    builder.header(it.name, it.value)
+                }
+            }
+
             val response = when (it.request().method()) {
                 "POST" -> client.post(newUrl) {
                     setBody(it.request().postDataBuffer())
-                    it.request().headersArray().forEach {
-                        header(it.name, it.value)
-                    }
+                    shared(this, it)
+                }
+                "PUT" -> client.put(newUrl) {
+                    setBody(it.request().postDataBuffer())
+                    shared(this, it)
+                }
+                "DELETE" -> client.delete(newUrl) {
+                    setBody(it.request().postDataBuffer())
+                    shared(this, it)
                 }
                 else -> client.get(newUrl) {
-                    it.request().headersArray().forEach {
-                        header(it.name, it.value)
-                    }
+                    shared(this, it)
                 }
             }
 

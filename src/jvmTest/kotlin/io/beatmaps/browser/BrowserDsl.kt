@@ -19,12 +19,14 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import kotlinx.serialization.SerializationStrategy
 import org.apache.http.entity.ContentType
+import org.jetbrains.exposed.sql.Transaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.nio.file.Paths
 
 class BrowserDsl(private val testHost: String, private val client: HttpClient, private val page: Page) : FixtureHelpers() {
     fun navigate(url: String) {
         page.navigate("$testHost$url")
-        page.waitForLoadState(LoadState.NETWORKIDLE)
+        waitForNetwork()
     }
 
     fun <T> mock(url: String, serializer: SerializationStrategy<T>, handler: (Request) -> T) {
@@ -53,8 +55,18 @@ class BrowserDsl(private val testHost: String, private val client: HttpClient, p
         }
     }
 
-    fun waitUntilGone(l: Locator) {
-        page.waitForCondition { l.count() == 0 }
+    fun waitUntilGone(l: Locator) = waitUntilNOrLess(l, 0)
+
+    fun waitUntilNOrLess(l: Locator, n: Int) {
+        page.waitForCondition { l.count() <= n }
+    }
+
+    fun waitUntilNOrMore(l: Locator, n: Int) {
+        page.waitForCondition { l.count() >= n }
+    }
+
+    private fun waitForNetwork() {
+        page.waitForLoadState(LoadState.NETWORKIDLE)
     }
 
     fun delay(t: Double) {
@@ -74,6 +86,12 @@ class BrowserDsl(private val testHost: String, private val client: HttpClient, p
         private val percy = Percy(page)
         percy.snapshot(name, percyCSS = css)*/
     }
+
+    fun <T> db(block: Transaction.() -> T) =
+        transaction {
+            maxAttempts = 1
+            block()
+        }
 
     val modals = Modals(page)
 
