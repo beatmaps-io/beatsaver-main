@@ -1,9 +1,10 @@
 package external
 
+import io.beatmaps.configContext
 import react.ComponentClass
+import react.MutableRefObject
 import react.Props
 import react.RBuilder
-import react.RefObject
 import kotlin.js.Promise
 
 external interface IGoogleReCaptchaProps : Props {
@@ -22,18 +23,36 @@ external interface IGoogleReCaptchaProps : Props {
 
 @JsModule("react-google-recaptcha")
 @JsNonModule
-external object ReCAPTCHA {
+external object ReCAPTCHA : IReCAPTCHA {
     val default: ComponentClass<IGoogleReCaptchaProps>
 
     fun execute(): String
+    override fun executeAsync(): Promise<String>
+    override fun reset()
+}
+
+external interface IReCAPTCHA {
     fun executeAsync(): Promise<String>
     fun reset()
 }
 
-fun RBuilder.recaptcha(captchaRef: RefObject<ReCAPTCHA>) {
-    ReCAPTCHA.default {
-        attrs.sitekey = "6LdMpxUaAAAAAA6a3Fb2BOLQk9KO8wCSZ-a_YIaH"
-        attrs.size = "invisible"
-        ref = captchaRef
+object FakeReCaptcha : IReCAPTCHA {
+    override fun executeAsync() =
+        Promise.resolve("")
+
+    override fun reset() = Unit
+}
+
+fun RBuilder.recaptcha(captchaRef: MutableRefObject<IReCAPTCHA>) {
+    configContext.Consumer { configData ->
+        if (configData?.showCaptcha != false) {
+            ReCAPTCHA.default {
+                attrs.sitekey = "6LdMpxUaAAAAAA6a3Fb2BOLQk9KO8wCSZ-a_YIaH"
+                attrs.size = "invisible"
+                ref = captchaRef
+            }
+        } else {
+            captchaRef.current = FakeReCaptcha
+        }
     }
 }

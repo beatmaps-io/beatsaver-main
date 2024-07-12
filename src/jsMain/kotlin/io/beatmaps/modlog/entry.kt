@@ -23,7 +23,6 @@ import io.beatmaps.user.userLink
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLDivElement
 import react.Props
-import react.createRef
 import react.dom.br
 import react.dom.div
 import react.dom.p
@@ -31,6 +30,7 @@ import react.dom.span
 import react.dom.td
 import react.dom.tr
 import react.fc
+import react.useRef
 
 external interface ModLogEntryProps : Props {
     var entry: ModLogEntry?
@@ -45,7 +45,7 @@ val modLogEntryRenderer = fc<ModLogEntryProps> {
         )
     }
 
-    val localRef = createRef<HTMLDivElement>()
+    val localRef = useRef<HTMLDivElement>()
     tr {
         it.entry?.let {
             attrs.onClickFunction = {

@@ -2,7 +2,7 @@ package io.beatmaps.shared.review
 
 import external.Axios
 import external.CancelTokenSource
-import external.ReCAPTCHA
+import external.IReCAPTCHA
 import external.generateConfig
 import external.recaptcha
 import io.beatmaps.Config
@@ -37,7 +37,7 @@ val reviewTable = fc<ReviewTableProps> { props ->
     val resultsTable = useRef<HTMLElement>()
     val modal = useContext(modalContext)
 
-    val captchaRef = useRef<ReCAPTCHA>()
+    val captchaRef = useRef<IReCAPTCHA>()
 
     recaptcha(captchaRef)
 

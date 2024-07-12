@@ -26,9 +26,14 @@ import io.ktor.server.testing.TestApplication
 import io.ktor.test.dispatcher.testSuspend
 import io.ktor.util.toMap
 import kotlinx.coroutines.runBlocking
+import org.junit.Rule
+import org.junit.rules.TestName
 
 abstract class BrowserTestBase {
     private val testHost = "https://dev.beatsaver.com"
+
+    @get:Rule
+    val name = TestName()
 
     protected fun bmTest(block: suspend BrowserDsl.() -> Unit) = testSuspend {
         val context = browser.newContext(
@@ -38,7 +43,14 @@ abstract class BrowserTestBase {
         )
         val page = context.newPage()
         page.route("$testHost/**", routeViaClient(client))
-        block(BrowserDsl(testHost, client, page))
+
+        val dsl = BrowserDsl(testHost, client, page)
+        try {
+            block(dsl)
+        } catch (e: Exception) {
+            dsl.screenshot("${name.methodName}-error")
+            throw e
+        }
         page.close()
     }
 

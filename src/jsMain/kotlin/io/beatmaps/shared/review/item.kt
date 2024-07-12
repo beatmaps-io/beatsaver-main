@@ -1,7 +1,7 @@
 package io.beatmaps.shared.review
 
 import external.Axios
-import external.ReCAPTCHA
+import external.IReCAPTCHA
 import external.axiosDelete
 import external.axiosGet
 import external.generateConfig
@@ -52,7 +52,7 @@ external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
     var userId: Int
     var map: MapDetail?
     var modal: RefObject<ModalComponent>?
-    var captcha: RefObject<ReCAPTCHA>?
+    var captcha: RefObject<IReCAPTCHA>?
     var setExistingReview: ((Boolean) -> Unit)?
 }
 external interface ReviewItemState : AutoSizeComponentState {

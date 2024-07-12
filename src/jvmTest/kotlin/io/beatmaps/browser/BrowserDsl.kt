@@ -67,7 +67,9 @@ class BrowserDsl(private val testHost: String, private val client: HttpClient, p
                 .setFullPage(true)
                 .setPath(Paths.get("screenshots/$name.png"))
         )
+    }
 
+    private fun percy(name: String) {
         /*val css = client.get("/static/main.css").bodyAsText()
         private val percy = Percy(page)
         percy.snapshot(name, percyCSS = css)*/
