@@ -2,7 +2,6 @@ package io.beatmaps.browser.page
 
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
-import io.beatmaps.browser.page.HomePage.MapCard
 import io.beatmaps.common.api.ReviewSentiment
 
 class MapPage(page: Page) : PageBase(page) {
