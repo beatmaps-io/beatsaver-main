@@ -3,7 +3,7 @@ package io.beatmaps.upload
 import external.Axios
 import external.AxiosResponse
 import external.DropzoneProps
-import external.ReCAPTCHA
+import external.IReCAPTCHA
 import io.beatmaps.History
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.UploadValidationInfo
@@ -41,7 +41,7 @@ fun RElementBuilder<DropzoneProps>.simple(
     errors: Boolean,
     progressBarInnerRef: RefObject<HTMLElement>,
     dropText: String,
-    captchaRef: RefObject<ReCAPTCHA>,
+    captchaRef: RefObject<IReCAPTCHA>,
     block: (FormData) -> Unit,
     errorsBlock: (List<UploadValidationInfo>) -> Unit,
     extraInfo: List<String> = emptyList(),

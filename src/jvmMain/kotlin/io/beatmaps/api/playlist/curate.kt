@@ -31,13 +31,13 @@ fun Route.playlistCurate() {
                         },
                         {
                             if (playlistUpdate.curated) {
-                                it[curatedAt] = NowExpression(curatedAt.columnType)
+                                it[curatedAt] = NowExpression(curatedAt)
                                 it[curator] = EntityID(user.userId, io.beatmaps.common.dbo.User)
                             } else {
                                 it[curatedAt] = null
                                 it[curator] = null
                             }
-                            it[updatedAt] = NowExpression(updatedAt.columnType)
+                            it[updatedAt] = NowExpression(updatedAt)
                         },
                         *io.beatmaps.common.dbo.Playlist.columns.toTypedArray()
                     )?.firstOrNull()?.let {

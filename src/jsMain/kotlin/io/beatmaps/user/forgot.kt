@@ -1,7 +1,7 @@
 package io.beatmaps.user
 
 import external.Axios
-import external.ReCAPTCHA
+import external.IReCAPTCHA
 import external.generateConfig
 import external.recaptcha
 import external.routeLink
@@ -31,7 +31,7 @@ val forgotPage = fc<Props> {
     val (errors, setErrors) = useState(listOf<String>())
 
     val emailRef = useRef<HTMLInputElement>()
-    val captchaRef = useRef<ReCAPTCHA>()
+    val captchaRef = useRef<IReCAPTCHA>()
 
     useEffectOnce {
         setPageTitle("Forgot password")

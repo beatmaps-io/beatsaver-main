@@ -4,13 +4,15 @@ import io.beatmaps.api.LeaderboardData
 import io.beatmaps.api.LeaderboardScore
 import io.beatmaps.common.SSGameMode
 import io.beatmaps.common.api.EDifficulty
+import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import kotlinx.serialization.Serializable
 
-class BeatLeaderScores : RemoteScores {
+class BeatLeaderScores(private val client: HttpClient) : RemoteScores {
     override suspend fun getLeaderboard(hash: String, diff: EDifficulty, mode: SSGameMode, page: Int) =
         ssTry {
-            scoresClient.get(
+            client.get(
                 "https://api.beatleader.xyz/v5/scores/$hash/${diff.enumName()}/${mode.characteristic.enumName()}?page=$page&count=12"
             ).body<BLPaged>()
         }.let {
@@ -24,8 +26,13 @@ class BeatLeaderScores : RemoteScores {
         }
 }
 
+@Serializable
 data class BLPaged(val metadata: SSPagedMetadata, val container: BLLeaderboardContainer, val data: List<BLLeaderboardScore>)
+
+@Serializable
 data class BLLeaderboardContainer(val leaderboardId: String?, val ranked: Boolean)
+
+@Serializable
 data class BLLeaderboardScore(
     val id: Long,
     val baseScore: Int,

@@ -7,6 +7,7 @@ import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.from
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
+import io.beatmaps.common.FileLimits
 import io.beatmaps.common.Folders
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.EPlaylistType
@@ -82,10 +83,10 @@ fun Route.playlistCreate() {
                 val multipart = call.handleMultipart { part ->
                     part.streamProvider().use { its ->
                         val tmp = ByteArrayOutputStream()
-                        its.copyToSuspend(tmp, sizeLimit = 10 * 1024 * 1024)
+                        its.copyToSuspend(tmp, sizeLimit = FileLimits.PLAYLIST_IMAGE_LIMIT)
 
                         thumbnailSizes.forEach { s ->
-                            files[s] = File(Folders.uploadTempFolder(), "upload-${java.lang.System.currentTimeMillis()}-${sess.userId.hashCode()}-$s.jpg").also { localFile ->
+                            files[s] = File(Folders.uploadTempFolder(), "upload-${System.currentTimeMillis()}-${sess.userId.hashCode()}-$s.jpg").also { localFile ->
                                 Thumbnails
                                     .of(tmp.toByteArray().inputStream())
                                     .size(s, s)
@@ -157,7 +158,7 @@ fun Route.playlistCreate() {
             val multipart = call.handleMultipart { part ->
                 part.streamProvider().use { its ->
                     val tmp = ByteArrayOutputStream()
-                    its.copyToSuspend(tmp, sizeLimit = 10 * 1024 * 1024)
+                    its.copyToSuspend(tmp, sizeLimit = FileLimits.PLAYLIST_IMAGE_LIMIT)
 
                     thumbnailSizes.forEach { s ->
                         val localFile = File(Folders.localPlaylistCoverFolder(s), "${req.id}.jpg")
@@ -194,14 +195,14 @@ fun Route.playlistCreate() {
                         query
                     }) {
                         if (data.deleted == true) {
-                            it[deletedAt] = NowExpression(deletedAt.columnType)
+                            it[deletedAt] = NowExpression(deletedAt)
                         } else {
                             it[name] = toCreate.name
                             it[description] = newDescription
                             it[type] = toCreate.type
                             it[config] = toCreate.config
                         }
-                        it[updatedAt] = NowExpression(updatedAt.columnType)
+                        it[updatedAt] = NowExpression(updatedAt)
                     } > 0 || throw UploadException("Update failed")
                 }
 

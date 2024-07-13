@@ -120,7 +120,7 @@ import kotlin.time.Duration.Companion.nanoseconds
 suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) =
     call.genericPage(statusCode, headerTemplate)
 
-suspend fun ApplicationCall.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) {
+suspend fun ApplicationCall.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null, includeHeader: Boolean = true) {
     val sess = sessions.get<Session>()
 
     // Force renew session
@@ -131,7 +131,7 @@ suspend fun ApplicationCall.genericPage(statusCode: HttpStatusCode = HttpStatusC
     if (sess != null && sess.uniqueName == null && request.path() != "/username") {
         respondRedirect("/username")
     } else {
-        respondHtmlTemplate(MainTemplate(sess, GenericPageTemplate(sess)), statusCode) {
+        respondHtmlTemplate(MainTemplate(sess, GenericPageTemplate(sess), includeHeader), statusCode) {
             headElements {
                 headerTemplate?.invoke(this)
             }
@@ -139,6 +139,9 @@ suspend fun ApplicationCall.genericPage(statusCode: HttpStatusCode = HttpStatusC
         }
     }
 }
+
+suspend fun PipelineContext<*, ApplicationCall>.emptyPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) =
+    call.genericPage(statusCode, headerTemplate, false)
 
 enum class DbMigrationType(val folder: String) {
     None(""), Standard("db/migration"), Test("db");

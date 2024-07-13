@@ -97,7 +97,7 @@ fun Route.playlistMaps() {
                                 (Playlist.id eq req.id) and (Playlist.owner eq sess.userId) and Playlist.deletedAt.isNull()
                             },
                             {
-                                it[songsChangedAt] = NowExpression(songsChangedAt.columnType)
+                                it[songsChangedAt] = NowExpression(songsChangedAt)
                             },
                             *Playlist.columns.toTypedArray()
                         )?.firstOrNull()?.let { row ->
@@ -174,7 +174,7 @@ fun Route.playlistMaps() {
                                 (Playlist.id eq req.id) and (Playlist.owner eq sess.userId) and Playlist.deletedAt.isNull()
                             },
                             {
-                                it[songsChangedAt] = NowExpression(songsChangedAt.columnType)
+                                it[songsChangedAt] = NowExpression(songsChangedAt)
                             },
                             *Playlist.columns.toTypedArray()
                         )?.firstOrNull()?.let { row ->

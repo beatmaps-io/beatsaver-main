@@ -205,13 +205,13 @@ fun Route.mapDetailRoute() {
                             (Beatmap.id eq mapUpdate.id) and (Beatmap.uploader neq user.userId) and (if (mapUpdate.curated) Beatmap.curatedAt.isNull() else Beatmap.curatedAt.isNotNull())
                         }) {
                             if (mapUpdate.curated) {
-                                it[curatedAt] = NowExpression(curatedAt.columnType)
+                                it[curatedAt] = NowExpression(curatedAt)
                                 it[curator] = EntityID(user.userId, User)
                             } else {
                                 it[curatedAt] = null
                                 it[curator] = null
                             }
-                            it[updatedAt] = NowExpression(updatedAt.columnType)
+                            it[updatedAt] = NowExpression(updatedAt)
                         }
 
                     (curateMap() > 0).also { success ->
@@ -288,7 +288,7 @@ fun Route.mapDetailRoute() {
                         mapUpdate.automapper && admin -> AiDeclarationType.Admin
                         else -> AiDeclarationType.Uploader
                     }
-                    it[updatedAt] = NowExpression(updatedAt.columnType)
+                    it[updatedAt] = NowExpression(updatedAt)
                 } > 0
             }
 
@@ -324,14 +324,14 @@ fun Route.mapDetailRoute() {
                         }
                     }) {
                         if (mapUpdate.deleted) {
-                            it[deletedAt] = NowExpression(deletedAt.columnType)
+                            it[deletedAt] = NowExpression(deletedAt)
                         } else {
                             mapUpdate.name?.let { n -> it[name] = n.take(1000) }
                             mapUpdate.description?.let { d -> it[description] = d.take(10000) }
                             if (tooMany != true) { // Don't update tags if request is trying to add too many tags
                                 mapUpdate.tags?.filter { t -> t != MapTag.None }?.map { t -> t.slug }?.let { t -> it[tags] = t }
                             }
-                            it[updatedAt] = NowExpression(updatedAt.columnType)
+                            it[updatedAt] = NowExpression(updatedAt)
                         }
                     }
 
@@ -385,7 +385,7 @@ fun Route.mapDetailRoute() {
                             Beatmap.id eq mapUpdate.id and Beatmap.deletedAt.isNull()
                         }) {
                             mapUpdate.tags?.filter { t -> t != MapTag.None }?.map { t -> t.slug }?.let { t -> it[tags] = t }
-                            it[updatedAt] = NowExpression(updatedAt.columnType)
+                            it[updatedAt] = NowExpression(updatedAt)
                         }
 
                     (updateMap() > 0).also { rTemp ->

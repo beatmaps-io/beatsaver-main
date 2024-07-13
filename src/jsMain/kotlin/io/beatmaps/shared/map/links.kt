@@ -11,12 +11,14 @@ import kotlinx.html.title
 import react.Props
 import react.dom.a
 import react.dom.i
+import react.dom.span
 import react.fc
 import react.useContext
 
 external interface LinksProps : Props {
     var map: MapDetail
     var version: MapVersion?
+    var limited: Boolean?
 }
 
 val links = fc<LinksProps> { props ->
@@ -24,6 +26,11 @@ val links = fc<LinksProps> { props ->
 
     copyBsr {
         attrs.map = props.map
+    }
+    if (props.limited != true) {
+        copyEmbed {
+            attrs.map = props.map
+        }
     }
     val version = props.version
     val altLink = if (version?.state == EMapState.Published) {
@@ -34,10 +41,12 @@ val links = fc<LinksProps> { props ->
         "#"
     }
     a(altLink) {
-        attrs.title = "Preview"
-        attrs.attributes["aria-label"] = "Preview"
+        val text = "Preview"
+        attrs.title = text
+        attrs.attributes["aria-label"] = text
+        attrs.target = "_top"
         attrs.onClickFunction = {
-            it.preventDefault()
+            if (modal?.current != null) it.preventDefault()
 
             if (props.version?.state == EMapState.Published) {
                 modal?.current?.showById(props.map.id)
@@ -47,6 +56,7 @@ val links = fc<LinksProps> { props ->
                 }
             }
         }
+        span("dd-text") { +text }
         i("fas fa-play text-info") {
             attrs.attributes["aria-hidden"] = "true"
         }

@@ -32,6 +32,7 @@ import io.ktor.server.routing.application
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.serializer
 import org.jetbrains.exposed.sql.Count
 import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
@@ -66,6 +67,7 @@ data class VoteRequest(val auth: AuthRequest, val hash: String, val direction: B
 @Serializable
 data class VoteResponse(val success: Boolean, val error: String? = null)
 
+@Serializable
 data class QueuedVote(val userId: Long, val steam: Boolean, val mapId: Int, val direction: Boolean)
 
 @Serializable
@@ -84,7 +86,7 @@ fun Route.voteRoute() {
                     it[mapId] = body.mapId
                     it[userId] = body.userId
                     it[vote] = body.direction
-                    it[updatedAt] = NowExpression(updatedAt.columnType)
+                    it[updatedAt] = NowExpression(updatedAt)
                     it[steam] = body.steam
                 }
 
@@ -107,7 +109,7 @@ fun Route.voteRoute() {
                         it[score] = scoreWeighted.toBigDecimal()
                         it[upVotesInt] = upVotes.toInt()
                         it[downVotesInt] = downVotes.toInt()
-                        it[lastVoteAt] = NowExpression(lastVoteAt.columnType)
+                        it[lastVoteAt] = NowExpression(lastVoteAt)
                     },
                     Beatmap.uploader
                 )?.firstOrNull()?.let {
@@ -121,17 +123,17 @@ fun Route.voteRoute() {
             }
         }
 
-        consumeAck("maptouv", Int::class) { _, mapId ->
+        consumeAck("maptouv", Int.serializer()) { _, mapId ->
             transaction {
                 Beatmap.select(Beatmap.uploader).where {
                     Beatmap.id eq mapId
                 }.firstOrNull()?.let { it[Beatmap.uploader].value }
-            }.let {
+            }?.let {
                 publish("beatmaps", "user.stats.$it", null, it)
             }
         }
 
-        consumeAck("uvstats", Int::class) { _, body ->
+        consumeAck("uvstats", Int.serializer()) { _, body ->
             transaction {
                 val subQuery = Beatmap
                     .joinVersions()

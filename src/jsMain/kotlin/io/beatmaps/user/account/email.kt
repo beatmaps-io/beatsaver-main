@@ -1,7 +1,7 @@
 package io.beatmaps.user.account
 
 import external.Axios
-import external.ReCAPTCHA
+import external.IReCAPTCHA
 import external.generateConfig
 import external.reactFor
 import io.beatmaps.Config
@@ -27,7 +27,7 @@ import react.useState
 
 external interface AccountEmailProps : Props {
     var userDetail: UserDetail
-    var captchaRef: RefObject<ReCAPTCHA>
+    var captchaRef: RefObject<IReCAPTCHA>
 }
 
 val accountEmail = fc<AccountEmailProps> { props ->

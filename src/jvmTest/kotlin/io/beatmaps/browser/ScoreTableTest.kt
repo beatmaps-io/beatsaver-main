@@ -33,8 +33,8 @@ class ScoreTableTest : BrowserTestBase() {
         }
 
         val mapId = transaction {
-            val (uid, username) = createUser()
-            val (mid, hash) = createMap(uid, true)
+            val (uid, _) = createUser()
+            val (mid, _) = createMap(uid, true)
 
             mid
         }

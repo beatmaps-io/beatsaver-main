@@ -63,7 +63,7 @@ class MapCardTest : BrowserTestBase() {
             }
         }
 
-        transaction {
+        db {
             val count = PlaylistMap.selectAll().where { PlaylistMap.playlistId eq playlistId }.count()
             assertEquals(1, count)
         }

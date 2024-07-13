@@ -1,10 +1,9 @@
 package io.beatmaps.shared.review
 
 import external.Axios
-import external.ReCAPTCHA
+import external.IReCAPTCHA
 import external.axiosGet
 import external.generateConfig
-import external.recaptcha
 import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.PutReview
@@ -15,6 +14,7 @@ import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
+import react.RefObject
 import react.dom.a
 import react.dom.br
 import react.dom.button
@@ -32,6 +32,7 @@ external interface NewReviewProps : Props {
     var mapId: String
     var userId: Int
     var existingReview: Boolean?
+    var captcha: RefObject<IReCAPTCHA>?
     var setExistingReview: ((Boolean) -> Unit)?
     var reloadList: (() -> Unit)?
 }
@@ -42,7 +43,6 @@ val newReview = fc<NewReviewProps> { props ->
     val (focusIcon, setFocusIcon) = useState(false)
     val (reviewLength, setReviewLength) = useState(0)
 
-    val captchaRef = useRef<ReCAPTCHA>()
     val textareaRef = useRef<HTMLTextAreaElement>()
 
     useEffectOnce {
@@ -54,8 +54,6 @@ val newReview = fc<NewReviewProps> { props ->
             }
         }
     }
-
-    recaptcha(captchaRef)
 
     if (props.existingReview == false) {
         div("card mb-2") {
@@ -113,7 +111,9 @@ val newReview = fc<NewReviewProps> { props ->
 
                             setLoading(true)
 
-                            captchaRef.current?.executeAsync()?.then { captcha ->
+                            props.captcha?.current?.executeAsync()?.then { captcha ->
+                                props.captcha?.current?.reset()
+
                                 Axios.put<ActionResponse>(
                                     "${Config.apibase}/review/single/${props.mapId}/${props.userId}",
                                     PutReview(newReview, currentSentiment, captcha),

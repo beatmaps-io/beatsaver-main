@@ -121,7 +121,7 @@ kotlin {
 
                 // Database drivers
                 implementation("org.postgresql:postgresql:42.5.0")
-                implementation("pl.jutupe:ktor-rabbitmq:0.4.5")
+                implementation("pl.jutupe:ktor-rabbitmq:0.5.19")
                 implementation("com.rabbitmq:amqp-client:5.9.0")
                 implementation("org.litote.kmongo:kmongo-serialization:4.9.0")
 
@@ -158,6 +158,8 @@ kotlin {
                 implementation(kotlin("test-junit"))
 
                 implementation("io.ktor:ktor-server-test-host:$ktorVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
+                implementation("io.ktor:ktor-client-mock:$ktorVersion")
                 implementation("com.microsoft.playwright:playwright:1.39.0")
                 implementation("com.appmattus.fixture:fixture:1.2.0")
                 implementation("net.lingala.zip4j:zip4j:2.11.6-SNAPSHOT")
@@ -243,6 +245,10 @@ tasks.getByName<Jar>("jvmJar") {
     listOf(jsBrowserProductionWebpack.mainOutputFileName.get(), jsBrowserProductionWebpack.mainOutputFileName.get() + ".map", "modules.js", "modules.js.map").forEach {
         from(File(jsBrowserProductionWebpack.outputDirectory.get().asFile, it))
     }
+}
+
+tasks.getByName<Test>("jvmTest") {
+    dependsOn(tasks.getByName("jsBrowserProductionWebpack"), tasks.getByName("compileSass"))
 }
 
 ktlint {

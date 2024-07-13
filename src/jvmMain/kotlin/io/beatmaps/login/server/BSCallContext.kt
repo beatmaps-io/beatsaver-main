@@ -13,7 +13,7 @@ import io.ktor.util.toMap
 import kotlinx.coroutines.runBlocking
 import nl.myndocs.oauth2.json.JsonMapper
 import nl.myndocs.oauth2.request.CallContext
-import java.net.URL
+import java.net.URI
 
 class BSCallContext(val applicationCall: ApplicationCall) : CallContext {
     override val path: String = applicationCall.request.path()
@@ -68,7 +68,7 @@ class BSCallContext(val applicationCall: ApplicationCall) : CallContext {
     override fun redirect(uri: String) {
         runBlocking {
             respondHeader("Refresh", "0;url=$uri")
-            applicationCall.respondText("You are being redirected back to ${URL(uri).host}")
+            applicationCall.respondText("You are being redirected back to ${URI(uri).authority}")
         }
     }
 }

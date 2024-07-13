@@ -4,6 +4,7 @@ import io.beatmaps.common.CDNUpdate
 import io.beatmaps.common.Folders
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.client
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
@@ -46,7 +47,7 @@ fun Application.filenameUpdater() {
         return
     }
 
-    val worker = Worker(cloudflareAccountId, cloudflareAuthToken)
+    val worker = Worker(client, cloudflareAccountId, cloudflareAuthToken)
     val beatsaverKVStore = worker.getKVStore(cloudflareKVId)
     val r2Client = R2(cloudflareAccountId, cloudflareR2Key, cloudflareR2Secret).getBucket(cloudflareR2Bucket)
     val downloadFilenameCache = createLRUMap<String, String>(100)

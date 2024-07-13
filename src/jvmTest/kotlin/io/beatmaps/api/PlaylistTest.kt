@@ -30,7 +30,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.insertIgnore
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -92,7 +91,7 @@ class PlaylistTest {
         val invalidHash = "z0f4c5dca2ea0e753abc453bed032a61758263bf"
         val invalidKey = "z"
         val notFoundHash = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        val notFoundKey = "2"
+        val notFoundKey = "aaaaaaa"
 
         val cases = listOf(
             PlaylistBatchCase(listOf(validHash, invalidHash), listOf(validKey, invalidKey), true, HttpStatusCode.OK, setOf(mapOne.intId(), mapTwo.intId()), "can insert multiple maps"),
@@ -136,7 +135,7 @@ class PlaylistTest {
         transaction {
             PlaylistMap.deleteWhere { PlaylistMap.playlistId eq playlistId }
             Playlist.update({ Playlist.id eq playlistId }) {
-                it[deletedAt] = NowExpression(deletedAt.columnType)
+                it[deletedAt] = NowExpression(deletedAt)
             }
         }
     }
@@ -168,7 +167,7 @@ class PlaylistTest {
         val invalidHash = "z0f4c5dca2ea0e753abc453bed032a61758263bf"
         val invalidKey = "z"
         val notFoundHash = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        val notFoundKey = "2"
+        val notFoundKey = "aaaaaaa"
 
         val cases = listOf(
             PlaylistBatchCase(listOf(validHash, invalidHash), listOf(validKey, invalidKey), true, HttpStatusCode.OK, setOf(), "can remove multiple maps"),
@@ -217,9 +216,9 @@ class PlaylistTest {
         }
 
         transaction {
-            PlaylistMap.deleteWhere { PlaylistMap.playlistId eq plId }
+            PlaylistMap.deleteWhere { playlistId eq plId }
             Playlist.update({ Playlist.id eq plId }) {
-                it[deletedAt] = NowExpression(deletedAt.columnType)
+                it[deletedAt] = NowExpression(deletedAt)
             }
         }
     }

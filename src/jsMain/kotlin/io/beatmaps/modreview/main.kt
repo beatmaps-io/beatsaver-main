@@ -2,15 +2,25 @@ package io.beatmaps.modreview
 
 import external.Axios
 import external.CancelTokenSource
+import external.axiosDelete
 import external.generateConfig
+import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
+import io.beatmaps.api.ActionResponse
+import io.beatmaps.api.DeleteReview
+import io.beatmaps.api.PutReview
+import io.beatmaps.api.RepliesResponse
+import io.beatmaps.api.ReplyRequest
+import io.beatmaps.api.ReviewDetail
+import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.api.ReviewsResponse
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
 import io.beatmaps.index.modalContext
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.review.CommentsInfiniteScroll
 import kotlinx.dom.hasClass
@@ -39,8 +49,13 @@ import react.useEffect
 import react.useEffectOnce
 import react.useRef
 import react.useState
+import kotlin.reflect.KClass
 
-val modReview = fc<Props> {
+external interface ModReviewProps : Props {
+    var type: KClass<*>
+}
+
+val modReview = fc<ModReviewProps> { props ->
     val userData = useContext(globalContext)
     val history = History(useNavigate())
     val location = useLocation()
@@ -64,7 +79,7 @@ val modReview = fc<Props> {
     }
 
     useEffect(location) {
-        userRef.current?.value = user
+        userRef.current?.value = userLocal
 
         setUser(userLocal)
     }
@@ -75,15 +90,6 @@ val modReview = fc<Props> {
         )
 
         return if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
-    }
-
-    val loadPage = { toLoad: Int, token: CancelTokenSource ->
-        Axios.get<ReviewsResponse>(
-            "${Config.apibase}/review/latest/$toLoad" + urlExtension(),
-            generateConfig<String, ReviewsResponse>(token.token)
-        ).then {
-            return@then it.data.docs
-        }
     }
 
     modal {
@@ -112,15 +118,29 @@ val modReview = fc<Props> {
                             }
                         }
                         td {
-                            attrs.colSpan = "4"
+                            attrs.colSpan = "3"
                             button(type = ButtonType.submit, classes = "btn btn-primary") {
                                 attrs.onClickFunction = {
                                     it.preventDefault()
 
-                                    history.push("/modreview" + urlExtension())
+                                    history.push(location.pathname + urlExtension())
                                 }
 
                                 +"Filter"
+                            }
+                        }
+                        td {
+                            when (props.type) {
+                                ReviewDetail::class -> {
+                                    routeLink("/modreply" + urlExtension(), "btn btn-primary") {
+                                        +"Replies"
+                                    }
+                                }
+                                ReviewReplyDetail::class -> {
+                                    routeLink("/modreview" + urlExtension(), "btn btn-primary") {
+                                        +"Reviews"
+                                    }
+                                }
                             }
                         }
                     }
@@ -129,21 +149,90 @@ val modReview = fc<Props> {
                     ref = resultsTable
                     key = "modreviewTable"
 
-                    child(CommentsInfiniteScroll::class) {
-                        attrs.resultsKey = user
-                        attrs.rowHeight = 95.5
-                        attrs.itemsPerPage = 20
-                        attrs.container = resultsTable
-                        attrs.loadPage = loadPage
-                        attrs.childFilter = {
-                            !it.hasClass("hiddenRow")
+                    when (props.type) {
+                        ReviewDetail::class -> {
+                            val loadPage = { toLoad: Int, token: CancelTokenSource ->
+                                Axios.get<ReviewsResponse>(
+                                    "${Config.apibase}/review/latest/$toLoad" + urlExtension(),
+                                    generateConfig<String, ReviewsResponse>(token.token)
+                                ).then {
+                                    return@then it.data.docs
+                                }
+                            }
+
+                            child(CommentsInfiniteScroll::class) {
+                                attrs.resultsKey = user
+                                attrs.rowHeight = 95.5
+                                attrs.itemsPerPage = 20
+                                attrs.container = resultsTable
+                                attrs.loadPage = loadPage
+                                attrs.childFilter = {
+                                    !it.hasClass("hiddenRow")
+                                }
+                                attrs.renderElement = InfiniteScrollElementRenderer {
+                                    modReviewEntry {
+                                        attrs.entry = it
+                                        attrs.setUser = { userStr ->
+                                            userRef.current?.value = userStr
+                                            history.push(location.pathname + urlExtension())
+                                        }
+                                        attrs.onDelete = { reason ->
+                                            axiosDelete<DeleteReview, String>(
+                                                "${Config.apibase}/review/single/${it?.map?.id}/${it?.creator?.id}",
+                                                DeleteReview(reason)
+                                            )
+                                        }
+                                        attrs.onSave = onSave@{ sentiment, text ->
+                                            Axios.put(
+                                                "${Config.apibase}/review/single/${it?.map?.id}/${it?.creator?.id}",
+                                                PutReview(text, sentiment ?: return@onSave null),
+                                                generateConfig<PutReview, ActionResponse>()
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
-                        attrs.renderElement = InfiniteScrollElementRenderer {
-                            modReviewEntryRenderer {
-                                attrs.entry = it
-                                attrs.setUser = { userStr ->
-                                    userRef.current?.value = userStr
-                                    history.push("/modreview" + urlExtension())
+                        ReviewReplyDetail::class -> {
+                            val loadPage = { toLoad: Int, token: CancelTokenSource ->
+                                Axios.get<RepliesResponse>(
+                                    "${Config.apibase}/reply/latest/$toLoad" + urlExtension(),
+                                    generateConfig<String, RepliesResponse>(token.token)
+                                ).then {
+                                    return@then it.data.docs
+                                }
+                            }
+
+                            child(RepliesInfiniteScroll::class) {
+                                attrs.resultsKey = user
+                                attrs.rowHeight = 95.5
+                                attrs.itemsPerPage = 20
+                                attrs.container = resultsTable
+                                attrs.loadPage = loadPage
+                                attrs.childFilter = {
+                                    !it.hasClass("hiddenRow")
+                                }
+                                attrs.renderElement = InfiniteScrollElementRenderer {
+                                    modReviewEntry {
+                                        attrs.entry = it
+                                        attrs.setUser = { userStr ->
+                                            userRef.current?.value = userStr
+                                            history.push(location.pathname + urlExtension())
+                                        }
+                                        attrs.onDelete = { reason ->
+                                            axiosDelete<DeleteReview, String>(
+                                                "${Config.apibase}/reply/single/${it?.id}",
+                                                DeleteReview(reason)
+                                            )
+                                        }
+                                        attrs.onSave = { _, text ->
+                                            Axios.put(
+                                                "${Config.apibase}/reply/single/${it?.id}",
+                                                ReplyRequest(text),
+                                                generateConfig<ReplyRequest, ActionResponse>()
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -153,3 +242,5 @@ val modReview = fc<Props> {
         }
     }
 }
+
+class RepliesInfiniteScroll : InfiniteScroll<ReviewReplyDetail>()

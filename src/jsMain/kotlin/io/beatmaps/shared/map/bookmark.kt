@@ -6,6 +6,7 @@ import org.w3c.dom.events.Event
 import react.Props
 import react.dom.a
 import react.dom.i
+import react.dom.span
 import react.fc
 
 external interface BookmarkButtonProps : Props {
@@ -14,7 +15,7 @@ external interface BookmarkButtonProps : Props {
 }
 
 var bookmarkButton = fc<BookmarkButtonProps> { props ->
-    a("#", classes = "text-warning me-1") {
+    a("#", classes = "me-1") {
         val title = if (props.bookmarked) "Remove Bookmark" else "Add Bookmark"
         attrs.title = title
         attrs.attributes["aria-label"] = title
@@ -22,6 +23,7 @@ var bookmarkButton = fc<BookmarkButtonProps> { props ->
             it.preventDefault()
             props.onClick(it, props.bookmarked)
         }
+        span("dd-text") { +title }
         i((if (props.bookmarked) "fas" else "far") + " fa-bookmark text-warning") { }
     }
 }

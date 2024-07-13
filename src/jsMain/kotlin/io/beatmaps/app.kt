@@ -1,8 +1,11 @@
 package io.beatmaps
 
 import external.ReactDatesInit
+import io.beatmaps.api.ReviewDetail
+import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.common.json
 import io.beatmaps.index.homePage
+import io.beatmaps.maps.mapEmbed
 import io.beatmaps.maps.mapPage
 import io.beatmaps.maps.recent.recentTestplays
 import io.beatmaps.modlog.modlog
@@ -42,9 +45,21 @@ fun setPageTitle(page: String) {
 }
 
 @Serializable
-data class UserData(val userId: Int = 0, val admin: Boolean = false, val curator: Boolean = false, val suspended: Boolean = false)
+data class UserData(
+    val userId: Int = 0,
+    val admin: Boolean = false,
+    val curator: Boolean = false,
+    val suspended: Boolean = false
+)
+
+@Serializable
+data class ConfigData(
+    // Safe because if captchas are bypassed the backend will still reject requests
+    val showCaptcha: Boolean = true
+)
 
 val globalContext = createContext<UserData?>(null)
+val configContext = createContext<ConfigData?>(null)
 
 object Config {
     const val apibase = "/api"
@@ -74,6 +89,9 @@ val appRouter = createBrowserRouter(
             mapPage {
                 attrs.beatsaver = false
             }
+        },
+        bsroute("/maps/:mapKey/embed") {
+            mapEmbed { }
         },
         bsroute("/upload") {
             uploadPage { }
@@ -109,7 +127,14 @@ val appRouter = createBrowserRouter(
             modlog { }
         },
         bsroute("/modreview") {
-            modReview { }
+            modReview {
+                attrs.type = ReviewDetail::class
+            }
+        },
+        bsroute("/modreply") {
+            modReview {
+                attrs.type = ReviewReplyDetail::class
+            }
         },
         bsroute("/policy/dmca", replaceHomelink = false) {
             div {}
@@ -158,13 +183,19 @@ val app = fc<Props> {
         viewportMinWidthPolyfill()
     }
 
-    globalContext.Provider {
-        attrs.value = kotlinx.browser.document.getElementById("user-data")?.let {
-            json.decodeFromString<UserData>(it.textContent ?: "{}")
+    configContext.Provider {
+        attrs.value = kotlinx.browser.document.getElementById("config-data")?.let {
+            json.decodeFromString<ConfigData>(it.textContent ?: "{}")
         }
 
-        RouterProvider {
-            attrs.router = appRouter
+        globalContext.Provider {
+            attrs.value = kotlinx.browser.document.getElementById("user-data")?.let {
+                json.decodeFromString<UserData>(it.textContent ?: "{}")
+            }
+
+            RouterProvider {
+                attrs.router = appRouter
+            }
         }
     }
 }

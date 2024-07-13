@@ -155,6 +155,7 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
                         links {
                             attrs.map = map
                             attrs.version = props.version
+                            attrs.limited = true
                         }
                     }
                 }

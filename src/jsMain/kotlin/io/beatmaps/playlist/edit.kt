@@ -1,7 +1,7 @@
 package io.beatmaps.playlist
 
 import external.Axios
-import external.ReCAPTCHA
+import external.IReCAPTCHA
 import external.generateConfig
 import external.reactFor
 import external.recaptcha
@@ -54,7 +54,7 @@ import react.useRef
 import react.useState
 
 val editPlaylist = fc<Props> {
-    val captchaRef = useRef<ReCAPTCHA>()
+    val captchaRef = useRef<IReCAPTCHA>()
     val coverRef = useRef<HTMLInputElement>()
 
     val nameRef = useRef<HTMLInputElement>()

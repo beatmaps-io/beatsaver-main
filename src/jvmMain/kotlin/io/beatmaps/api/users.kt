@@ -39,7 +39,6 @@ import io.beatmaps.common.dbo.UserLog
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.handlePatreon
-import io.beatmaps.common.dbo.joinCollaborations
 import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.sendEmail
@@ -107,10 +106,12 @@ import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.min
 import org.jetbrains.exposed.sql.or
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.union
 import org.jetbrains.exposed.sql.update
 import org.litote.kmongo.and
 import org.litote.kmongo.descending
@@ -236,7 +237,7 @@ class UsersApi {
     data class SessionsById(val id: String, val api: UsersApi)
 
     @Location("/id/{id}/playlist/{filename?}")
-    data class UserPlaylist(val id: Int, val filename: String? = null, val api: UsersApi)
+    data class UserPlaylist(val id: Int, val filename: String? = null, val collabs: Boolean = true, val api: UsersApi)
 
     @Location("/find/{id}")
     data class Find(val id: String, val api: UsersApi)
@@ -297,9 +298,9 @@ fun Route.userRoute() {
             } else {
                 val success = transaction {
                     try {
-                        User.update({ User.id eq sess.userId and (User.uniqueName.isNull() or User.renamedAt.lessEq(DateMinusDays(NowExpression(User.renamedAt.columnType), 1))) }) { u ->
+                        User.update({ User.id eq sess.userId and (User.uniqueName.isNull() or User.renamedAt.lessEq(DateMinusDays(NowExpression(User.renamedAt), 1))) }) { u ->
                             u[uniqueName] = req.textContent
-                            u[renamedAt] = Expression.build { case().When(uniqueName eq req.textContent, renamedAt).Else(NowExpression(renamedAt.columnType)) }
+                            u[renamedAt] = Expression.build { case().When(uniqueName eq req.textContent, renamedAt).Else(NowExpression(renamedAt)) }
                         }
                     } catch (e: ExposedSQLException) {
                         -1
@@ -399,7 +400,7 @@ fun Route.userRoute() {
                             User.id eq req.userId
                         }) { u ->
                             if (req.suspended) {
-                                u[suspendedAt] = NowExpression(suspendedAt.columnType)
+                                u[suspendedAt] = NowExpression(suspendedAt)
                             } else {
                                 u[suspendedAt] = null
                             }
@@ -765,7 +766,7 @@ fun Route.userRoute() {
                                 User.id eq userId
                             }) {
                                 it[email] = newEmail
-                                it[emailChangedAt] = NowExpression(emailChangedAt.columnType)
+                                it[emailChangedAt] = NowExpression(emailChangedAt)
                             } > 0
 
                             if (success) {
@@ -931,7 +932,7 @@ fun Route.userRoute() {
                 Follows.upsert(conflictIndex = Follows.link) { follow ->
                     follow[userId] = req.userId
                     follow[followerId] = user.userId
-                    follow[since] = NowExpression(since.columnType)
+                    follow[since] = NowExpression(since)
                     follow[upload] = req.upload
                     follow[curation] = req.curation
                     follow[collab] = req.collab
@@ -1035,9 +1036,17 @@ fun Route.userRoute() {
     get<UsersApi.UserPlaylist> {
         val (maps, user) = transaction {
             Beatmap.joinVersions()
-                .joinCollaborations()
                 .selectAll().where {
-                    ((Beatmap.uploader eq it.id) or (Collaboration.collaboratorId eq it.id)) and Beatmap.deletedAt.isNull()
+                    Beatmap.id.inSubQuery(
+                        Beatmap.select(Beatmap.id).where { (Beatmap.uploader eq it.id) and Beatmap.deletedAt.isNull() }
+                            .let { q ->
+                                if (it.collabs) {
+                                    q.union(Collaboration.select(Collaboration.mapId).where { Collaboration.collaboratorId eq it.id and Collaboration.accepted })
+                                } else {
+                                    q
+                                }
+                            }
+                    )
                 }.complexToBeatmap().sortedByDescending { b -> b.uploaded } to User.selectAll().where { User.id eq it.id and User.active }.firstOrNull()?.let { row -> UserDetail.from(row) }
         }
 

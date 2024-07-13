@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   db:
-    image: iamtopcat/postgres:master-b71
+    image: iamtopcat/postgres:master-b91
     ports:
       - "5432:5432"
     volumes:
@@ -25,6 +25,18 @@ services:
       MONGO_USER: "beatmaps"
       MONGO_PASSWORD: "insecure-password"
     restart: always
+  rabbitmq:
+    image: rabbitmq:3.8-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_ERLANG_COOKIE: "ThdGkKL+vFrar6asCvNkfhI4WMeedX79au8FUOdn"
 volumes:
   db_data:
   mongo_data:
+  rabbitmq_data:

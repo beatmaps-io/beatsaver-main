@@ -2,6 +2,7 @@ package io.beatmaps.browser.page
 
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
+import io.beatmaps.common.api.ReviewSentiment
 
 class MapPage(page: Page) : PageBase(page) {
     val tabs = Tabs(element(".nav-minimal"))
@@ -27,6 +28,52 @@ class MapPage(page: Page) : PageBase(page) {
     }
 
     class Reviews(element: Locator) : ElementBase(element) {
-        val header = element(":scope > .card")
+        fun new(block: NewReview.() -> Unit) {
+            block(NewReview(element(".card-body")))
+        }
+
+        private fun reviews() = element(":scope > .review-card").all()
+        fun get(index: Int, block: Review.() -> Unit) {
+            block(Review(reviews()[index]))
+        }
+
+        class NewReview(element: Locator) : ElementBase(element) {
+            val text = element("textarea")
+            val save = element("button[class~='float-end'], :scope > .d-grid button")
+
+            fun sentiment(type: ReviewSentiment): Locator =
+                element("button").all()[1 - type.dbValue]
+        }
+
+        class Review(element: Locator) : ElementBase(element) {
+            val edit = element(".options i[class~='fa-pen']")
+            val delete = element(".options i[class~='fa-trash']")
+
+            val sentiment = element(".main > i")
+            val text = element(".review-body > div:first-child")
+
+            fun replies() = element(".replies .reply")
+
+            fun edit(block: NewReview.() -> Unit) {
+                block(NewReview(element(".review-body")))
+            }
+
+            fun reply(block: Reply.() -> Unit) {
+                block(Reply(element(".reply-input")))
+            }
+
+            fun reply(index: Int, block: Reply.() -> Unit) {
+                block(Reply(replies().all()[index]))
+            }
+
+            class Reply(element: Locator) : ElementBase(element) {
+                val content = element(".content > *")
+                val text = element("textarea")
+                val save = element("button")
+
+                val edit = element(".options i[class~='fa-pen']")
+                val delete = element(".options i[class~='fa-trash']")
+            }
+        }
     }
 }

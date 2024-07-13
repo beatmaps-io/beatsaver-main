@@ -16,7 +16,6 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLDivElement
 import react.Props
-import react.createRef
 import react.dom.a
 import react.dom.b
 import react.dom.div
@@ -26,6 +25,7 @@ import react.dom.p
 import react.dom.span
 import react.fc
 import react.useEffect
+import react.useRef
 import react.useState
 
 external interface AlertProps : Props {
@@ -53,7 +53,7 @@ val alert = fc<AlertProps> { props ->
     val (opacity, setOpacity) = useState<String?>(null)
     val (margin, setMargin) = useState<String?>(null)
 
-    val bodyRef = createRef<HTMLDivElement>()
+    val bodyRef = useRef<HTMLDivElement>()
 
     useEffect(props.alert, props.hidden) {
         if (props.alert == null) {

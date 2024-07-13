@@ -30,6 +30,7 @@ external interface EditableTextProps : Props {
     var rows: Int?
     var btnClass: String?
     var justify: String?
+    var placeholder: String?
 }
 
 val editableText = fc<EditableTextProps> { props ->
@@ -41,27 +42,32 @@ val editableText = fc<EditableTextProps> { props ->
     val displayText = (props.text ?: "")
 
     if (props.editing == true) {
-        textarea((props.rows ?: 10).toString(), classes = "form-control mt-2") {
-            attrs.id = "review"
-            attrs.disabled = loading == true
-            +displayText
-            ref = textareaRef
-            props.maxLength?.let { max ->
-                attrs.maxLength = "$max"
+        div {
+            textarea((props.rows ?: 10).toString(), classes = "form-control mt-2") {
+                attrs.id = "review"
+                attrs.disabled = loading == true
+                attrs.placeholder = props.placeholder ?: ""
+                +displayText
+                ref = textareaRef
+                props.maxLength?.let { max ->
+                    attrs.maxLength = "$max"
+                }
+                attrs.onChangeFunction = {
+                    setTextLength((it.target as HTMLTextAreaElement).value.length)
+                }
             }
-            attrs.onChangeFunction = {
-                setTextLength((it.target as HTMLTextAreaElement).value.length)
-            }
-        }
-        props.maxLength?.let {
-            span("badge badge-" + if (textLength > it - 20) "danger" else "dark") {
-                attrs.id = "count_message"
-                +"$textLength / $it"
+            props.maxLength?.let {
+                span("badge badge-" + if (textLength > it - 20) "danger" else "dark") {
+                    attrs.id = "count_message"
+                    +"$textLength / $it"
+                }
             }
         }
 
         div("d-grid") {
             button(classes = "btn " + (props.btnClass ?: "btn-primary mt-1"), type = ButtonType.submit) {
+                attrs.disabled = textLength < 1 || props.maxLength?.let { textLength > it } ?: false
+
                 attrs.jsStyle {
                     justifySelf = props.justify ?: "end"
                 }
@@ -74,6 +80,7 @@ val editableText = fc<EditableTextProps> { props ->
                             setLoading(false)
 
                             if (it.data.success) {
+                                textareaRef.current?.value = ""
                                 props.stopEditing?.invoke(newReview)
                             }
                         }, {

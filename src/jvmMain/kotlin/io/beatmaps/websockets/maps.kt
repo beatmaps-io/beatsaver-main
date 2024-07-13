@@ -9,9 +9,14 @@ import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.common.json
 import io.beatmaps.common.rabbitOptional
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.application
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.encodeToJsonElement
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import pl.jutupe.ktor_rabbitmq.publish
@@ -20,11 +25,13 @@ import java.lang.Integer.toHexString
 enum class MapUpdateMessageType {
     MAP_UPDATE, MAP_DELETE
 }
-data class MapUpdateMessage(val type: MapUpdateMessageType, val msg: Any)
+
+@Serializable
+data class MapUpdateMessage(val type: MapUpdateMessageType, val msg: JsonElement)
 
 fun Route.mapUpdateEnricher() {
     application.rabbitOptional {
-        consumeAck("bm.updateStream", Int::class) { _, mapId ->
+        consumeAck("bm.updateStream", Int.serializer()) { _, mapId ->
             transaction {
                 Beatmap
                     .joinVersions(true, state = null)
@@ -46,9 +53,11 @@ fun Route.mapUpdateEnricher() {
                 publish("beatmaps", "cdn.${cdnUpdate.mapId}", null, cdnUpdate)
 
                 val wsMsg = if (map.first == null) {
-                    MapUpdateMessage(MapUpdateMessageType.MAP_UPDATE, map.second)
+                    val subJson = json.encodeToJsonElement(map.second)
+                    MapUpdateMessage(MapUpdateMessageType.MAP_UPDATE, subJson)
                 } else {
-                    MapUpdateMessage(MapUpdateMessageType.MAP_DELETE, toHexString(mapId))
+                    val subJson = json.encodeToJsonElement(toHexString(mapId))
+                    MapUpdateMessage(MapUpdateMessageType.MAP_DELETE, subJson)
                 }
 
                 publish("beatmaps", "ws.map.$mapId", null, wsMsg)

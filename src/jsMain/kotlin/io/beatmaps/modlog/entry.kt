@@ -8,6 +8,8 @@ import io.beatmaps.common.DeletedData
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.InfoEditData
+import io.beatmaps.common.ReplyDeleteData
+import io.beatmaps.common.ReplyModerationData
 import io.beatmaps.common.ReviewDeleteData
 import io.beatmaps.common.ReviewModerationData
 import io.beatmaps.common.RevokeSessionsData
@@ -21,7 +23,6 @@ import io.beatmaps.user.userLink
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLDivElement
 import react.Props
-import react.createRef
 import react.dom.br
 import react.dom.div
 import react.dom.p
@@ -29,6 +30,7 @@ import react.dom.span
 import react.dom.td
 import react.dom.tr
 import react.fc
+import react.useRef
 
 external interface ModLogEntryProps : Props {
     var entry: ModLogEntry?
@@ -43,7 +45,7 @@ val modLogEntryRenderer = fc<ModLogEntryProps> {
         )
     }
 
-    val localRef = createRef<HTMLDivElement>()
+    val localRef = useRef<HTMLDivElement>()
     tr {
         it.entry?.let {
             attrs.onClickFunction = {
@@ -234,6 +236,27 @@ val modLogEntryRenderer = fc<ModLogEntryProps> {
                                 attrs.description = "sentiment"
                                 attrs.old = ReviewSentiment.fromInt(it.action.oldSentiment).name
                                 attrs.new = ReviewSentiment.fromInt(it.action.newSentiment).name
+                            }
+                        }
+
+                        is ReplyDeleteData -> {
+                            p("card-text") {
+                                +"Deleted reply"
+                            }
+                            p("card-text") {
+                                +"Reason: ${it.action.reason}"
+                                it.action.text?.let { t ->
+                                    br {}
+                                    +"Text: $t"
+                                }
+                            }
+                        }
+
+                        is ReplyModerationData -> {
+                            diffText {
+                                attrs.description = "text"
+                                attrs.old = it.action.oldText
+                                attrs.new = it.action.newText
                             }
                         }
 
