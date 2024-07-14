@@ -139,8 +139,8 @@ fun pushAlerts(map: BeatmapDao, rb: RabbitMQInstance?) {
     }
 
     val authorNames = allAuthors.map {
-            "@" + it.uniqueName
-        }.joinToString(separator = ", ")
+        "@" + it.uniqueName
+    }.joinToString(separator = ", ")
 
     val (title, adjective) = if (map.lastPublishedAt == null) ("New Map Release" to "released") else ("Map Updated" to "updated")
     Alert.insert(
