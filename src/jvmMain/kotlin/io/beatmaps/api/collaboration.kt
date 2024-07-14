@@ -115,32 +115,39 @@ fun Route.collaborationRoute() {
                             it[accepted] = true
                         }
 
-                        // Generate alert for followers of the collaborator.
-                        val followsAlias = Follows.alias("f2")
-                        val recipients = Follows
-                            .join(followsAlias, JoinType.LEFT, followsAlias[Follows.followerId], Follows.followerId) {
-                                (followsAlias[Follows.userId] eq map.uploaderId) and followsAlias[Follows.following]
-                            }
-                            .select(Follows.followerId)
-                            .where {
-                                followsAlias[Follows.id].isNull() and (Follows.followerId neq map.uploaderId) and
-                                    (Follows.userId eq sess.userId) and Follows.collab and Follows.following
-                            }
-                            .map { row ->
-                                row[Follows.followerId].value
-                            }
+                        // Generate alert for followers of the collaborator, if the map has already been published.
+                        if (map.lastPublishedAt != null) {
+                            val followsAlias = Follows.alias("f2")
+                            val recipients = Follows
+                                .join(
+                                    followsAlias,
+                                    JoinType.LEFT,
+                                    followsAlias[Follows.followerId],
+                                    Follows.followerId
+                                ) {
+                                    (followsAlias[Follows.userId] eq map.uploaderId) and followsAlias[Follows.following]
+                                }
+                                .select(Follows.followerId)
+                                .where {
+                                    followsAlias[Follows.id].isNull() and (Follows.followerId neq map.uploaderId) and
+                                            (Follows.userId eq sess.userId) and Follows.collab and Follows.following
+                                }
+                                .map { row ->
+                                    row[Follows.followerId].value
+                                }
 
-                        Alert.insert(
-                            "New Map Collaboration",
-                            "@${sess.uniqueName} collaborated with @${map.uploader.uniqueName} on #${
-                                Integer.toHexString(
-                                    map.id.value
-                                )
-                            }: **${map.name}**.\n" +
-                                "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
-                            EAlertType.MapRelease,
-                            recipients
-                        )
+                            Alert.insert(
+                                "New Map Collaboration",
+                                "@${sess.uniqueName} collaborated with @${map.uploader.uniqueName} on #${
+                                    Integer.toHexString(
+                                        map.id.value
+                                    )
+                                }: **${map.name}**.\n" +
+                                        "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                EAlertType.MapRelease,
+                                recipients
+                            )
+                        }
                         true
                     } else {
                         false
