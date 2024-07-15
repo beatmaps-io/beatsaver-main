@@ -4,17 +4,24 @@ import com.appmattus.kotlinfixture.kotlinFixture
 import io.beatmaps.api.LeaderboardScore
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
+import io.beatmaps.api.PlaylistFull
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.api.EPlaylistType
+import io.beatmaps.common.db.NowExpression
+import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
+import io.beatmaps.common.dbo.Follows
+import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import kotlinx.datetime.Clock
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.math.BigDecimal
 import kotlin.random.Random
 
 abstract class FixtureHelpers {
@@ -105,6 +112,37 @@ abstract class FixtureHelpers {
             }
 
             mId to digest
+        }
+    }
+
+    fun createPlaylist(userId: Int, plType: EPlaylistType = EPlaylistType.Private): Int = transaction {
+        fixture<PlaylistFull>().let { playlist ->
+            Playlist.insertAndGetId {
+                it[name] = playlist.name
+                it[description] = playlist.description
+
+                it[totalMaps] = playlist.stats?.totalMaps ?: 0
+                it[minNps] = BigDecimal.valueOf(playlist.stats?.minNps ?: 0.0)
+                it[maxNps] = BigDecimal.valueOf(playlist.stats?.minNps ?: 0.0)
+
+                it[owner] = userId
+                it[type] = plType
+                if (plType == EPlaylistType.Search) {
+                    it[config] = playlist.config
+                }
+            }.value
+        }
+    }
+
+    fun follows(user: Int, follower: Int, upload: Boolean = true, collab: Boolean = true, curation: Boolean = true) = transaction {
+        Follows.upsert(conflictIndex = Follows.link) {
+            it[followerId] = follower
+            it[userId] = user
+            it[this.upload] = upload
+            it[this.curation] = curation
+            it[this.collab] = collab
+            it[following] = upload || curation || collab
+            it[since] = NowExpression(since)
         }
     }
 
