@@ -119,7 +119,7 @@ class PublishAlertsTest : ApiTestBase() {
 
         checkAlertCount(info.followsMapper, 0, "No mapper alert for collab when published")
         checkAlertCount(info.followsCollaborator, 1, "Single collaborator alert for new collab when published")
-        checkAlertCount(info.followsBoth, 1, "Single alert for new collab when published when following mapper and collaborator")
+        checkAlertCount(info.followsBoth, 0, "No alert for new collab when published when following mapper and collaborator")
 
         changeMapState(false)
 
