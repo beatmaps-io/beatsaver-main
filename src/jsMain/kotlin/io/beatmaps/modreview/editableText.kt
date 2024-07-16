@@ -81,6 +81,7 @@ val editableText = fc<EditableTextProps> { props ->
 
                             if (it.data.success) {
                                 textareaRef.current?.value = ""
+                                setTextLength(0)
                                 props.stopEditing?.invoke(newReview)
                             }
                         }, {
