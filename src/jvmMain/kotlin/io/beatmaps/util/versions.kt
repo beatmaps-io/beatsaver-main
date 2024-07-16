@@ -132,15 +132,15 @@ fun pushAlerts(map: BeatmapDao, rb: RabbitMQInstance?) {
     val allAuthors = (map.collaborators.values + map.uploader).reversed()
     val authorIds = allAuthors.map { it.id }
 
-    val recipients = Follows.selectAll().where {
+    val recipients = Follows.select(Follows.followerId).where {
         (Follows.userId inList authorIds) and (Follows.followerId notInList authorIds) and (((Follows.userId eq map.uploaderId) and Follows.upload) or ((Follows.userId neq map.uploaderId) and Follows.collab)) and Follows.following
-    }.map { row ->
+    }.withDistinct().map { row ->
         row[Follows.followerId].value
     }
 
-    val authorNames = allAuthors.map {
+    val authorNames = allAuthors.joinToString(separator = ", ") {
         "@" + it.uniqueName
-    }.joinToString(separator = ", ")
+    }
 
     val (title, adjective) = if (map.lastPublishedAt == null) ("New Map Release" to "released") else ("Map Updated" to "updated")
     Alert.insert(
