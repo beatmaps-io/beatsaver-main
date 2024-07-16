@@ -17,6 +17,8 @@ import io.beatmaps.common.dbo.DifficultyDao
 import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
+import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinUploader
 import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.JoinType
@@ -25,6 +27,7 @@ import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.QueryParameter
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import pl.jutupe.ktor_rabbitmq.RabbitMQInstance
@@ -74,11 +77,12 @@ fun publishVersion(mapId: Int, hash: String, alert: Boolean?, rb: RabbitMQInstan
 
         val map = Beatmap
             .joinUploader()
+            .joinCollaborators()
             .selectAll()
             .where {
                 (Beatmap.id eq mapId)
-            }.firstOrNull()
-            ?.let { BeatmapDao.wrapRow(it) }
+            }.complexToBeatmap()
+            .firstOrNull()
             ?.also {
                 if (alert == true) {
                     pushAlerts(it, rb)
@@ -125,16 +129,23 @@ fun publishVersion(mapId: Int, hash: String, alert: Boolean?, rb: RabbitMQInstan
 }
 
 fun pushAlerts(map: BeatmapDao, rb: RabbitMQInstance?) {
-    val recipients = Follows.selectAll().where {
-        Follows.userId eq map.uploaderId and Follows.upload and Follows.following
-    }.map { row ->
+    val allAuthors = (map.collaborators.values + map.uploader).reversed()
+    val authorIds = allAuthors.map { it.id }
+
+    val recipients = Follows.select(Follows.followerId).where {
+        (Follows.userId inList authorIds) and (Follows.followerId notInList authorIds) and (((Follows.userId eq map.uploaderId) and Follows.upload) or ((Follows.userId neq map.uploaderId) and Follows.collab)) and Follows.following
+    }.withDistinct().map { row ->
         row[Follows.followerId].value
+    }
+
+    val authorNames = allAuthors.joinToString(separator = ", ") {
+        "@" + it.uniqueName
     }
 
     val (title, adjective) = if (map.lastPublishedAt == null) ("New Map Release" to "released") else ("Map Updated" to "updated")
     Alert.insert(
         title,
-        "@${map.uploader.uniqueName} just $adjective #${toHexString(map.id.value)}: **${map.name}**.\n" +
+        "$authorNames just $adjective #${toHexString(map.id.value)}: **${map.name}**.\n" +
             "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
         EAlertType.MapRelease,
         recipients

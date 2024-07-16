@@ -1,6 +1,7 @@
 package io.beatmaps.api
 
 import io.beatmaps.common.api.EAlertType
+import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
@@ -10,6 +11,7 @@ import io.beatmaps.common.dbo.CollaborationDao
 import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.collaboratorAlias
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.util.cdnPrefix
@@ -91,8 +93,9 @@ fun Route.collaborationRoute() {
 
             val success = transaction {
                 if (req.accepted) {
-                    val (collab, map) = Collaboration
+                    val (collab, map, published) = Collaboration
                         .join(Beatmap, JoinType.LEFT, Collaboration.mapId, Beatmap.id) { Beatmap.deletedAt.isNull() }
+                        .join(Versions, JoinType.LEFT, onColumn = Beatmap.id, otherColumn = Versions.mapId, additionalConstraint = { Versions.state eq EMapState.Published })
                         .joinUploader()
                         .selectAll()
                         .where {
@@ -102,8 +105,8 @@ fun Route.collaborationRoute() {
                         .singleOrNull()
                         ?.let {
                             UserDao.wrapRow(it)
-                            CollaborationDao.wrapRow(it) to BeatmapDao.wrapRow(it)
-                        } ?: (null to null)
+                            Triple(CollaborationDao.wrapRow(it), BeatmapDao.wrapRow(it), it.getOrNull(Versions.id) != null)
+                        } ?: Triple(null, null, null)
 
                     if (collab?.accepted == true) {
                         true
@@ -115,32 +118,39 @@ fun Route.collaborationRoute() {
                             it[accepted] = true
                         }
 
-                        // Generate alert for followers of the collaborator.
-                        val followsAlias = Follows.alias("f2")
-                        val recipients = Follows
-                            .join(followsAlias, JoinType.LEFT, followsAlias[Follows.followerId], Follows.followerId) {
-                                (followsAlias[Follows.userId] eq map.uploaderId) and followsAlias[Follows.following]
-                            }
-                            .select(Follows.followerId)
-                            .where {
-                                followsAlias[Follows.id].isNull() and (Follows.followerId neq map.uploaderId) and
-                                    (Follows.userId eq sess.userId) and Follows.collab and Follows.following
-                            }
-                            .map { row ->
-                                row[Follows.followerId].value
-                            }
+                        // Generate alert for followers of the collaborator, if the map has already been published.
+                        if (published == true) {
+                            val followsAlias = Follows.alias("f2")
+                            val recipients = Follows
+                                .join(
+                                    followsAlias,
+                                    JoinType.LEFT,
+                                    followsAlias[Follows.followerId],
+                                    Follows.followerId
+                                ) {
+                                    (followsAlias[Follows.userId] eq map.uploaderId) and followsAlias[Follows.following]
+                                }
+                                .select(Follows.followerId)
+                                .where {
+                                    followsAlias[Follows.id].isNull() and (Follows.followerId neq map.uploaderId) and
+                                        (Follows.userId eq sess.userId) and Follows.collab and Follows.following
+                                }
+                                .map { row ->
+                                    row[Follows.followerId].value
+                                }
 
-                        Alert.insert(
-                            "New Map Collaboration",
-                            "@${sess.uniqueName} collaborated with @${map.uploader.uniqueName} on #${
-                                Integer.toHexString(
-                                    map.id.value
-                                )
-                            }: **${map.name}**.\n" +
-                                "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
-                            EAlertType.MapRelease,
-                            recipients
-                        )
+                            Alert.insert(
+                                "New Map Collaboration",
+                                "@${sess.uniqueName} collaborated with @${map.uploader.uniqueName} on #${
+                                    Integer.toHexString(
+                                        map.id.value
+                                    )
+                                }: **${map.name}**.\n" +
+                                    "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                EAlertType.MapRelease,
+                                recipients
+                            )
+                        }
                         true
                     } else {
                         false

@@ -1,34 +1,19 @@
 package io.beatmaps.api
 
-import io.beatmaps.beatmapsio
-import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.db.NowExpression
-import io.beatmaps.common.db.setupDB
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
-import io.beatmaps.login.Session
-import io.ktor.client.HttpClient
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.cookies.HttpCookies
-import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import io.ktor.serialization.kotlinx.json.json
-import io.ktor.server.application.call
-import io.ktor.server.routing.get
-import io.ktor.server.sessions.sessions
-import io.ktor.server.sessions.set
-import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -36,45 +21,15 @@ import org.jetbrains.exposed.sql.update
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class PlaylistTest {
+class PlaylistTest : ApiTestBase() {
     data class PlaylistBatchCase(val hashes: List<String>, val keys: List<String>, val ignoreUnknown: Boolean, val status: HttpStatusCode, val rowsInTable: Set<Int>, val message: String)
-
-    private suspend fun ApplicationTestBuilder.setup(): HttpClient {
-        setupDB(app = "BeatSaver Tests")
-
-        application {
-            beatmapsio()
-        }
-
-        routing {
-            get("/login-test") {
-                call.sessions.set(Session(1, userEmail = "test@example.com", userName = "test"))
-            }
-        }
-
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-            install(HttpCookies)
-        }
-
-        client.get("/login-test")
-
-        return client
-    }
 
     @Test
     fun testBatchAdd() = testApplication {
         val client = setup()
 
         val (playlistId, mapOne, mapTwo) = transaction {
-            val pId = Playlist.insertAndGetId {
-                it[name] = "Test playlist"
-                it[description] = ""
-                it[owner] = 1
-                it[type] = EPlaylistType.Private
-            }
+            val pId = createPlaylist(1)
 
             val maps = Beatmap.joinVersions().selectAll().where {
                 Beatmap.deletedAt.isNull()
@@ -145,12 +100,7 @@ class PlaylistTest {
         val client = setup()
 
         val (plId, mapOne, mapTwo) = transaction {
-            val pId = Playlist.insertAndGetId {
-                it[name] = "Test playlist"
-                it[description] = ""
-                it[owner] = 1
-                it[type] = EPlaylistType.Private
-            }
+            val pId = createPlaylist(1)
 
             val maps = Beatmap.joinVersions().selectAll().where {
                 Beatmap.deletedAt.isNull()

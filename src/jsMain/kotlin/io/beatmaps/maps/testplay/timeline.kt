@@ -142,6 +142,7 @@ val timeline = fc<TimelineProps> { props ->
                         attrs.reloadMap = props.reloadMap
                         attrs.mapId = props.mapInfo.intId()
                         attrs.allowPublish = props.mapInfo.name.isNotEmpty()
+                        attrs.alreadyPublished = (props.mapInfo.lastPublishedAt != null)
                     }
                     first = false
                 }

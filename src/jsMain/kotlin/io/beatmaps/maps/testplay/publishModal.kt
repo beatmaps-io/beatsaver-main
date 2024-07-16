@@ -24,6 +24,7 @@ import react.useState
 external interface PublishModalProps : Props {
     var callbackScheduleAt: (Instant?) -> Unit
     var callbackAlert: (Boolean) -> Unit
+    var notifyFollowersDefault: Boolean
 }
 
 val publishModal = fc<PublishModalProps> { props ->
@@ -94,7 +95,7 @@ val publishModal = fc<PublishModalProps> { props ->
     }
     div("form-check form-switch d-inline-block me-2") {
         input(InputType.checkBox, classes = "form-check-input") {
-            attrs.defaultChecked = true
+            attrs.defaultChecked = props.notifyFollowersDefault
             attrs.id = "alertUpdate"
             attrs.onChangeFunction = {
                 val boolVal = (it.currentTarget as HTMLInputElement).checked

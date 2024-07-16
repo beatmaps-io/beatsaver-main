@@ -44,6 +44,7 @@ external interface VersionProps : Props {
     var scheduledAt: Instant?
     var reloadMap: () -> Unit
     var allowPublish: Boolean?
+    var alreadyPublished: Boolean?
 }
 private const val testplayEnabled = false
 
@@ -130,6 +131,7 @@ val version = fc<VersionProps> { props ->
                                                 attrs.callbackAlert = {
                                                     alert.current = it
                                                 }
+                                                attrs.notifyFollowersDefault = (props.alreadyPublished != true)
                                             }
                                         }
                                     )
