@@ -6,7 +6,6 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.api.complexToReview
 import io.beatmaps.api.from
 import io.beatmaps.common.Config
-import io.beatmaps.common.client
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.avgWithFilter
 import io.beatmaps.common.db.countWithFilter
@@ -17,6 +16,7 @@ import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
+import io.beatmaps.common.jsonClient
 import io.beatmaps.common.rabbitOptional
 import io.ktor.client.HttpClient
 import io.ktor.client.request.post
@@ -164,7 +164,7 @@ fun Application.reviewListeners() {
         }
 
         discordWebhookUrl?.let { webhookUrl ->
-            val handler = DiscordWebhookHandler(client, webhookUrl)
+            val handler = DiscordWebhookHandler(jsonClient, webhookUrl)
             consumeAck("bm.reviewDiscordHook", ReviewUpdateInfo::class) { _, r ->
                 transaction {
                     Review
