@@ -89,6 +89,9 @@ fun ColumnSet.joinReplies() = join(ReviewReply, JoinType.LEFT, Review.id, Review
 
 @Location("/api/review")
 class ReviewApi {
+    @Location("/id/{reviewId}")
+    data class Detail(val reviewId: Int, val api: ReviewApi)
+
     @Location("/map/{id}/{page?}")
     data class ByMap(val id: String, val page: Long = 0, val api: ReviewApi)
 
@@ -177,6 +180,35 @@ fun Route.reviewRoute() {
         }
     }
 
+    get<ReviewApi.Detail> {
+        val review = transaction {
+            try {
+                Review
+                    .joinReplies()
+                    .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                    .joinVersions(false)
+                    .select(Review.columns + ReviewReply.columns)
+                    .where {
+                        Review.id eq it.reviewId and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
+                    }
+                    .orderBy(
+                        ReviewReply.createdAt to SortOrder.ASC
+                    )
+                    .complexToReview()
+                    .singleOrNull()
+                    ?.let { ReviewDetail.from(it, cdnPrefix()) }
+            } catch (_: NumberFormatException) {
+                null
+            }
+        }
+
+        if (review == null) {
+            call.respond(HttpStatusCode.NotFound)
+        } else {
+            call.respond(review)
+        }
+    }
+
     get<ReviewApi.ByMap> {
         val reviews = transaction {
             try {
@@ -256,6 +288,9 @@ fun Route.reviewRoute() {
                     .where {
                         Review.mapId eq it.mapId.toInt(16) and (Review.userId eq it.userId) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
+                    .orderBy(
+                        ReviewReply.createdAt to SortOrder.ASC
+                    )
                     .complexToReview()
                     .singleOrNull()
                     ?.let { ReviewDetail.from(it, cdnPrefix()) }
