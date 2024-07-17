@@ -256,6 +256,9 @@ fun Route.reviewRoute() {
                     .where {
                         Review.mapId eq it.mapId.toInt(16) and (Review.userId eq it.userId) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
+                    .orderBy(
+                        ReviewReply.createdAt to SortOrder.ASC
+                    )
                     .complexToReview()
                     .singleOrNull()
                     ?.let { ReviewDetail.from(it, cdnPrefix()) }
