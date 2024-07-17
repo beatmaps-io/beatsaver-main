@@ -191,7 +191,8 @@ fun Route.reviewRoute() {
                     }
                     .orderBy(
                         Review.curatedAt to SortOrder.DESC_NULLS_LAST,
-                        Review.createdAt to SortOrder.DESC
+                        Review.createdAt to SortOrder.DESC,
+                        ReviewReply.createdAt to SortOrder.ASC
                     )
                     .limit(it.page)
                     .complexToReview()
@@ -224,7 +225,8 @@ fun Route.reviewRoute() {
                         Review.userId eq it.id and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
                     .orderBy(
-                        Review.createdAt, SortOrder.DESC
+                        Review.createdAt to SortOrder.DESC,
+                        ReviewReply.createdAt to SortOrder.ASC
                     )
                     .limit(it.page)
                     .complexToReview()
