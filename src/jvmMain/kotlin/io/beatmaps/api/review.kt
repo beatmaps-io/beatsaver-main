@@ -453,8 +453,7 @@ fun Route.reviewRoute() {
             val response = requireCaptcha(
                 reply.captcha,
                 {
-                    var insertedId: Int? = null
-                    val response = newSuspendedTransaction {
+                    val (insertedId, response) = newSuspendedTransaction {
                         val allowedUsers = Review
                             .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
                             .select(Review.userId, Beatmap.uploader)
@@ -465,26 +464,22 @@ fun Route.reviewRoute() {
                             } ?: listOf()
 
                         if (user.userId !in allowedUsers) {
-                            return@newSuspendedTransaction ActionResponse(false, listOf("Unauthorised"))
+                            return@newSuspendedTransaction Pair(null, ActionResponse(false, listOf("Unauthorised")))
                         }
 
-                        try {
-                            insertedId = ReviewReply.insertAndGetId {
-                                it[userId] = user.userId
-                                it[reviewId] = req.reviewId
-                                it[text] = reply.text
-                                it[createdAt] = NowExpression(createdAt)
-                                it[updatedAt] = NowExpression(updatedAt)
-                            }.value
-                        } catch (e: Exception) {
-                            return@newSuspendedTransaction ActionResponse(false, listOf())
-                        }
+                        val insertedId = ReviewReply.insertAndGetId {
+                            it[userId] = user.userId
+                            it[reviewId] = req.reviewId
+                            it[text] = reply.text
+                            it[createdAt] = NowExpression(createdAt)
+                            it[updatedAt] = NowExpression(updatedAt)
+                        }.value
 
-                        ActionResponse(true, listOf())
+                        Pair(insertedId, ActionResponse(true, listOf()))
                     }
 
                     if (insertedId != null) {
-                        call.pub("beatmaps", "ws.review-replies.created", null, insertedId!!)
+                        call.pub("beatmaps", "ws.review-replies.created", null, insertedId)
                     }
 
                     response
