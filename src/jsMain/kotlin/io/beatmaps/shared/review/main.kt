@@ -56,7 +56,12 @@ val reviewTable = fc<ReviewTableProps> { props ->
             getUrl(toLoad),
             generateConfig<String, ReviewsResponse>(token.token)
         ).then {
-            return@then it.data.docs
+            // Needed because the API will return the data the "wrong" way around
+            // Could just be a .reversed() as well as replies are sorted DESC
+            val sortedReviews = it.data.docs.map { review ->
+                review.copy(replies = review.replies.sortedBy { reply -> reply.createdAt })
+            }
+            return@then sortedReviews
         }
     }
 

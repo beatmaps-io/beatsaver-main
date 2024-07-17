@@ -192,7 +192,7 @@ fun Route.reviewRoute() {
                     .orderBy(
                         Review.curatedAt to SortOrder.DESC_NULLS_LAST,
                         Review.createdAt to SortOrder.DESC,
-                        ReviewReply.createdAt to SortOrder.ASC
+                        ReviewReply.createdAt to SortOrder.DESC
                     )
                     .limit(it.page)
                     .complexToReview()
@@ -226,7 +226,7 @@ fun Route.reviewRoute() {
                     }
                     .orderBy(
                         Review.createdAt to SortOrder.DESC,
-                        ReviewReply.createdAt to SortOrder.ASC
+                        ReviewReply.createdAt to SortOrder.DESC
                     )
                     .limit(it.page)
                     .complexToReview()
