@@ -453,7 +453,7 @@ fun Route.reviewRoute() {
             val response = requireCaptcha(
                 reply.captcha,
                 {
-                    var insertedId: Int? = null;
+                    var insertedId: Int? = null
                     val response = newSuspendedTransaction {
                         val allowedUsers = Review
                             .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
@@ -483,7 +483,7 @@ fun Route.reviewRoute() {
                         ActionResponse(true, listOf())
                     }
 
-                    if(insertedId != null) {
+                    if (insertedId != null) {
                         call.pub("beatmaps", "ws.review-replies.created", null, insertedId!!)
                     }
 
@@ -502,7 +502,7 @@ fun Route.reviewRoute() {
             val update = call.receive<ReplyRequest>()
 
             captchaIfPresent(update.captcha) {
-                var updated = false;
+                var updated = false
                 val response = newSuspendedTransaction {
                     val ownerId = ReviewReply
                         .select(ReviewReply.userId)
@@ -543,7 +543,7 @@ fun Route.reviewRoute() {
                 }
 
                 // This should be outside the transaction - otherwise the websocket will send the old text
-                if(updated) {
+                if (updated) {
                     call.pub("beatmaps", "ws.review-replies.updated", null, req.replyId)
                 }
 
@@ -596,7 +596,6 @@ fun Route.reviewRoute() {
                         )
                     }
                 }
-
 
                 // This can be inside the delete transaction since only the ID is needed and no data is retrieved
                 if (deleted != null) {
