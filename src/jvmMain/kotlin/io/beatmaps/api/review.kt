@@ -57,7 +57,7 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -455,7 +455,7 @@ fun Route.reviewRoute() {
             val response = requireCaptcha(
                 reply.captcha,
                 {
-                    newSuspendedTransaction {
+                    val (insertedId, response) = newSuspendedTransaction {
                         val allowedUsers = Review
                             .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
                             .select(Review.userId, Beatmap.uploader)
@@ -466,19 +466,25 @@ fun Route.reviewRoute() {
                             } ?: listOf()
 
                         if (user.userId !in allowedUsers) {
-                            return@newSuspendedTransaction ActionResponse(false, listOf("Unauthorised"))
+                            return@newSuspendedTransaction Pair(null, ActionResponse(false, listOf("Unauthorised")))
                         }
 
-                        ReviewReply.insert {
+                        val insertedId = ReviewReply.insertAndGetId {
                             it[userId] = user.userId
                             it[reviewId] = req.reviewId
                             it[text] = reply.text
                             it[createdAt] = NowExpression(createdAt)
                             it[updatedAt] = NowExpression(updatedAt)
-                        }.let {
-                            ActionResponse(it.insertedCount > 0, listOf())
-                        }
+                        }.value
+
+                        Pair(insertedId, ActionResponse(true, listOf()))
                     }
+
+                    if (insertedId != null) {
+                        call.pub("beatmaps", "ws.review-replies.created", null, insertedId)
+                    }
+
+                    response
                 }
             ) { e ->
                 ActionResponse(false, e.errorCodes.map { "Captcha error: $it" })
@@ -532,6 +538,11 @@ fun Route.reviewRoute() {
                     ActionResponse(updated, listOf())
                 }
 
+                // This should be outside the transaction - otherwise the websocket will send the old text
+                if (response.success) {
+                    call.pub("beatmaps", "ws.review-replies.updated", null, req.replyId)
+                }
+
                 call.respond(response)
             }
         }
@@ -582,7 +593,13 @@ fun Route.reviewRoute() {
                     }
                 }
 
-                if (deleted != null) HttpStatusCode.OK else HttpStatusCode.NotModified
+                // This can be inside the delete transaction since only the ID is needed and no data is retrieved
+                if (deleted != null) {
+                    call.pub("beatmaps", "ws.review-replies.deleted", null, deleted[ReviewReply.id].value)
+                    HttpStatusCode.OK
+                } else {
+                    HttpStatusCode.NotModified
+                }
             }
 
             call.respond(response)
