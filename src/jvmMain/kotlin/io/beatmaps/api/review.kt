@@ -497,7 +497,6 @@ fun Route.reviewRoute() {
             val update = call.receive<ReplyRequest>()
 
             captchaIfPresent(update.captcha) {
-                var updated = false
                 val response = newSuspendedTransaction {
                     val ownerId = ReviewReply
                         .select(ReviewReply.userId)
@@ -514,7 +513,7 @@ fun Route.reviewRoute() {
                         null
                     }
 
-                    updated = ReviewReply.update({ ReviewReply.id eq req.replyId and ReviewReply.deletedAt.isNull() }) {
+                    val updated = ReviewReply.update({ ReviewReply.id eq req.replyId and ReviewReply.deletedAt.isNull() }) {
                         it[text] = update.text
                         it[updatedAt] = NowExpression(updatedAt)
                     } > 0
@@ -538,7 +537,7 @@ fun Route.reviewRoute() {
                 }
 
                 // This should be outside the transaction - otherwise the websocket will send the old text
-                if (updated) {
+                if (response.success) {
                     call.pub("beatmaps", "ws.review-replies.updated", null, req.replyId)
                 }
 
