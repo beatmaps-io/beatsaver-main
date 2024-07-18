@@ -524,11 +524,10 @@ fun Route.reviewRoute() {
                             it[updatedAt] = NowExpression(updatedAt)
                         }.value
 
-
-                        if(insertedId != null) {
+                        if (insertedId != null) {
                             val alertHeader = "New Review Reply"
 
-                            if(user.userId != review[Review.userId].value) {
+                            if (user.userId != review[Review.userId].value) {
                                 Alert.insert(
                                     alertHeader,
                                     "@${user.uniqueName} just replied to your review on #${toHexString(mapOfReview.id.value)}: **${mapOfReview.name}**.\n" +
@@ -539,7 +538,7 @@ fun Route.reviewRoute() {
                             }
 
                             val otherMappers = mapperIds.filter { it != user.userId }
-                            if(otherMappers.isNotEmpty()) {
+                            if (otherMappers.isNotEmpty()) {
                                 Alert.insert(
                                     alertHeader,
                                     "@${user.uniqueName} just replied to a review on #${toHexString(mapOfReview.id.value)}: **${mapOfReview.name}**.\n" +
@@ -550,8 +549,7 @@ fun Route.reviewRoute() {
                             }
                         }
 
-
-                            Pair(insertedId, ActionResponse(true, listOf()))
+                        Pair(insertedId, ActionResponse(true, listOf()))
                     }
 
                     if (insertedId != null) {
