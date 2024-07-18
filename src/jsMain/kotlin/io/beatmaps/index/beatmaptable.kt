@@ -111,7 +111,7 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
                     (if (search.noodle != null) "&noodle=${search.noodle}" else "") +
                     (if (search.me != null) "&me=${search.me}" else "") +
                     (if (search.cinema != null) "&cinema=${search.cinema}" else "") +
-                    (if (search.ranked != null) "&rankFilter=${search.ranked}" else "") +
+                    (if (search.ranked != null) "&leaderboard=${search.ranked}" else "") +
                     (if (search.curated != null) "&curated=${search.curated}" else "") +
                     (if (search.verified != null) "&verified=${search.verified}" else "") +
                     (if (search.followed != null) "&followed=${search.followed}" else "") +
