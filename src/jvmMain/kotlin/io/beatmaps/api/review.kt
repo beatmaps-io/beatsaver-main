@@ -55,6 +55,7 @@ import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Query
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
@@ -491,14 +492,25 @@ fun Route.reviewRoute() {
                 reply.captcha,
                 {
                     val (insertedId, response) = newSuspendedTransaction {
-                        val allowedUsers = Review
-                            .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
-                            .select(Review.userId, Beatmap.uploader)
-                            .where { Review.id eq req.reviewId }
-                            .firstOrNull()
-                            ?.let {
-                                listOf(it[Review.userId].value, it[Beatmap.uploader].value)
-                            } ?: listOf()
+                        val review = Review.select(Review.mapId, Review.userId).where { Review.id eq req.reviewId and Review.deletedAt.isNull() }.singleOrNull()
+
+                        if(review == null) {
+                            return@newSuspendedTransaction Pair(null, ActionResponse(false, listOf("Review not found")))
+                        }
+
+                        val mapOfReview = Beatmap.joinCollaborators().selectAll().where { Beatmap.id eq review[Review.mapId] and Beatmap.deletedAt.isNull()}.complexToBeatmap().firstOrNull()
+
+                        if(mapOfReview == null) {
+                            return@newSuspendedTransaction Pair(null, ActionResponse(false, listOf("Map not found")))
+                        }
+
+                        val allowedUsers: List<Int> = listOf(
+                            mapOfReview.uploaderId.value,
+                            *mapOfReview.collaborators.values.map { it.id.value }.toTypedArray(),
+                            review[Review.userId].value
+                        )
+
+                        println(allowedUsers)
 
                         if (user.userId !in allowedUsers) {
                             return@newSuspendedTransaction Pair(null, ActionResponse(false, listOf("Unauthorised")))
