@@ -510,8 +510,6 @@ fun Route.reviewRoute() {
                             review[Review.userId].value
                         )
 
-                        println(allowedUsers)
-
                         if (user.userId !in allowedUsers) {
                             return@newSuspendedTransaction Pair(null, ActionResponse(false, listOf("Unauthorised")))
                         }
