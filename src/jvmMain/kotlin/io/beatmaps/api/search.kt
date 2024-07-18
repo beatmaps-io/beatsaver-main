@@ -86,7 +86,8 @@ class SearchApi {
         val to: Instant? = null,
         @Ignore val api: SearchApi,
         val noodle: Boolean? = null,
-        val ranked: RankedFilter = RankedFilter.All,
+        @Ignore val ranked: Boolean? = null,
+        val rankFilter: RankedFilter = RankedFilter.All,
         val curated: Boolean? = null,
         val verified: Boolean? = null,
         val followed: Boolean? = null,
@@ -271,7 +272,8 @@ fun Route.searchRoute() {
                                             .notNull(followingSubQuery) { o -> Beatmap.uploader inSubQuery o }
                                             .notNull(it.chroma) { o -> Beatmap.chroma eq o }
                                             .notNull(it.noodle) { o -> Beatmap.noodle eq o }
-                                            .notNull(it.ranked) { o ->
+                                            .notNull(it.ranked) { o -> (Beatmap.ranked eq o) or (Beatmap.blRanked eq o) }
+                                            .notNull(it.rankFilter) { o ->
                                                 Op.of(o == RankedFilter.All).run {
                                                     if (o.blRanked) this or Beatmap.blRanked else this
                                                 }.run {
