@@ -494,13 +494,13 @@ fun Route.reviewRoute() {
                     val (insertedId, response) = newSuspendedTransaction {
                         val review = Review.select(Review.mapId, Review.userId).where { Review.id eq req.reviewId and Review.deletedAt.isNull() }.singleOrNull()
 
-                        if(review == null) {
+                        if (review == null) {
                             return@newSuspendedTransaction Pair(null, ActionResponse(false, listOf("Review not found")))
                         }
 
-                        val mapOfReview = Beatmap.joinCollaborators().selectAll().where { Beatmap.id eq review[Review.mapId] and Beatmap.deletedAt.isNull()}.complexToBeatmap().firstOrNull()
+                        val mapOfReview = Beatmap.joinCollaborators().selectAll().where { Beatmap.id eq review[Review.mapId] and Beatmap.deletedAt.isNull() }.complexToBeatmap().firstOrNull()
 
-                        if(mapOfReview == null) {
+                        if (mapOfReview == null) {
                             return@newSuspendedTransaction Pair(null, ActionResponse(false, listOf("Map not found")))
                         }
 
