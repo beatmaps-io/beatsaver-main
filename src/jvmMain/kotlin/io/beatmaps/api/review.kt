@@ -55,7 +55,6 @@ import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Query
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
@@ -504,9 +503,12 @@ fun Route.reviewRoute() {
                             return@newSuspendedTransaction Pair(null, ActionResponse(false, listOf("Map not found")))
                         }
 
-                        val allowedUsers: List<Int> = listOf(
+                        val mapperIds = listOf(
                             mapOfReview.uploaderId.value,
-                            *mapOfReview.collaborators.values.map { it.id.value }.toTypedArray(),
+                            *mapOfReview.collaborators.values.map { it.id.value }.toTypedArray()
+                        )
+                        val allowedUsers: List<Int> = listOf(
+                            *mapperIds.toTypedArray(),
                             review[Review.userId].value
                         )
 
@@ -522,7 +524,34 @@ fun Route.reviewRoute() {
                             it[updatedAt] = NowExpression(updatedAt)
                         }.value
 
-                        Pair(insertedId, ActionResponse(true, listOf()))
+
+                        if(insertedId != null) {
+                            val alertHeader = "New Review Reply"
+
+                            if(user.userId != review[Review.userId].value) {
+                                Alert.insert(
+                                    alertHeader,
+                                    "@${user.uniqueName} just replied to your review on #${toHexString(mapOfReview.id.value)}: **${mapOfReview.name}**.\n" +
+                                        "*\"${reply.text.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                    EAlertType.ReviewReply,
+                                    review[Review.userId].value
+                                )
+                            }
+
+                            val otherMappers = mapperIds.filter { it != user.userId }
+                            if(otherMappers.isNotEmpty()) {
+                                Alert.insert(
+                                    alertHeader,
+                                    "@${user.uniqueName} just replied to a review on #${toHexString(mapOfReview.id.value)}: **${mapOfReview.name}**.\n" +
+                                        "*\"${reply.text.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                    EAlertType.ReviewReply,
+                                    otherMappers
+                                )
+                            }
+                        }
+
+
+                            Pair(insertedId, ActionResponse(true, listOf()))
                     }
 
                     if (insertedId != null) {
