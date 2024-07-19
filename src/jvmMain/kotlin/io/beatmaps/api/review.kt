@@ -379,6 +379,20 @@ fun Route.reviewRoute() {
                             )
                             updateAlertCount(map.uploaderId.value)
                         }
+
+                        val collaboratorIdsToNotify = map.collaborators.values.filter { it.reviewAlerts }.map { it.id.value }
+
+                        if (collaboratorIdsToNotify.isNotEmpty()) {
+                            Alert.insert(
+                                "New review on a map you collaborated on",
+                                "@${sess.uniqueName} just reviewed a map you collaborated on #${toHexString(updateMapId)}: **${map.name}**.\n" +
+                                    "*\"${newText.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                EAlertType.Review,
+                                collaboratorIdsToNotify
+                            )
+
+                            updateAlertCount(collaboratorIdsToNotify)
+                        }
                     }
 
                     if (single.userId != sess.userId && oldData != null) {
@@ -492,30 +506,32 @@ fun Route.reviewRoute() {
                 reply.captcha,
                 {
                     val (insertedId, response) = newSuspendedTransaction {
-                        val (mapId, uploadUserId, reviewUserId) = Review
+                        val intermediaryResult = Review
                             .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
-                            .select(Review.userId, Beatmap.id, Beatmap.uploader)
+                            .select(Review.userId, Beatmap.id, Beatmap.name, Beatmap.uploader)
                             .where { Review.id eq req.reviewId and Beatmap.deletedAt.isNull() and Review.deletedAt.isNull() }
                             .firstOrNull()
-                            ?.let {
-                                Triple(it[Beatmap.id].value, it[Beatmap.uploader].value, it[Review.userId].value)
-                            } ?: Triple(null, null, null)
 
-                        if (reviewUserId == null || uploadUserId == null || mapId == null) {
+                        if (intermediaryResult == null) {
                             return@newSuspendedTransaction Pair(
                                 null,
                                 ActionResponse(false, listOf("Review or map not found"))
                             )
                         }
 
+                        val reviewUserId = intermediaryResult[Review.userId].value
+                        val mapId = intermediaryResult[Beatmap.id].value
+                        val mapName = intermediaryResult[Beatmap.name]
+                        val uploadUserId = intermediaryResult[Beatmap.uploader].value
+
                         val collaborators = Collaboration
-                            .select(Collaboration.collaboratorId)
+                            .join(User, JoinType.LEFT, Collaboration.collaboratorId, User.id)
+                            .select(Collaboration.collaboratorId, User.reviewAlerts)
                             .where { Collaboration.mapId eq mapId and Collaboration.accepted }
-                            .map { it[Collaboration.collaboratorId].value }
 
                         val allowedUsers = listOf(
                             uploadUserId,
-                            *collaborators.toTypedArray(),
+                            *collaborators.map { it[Collaboration.collaboratorId].value }.toTypedArray(),
                             reviewUserId
                         )
 
@@ -530,6 +546,39 @@ fun Route.reviewRoute() {
                             it[createdAt] = NowExpression(createdAt)
                             it[updatedAt] = NowExpression(updatedAt)
                         }.value
+
+                        if (insertedId != null) {
+                            val alertHeader = "New Review Reply"
+
+                            if (user.userId != reviewUserId) {
+                                Alert.insert(
+                                    alertHeader,
+                                    "@${user.uniqueName} just replied to your review on #${toHexString(mapId)}: **$mapName**.\n" +
+                                        "*\"${reply.text.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                    EAlertType.ReviewReply,
+                                    reviewUserId
+                                )
+
+                                updateAlertCount(reviewUserId)
+                            }
+
+                            val collaboratorIdsToNotify = collaborators.filter {
+                                it[Collaboration.collaboratorId].value != user.userId &&
+                                    it[User.reviewAlerts]
+                            }.map { it[Collaboration.collaboratorId].value }
+
+                            if (collaboratorIdsToNotify.isNotEmpty()) {
+                                Alert.insert(
+                                    alertHeader,
+                                    "@${user.uniqueName} just replied to a review on #${toHexString(mapId)}: **$mapName**.\n" +
+                                        "*\"${reply.text.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                    EAlertType.ReviewReply,
+                                    collaboratorIdsToNotify
+                                )
+
+                                updateAlertCount(collaboratorIdsToNotify)
+                            }
+                        }
 
                         Pair(insertedId, ActionResponse(true, listOf()))
                     }
