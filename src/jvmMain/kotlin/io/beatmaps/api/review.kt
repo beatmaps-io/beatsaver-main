@@ -379,6 +379,19 @@ fun Route.reviewRoute() {
                             )
                             updateAlertCount(map.uploaderId.value)
                         }
+
+                        for (singleCollaborator in map.collaborators.values) {
+                            if (!singleCollaborator.reviewAlerts) continue
+
+                            Alert.insert(
+                                "New review on a map you collaborated on",
+                                "@${sess.uniqueName} just reviewed a map you collaborated on #${toHexString(updateMapId)}: **${map.name}**.\n" +
+                                    "*\"${newText.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                EAlertType.Review,
+                                singleCollaborator.id.value
+                            )
+                            updateAlertCount(singleCollaborator.id.value)
+                        }
                     }
 
                     if (single.userId != sess.userId && oldData != null) {
