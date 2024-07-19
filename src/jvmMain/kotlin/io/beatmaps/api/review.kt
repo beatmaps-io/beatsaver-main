@@ -534,7 +534,7 @@ fun Route.reviewRoute() {
                             *collaborators.map { it[Collaboration.collaboratorId].value }.toTypedArray()
                         )
 
-                        val allowedUsers: List<Int> = listOf(
+                        val allowedUsers = listOf(
                             *mapperIds.toTypedArray(),
                             reviewUserId
                         )
