@@ -22,6 +22,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
+import io.beatmaps.common.dbo.collaboratorAlias
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinCollaborators
@@ -524,13 +525,13 @@ fun Route.reviewRoute() {
                         val uploadUserId = intermediaryResult[Beatmap.uploader].value
 
                         val collaborators = Collaboration
-                            .select(Collaboration.collaboratorId)
+                            .joinCollaborators()
+                            .select(Collaboration.collaboratorId, collaboratorAlias[User.reviewAlerts])
                             .where { Collaboration.mapId eq mapId and Collaboration.accepted }
-                            .map { it[Collaboration.collaboratorId].value }
 
                         val mapperIds = listOf(
                             uploadUserId,
-                            *collaborators.toTypedArray()
+                            *collaborators.map { it[Collaboration.collaboratorId].value }.toTypedArray()
                         )
 
                         val allowedUsers: List<Int> = listOf(
@@ -561,17 +562,23 @@ fun Route.reviewRoute() {
                                     EAlertType.ReviewReply,
                                     reviewUserId
                                 )
+
+                                updateAlertCount(reviewUserId)
                             }
 
-                            val otherMappers = mapperIds.filter { it != user.userId }
-                            if (otherMappers.isNotEmpty()) {
+                            for (singleCollaborator in collaborators) {
+                                if (singleCollaborator[collaboratorAlias[User.id]].value == user.userId) continue
+                                if (!singleCollaborator[collaboratorAlias[User.reviewAlerts]]) continue
+
                                 Alert.insert(
                                     alertHeader,
                                     "@${user.uniqueName} just replied to a review on #${toHexString(mapId)}: **$mapName**.\n" +
                                         "*\"${reply.text.replace(Regex("\n+"), " ").take(100)}...\"*",
                                     EAlertType.ReviewReply,
-                                    otherMappers
+                                    singleCollaborator[collaboratorAlias[User.id]].value
                                 )
+
+                                updateAlertCount(singleCollaborator[collaboratorAlias[User.id]].value)
                             }
                         }
 
