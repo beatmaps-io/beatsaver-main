@@ -492,7 +492,6 @@ fun Route.reviewRoute() {
                 reply.captcha,
                 {
                     val (insertedId, response) = newSuspendedTransaction {
-
                         val (mapId, uploadUserId, reviewUserId) = Review
                             .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
                             .select(Review.userId, Beatmap.id, Beatmap.uploader)
@@ -502,7 +501,7 @@ fun Route.reviewRoute() {
                                 Triple(it[Beatmap.id].value, it[Beatmap.uploader].value, it[Review.userId].value)
                             } ?: Triple(null, null, null)
 
-                        if(reviewUserId == null || uploadUserId == null || mapId == null) {
+                        if (reviewUserId == null || uploadUserId == null || mapId == null) {
                             return@newSuspendedTransaction Pair(
                                 null,
                                 ActionResponse(false, listOf("Review or map not found"))
