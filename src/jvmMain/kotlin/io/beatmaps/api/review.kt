@@ -499,7 +499,7 @@ fun Route.reviewRoute() {
                             .where { Review.id eq req.reviewId and Beatmap.deletedAt.isNull() and Review.deletedAt.isNull() }
                             .firstOrNull()
 
-                        if(intermediaryResult == null) {
+                        if (intermediaryResult == null) {
                             return@newSuspendedTransaction Pair(
                                 null,
                                 ActionResponse(false, listOf("Review or map not found"))
