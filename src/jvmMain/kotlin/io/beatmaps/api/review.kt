@@ -560,8 +560,8 @@ fun Route.reviewRoute() {
                             }
 
                             collaborators.filter {
-                                it[Collaboration.collaboratorId].value != user.userId
-                                && it[User.reviewAlerts]
+                                it[Collaboration.collaboratorId].value != user.userId &&
+                                    it[User.reviewAlerts]
                             }.forEach { singleCollaborator ->
                                 Alert.insert(
                                     alertHeader,
