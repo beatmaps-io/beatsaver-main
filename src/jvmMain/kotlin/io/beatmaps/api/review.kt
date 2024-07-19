@@ -513,7 +513,7 @@ fun Route.reviewRoute() {
                             .where { Collaboration.mapId eq mapId and Collaboration.accepted }
                             .map { it[Collaboration.collaboratorId].value }
 
-                        val allowedUsers: List<Int> = listOf(
+                        val allowedUsers = listOf(
                             uploadUserId,
                             *collaborators.toTypedArray(),
                             reviewUserId
