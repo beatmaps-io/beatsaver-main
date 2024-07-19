@@ -567,18 +567,18 @@ fun Route.reviewRoute() {
                             }
 
                             for (singleCollaborator in collaborators) {
-                                if (singleCollaborator[collaboratorAlias[User.id]].value == user.userId) continue
-                                if (!singleCollaborator[collaboratorAlias[User.reviewAlerts]]) continue
+                                if (singleCollaborator[Collaboration.collaboratorId].value == user.userId) continue
+                                if (!singleCollaborator[User.reviewAlerts]) continue
 
                                 Alert.insert(
                                     alertHeader,
                                     "@${user.uniqueName} just replied to a review on #${toHexString(mapId)}: **$mapName**.\n" +
                                         "*\"${reply.text.replace(Regex("\n+"), " ").take(100)}...\"*",
                                     EAlertType.ReviewReply,
-                                    singleCollaborator[collaboratorAlias[User.id]].value
+                                    singleCollaborator[Collaboration.collaboratorId].value
                                 )
 
-                                updateAlertCount(singleCollaborator[collaboratorAlias[User.id]].value)
+                                updateAlertCount(singleCollaborator[Collaboration.collaboratorId].value)
                             }
                         }
 
