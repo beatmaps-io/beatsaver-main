@@ -380,9 +380,7 @@ fun Route.reviewRoute() {
                             updateAlertCount(map.uploaderId.value)
                         }
 
-                        for (singleCollaborator in map.collaborators.values) {
-                            if (!singleCollaborator.reviewAlerts) continue
-
+                        map.collaborators.values.filter { it.reviewAlerts }.forEach { singleCollaborator ->
                             Alert.insert(
                                 "New review on a map you collaborated on",
                                 "@${sess.uniqueName} just reviewed a map you collaborated on #${toHexString(updateMapId)}: **${map.name}**.\n" +
@@ -565,10 +563,10 @@ fun Route.reviewRoute() {
                                 updateAlertCount(reviewUserId)
                             }
 
-                            for (singleCollaborator in collaborators) {
-                                if (singleCollaborator[Collaboration.collaboratorId].value == user.userId) continue
-                                if (!singleCollaborator[User.reviewAlerts]) continue
-
+                            collaborators.filter {
+                                it[Collaboration.collaboratorId].value != user.userId
+                                && it[User.reviewAlerts]
+                            }.forEach { singleCollaborator ->
                                 Alert.insert(
                                     alertHeader,
                                     "@${user.uniqueName} just replied to a review on #${toHexString(mapId)}: **$mapName**.\n" +
