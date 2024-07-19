@@ -380,15 +380,18 @@ fun Route.reviewRoute() {
                             updateAlertCount(map.uploaderId.value)
                         }
 
-                        map.collaborators.values.filter { it.reviewAlerts }.forEach { singleCollaborator ->
+                        val collaboratorIdsToNotify = map.collaborators.values.filter { it.reviewAlerts }.map { it.id.value }
+
+                        if (collaboratorIdsToNotify.isNotEmpty()) {
                             Alert.insert(
                                 "New review on a map you collaborated on",
                                 "@${sess.uniqueName} just reviewed a map you collaborated on #${toHexString(updateMapId)}: **${map.name}**.\n" +
                                     "*\"${newText.replace(Regex("\n+"), " ").take(100)}...\"*",
                                 EAlertType.Review,
-                                singleCollaborator.id.value
+                                collaboratorIdsToNotify
                             )
-                            updateAlertCount(singleCollaborator.id.value)
+
+                            updateAlertCount(collaboratorIdsToNotify)
                         }
                     }
 
@@ -559,19 +562,21 @@ fun Route.reviewRoute() {
                                 updateAlertCount(reviewUserId)
                             }
 
-                            collaborators.filter {
+                            val collaboratorIdsToNotify = collaborators.filter {
                                 it[Collaboration.collaboratorId].value != user.userId &&
                                     it[User.reviewAlerts]
-                            }.forEach { singleCollaborator ->
+                            }.map { it[Collaboration.collaboratorId].value }
+
+                            if (collaboratorIdsToNotify.isNotEmpty()) {
                                 Alert.insert(
                                     alertHeader,
                                     "@${user.uniqueName} just replied to a review on #${toHexString(mapId)}: **$mapName**.\n" +
                                         "*\"${reply.text.replace(Regex("\n+"), " ").take(100)}...\"*",
                                     EAlertType.ReviewReply,
-                                    singleCollaborator[Collaboration.collaboratorId].value
+                                    collaboratorIdsToNotify
                                 )
 
-                                updateAlertCount(singleCollaborator[Collaboration.collaboratorId].value)
+                                updateAlertCount(collaboratorIdsToNotify)
                             }
                         }
 
