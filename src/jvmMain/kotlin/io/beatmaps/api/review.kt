@@ -12,6 +12,7 @@ import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
+import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Review
 import io.beatmaps.common.dbo.ReviewDao
@@ -55,7 +56,6 @@ import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Query
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
@@ -492,22 +492,32 @@ fun Route.reviewRoute() {
                 reply.captcha,
                 {
                     val (insertedId, response) = newSuspendedTransaction {
-                        val review = Review.select(Review.mapId, Review.userId).where { Review.id eq req.reviewId and Review.deletedAt.isNull() }.singleOrNull()
 
-                        if (review == null) {
-                            return@newSuspendedTransaction Pair(null, ActionResponse(false, listOf("Review not found")))
+                        val (mapId, uploadUserId, reviewUserId) = Review
+                            .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
+                            .select(Review.userId, Beatmap.id, Beatmap.uploader)
+                            .where { Review.id eq req.reviewId and Beatmap.deletedAt.isNull() and Review.deletedAt.isNull() }
+                            .firstOrNull()
+                            ?.let {
+                                Triple(it[Beatmap.id].value, it[Beatmap.uploader].value, it[Review.userId].value)
+                            } ?: Triple(null, null, null)
+
+                        if(reviewUserId == null || uploadUserId == null || mapId == null) {
+                            return@newSuspendedTransaction Pair(
+                                null,
+                                ActionResponse(false, listOf("Review or map not found"))
+                            )
                         }
 
-                        val mapOfReview = Beatmap.joinCollaborators().selectAll().where { Beatmap.id eq review[Review.mapId] and Beatmap.deletedAt.isNull() }.complexToBeatmap().firstOrNull()
-
-                        if (mapOfReview == null) {
-                            return@newSuspendedTransaction Pair(null, ActionResponse(false, listOf("Map not found")))
-                        }
+                        val collaborators = Collaboration
+                            .select(Collaboration.collaboratorId)
+                            .where { Collaboration.mapId eq mapId and Collaboration.accepted }
+                            .map { it[Collaboration.collaboratorId].value }
 
                         val allowedUsers: List<Int> = listOf(
-                            mapOfReview.uploaderId.value,
-                            *mapOfReview.collaborators.values.map { it.id.value }.toTypedArray(),
-                            review[Review.userId].value
+                            uploadUserId,
+                            *collaborators.toTypedArray(),
+                            reviewUserId
                         )
 
                         if (user.userId !in allowedUsers) {
