@@ -369,11 +369,12 @@ fun Route.reviewRoute() {
                             r[deletedAt] = null
                         }
 
+                        val alertDescription = Alert.forDescription(newText)
                         if (map.uploader.reviewAlerts) {
                             Alert.insert(
                                 "New review on your map",
                                 "@${sess.uniqueName} just reviewed your map #${toHexString(updateMapId)}: **${map.name}**.\n" +
-                                    "*\"${newText.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                    "*\"$alertDescription\"*",
                                 EAlertType.Review,
                                 map.uploaderId.value
                             )
@@ -386,7 +387,7 @@ fun Route.reviewRoute() {
                             Alert.insert(
                                 "New review on a map you collaborated on",
                                 "@${sess.uniqueName} just reviewed a map you collaborated on #${toHexString(updateMapId)}: **${map.name}**.\n" +
-                                    "*\"${newText.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                    "*\"$alertDescription\"*",
                                 EAlertType.Review,
                                 collaboratorIdsToNotify
                             )
@@ -547,37 +548,36 @@ fun Route.reviewRoute() {
                             it[updatedAt] = NowExpression(updatedAt)
                         }.value
 
-                        if (insertedId != null) {
-                            val alertHeader = "New Review Reply"
+                        val alertHeader = "New Review Reply"
+                        val alertDescription = Alert.forDescription(reply.text)
 
-                            if (user.userId != reviewUserId) {
-                                Alert.insert(
-                                    alertHeader,
-                                    "@${user.uniqueName} just replied to your review on #${toHexString(mapId)}: **$mapName**.\n" +
-                                        "*\"${reply.text.replace(Regex("\n+"), " ").take(100)}...\"*",
-                                    EAlertType.ReviewReply,
-                                    reviewUserId
-                                )
+                        if (user.userId != reviewUserId) {
+                            Alert.insert(
+                                alertHeader,
+                                "@${user.uniqueName} just replied to your review on #${toHexString(mapId)}: **$mapName**.\n" +
+                                    "*\"$alertDescription\"*",
+                                EAlertType.ReviewReply,
+                                reviewUserId
+                            )
 
-                                updateAlertCount(reviewUserId)
-                            }
+                            updateAlertCount(reviewUserId)
+                        }
 
-                            val collaboratorIdsToNotify = collaborators.filter {
-                                it[Collaboration.collaboratorId].value != user.userId &&
-                                    it[User.reviewAlerts]
-                            }.map { it[Collaboration.collaboratorId].value }
+                        val collaboratorIdsToNotify = collaborators.filter {
+                            it[Collaboration.collaboratorId].value != user.userId &&
+                                it[User.reviewAlerts]
+                        }.map { it[Collaboration.collaboratorId].value }
 
-                            if (collaboratorIdsToNotify.isNotEmpty()) {
-                                Alert.insert(
-                                    alertHeader,
-                                    "@${user.uniqueName} just replied to a review on #${toHexString(mapId)}: **$mapName**.\n" +
-                                        "*\"${reply.text.replace(Regex("\n+"), " ").take(100)}...\"*",
-                                    EAlertType.ReviewReply,
-                                    collaboratorIdsToNotify
-                                )
+                        if (collaboratorIdsToNotify.isNotEmpty()) {
+                            Alert.insert(
+                                alertHeader,
+                                "@${user.uniqueName} just replied to a review on #${toHexString(mapId)}: **$mapName**.\n" +
+                                    "*\"$alertDescription\"*",
+                                EAlertType.ReviewReply,
+                                collaboratorIdsToNotify
+                            )
 
-                                updateAlertCount(collaboratorIdsToNotify)
-                            }
+                            updateAlertCount(collaboratorIdsToNotify)
                         }
 
                         Pair(insertedId, ActionResponse(true, listOf()))

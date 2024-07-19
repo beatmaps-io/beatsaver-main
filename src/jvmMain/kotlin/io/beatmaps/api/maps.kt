@@ -242,7 +242,7 @@ fun Route.mapDetailRoute() {
                                     Alert.insert(
                                         "Followed Curation",
                                         "@${user.uniqueName} just curated #${toHexString(mapUpdate.id)}: **${it.name}**.\n" +
-                                            "*\"${it.description.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                            "*\"${Alert.forDescription(it.description)}\"*",
                                         EAlertType.MapCurated,
                                         recipients
                                     )
