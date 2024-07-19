@@ -22,7 +22,6 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
-import io.beatmaps.common.dbo.collaboratorAlias
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinCollaborators
