@@ -146,7 +146,7 @@ fun Route.collaborationRoute() {
                                         map.id.value
                                     )
                                 }: **${map.name}**.\n" +
-                                    "*\"${map.description.replace(Regex("\n+"), " ").take(100)}...\"*",
+                                    "*\"${Alert.forDescription(map.description)}\"*",
                                 EAlertType.MapRelease,
                                 recipients
                             )

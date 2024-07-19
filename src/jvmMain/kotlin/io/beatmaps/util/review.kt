@@ -18,6 +18,7 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
 import io.beatmaps.common.jsonClient
 import io.beatmaps.common.rabbitOptional
+import io.beatmaps.common.util.TextHelper
 import io.ktor.client.HttpClient
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -111,7 +112,7 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                         DiscordEmbed(
                             author = review.creator?.let { user -> DiscordEmbed.Author(user) },
                             title = review.map?.name?.let {
-                                truncateWithEllipsis(it, MAX_TITLE_LEN)
+                                TextHelper.ellipsize(it, MAX_TITLE_LEN)
                             },
                             url = review.map?.let {
                                 "${Config.siteBase()}/maps/${it.id}"
@@ -124,7 +125,7 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                             fields = listOf(
                                 DiscordEmbed.Field(
                                     "Review",
-                                    truncateWithEllipsis(review.text, MAX_REVIEW_LEN)
+                                    TextHelper.ellipsize(review.text, MAX_REVIEW_LEN)
                                 ),
                                 DiscordEmbed.Field(
                                     "Sentiment",
@@ -140,11 +141,6 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
         }
     }
 }
-
-fun truncateWithEllipsis(text: String, maxLength: Int, ellipsis: String = "...") =
-    if (text.length > maxLength) {
-        text.take(maxLength - ellipsis.length) + ellipsis
-    } else { text }
 
 fun Application.reviewListeners() {
     rabbitOptional {
