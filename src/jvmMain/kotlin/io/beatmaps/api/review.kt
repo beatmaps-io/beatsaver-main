@@ -492,7 +492,6 @@ fun Route.reviewRoute() {
                 reply.captcha,
                 {
                     val (insertedId, response) = newSuspendedTransaction {
-
                         val intermediaryResult = Review
                             .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
                             .select(Review.userId, Beatmap.id, Beatmap.name, Beatmap.uploader)
@@ -506,10 +505,10 @@ fun Route.reviewRoute() {
                             )
                         }
 
-                        val reviewUserId = intermediaryResult[Review.userId].value;
-                        val mapId = intermediaryResult[Beatmap.id].value;
-                        val mapName = intermediaryResult[Beatmap.name];
-                        val uploadUserId = intermediaryResult[Beatmap.uploader].value;
+                        val reviewUserId = intermediaryResult[Review.userId].value
+                        val mapId = intermediaryResult[Beatmap.id].value
+                        val mapName = intermediaryResult[Beatmap.name]
+                        val uploadUserId = intermediaryResult[Beatmap.uploader].value
 
                         val collaborators = Collaboration
                             .select(Collaboration.collaboratorId)
@@ -518,8 +517,9 @@ fun Route.reviewRoute() {
 
                         val mapperIds = listOf(
                             uploadUserId,
-                            *collaborators.toTypedArray(),
+                            *collaborators.toTypedArray()
                         )
+
                         val allowedUsers: List<Int> = listOf(
                             *mapperIds.toTypedArray(),
                             reviewUserId
@@ -543,7 +543,7 @@ fun Route.reviewRoute() {
                             if (user.userId != reviewUserId) {
                                 Alert.insert(
                                     alertHeader,
-                                    "@${user.uniqueName} just replied to your review on #${toHexString(mapId)}: **${mapName}**.\n" +
+                                    "@${user.uniqueName} just replied to your review on #${toHexString(mapId)}: **$mapName**.\n" +
                                         "*\"${reply.text.replace(Regex("\n+"), " ").take(100)}...\"*",
                                     EAlertType.ReviewReply,
                                     reviewUserId
@@ -554,7 +554,7 @@ fun Route.reviewRoute() {
                             if (otherMappers.isNotEmpty()) {
                                 Alert.insert(
                                     alertHeader,
-                                    "@${user.uniqueName} just replied to a review on #${toHexString(mapId)}: **${mapName}**.\n" +
+                                    "@${user.uniqueName} just replied to a review on #${toHexString(mapId)}: **$mapName**.\n" +
                                         "*\"${reply.text.replace(Regex("\n+"), " ").take(100)}...\"*",
                                     EAlertType.ReviewReply,
                                     otherMappers
