@@ -12,6 +12,7 @@ import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
+import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Review
 import io.beatmaps.common.dbo.ReviewDao
@@ -491,14 +492,32 @@ fun Route.reviewRoute() {
                 reply.captcha,
                 {
                     val (insertedId, response) = newSuspendedTransaction {
-                        val allowedUsers = Review
+                        val (mapId, uploadUserId, reviewUserId) = Review
                             .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
-                            .select(Review.userId, Beatmap.uploader)
-                            .where { Review.id eq req.reviewId }
+                            .select(Review.userId, Beatmap.id, Beatmap.uploader)
+                            .where { Review.id eq req.reviewId and Beatmap.deletedAt.isNull() and Review.deletedAt.isNull() }
                             .firstOrNull()
                             ?.let {
-                                listOf(it[Review.userId].value, it[Beatmap.uploader].value)
-                            } ?: listOf()
+                                Triple(it[Beatmap.id].value, it[Beatmap.uploader].value, it[Review.userId].value)
+                            } ?: Triple(null, null, null)
+
+                        if (reviewUserId == null || uploadUserId == null || mapId == null) {
+                            return@newSuspendedTransaction Pair(
+                                null,
+                                ActionResponse(false, listOf("Review or map not found"))
+                            )
+                        }
+
+                        val collaborators = Collaboration
+                            .select(Collaboration.collaboratorId)
+                            .where { Collaboration.mapId eq mapId and Collaboration.accepted }
+                            .map { it[Collaboration.collaboratorId].value }
+
+                        val allowedUsers = listOf(
+                            uploadUserId,
+                            *collaborators.toTypedArray(),
+                            reviewUserId
+                        )
 
                         if (user.userId !in allowedUsers) {
                             return@newSuspendedTransaction Pair(null, ActionResponse(false, listOf("Unauthorised")))

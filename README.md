@@ -20,6 +20,8 @@ Contains both backend code for uploading and managing maps, the beatsaver API an
 - Login with one of the test users
   - admin:admin
   - test:test
+  - collab1:collab1
+  - collab2:collab2
 
 #### Extra environment variables
 - `ZIP_DIR` Directory zips will get served from
