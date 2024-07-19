@@ -525,8 +525,8 @@ fun Route.reviewRoute() {
                         val uploadUserId = intermediaryResult[Beatmap.uploader].value
 
                         val collaborators = Collaboration
-                            .joinCollaborators()
-                            .select(Collaboration.collaboratorId, collaboratorAlias[User.reviewAlerts])
+                            .join(User, JoinType.LEFT, Collaboration.collaboratorId, User.id)
+                            .select(Collaboration.collaboratorId, User.reviewAlerts)
                             .where { Collaboration.mapId eq mapId and Collaboration.accepted }
 
                         val mapperIds = listOf(
