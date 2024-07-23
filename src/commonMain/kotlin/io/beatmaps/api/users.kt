@@ -83,9 +83,6 @@ data class AccountDetailReq(val textContent: String)
 data class RegisterRequest(val captcha: String, val username: String, val email: String, val password: String, val password2: String)
 
 @Serializable
-data class ActionResponse(val success: Boolean, val errors: List<String> = listOf())
-
-@Serializable
 data class ForgotRequest(val captcha: String, val email: String)
 
 @Serializable

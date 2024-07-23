@@ -64,7 +64,7 @@ val signupPage = fc<Props> {
                     setLoading(true)
 
                     captchaRef.current?.executeAsync()?.then { captcha ->
-                        Axios.post<ActionResponse>(
+                        Axios.post<ActionResponse<Unit>>(
                             "${Config.apibase}/users/register",
                             RegisterRequest(
                                 captcha,
@@ -73,7 +73,7 @@ val signupPage = fc<Props> {
                                 passwordRef.current?.value ?: "",
                                 password2Ref.current?.value ?: ""
                             ),
-                            generateConfig<RegisterRequest, ActionResponse>()
+                            generateConfig<RegisterRequest, ActionResponse<Unit>>()
                         ).then {
                             if (it.data.success) {
                                 setComplete(true)

@@ -70,10 +70,10 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
     }
 
     fun suspend(suspended: Boolean, reason: String? = null) {
-        Axios.post<ActionResponse>(
+        Axios.post<ActionResponse<Unit>>(
             "${Config.apibase}/users/suspend",
             UserSuspendRequest(props.userDetail.id, suspended, reason),
-            generateConfig<UserSuspendRequest, ActionResponse>()
+            generateConfig<UserSuspendRequest, ActionResponse<Unit>>()
         ).then {
             props.onUpdate()
             setErrors(it.data.errors)
@@ -87,7 +87,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
     }
 
     fun revoke(reason: String? = null) {
-        axiosDelete<SessionRevokeRequest, ActionResponse>(
+        axiosDelete<SessionRevokeRequest, ActionResponse<Unit>>(
             "${Config.apibase}/users/sessions",
             SessionRevokeRequest(userId = props.userDetail.id, site = true, reason = reason)
         ).then {
@@ -195,7 +195,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
 
                         setLoading(true)
 
-                        Axios.post<ActionResponse>(
+                        Axios.post<ActionResponse<Unit>>(
                             "${Config.apibase}/users/admin",
                             UserAdminRequest(
                                 props.userDetail.id,
@@ -205,7 +205,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
                                 curatorTabRef.current?.checked ?: false,
                                 verifiedMapperRef.current?.checked ?: false
                             ),
-                            generateConfig<UserAdminRequest, ActionResponse>()
+                            generateConfig<UserAdminRequest, ActionResponse<Unit>>()
                         ).then {
                             props.onUpdate()
                             setErrors(it.data.errors)

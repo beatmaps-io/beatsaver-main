@@ -10,7 +10,7 @@ import react.fc
 import kotlin.js.Promise
 
 external interface ReplyInputProps : Props {
-    var onSave: ((String) -> Promise<AxiosResponse<ActionResponse>>?)?
+    var onSave: ((String) -> Promise<AxiosResponse<ActionResponse<Unit>>>?)?
     var onSuccess: ((String) -> Unit)?
 }
 

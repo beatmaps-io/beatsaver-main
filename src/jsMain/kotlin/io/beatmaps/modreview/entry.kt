@@ -35,7 +35,7 @@ external interface ModReviewEntryProps : Props {
     var entry: CommentDetail?
     var setUser: (String) -> Unit
     var onDelete: (String) -> Promise<*>
-    var onSave: (ReviewSentiment?, String) -> Promise<AxiosResponse<ActionResponse>>?
+    var onSave: (ReviewSentiment?, String) -> Promise<AxiosResponse<ActionResponse<Unit>>>?
 }
 
 val modReviewEntry = fc<ModReviewEntryProps> { props ->

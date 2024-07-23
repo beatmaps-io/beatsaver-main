@@ -249,7 +249,7 @@ fun Route.testplayRoute() {
 
                     val currentWipCount = userWipCount(sess.userId)
                     val maxWips = (user.patreon.toTier() ?: PatreonTier.None).maxWips
-                    sess.isAdmin() || currentWipCount < maxWips || throw ApiException(PatreonTier.maxWipsMessage)
+                    sess.isAdmin() || currentWipCount < maxWips || throw UserApiException(PatreonTier.maxWipsMessage)
 
                     (updateState() > 0).also { rTemp ->
                         if (rTemp && sess.isAdmin() && newState.reason?.isEmpty() == false) {
@@ -266,7 +266,7 @@ fun Route.testplayRoute() {
                 }
             }
 
-            valid || throw ApiException("Error updating map state")
+            valid || throw ServerApiException("Error updating map state")
 
             call.pub("beatmaps", "maps.${newState.mapId}.updated.state", null, newState.mapId)
             call.respond(HttpStatusCode.OK)

@@ -131,10 +131,10 @@ val accountTab = fc<AccountComponentProps> { props ->
                         } else {
                             setUserLoading(true)
 
-                            Axios.post<ActionResponse>(
+                            Axios.post<ActionResponse<Unit>>(
                                 "${Config.apibase}/users/username",
                                 AccountDetailReq(username),
-                                generateConfig<AccountDetailReq, ActionResponse>()
+                                generateConfig<AccountDetailReq, ActionResponse<Unit>>()
                             ).then {
                                 if (it.data.success) {
                                     props.onUpdate()
@@ -172,10 +172,10 @@ val accountTab = fc<AccountComponentProps> { props ->
                 attrs.maxLength = 500
                 attrs.saveText = { newDescription ->
                     if (props.userDetail.description != newDescription) {
-                        Axios.post<ActionResponse>(
+                        Axios.post<ActionResponse<Unit>>(
                             "${Config.apibase}/users/description",
                             AccountDetailReq(newDescription),
-                            generateConfig<AccountDetailReq, ActionResponse>()
+                            generateConfig<AccountDetailReq, ActionResponse<Unit>>()
                         ).then {
                             if (it.data.success) {
                                 props.onUpdate()

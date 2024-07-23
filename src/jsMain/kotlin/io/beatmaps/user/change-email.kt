@@ -51,13 +51,13 @@ val changeEmailPage = fc<Props> {
 
                 setLoading(true)
 
-                Axios.post<ActionResponse>(
+                Axios.post<ActionResponse<Unit>>(
                     "${Config.apibase}/users/change-email",
                     ChangeEmailRequest(
                         params["jwt"] ?: "",
                         passwordRef.current?.value ?: ""
                     ),
-                    generateConfig<ChangeEmailRequest, ActionResponse>()
+                    generateConfig<ChangeEmailRequest, ActionResponse<Unit>>()
                 ).then {
                     if (it.data.success) {
                         history.push("/login?email")

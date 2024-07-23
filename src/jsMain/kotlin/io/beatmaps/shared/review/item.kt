@@ -223,7 +223,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                 attrs.maxLength = ReviewConstants.MAX_LENGTH
                                 attrs.saveText = { newReview ->
                                     val newSentiment = state.newSentiment ?: sentimentLocal
-                                    Axios.put<ActionResponse>("${Config.apibase}/review/single/${props.map?.id}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse>()).then { r ->
+                                    Axios.put<ActionResponse<Unit>>("${Config.apibase}/review/single/${props.map?.id}/${props.userId}", PutReview(newReview, newSentiment), generateConfig<PutReview, ActionResponse<Unit>>()).then { r ->
                                         if (r.data.success) {
                                             setState {
                                                 sentiment = newSentiment
@@ -254,12 +254,12 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                             }
 
                             globalContext.Consumer { userData ->
-                                if (state.editing != true && userData != null && (userData.userId == rv.creator?.id || userData.userId == props.map?.uploader?.id || props.map?.collaborators?.any { it.id == userData.userId } ?: false)) {
+                                if (state.editing != true && userData != null && (userData.userId == rv.creator?.id || userData.userId == props.map?.uploader?.id || props.map?.collaborators?.any { it.id == userData.userId } == true)) {
                                     replyInput {
                                         attrs.onSave = { reply ->
                                             props.captcha?.current?.executeAsync()?.then {
                                                 props.captcha?.current?.reset()
-                                                Axios.post<ActionResponse>("${Config.apibase}/reply/create/${rv.id}", ReplyRequest(reply, it), generateConfig<ReplyRequest, ActionResponse>())
+                                                Axios.post<ActionResponse<Unit>>("${Config.apibase}/reply/create/${rv.id}", ReplyRequest(reply, it), generateConfig<ReplyRequest, ActionResponse<Unit>>())
                                             }?.then { it }
                                         }
                                         attrs.onSuccess = {

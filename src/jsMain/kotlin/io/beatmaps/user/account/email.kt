@@ -66,10 +66,10 @@ val accountEmail = fc<AccountEmailProps> { props ->
                         setLoading(true)
 
                         props.captchaRef.current?.executeAsync()?.then { captcha ->
-                            Axios.post<ActionResponse>(
+                            Axios.post<ActionResponse<Unit>>(
                                 "${Config.apibase}/users/email",
                                 EmailRequest(captcha, email),
-                                generateConfig<EmailRequest, ActionResponse>()
+                                generateConfig<EmailRequest, ActionResponse<Unit>>()
                             ).then {
                                 if (it.data.success) {
                                     setValid(true)

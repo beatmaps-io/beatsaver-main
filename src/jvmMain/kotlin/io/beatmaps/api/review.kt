@@ -316,14 +316,13 @@ fun Route.reviewRoute() {
             captchaIfPresent(update.captcha) {
                 val success = newSuspendedTransaction {
                     if (single.userId != sess.userId && !sess.isCurator()) {
-                        call.respond(HttpStatusCode.Forbidden)
+                        call.respond(HttpStatusCode.Forbidden, ActionResponse.error())
                         return@newSuspendedTransaction false
                     }
 
                     if (sess.suspended || UserDao[sess.userId].suspendedAt != null) {
                         // User is suspended
-                        call.respond(ActionResponse(false, listOf("Suspended account")))
-                        return@newSuspendedTransaction false
+                        throw UserApiException("Suspended account")
                     }
 
                     val oldData = if (single.userId != sess.userId) {
@@ -345,8 +344,7 @@ fun Route.reviewRoute() {
 
                         if (map.uploaderId.value == single.userId) {
                             // Can't review your own map
-                            call.respond(ActionResponse(false, listOf("Own map")))
-                            return@newSuspendedTransaction false
+                            throw UserApiException("Own map")
                         }
 
                         val isCollaborator = map.collaborators.values.any { singleCollaborator ->
@@ -355,8 +353,7 @@ fun Route.reviewRoute() {
 
                         if (isCollaborator) {
                             // Can't review maps that you collaborated on
-                            call.respond(ActionResponse(false, listOf("You're a collaborator of this map")))
-                            return@newSuspendedTransaction false
+                            throw UserApiException("You're a collaborator of this map")
                         }
 
                         Review.upsert(conflictIndex = Index(listOf(Review.mapId, Review.userId), true, "review_unique")) { r ->
@@ -411,7 +408,7 @@ fun Route.reviewRoute() {
                 if (success) {
                     val updateType = if (update.captcha == null) "updated" else "created"
                     call.pub("beatmaps", "reviews.$updateMapId.$updateType", null, ReviewUpdateInfo(updateMapId, single.userId))
-                    call.respond(ActionResponse(true, listOf()))
+                    call.respond(ActionResponse.success())
                 }
             }
         }
@@ -423,7 +420,7 @@ fun Route.reviewRoute() {
             val mapId = single.mapId.toInt(16)
 
             if (single.userId != sess.userId && !sess.isCurator()) {
-                call.respond(HttpStatusCode.Forbidden)
+                call.respond(HttpStatusCode.Forbidden, ActionResponse.error())
                 return@requireAuthorization
             }
 
@@ -497,11 +494,11 @@ fun Route.reviewRoute() {
 
     post<ReplyApi.Create> { req ->
         requireAuthorization { _, user ->
-            if (user.suspended) return@requireAuthorization call.respond(ActionResponse(false, listOf("Suspended account")))
+            if (user.suspended) throw UserApiException("Suspended account")
 
             val reply = call.receive<ReplyRequest>()
 
-            if (reply.captcha == null) return@requireAuthorization call.respond(ActionResponse(false, listOf("Missing Captcha")))
+            if (reply.captcha == null) throw UserApiException("Missing Captcha")
 
             val response = requireCaptcha(
                 reply.captcha,
@@ -516,7 +513,7 @@ fun Route.reviewRoute() {
                         if (intermediaryResult == null) {
                             return@newSuspendedTransaction Pair(
                                 null,
-                                ActionResponse(false, listOf("Review or map not found"))
+                                ActionResponse.error("Review or map not found")
                             )
                         }
 
@@ -537,7 +534,7 @@ fun Route.reviewRoute() {
                         )
 
                         if (user.userId !in allowedUsers) {
-                            return@newSuspendedTransaction Pair(null, ActionResponse(false, listOf("Unauthorised")))
+                            return@newSuspendedTransaction Pair(null, ActionResponse.error("Unauthorised"))
                         }
 
                         val insertedId = ReviewReply.insertAndGetId {
@@ -580,7 +577,7 @@ fun Route.reviewRoute() {
                             updateAlertCount(collaboratorIdsToNotify)
                         }
 
-                        Pair(insertedId, ActionResponse(true, listOf()))
+                        Pair(insertedId, ActionResponse.success())
                     }
 
                     if (insertedId != null) {
@@ -590,7 +587,7 @@ fun Route.reviewRoute() {
                     response
                 }
             ) { e ->
-                ActionResponse(false, e.errorCodes.map { "Captcha error: $it" })
+                ActionResponse.error(*e.errorCodes.map { "Captcha error: $it" }.toTypedArray())
             }
 
             call.respond(response)
@@ -609,7 +606,7 @@ fun Route.reviewRoute() {
                         .single().let { it[ReviewReply.userId].value }
 
                     if (ownerId != user.userId && !user.isCurator()) {
-                        return@newSuspendedTransaction ActionResponse(false, listOf("Unauthorised"))
+                        return@newSuspendedTransaction ActionResponse.error("Unauthorised")
                     }
 
                     val oldData = if (ownerId != user.userId) {
@@ -638,7 +635,7 @@ fun Route.reviewRoute() {
                         )
                     }
 
-                    ActionResponse(updated, listOf())
+                    if (updated) ActionResponse.success() else ActionResponse.error()
                 }
 
                 // This should be outside the transaction - otherwise the websocket will send the old text

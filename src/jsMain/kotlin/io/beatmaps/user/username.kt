@@ -73,10 +73,10 @@ val pickUsernamePage = fc<Props> {
                 ev.preventDefault()
                 setSubmitted(true)
 
-                Axios.post<ActionResponse>(
+                Axios.post<ActionResponse<Unit>>(
                     "${Config.apibase}/users/username",
                     AccountDetailReq(inputRef.current?.value ?: ""),
-                    generateConfig<AccountDetailReq, ActionResponse>()
+                    generateConfig<AccountDetailReq, ActionResponse<Unit>>()
                 ).then {
                     if (it.data.success) {
                         history.push("/")

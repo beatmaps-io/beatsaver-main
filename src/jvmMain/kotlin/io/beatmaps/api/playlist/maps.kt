@@ -1,5 +1,7 @@
 package io.beatmaps.api.playlist
 
+import de.nielsfalk.ktor.swagger.badRequest
+import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
@@ -8,6 +10,7 @@ import io.beatmaps.api.OauthScope
 import io.beatmaps.api.PlaylistApi
 import io.beatmaps.api.PlaylistBatchRequest
 import io.beatmaps.api.PlaylistMapRequest
+import io.beatmaps.api.UserApiException
 import io.beatmaps.api.getMaxMap
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
@@ -37,6 +40,8 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.floatLiteral
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.or
+import org.jetbrains.exposed.sql.statements.BatchInsertStatement
+import org.jetbrains.exposed.sql.statements.Statement
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.postgresql.util.PSQLException
 
@@ -74,19 +79,20 @@ fun Route.playlistMaps() {
     fun applyPlaylistChange(pId: Int, inPlaylist: Boolean, mapId: Int, newOrder: Float? = null) =
         applyPlaylistChange(pId, inPlaylist, intLiteral(mapId), newOrder)
 
-    post<PlaylistApi.Batch, PlaylistBatchRequest>("Add or remove up to 100 maps to a playlist. Requires OAUTH".responds(ok<ActionResponse>())) { req, pbr ->
+    post<PlaylistApi.Batch, PlaylistBatchRequest>(
+        "Add or remove up to 100 maps to a playlist. Requires OAUTH"
+            .responds(ok<ActionResponse<Unit>>(), notFound<ActionResponse<Unit>>(), badRequest<ActionResponse<Unit>>())
+    ) { req, pbr ->
         requireAuthorization(OauthScope.MANAGE_PLAYLISTS) { _, sess ->
             val validKeys = (pbr.keys ?: listOf()).mapNotNull { key -> key.toIntOrNull(16) }
             val hashesOrEmpty = pbr.hashes?.map { it.lowercase() } ?: listOf()
             if (hashesOrEmpty.size + validKeys.size > 100) {
-                call.respond(HttpStatusCode.BadRequest, "Too many maps")
-                return@requireAuthorization
+                throw UserApiException("Too many maps")
             } else if (hashesOrEmpty.size + validKeys.size <= 0 || (validKeys.size != (pbr.keys?.size ?: 0) && pbr.ignoreUnknown != true)) {
                 // No hashes or keys
                 // OR
                 // Some invalid keys but not allowed to ignore unknown
-                call.respond(HttpStatusCode.BadRequest, "Nothing to do")
-                return@requireAuthorization
+                throw UserApiException("Nothing to do")
             }
 
             try {
@@ -132,11 +138,14 @@ fun Route.playlistMaps() {
                                 rollback()
                                 null
                             } else if (pbr.inPlaylist == true) {
-                                PlaylistMap.batchInsert(mapIds.mapIndexed { idx, it -> idx to it }, true, shouldReturnGeneratedValues = false) {
+                                val info = PlaylistMap.batchInsert(mapIds.mapIndexed { idx, it -> idx to it }, true, shouldReturnGeneratedValues = false) {
                                     this[PlaylistMap.playlistId] = playlist.id
                                     this[PlaylistMap.mapId] = it.second
                                     this[PlaylistMap.order] = maxMap + it.first + 1
-                                }.size
+                                }
+
+                                // Will be equal to the row count regardless of if rows already existed or not
+                                info.size
                             } else {
                                 PlaylistMap.deleteWhere {
                                     (playlistId eq playlist.id.value) and (mapId.inList(mapIds))
@@ -152,11 +161,12 @@ fun Route.playlistMaps() {
                 null
             }.let {
                 when (it) {
-                    null -> call.respond(HttpStatusCode.NotFound)
-                    0 -> call.respond(ActionResponse(false))
+                    null -> call.respond(HttpStatusCode.NotFound, ActionResponse.error("Playlist not found"))
+                    // I think this only occurs when deleting maps from playlist that aren't in the playlist
+                    0 -> call.respond(ActionResponse.success())
                     else -> {
                         call.pub("beatmaps", "playlists.$it.updated", null, it)
-                        call.respond(ActionResponse(true))
+                        call.respond(ActionResponse.success())
                     }
                 }
             }
@@ -196,11 +206,11 @@ fun Route.playlistMaps() {
                 null
             }.let {
                 when (it) {
-                    null -> call.respond(HttpStatusCode.NotFound)
-                    0 -> call.respond(ActionResponse(false))
+                    null -> call.respond(HttpStatusCode.NotFound, ActionResponse.error("Playlist not found"))
+                    0 -> call.respond(ActionResponse.error())
                     else -> {
                         call.pub("beatmaps", "playlists.$it.updated", null, it)
-                        call.respond(ActionResponse(true))
+                        call.respond(ActionResponse.success())
                     }
                 }
             }

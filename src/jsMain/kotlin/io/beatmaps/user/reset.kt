@@ -47,14 +47,14 @@ val resetPage = fc<Props> {
                 ev.preventDefault()
                 setLoading(true)
 
-                Axios.post<ActionResponse>(
+                Axios.post<ActionResponse<Unit>>(
                     "${Config.apibase}/users/reset",
                     ResetRequest(
                         params["jwt"] ?: "",
                         passwordRef.current?.value ?: "",
                         password2Ref.current?.value ?: ""
                     ),
-                    generateConfig<ResetRequest, ActionResponse>()
+                    generateConfig<ResetRequest, ActionResponse<Unit>>()
                 ).then {
                     if (it.data.success) {
                         history.push("/login?reset")
