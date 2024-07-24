@@ -22,6 +22,7 @@ import io.beatmaps.common.util.TextHelper
 import io.ktor.client.HttpClient
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.userAgent
@@ -96,11 +97,11 @@ val discordWebhookUrl: String? = System.getenv("DISCORD_WEBHOOK_URL")
 class DiscordWebhookHandler(private val client: HttpClient, private val webhookUrl: String) {
     companion object {
         private const val MAX_TITLE_LEN = 100 // 256 max
-        private const val MAX_REVIEW_LEN = 1024 // 1024 max
+        private const val MAX_REVIEW_LEN = 800 // 1024 max
     }
 
     suspend fun post(review: ReviewDetail) {
-        client.post(webhookUrl) {
+        val res = client.post(webhookUrl) {
             contentType(ContentType.Application.Json)
             userAgent("BeatSaver")
 
@@ -139,10 +140,14 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                 )
             )
         }
+
+        val txt = res.bodyAsText()
+        println(res.status)
+        println(txt)
     }
 }
 
-fun Application.reviewListeners() {
+fun Application.reviewListeners(client: HttpClient) {
     rabbitOptional {
         val avg = Review.sentiment.avgWithFilter(Review.deletedAt.isNull(), 3).alias("sentiment")
         val count = Review.sentiment.countWithFilter(Review.deletedAt.isNull()).alias("reviews")
@@ -160,7 +165,7 @@ fun Application.reviewListeners() {
         }
 
         discordWebhookUrl?.let { webhookUrl ->
-            val handler = DiscordWebhookHandler(jsonClient, webhookUrl)
+            val handler = DiscordWebhookHandler(client, webhookUrl)
             consumeAck("bm.reviewDiscordHook", ReviewUpdateInfo::class) { _, r ->
                 transaction {
                     Review

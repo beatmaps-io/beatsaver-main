@@ -36,6 +36,7 @@ import io.beatmaps.common.genericQueueConfig
 import io.beatmaps.common.installMetrics
 import io.beatmaps.common.jackson
 import io.beatmaps.common.json
+import io.beatmaps.common.jsonClient
 import io.beatmaps.common.rabbitHost
 import io.beatmaps.common.setupAMQP
 import io.beatmaps.common.setupLogging
@@ -64,6 +65,7 @@ import io.beatmaps.util.downloadsThread
 import io.beatmaps.util.playlistStats
 import io.beatmaps.util.reviewListeners
 import io.beatmaps.websockets.mapUpdateEnricher
+import io.ktor.client.HttpClient
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.EntityTagVersion
@@ -175,7 +177,7 @@ fun migrateDB(ds: DataSource, type: DbMigrationType) {
         .migrate()
 }
 
-fun Application.beatmapsio() {
+fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
     install(ContentNegotiation) {
         val kotlinx = KotlinxSerializationConverter(json)
         val jsConv = JacksonConverter(jackson)
@@ -352,7 +354,7 @@ fun Application.beatmapsio() {
 
     installMetrics()
     installSessions()
-    installOauth()
+    installOauth(httpClient)
     if (rabbitHost.isNotEmpty()) {
         install(RabbitMQ) {
             setupAMQP {
@@ -403,8 +405,8 @@ fun Application.beatmapsio() {
         }
         downloadsThread()
         alertsThread()
-        filenameUpdater()
-        reviewListeners()
+        filenameUpdater(httpClient)
+        reviewListeners(httpClient)
         playlistStats()
         emailQueue()
     }
@@ -422,15 +424,15 @@ fun Application.beatmapsio() {
 
         cdnRoute()
 
-        authRoute()
-        discordLogin()
-        patreonLink()
+        authRoute(httpClient)
+        discordLogin(httpClient)
+        patreonLink(httpClient)
         mapDetailRoute()
-        userRoute()
+        userRoute(httpClient)
         searchRoute()
         scoresRoute()
-        testplayRoute()
-        voteRoute()
+        testplayRoute(httpClient)
+        voteRoute(httpClient)
         playlistRoute()
         alertsRoute()
         modLogRoute()

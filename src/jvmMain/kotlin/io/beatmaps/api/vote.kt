@@ -21,6 +21,8 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.common.rabbitOptional
 import io.beatmaps.common.tag
+import io.beatmaps.util.GameTokenValidator
+import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -39,7 +41,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.intLiteral
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -73,7 +74,7 @@ data class QueuedVote(val userId: Long, val steam: Boolean, val mapId: Int, val 
 @Serializable
 data class VoteSummary(val hash: String?, val mapId: Int, val key64: String?, val upvotes: Int, val downvotes: Int, val score: Double)
 
-fun Route.voteRoute() {
+fun Route.voteRoute(client: HttpClient) {
     options<VoteApi.Vote> {
         call.response.header("Access-Control-Allow-Origin", "*")
         call.respond(HttpStatusCode.OK)
@@ -177,6 +178,7 @@ fun Route.voteRoute() {
         call.respond(voteSummary)
     }
 
+    val validator = GameTokenValidator(client)
     post<VoteApi.Vote, VoteRequest>("Vote on a map".responds(ok<VoteResponse>())) { _, req ->
         call.response.header("Access-Control-Allow-Origin", "*")
         call.tag("platform", if (req.auth.steamId != null) "steam" else if (req.auth.oculusId != null) "oculus" else "unknown")
@@ -193,14 +195,14 @@ fun Route.voteRoute() {
                 }
 
                 val (userId, steam) = req.auth.steamId?.let { steamId ->
-                    if (!validateSteamToken(steamId, req.auth.proof)) {
+                    if (!validator.steam(steamId, req.auth.proof)) {
                         error("Could not validate steam token")
                     }
 
                     // Valid steam user
                     steamId.toLong() to true
                 } ?: req.auth.oculusId?.let { oculusId ->
-                    if (!validateOculusToken(oculusId, req.auth.proof)) {
+                    if (!validator.oculus(oculusId, req.auth.proof)) {
                         error("Could not validate oculus token")
                     }
 
@@ -213,7 +215,7 @@ fun Route.voteRoute() {
 
                 call.respond(VoteResponse(true))
             } catch (e: IllegalStateException) {
-                call.respond(VoteResponse(false, e.message))
+                call.respond(HttpStatusCode.BadRequest, VoteResponse(false, e.message))
             }
         }
     }

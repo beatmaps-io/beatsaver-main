@@ -19,8 +19,15 @@ open class ApiTestBase : FixtureHelpers() {
     protected suspend fun ApplicationTestBuilder.setup(): HttpClient {
         setupDB(app = "BeatSaver Tests")
 
+        val client = createClient {
+            install(ContentNegotiation) {
+                json()
+            }
+            install(HttpCookies)
+        }
+
         application {
-            beatmapsio()
+            beatmapsio(client)
         }
 
         routing {
@@ -28,13 +35,6 @@ open class ApiTestBase : FixtureHelpers() {
                 val id = call.parameters["id"]?.toIntOrNull() ?: 1
                 call.sessions.set(Session(id, userEmail = "test@example.com", userName = "test", uniqueName = "test"))
             }
-        }
-
-        val client = createClient {
-            install(ContentNegotiation) {
-                json()
-            }
-            install(HttpCookies)
         }
 
         client.get("/login-test")

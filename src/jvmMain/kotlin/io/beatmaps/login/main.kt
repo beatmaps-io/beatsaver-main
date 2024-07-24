@@ -2,7 +2,6 @@ package io.beatmaps.login
 
 import io.beatmaps.api.UserCrypto
 import io.beatmaps.common.Config
-import io.beatmaps.common.client
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.getCountry
@@ -10,8 +9,11 @@ import io.beatmaps.genericPage
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.SignatureException
+import io.ktor.client.HttpClient
+import io.ktor.client.request.accept
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
 import io.ktor.http.parametersOf
@@ -115,7 +117,7 @@ class Username
 @Location("/steam")
 class Steam
 
-fun Route.authRoute() {
+fun Route.authRoute(client: HttpClient) {
     get<Register> { genericPage() }
     get<Forgot> { genericPage() }
     get<Reset> { genericPage() }
