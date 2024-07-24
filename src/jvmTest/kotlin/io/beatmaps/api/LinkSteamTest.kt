@@ -48,6 +48,7 @@ class LinkSteamTest : ApiTestBase() {
         val response = client.get("/steam?openid.claimed_id=https%3A%2F%2Fsteamcommunity.com%2Fopenid%2Fid%2F$steamId")
         assertEquals(HttpStatusCode.OK, response.status, "Request should be successful")
         assertEquals("/profile", response.request.url.fullPath)
+        assertEquals("", response.request.url.fragment)
 
         val actualSteamId = transaction {
             User.select(User.steamId).where { User.id eq uid }.single()[User.steamId]

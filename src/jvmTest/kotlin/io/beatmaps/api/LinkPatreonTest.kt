@@ -1,10 +1,9 @@
 package io.beatmaps.api
 
+import io.beatmaps.common.dbo.User
 import io.beatmaps.common.json
-import io.beatmaps.login.patreon.PatreonBase
 import io.beatmaps.login.patreon.PatreonIncluded
 import io.beatmaps.login.patreon.PatreonMembership
-import io.beatmaps.login.patreon.PatreonObject
 import io.beatmaps.login.patreon.PatreonResponse
 import io.beatmaps.login.patreon.PatreonStatus
 import io.beatmaps.login.patreon.PatreonTier
@@ -26,6 +25,7 @@ import kotlinx.datetime.Clock
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.days
@@ -33,6 +33,7 @@ import kotlin.time.Duration.Companion.days
 class LinkPatreonTest : ApiTestBase() {
     @Test
     fun linkAccount() = testApplication {
+        val patreonUserId = fixture<UShort>()
         externalServices {
             hosts("https://patreon.com") {
                 this@hosts.install(ContentNegotiation) {
@@ -56,7 +57,7 @@ class LinkPatreonTest : ApiTestBase() {
                             listOf(
                                 json.encodeToJsonElement(
                                     PatreonIncluded(
-                                        "1234", // TODO: Randomise
+                                        "$patreonUserId",
                                         PatreonUser.fieldKey,
                                         fixture<PatreonUser>()
                                     )
@@ -90,6 +91,9 @@ class LinkPatreonTest : ApiTestBase() {
         val client = setup()
 
         val uid = transaction {
+            User.update({ User.id eq patreonUserId.toInt() }) {
+                it[patreonId] = null
+            }
             createUser().first
         }
 
@@ -97,6 +101,7 @@ class LinkPatreonTest : ApiTestBase() {
 
         val response = client.get("/patreon?code=1&state=2")
         assertEquals(HttpStatusCode.OK, response.status, "Request should be successful")
-        assertEquals("/profile#account", response.request.url.fullPath)
+        assertEquals("/profile", response.request.url.fullPath)
+        assertEquals("account", response.request.url.fragment)
     }
 }
