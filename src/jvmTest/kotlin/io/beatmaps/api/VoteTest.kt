@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -16,6 +17,7 @@ import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 class VoteTest : ApiTestBase() {
@@ -51,8 +53,11 @@ class VoteTest : ApiTestBase() {
                 VoteRequest(AuthRequest("76561198000000000", proof = "fake-proof"), hash, true)
             )
         }
+        val actionResponse = response.body<ActionResponse<Unit>>()
 
         assertEquals(HttpStatusCode.OK, response.status, "Vote should be successful")
+        assertEquals(true, actionResponse.success, "Vote should be successful")
+        assertContentEquals(listOf(), actionResponse.errors, "Vote should have no errors")
     }
 
     @Test
@@ -83,8 +88,11 @@ class VoteTest : ApiTestBase() {
                 VoteRequest(AuthRequest(oculusId = "1234567890", proof = "fake-proof"), hash, true)
             )
         }
+        val actionResponse = response.body<ActionResponse<Unit>>()
 
         assertEquals(HttpStatusCode.OK, response.status, "Vote should be successful")
+        assertEquals(true, actionResponse.success, "Vote should be successful")
+        assertContentEquals(listOf(), actionResponse.errors, "Vote should have no errors")
     }
 
     @Test
@@ -119,8 +127,11 @@ class VoteTest : ApiTestBase() {
                 VoteRequest(AuthRequest("76561198000000000", proof = "fake-proof"), hash, true)
             )
         }
+        val actionResponse = response.body<ActionResponse<Unit>>()
 
         assertEquals(HttpStatusCode.BadRequest, response.status, "Vote should not be successful")
+        assertEquals(false, actionResponse.success, "Vote should not be successful")
+        assertContentEquals(listOf("Could not validate steam token"), actionResponse.errors)
     }
 
     @Test
@@ -151,8 +162,11 @@ class VoteTest : ApiTestBase() {
                 VoteRequest(AuthRequest(oculusId = "1234567890", proof = "fake-proof"), hash, true)
             )
         }
+        val actionResponse = response.body<ActionResponse<Unit>>()
 
         assertEquals(HttpStatusCode.BadRequest, response.status, "Vote should not be successful")
+        assertEquals(false, actionResponse.success, "Vote should not be successful")
+        assertContentEquals(listOf("Could not validate oculus token"), actionResponse.errors)
     }
 
     @Test
@@ -170,7 +184,10 @@ class VoteTest : ApiTestBase() {
                 VoteRequest(AuthRequest(proof = "fake-proof"), hash, true)
             )
         }
+        val actionResponse = response.body<ActionResponse<Unit>>()
 
         assertEquals(HttpStatusCode.BadRequest, response.status, "Vote should not be successful")
+        assertEquals(false, actionResponse.success, "Vote should not be successful")
+        assertContentEquals(listOf("No user identifier provided"), actionResponse.errors)
     }
 }

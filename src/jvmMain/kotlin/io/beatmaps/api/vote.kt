@@ -66,9 +66,6 @@ class VoteApi {
 data class VoteRequest(val auth: AuthRequest, val hash: String, val direction: Boolean)
 
 @Serializable
-data class VoteResponse(val success: Boolean, val error: String? = null)
-
-@Serializable
 data class QueuedVote(val userId: Long, val steam: Boolean, val mapId: Int, val direction: Boolean)
 
 @Serializable
@@ -179,7 +176,7 @@ fun Route.voteRoute(client: HttpClient) {
     }
 
     val validator = GameTokenValidator(client)
-    post<VoteApi.Vote, VoteRequest>("Vote on a map".responds(ok<VoteResponse>())) { _, req ->
+    post<VoteApi.Vote, VoteRequest>("Vote on a map".responds(ok<ActionResponse<Unit>>())) { _, req ->
         call.response.header("Access-Control-Allow-Origin", "*")
         call.tag("platform", if (req.auth.steamId != null) "steam" else if (req.auth.oculusId != null) "oculus" else "unknown")
 
@@ -213,9 +210,9 @@ fun Route.voteRoute(client: HttpClient) {
                 val mapId = mapIdArr.first()[Versions.mapId]
                 call.pub("beatmaps", "vote.$mapId", null, QueuedVote(userId, steam, mapId.value, req.direction))
 
-                call.respond(VoteResponse(true))
+                call.respond(ActionResponse.success())
             } catch (e: IllegalStateException) {
-                call.respond(HttpStatusCode.BadRequest, VoteResponse(false, e.message))
+                call.respond(HttpStatusCode.BadRequest, ActionResponse.error(e.message ?: "Unknown error"))
             }
         }
     }

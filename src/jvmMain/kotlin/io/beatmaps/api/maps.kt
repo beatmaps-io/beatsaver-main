@@ -166,10 +166,6 @@ enum class LatestSort {
 }
 
 fun Route.mapDetailRoute() {
-    options<MapsApi.Beatsaver> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
     options<MapsApi.Detail> {
         call.response.header("Access-Control-Allow-Origin", "*")
         call.respond(HttpStatusCode.OK)
@@ -473,8 +469,7 @@ fun Route.mapDetailRoute() {
         }
     }
 
-    get<MapsApi.Beatsaver> {
-        call.response.header("Access-Control-Allow-Origin", "*")
+    getWithOptions<MapsApi.Beatsaver> {
         val r = transaction {
             Beatmap
                 .joinVersions(true)

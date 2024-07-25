@@ -83,9 +83,6 @@ data class AuthRequest(val steamId: String? = null, val oculusId: String? = null
 data class MarkRequest(val hash: String, val markPlayed: Boolean = true, val removeFromQueue: Boolean = false, val addToQueue: Boolean = false)
 
 @Serializable
-data class VerifyResponse(val success: Boolean, val error: String? = null)
-
-@Serializable
 data class SteamAPIResponse(val response: SteamAPIResponseObject)
 
 @Serializable
@@ -264,21 +261,21 @@ fun Route.testplayRoute(client: HttpClient) {
     }
 
     val validator = GameTokenValidator(client)
-    post<MapsApi.Verify, AuthRequest>("Verify user tokens".responds(ok<VerifyResponse>())) { _, auth ->
+    post<MapsApi.Verify, AuthRequest>("Verify user tokens".responds(ok<ActionResponse<Unit>>())) { _, auth ->
         call.respond(
             auth.steamId?.let { steamId ->
                 if (!validator.steam(steamId, auth.proof)) {
-                    VerifyResponse(false, "Could not validate steam token")
+                    ActionResponse.error("Could not validate steam token")
                 } else {
-                    VerifyResponse(true)
+                    ActionResponse.success()
                 }
             } ?: auth.oculusId?.let { oculusId ->
                 if (!validator.oculus(oculusId, auth.proof)) {
-                    VerifyResponse(false, "Could not validate oculus token")
+                    ActionResponse.error("Could not validate oculus token")
                 } else {
-                    VerifyResponse(true)
+                    ActionResponse.success()
                 }
-            } ?: VerifyResponse(false, "No user identifier provided")
+            } ?: ActionResponse.error("No user identifier provided")
         )
     }
 
