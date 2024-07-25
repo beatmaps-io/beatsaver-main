@@ -56,7 +56,7 @@ val homePage = fc<Props> {
             params.get("from"),
             params.get("to"),
             params.get("noodle")?.toBoolean(),
-            RankedFilter.fromString(params.get("ranked")) ?: RankedFilter.All,
+            RankedFilter.fromString(params.get("ranked")),
             params.get("curated")?.toBoolean(),
             params.get("verified")?.toBoolean(),
             params.get("followed")?.toBoolean(),
