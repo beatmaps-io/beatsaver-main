@@ -55,6 +55,6 @@ val collaboratorLeave = fc<CollaboratorLeaveProps> { props ->
             )
         }
         span("dd-text") { +title }
-        i("fas fa-users-slash text-danger") { }
+        i("fas fa-users-slash text-danger-light") { }
     }
 }
