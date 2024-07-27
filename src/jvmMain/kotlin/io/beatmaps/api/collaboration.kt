@@ -171,7 +171,7 @@ fun Route.collaborationRoute() {
             val req = call.receive<CollaborationRemoveData>()
 
             val success = transaction {
-                (isUploader(req.mapId, sess.userId) || sess.isAdmin()) &&
+                (isUploader(req.mapId, sess.userId) || sess.userId == req.collaboratorId || sess.isAdmin()) &&
                     Collaboration.deleteWhere {
                         mapId eq req.mapId and (collaboratorId eq req.collaboratorId)
                     } > 0
