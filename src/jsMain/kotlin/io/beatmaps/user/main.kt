@@ -80,7 +80,7 @@ enum class ProfileTab(val tabText: String, val condition: (UserData?, TabContext
     ACCOUNT("Account", condition = { it, c, _ -> (it?.admin == true || c.userId == null) })
 }
 
-val profilePage = fc<Props> { props ->
+val profilePage = fc<Props> { _ ->
     val modalRef = useRef<ModalComponent>()
     val userData = useContext(globalContext)
 
@@ -95,20 +95,20 @@ val profilePage = fc<Props> { props ->
     val history = History(useNavigate())
     val params = useParams()
 
-    fun setupTabState() {
+    fun setupTabState(user: UserDetail) {
         val hash = location.hash.substring(1)
         val tabContext = TabContext(params["userId"]?.toIntOrNull())
-        setTabState(
-            ProfileTab.entries.firstOrNull {
-                hash == it.tabText.lowercase() && it.condition(userData, tabContext, userDetail)
-            } ?: ProfileTab.entries.firstOrNull { it.bootCondition() && it.condition(userData, tabContext, userDetail) } ?: run {
-                if (ProfileTab.UNPUBLISHED.condition(userData, tabContext, userDetail)) {
-                    ProfileTab.UNPUBLISHED
-                } else {
-                    ProfileTab.PUBLISHED
-                }
+        val newState = ProfileTab.entries.firstOrNull {
+            hash == it.tabText.lowercase() && it.condition(userData, tabContext, user)
+        } ?: ProfileTab.entries.firstOrNull { it.bootCondition() && it.condition(userData, tabContext, user) } ?: run {
+            if (ProfileTab.UNPUBLISHED.condition(userData, tabContext, user)) {
+                ProfileTab.UNPUBLISHED
+            } else {
+                ProfileTab.PUBLISHED
             }
-        )
+        }
+
+        setTabState(newState)
         setStartup(true)
     }
 
@@ -128,7 +128,7 @@ val profilePage = fc<Props> { props ->
             setPageTitle("Profile - ${data.name}")
             setUserDetail(data)
             setFollowData(data.followData)
-            setupTabState()
+            setupTabState(data)
         }.catch {
             if (it.asDynamic().response?.status == 401) {
                 history.push("/login")
