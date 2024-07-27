@@ -88,6 +88,7 @@ val mapInfo = fc<MapInfoProps> { props ->
     val userData = useContext(globalContext)
     val loggedInId = userData?.userId
     val isOwnerLocal = loggedInId == props.mapInfo.uploader.id
+    val isCollaboratorLocal = if (props.mapInfo.collaborators != null) props.mapInfo.collaborators.let { loggedInId in it!!.map { collaborator -> collaborator.id } } else false
 
     val modal = useContext(modalContext)
 
@@ -245,6 +246,15 @@ val mapInfo = fc<MapInfoProps> { props ->
                                         }
                                         span("dd-text") { +"Edit" }
                                         i("fas fa-pen text-warning") { }
+                                    }
+                                }
+
+                                if (loggedInId != null && isCollaboratorLocal) {
+                                    collaboratorLeave {
+                                        attrs.map = props.mapInfo
+                                        attrs.collaboratorId = loggedInId
+                                        attrs.reloadMap = props.reloadMap
+                                        attrs.modal = modal
                                     }
                                 }
 
