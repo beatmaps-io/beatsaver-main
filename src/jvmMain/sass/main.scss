@@ -282,7 +282,7 @@ table.search-results {
       }
     }
 
-    &:not(:last-child, .loading)::after {
+    &:not(:last-child, .loading) .replies::after {
       content: "";
       display: block;
       height: 2px;
