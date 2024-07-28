@@ -38,6 +38,7 @@ val copyEmbed = fc<CopyBSProps> { props ->
             <iframe 
                 src="${window.location.origin}/maps/${props.map.id}/embed" 
                 width="600" height="145" 
+                loading="lazy"
                 style="border: none; border-radius: 4px;"></iframe>
         """.trimIndent()
 
