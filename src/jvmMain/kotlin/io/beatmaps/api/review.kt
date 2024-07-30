@@ -220,7 +220,7 @@ fun Route.reviewRoute() {
                     .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
                     .select(Review.columns + ReviewReply.columns + reviewerAlias.columns)
                     .where {
-                        Review.id inSubQuery(
+                        Review.id.inSubQuery(
                             Review
                                 .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
                                 .joinVersions()
@@ -267,7 +267,7 @@ fun Route.reviewRoute() {
                     .joinCurator()
                     .selectAll()
                     .where {
-                        Review.id inSubQuery(
+                        Review.id.inSubQuery(
                             Review
                                 .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
                                 .joinVersions()
