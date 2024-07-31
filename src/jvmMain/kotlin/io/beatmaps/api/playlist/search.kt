@@ -1,6 +1,5 @@
 package io.beatmaps.api.playlist
 
-import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.api.LatestPlaylistSort
@@ -28,10 +27,7 @@ import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
-import io.ktor.server.locations.options
-import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import kotlinx.datetime.toJavaInstant

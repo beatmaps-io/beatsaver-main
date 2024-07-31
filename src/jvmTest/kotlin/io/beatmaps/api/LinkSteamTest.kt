@@ -27,10 +27,12 @@ class LinkSteamTest : ApiTestBase() {
                 }
                 this@hosts.routing {
                     post("openid/login") {
-                        call.respond("""
-                            ns:http://specs.openid.net/auth/2.0
-                            is_valid:true
-                        """.trimIndent())
+                        call.respond(
+                            """
+                                ns:http://specs.openid.net/auth/2.0
+                                is_valid:true
+                            """.trimIndent()
+                        )
                     }
                 }
             }

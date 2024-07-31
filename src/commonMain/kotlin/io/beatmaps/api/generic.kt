@@ -22,8 +22,9 @@ interface IActionResponse {
 @Serializable
 data class ActionResponse(override val success: Boolean, override val errors: List<String> = listOf()) : IActionResponse {
     companion object {
-        fun success() = ActionResponse(true)
         // fun <T> success(data: T) = ActionResponse(true, data)
+
+        fun success() = ActionResponse(true)
         fun error(vararg errors: String): ActionResponse = error(errors.toList())
         private fun error(errors: List<String> = listOf()) = ActionResponse(false, errors = errors)
     }

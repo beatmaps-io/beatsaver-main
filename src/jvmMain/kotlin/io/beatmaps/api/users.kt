@@ -4,6 +4,9 @@ import com.toxicbakery.bcrypt.Bcrypt
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
+import io.beatmaps.api.user.UserCrypto
+import io.beatmaps.api.user.from
+import io.beatmaps.api.user.getAvatar
 import io.beatmaps.common.Config
 import io.beatmaps.common.EmailChangedData
 import io.beatmaps.common.PasswordChangedData
@@ -45,9 +48,6 @@ import io.beatmaps.login.MongoSession
 import io.beatmaps.login.Session
 import io.beatmaps.login.cookieName
 import io.beatmaps.login.server.DBTokenStore
-import io.beatmaps.api.user.UserCrypto
-import io.beatmaps.api.user.from
-import io.beatmaps.api.user.getAvatar
 import io.beatmaps.util.requireAuthorization
 import io.beatmaps.util.requireCaptcha
 import io.beatmaps.util.updateAlertCount

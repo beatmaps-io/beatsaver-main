@@ -41,48 +41,52 @@ class LinkPatreonTest : ApiTestBase() {
                 }
                 this@hosts.routing {
                     post("api/oauth2/token") {
-                        call.respond("""
-                            {
-                                "access_token": "1",
-                                "refresh_token": "2",
-                                "token_type": "bearer",
-                                "expires_in": 3600,
-                                "scope": "identity"
-                            }
-                        """.trimIndent())
+                        call.respond(
+                            """
+                                {
+                                    "access_token": "1",
+                                    "refresh_token": "2",
+                                    "token_type": "bearer",
+                                    "expires_in": 3600,
+                                    "scope": "identity"
+                                }
+                            """.trimIndent()
+                        )
                     }
                     get("api/oauth2/v2/identity") {
-                        call.respond(PatreonResponse(
-                            JsonObject(emptyMap()),
-                            listOf(
-                                json.encodeToJsonElement(
-                                    PatreonIncluded(
-                                        "$patreonUserId",
-                                        PatreonUser.fieldKey,
-                                        fixture<PatreonUser>()
-                                    )
-                                ),
-                                json.encodeToJsonElement(
-                                    PatreonIncluded(
-                                        fixture<String>(),
-                                        PatreonMembership.fieldKey,
-                                        PatreonMembership(
-                                            currentlyEntitledAmountCents = 100,
-                                            patronStatus = PatreonStatus.ACTIVE,
-                                            nextChargeDate = Clock.System.now().plus(7.days)
+                        call.respond(
+                            PatreonResponse(
+                                JsonObject(emptyMap()),
+                                listOf(
+                                    json.encodeToJsonElement(
+                                        PatreonIncluded(
+                                            "$patreonUserId",
+                                            PatreonUser.fieldKey,
+                                            fixture<PatreonUser>()
+                                        )
+                                    ),
+                                    json.encodeToJsonElement(
+                                        PatreonIncluded(
+                                            fixture<String>(),
+                                            PatreonMembership.fieldKey,
+                                            PatreonMembership(
+                                                currentlyEntitledAmountCents = 100,
+                                                patronStatus = PatreonStatus.ACTIVE,
+                                                nextChargeDate = Clock.System.now().plus(7.days)
+                                            )
+                                        )
+                                    ),
+                                    json.encodeToJsonElement(
+                                        PatreonIncluded(
+                                            fixture<String>(),
+                                            PatreonTier.fieldKey,
+                                            fixture<PatreonTier>()
                                         )
                                     )
                                 ),
-                                json.encodeToJsonElement(
-                                    PatreonIncluded(
-                                        fixture<String>(),
-                                        PatreonTier.fieldKey,
-                                        fixture<PatreonTier>()
-                                    )
-                                )
-                            ),
-                            JsonObject(emptyMap())
-                        ))
+                                JsonObject(emptyMap())
+                            )
+                        )
                     }
                 }
             }

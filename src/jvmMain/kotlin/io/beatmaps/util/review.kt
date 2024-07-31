@@ -16,13 +16,11 @@ import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
-import io.beatmaps.common.jsonClient
 import io.beatmaps.common.rabbitOptional
 import io.beatmaps.common.util.TextHelper
 import io.ktor.client.HttpClient
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.userAgent
@@ -97,11 +95,11 @@ val discordWebhookUrl: String? = System.getenv("DISCORD_WEBHOOK_URL")
 class DiscordWebhookHandler(private val client: HttpClient, private val webhookUrl: String) {
     companion object {
         private const val MAX_TITLE_LEN = 100 // 256 max
-        private const val MAX_REVIEW_LEN = 800 // 1024 max
+        private const val MAX_REVIEW_LEN = 1024 // 1024 max
     }
 
     suspend fun post(review: ReviewDetail) {
-        val res = client.post(webhookUrl) {
+        client.post(webhookUrl) {
             contentType(ContentType.Application.Json)
             userAgent("BeatSaver")
 
@@ -140,10 +138,6 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                 )
             )
         }
-
-        val txt = res.bodyAsText()
-        println(res.status)
-        println(txt)
     }
 }
 

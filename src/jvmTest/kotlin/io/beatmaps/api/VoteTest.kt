@@ -64,11 +64,13 @@ class VoteTest : ApiTestBase() {
                 }
                 this@hosts.routing {
                     get("ISteamUserAuth/AuthenticateUserTicket/v1") {
-                        call.respond(SteamAPIResponse(
-                            SteamAPIResponseObject(
-                                SteamAPIResponseParams("OK", 76561198000000000L, 76561198000000000L, vacbanned = false, publisherbanned = false)
+                        call.respond(
+                            SteamAPIResponse(
+                                SteamAPIResponseObject(
+                                    SteamAPIResponseParams("OK", 76561198000000000L, 76561198000000000L, vacbanned = false, publisherbanned = false)
+                                )
                             )
-                        ))
+                        )
                     }
                 }
             }
@@ -138,11 +140,13 @@ class VoteTest : ApiTestBase() {
                 }
                 this@hosts.routing {
                     get("ISteamUserAuth/AuthenticateUserTicket/v1") {
-                        call.respond(SteamAPIResponse(
-                            SteamAPIResponseObject(
-                                error = SteamAPIResponseError(123, "Bad stuff")
+                        call.respond(
+                            SteamAPIResponse(
+                                SteamAPIResponseObject(
+                                    error = SteamAPIResponseError(123, "Bad stuff")
+                                )
                             )
-                        ))
+                        )
                     }
                 }
             }
