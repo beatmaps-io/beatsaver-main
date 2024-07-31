@@ -3,15 +3,10 @@ package io.beatmaps.api
 import io.beatmaps.api.scores.BeatLeaderScores
 import io.beatmaps.api.scores.ScoreSaberScores
 import io.beatmaps.api.scores.scoresClient
-import io.beatmaps.common.Config
 import io.beatmaps.common.SSGameMode
 import io.beatmaps.common.api.EDifficulty
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
-import io.ktor.server.locations.options
-import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 
@@ -34,20 +29,14 @@ fun Route.scoresRoute() {
         LeaderboardType.BeatLeader to BeatLeaderScores(scoresClient)
     )
 
-    options<ScoresApi.Leaderboard> {
-        call.response.header("Access-Control-Allow-Origin", Config.siteBase())
-        call.respond(HttpStatusCode.OK)
-    }
+    getWithOptions<ScoresApi.Leaderboard> {
+        val response = lookup[it.type]?.getLeaderboard(
+            it.key,
+            EDifficulty.fromInt(it.difficulty) ?: EDifficulty.ExpertPlus,
+            SSGameMode.fromInt(it.gameMode) ?: SSGameMode.SoloStandard,
+            it.page
+        ) ?: throw UserApiException("Unknown leaderboard")
 
-    get<ScoresApi.Leaderboard> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(
-            lookup[it.type]!!.getLeaderboard(
-                it.key,
-                EDifficulty.fromInt(it.difficulty) ?: EDifficulty.ExpertPlus,
-                SSGameMode.fromInt(it.gameMode) ?: SSGameMode.SoloStandard,
-                it.page
-            )
-        )
+        call.respond(response)
     }
 }

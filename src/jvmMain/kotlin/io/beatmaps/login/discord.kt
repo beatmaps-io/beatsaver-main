@@ -1,6 +1,6 @@
 package io.beatmaps.login
 
-import io.beatmaps.api.UserCrypto
+import io.beatmaps.api.user.UserCrypto
 import io.beatmaps.api.alertCount
 import io.beatmaps.common.Config
 import io.beatmaps.common.Folders

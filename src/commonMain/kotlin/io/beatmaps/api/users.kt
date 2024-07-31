@@ -45,6 +45,8 @@ data class UserDetail(
     fun profileLink(tab: String? = null, absolute: Boolean = false) = UserDetailHelper.profileLink(this, tab, absolute)
     companion object
 }
+
+@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 expect object UserDetailHelper {
     fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean): String
 }

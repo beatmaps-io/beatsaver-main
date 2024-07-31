@@ -189,14 +189,8 @@ fun parseSearchQuery(q: String?, searchFields: ExpressionWithColumnType<String>,
 }
 
 fun Route.searchRoute() {
-    options<SearchApi.Text> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    get<SearchApi.Text>("Search for maps".responds(ok<SearchResponse>())) {
+    getWithOptions<SearchApi.Text>("Search for maps".responds(ok<SearchResponse>())) {
         optionalAuthorization { _, user ->
-            call.response.header("Access-Control-Allow-Origin", "*")
             val sess = call.sessions.get<Session>()
 
             val needsDiff = it.minNps != null || it.maxNps != null

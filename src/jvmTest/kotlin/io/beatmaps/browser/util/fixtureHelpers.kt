@@ -9,12 +9,10 @@ import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewReplyDetail
-import io.beatmaps.api.UserDetail
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
-import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
@@ -52,6 +50,7 @@ abstract class FixtureHelpers {
             User.insertAndGetId {
                 it[name] = username
                 it[email] = "$username@beatsaver.com"
+                it[avatar] = "https://beatsaver.com/static/logo.svg"
                 it[password] = null
                 it[verifyToken] = null
                 it[uniqueName] = username

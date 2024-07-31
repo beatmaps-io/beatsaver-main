@@ -1,10 +1,8 @@
 package io.beatmaps.api
 
 import de.nielsfalk.ktor.swagger.Ignore
-import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
-import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.consumeAck
@@ -26,8 +24,6 @@ import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
-import io.ktor.server.locations.options
-import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.application
@@ -72,11 +68,6 @@ data class QueuedVote(val userId: Long, val steam: Boolean, val mapId: Int, val 
 data class VoteSummary(val hash: String?, val mapId: Int, val key64: String?, val upvotes: Int, val downvotes: Int, val score: Double)
 
 fun Route.voteRoute(client: HttpClient) {
-    options<VoteApi.Vote> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
     application.rabbitOptional {
         consumeAck("vote", QueuedVote::class) { _, body ->
             transaction {
@@ -149,9 +140,7 @@ fun Route.voteRoute(client: HttpClient) {
         }
     }
 
-    get<VoteApi.Since>("Get votes".responds(ok<List<VoteSummary>>(), notFound())) { req ->
-        call.response.header("Access-Control-Allow-Origin", "*")
-
+    getWithOptions<VoteApi.Since>("Get votes".responds(ok<List<VoteSummary>>(), notFound())) { req ->
         val voteSummary = transaction {
             val updatedMaps =
                 Beatmap.joinVersions(false).selectAll().where {
@@ -176,8 +165,7 @@ fun Route.voteRoute(client: HttpClient) {
     }
 
     val validator = GameTokenValidator(client)
-    post<VoteApi.Vote, VoteRequest>("Vote on a map".responds(ok<ActionResponse>())) { _, req ->
-        call.response.header("Access-Control-Allow-Origin", "*")
+    postWithOptions<VoteApi.Vote, VoteRequest>("Vote on a map".responds(ok<ActionResponse>())) { _, req ->
         call.tag("platform", if (req.auth.steamId != null) "steam" else if (req.auth.oculusId != null) "oculus" else "unknown")
 
         newSuspendedTransaction {

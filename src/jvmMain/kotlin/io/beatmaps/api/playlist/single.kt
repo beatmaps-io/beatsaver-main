@@ -14,6 +14,7 @@ import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
 import io.beatmaps.api.PlaylistSong
 import io.beatmaps.api.from
+import io.beatmaps.api.getWithOptions
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
 import io.beatmaps.api.of
@@ -243,14 +244,7 @@ fun Route.playlistSingle() {
         }
     }
 
-    options<PlaylistApi.DetailWithPage> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    get<PlaylistApi.DetailWithPage>("Get playlist detail".responds(ok<PlaylistPage>(), notFound())) { req ->
-        call.response.header("Access-Control-Allow-Origin", "*")
-
+    getWithOptions<PlaylistApi.DetailWithPage>("Get playlist detail".responds(ok<PlaylistPage>(), notFound())) { req ->
         optionalAuthorization(OauthScope.PLAYLISTS) { _, sess ->
             getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, req.page)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
         }

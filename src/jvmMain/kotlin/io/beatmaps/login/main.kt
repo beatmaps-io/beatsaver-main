@@ -1,6 +1,6 @@
 package io.beatmaps.login
 
-import io.beatmaps.api.UserCrypto
+import io.beatmaps.api.user.UserCrypto
 import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
@@ -10,10 +10,8 @@ import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.SignatureException
 import io.ktor.client.HttpClient
-import io.ktor.client.request.accept
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
 import io.ktor.http.parametersOf

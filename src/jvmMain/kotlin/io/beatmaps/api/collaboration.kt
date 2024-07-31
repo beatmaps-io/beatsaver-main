@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+import io.beatmaps.api.user.from
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.db.NowExpression

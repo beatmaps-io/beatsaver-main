@@ -1,6 +1,8 @@
 package io.beatmaps.api
 
+import io.beatmaps.common.dbo.Beatmap
 import io.ktor.client.call.body
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -15,12 +17,44 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
+import kotlinx.datetime.Clock
+import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
+import java.lang.Integer.toHexString
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 class VoteTest : ApiTestBase() {
+    @Test
+    fun getVotes() = testApplication {
+        val client = setup()
+
+        val now = Clock.System.now()
+        val (mapId, hash) = transaction {
+            val (uid, _) = createUser()
+            val (mapId, hash) = createMap(uid)
+
+            Beatmap.update({
+                Beatmap.id eq mapId
+            }) {
+                it[lastVoteAt] = now.toJavaInstant()
+            }
+
+            mapId to hash
+        }
+
+        val response = client.get("/api/vote?since=$now")
+        val summaries = response.body<List<VoteSummary>>()
+
+        val expected = VoteSummary(hash, mapId, toHexString(mapId), 0, 0, 0.5)
+
+        assertEquals(HttpStatusCode.OK, response.status, "Vote request should be successful")
+        assertContains(summaries, expected, "Test map should be present")
+    }
+
     @Test
     fun submitVoteSteamSuccess() = testApplication {
         externalServices {

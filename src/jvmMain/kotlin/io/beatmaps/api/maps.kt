@@ -166,29 +166,7 @@ enum class LatestSort {
 }
 
 fun Route.mapDetailRoute() {
-    options<MapsApi.Detail> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-    options<MapsApi.ByHash> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-    options<MapsApi.ByUploader> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-    options<MapsApi.ByUploadDate> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-    options<MapsApi.ByPlayCount> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
     post<MapsApi.Curate> {
-        call.response.header("Access-Control-Allow-Origin", "*")
         requireAuthorization { _, user ->
             if (!user.isCurator()) {
                 call.respond(HttpStatusCode.BadRequest)
@@ -265,7 +243,6 @@ fun Route.mapDetailRoute() {
     }
 
     post<MapsApi.DeclareAi> {
-        call.response.header("Access-Control-Allow-Origin", "*")
         requireAuthorization { _, user ->
             val mapUpdate = call.receive<AiDeclaration>()
             val result = transaction {
@@ -294,7 +271,6 @@ fun Route.mapDetailRoute() {
     }
 
     post<MapsApi.Update> {
-        call.response.header("Access-Control-Allow-Origin", "*")
         requireAuthorization { _, user ->
             val mapUpdate = call.receive<MapInfoUpdate>()
 
@@ -364,7 +340,6 @@ fun Route.mapDetailRoute() {
     }
 
     post<MapsApi.TagUpdate> {
-        call.response.header("Access-Control-Allow-Origin", "*")
         requireAuthorization { _, user ->
             val mapUpdate = call.receive<SimpleMapInfoUpdate>()
 
@@ -404,8 +379,7 @@ fun Route.mapDetailRoute() {
         }
     }
 
-    get<MapsApi.Detail>("Get map information".responds(ok<MapDetail>(), notFound())) {
-        call.response.header("Access-Control-Allow-Origin", "*")
+    getWithOptions<MapsApi.Detail>("Get map information".responds(ok<MapDetail>(), notFound())) {
         val sess = call.sessions.get<Session>()
         val isAdmin = sess?.isAdmin() == true
         val r = try {
@@ -526,8 +500,7 @@ fun Route.mapDetailRoute() {
         }
     }
 
-    get<MapsApi.ByIds>("Get maps for mapIds".responds(ok<MapDetail>(), notFound())) { ids ->
-        call.response.header("Access-Control-Allow-Origin", "*")
+    getWithOptions<MapsApi.ByIds>("Get maps for mapIds".responds(ok<MapDetail>(), notFound())) { ids ->
         val sess = call.sessions.get<Session>()
         val mapIdList = ids.ids.split(",").take(50)
         val isAdmin = sess?.isAdmin() == true
@@ -563,8 +536,7 @@ fun Route.mapDetailRoute() {
         }
     }
 
-    get<MapsApi.ByHash>("Get map(s) for a map hash".responds(ok<MapDetail>(), notFound())) {
-        call.response.header("Access-Control-Allow-Origin", "*")
+    getWithOptions<MapsApi.ByHash>("Get map(s) for a map hash".responds(ok<MapDetail>(), notFound())) {
         val r = transaction {
             val rawHashes = it.hash.lowercase().split(',', ignoreCase = false).take(50)
             val singleRequest = rawHashes.size <= 1
@@ -650,9 +622,7 @@ fun Route.mapDetailRoute() {
         }
     }
 
-    get<MapsApi.ByUploader>("Get maps by a user".responds(ok<SearchResponse>())) {
-        call.response.header("Access-Control-Allow-Origin", "*")
-
+    getWithOptions<MapsApi.ByUploader>("Get maps by a user".responds(ok<SearchResponse>())) {
         val sess = call.sessions.get<Session>()
         val beatmaps = transaction {
             Beatmap
@@ -684,8 +654,6 @@ fun Route.mapDetailRoute() {
     }
 
     get<MapsApi.Collaborations>("Get maps by a user, including collaborations".responds(ok<SearchResponse>())) {
-        call.response.header("Access-Control-Allow-Origin", "*")
-
         val sess = call.sessions.get<Session>()
         val pageSize = (it.pageSize ?: 20).coerceIn(1, 100)
         val beatmaps = transaction {
@@ -737,13 +705,12 @@ fun Route.mapDetailRoute() {
         call.respond(SearchResponse(beatmaps))
     }
 
-    get<MapsApi.ByUploadDate>(
+    getWithOptions<MapsApi.ByUploadDate>(
         "Get maps ordered by upload/publish/updated. If you're going to scrape the data and make 100s of requests make this this endpoint you use.".responds(
             ok<SearchResponse>()
         )
     ) {
         val sess = call.sessions.get<Session>()
-        call.response.header("Access-Control-Allow-Origin", "*")
 
         val sortField = when (it.sort) {
             null, LatestSort.FIRST_PUBLISHED -> Beatmap.uploaded
@@ -801,8 +768,7 @@ fun Route.mapDetailRoute() {
         call.respond(SearchResponse(beatmaps))
     }
 
-    get<MapsApi.ByPlayCount>("Get maps ordered by play count (Not currently tracked)".responds(ok<SearchResponse>())) {
-        call.response.header("Access-Control-Allow-Origin", "*")
+    getWithOptions<MapsApi.ByPlayCount>("Get maps ordered by play count (Not currently tracked)".responds(ok<SearchResponse>())) {
         val beatmaps = transaction {
             Beatmap
                 .joinVersions(true)

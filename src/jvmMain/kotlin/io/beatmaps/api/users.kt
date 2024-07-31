@@ -1,7 +1,6 @@
 package io.beatmaps.api
 
 import com.toxicbakery.bcrypt.Bcrypt
-import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
@@ -46,6 +45,9 @@ import io.beatmaps.login.MongoSession
 import io.beatmaps.login.Session
 import io.beatmaps.login.cookieName
 import io.beatmaps.login.server.DBTokenStore
+import io.beatmaps.api.user.UserCrypto
+import io.beatmaps.api.user.from
+import io.beatmaps.api.user.getAvatar
 import io.beatmaps.util.requireAuthorization
 import io.beatmaps.util.requireCaptcha
 import io.beatmaps.util.updateAlertCount
@@ -56,7 +58,6 @@ import io.jsonwebtoken.Jwt
 import io.jsonwebtoken.JwtBuilder
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.security.Keys
 import io.jsonwebtoken.security.SignatureException
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -69,17 +70,14 @@ import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.delete
 import io.ktor.server.locations.get
-import io.ktor.server.locations.options
 import io.ktor.server.locations.post
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.request.receive
-import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
-import io.ktor.util.hex
 import io.ktor.util.pipeline.PipelineContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
@@ -91,7 +89,6 @@ import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.IntegerColumnType
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
-import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -118,32 +115,19 @@ import org.litote.kmongo.div
 import org.litote.kmongo.eq
 import org.litote.kmongo.ne
 import java.lang.Integer.toHexString
-import java.math.BigInteger
-import java.security.MessageDigest
-import java.security.SecureRandom
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Base64
 import java.util.Date
-import javax.crypto.Cipher
-import javax.crypto.spec.IvParameterSpec
-import javax.crypto.spec.SecretKeySpec
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
-
-fun md5(input: String) =
-    MessageDigest.getInstance("MD5").let { md ->
-        BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
-    }
 
 fun JwtBuilder.setExpiration(duration: Duration): JwtBuilder = setExpiration(Date.from(Clock.System.now().plus(duration).toJavaInstant()))
 fun parseJwtUntrusted(jwt: String): Jwt<Header<*>, Claims> =
     jwt.substring(0, jwt.lastIndexOf('.') + 1).let {
         Jwts.parserBuilder().build().parseClaimsJwt(it)
     }
-
-fun UserDetail.Companion.getAvatar(other: UserDao) = other.avatar ?: "https://www.gravatar.com/avatar/${other.hash ?: md5(other.uniqueName ?: other.name)}?d=retro"
 
 fun PatreonDao?.toTier() = if (this != null) {
     if (expireAt?.let { it.toKotlinInstant() >= Clock.System.now() } == true) {
@@ -155,46 +139,8 @@ fun PatreonDao?.toTier() = if (this != null) {
     null
 }
 
-fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null, description: Boolean = false, patreon: Boolean = false) =
-    UserDetail(
-        other.id.value, other.uniqueName ?: other.name, if (description) other.description else null, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
-        getAvatar(other), stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
-        admin = other.admin, curator = other.curator, seniorCurator = other.seniorCurator, curatorTab = other.curatorTab, verifiedMapper = other.verifiedMapper, suspendedAt = other.suspendedAt?.toKotlinInstant(),
-        playlistUrl = "${Config.apiBase(true)}/users/id/${other.id.value}/playlist", patreon = if (patreon) other.patreon.toTier() else null
-    )
-
-fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null, description: Boolean = false, patreon: Boolean = false) =
-    from(UserDao.wrapRow(row), roles, stats, followData, description, patreon)
 actual object UserDetailHelper {
     actual fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean) = Config.siteBase(absolute) + "/profile/${userDetail.id}" + (tab?.let { "#$it" } ?: "")
-}
-
-object UserCrypto {
-    private const val defaultSecretEncoded = "ZsEgU9mLHT1Vg+K5HKzlKna20mFQi26ZbB92zILrklNxV5Yxg8SyEcHVWzkspEiCCGkRB89claAWbFhglykfUA=="
-    private val secret = Base64.getDecoder().decode(System.getenv("BSHASH_SECRET") ?: defaultSecretEncoded)
-    private val sessionSecret = Base64.getDecoder().decode(System.getenv("SESSION_ENCRYPT_SECRET") ?: defaultSecretEncoded)
-    private val secretEncryptKey = SecretKeySpec(sessionSecret, "AES")
-    private val ephemeralIv = ByteArray(16).apply { SecureRandom().nextBytes(this) }
-    private val envIv = System.getenv("BSIV")?.let { Base64.getDecoder().decode(it) } ?: ephemeralIv
-
-    fun keyForUser(user: UserDao) = key(user.password ?: "")
-
-    fun key(pwdHash: String = ""): java.security.Key =
-        Keys.hmacShaKeyFor(secret + pwdHash.toByteArray())
-
-    private fun encryptDecrypt(mode: Int, input: ByteArray, iv: ByteArray): ByteArray {
-        val cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING")
-        cipher.init(mode, secretEncryptKey, IvParameterSpec(iv))
-        return cipher.doFinal(input)
-    }
-
-    fun encrypt(input: String, iv: ByteArray = envIv) = hex(encryptDecrypt(Cipher.ENCRYPT_MODE, input.toByteArray(), iv))
-    fun decrypt(input: String, iv: ByteArray = envIv) = String(encryptDecrypt(Cipher.DECRYPT_MODE, hex(input), iv))
-
-    fun getHash(userId: String, salt: ByteArray = secret) = MessageDigest.getInstance("SHA1").let {
-        it.update(salt + userId.toByteArray())
-        hex(it.digest())
-    }
 }
 
 @Location("/api/users")
@@ -1160,13 +1106,7 @@ fun Route.userRoute(client: HttpClient) {
         }
     }
 
-    options<MapsApi.UserId> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-    get<MapsApi.UserId>("Get user info".responds(ok<UserDetail>(), notFound())) {
-        call.response.header("Access-Control-Allow-Origin", "*")
-
+    getWithOptions<MapsApi.UserId>("Get user info".responds(ok<UserDetail>(), notFound())) {
         val userDetail = transaction {
             val user = userBy {
                 (User.id eq it.id) and User.active
@@ -1185,13 +1125,7 @@ fun Route.userRoute(client: HttpClient) {
         call.respond(userDetail)
     }
 
-    options<MapsApi.UserIds> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-    get<MapsApi.UserIds>("Get user info".responds(ok<UserDetail>(), notFound())) {
-        call.response.header("Access-Control-Allow-Origin", "*")
-
+    getWithOptions<MapsApi.UserIds>("Get user info".responds(ok<UserDetail>(), notFound())) {
         val ids = it.ids.split(",").mapNotNull { id -> id.toIntOrNull() }.take(50)
 
         val userDetail = transaction {
@@ -1208,12 +1142,7 @@ fun Route.userRoute(client: HttpClient) {
         call.respond(userDetail)
     }
 
-    options<MapsApi.UserName> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-    get<MapsApi.UserName>("Get user info by name".responds(ok<UserDetail>(), notFound())) {
-        call.response.header("Access-Control-Allow-Origin", "*")
+    getWithOptions<MapsApi.UserName>("Get user info by name".responds(ok<UserDetail>(), notFound())) {
         val userDetail = transaction {
             val user = userBy {
                 (User.uniqueName eq it.name) and User.active
@@ -1288,12 +1217,7 @@ fun Route.userRoute(client: HttpClient) {
         call.respond(users)
     }
 
-    options<UsersApi.Curators> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-    get<UsersApi.Curators> {
-        call.response.header("Access-Control-Allow-Origin", "*")
+    getWithOptions<UsersApi.Curators> {
         val users = transaction {
             User
                 .selectAll()

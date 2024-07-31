@@ -2,6 +2,7 @@ package io.beatmaps.controllers
 
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
+import io.beatmaps.api.getWithOptions
 import io.beatmaps.common.DownloadInfo
 import io.beatmaps.common.DownloadType
 import io.beatmaps.common.Folders
@@ -104,22 +105,7 @@ object CdnSig {
 }
 
 fun Route.cdnRoute() {
-    options<CDN.Zip> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    options<CDN.Cover> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    options<CDN.BeatSaver> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    get<CDN.Zip> {
+    getWithOptions<CDN.Zip> {
         val sess = call.sessions.get<Session>()
         val signed = CdnSig.verify(it.file, call.request)
 
@@ -154,11 +140,10 @@ fun Route.cdnRoute() {
             null
         } ?: throw NotFoundException()
 
-        call.response.header("Access-Control-Allow-Origin", "*")
         returnFile(file, name)
     }
 
-    get<CDN.BeatSaver> {
+    getWithOptions<CDN.BeatSaver> {
         val res = try {
             transaction {
                 Beatmap.joinVersions(false)
@@ -184,7 +169,6 @@ fun Route.cdnRoute() {
             null
         } ?: throw NotFoundException()
 
-        call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
         returnFile(res.first, res.second)
     }
 
@@ -213,12 +197,11 @@ fun Route.cdnRoute() {
         } ?: throw NotFoundException()
     }
 
-    get<CDN.Cover> {
+    getWithOptions<CDN.Cover> {
         if (it.file.isBlank()) {
             throw NotFoundException()
         }
 
-        call.response.header("Access-Control-Allow-Origin", "*")
         returnFile(File(Folders.localCoverFolder(it.file), "${it.file}.jpg"))
     }
 
