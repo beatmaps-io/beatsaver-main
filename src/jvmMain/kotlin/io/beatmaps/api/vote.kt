@@ -176,7 +176,7 @@ fun Route.voteRoute(client: HttpClient) {
     }
 
     val validator = GameTokenValidator(client)
-    post<VoteApi.Vote, VoteRequest>("Vote on a map".responds(ok<ActionResponse<Unit>>())) { _, req ->
+    post<VoteApi.Vote, VoteRequest>("Vote on a map".responds(ok<ActionResponse>())) { _, req ->
         call.response.header("Access-Control-Allow-Origin", "*")
         call.tag("platform", if (req.auth.steamId != null) "steam" else if (req.auth.oculusId != null) "oculus" else "unknown")
 

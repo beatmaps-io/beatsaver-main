@@ -103,7 +103,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                 }) {
                     val response = it.asDynamic().response as? AxiosResponse<String>
                     if (response?.status == 400) {
-                        setErrors(json.decodeFromString<ActionResponse<Unit>>(response.data).errors)
+                        setErrors(json.decodeFromString<ActionResponse>(response.data).errors)
                     }
 
                     setLoading(false)

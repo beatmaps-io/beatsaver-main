@@ -53,7 +53,7 @@ class VoteTest : ApiTestBase() {
                 VoteRequest(AuthRequest("76561198000000000", proof = "fake-proof"), hash, true)
             )
         }
-        val actionResponse = response.body<ActionResponse<Unit>>()
+        val actionResponse = response.body<ActionResponse>()
 
         assertEquals(HttpStatusCode.OK, response.status, "Vote should be successful")
         assertEquals(true, actionResponse.success, "Vote should be successful")
@@ -88,7 +88,7 @@ class VoteTest : ApiTestBase() {
                 VoteRequest(AuthRequest(oculusId = "1234567890", proof = "fake-proof"), hash, true)
             )
         }
-        val actionResponse = response.body<ActionResponse<Unit>>()
+        val actionResponse = response.body<ActionResponse>()
 
         assertEquals(HttpStatusCode.OK, response.status, "Vote should be successful")
         assertEquals(true, actionResponse.success, "Vote should be successful")
@@ -127,7 +127,7 @@ class VoteTest : ApiTestBase() {
                 VoteRequest(AuthRequest("76561198000000000", proof = "fake-proof"), hash, true)
             )
         }
-        val actionResponse = response.body<ActionResponse<Unit>>()
+        val actionResponse = response.body<ActionResponse>()
 
         assertEquals(HttpStatusCode.BadRequest, response.status, "Vote should not be successful")
         assertEquals(false, actionResponse.success, "Vote should not be successful")
@@ -162,7 +162,7 @@ class VoteTest : ApiTestBase() {
                 VoteRequest(AuthRequest(oculusId = "1234567890", proof = "fake-proof"), hash, true)
             )
         }
-        val actionResponse = response.body<ActionResponse<Unit>>()
+        val actionResponse = response.body<ActionResponse>()
 
         assertEquals(HttpStatusCode.BadRequest, response.status, "Vote should not be successful")
         assertEquals(false, actionResponse.success, "Vote should not be successful")
@@ -184,7 +184,7 @@ class VoteTest : ApiTestBase() {
                 VoteRequest(AuthRequest(proof = "fake-proof"), hash, true)
             )
         }
-        val actionResponse = response.body<ActionResponse<Unit>>()
+        val actionResponse = response.body<ActionResponse>()
 
         assertEquals(HttpStatusCode.BadRequest, response.status, "Vote should not be successful")
         assertEquals(false, actionResponse.success, "Vote should not be successful")

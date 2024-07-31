@@ -44,14 +44,14 @@ val changePassword = fc<ChangePasswordProps> { props ->
         attrs.onSubmitFunction = { ev ->
             ev.preventDefault()
 
-            Axios.post<ActionResponse<Unit>>(
+            Axios.post<ActionResponse>(
                 "${Config.apibase}/users/me",
                 AccountRequest(
                     currpassRef.current?.value ?: "",
                     passwordRef.current?.value ?: "",
                     password2Ref.current?.value ?: ""
                 ),
-                generateConfig<AccountRequest, ActionResponse<Unit>>()
+                generateConfig<AccountRequest, ActionResponse>()
             ).then {
                 if (it.data.success) {
                     currpassRef.current?.value = ""

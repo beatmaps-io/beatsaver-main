@@ -65,10 +65,10 @@ val multiAddPlaylist = fc<Props> {
         val hashes = queue.first()
         val (keyList, hashList) = hashes.partition { !hashRegex.matches(it) }
 
-        Axios.post<ActionResponse<Unit>>(
+        Axios.post<ActionResponse>(
             "${Config.apibase}/playlists/id/${params["id"]}/batch",
             PlaylistBatchRequest(hashList, keyList, inPlaylist = true, ignoreUnknown = true),
-            generateConfig<PlaylistBatchRequest, ActionResponse<Unit>>()
+            generateConfig<PlaylistBatchRequest, ActionResponse>()
         ).then {
             setProgress(progress?.let { p -> p.first + hashes.size to p.second })
             window.setTimeout(

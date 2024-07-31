@@ -11,6 +11,33 @@ import kotlin.test.assertEquals
 
 class ReviewApiTest : ApiTestBase() {
     @Test
+    fun badId() = testApplication {
+        val client = setup()
+
+        val reviewsResponse = client.get("/api/review/map/z/0")
+
+        assertEquals(HttpStatusCode.NotFound, reviewsResponse.status, "Reviews request should fail")
+    }
+
+    @Test
+    fun noReviews() = testApplication {
+        val client = setup()
+
+        val mapId = newSuspendedTransaction {
+            val (mapOwner, _) = createUser()
+            val (mapId, _) = createMap(mapOwner)
+
+            mapId
+        }
+
+        val reviewsResponse = client.get("/api/review/map/$mapId/0")
+        val body = reviewsResponse.body<ReviewsResponse>()
+
+        assertEquals(HttpStatusCode.OK, reviewsResponse.status, "Reviews request should succeed")
+        assertEquals(0, body.docs.size)
+    }
+
+    @Test
     fun fullPageReturnedForUser() = testApplication {
         val client = setup()
 

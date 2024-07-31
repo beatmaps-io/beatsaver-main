@@ -81,7 +81,7 @@ fun Route.playlistMaps() {
 
     post<PlaylistApi.Batch, PlaylistBatchRequest>(
         "Add or remove up to 100 maps to a playlist. Requires OAUTH"
-            .responds(ok<ActionResponse<Unit>>(), notFound<ActionResponse<Unit>>(), badRequest<ActionResponse<Unit>>())
+            .responds(ok<ActionResponse>(), notFound<ActionResponse>(), badRequest<ActionResponse>())
     ) { req, pbr ->
         requireAuthorization(OauthScope.MANAGE_PLAYLISTS) { _, sess ->
             val validKeys = (pbr.keys ?: listOf()).mapNotNull { key -> key.toIntOrNull(16) }

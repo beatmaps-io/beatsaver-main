@@ -186,7 +186,7 @@ val modReview = fc<ModReviewProps> { props ->
                                             Axios.put(
                                                 "${Config.apibase}/review/single/${it?.map?.id}/${it?.creator?.id}",
                                                 PutReview(text, sentiment ?: return@onSave null),
-                                                generateConfig<PutReview, ActionResponse<Unit>>()
+                                                generateConfig<PutReview, ActionResponse>()
                                             )
                                         }
                                     }
@@ -229,7 +229,7 @@ val modReview = fc<ModReviewProps> { props ->
                                             Axios.put(
                                                 "${Config.apibase}/reply/single/${it?.id}",
                                                 ReplyRequest(text),
-                                                generateConfig<ReplyRequest, ActionResponse<Unit>>()
+                                                generateConfig<ReplyRequest, ActionResponse>()
                                             )
                                         }
                                     }

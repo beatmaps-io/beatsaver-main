@@ -120,7 +120,7 @@ val reply = fc<ReplyProps> { props ->
                         props.captcha?.current?.executeAsync()?.then {
                             props.captcha?.current?.reset()
 
-                            Axios.put<ActionResponse<Unit>>("${Config.apibase}/reply/single/${props.reply.id}", ReplyRequest(newReply, it), generateConfig<ReplyRequest, ActionResponse<Unit>>())
+                            Axios.put<ActionResponse>("${Config.apibase}/reply/single/${props.reply.id}", ReplyRequest(newReply, it), generateConfig<ReplyRequest, ActionResponse>())
                         }?.then { it }
                     }
                     attrs.stopEditing = { t ->

@@ -261,7 +261,7 @@ fun Route.testplayRoute(client: HttpClient) {
     }
 
     val validator = GameTokenValidator(client)
-    post<MapsApi.Verify, AuthRequest>("Verify user tokens".responds(ok<ActionResponse<Unit>>())) { _, auth ->
+    post<MapsApi.Verify, AuthRequest>("Verify user tokens".responds(ok<ActionResponse>())) { _, auth ->
         call.respond(
             auth.steamId?.let { steamId ->
                 if (!validator.steam(steamId, auth.proof)) {

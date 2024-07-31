@@ -52,13 +52,13 @@ val forgotPage = fc<Props> {
                     setLoading(true)
 
                     captchaRef.current?.executeAsync()?.then { captcha ->
-                        Axios.post<ActionResponse<Unit>>(
+                        Axios.post<ActionResponse>(
                             "${Config.apibase}/users/forgot",
                             ForgotRequest(
                                 captcha,
                                 emailRef.current?.value ?: ""
                             ),
-                            generateConfig<ForgotRequest, ActionResponse<Unit>>()
+                            generateConfig<ForgotRequest, ActionResponse>()
                         ).then {
                             if (it.data.success) {
                                 setComplete(true)
