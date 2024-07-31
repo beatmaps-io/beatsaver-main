@@ -4,13 +4,13 @@ import io.beatmaps.common.CDNUpdate
 import io.beatmaps.common.Folders
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
-import io.beatmaps.common.client
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.downloadFilename
 import io.beatmaps.common.rabbitOptional
+import io.ktor.client.HttpClient
 import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
@@ -41,7 +41,7 @@ fun <K, V> createLRUMap(maxEntries: Int): MutableMap<K, V> {
     }
 }
 
-fun Application.filenameUpdater() {
+fun Application.filenameUpdater(client: HttpClient) {
     if (cloudflareAccountId.isEmpty()) {
         logger.warning("Cloudflare updater not set up")
         return

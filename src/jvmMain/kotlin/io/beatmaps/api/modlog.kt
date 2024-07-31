@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+import io.beatmaps.api.user.from
 import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao

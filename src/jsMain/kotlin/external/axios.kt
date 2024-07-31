@@ -133,7 +133,7 @@ external interface AxiosStatic : AxiosInstance {
 @JsNonModule
 external val Axios: AxiosStatic = definedExternally
 
-inline fun <reified T, reified U> generateConfig(ct: CancelToken? = null) = object : AxiosRequestConfig {
+inline fun <reified T, reified U> generateConfig(ct: CancelToken? = null, validStatus: Array<Int> = arrayOf(200)) = object : AxiosRequestConfig {
     override var cancelToken = ct
     override var transformRequest: Array<(T, dynamic) -> String> = arrayOf(
         { data, headers -> transformRequest(data, headers) }
@@ -144,6 +144,9 @@ inline fun <reified T, reified U> generateConfig(ct: CancelToken? = null) = obje
         } else {
             json.decodeFromString(it)
         }
+    }
+    override var validateStatus: ((Number) -> Boolean)? = {
+        validStatus.contains(it)
     }
 }
 

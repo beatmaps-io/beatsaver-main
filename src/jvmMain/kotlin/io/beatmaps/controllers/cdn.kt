@@ -2,6 +2,7 @@ package io.beatmaps.controllers
 
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
+import io.beatmaps.api.getWithOptions
 import io.beatmaps.common.DownloadInfo
 import io.beatmaps.common.DownloadType
 import io.beatmaps.common.Folders
@@ -14,18 +15,13 @@ import io.beatmaps.common.downloadFilename
 import io.beatmaps.common.pub
 import io.beatmaps.common.returnFile
 import io.beatmaps.login.Session
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
-import io.ktor.server.locations.options
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.ApplicationRequest
-import io.ktor.server.response.header
-import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
@@ -104,22 +100,7 @@ object CdnSig {
 }
 
 fun Route.cdnRoute() {
-    options<CDN.Zip> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    options<CDN.Cover> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    options<CDN.BeatSaver> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    get<CDN.Zip> {
+    getWithOptions<CDN.Zip> {
         val sess = call.sessions.get<Session>()
         val signed = CdnSig.verify(it.file, call.request)
 
@@ -154,11 +135,10 @@ fun Route.cdnRoute() {
             null
         } ?: throw NotFoundException()
 
-        call.response.header("Access-Control-Allow-Origin", "*")
         returnFile(file, name)
     }
 
-    get<CDN.BeatSaver> {
+    getWithOptions<CDN.BeatSaver> {
         val res = try {
             transaction {
                 Beatmap.joinVersions(false)
@@ -184,7 +164,6 @@ fun Route.cdnRoute() {
             null
         } ?: throw NotFoundException()
 
-        call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
         returnFile(res.first, res.second)
     }
 
@@ -213,12 +192,11 @@ fun Route.cdnRoute() {
         } ?: throw NotFoundException()
     }
 
-    get<CDN.Cover> {
+    getWithOptions<CDN.Cover> {
         if (it.file.isBlank()) {
             throw NotFoundException()
         }
 
-        call.response.header("Access-Control-Allow-Origin", "*")
         returnFile(File(Folders.localCoverFolder(it.file), "${it.file}.jpg"))
     }
 

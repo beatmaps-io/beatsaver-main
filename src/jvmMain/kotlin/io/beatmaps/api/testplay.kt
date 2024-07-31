@@ -5,7 +5,6 @@ import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.api.EMapState
-import io.beatmaps.common.client
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.isFalse
 import io.beatmaps.common.db.updateReturning
@@ -26,25 +25,19 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.common.rb
 import io.beatmaps.controllers.userWipCount
+import io.beatmaps.util.GameTokenValidator
 import io.beatmaps.util.captchaIfPresent
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
 import io.beatmaps.util.publishVersion
 import io.beatmaps.util.requireAuthorization
-import io.ktor.client.call.body
-import io.ktor.client.plugins.ClientRequestException
-import io.ktor.client.request.get
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
+import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.contentType
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
 import io.ktor.server.locations.post
-import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -88,9 +81,6 @@ data class AuthRequest(val steamId: String? = null, val oculusId: String? = null
 
 @Serializable
 data class MarkRequest(val hash: String, val markPlayed: Boolean = true, val removeFromQueue: Boolean = false, val addToQueue: Boolean = false)
-
-@Serializable
-data class VerifyResponse(val success: Boolean, val error: String? = null)
 
 @Serializable
 data class SteamAPIResponse(val response: SteamAPIResponseObject)
@@ -168,26 +158,7 @@ fun PipelineContext<*, ApplicationCall>.getTestplayRecent(userId: Int, page: Lon
         }
 }
 
-suspend fun validateSteamToken(steamId: String, proof: String): Boolean {
-    val clientId = System.getenv("STEAM_APIKEY") ?: ""
-    val data = client.get("https://api.steampowered.com/ISteamUserAuth/AuthenticateUserTicket/v1?key=$clientId&appid=$beatsaberAppid&ticket=$proof").body<SteamAPIResponse>()
-    return !(data.response.params == null || data.response.params.result != "OK" || data.response.params.steamid.toString() != steamId)
-}
-
-val authHost = System.getenv("AUTH_HOST") ?: "http://localhost:3030"
-suspend fun validateOculusToken(oculusId: String, proof: String) = try {
-    val data = client.post("$authHost/auth/oculus") {
-        contentType(ContentType.Application.Json)
-        setBody(AuthRequest(oculusId = oculusId, proof = proof))
-    }.body<OculusAuthResponse>()
-    data.success
-} catch (e: BadRequestException) {
-    false
-} catch (e: ClientRequestException) {
-    false
-}
-
-fun Route.testplayRoute() {
+fun Route.testplayRoute(client: HttpClient) {
     post<TestplayApi.Queue> { req ->
         requireAuthorization(OauthScope.TESTPLAY) { _, sess ->
             call.respond(getTestplayQueue(sess.userId, false, req.page))
@@ -249,7 +220,7 @@ fun Route.testplayRoute() {
 
                     val currentWipCount = userWipCount(sess.userId)
                     val maxWips = (user.patreon.toTier() ?: PatreonTier.None).maxWips
-                    sess.isAdmin() || currentWipCount < maxWips || throw ApiException(PatreonTier.maxWipsMessage)
+                    sess.isAdmin() || currentWipCount < maxWips || throw UserApiException(PatreonTier.maxWipsMessage)
 
                     (updateState() > 0).also { rTemp ->
                         if (rTemp && sess.isAdmin() && newState.reason?.isEmpty() == false) {
@@ -266,7 +237,7 @@ fun Route.testplayRoute() {
                 }
             }
 
-            valid || throw ApiException("Error updating map state")
+            valid || throw ServerApiException("Error updating map state")
 
             call.pub("beatmaps", "maps.${newState.mapId}.updated.state", null, newState.mapId)
             call.respond(HttpStatusCode.OK)
@@ -289,21 +260,22 @@ fun Route.testplayRoute() {
         }
     }
 
-    post<MapsApi.Verify, AuthRequest>("Verify user tokens".responds(ok<VerifyResponse>())) { _, auth ->
+    val validator = GameTokenValidator(client)
+    post<MapsApi.Verify, AuthRequest>("Verify user tokens".responds(ok<ActionResponse>())) { _, auth ->
         call.respond(
             auth.steamId?.let { steamId ->
-                if (!validateSteamToken(steamId, auth.proof)) {
-                    VerifyResponse(false, "Could not validate steam token")
+                if (!validator.steam(steamId, auth.proof)) {
+                    ActionResponse.error("Could not validate steam token")
                 } else {
-                    VerifyResponse(true)
+                    ActionResponse.success()
                 }
             } ?: auth.oculusId?.let { oculusId ->
-                if (!validateOculusToken(oculusId, auth.proof)) {
-                    VerifyResponse(false, "Could not validate oculus token")
+                if (!validator.oculus(oculusId, auth.proof)) {
+                    ActionResponse.error("Could not validate oculus token")
                 } else {
-                    VerifyResponse(true)
+                    ActionResponse.success()
                 }
-            } ?: VerifyResponse(false, "No user identifier provided")
+            } ?: ActionResponse.error("No user identifier provided")
         )
     }
 

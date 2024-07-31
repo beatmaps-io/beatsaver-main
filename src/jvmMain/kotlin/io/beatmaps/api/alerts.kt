@@ -188,7 +188,7 @@ fun Route.alertsRoute() {
                 }
             }
 
-            call.respond(HttpStatusCode.OK)
+            call.respond(ActionResponse.success())
         }
     }
 

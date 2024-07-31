@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+import io.beatmaps.api.user.from
 import io.beatmaps.common.Config
 import io.beatmaps.common.Folders
 import io.beatmaps.common.MapTag

@@ -1,6 +1,5 @@
 package io.beatmaps.login.patreon
 
-import io.beatmaps.common.client
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Patreon
@@ -8,6 +7,7 @@ import io.beatmaps.common.dbo.PatreonLog
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.json
 import io.beatmaps.util.requireAuthorization
+import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
@@ -115,7 +115,7 @@ abstract class PatreonFields {
         "fields%5B$fieldKey%5D=${fields.joinToString(",")}"
 }
 
-fun Route.patreonLink() {
+fun Route.patreonLink(client: HttpClient) {
     authenticate("patreon") {
         get<PatreonLink> {
             requireAuthorization { _, sess ->

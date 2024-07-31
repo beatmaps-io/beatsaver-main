@@ -1,10 +1,9 @@
 package io.beatmaps.login
 
-import io.beatmaps.api.UserCrypto
 import io.beatmaps.api.alertCount
+import io.beatmaps.api.user.UserCrypto
 import io.beatmaps.common.Config
 import io.beatmaps.common.Folders
-import io.beatmaps.common.client
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
@@ -42,7 +41,6 @@ import java.io.File
 import java.util.Base64
 
 val discordSecret = System.getenv("DISCORD_HASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: byteArrayOf()
-val discordHelper = DiscordHelper(client)
 
 @Location("/discord")
 class DiscordLogin(val state: String? = null)
@@ -94,12 +92,14 @@ class DiscordHelper(val client: HttpClient) {
         }.body<DiscordUserInfo>()
 }
 
-suspend fun ApplicationCall.getDiscordData(): DiscordUserInfo {
-    val principal = authentication.principal<OAuthAccessTokenResponse.OAuth2>() ?: error("No principal")
-    return discordHelper.getDiscordData(principal.accessToken)
-}
+fun Route.discordLogin(client: HttpClient) {
+    val discordHelper = DiscordHelper(client)
 
-fun Route.discordLogin() {
+    suspend fun ApplicationCall.getDiscordData(): DiscordUserInfo {
+        val principal = authentication.principal<OAuthAccessTokenResponse.OAuth2>() ?: error("No principal")
+        return discordHelper.getDiscordData(principal.accessToken)
+    }
+
     authenticate("discord") {
         get<DiscordLogin> { req ->
             val data = call.getDiscordData()

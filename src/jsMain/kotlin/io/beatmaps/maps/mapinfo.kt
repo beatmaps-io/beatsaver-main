@@ -4,10 +4,10 @@ import external.Axios
 import external.AxiosResponse
 import external.generateConfig
 import io.beatmaps.Config
+import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.AiDeclaration
 import io.beatmaps.api.BookmarkRequest
 import io.beatmaps.api.CurateMap
-import io.beatmaps.api.ErrorResponse
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.SimpleMapInfoUpdate
@@ -71,7 +71,7 @@ val mapInfo = fc<MapInfoProps> { props ->
 
     val (tags, setTags) = useState(props.mapInfo.tags.toSet())
     val (loading, setLoading) = useState(false)
-    val (error, setError) = useState<String?>(null)
+    val (errors, setErrors) = useState(listOf<String>())
     val (editing, setEditing) = useState(false)
     val (dropdown, setDropdown) = useState(false)
 
@@ -103,7 +103,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                 }) {
                     val response = it.asDynamic().response as? AxiosResponse<String>
                     if (response?.status == 400) {
-                        setError(json.decodeFromString<ErrorResponse>(response.data).error)
+                        setErrors(json.decodeFromString<ActionResponse>(response.data).errors)
                     }
 
                     setLoading(false)
@@ -403,10 +403,8 @@ val mapInfo = fc<MapInfoProps> { props ->
 
             if (editing) {
                 div("text-end") {
-                    error?.let {
-                        errors {
-                            attrs.errors = listOf(it)
-                        }
+                    errors {
+                        attrs.errors = errors
                     }
 
                     if (isOwnerLocal) {

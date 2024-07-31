@@ -1,6 +1,5 @@
 package io.beatmaps.api.playlist
 
-import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.api.LatestPlaylistSort
@@ -10,6 +9,7 @@ import io.beatmaps.api.PlaylistBasic
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistSearchResponse
 import io.beatmaps.api.from
+import io.beatmaps.api.getWithOptions
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
 import io.beatmaps.api.parseSearchQuery
@@ -27,10 +27,7 @@ import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
-import io.ktor.server.locations.options
-import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import kotlinx.datetime.toJavaInstant
@@ -46,14 +43,7 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Route.playlistSearch() {
-    options<PlaylistApi.ByUploadDate> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    get<PlaylistApi.ByUploadDate>("Get playlists ordered by created/updated".responds(ok<PlaylistSearchResponse>())) {
-        call.response.header("Access-Control-Allow-Origin", "*")
-
+    getWithOptions<PlaylistApi.ByUploadDate>("Get playlists ordered by created/updated".responds(ok<PlaylistSearchResponse>())) {
         optionalAuthorization(OauthScope.PLAYLISTS) { _, sess ->
             val sortField = when (it.sort) {
                 null, LatestPlaylistSort.CREATED -> Playlist.createdAt
@@ -98,14 +88,7 @@ fun Route.playlistSearch() {
         }
     }
 
-    options<PlaylistApi.Text> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    get<PlaylistApi.Text>("Search for playlists".responds(ok<PlaylistSearchResponse>())) { it ->
-        call.response.header("Access-Control-Allow-Origin", "*")
-
+    getWithOptions<PlaylistApi.Text>("Search for playlists".responds(ok<PlaylistSearchResponse>())) { it ->
         val searchFields = PgConcat(" ", Playlist.name, Playlist.description)
         val searchInfo = parseSearchQuery(it.q, searchFields)
         val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
@@ -161,14 +144,7 @@ fun Route.playlistSearch() {
         }
     }
 
-    options<PlaylistApi.ByUser> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    get<PlaylistApi.ByUser>("Get playlists by user".responds(ok<PlaylistSearchResponse>())) { req ->
-        call.response.header("Access-Control-Allow-Origin", "*")
-
+    getWithOptions<PlaylistApi.ByUser>("Get playlists by user".responds(ok<PlaylistSearchResponse>())) { req ->
         optionalAuthorization(OauthScope.PLAYLISTS) { _, sess ->
             fun <T> doQuery(table: Query = Playlist.selectAll(), groupBy: Array<Column<*>> = arrayOf(Playlist.id), block: (ResultRow) -> T) =
                 transaction {

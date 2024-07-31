@@ -1,10 +1,8 @@
 package io.beatmaps.api
 
 import de.nielsfalk.ktor.swagger.Ignore
-import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
-import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.common.consumeAck
@@ -21,11 +19,11 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.common.rabbitOptional
 import io.beatmaps.common.tag
+import io.beatmaps.util.GameTokenValidator
+import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
-import io.ktor.server.locations.options
-import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.application
@@ -39,7 +37,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.intLiteral
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -65,20 +62,12 @@ class VoteApi {
 data class VoteRequest(val auth: AuthRequest, val hash: String, val direction: Boolean)
 
 @Serializable
-data class VoteResponse(val success: Boolean, val error: String? = null)
-
-@Serializable
 data class QueuedVote(val userId: Long, val steam: Boolean, val mapId: Int, val direction: Boolean)
 
 @Serializable
 data class VoteSummary(val hash: String?, val mapId: Int, val key64: String?, val upvotes: Int, val downvotes: Int, val score: Double)
 
-fun Route.voteRoute() {
-    options<VoteApi.Vote> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
+fun Route.voteRoute(client: HttpClient) {
     application.rabbitOptional {
         consumeAck("vote", QueuedVote::class) { _, body ->
             transaction {
@@ -151,9 +140,7 @@ fun Route.voteRoute() {
         }
     }
 
-    get<VoteApi.Since>("Get votes".responds(ok<List<VoteSummary>>(), notFound())) { req ->
-        call.response.header("Access-Control-Allow-Origin", "*")
-
+    getWithOptions<VoteApi.Since>("Get votes".responds(ok<List<VoteSummary>>(), notFound())) { req ->
         val voteSummary = transaction {
             val updatedMaps =
                 Beatmap.joinVersions(false).selectAll().where {
@@ -177,8 +164,8 @@ fun Route.voteRoute() {
         call.respond(voteSummary)
     }
 
-    post<VoteApi.Vote, VoteRequest>("Vote on a map".responds(ok<VoteResponse>())) { _, req ->
-        call.response.header("Access-Control-Allow-Origin", "*")
+    val validator = GameTokenValidator(client)
+    postWithOptions<VoteApi.Vote, VoteRequest>("Vote on a map".responds(ok<ActionResponse>())) { _, req ->
         call.tag("platform", if (req.auth.steamId != null) "steam" else if (req.auth.oculusId != null) "oculus" else "unknown")
 
         newSuspendedTransaction {
@@ -193,14 +180,14 @@ fun Route.voteRoute() {
                 }
 
                 val (userId, steam) = req.auth.steamId?.let { steamId ->
-                    if (!validateSteamToken(steamId, req.auth.proof)) {
+                    if (!validator.steam(steamId, req.auth.proof)) {
                         error("Could not validate steam token")
                     }
 
                     // Valid steam user
                     steamId.toLong() to true
                 } ?: req.auth.oculusId?.let { oculusId ->
-                    if (!validateOculusToken(oculusId, req.auth.proof)) {
+                    if (!validator.oculus(oculusId, req.auth.proof)) {
                         error("Could not validate oculus token")
                     }
 
@@ -211,9 +198,9 @@ fun Route.voteRoute() {
                 val mapId = mapIdArr.first()[Versions.mapId]
                 call.pub("beatmaps", "vote.$mapId", null, QueuedVote(userId, steam, mapId.value, req.direction))
 
-                call.respond(VoteResponse(true))
+                call.respond(ActionResponse.success())
             } catch (e: IllegalStateException) {
-                call.respond(VoteResponse(false, e.message))
+                call.respond(HttpStatusCode.BadRequest, ActionResponse.error(e.message ?: "Unknown error"))
             }
         }
     }

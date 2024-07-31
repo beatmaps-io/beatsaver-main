@@ -1,6 +1,5 @@
 package io.beatmaps.api.playlist
 
-import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
@@ -14,6 +13,7 @@ import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
 import io.beatmaps.api.PlaylistSong
 import io.beatmaps.api.from
+import io.beatmaps.api.getWithOptions
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
 import io.beatmaps.api.of
@@ -55,8 +55,6 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.get
-import io.ktor.server.locations.options
-import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import kotlinx.datetime.toJavaInstant
@@ -243,14 +241,7 @@ fun Route.playlistSingle() {
         }
     }
 
-    options<PlaylistApi.DetailWithPage> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    get<PlaylistApi.DetailWithPage>("Get playlist detail".responds(ok<PlaylistPage>(), notFound())) { req ->
-        call.response.header("Access-Control-Allow-Origin", "*")
-
+    getWithOptions<PlaylistApi.DetailWithPage>("Get playlist detail".responds(ok<PlaylistPage>(), notFound())) { req ->
         optionalAuthorization(OauthScope.PLAYLISTS) { _, sess ->
             getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, req.page)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
         }

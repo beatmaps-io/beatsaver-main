@@ -24,6 +24,7 @@ import io.beatmaps.common.dbo.ReviewReply
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import kotlinx.datetime.Clock
+import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -33,7 +34,9 @@ import kotlin.random.Random
 abstract class FixtureHelpers {
     val fixture = kotlinFixture {
         nullabilityStrategy(NeverNullStrategy)
+        factory<JsonObject> { JsonObject(emptyMap()) }
         property(LeaderboardScore::mods) { listOf("NF") }
+        property(ReviewDetail::replies) { listOf() }
         property(ReviewReplyDetail::review) { null }
     }
 
@@ -47,6 +50,7 @@ abstract class FixtureHelpers {
             User.insertAndGetId {
                 it[name] = username
                 it[email] = "$username@beatsaver.com"
+                it[avatar] = "https://beatsaver.com/static/logo.svg"
                 it[password] = null
                 it[verifyToken] = null
                 it[uniqueName] = username

@@ -76,7 +76,7 @@ val thumbnailSizes = listOf(256, 512)
 
 fun Route.playlistCreate() {
     post<PlaylistApi.Create> {
-        requireAuthorization(io.beatmaps.api.OauthScope.ADMIN_PLAYLISTS) { authType, sess ->
+        requireAuthorization(OauthScope.ADMIN_PLAYLISTS) { authType, sess ->
             val files = mutableMapOf<Int, File>()
 
             try {

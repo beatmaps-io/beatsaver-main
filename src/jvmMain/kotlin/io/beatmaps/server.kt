@@ -5,10 +5,12 @@ import de.nielsfalk.ktor.swagger.SwaggerSupport
 import de.nielsfalk.ktor.swagger.version.shared.Contact
 import de.nielsfalk.ktor.swagger.version.shared.Information
 import de.nielsfalk.ktor.swagger.version.v2.Swagger
+import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ApiException
-import io.beatmaps.api.ErrorResponse
 import io.beatmaps.api.FailedUploadResponse
+import io.beatmaps.api.ServerApiException
 import io.beatmaps.api.UploadValidationInfo
+import io.beatmaps.api.UserApiException
 import io.beatmaps.api.alertsRoute
 import io.beatmaps.api.bookmarkRoute
 import io.beatmaps.api.collaborationRoute
@@ -34,6 +36,7 @@ import io.beatmaps.common.genericQueueConfig
 import io.beatmaps.common.installMetrics
 import io.beatmaps.common.jackson
 import io.beatmaps.common.json
+import io.beatmaps.common.jsonClient
 import io.beatmaps.common.rabbitHost
 import io.beatmaps.common.setupAMQP
 import io.beatmaps.common.setupLogging
@@ -62,6 +65,7 @@ import io.beatmaps.util.downloadsThread
 import io.beatmaps.util.playlistStats
 import io.beatmaps.util.reviewListeners
 import io.beatmaps.websockets.mapUpdateEnricher
+import io.ktor.client.HttpClient
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.EntityTagVersion
@@ -173,7 +177,7 @@ fun migrateDB(ds: DataSource, type: DbMigrationType) {
         .migrate()
 }
 
-fun Application.beatmapsio() {
+fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
     install(ContentNegotiation) {
         val kotlinx = KotlinxSerializationConverter(json)
         val jsConv = JacksonConverter(jackson)
@@ -268,7 +272,7 @@ fun Application.beatmapsio() {
         status(HttpStatusCode.NotFound) {
             val reqPath = call.request.path()
             if (reqPath.startsWith("/api")) {
-                call.respond(HttpStatusCode.NotFound, ErrorResponse("Not Found"))
+                call.respond(HttpStatusCode.NotFound, ActionResponse.error("Not Found"))
             } else if (reqPath.startsWith("/cdn")) {
                 call.respond(HttpStatusCode.NotFound)
             } else {
@@ -303,15 +307,19 @@ fun Application.beatmapsio() {
         }
 
         exception<ScoreSaberServerException> { cause ->
-            call.respond(HttpStatusCode.BadGateway, ErrorResponse("Upstream responded with ${cause.originalException.response}"))
+            call.respond(HttpStatusCode.BadGateway, ActionResponse.error("Upstream responded with ${cause.originalException.response}"))
         }
 
         exception<DataConversionException> { cause ->
-            call.respond(HttpStatusCode.InternalServerError, ErrorResponse(cause.message ?: ""))
+            call.respond(HttpStatusCode.InternalServerError, ActionResponse.error(cause.message ?: ""))
         }
 
         exception<ApiException> { cause ->
-            call.respond(HttpStatusCode.BadRequest, cause.toResponse())
+            val code = when (cause) {
+                is UserApiException -> HttpStatusCode.BadRequest
+                is ServerApiException -> HttpStatusCode.InternalServerError
+            }
+            call.respond(code, cause.toResponse())
         }
 
         exception<ParameterConversionException> { cause ->
@@ -319,15 +327,15 @@ fun Application.beatmapsio() {
                 val now = Clock.System.now().let {
                     it.minus(it.nanosecondsOfSecond.nanoseconds)
                 }
-                call.respond(HttpStatusCode.BadRequest, ErrorResponse("${cause.message}. Most likely you're missing a timezone. Example: $now"))
+                call.respond(HttpStatusCode.BadRequest, ActionResponse.error("${cause.message}. Most likely you're missing a timezone. Example: $now"))
             } else {
-                call.respond(HttpStatusCode.BadRequest, ErrorResponse(cause.message ?: ""))
+                call.respond(HttpStatusCode.BadRequest, ActionResponse.error(cause.message ?: ""))
                 throw cause
             }
         }
 
         exception<NotFoundException> {
-            call.respond(HttpStatusCode.NotFound, ErrorResponse("Not Found"))
+            call.respond(HttpStatusCode.NotFound, ActionResponse.error("Not Found"))
         }
 
         exception<InvalidGrantException> {
@@ -346,7 +354,7 @@ fun Application.beatmapsio() {
 
     installMetrics()
     installSessions()
-    installOauth()
+    installOauth(httpClient)
     if (rabbitHost.isNotEmpty()) {
         install(RabbitMQ) {
             setupAMQP {
@@ -397,8 +405,8 @@ fun Application.beatmapsio() {
         }
         downloadsThread()
         alertsThread()
-        filenameUpdater()
-        reviewListeners()
+        filenameUpdater(httpClient)
+        reviewListeners(httpClient)
         playlistStats()
         emailQueue()
     }
@@ -416,15 +424,15 @@ fun Application.beatmapsio() {
 
         cdnRoute()
 
-        authRoute()
-        discordLogin()
-        patreonLink()
+        authRoute(httpClient)
+        discordLogin(httpClient)
+        patreonLink(httpClient)
         mapDetailRoute()
-        userRoute()
+        userRoute(httpClient)
         searchRoute()
         scoresRoute()
-        testplayRoute()
-        voteRoute()
+        testplayRoute(httpClient)
+        voteRoute(httpClient)
         playlistRoute()
         alertsRoute()
         modLogRoute()

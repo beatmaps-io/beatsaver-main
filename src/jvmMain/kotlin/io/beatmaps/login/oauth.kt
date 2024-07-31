@@ -7,7 +7,6 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.login.patreon.patreonProvider
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
@@ -23,10 +22,12 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 class SimpleUserPrincipal(val user: UserDao, val alertCount: Int, val redirect: String) : Principal
 
-fun Application.installOauth() {
+fun Application.installOauth(httpClient: HttpClient) {
+    val discordHelper = DiscordHelper(httpClient)
+
     install(Authentication) {
         oauth("discord") {
-            client = HttpClient(Apache)
+            client = httpClient
             urlProvider = { "${Config.siteBase()}${request.uri.substringBefore("?")}" }
             providerLookup = {
                 val queryParams = request.queryParameters as StringValues
@@ -34,7 +35,7 @@ fun Application.installOauth() {
             }
         }
         oauth("patreon") {
-            client = HttpClient(Apache)
+            client = httpClient
             urlProvider = { "${Config.siteBase()}${request.uri.substringBefore("?")}" }
             providerLookup = { patreonProvider }
         }

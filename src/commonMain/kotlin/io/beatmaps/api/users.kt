@@ -45,6 +45,8 @@ data class UserDetail(
     fun profileLink(tab: String? = null, absolute: Boolean = false) = UserDetailHelper.profileLink(this, tab, absolute)
     companion object
 }
+
+@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 expect object UserDetailHelper {
     fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean): String
 }
@@ -81,9 +83,6 @@ data class AccountDetailReq(val textContent: String)
 
 @Serializable
 data class RegisterRequest(val captcha: String, val username: String, val email: String, val password: String, val password2: String)
-
-@Serializable
-data class ActionResponse(val success: Boolean, val errors: List<String> = listOf())
 
 @Serializable
 data class ForgotRequest(val captcha: String, val email: String)

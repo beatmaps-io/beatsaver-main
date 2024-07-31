@@ -1,10 +1,12 @@
 package io.beatmaps.api
 
 import com.toxicbakery.bcrypt.Bcrypt
-import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
+import io.beatmaps.api.user.UserCrypto
+import io.beatmaps.api.user.from
+import io.beatmaps.api.user.getAvatar
 import io.beatmaps.common.Config
 import io.beatmaps.common.EmailChangedData
 import io.beatmaps.common.PasswordChangedData
@@ -15,7 +17,6 @@ import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
-import io.beatmaps.common.client
 import io.beatmaps.common.db.DateMinusDays
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
@@ -57,8 +58,8 @@ import io.jsonwebtoken.Jwt
 import io.jsonwebtoken.JwtBuilder
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.security.Keys
 import io.jsonwebtoken.security.SignatureException
+import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
@@ -69,17 +70,14 @@ import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.delete
 import io.ktor.server.locations.get
-import io.ktor.server.locations.options
 import io.ktor.server.locations.post
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.request.receive
-import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
-import io.ktor.util.hex
 import io.ktor.util.pipeline.PipelineContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
@@ -91,7 +89,6 @@ import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.IntegerColumnType
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
-import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -106,7 +103,6 @@ import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.min
 import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -119,32 +115,19 @@ import org.litote.kmongo.div
 import org.litote.kmongo.eq
 import org.litote.kmongo.ne
 import java.lang.Integer.toHexString
-import java.math.BigInteger
-import java.security.MessageDigest
-import java.security.SecureRandom
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Base64
 import java.util.Date
-import javax.crypto.Cipher
-import javax.crypto.spec.IvParameterSpec
-import javax.crypto.spec.SecretKeySpec
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
-
-fun md5(input: String) =
-    MessageDigest.getInstance("MD5").let { md ->
-        BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
-    }
 
 fun JwtBuilder.setExpiration(duration: Duration): JwtBuilder = setExpiration(Date.from(Clock.System.now().plus(duration).toJavaInstant()))
 fun parseJwtUntrusted(jwt: String): Jwt<Header<*>, Claims> =
     jwt.substring(0, jwt.lastIndexOf('.') + 1).let {
         Jwts.parserBuilder().build().parseClaimsJwt(it)
     }
-
-fun UserDetail.Companion.getAvatar(other: UserDao) = other.avatar ?: "https://www.gravatar.com/avatar/${other.hash ?: md5(other.uniqueName ?: other.name)}?d=retro"
 
 fun PatreonDao?.toTier() = if (this != null) {
     if (expireAt?.let { it.toKotlinInstant() >= Clock.System.now() } == true) {
@@ -156,46 +139,8 @@ fun PatreonDao?.toTier() = if (this != null) {
     null
 }
 
-fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null, description: Boolean = false, patreon: Boolean = false) =
-    UserDetail(
-        other.id.value, other.uniqueName ?: other.name, if (description) other.description else null, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
-        getAvatar(other), stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
-        admin = other.admin, curator = other.curator, seniorCurator = other.seniorCurator, curatorTab = other.curatorTab, verifiedMapper = other.verifiedMapper, suspendedAt = other.suspendedAt?.toKotlinInstant(),
-        playlistUrl = "${Config.apiBase(true)}/users/id/${other.id.value}/playlist", patreon = if (patreon) other.patreon.toTier() else null
-    )
-
-fun UserDetail.Companion.from(row: ResultRow, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null, description: Boolean = false, patreon: Boolean = false) =
-    from(UserDao.wrapRow(row), roles, stats, followData, description, patreon)
 actual object UserDetailHelper {
     actual fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean) = Config.siteBase(absolute) + "/profile/${userDetail.id}" + (tab?.let { "#$it" } ?: "")
-}
-
-object UserCrypto {
-    private const val defaultSecretEncoded = "ZsEgU9mLHT1Vg+K5HKzlKna20mFQi26ZbB92zILrklNxV5Yxg8SyEcHVWzkspEiCCGkRB89claAWbFhglykfUA=="
-    private val secret = Base64.getDecoder().decode(System.getenv("BSHASH_SECRET") ?: defaultSecretEncoded)
-    private val sessionSecret = Base64.getDecoder().decode(System.getenv("SESSION_ENCRYPT_SECRET") ?: defaultSecretEncoded)
-    private val secretEncryptKey = SecretKeySpec(sessionSecret, "AES")
-    private val ephemeralIv = ByteArray(16).apply { SecureRandom().nextBytes(this) }
-    private val envIv = System.getenv("BSIV")?.let { Base64.getDecoder().decode(it) } ?: ephemeralIv
-
-    fun keyForUser(user: UserDao) = key(user.password ?: "")
-
-    fun key(pwdHash: String = ""): java.security.Key =
-        Keys.hmacShaKeyFor(secret + pwdHash.toByteArray())
-
-    private fun encryptDecrypt(mode: Int, input: ByteArray, iv: ByteArray): ByteArray {
-        val cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING")
-        cipher.init(mode, secretEncryptKey, IvParameterSpec(iv))
-        return cipher.doFinal(input)
-    }
-
-    fun encrypt(input: String, iv: ByteArray = envIv) = hex(encryptDecrypt(Cipher.ENCRYPT_MODE, input.toByteArray(), iv))
-    fun decrypt(input: String, iv: ByteArray = envIv) = String(encryptDecrypt(Cipher.DECRYPT_MODE, hex(input), iv))
-
-    fun getHash(userId: String, salt: ByteArray = secret) = MessageDigest.getInstance("SHA1").let {
-        it.update(salt + userId.toByteArray())
-        hex(it.digest())
-    }
 }
 
 @Location("/api/users")
@@ -287,35 +232,30 @@ fun followData(uploaderId: Int, userId: Int?): UserFollowData {
         }
 }
 
-fun Route.userRoute() {
+fun Route.userRoute(client: HttpClient) {
     val usernameRegex = Regex("^[._\\-A-Za-z0-9]{3,50}$")
     post<UsersApi.Username> {
         requireAuthorization { _, sess ->
             val req = call.receive<AccountDetailReq>()
 
             if (!usernameRegex.matches(req.textContent)) {
-                call.respond(ActionResponse(false, listOf("Username not valid")))
+                throw UserApiException("Username not valid")
             } else {
                 val success = transaction {
                     try {
                         User.update({ User.id eq sess.userId and (User.uniqueName.isNull() or User.renamedAt.lessEq(DateMinusDays(NowExpression(User.renamedAt), 1))) }) { u ->
                             u[uniqueName] = req.textContent
                             u[renamedAt] = Expression.build { case().When(uniqueName eq req.textContent, renamedAt).Else(NowExpression(renamedAt)) }
-                        }
+                        } > 0
                     } catch (e: ExposedSQLException) {
-                        -1
+                        throw UserApiException("Username already taken")
                     }
                 }
 
-                if (success > 0) {
-                    // Success
-                    call.sessions.set(sess.copy(uniqueName = req.textContent))
-                    call.respond(ActionResponse(true, listOf()))
-                } else if (success == 0) {
-                    call.respond(ActionResponse(false, listOf("You can only set a new username once per day")))
-                } else {
-                    call.respond(ActionResponse(false, listOf("Username already taken")))
-                }
+                success || throw UserApiException("You can only set a new username once per day")
+
+                call.sessions.set(sess.copy(uniqueName = req.textContent))
+                call.respond(ActionResponse.success())
             }
         }
     }
@@ -328,25 +268,21 @@ fun Route.userRoute() {
                 try {
                     User.update({ User.id eq sess.userId }) { u ->
                         u[description] = req.textContent.take(500)
-                    }
+                    } > 0
                 } catch (e: ExposedSQLException) {
-                    0
+                    false
                 }
             }
 
-            if (success > 0) {
-                // Success
-                call.respond(ActionResponse(true, listOf()))
-            } else {
-                call.respond(ActionResponse(false, listOf("Something went wrong")))
-            }
+            success || throw ServerApiException("Something went wrong")
+            call.respond(ActionResponse.success())
         }
     }
 
     post<UsersApi.Admin> {
         requireAuthorization { _, sess ->
             if (!sess.isAdmin()) {
-                ActionResponse(false, listOf("Not an admin"))
+                ActionResponse.error("Not an admin")
             } else {
                 val req = call.receive<UserAdminRequest>()
                 if (UserAdminRequest.allowedUploadSizes.contains(req.maxUploadSize)) {
@@ -374,13 +310,13 @@ fun Route.userRoute() {
                         }
                     }.let { success ->
                         if (success) {
-                            ActionResponse(true, listOf())
+                            ActionResponse.success()
                         } else {
-                            ActionResponse(false, listOf("User not found"))
+                            ActionResponse.error("User not found")
                         }
                     }
                 } else {
-                    ActionResponse(false, listOf("Upload size not allowed"))
+                    ActionResponse.error("Upload size not allowed")
                 }
             }.let {
                 call.respond(it)
@@ -391,7 +327,7 @@ fun Route.userRoute() {
     post<UsersApi.Suspend> {
         requireAuthorization { _, sess ->
             if (!sess.isAdmin()) {
-                ActionResponse(false, listOf("Not an admin"))
+                ActionResponse.error("Not an admin")
             } else {
                 val req = call.receive<UserSuspendRequest>()
                 transaction {
@@ -426,9 +362,9 @@ fun Route.userRoute() {
                     }
                 }.let { success ->
                     if (success) {
-                        ActionResponse(true, listOf())
+                        ActionResponse.success()
                     } else {
-                        ActionResponse(false, listOf("User not found"))
+                        ActionResponse.error("User not found")
                     }
                 }
             }.let {
@@ -444,11 +380,11 @@ fun Route.userRoute() {
             req.captcha,
             {
                 if (req.password != req.password2) {
-                    ActionResponse(false, listOf("Passwords don't match"))
+                    ActionResponse.error("Passwords don't match")
                 } else if (req.password.length < 8) {
-                    ActionResponse(false, listOf("Password too short"))
+                    ActionResponse.error("Password too short")
                 } else if (!usernameRegex.matches(req.username)) {
-                    ActionResponse(false, listOf("Username not valid"))
+                    ActionResponse.error("Username not valid")
                 } else {
                     try {
                         val bcrypt = String(Bcrypt.hash(req.password, 12))
@@ -466,7 +402,7 @@ fun Route.userRoute() {
                             } catch (e: ExposedSQLException) {
                                 if (e.message?.contains("simple_username") == true) {
                                     // Username constraint -> show conflict error
-                                    null to ActionResponse(false, listOf("Username taken"))
+                                    null to ActionResponse.error("Username taken")
                                 } else if (e.message?.contains("uploader_pkey") == true) {
                                     // id constraint, retry transaction
                                     throw e
@@ -493,7 +429,7 @@ fun Route.userRoute() {
                                 "${req.username}\n\nTo verify your account, please click the link below:\n${Config.siteBase()}/verify/$jwt"
                             )
 
-                            ActionResponse(true)
+                            ActionResponse.success()
                         } ?: newUserId.second ?: run {
                             sendEmail(
                                 req.email,
@@ -502,15 +438,15 @@ fun Route.userRoute() {
                                     "If this wasn't you then you can safely ignore this email otherwise please use a different email"
                             )
 
-                            ActionResponse(true)
+                            ActionResponse.success()
                         }
                     } catch (e: IllegalArgumentException) {
-                        ActionResponse(false, listOf("Password too long"))
+                        ActionResponse.error("Password too long")
                     }
                 }
             }
         ) {
-            ActionResponse(false, listOf("Could not verify user [${it.errorCodes.joinToString(", ")}]"))
+            ActionResponse.error("Could not verify user [${it.errorCodes.joinToString(", ")}]")
         }
 
         call.respond(response)
@@ -542,10 +478,10 @@ fun Route.userRoute() {
                     )
                 }
 
-                ActionResponse(true)
+                ActionResponse.success()
             }
         ) {
-            ActionResponse(false, listOf("Could not verify user [${it.errorCodes.joinToString(", ")}]"))
+            ActionResponse.error("Could not verify user [${it.errorCodes.joinToString(", ")}]")
         }
 
         call.respond(response)
@@ -597,7 +533,7 @@ fun Route.userRoute() {
             val sessionId = call.request.cookies[cookieName]
 
             val response = if (userId != sess.userId && !sess.isAdmin()) {
-                ActionResponse(false, listOf("Not an admin or no reason given"))
+                ActionResponse.error("Not an admin or no reason given")
             } else {
                 transaction {
                     if (userId != sess.userId) {
@@ -620,7 +556,7 @@ fun Route.userRoute() {
                     }
                 }
 
-                ActionResponse(true)
+                ActionResponse.success()
             }
 
             call.respond(response)
@@ -634,9 +570,9 @@ fun Route.userRoute() {
             val id = UserCrypto.decrypt(byId.id)
 
             val response = if (userId != sess.userId && !sess.isAdmin()) {
-                ActionResponse(false, listOf("Not an admin"))
+                ActionResponse.error("Not an admin")
             } else if (req.site == null) {
-                ActionResponse(false, listOf("site property is required when deleting by id"))
+                ActionResponse.error("site property is required when deleting by id")
             } else {
                 transaction {
                     if (userId != sess.userId) {
@@ -650,16 +586,16 @@ fun Route.userRoute() {
 
                     if (!req.site) {
                         DBTokenStore.revokeRefreshToken(id)
-                        ActionResponse(true)
+                        ActionResponse.success()
                     } else if (!MongoClient.connected) {
-                        ActionResponse(false, listOf("Can't revoke in memory sessions"))
+                        ActionResponse.error("Can't revoke in memory sessions")
                     } else if (id == call.request.cookies[cookieName]) {
-                        ActionResponse(false, listOf("Can't revoke current session"))
+                        ActionResponse.error("Can't revoke current session")
                     } else {
                         MongoClient.sessions.deleteOne(
                             MongoSession::_id eq id
                         )
-                        ActionResponse(true)
+                        ActionResponse.success()
                     }
                 }
             }
@@ -681,7 +617,7 @@ fun Route.userRoute() {
                         }.firstOrNull()?.let { UserDao.wrapRow(it) }
                     }?.let { user ->
                         if (user.emailChangedAt.toKotlinInstant() > Clock.System.now().minus(10.toDuration(DurationUnit.DAYS))) {
-                            ActionResponse(false, listOf("You can only change email once every 10 days"))
+                            ActionResponse.error("You can only change email once every 10 days")
                         } else {
                             val jwt = Jwts.builder()
                                 .setExpiration(20.toDuration(DurationUnit.MINUTES))
@@ -698,12 +634,12 @@ fun Route.userRoute() {
                                     "You can update the email on your account by clicking here: ${Config.siteBase()}/change-email/$jwt"
                             )
 
-                            ActionResponse(true)
+                            ActionResponse.success()
                         }
-                    } ?: ActionResponse(false, listOf("User not found"))
+                    } ?: ActionResponse.error("User not found")
                 }
             ) {
-                ActionResponse(false, it.errorCodes.map { "Captcha error: $it" })
+                ActionResponse.error(*it.errorCodes.map { "Captcha error: $it" }.toTypedArray())
             }
 
             call.respond(response)
@@ -750,9 +686,9 @@ fun Route.userRoute() {
                         val isReclaim = action == "reclaim"
                         if (user.email == newEmail) {
                             // Ignore if this is a re-do
-                            ActionResponse(true)
+                            ActionResponse.success()
                         } else if (!isReclaim && user.emailChangedAt.toKotlinInstant() > Clock.System.now().minus(10.toDuration(DurationUnit.DAYS))) {
-                            ActionResponse(false, listOf("You can only change email once every 10 days"))
+                            ActionResponse.error("You can only change email once every 10 days")
                         } else if (isReclaim || user.password?.let { curPw -> Bcrypt.verify(req.password, curPw.toByteArray()) } == true) {
                             // If the jwt is valid we can change the users email
                             Jwts.parserBuilder()
@@ -780,28 +716,28 @@ fun Route.userRoute() {
                                     sendReclaimMail(user)
                                 }
 
-                                ActionResponse(true)
+                                ActionResponse.success()
                             } else {
-                                ActionResponse(false, listOf("Failed to update email"))
+                                ActionResponse.error("Failed to update email")
                             }
                         } else {
-                            ActionResponse(false, listOf("Current password incorrect"))
+                            ActionResponse.error("Current password incorrect")
                         }
                     } catch (e: ExposedSQLException) {
-                        ActionResponse(false, listOf("Email in use on another account"))
+                        ActionResponse.error("Email in use on another account")
                     } catch (e: SignatureException) {
-                        ActionResponse(false, listOf("Token no longer valid"))
+                        ActionResponse.error("Token no longer valid")
                     } catch (e: JwtException) {
-                        ActionResponse(false, listOf("Bad token"))
+                        ActionResponse.error("Bad token")
                     }
-                } ?: ActionResponse(false, listOf("User not found"))
+                } ?: ActionResponse.error("User not found")
             }
         } catch (e: IllegalArgumentException) {
-            ActionResponse(false, listOf("Password too long"))
+            ActionResponse.error("Password too long")
         } catch (e: ExpiredJwtException) {
-            ActionResponse(false, listOf("Link has expired"))
+            ActionResponse.error("Link has expired")
         } catch (e: JwtException) {
-            ActionResponse(false, listOf("Token is malformed"))
+            ActionResponse.error("Token is malformed")
         }.let {
             call.respond(it)
         }
@@ -811,9 +747,9 @@ fun Route.userRoute() {
         val req = call.receive<ResetRequest>()
 
         val response = if (req.password != req.password2) {
-            ActionResponse(false, listOf("Passwords don't match"))
+            ActionResponse.error("Passwords don't match")
         } else if (req.password.length < 8) {
-            ActionResponse(false, listOf("Password too short"))
+            ActionResponse.error("Password too short")
         } else {
             try {
                 val bcrypt = String(Bcrypt.hash(req.password, 12))
@@ -850,26 +786,26 @@ fun Route.userRoute() {
                                     DBTokenStore.deleteForUser(userId)
                                     MongoClient.deleteSessionsFor(userId)
 
-                                    ActionResponse(true)
+                                    ActionResponse.success()
                                 } else {
-                                    ActionResponse(false, listOf("Failed to update password"))
+                                    ActionResponse.error("Failed to update password")
                                 }
                             } catch (e: SignatureException) {
                                 // As previous password is included in key the signature will fail if the password
                                 // has changed since we sent the link
-                                ActionResponse(false, listOf("Reset token no longer valid"))
+                                ActionResponse.error("Reset token no longer valid")
                             } catch (e: JwtException) {
-                                ActionResponse(false, listOf("Bad token"))
+                                ActionResponse.error("Bad token")
                             }
-                        } ?: ActionResponse(false, listOf("User not found"))
+                        } ?: ActionResponse.error("User not found")
                     }
                 }
             } catch (e: IllegalArgumentException) {
-                ActionResponse(false, listOf("Password too long"))
+                ActionResponse.error("Password too long")
             } catch (e: ExpiredJwtException) {
-                ActionResponse(false, listOf("Password reset link has expired"))
+                ActionResponse.error("Password reset link has expired")
             } catch (e: JwtException) {
-                ActionResponse(false, listOf("Reset token is malformed"))
+                ActionResponse.error("Reset token is malformed")
             }
         }
 
@@ -882,11 +818,11 @@ fun Route.userRoute() {
 
             val response = if (req.password == null || req.currentPassword == null) {
                 // Not a password reset request
-                ActionResponse(true)
+                ActionResponse.success()
             } else if (req.password != req.password2) {
-                ActionResponse(false, listOf("Passwords don't match"))
+                ActionResponse.error("Passwords don't match")
             } else if (req.password.length < 8) {
-                ActionResponse(false, listOf("Password too short"))
+                ActionResponse.error("Password too short")
             } else {
                 try {
                     val bcrypt = String(Bcrypt.hash(req.password, 12))
@@ -902,14 +838,14 @@ fun Route.userRoute() {
                                     it[password] = bcrypt
                                 }
                                 DBTokenStore.deleteForUser(sess.userId)
-                                ActionResponse(true)
+                                ActionResponse.success()
                             } else {
-                                ActionResponse(false, listOf("Current password incorrect"))
+                                ActionResponse.error("Current password incorrect")
                             }
-                        } ?: ActionResponse(false, listOf("Account not found")) // Shouldn't ever happen
+                        } ?: ActionResponse.error("Account not found") // Shouldn't ever happen
                     }
                 } catch (e: IllegalArgumentException) {
-                    ActionResponse(false, listOf("Password too long"))
+                    ActionResponse.error("Password too long")
                 }
             }
 
@@ -922,8 +858,7 @@ fun Route.userRoute() {
             val req = call.receive<UserFollowRequest>()
 
             if (req.userId == user.userId && req.following) {
-                call.respond(HttpStatusCode.BadRequest, ErrorResponse("Can't follow yourself"))
-                return@requireAuthorization
+                throw UserApiException("Can't follow yourself")
             }
 
             transaction {
@@ -1171,13 +1106,7 @@ fun Route.userRoute() {
         }
     }
 
-    options<MapsApi.UserId> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-    get<MapsApi.UserId>("Get user info".responds(ok<UserDetail>(), notFound())) {
-        call.response.header("Access-Control-Allow-Origin", "*")
-
+    getWithOptions<MapsApi.UserId>("Get user info".responds(ok<UserDetail>(), notFound())) {
         val userDetail = transaction {
             val user = userBy {
                 (User.id eq it.id) and User.active
@@ -1196,13 +1125,7 @@ fun Route.userRoute() {
         call.respond(userDetail)
     }
 
-    options<MapsApi.UserIds> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-    get<MapsApi.UserIds>("Get user info".responds(ok<UserDetail>(), notFound())) {
-        call.response.header("Access-Control-Allow-Origin", "*")
-
+    getWithOptions<MapsApi.UserIds>("Get user info".responds(ok<UserDetail>(), notFound())) {
         val ids = it.ids.split(",").mapNotNull { id -> id.toIntOrNull() }.take(50)
 
         val userDetail = transaction {
@@ -1219,12 +1142,7 @@ fun Route.userRoute() {
         call.respond(userDetail)
     }
 
-    options<MapsApi.UserName> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-    get<MapsApi.UserName>("Get user info by name".responds(ok<UserDetail>(), notFound())) {
-        call.response.header("Access-Control-Allow-Origin", "*")
+    getWithOptions<MapsApi.UserName>("Get user info by name".responds(ok<UserDetail>(), notFound())) {
         val userDetail = transaction {
             val user = userBy {
                 (User.uniqueName eq it.name) and User.active
@@ -1272,7 +1190,7 @@ fun Route.userRoute() {
 
     get<UsersApi.FollowedBy> {
         requireAuthorization { _, sess ->
-            if (it.user != sess.userId) call.respond(HttpStatusCode.Forbidden)
+            if (it.user != sess.userId) call.respond(HttpStatusCode.Forbidden, ActionResponse.error())
 
             val users = getFollowerData(it.page, Follows.userId) {
                 Follows.followerId eq it.user
@@ -1299,12 +1217,7 @@ fun Route.userRoute() {
         call.respond(users)
     }
 
-    options<UsersApi.Curators> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-    get<UsersApi.Curators> {
-        call.response.header("Access-Control-Allow-Origin", "*")
+    getWithOptions<UsersApi.Curators> {
         val users = transaction {
             User
                 .selectAll()

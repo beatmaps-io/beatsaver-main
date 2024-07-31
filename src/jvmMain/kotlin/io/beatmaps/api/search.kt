@@ -3,7 +3,6 @@ package io.beatmaps.api
 import de.nielsfalk.ktor.swagger.DefaultValue
 import de.nielsfalk.ktor.swagger.Description
 import de.nielsfalk.ktor.swagger.Ignore
-import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
@@ -39,11 +38,8 @@ import io.beatmaps.common.toQuery
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
-import io.ktor.server.locations.options
-import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
@@ -189,14 +185,8 @@ fun parseSearchQuery(q: String?, searchFields: ExpressionWithColumnType<String>,
 }
 
 fun Route.searchRoute() {
-    options<SearchApi.Text> {
-        call.response.header("Access-Control-Allow-Origin", "*")
-        call.respond(HttpStatusCode.OK)
-    }
-
-    get<SearchApi.Text>("Search for maps".responds(ok<SearchResponse>())) {
+    getWithOptions<SearchApi.Text>("Search for maps".responds(ok<SearchResponse>())) {
         optionalAuthorization { _, user ->
-            call.response.header("Access-Control-Allow-Origin", "*")
             val sess = call.sessions.get<Session>()
 
             val needsDiff = it.minNps != null || it.maxNps != null

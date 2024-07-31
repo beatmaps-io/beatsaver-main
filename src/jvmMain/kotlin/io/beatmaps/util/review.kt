@@ -16,7 +16,6 @@ import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
-import io.beatmaps.common.jsonClient
 import io.beatmaps.common.rabbitOptional
 import io.beatmaps.common.util.TextHelper
 import io.ktor.client.HttpClient
@@ -142,7 +141,7 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
     }
 }
 
-fun Application.reviewListeners() {
+fun Application.reviewListeners(client: HttpClient) {
     rabbitOptional {
         val avg = Review.sentiment.avgWithFilter(Review.deletedAt.isNull(), 3).alias("sentiment")
         val count = Review.sentiment.countWithFilter(Review.deletedAt.isNull()).alias("reviews")
@@ -160,7 +159,7 @@ fun Application.reviewListeners() {
         }
 
         discordWebhookUrl?.let { webhookUrl ->
-            val handler = DiscordWebhookHandler(jsonClient, webhookUrl)
+            val handler = DiscordWebhookHandler(client, webhookUrl)
             consumeAck("bm.reviewDiscordHook", ReviewUpdateInfo::class) { _, r ->
                 transaction {
                     Review
