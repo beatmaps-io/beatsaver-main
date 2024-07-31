@@ -45,11 +45,16 @@ interface FilterInfo<T, V> {
     val name: String
     val cat: FilterCategory
     val fromParams: (T) -> V
+    val isFiltered: (Any?) -> Boolean
 }
 
-class BooleanFilterInfo<T>(override val key: String, override val name: String, override val cat: FilterCategory, override val fromParams: (T) -> Boolean) : FilterInfo<T, Boolean>
+class BooleanFilterInfo<T>(override val key: String, override val name: String, override val cat: FilterCategory, override val fromParams: (T) -> Boolean) : FilterInfo<T, Boolean> {
+    override val isFiltered = { it: Any? -> it as? Boolean ?: false }
+}
 
-class MultipleChoiceFilterInfo<T, V>(override val key: String, override val name: String, override val cat: FilterCategory, val choices: Map<String, V>, val default: V, override val fromParams: (T) -> V) : FilterInfo<T, V>
+class MultipleChoiceFilterInfo<T, V>(override val key: String, override val name: String, override val cat: FilterCategory, val choices: Map<String, V>, val default: V, override val fromParams: (T) -> V) : FilterInfo<T, V> {
+    override val isFiltered = { it: Any? -> it != null && it != default }
+}
 
 fun interface SearchParamGenerator<T : CommonParams> {
     fun Search<T>.get(): T
@@ -165,13 +170,7 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
     }
 
     fun isFiltered(s: String) =
-        state.filterMap?.entries?.firstOrNull { it.key.key == s }?.let { (filter, value) ->
-            when (filter) {
-                is BooleanFilterInfo -> value as? Boolean ?: false
-                is MultipleChoiceFilterInfo -> value != filter.default
-                else -> false
-            }
-        } ?: false
+        state.filterMap?.entries?.firstOrNull { it.key.key == s }?.let { (filter, value) -> filter.isFiltered(value) } ?: false
 
     override fun RBuilder.render() {
         form("") {
@@ -208,13 +207,7 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                         }
                         ref = dropdownRef
                         span {
-                            val filters = state.filterMap.orEmpty().entries.filter { (filter, value) ->
-                                when (filter) {
-                                    is BooleanFilterInfo -> value as? Boolean ?: false
-                                    is MultipleChoiceFilterInfo -> value != filter.default
-                                    else -> false
-                                }
-                            }.map { it.key.name } +
+                            val filters = state.filterMap.orEmpty().entries.filter { (filter, value) -> filter.isFiltered(value) }.map { it.key.name } +
                                 (props.filterTexts?.invoke() ?: listOf())
 
                             if (filters.isEmpty()) {

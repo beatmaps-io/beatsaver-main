@@ -216,18 +216,30 @@ fun Route.reviewRoute() {
                 Review
                     .joinReplies()
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
-                    .joinVersions(false)
+                    .joinVersions()
                     .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
                     .select(Review.columns + ReviewReply.columns + reviewerAlias.columns)
                     .where {
-                        Review.mapId eq it.id.toInt(16) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
+                        Review.id.inSubQuery(
+                            Review
+                                .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                                .joinVersions()
+                                .select(Review.id)
+                                .where {
+                                    Review.mapId eq it.id.toInt(16) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
+                                }
+                                .orderBy(
+                                    Review.curatedAt to SortOrder.DESC_NULLS_LAST,
+                                    Review.createdAt to SortOrder.DESC
+                                )
+                                .limit(it.page)
+                        )
                     }
                     .orderBy(
                         Review.curatedAt to SortOrder.DESC_NULLS_LAST,
                         Review.createdAt to SortOrder.DESC,
                         ReviewReply.createdAt to SortOrder.ASC
                     )
-                    .limit(it.page)
                     .complexToReview()
                     .map {
                         ReviewDetail.from(it, cdnPrefix(), beatmap = false)
@@ -250,18 +262,27 @@ fun Route.reviewRoute() {
                 Review
                     .joinReplies()
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
-                    .joinVersions(false)
+                    .joinVersions()
                     .joinUploader()
                     .joinCurator()
                     .selectAll()
                     .where {
-                        Review.userId eq it.id and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
+                        Review.id.inSubQuery(
+                            Review
+                                .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                                .joinVersions()
+                                .select(Review.id)
+                                .where {
+                                    Review.userId eq it.id and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
+                                }
+                                .orderBy(Review.createdAt to SortOrder.DESC)
+                                .limit(it.page)
+                        )
                     }
                     .orderBy(
                         Review.createdAt to SortOrder.DESC,
                         ReviewReply.createdAt to SortOrder.ASC
                     )
-                    .limit(it.page)
                     .complexToReview()
                     .map {
                         ReviewDetail.from(it, cdnPrefix(), user = false)

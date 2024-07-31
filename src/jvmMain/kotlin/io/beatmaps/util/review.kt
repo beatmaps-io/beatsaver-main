@@ -113,7 +113,7 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                         DiscordEmbed(
                             author = review.creator?.let { user -> DiscordEmbed.Author(user) },
                             title = review.map?.name?.let {
-                                TextHelper.ellipsize(it, MAX_TITLE_LEN)
+                                TextHelper.ellipsize(it, MAX_TITLE_LEN, true)
                             },
                             url = review.map?.let {
                                 "${Config.siteBase()}/maps/${it.id}"
@@ -126,7 +126,7 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                             fields = listOf(
                                 DiscordEmbed.Field(
                                     "Review",
-                                    TextHelper.ellipsize(review.text, MAX_REVIEW_LEN)
+                                    TextHelper.ellipsize(review.text, MAX_REVIEW_LEN, true)
                                 ),
                                 DiscordEmbed.Field(
                                     "Sentiment",

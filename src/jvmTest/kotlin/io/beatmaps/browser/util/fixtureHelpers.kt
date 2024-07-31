@@ -1,20 +1,28 @@
 package io.beatmaps.browser.util
 
+import com.appmattus.kotlinfixture.decorator.nullability.NeverNullStrategy
+import com.appmattus.kotlinfixture.decorator.nullability.nullabilityStrategy
 import com.appmattus.kotlinfixture.kotlinFixture
 import io.beatmaps.api.LeaderboardScore
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.PlaylistFull
+import io.beatmaps.api.ReviewDetail
+import io.beatmaps.api.ReviewReplyDetail
+import io.beatmaps.api.UserDetail
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
+import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.Playlist
+import io.beatmaps.common.dbo.Review
+import io.beatmaps.common.dbo.ReviewReply
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import kotlinx.datetime.Clock
@@ -27,12 +35,11 @@ import kotlin.random.Random
 
 abstract class FixtureHelpers {
     val fixture = kotlinFixture {
-        factory<JsonObject> {
-            JsonObject(emptyMap())
-        }
-        property(LeaderboardScore::mods) {
-            listOf("NF")
-        }
+        nullabilityStrategy(NeverNullStrategy)
+        factory<JsonObject> { JsonObject(emptyMap()) }
+        property(LeaderboardScore::mods) { listOf("NF") }
+        property(ReviewDetail::replies) { listOf() }
+        property(ReviewReplyDetail::review) { null }
     }
 
     fun createUser(): Pair<Int, String> {
@@ -147,6 +154,31 @@ abstract class FixtureHelpers {
             it[this.collab] = collab
             it[following] = upload || curation || collab
             it[since] = NowExpression(since)
+        }
+    }
+
+    fun review(user: Int, map: Int) = transaction {
+        fixture<ReviewDetail>().let { review ->
+            Review.insertAndGetId {
+                it[userId] = user
+                it[mapId] = map
+                it[text] = review.text
+                it[sentiment] = review.sentiment.dbValue
+                it[createdAt] = NowExpression(createdAt)
+                it[updatedAt] = NowExpression(updatedAt)
+            }.value
+        }
+    }
+
+    fun reviewReply(rId: Int, user: Int) = transaction {
+        fixture<ReviewReplyDetail>().let { review ->
+            ReviewReply.insertAndGetId {
+                it[reviewId] = rId
+                it[userId] = user
+                it[text] = review.text
+                it[createdAt] = NowExpression(createdAt)
+                it[updatedAt] = NowExpression(updatedAt)
+            }.value
         }
     }
 

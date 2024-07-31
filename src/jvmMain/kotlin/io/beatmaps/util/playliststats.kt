@@ -11,6 +11,7 @@ import io.beatmaps.common.rabbitOptional
 import io.ktor.server.application.Application
 import kotlinx.serialization.builtins.serializer
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -39,7 +40,7 @@ fun Application.playlistStats() {
                     .join(PlaylistMap, JoinType.INNER, Beatmap.id, PlaylistMap.mapId)
                     .selectAll()
                     .where {
-                        PlaylistMap.playlistId eq playlistId
+                        PlaylistMap.playlistId eq playlistId and Beatmap.deletedAt.isNull()
                     }
                     .complexToBeatmap()
 

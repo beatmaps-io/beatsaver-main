@@ -50,6 +50,7 @@ external interface InfiniteScrollState<T> : State {
     var visItem: Int?
     var visPage: Int?
     var scroll: Boolean?
+    var firstLoad: Boolean?
     var loading: Boolean?
     var token: CancelTokenSource?
     var pages: Map<Int, List<T>>?
@@ -74,7 +75,6 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
     override fun componentDidMount() {
         onHashChange(null)
 
-        (props.scrollParent ?: window).addEventListener("scroll", onScroll)
         window.addEventListener("resize", onResize)
         window.addEventListener("hashchange", onHashChange)
     }
@@ -139,6 +139,10 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
 
         val shouldScroll = if (state.scroll != false) state.visItem else null
         props.loadPage(toLoad, newToken).then { page ->
+            if (state.firstLoad != false) {
+                (props.scrollParent ?: window).addEventListener("scroll", onScroll)
+            }
+
             setState {
                 if (page?.size?.let { s -> s < props.itemsPerPage } == true && toLoad < (finalPage ?: Int.MAX_VALUE)) {
                     finalPage = toLoad
@@ -151,11 +155,14 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
 
                 loading = false
                 scroll = false
+                firstLoad = false
             }
 
             shouldScroll?.let { scrollTo(it) }
             window.setTimeout(onScroll, 1)
-        }.catch { loading(false) }
+        }.catch {
+            loading(false)
+        }
     }
 
     private val onHashChange = { _: Event? ->
