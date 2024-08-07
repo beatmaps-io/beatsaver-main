@@ -11,6 +11,7 @@ import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.util.requireAuthorization
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.retry
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -39,6 +40,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.File
 import java.util.Base64
+import java.util.logging.Level
+import java.util.logging.Logger
 
 val discordSecret = System.getenv("DISCORD_HASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: byteArrayOf()
 
@@ -53,6 +56,8 @@ data class DiscordUserInfo(
 )
 
 class DiscordHelper(val client: HttpClient) {
+    private val discordLogger = Logger.getLogger("bmio.DiscordHelper")
+
     fun discordProvider(state: String?) = OAuthServerSettings.OAuth2ServerSettings(
         name = "discord",
         authorizeUrl = "https://discord.com/api/oauth2/authorize",
@@ -86,10 +91,17 @@ class DiscordHelper(val client: HttpClient) {
         return "${Config.cdnBase("", true)}/avatar/$fileName.png"
     }
 
-    suspend fun getDiscordData(token: String) =
+    suspend fun getDiscordData(token: String) = try {
         client.get("https://discord.com/api/users/@me") {
+            retry {
+                constantDelay(50, 100)
+            }
             header("Authorization", "Bearer $token")
         }.body<DiscordUserInfo>()
+    } catch (e: Exception) { // Change this to be more specific
+        discordLogger.log(Level.SEVERE, "Error loading discord user data", e)
+        throw e
+    }
 }
 
 fun Route.discordLogin(client: HttpClient) {
