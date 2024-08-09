@@ -117,6 +117,7 @@ import pl.jutupe.ktor_rabbitmq.RabbitMQ
 import java.io.File
 import java.math.BigInteger
 import java.security.MessageDigest
+import java.util.logging.Level
 import java.util.logging.Logger
 import javax.sql.DataSource
 import kotlin.time.Duration.Companion.nanoseconds
@@ -348,7 +349,7 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
 
         exception<Throwable> { cause ->
             call.respond(HttpStatusCode.InternalServerError, "Internal Server Error")
-            errorLogger.severe(cause.message)
+            errorLogger.log(Level.SEVERE, "Error processing request", cause)
         }
     }
 
