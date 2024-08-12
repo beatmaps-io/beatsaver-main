@@ -373,7 +373,10 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
 
                 queueDeclare("bm.updateStream", true, false, false, genericQueueConfig)
                 queueBind("bm.updateStream", "beatmaps", "maps.*.updated")
+                // The two following binds joined to one bind with maps.*.updated.# - however I kept it separate to
+                // not unknowingly add more update events than is sensible
                 queueBind("bm.updateStream", "beatmaps", "maps.*.updated.*")
+                queueBind("bm.updateStream", "beatmaps", "maps.*.updated.collaborators.*")
 
                 queueDeclare("bm.mapPlaylistTrigger", true, false, false, genericQueueConfig)
                 queueBind("bm.mapPlaylistTrigger", "beatmaps", "maps.*.updated.deleted")

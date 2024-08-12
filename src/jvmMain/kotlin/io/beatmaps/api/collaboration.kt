@@ -15,6 +15,7 @@ import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.collaboratorAlias
 import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.pub
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.isUploader
 import io.beatmaps.util.requireAuthorization
@@ -119,6 +120,8 @@ fun Route.collaborationRoute() {
                             it[accepted] = true
                         }
 
+                        call.pub("beatmaps", "maps.${map.id}.updated.collaborators.added", null, map.id.value)
+
                         // Generate alert for followers of the collaborator, if the map has already been published.
                         if (published == true) {
                             val followsAlias = Follows.alias("f2")
@@ -177,6 +180,8 @@ fun Route.collaborationRoute() {
                         mapId eq req.mapId and (collaboratorId eq req.collaboratorId)
                     } > 0
             }
+
+            if (success) call.pub("beatmaps", "maps.${req.mapId}.updated.collaborators.removed", null, req.mapId)
 
             call.respond(if (success) HttpStatusCode.OK else HttpStatusCode.Unauthorized)
         }
