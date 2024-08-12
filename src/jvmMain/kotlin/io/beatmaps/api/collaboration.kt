@@ -161,7 +161,7 @@ fun Route.collaborationRoute() {
                 } else {
                     val success = Collaboration.deleteWhere {
                         id eq req.collaborationId and (collaboratorId eq sess.userId)
-                    } > 0;
+                    } > 0
 
                     Pair(success, null)
                 }
