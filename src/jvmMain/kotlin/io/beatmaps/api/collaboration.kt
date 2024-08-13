@@ -15,6 +15,7 @@ import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.collaboratorAlias
 import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.pub
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.isUploader
 import io.beatmaps.util.requireAuthorization
@@ -92,7 +93,8 @@ fun Route.collaborationRoute() {
         requireAuthorization { _, sess ->
             val req = call.receive<CollaborationResponseData>()
 
-            val success = transaction {
+            // map is null when the collaboration has not been accepted
+            val (success, map) = transaction {
                 if (req.accepted) {
                     val (collab, map, published) = Collaboration
                         .join(Beatmap, JoinType.LEFT, Collaboration.mapId, Beatmap.id) { Beatmap.deletedAt.isNull() }
@@ -110,7 +112,7 @@ fun Route.collaborationRoute() {
                         } ?: Triple(null, null, null)
 
                     if (collab?.accepted == true) {
-                        true
+                        Pair(true, null)
                     } else if (map != null && collab != null) {
                         // Set to accepted
                         Collaboration.update({
@@ -152,17 +154,20 @@ fun Route.collaborationRoute() {
                                 recipients
                             )
                         }
-                        true
+                        Pair(true, map)
                     } else {
-                        false
+                        Pair(false, null)
                     }
                 } else {
-                    Collaboration.deleteWhere {
+                    val success = Collaboration.deleteWhere {
                         id eq req.collaborationId and (collaboratorId eq sess.userId)
                     } > 0
+
+                    Pair(success, null)
                 }
             }
 
+            if (success && map != null) call.pub("beatmaps", "maps.${map.id}.updated.collaborators", null, map.id.value)
             call.respond(if (success) HttpStatusCode.OK else HttpStatusCode.Unauthorized)
         }
     }
@@ -177,6 +182,8 @@ fun Route.collaborationRoute() {
                         mapId eq req.mapId and (collaboratorId eq req.collaboratorId)
                     } > 0
             }
+
+            if (success) call.pub("beatmaps", "maps.${req.mapId}.updated.collaborators", null, req.mapId)
 
             call.respond(if (success) HttpStatusCode.OK else HttpStatusCode.Unauthorized)
         }
