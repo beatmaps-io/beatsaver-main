@@ -12,7 +12,6 @@ import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.beatsaber.BaseMapInfo
-import io.beatmaps.common.beatsaber.MapInfoV4
 import io.beatmaps.common.beatsaber.toJson
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
