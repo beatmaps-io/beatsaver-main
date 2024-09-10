@@ -374,7 +374,6 @@ fun ZipHelperWithAudio.validateFiles(dos: DigestOutputStream) =
         val withoutPrefix = newFiles.map { its -> its.removePrefix(prefix.lowercase()) }.toSet()
 
         // Validate info.dat
-        if (p.mapInfo is MapInfoV4) throw UploadException("V4 support is coming soon")
         p.mapInfo.validate(withoutPrefix, p, audioFile, previewAudioFile, ::fromInfo)
 
         val output = p.mapInfo.toJson().toByteArray()
@@ -418,20 +417,26 @@ fun findAllowedFiles(info: BaseMapInfo) =
     (listOfNotNull("info.dat", "bpminfo.dat", "cinema-video.json") + info.getExtraFiles())
         .map { it.lowercase() }
 
-fun ZipHelper.oggToEgg(info: ExtractedInfo) =
-    info.mapInfo.getSongFilename()?.let { filename ->
-        fromInfo(filename.lowercase())?.let { path ->
-            if (filename.endsWith(".ogg")) {
+fun ZipHelper.oggToEgg(info: ExtractedInfo): Pair<Set<String>, Set<String>> {
+    val moved = setOf(info.mapInfo.getSongFilename(), info.mapInfo.getPreviewInfo().filename)
+        .filterNotNull()
+        .filter { it.endsWith(".ogg") }
+        .fold(mapOf<String, String>()) { acc, filename ->
+            fromInfo(filename.lowercase())?.let { path ->
                 val newFilename = filename.replace(Regex("\\.ogg$"), ".egg")
-                info.mapInfo = info.mapInfo.setSongFilename(newFilename)
                 moveFile(path, "/$newFilename")
-                files.minus((infoPrefix() + filename).lowercase()).plus((infoPrefix() + newFilename).lowercase()) to
-                    filesOriginalCase.minus(infoPrefix() + filename)
-            } else {
-                null
-            }
+                acc.plus(filename to newFilename)
+            } ?: acc
         }
-    } ?: (files to filesOriginalCase)
+
+    info.mapInfo = info.mapInfo.updateFiles(moved)
+
+    return files
+        .minus(moved.keys.map { (infoPrefix() + it).lowercase() }.toSet())
+        .plus(moved.values.map { (infoPrefix() + it).lowercase() }.toSet()) to
+        // Don't add it back so that we don't later try and remove the file as it's no longer whitelisted
+        filesOriginalCase.minus(moved.keys.map { infoPrefix() + it }.toSet())
+}
 
 class UploadException(private val msg: String) : RuntimeException() {
     fun toResponse() = FailedUploadResponse(listOf(UploadValidationInfo(listOf(), msg)))
