@@ -1222,7 +1222,7 @@ fun Route.userRoute(client: HttpClient) {
             User
                 .selectAll()
                 .where { User.curator eq Op.TRUE }
-                .orderBy(User.seniorCurator to SortOrder.DESC, User.name to SortOrder.ASC)
+                .orderBy(User.seniorCurator to SortOrder.DESC, User.uniqueName to SortOrder.ASC)
                 .limit(50)
                 .map { row ->
                     UserDetail.from(row, description = true)
