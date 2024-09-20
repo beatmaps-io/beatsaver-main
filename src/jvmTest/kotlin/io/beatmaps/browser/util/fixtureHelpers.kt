@@ -26,15 +26,12 @@ import io.beatmaps.common.dbo.Versions
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.json.JsonObject
-import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.math.BigDecimal
 import kotlin.random.Random
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.days
 
 abstract class FixtureHelpers {
     val fixture = kotlinFixture {
