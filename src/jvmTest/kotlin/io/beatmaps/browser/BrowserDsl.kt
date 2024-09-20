@@ -13,6 +13,7 @@ import io.beatmaps.browser.page.Modals
 import io.beatmaps.browser.page.PageHeader
 import io.beatmaps.browser.page.RegisterPage
 import io.beatmaps.browser.page.UploadPage
+import io.beatmaps.browser.page.UserAccountPage
 import io.beatmaps.browser.util.FixtureHelpers
 import io.beatmaps.common.json
 import io.ktor.client.HttpClient
@@ -101,4 +102,5 @@ class BrowserDsl(private val testHost: String, private val client: HttpClient, p
     fun mapPage(block: MapPage.() -> Unit) = block(MapPage(page))
     fun loginPage(block: LoginPage.() -> Unit) = block(LoginPage(page))
     fun registerPage(block: RegisterPage.() -> Unit) = block(RegisterPage(page))
+    fun userAccountPage(block: UserAccountPage.() -> Unit) = block(UserAccountPage(page))
 }

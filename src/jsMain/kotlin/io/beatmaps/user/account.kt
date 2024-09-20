@@ -105,10 +105,11 @@ val accountTab = fc<AccountComponentProps> { props ->
                 attrs.captchaRef = captchaRef
             }
         }
-        errors {
-            attrs.errors = usernameErrors
-        }
         div("mb-3") {
+            attrs.id = "change-username"
+            errors {
+                attrs.errors = usernameErrors
+            }
             label("form-label") {
                 attrs.reactFor = "name"
                 +"Username"
@@ -134,7 +135,7 @@ val accountTab = fc<AccountComponentProps> { props ->
                             Axios.post<ActionResponse>(
                                 "${Config.apibase}/users/username",
                                 AccountDetailReq(username),
-                                generateConfig<AccountDetailReq, ActionResponse>()
+                                generateConfig<AccountDetailReq, ActionResponse>(validStatus = arrayOf(200, 400))
                             ).then {
                                 if (it.data.success) {
                                     props.onUpdate()

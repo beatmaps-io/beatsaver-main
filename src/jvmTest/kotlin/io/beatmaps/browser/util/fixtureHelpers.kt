@@ -24,12 +24,14 @@ import io.beatmaps.common.dbo.ReviewReply
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import kotlinx.datetime.Clock
+import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.math.BigDecimal
 import kotlin.random.Random
+import kotlin.time.Duration
 
 abstract class FixtureHelpers {
     val fixture = kotlinFixture {
@@ -40,7 +42,7 @@ abstract class FixtureHelpers {
         property(ReviewReplyDetail::review) { null }
     }
 
-    fun createUser(): Pair<Int, String> {
+    fun createUser(renamedAtOffset: Duration? = null): Pair<Int, String> {
         val now = Clock.System.now().epochSeconds
         val fuzz = fixture(1..100000)
 
@@ -51,6 +53,9 @@ abstract class FixtureHelpers {
                 it[name] = username
                 it[email] = "$username@beatsaver.com"
                 it[avatar] = "https://beatsaver.com/static/logo.svg"
+                renamedAtOffset?.let { d ->
+                    it[renamedAt] = Clock.System.now().minus(d).toJavaInstant()
+                }
                 it[password] = null
                 it[verifyToken] = null
                 it[uniqueName] = username
