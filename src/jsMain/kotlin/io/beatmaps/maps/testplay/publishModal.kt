@@ -10,6 +10,7 @@ import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
+import react.MutableRefObject
 import react.Props
 import react.dom.a
 import react.dom.br
@@ -23,8 +24,7 @@ import react.useState
 
 external interface PublishModalProps : Props {
     var callbackScheduleAt: (Instant?) -> Unit
-    var callbackAlert: (Boolean) -> Unit
-    var notifyFollowersDefault: Boolean
+    var notifyFollowersRef: MutableRefObject<Boolean>
 }
 
 val publishModal = fc<PublishModalProps> { props ->
@@ -95,11 +95,10 @@ val publishModal = fc<PublishModalProps> { props ->
     }
     div("form-check form-switch d-inline-block me-2") {
         input(InputType.checkBox, classes = "form-check-input") {
-            attrs.defaultChecked = props.notifyFollowersDefault
+            attrs.defaultChecked = props.notifyFollowersRef.current == true
             attrs.id = "alertUpdate"
             attrs.onChangeFunction = {
-                val boolVal = (it.currentTarget as HTMLInputElement).checked
-                props.callbackAlert(boolVal)
+                props.notifyFollowersRef.current = (it.currentTarget as HTMLInputElement).checked
             }
         }
         label("form-check-label") {
