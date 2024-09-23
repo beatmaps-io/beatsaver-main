@@ -117,6 +117,7 @@ val version = fc<VersionProps> { props ->
                         if (props.allowPublish == true) {
                             button(classes = "btn btn-danger m-1") {
                                 attrs.onClickFunction = {
+                                    alert.current = props.alreadyPublished != true
                                     modal?.current?.showDialog(
                                         ModalData(
                                             "Are you sure?",
@@ -128,10 +129,7 @@ val version = fc<VersionProps> { props ->
                                                 attrs.callbackScheduleAt = {
                                                     scheduleAt.current = it
                                                 }
-                                                attrs.callbackAlert = {
-                                                    alert.current = it
-                                                }
-                                                attrs.notifyFollowersDefault = (props.alreadyPublished != true)
+                                                attrs.notifyFollowersRef = alert
                                             }
                                         }
                                     )
