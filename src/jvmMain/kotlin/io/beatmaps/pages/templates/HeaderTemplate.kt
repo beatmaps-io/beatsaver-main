@@ -54,7 +54,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 +"Find Maps"
                             }
                             div("dropdown-menu") {
-                                a("/?curated=true", classes = "dropdown-item auto-router") {
+                                a("/?curated=true&order=Curated", classes = "dropdown-item auto-router") {
                                     +"Curated Maps"
                                 }
                                 a("/?verified=true", classes = "dropdown-item auto-router") {
@@ -65,7 +65,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                         +"From Mappers You Follow"
                                     }
                                 }
-                                a("/?ranked=true", classes = "dropdown-item auto-router") {
+                                a("/?ranked=Ranked", classes = "dropdown-item auto-router") {
                                     +"Ranked Maps"
                                 }
                                 div("dropdown-divider") {}
