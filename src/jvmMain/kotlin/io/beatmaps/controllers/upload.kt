@@ -413,7 +413,7 @@ fun ZipHelperWithAudio.validateFiles(dos: DigestOutputStream) =
     }
 
 fun findAllowedFiles(info: BaseMapInfo) =
-    (listOfNotNull("info.dat", "bpminfo.dat", "cinema-video.json") + info.getExtraFiles())
+    (listOfNotNull("info.dat", "cinema-video.json") + info.getExtraFiles())
         .map { it.lowercase() }
 
 fun ZipHelper.oggToEgg(info: ExtractedInfo): Pair<Set<String>, Set<String>> {
