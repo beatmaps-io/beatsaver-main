@@ -122,7 +122,7 @@ val infoTable = fc<InfoTableProps> { props ->
     div("list-group" + if (props.horizontal == true) " list-group-horizontal row m-4" else "") {
         div(itemClasses) {
             +(if (props.map.collaborators?.size != 0) "Mappers" else "Mapper")
-            span("ms-4 text-wrap") {
+            span("ms-4 text-wrap text-end") {
                 uploader {
                     attrs.map = props.map
                 }
