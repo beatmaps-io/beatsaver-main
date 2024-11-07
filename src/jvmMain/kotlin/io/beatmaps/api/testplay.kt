@@ -47,6 +47,7 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertIgnore
@@ -223,6 +224,10 @@ fun Route.testplayRoute(client: HttpClient) {
                     sess.isAdmin() || currentWipCount < maxWips || throw UserApiException(PatreonTier.maxWipsMessage)
 
                     (updateState() > 0).also { rTemp ->
+                        Beatmap.update({ Beatmap.id eq newState.mapId }) {
+                            it[updatedAt] = NowExpression(updatedAt, transactionTime = false)
+                        }
+
                         if (rTemp && sess.isAdmin() && newState.reason?.isEmpty() == false) {
                             ModLog.insert(
                                 sess.userId,
