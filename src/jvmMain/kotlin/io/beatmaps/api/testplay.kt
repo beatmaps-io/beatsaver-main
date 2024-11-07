@@ -223,6 +223,10 @@ fun Route.testplayRoute(client: HttpClient) {
                     sess.isAdmin() || currentWipCount < maxWips || throw UserApiException(PatreonTier.maxWipsMessage)
 
                     (updateState() > 0).also { rTemp ->
+                        Beatmap.update({ Beatmap.id eq newState.mapId }) {
+                            it[updatedAt] = NowExpression(updatedAt, transactionTime = false)
+                        }
+
                         if (rTemp && sess.isAdmin() && newState.reason?.isEmpty() == false) {
                             ModLog.insert(
                                 sess.userId,
