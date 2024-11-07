@@ -9,7 +9,7 @@ from (
      ) s
 $$;
 
-create aggregate array_merge_agg(anyarray) (
+create or replace aggregate array_merge_agg(anyarray) (
     sfunc = array_merge,
     stype = anyarray
 );
