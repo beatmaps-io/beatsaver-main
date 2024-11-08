@@ -52,6 +52,7 @@ import io.ktor.server.sessions.sessions
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.apache.solr.client.solrj.SolrQuery
+import org.apache.solr.client.solrj.impl.BaseHttpSolrClient.RemoteSolrException
 import org.jetbrains.exposed.sql.EqOp
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
@@ -246,9 +247,18 @@ fun Route.searchRoute() {
                     }
                     .setStart((it.page * 20).toInt()).setRows(20)
 
-                val response = SolrHelper.solr.query(query)
+                val (mapIds, qTime, numRecords) = try {
+                    val response = SolrHelper.solr.query(query)
 
-                val mapIds = response.results.mapNotNull { it["id"] as? Int }
+                    val mapIds = response.results.mapNotNull { it["id"] as? Int }
+                    val numRecords = response.results.numFound.toInt()
+
+                    Triple(mapIds, response.qTime, numRecords)
+                } catch (e: RemoteSolrException) {
+                    // Ignore
+                    Triple(listOf(), 0, 0)
+                }
+
                 val order = mapIds.mapIndexed { idx, i -> i to idx }.toMap()
 
                 val beatmaps = Beatmap
@@ -267,8 +277,7 @@ fun Route.searchRoute() {
                     .complexToBeatmap()
                     .sortedBy { order[it.id.value] } // Match order from solr
                     .map { m -> MapDetail.from(m, cdnPrefix()) }
-                val numRecords = response.results.numFound.toInt()
-                call.respond(SearchResponse(beatmaps, SearchInfo(numRecords, ceil(numRecords / 20f).toInt(), response.qTime / 1000f)))
+                call.respond(SearchResponse(beatmaps, SearchInfo(numRecords, ceil(numRecords / 20f).toInt(), qTime / 1000f)))
             }
         }
     }

@@ -13,6 +13,7 @@ import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.RankedFilter
 import io.beatmaps.common.toQuery
+import io.beatmaps.configContext
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.search.CommonParams
@@ -30,6 +31,7 @@ import react.dom.img
 import react.dom.p
 import react.fc
 import react.router.useNavigate
+import react.useContext
 import react.useEffect
 import react.useRef
 import react.useState
@@ -72,6 +74,7 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
     val audio = useAudio()
 
     val history = History(useNavigate())
+    val config = useContext(configContext)
 
     useDidUpdateEffect(props.user, props.wip, props.curated, props.search) {
         setUser(null)
@@ -97,7 +100,7 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
         if (props.wip == true) {
             "${Config.apibase}/maps/wip/$page"
         } else if (props.curated == true && props.user != null) {
-            "${Config.apibase}/search/text/$page?sortOrder=Curated&curator=${props.user}&automapper=true"
+            "${Config.apibase}/search/${if (config?.v2Search == true) "v2" else "text"}/$page?sortOrder=Curated&curator=${props.user}&automapper=true"
         } else if (props.user != null) {
             "${Config.apibase}/maps/collaborations/${props.user}?" +
                 (minTimeRef.current?.let { "&before=$it" } ?: "")
@@ -105,7 +108,7 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
             props.search?.let { search ->
                 val tagStr = search.tags.toQuery()
 
-                "${Config.apibase}/search/text/$page?sortOrder=${search.sortOrder}" +
+                "${Config.apibase}/search/${if (config?.v2Search == true) "v2" else "text"}/$page?sortOrder=${search.sortOrder}" +
                     (if (search.automapper != null) "&automapper=${search.automapper}" else "") +
                     (if (search.chroma != null) "&chroma=${search.chroma}" else "") +
                     (if (search.noodle != null) "&noodle=${search.noodle}" else "") +

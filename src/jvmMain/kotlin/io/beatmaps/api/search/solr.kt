@@ -18,6 +18,7 @@ object SolrHelper {
     private val solrUser = System.getenv("SOLR_USER") ?: "solr"
     private val solrPass = System.getenv("SOLR_PASS") ?: "insecure-password"
     private val solrCollection = System.getenv("SOLR_COLLECTION") ?: "beatsaver"
+    val enabled = System.getenv("SOLR_ENABLED") == "false"
 
     val solr: Http2SolrClient by lazy {
         Http2SolrClient.Builder(solrHost)

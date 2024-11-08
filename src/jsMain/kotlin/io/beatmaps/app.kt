@@ -55,7 +55,8 @@ data class UserData(
 @Serializable
 data class ConfigData(
     // Safe because if captchas are bypassed the backend will still reject requests
-    val showCaptcha: Boolean = true
+    val showCaptcha: Boolean = true,
+    val v2Search: Boolean = false
 )
 
 val globalContext = createContext<UserData?>(null)
