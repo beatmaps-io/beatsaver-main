@@ -139,4 +139,7 @@ data class MapStats(
 data class MapTestplay(val feedback: String? = null, val video: String? = null, val user: UserDetail, val createdAt: Instant, val feedbackAt: Instant? = null) { companion object }
 
 @Serializable
-data class SearchResponse(val docs: List<MapDetail>? = null, val redirect: String? = null)
+data class SearchResponse(val docs: List<MapDetail>? = null, val info: SearchInfo? = null, val redirect: String? = null)
+
+@Serializable
+data class SearchInfo(val total: Int, val pages: Int, val duration: Float)

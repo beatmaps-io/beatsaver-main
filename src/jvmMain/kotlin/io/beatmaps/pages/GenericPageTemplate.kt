@@ -1,5 +1,6 @@
 package io.beatmaps.pages
 
+import io.beatmaps.api.search.SolrHelper
 import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.login.Session
 import io.ktor.server.html.Template
@@ -22,7 +23,7 @@ class GenericPageTemplate(private val s: Session?) : Template<BODY> {
         }
         div("d-none") {
             id = "config-data"
-            +"""{"showCaptcha": ${reCaptchaVerify != null}}"""
+            +"""{"showCaptcha": ${reCaptchaVerify != null}, "v2Search": ${SolrHelper.enabled}}"""
         }
         script(src = "/static/modules.js") {}
         script(src = "/static/output.js") {}

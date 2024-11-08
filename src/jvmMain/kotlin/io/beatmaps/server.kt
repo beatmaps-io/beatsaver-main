@@ -21,6 +21,7 @@ import io.beatmaps.api.questRoute
 import io.beatmaps.api.reviewRoute
 import io.beatmaps.api.scores.ScoreSaberServerException
 import io.beatmaps.api.scoresRoute
+import io.beatmaps.api.search.SolrHelper.solrUpdater
 import io.beatmaps.api.searchRoute
 import io.beatmaps.api.testplayRoute
 import io.beatmaps.api.userRoute
@@ -402,6 +403,10 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
 
                 queueDeclare("bm.alertCount", true, false, false, genericQueueConfig)
                 queueBind("bm.alertCount", "beatmaps", "user.alerts.*")
+
+                queueDeclare("bm.solr", true, false, false, genericQueueConfig)
+                queueBind("bm.solr", "beatmaps", "maps.*.updated")
+                queueBind("bm.solr", "beatmaps", "maps.*.updated.*")
             }
         }
         downloadsThread()
@@ -417,6 +422,7 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
     scheduleTask()
     scheduleCleanser()
     scheduleTokenCleanup()
+    solrUpdater()
 
     routing {
         get("/") {
