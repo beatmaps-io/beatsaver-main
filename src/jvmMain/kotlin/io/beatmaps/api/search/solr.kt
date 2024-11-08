@@ -2,6 +2,7 @@ package io.beatmaps.api.search
 
 import io.beatmaps.api.search.SolrHelper.deltaImport
 import io.beatmaps.common.consumeAck
+import io.beatmaps.common.rabbitHost
 import io.beatmaps.common.rabbitOptional
 import io.ktor.server.application.Application
 import kotlinx.serialization.builtins.serializer
@@ -64,7 +65,7 @@ object SolrImporter : TimerTask() {
     }
 
     override fun run() {
-        if (state == SolrImportState.QUEUED) {
+        if (state == SolrImportState.QUEUED || rabbitHost.isEmpty()) {
             execute()
         } else if (state == SolrImportState.RUNNING) {
             state = SolrImportState.IDLE

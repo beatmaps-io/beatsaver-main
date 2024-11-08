@@ -36,6 +36,14 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
       RABBITMQ_ERLANG_COOKIE: "ThdGkKL+vFrar6asCvNkfhI4WMeedX79au8FUOdn"
+  solr:
+    image: bssolr
+    build: solr
+    ports:
+      - "8983:8983"
+    environment:
+      SOLR_OPTS: "-Dsolr.sharedLib=/var/solr/lib"
+      PGPASSFILE: "/var/solr/lib"
 volumes:
   db_data:
   mongo_data:
