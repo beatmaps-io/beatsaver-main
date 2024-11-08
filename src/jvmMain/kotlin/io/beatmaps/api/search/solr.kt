@@ -43,17 +43,18 @@ object SolrHelper {
 
     fun Application.solrUpdater() {
         // Run every 30s
-        Timer("Solr Delta").scheduleAtFixedRate(SolrImporter, 5000L, 30 * 1000L)
+        val importer = SolrImporter()
+        Timer("Solr Delta").scheduleAtFixedRate(importer, 5000L, 30 * 1000L)
 
         rabbitOptional {
             consumeAck("bm.solr", Int.serializer()) { _, _ ->
-                SolrImporter.trigger()
+                importer.trigger()
             }
         }
     }
 }
 
-object SolrImporter : TimerTask() {
+class SolrImporter : TimerTask() {
     var state = SolrImportState.IDLE
 
     fun trigger() {
