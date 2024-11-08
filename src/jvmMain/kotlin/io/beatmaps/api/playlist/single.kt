@@ -17,7 +17,7 @@ import io.beatmaps.api.getWithOptions
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
 import io.beatmaps.api.of
-import io.beatmaps.api.parseSearchQuery
+import io.beatmaps.api.search.PgSearchParams
 import io.beatmaps.common.Folders
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SearchPlaylistConfig
@@ -81,7 +81,7 @@ fun Route.playlistSingle() {
         val params = config.searchParams
         val needsDiff = params.minNps != null || params.maxNps != null
         val searchFields = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
-        val searchInfo = parseSearchQuery(params.search, searchFields, needsDiff)
+        val searchInfo = PgSearchParams.parseSearchQuery(params.search, searchFields, needsDiff)
         val actualSortOrder = searchInfo.validateSearchOrder(params.sortOrder)
         val sortArgs = searchInfo.sortArgsFor(actualSortOrder)
 

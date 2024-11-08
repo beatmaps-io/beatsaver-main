@@ -124,6 +124,7 @@ kotlin {
                 implementation("pl.jutupe:ktor-rabbitmq:0.5.19")
                 implementation("com.rabbitmq:amqp-client:5.9.0")
                 implementation("org.litote.kmongo:kmongo-serialization:4.9.0")
+                implementation("org.apache.solr:solr-solrj:9.7.0")
 
                 // Serialization
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")

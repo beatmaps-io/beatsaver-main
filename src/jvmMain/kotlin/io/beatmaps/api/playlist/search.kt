@@ -12,7 +12,7 @@ import io.beatmaps.api.from
 import io.beatmaps.api.getWithOptions
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
-import io.beatmaps.api.parseSearchQuery
+import io.beatmaps.api.search.PgSearchParams
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.db.PgConcat
@@ -88,13 +88,13 @@ fun Route.playlistSearch() {
         }
     }
 
-    getWithOptions<PlaylistApi.Text>("Search for playlists".responds(ok<PlaylistSearchResponse>())) { it ->
+    getWithOptions<PlaylistApi.Text>("Search for playlists".responds(ok<PlaylistSearchResponse>())) {
         val searchFields = PgConcat(" ", Playlist.name, Playlist.description)
-        val searchInfo = parseSearchQuery(it.q, searchFields)
+        val searchInfo = PgSearchParams.parseSearchQuery(it.q, searchFields)
         val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
         val sortArgs = when (actualSortOrder) {
             SearchOrder.Relevance -> listOf(searchInfo.similarRank to SortOrder.DESC, Playlist.createdAt to SortOrder.DESC)
-            SearchOrder.Rating, SearchOrder.Latest -> listOf(Playlist.createdAt to SortOrder.DESC)
+            SearchOrder.Rating, SearchOrder.Random, SearchOrder.Latest -> listOf(Playlist.createdAt to SortOrder.DESC)
             SearchOrder.Curated -> listOf(Playlist.curatedAt to SortOrder.DESC_NULLS_LAST, Playlist.createdAt to SortOrder.DESC)
         }.toTypedArray()
 

@@ -6,6 +6,16 @@ import de.nielsfalk.ktor.swagger.Ignore
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
+import io.beatmaps.api.search.BsSolr
+import io.beatmaps.api.search.PgSearchParams
+import io.beatmaps.api.search.SolrFilter
+import io.beatmaps.api.search.SolrHelper
+import io.beatmaps.api.search.SolrSearchParams
+import io.beatmaps.api.search.apply
+import io.beatmaps.api.search.eq
+import io.beatmaps.api.search.greater
+import io.beatmaps.api.search.less
+import io.beatmaps.common.MapTagQuery
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
@@ -13,13 +23,8 @@ import io.beatmaps.common.api.RankedFilter
 import io.beatmaps.common.applyToQuery
 import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.greaterEqF
-import io.beatmaps.common.db.ilike
 import io.beatmaps.common.db.lateral
 import io.beatmaps.common.db.lessEqF
-import io.beatmaps.common.db.similar
-import io.beatmaps.common.db.unaccent
-import io.beatmaps.common.db.unaccentLiteral
-import io.beatmaps.common.db.wildcard
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
@@ -46,19 +51,17 @@ import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
-import org.jetbrains.exposed.sql.CustomFunction
+import org.apache.solr.client.solrj.SolrQuery
 import org.jetbrains.exposed.sql.EqOp
-import org.jetbrains.exposed.sql.ExpressionWithColumnType
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
-import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import java.lang.Integer.toHexString
 import java.util.logging.Logger
+import kotlin.math.ceil
 import kotlin.time.DurationUnit
 import kotlin.time.measureTime
 import kotlin.time.toDuration
@@ -101,97 +104,182 @@ class SearchApi {
         @Ignore val mapper: Int? = null,
         @Ignore val curator: Int? = null
     )
+
+    @Group("Search")
+    @Location("/search/v2/{page}")
+    data class Solr(
+        val q: String? = "",
+        @Description("Options are a little weird, I may add another enum field in future to make this clearer.\ntrue = both, false = only ai, null = no ai") val automapper: Boolean? = null,
+        val minNps: Float? = null,
+        val maxNps: Float? = null,
+        val chroma: Boolean? = null,
+        @DefaultValue("0") val page: Long = 0,
+        val sortOrder: SearchOrder = SearchOrder.Relevance,
+        val from: Instant? = null,
+        val to: Instant? = null,
+        @Ignore val api: SearchApi,
+        val noodle: Boolean? = null,
+        val leaderboard: RankedFilter = RankedFilter.All,
+        val curated: Boolean? = null,
+        val verified: Boolean? = null,
+        val followed: Boolean? = null,
+        val fullSpread: Boolean? = null,
+        val minDuration: Int? = null,
+        val maxDuration: Int? = null,
+        val minRating: Float? = null,
+        val maxRating: Float? = null,
+        val minBpm: Float? = null,
+        val maxBpm: Float? = null,
+        val me: Boolean? = null,
+        val cinema: Boolean? = null,
+        @Description("Tag query, separated by `,` (and) or `|` (or). Excluded tags are prefixed with `!`.")
+        val tags: String? = null,
+        @Ignore val mapper: Int? = null,
+        @Ignore val curator: Int? = null,
+        @Ignore val seed: String? = null
+    )
 }
 
 fun <T> Op<Boolean>.notNull(b: T?, block: (T) -> Op<Boolean>) = if (b == null) this else this.and(block(b))
+fun <T> SolrQuery.notNull(b: T?, block: (T) -> SolrFilter): SolrQuery = if (b == null) this else apply(block(b))
 
 fun Op.Companion.of(b: Boolean): Op<Boolean> = if (b) Op.TRUE else Op.FALSE
 
-class SearchParams(
-    val escapedQuery: String?,
-    private val useLiteral: Boolean,
-    private val searchIndex: ExpressionWithColumnType<String>,
-    private val query: String,
-    private val quotedSections: List<String>,
-    private val bothWithoutQuotes: String,
-    private val mappers: List<String>
-) {
-    val userSubQuery by lazy {
-        if (mappers.isNotEmpty()) {
-            User
-                .select(User.id)
-                .where {
-                    User.uniqueName inList mappers.map { m -> m.substring(7) }
-                }
-        } else {
-            null
-        }
-    }
-
-    val similarRank by lazy {
-        CustomFunction<String>(
-            "substring_similarity",
-            searchIndex.columnType,
-            (if (useLiteral) ::unaccentLiteral else ::unaccent).invoke(bothWithoutQuotes),
-            searchIndex
-        )
-    }
-
-    fun validateSearchOrder(originalOrder: SearchOrder) =
-        when {
-            escapedQuery != null && bothWithoutQuotes.replace(" ", "").length > 3 && originalOrder == SearchOrder.Relevance ->
-                SearchOrder.Relevance
-            originalOrder == SearchOrder.Rating -> SearchOrder.Rating
-            originalOrder == SearchOrder.Curated -> SearchOrder.Curated
-            else -> SearchOrder.Latest
-        }
-
-    fun sortArgsFor(searchOrder: SearchOrder) = when (searchOrder) {
-        SearchOrder.Relevance -> listOf(similarRank to SortOrder.DESC, Beatmap.score to SortOrder.DESC, Beatmap.uploaded to SortOrder.DESC)
-        SearchOrder.Rating -> listOf(Beatmap.score to SortOrder.DESC, Beatmap.uploaded to SortOrder.DESC)
-        SearchOrder.Latest -> listOf(Beatmap.uploaded to SortOrder.DESC)
-        SearchOrder.Curated -> listOf(Beatmap.curatedAt to SortOrder.DESC_NULLS_LAST, Beatmap.uploaded to SortOrder.DESC)
-    }.toTypedArray()
-
-    private fun preApplyQuery(q: Op<Boolean>) =
-        if (query.isBlank()) {
-            q
-        } else if (query.length > 3) {
-            q.and(searchIndex similar unaccent(query))
-        } else {
-            q.and(searchIndex ilike wildcard(unaccent(query)))
-        }
-
-    fun applyQuery(q: Op<Boolean>) =
-        preApplyQuery(q).let {
-            quotedSections.fold(it) { p, section ->
-                p.and(searchIndex ilike wildcard(unaccent(section)))
+fun MapTagQuery.applyToQuery(q: SolrQuery) =
+    flatMap { x ->
+        x.groupBy { it.first }.map { y ->
+            y.value.map { t -> (BsSolr.tags eq t.second.slug).let { if (y.key) it else it.not() } }.reduce { a, b ->
+                if (y.key) a or b else a and b
             }
         }
-}
-private val quotedPattern = Regex("\"([^\"]*)\"")
-fun parseSearchQuery(q: String?, searchFields: ExpressionWithColumnType<String>, useLiteral: Boolean = false): SearchParams {
-    val originalQuery = q?.replace("%", "\\%")
-
-    val matches = quotedPattern.findAll(originalQuery ?: "")
-    val quotedSections = matches.map { match -> match.groupValues[1] }.toList()
-    val withoutQuotedSections = quotedPattern.split(originalQuery ?: "").filter { s -> s.isNotBlank() }.joinToString(" ") { s -> s.trim() }
-
-    val (mappers, nonmappers) = withoutQuotedSections.split(' ').partition { s -> s.startsWith("mapper:") }
-    val query = nonmappers.joinToString(" ")
-    val bothWithoutQuotes = (nonmappers + quotedSections).joinToString(" ")
-
-    return SearchParams(originalQuery, useLiteral, unaccent(searchFields), query, quotedSections, bothWithoutQuotes, mappers)
-}
+    }.fold(q) { query, it ->
+        query.apply(it)
+    }
 
 fun Route.searchRoute() {
+    getWithOptions<SearchApi.Solr>("Search for maps with solr".responds(ok<SearchResponse>())) {
+        optionalAuthorization { _, user ->
+            val sess = call.sessions.get<Session>()
+
+            val searchInfo = SolrSearchParams.parseSearchQuery(it.q)
+            val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
+
+            newSuspendedTransaction {
+                if (searchInfo.checkKeySearch(call)) return@newSuspendedTransaction
+
+                val followingSubQuery = if (user != null && it.followed == true) {
+                    Follows
+                        .select(Follows.userId)
+                        .where { Follows.followerId eq user.userId }
+                        .map { it[Follows.userId].value }
+                } else {
+                    listOf()
+                }
+
+                val query = SolrQuery()
+                    .setFields("id")
+                    .let { q ->
+                        searchInfo.applyQuery(q)
+                    }
+                    .also { q ->
+                        when (it.automapper) {
+                            true -> null
+                            false -> BsSolr.ai eq true
+                            null -> BsSolr.ai eq false
+                        }?.let { filter ->
+                            q.apply(filter)
+                        }
+                    }
+                    .also { q ->
+                        listOfNotNull(
+                            if (it.leaderboard.blRanked) BsSolr.rankedbl eq true else null,
+                            if (it.leaderboard.ssRanked) BsSolr.rankedss eq true else null
+                        ).reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }?.let {
+                            q.apply(it)
+                        }
+                    }
+                    .notNull(it.minNps) { o -> BsSolr.nps greater o }
+                    .notNull(it.maxNps) { o -> BsSolr.nps less o }
+                    .let { q ->
+                        it.tags?.toQuery()?.applyToQuery(q) ?: q
+                    }
+                    .notNull(it.curated) { o -> BsSolr.curated.any().let { if (o) it else it.not() } }
+                    .notNull(it.verified) { o -> BsSolr.verified eq o }
+                    .notNull(it.fullSpread) { o -> BsSolr.fullSpread eq o }
+                    .notNull(it.minRating) { o -> BsSolr.voteScore greater o }
+                    .notNull(it.maxRating) { o -> BsSolr.voteScore less o }
+                    .notNull(it.mapper) { o -> BsSolr.mapperId eq o }
+                    .notNull(it.from) { o -> BsSolr.uploaded greater o }
+                    .notNull(it.to) { o -> BsSolr.uploaded less o }
+                    .notNull(it.minBpm) { o -> BsSolr.bpm greater o }
+                    .notNull(it.maxBpm) { o -> BsSolr.bpm less o }
+                    .notNull(it.minDuration) { o -> BsSolr.duration greater o }
+                    .notNull(it.maxDuration) { o -> BsSolr.duration less o }
+                    .notNull(it.curator) { o -> BsSolr.curatorId eq o }
+                    .also { q ->
+                        val mapperIds = followingSubQuery + (searchInfo.userSubQuery?.map { it[User.id].value } ?: listOf())
+
+                        mapperIds.map { id ->
+                            BsSolr.mapperIds eq id
+                        }.reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }?.let {
+                            q.apply(it)
+                        }
+                    }
+                    .notNull(it.chroma) { o ->
+                        val chromaQuery = (BsSolr.suggestions eq "Chroma") or (BsSolr.requirements eq "Chroma")
+                        if (o) chromaQuery else chromaQuery.not()
+                    }
+                    .notNull(it.noodle) { o ->
+                        val noodleQuery = BsSolr.requirements eq "Noodle Extensions"
+                        if (o) noodleQuery else noodleQuery.not()
+                    }
+                    .notNull(it.me) { o ->
+                        val meQuery = BsSolr.requirements eq "Mapping Extensions"
+                        if (o) meQuery else meQuery.not()
+                    }
+                    .notNull(it.cinema) { o ->
+                        val cinemaQuery = (BsSolr.suggestions eq "Cinema") or (BsSolr.requirements eq "Cinema")
+                        if (o) cinemaQuery else cinemaQuery.not()
+                    }
+                    .let { q ->
+                        searchInfo.addSortArgs(q, it.seed.hashCode(), actualSortOrder)
+                    }
+                    .setStart((it.page * 20).toInt()).setRows(20)
+
+                val response = SolrHelper.solr.query(query)
+
+                val mapIds = response.results.mapNotNull { it["id"] as? Int }
+                val order = mapIds.mapIndexed { idx, i -> i to idx }.toMap()
+
+                val beatmaps = Beatmap
+                    .joinVersions(true)
+                    .joinUploader()
+                    .joinCurator()
+                    .joinBookmarked(sess?.userId)
+                    .joinCollaborators()
+                    .select(
+                        Beatmap.columns + Versions.columns + Difficulty.columns + User.columns +
+                            curatorAlias.columns + bookmark.columns + collaboratorAlias.columns
+                    )
+                    .where {
+                        Beatmap.id.inList(mapIds)
+                    }
+                    .complexToBeatmap()
+                    .sortedBy { order[it.id.value] } // Match order from solr
+                    .map { m -> MapDetail.from(m, cdnPrefix()) }
+                val numRecords = response.results.numFound.toInt()
+                call.respond(SearchResponse(beatmaps, SearchInfo(numRecords, ceil(numRecords / 20f).toInt(), response.qTime / 1000f)))
+            }
+        }
+    }
+
     getWithOptions<SearchApi.Text>("Search for maps".responds(ok<SearchResponse>())) {
         optionalAuthorization { _, user ->
             val sess = call.sessions.get<Session>()
 
             val needsDiff = it.minNps != null || it.maxNps != null
             val searchFields = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
-            val searchInfo = parseSearchQuery(it.q, searchFields, needsDiff)
+            val searchInfo = PgSearchParams.parseSearchQuery(it.q, searchFields, needsDiff)
             val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
             val sortArgs = searchInfo.sortArgsFor(actualSortOrder)
 
@@ -204,17 +292,7 @@ fun Route.searchRoute() {
                     null
                 }
 
-                if (searchInfo.escapedQuery != null && searchInfo.escapedQuery.startsWith("key:")) {
-                    Beatmap
-                        .select(Beatmap.id)
-                        .where {
-                            Beatmap.id eq searchInfo.escapedQuery.substring(4).toInt(16) and (Beatmap.deletedAt.isNull())
-                        }
-                        .limit(1).firstOrNull()?.let { r ->
-                            call.respond(SearchResponse(redirect = toHexString(r[Beatmap.id].value)))
-                            return@newSuspendedTransaction
-                        }
-                }
+                if (searchInfo.checkKeySearch(call)) return@newSuspendedTransaction
 
                 val time = measureTime {
                     val beatmaps = Beatmap
