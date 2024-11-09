@@ -14,7 +14,7 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 
 class PgSearchParams(
-    escapedQuery: String?,
+    escapedQuery: String,
     private val useLiteral: Boolean,
     private val searchIndex: ExpressionWithColumnType<String>,
     private val query: String,
@@ -30,6 +30,13 @@ class PgSearchParams(
             searchIndex
         )
     }
+
+    override fun validateSearchOrder(originalOrder: SearchOrder) =
+        if (originalOrder == SearchOrder.Relevance && bothWithoutQuotes.replace(" ", "").length > 3) {
+            SearchOrder.Relevance
+        } else {
+            super.validateSearchOrder(originalOrder)
+        }
 
     fun sortArgsFor(searchOrder: SearchOrder) = when (searchOrder) {
         SearchOrder.Relevance -> listOf(similarRank to SortOrder.DESC, Beatmap.score to SortOrder.DESC, Beatmap.uploaded to SortOrder.DESC)
@@ -55,7 +62,7 @@ class PgSearchParams(
         }
 
     companion object {
-        fun parseSearchQuery(q: String?, searchFields: ExpressionWithColumnType<String>, useLiteral: Boolean = false) =
+        fun parseSearchQuery(q: String, searchFields: ExpressionWithColumnType<String>, useLiteral: Boolean = false) =
             parseSearchQuery(q) { originalQuery, query, quotedSections, bothWithoutQuotes, mappers ->
                 PgSearchParams(originalQuery, useLiteral, unaccent(searchFields), query, quotedSections, bothWithoutQuotes, mappers)
             }
