@@ -8,6 +8,10 @@ import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
+import io.beatmaps.api.search.BsSolr
+import io.beatmaps.api.search.all
+import io.beatmaps.api.search.eq
+import io.beatmaps.api.search.getMapIds
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.MapTag
@@ -19,7 +23,6 @@ import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
-import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
@@ -29,7 +32,6 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinBookmarked
-import io.beatmaps.common.dbo.joinCollaborations
 import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
@@ -52,14 +54,14 @@ import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
+import org.apache.solr.client.solrj.SolrQuery
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.unionAll
 import org.jetbrains.exposed.sql.update
 import java.lang.Integer.toHexString
 
@@ -653,28 +655,14 @@ fun Route.mapDetailRoute() {
     get<MapsApi.Collaborations>("Get maps by a user, including collaborations".responds(ok<SearchResponse>())) {
         val sess = call.sessions.get<Session>()
         val pageSize = (it.pageSize ?: 20).coerceIn(1, 100)
-        val beatmaps = transaction {
-            val collabQuery = Beatmap
-                .joinCollaborations()
-                .joinVersions(column = Collaboration.mapId)
-                .select(Collaboration.mapId, Collaboration.uploadedAt)
-                .where {
-                    (Collaboration.collaboratorId eq it.id and Collaboration.accepted and Beatmap.deletedAt.isNull())
-                        .notNull(it.before) { o -> Collaboration.uploadedAt less o.toJavaInstant() }
-                }
-                .orderBy(Collaboration.uploadedAt to SortOrder.DESC)
-                .limit(pageSize)
 
-            val uploadQuery = Beatmap
-                .joinVersions()
-                .select(Beatmap.id, Beatmap.uploaded)
-                .where {
-                    (Beatmap.uploader eq it.id and Beatmap.deletedAt.isNull())
-                        .notNull(it.before) { o -> Beatmap.uploaded less o.toJavaInstant() }
-                }
-                .orderBy(Beatmap.uploaded to SortOrder.DESC)
-                .limit(pageSize)
+        val results = SolrQuery().all()
+            .notNull(it.before) { o -> BsSolr.uploaded less o }
+            .notNull(it.id) { o -> BsSolr.mapperIds eq o }
+            .setSort(BsSolr.uploaded.desc())
+            .getMapIds(pageSize = pageSize)
 
+        val beatmaps = newSuspendedTransaction {
             Beatmap
                 .joinVersions(true)
                 .joinUploader()
@@ -683,14 +671,7 @@ fun Route.mapDetailRoute() {
                 .joinCollaborators()
                 .selectAll()
                 .where {
-                    Beatmap.id.inSubQuery(
-                        collabQuery.unionAll(uploadQuery).alias("tm").let { u ->
-                            u
-                                .select(u[Collaboration.mapId])
-                                .orderBy(u[Collaboration.uploadedAt] to SortOrder.DESC)
-                                .limit(20)
-                        }
-                    )
+                    Beatmap.id.inList(results.mapIds)
                 }
                 .complexToBeatmap()
                 .map { map ->
@@ -699,7 +680,7 @@ fun Route.mapDetailRoute() {
                 .sortedByDescending { it.uploaded }
         }
 
-        call.respond(SearchResponse(beatmaps))
+        call.respond(SearchResponse(beatmaps, results.searchInfo))
     }
 
     getWithOptions<MapsApi.ByUploadDate>(
