@@ -21,15 +21,31 @@ abstract class SolrCollection {
     private fun <T> registerField(name: String) = SolrField<T>(this, name).also { _fields.add(it) }
 }
 
-data class SolrField<T>(private val collection: SolrCollection, val name: String) {
+data class SolrField<T>(private val collection: SolrCollection, val name: String) : SolrFunction<T>() {
+    override fun toText() = name
+
     infix fun less(value: T) = lessThan(this, "$value")
     infix fun greater(value: T) = greaterThan(this, "$value")
     infix fun eq(value: T) = eq(this, "$value")
     fun any() = eq(this, "*")
+}
 
-    fun sort(order: SolrQuery.ORDER) = SolrQuery.SortClause(name, order)
+object SolrBaseScore : SolrFunction<Float>() {
+    override fun toText() = "query(\$q)"
+}
+
+class SolrProduct<T>(private val a: SolrFunction<T>, private val b: SolrFunction<T>) : SolrFunction<T>() {
+    override fun toText() = "product(${a.toText()}, ${b.toText()})"
+}
+
+abstract class SolrFunction<T> {
+    abstract fun toText(): String
+
+    private fun sort(order: SolrQuery.ORDER) = SolrQuery.SortClause(toText(), order)
     fun asc() = sort(SolrQuery.ORDER.asc)
     fun desc() = sort(SolrQuery.ORDER.desc)
+
+    infix fun product(other: SolrFunction<T>) = SolrProduct(this, other)
 }
 
 private fun lessThan(field: SolrField<*>, value: String) =
