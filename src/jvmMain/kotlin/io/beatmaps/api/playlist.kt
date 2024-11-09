@@ -21,7 +21,6 @@ import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.floatLiteral
-import org.jetbrains.exposed.sql.select
 
 const val prefix: String = "/playlists"
 
@@ -81,7 +80,7 @@ class PlaylistApi {
     @Group("Playlists")
     @Location("$prefix/search/{page}")
     data class Text(
-        val q: String? = "",
+        val q: String = "",
         @DefaultValue("0") val page: Long = 0,
         val sortOrder: SearchOrder = SearchOrder.Relevance,
         val minNps: Float? = null,

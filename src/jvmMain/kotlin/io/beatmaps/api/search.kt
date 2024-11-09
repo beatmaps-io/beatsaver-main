@@ -75,7 +75,7 @@ class SearchApi {
     @Group("Search")
     @Location("/search/text/{page}")
     data class Text(
-        val q: String? = "",
+        val q: String = "",
         @Description("Options are a little weird, I may add another enum field in future to make this clearer.\ntrue = both, false = only ai, null = no ai") val automapper: Boolean? = null,
         val minNps: Float? = null,
         val maxNps: Float? = null,
@@ -109,7 +109,7 @@ class SearchApi {
     @Group("Search")
     @Location("/search/v2/{page}")
     data class Solr(
-        val q: String? = "",
+        val q: String = "",
         @Description("Options are a little weird, I may add another enum field in future to make this clearer.\ntrue = both, false = only ai, null = no ai") val automapper: Boolean? = null,
         val minNps: Float? = null,
         val maxNps: Float? = null,
