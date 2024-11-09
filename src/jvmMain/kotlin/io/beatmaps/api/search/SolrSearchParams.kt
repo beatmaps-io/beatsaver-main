@@ -12,7 +12,7 @@ class SolrSearchParams(
 ) : SearchParams(escapedQuery, bothWithoutQuotes, mappers) {
     fun applyQuery(q: SolrQuery): SolrQuery =
         if (query.isBlank() && quotedSections.isEmpty()) {
-            q.setQuery("*:*")
+            q.all()
         } else {
             // Recombine string without key: or mapper:
             q.setQuery("${query.replace(':', ' ')} ${quotedSections.joinToString("\" \"", "\"", "\"")}")
@@ -44,8 +44,8 @@ class SolrSearchParams(
             SearchOrder.Random -> listOf(
                 SolrQuery.SortClause("random_$seed", SolrQuery.ORDER.desc)
             )
-        }.fold(q) { query, it ->
-            query.addSort(it)
+        }.let {
+            q.setSorts(it)
         }
 
     companion object {

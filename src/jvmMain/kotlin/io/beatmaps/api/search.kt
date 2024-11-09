@@ -9,12 +9,12 @@ import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.api.search.BsSolr
 import io.beatmaps.api.search.PgSearchParams
 import io.beatmaps.api.search.SolrFilter
-import io.beatmaps.api.search.SolrHelper
 import io.beatmaps.api.search.SolrSearchParams
 import io.beatmaps.api.search.apply
 import io.beatmaps.api.search.eq
-import io.beatmaps.api.search.greater
-import io.beatmaps.api.search.less
+import io.beatmaps.api.search.getMapIds
+import io.beatmaps.api.search.greaterEq
+import io.beatmaps.api.search.lessEq
 import io.beatmaps.common.MapTagQuery
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.AiDeclarationType
@@ -52,7 +52,6 @@ import io.ktor.server.sessions.sessions
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.apache.solr.client.solrj.SolrQuery
-import org.apache.solr.client.solrj.impl.BaseHttpSolrClient.RemoteSolrException
 import org.jetbrains.exposed.sql.EqOp
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
@@ -62,7 +61,6 @@ import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.logging.Logger
-import kotlin.math.ceil
 import kotlin.time.DurationUnit
 import kotlin.time.measureTime
 import kotlin.time.toDuration
@@ -177,8 +175,7 @@ fun Route.searchRoute() {
                     listOf()
                 }
 
-                val query = SolrQuery()
-                    .setFields("id")
+                val results = SolrQuery()
                     .let { q ->
                         searchInfo.applyQuery(q)
                     }
@@ -199,23 +196,23 @@ fun Route.searchRoute() {
                             q.apply(it)
                         }
                     }
-                    .notNull(it.minNps) { o -> BsSolr.nps greater o }
-                    .notNull(it.maxNps) { o -> BsSolr.nps less o }
+                    .notNull(it.minNps) { o -> BsSolr.nps greaterEq o }
+                    .notNull(it.maxNps) { o -> BsSolr.nps lessEq o }
                     .let { q ->
                         it.tags?.toQuery()?.applyToQuery(q) ?: q
                     }
                     .notNull(it.curated) { o -> BsSolr.curated.any().let { if (o) it else it.not() } }
                     .notNull(it.verified) { o -> BsSolr.verified eq o }
                     .notNull(it.fullSpread) { o -> BsSolr.fullSpread eq o }
-                    .notNull(it.minRating) { o -> BsSolr.voteScore greater o }
-                    .notNull(it.maxRating) { o -> BsSolr.voteScore less o }
+                    .notNull(it.minRating) { o -> BsSolr.voteScore greaterEq o }
+                    .notNull(it.maxRating) { o -> BsSolr.voteScore lessEq o }
                     .notNull(it.mapper) { o -> BsSolr.mapperId eq o }
-                    .notNull(it.from) { o -> BsSolr.uploaded greater o }
-                    .notNull(it.to) { o -> BsSolr.uploaded less o }
-                    .notNull(it.minBpm) { o -> BsSolr.bpm greater o }
-                    .notNull(it.maxBpm) { o -> BsSolr.bpm less o }
-                    .notNull(it.minDuration) { o -> BsSolr.duration greater o }
-                    .notNull(it.maxDuration) { o -> BsSolr.duration less o }
+                    .notNull(it.from) { o -> BsSolr.uploaded greaterEq o }
+                    .notNull(it.to) { o -> BsSolr.uploaded lessEq o }
+                    .notNull(it.minBpm) { o -> BsSolr.bpm greaterEq o }
+                    .notNull(it.maxBpm) { o -> BsSolr.bpm lessEq o }
+                    .notNull(it.minDuration) { o -> BsSolr.duration greaterEq o }
+                    .notNull(it.maxDuration) { o -> BsSolr.duration lessEq o }
                     .notNull(it.curator) { o -> BsSolr.curatorId eq o }
                     .also { q ->
                         val mapperIds = followingSubQuery + (searchInfo.userSubQuery?.map { it[User.id].value } ?: listOf())
@@ -245,21 +242,7 @@ fun Route.searchRoute() {
                     .let { q ->
                         searchInfo.addSortArgs(q, it.seed.hashCode(), actualSortOrder)
                     }
-                    .setStart((it.page * 20).toInt()).setRows(20)
-
-                val (mapIds, qTime, numRecords) = try {
-                    val response = SolrHelper.solr.query(query)
-
-                    val mapIds = response.results.mapNotNull { it["id"] as? Int }
-                    val numRecords = response.results.numFound.toInt()
-
-                    Triple(mapIds, response.qTime, numRecords)
-                } catch (e: RemoteSolrException) {
-                    // Ignore
-                    Triple(listOf(), 0, 0)
-                }
-
-                val order = mapIds.mapIndexed { idx, i -> i to idx }.toMap()
+                    .getMapIds(page = it.page.toInt())
 
                 val beatmaps = Beatmap
                     .joinVersions(true)
@@ -272,12 +255,12 @@ fun Route.searchRoute() {
                             curatorAlias.columns + bookmark.columns + collaboratorAlias.columns
                     )
                     .where {
-                        Beatmap.id.inList(mapIds)
+                        Beatmap.id.inList(results.mapIds)
                     }
                     .complexToBeatmap()
-                    .sortedBy { order[it.id.value] } // Match order from solr
+                    .sortedBy { results.order[it.id.value] } // Match order from solr
                     .map { m -> MapDetail.from(m, cdnPrefix()) }
-                call.respond(SearchResponse(beatmaps, SearchInfo(numRecords, ceil(numRecords / 20f).toInt(), qTime / 1000f)))
+                call.respond(SearchResponse(beatmaps, results.searchInfo))
             }
         }
     }
