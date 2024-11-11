@@ -9,6 +9,7 @@ import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewReplyDetail
+import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
@@ -78,8 +79,7 @@ abstract class FixtureHelpers {
                 it[levelAuthorName] = map.metadata.levelAuthorName
                 it[songAuthorName] = map.metadata.songAuthorName
 
-                it[automapper] = false
-                it[ai] = false
+                it[declaredAi] = AiDeclarationType.None
                 it[plays] = map.stats.plays
             }.value
 
