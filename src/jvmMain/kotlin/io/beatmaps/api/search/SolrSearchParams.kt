@@ -15,7 +15,7 @@ class SolrSearchParams(
             q.all()
         } else {
             // Recombine string without key: or mapper:
-            q.setQuery("${query.replace(':', ' ')} ${quotedSections.joinToString("\" \"", "\"", "\"")}")
+            q.setQuery("${query.replace(specialRegex, " ")} ${quotedSections.joinToString("\" \"", "\"", "\"") { it.replace(specialRegex, " ") }}")
         }
 
     override fun validateSearchOrder(originalOrder: SearchOrder) =
@@ -25,7 +25,7 @@ class SolrSearchParams(
             super.validateSearchOrder(originalOrder)
         }
 
-    fun addSortArgs(q: SolrQuery, seed: Int?, searchOrder: SearchOrder) =
+    fun addSortArgs(q: SolrQuery, seed: Int?, searchOrder: SearchOrder): SolrQuery =
         when (searchOrder) {
             SearchOrder.Relevance -> listOf(
                 (SolrBaseScore product BsSolr.voteScore).desc()
@@ -49,6 +49,8 @@ class SolrSearchParams(
         }
 
     companion object {
+        val specialRegex = Regex("[\\+\\-\\&\\|\\!\\(\\)\\{\\}\\[\\]\\^\\\"\\~\\*\\?\\:\\\\]")
+
         fun parseSearchQuery(q: String) =
             parseSearchQuery(q) { originalQuery, query, quotedSections, bothWithoutQuotes, mappers ->
                 SolrSearchParams(originalQuery, query, quotedSections, bothWithoutQuotes, mappers)
