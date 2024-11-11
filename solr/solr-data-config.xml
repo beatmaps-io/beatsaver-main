@@ -4,9 +4,10 @@
         <entity pk="hexid" name="Beatmaps"
                 query="
                     SELECT b.&quot;mapId&quot; id, to_hex(b.&quot;mapId&quot;) hexid, SUBSTRING(b.name, 0, 2000)::varchar name, SUBSTRING(b.description, 0, 10000)::varchar description, b.&quot;levelAuthorName&quot;::varchar,
-                        u.&quot;uniqueName&quot;::varchar, b.&quot;createdAt&quot;, b.uploaded, b.&quot;updatedAt&quot;, b.&quot;deletedAt&quot;, b.&quot;curatedAt&quot;, b.score, u.&quot;verifiedMapper&quot;,
-                        b.uploader, ARRAY_TO_STRING(b.tags, ',') tagstr, STRING_AGG(d.nps::varchar, ',') npsstr, b.&quot;fullSpread&quot;, ARRAY_TO_STRING(array_merge_agg(d.suggestions), '||') suggestions,
-                        ARRAY_TO_STRING(array_merge_agg(d.requirements), '||') requirements, b.ranked rankedss, b.&quot;blRanked&quot; rankedbl, b.&quot;declaredAi&quot; != 'None' ai, b.bpm, b.duration, b.&quot;curatedBy&quot;,
+                        u.&quot;uniqueName&quot;::varchar, b.&quot;createdAt&quot;, b.uploaded, b.&quot;updatedAt&quot;, b.&quot;deletedAt&quot;, b.&quot;curatedAt&quot;, b.score, b.uploader,
+                        (u.&quot;verifiedMapper&quot; OR bool_or(u2.&quot;verifiedMapper&quot;)) verified, ARRAY_TO_STRING(b.tags, ',') tagstr, STRING_AGG(d.nps::varchar, ',') npsstr,
+                        b.&quot;fullSpread&quot;, ARRAY_TO_STRING(array_merge_agg(d.suggestions), '||') suggestions, ARRAY_TO_STRING(array_merge_agg(d.requirements), '||') requirements,
+                        b.ranked rankedss, b.&quot;blRanked&quot; rankedbl, b.&quot;declaredAi&quot; != 'None' ai, b.bpm, b.duration, b.&quot;curatedBy&quot;,
                         ARRAY_TO_STRING(array_merge(ARRAY_AGG(c.&quot;collaboratorId&quot;), ARRAY[b.uploader]), ',') collaborators
                     FROM beatmap b JOIN uploader u ON b.uploader = u.id JOIN versions v ON b.&quot;mapId&quot; = v.&quot;mapId&quot; AND v.state = 'Published' JOIN difficulty d ON v.&quot;versionId&quot; = d.&quot;versionId&quot;
                         LEFT JOIN collaboration c ON b.&quot;mapId&quot; = c.&quot;mapId&quot; AND c.accepted
@@ -14,7 +15,7 @@
                 deltaQuery="SELECT &quot;mapId&quot; id, to_hex(&quot;mapId&quot;) hexid FROM beatmap WHERE &quot;deletedAt&quot; IS NULL AND &quot;updatedAt&quot; >= '${dataimporter.last_index_time}'"
                 deltaImportQuery="
                     SELECT b.&quot;mapId&quot; id, to_hex(b.&quot;mapId&quot;) hexid, SUBSTRING(b.name, 0, 2000)::varchar name, SUBSTRING(b.description, 0, 10000)::varchar description, b.&quot;levelAuthorName&quot;::varchar, u.&quot;uniqueName&quot;::varchar,
-                        b.&quot;createdAt&quot;, b.uploaded, b.&quot;updatedAt&quot;, b.&quot;deletedAt&quot;, b.&quot;curatedAt&quot;, b.score, u.&quot;verifiedMapper&quot;, b.uploader,
+                        b.&quot;createdAt&quot;, b.uploaded, b.&quot;updatedAt&quot;, b.&quot;deletedAt&quot;, b.&quot;curatedAt&quot;, b.score, (u.&quot;verifiedMapper&quot; OR bool_or(u2.&quot;verifiedMapper&quot;)) verified, b.uploader,
                         ARRAY_TO_STRING(b.tags, ',') tagstr, STRING_AGG(d.nps::varchar, ',') npsstr, b.&quot;fullSpread&quot;, ARRAY_TO_STRING(array_merge_agg(d.suggestions), '||') suggestions,
                         ARRAY_TO_STRING(array_merge_agg(d.requirements), '||') requirements, b.ranked rankedss, b.&quot;blRanked&quot; rankedbl, b.&quot;declaredAi&quot; != 'None' ai, b.bpm, b.duration, b.&quot;curatedBy&quot;,
                         ARRAY_TO_STRING(array_merge(ARRAY_AGG(c.&quot;collaboratorId&quot;), ARRAY[b.uploader]), ',') collaborators
@@ -43,7 +44,7 @@
             <field column="score" name="voteScore"></field>
             <field column="bpm" name="bpm"></field>
             <field column="duration" name="duration"></field>
-            <field column="verifiedMapper" name="verified"></field>
+            <field column="verified" name="verified"></field>
             <field column="uploader" name="mapperId"></field>
             <field column="collaborators" splitBy="," name="mapperIds"></field>
             <field column="tagstr" splitBy="," name="tags"></field>
