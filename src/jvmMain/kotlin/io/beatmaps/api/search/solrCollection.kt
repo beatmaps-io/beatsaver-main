@@ -2,6 +2,8 @@ package io.beatmaps.api.search
 
 import kotlinx.datetime.Instant
 import org.apache.solr.client.solrj.SolrQuery
+import org.apache.solr.common.SolrInputDocument
+import org.jetbrains.exposed.dao.id.EntityID
 
 abstract class SolrCollection {
     private val _fields = mutableListOf<SolrField<*>>()
@@ -19,6 +21,24 @@ abstract class SolrCollection {
     fun boolean(name: String): SolrField<Boolean> = registerField(name)
 
     private fun <T> registerField(name: String) = SolrField<T>(this, name).also { _fields.add(it) }
+}
+
+fun <T : SolrCollection> T.insert(block: T.(SolrDocumentBuilder) -> Unit) {
+    val inputDoc = SolrInputDocument()
+    block(this, SolrDocumentBuilder(inputDoc))
+
+    SolrHelper.solr.add(inputDoc)
+}
+
+class SolrDocumentBuilder(private val inputDoc: SolrInputDocument) {
+    operator fun set(field: SolrField<Instant>, value: java.time.Instant?) =
+        inputDoc.setField(field.name, value?.toString())
+
+    operator fun <T> set(field: SolrField<T>, value: T?) =
+        inputDoc.setField(field.name, value)
+
+    operator fun <T, U : EntityID<T>?> set(field: SolrField<T>, value: U) =
+        inputDoc.setField(field.name, value?.value)
 }
 
 data class SolrField<T>(private val collection: SolrCollection, val name: String) : SolrFunction<T>() {

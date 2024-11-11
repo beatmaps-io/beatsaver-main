@@ -21,7 +21,7 @@ import io.beatmaps.api.questRoute
 import io.beatmaps.api.reviewRoute
 import io.beatmaps.api.scores.ScoreSaberServerException
 import io.beatmaps.api.scoresRoute
-import io.beatmaps.api.search.SolrHelper.solrUpdater
+import io.beatmaps.api.search.SolrImporter.solrUpdater
 import io.beatmaps.api.searchRoute
 import io.beatmaps.api.testplayRoute
 import io.beatmaps.api.userRoute
