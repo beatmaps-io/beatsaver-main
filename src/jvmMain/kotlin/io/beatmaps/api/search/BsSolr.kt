@@ -21,7 +21,6 @@ object BsSolr : SolrCollection() {
     val mapperId = pint("mapperId")
     val curatorId = pint("curatorId")
     val tags = strings("tags")
-    val mods = strings("mods")
     val suggestions = strings("suggestions")
     val requirements = strings("requirements")
     val nps = pfloats("nps")

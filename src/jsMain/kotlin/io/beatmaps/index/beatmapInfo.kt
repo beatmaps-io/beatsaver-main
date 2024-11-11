@@ -64,7 +64,7 @@ class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoSt
                 if (map.curator != null) MapAttr.Curated else null
             ).ifEmpty {
                 listOfNotNull(
-                    if (map.uploader.verifiedMapper) MapAttr.Verified else null
+                    if (map.uploader.verifiedMapper || map.collaborators?.any { it.verifiedMapper } == true) MapAttr.Verified else null
                 )
             }
 

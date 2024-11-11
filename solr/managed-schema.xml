@@ -191,7 +191,6 @@
     <field name="mapperId" type="pint" uninvertible="false" indexed="true" required="true" stored="true"/>
     <field name="curatorId" type="pint" uninvertible="false" indexed="true" stored="true"/>
     <field name="tags" type="strings" uninvertible="false" indexed="true" stored="true"/>
-    <field name="mods" type="strings" uninvertible="false" indexed="true" stored="true"/>
     <field name="suggestions" type="strings" uninvertible="false" indexed="true" stored="true"/>
     <field name="requirements" type="strings" uninvertible="false" indexed="true" stored="true"/>
     <field name="nps" type="pfloats" uninvertible="false" indexed="true" stored="true"/>
