@@ -39,6 +39,12 @@ class SolrDocumentBuilder(private val inputDoc: SolrInputDocument) {
 
     operator fun <T, U : EntityID<T>?> set(field: SolrField<T>, value: U) =
         inputDoc.setField(field.name, value?.value)
+
+    fun <T> update(field: SolrField<T>, value: T?) {
+        val partialUpdate = mutableMapOf<String, T?>()
+        partialUpdate["set"] = value
+        inputDoc.addField(field.name, partialUpdate)
+    }
 }
 
 data class SolrField<T>(private val collection: SolrCollection, val name: String) : SolrFunction<T>() {

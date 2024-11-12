@@ -134,6 +134,7 @@ class SearchApi {
         @Description("Tag query, separated by `,` (and) or `|` (or). Excluded tags are prefixed with `!`.")
         val tags: String? = null,
         @Ignore val mapper: Int? = null,
+        @Ignore val collaborator: Int? = null,
         @Ignore val curator: Int? = null,
         @Ignore val seed: String? = null
     )
@@ -207,6 +208,7 @@ fun Route.searchRoute() {
                     .notNull(it.minRating) { o -> BsSolr.voteScore greaterEq o }
                     .notNull(it.maxRating) { o -> BsSolr.voteScore lessEq o }
                     .notNull(it.mapper) { o -> BsSolr.mapperId eq o }
+                    .notNull(it.collaborator) { o -> BsSolr.mapperIds eq o }
                     .notNull(it.from) { o -> BsSolr.uploaded greaterEq o }
                     .notNull(it.to) { o -> BsSolr.uploaded lessEq o }
                     .notNull(it.minBpm) { o -> BsSolr.bpm greaterEq o }

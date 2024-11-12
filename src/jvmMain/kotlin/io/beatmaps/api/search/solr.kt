@@ -1,6 +1,7 @@
 package io.beatmaps.api.search
 
 import io.beatmaps.api.SearchInfo
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.solr.client.solrj.impl.BaseHttpSolrClient.RemoteSolrException
 import org.apache.solr.client.solrj.impl.Http2SolrClient
@@ -19,6 +20,8 @@ object SolrHelper {
             .withDefaultCollection(solrCollection)
             .build()
     }
+
+    val logger = KotlinLogging.logger {}
 }
 
 val emptyResults = SolrResults(listOf(), 0, 0)
@@ -44,6 +47,6 @@ fun SolrQuery.getMapIds(page: Int = 0, pageSize: Int = 20) =
 
         SolrResults(mapIds, response.qTime, numRecords)
     } catch (e: RemoteSolrException) {
-        // Ignore
+        SolrHelper.logger.warn(e) { "Failed to perform solr query $this" }
         emptyResults
     }

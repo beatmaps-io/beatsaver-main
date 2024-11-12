@@ -14,7 +14,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 object SolrImporter {
-    suspend fun trigger(updateMapId: Int) {
+    private suspend fun trigger(updateMapId: Int) {
         newSuspendedTransaction {
             val map = Beatmap
                 .joinVersions(true)
