@@ -1244,7 +1244,7 @@ div.mapstats {
 
     > .nav-link {
       padding: .5rem;
-      margin: 0 1rem;
+      margin: 0 .5rem;
       color: #888;
       border-bottom: 3px solid transparent;
       transition: border-bottom-color 0.2s, color 0.2s;
@@ -1702,6 +1702,10 @@ small.alert-count {
     .dropdown-menu {
       transform: translate(-125px, 0);
     }
+  }
+  .nav-minimal li > .nav-link {
+    padding: .5rem 1rem;
+    margin: 0 1rem;
   }
 }
 
