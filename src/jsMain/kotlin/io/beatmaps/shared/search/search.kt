@@ -11,7 +11,6 @@ import kotlinx.browser.document
 import kotlinx.html.ButtonType
 import kotlinx.html.DIV
 import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLDivElement
@@ -25,15 +24,12 @@ import react.State
 import react.createElement
 import react.createRef
 import react.dom.RDOMBuilder
-import react.dom.attrs
 import react.dom.button
 import react.dom.div
 import react.dom.form
 import react.dom.h4
 import react.dom.i
 import react.dom.input
-import react.dom.option
-import react.dom.select
 import react.dom.span
 import react.setState
 
@@ -129,7 +125,6 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
     private fun updateUI() {
         val fromParams = props.typedState
         inputRef.current?.value = fromParams?.search ?: ""
-        sortRef.current?.selectedIndex = (fromParams?.sortOrder ?: SearchOrder.Relevance).idx
 
         setState {
             filterRefs.forEach { (filter, filterRef) ->
@@ -312,23 +307,14 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                     }
                 }
                 div("mb-3 col-sm-3") {
-                    select("form-select") {
-                        ref = sortRef
-                        attrs {
-                            attributes["aria-label"] = "Sort by"
-                            onChangeFunction = {
-                                setState {
-                                    order = SearchOrder.fromString(sortRef.current?.value ?: "") ?: SearchOrder.Relevance
-                                }
+                    sort {
+                        attrs.target = props.sortOrderTarget
+                        attrs.cb = {
+                            setState {
+                                order = it
                             }
                         }
-                        SearchOrder.entries.filter { props.sortOrderTarget in it.targets }.forEach {
-                            option {
-                                attrs.value = it.toString()
-                                attrs.selected = state.order == it
-                                +it.toString()
-                            }
-                        }
+                        attrs.default = state.order
                     }
                 }
             }
