@@ -22,7 +22,6 @@ import io.beatmaps.util.hashRegex
 import io.beatmaps.util.useAudio
 import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.browser.window
-import kotlinx.datetime.Instant
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
@@ -43,6 +42,7 @@ external interface BeatmapTableProps : Props {
     var wip: Boolean?
     var updateScrollIndex: ((Int) -> Unit)?
     var visible: Boolean?
+    var fallbackOrder: SearchOrder?
 }
 
 data class SearchParams(
@@ -68,7 +68,6 @@ data class SearchParams(
 val beatmapTable = fc<BeatmapTableProps> { props ->
     val (user, setUser) = useState<UserDetail?>(null)
     val (resultsKey, setResultsKey) = useState(Any())
-    val minTimeRef = useRef<Instant>(null)
 
     val resultsTable = useRef<HTMLElement>()
     val audio = useAudio()
@@ -76,7 +75,7 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
     val history = History(useNavigate())
     val config = useContext(configContext)
 
-    useDidUpdateEffect(props.user, props.wip, props.curated, props.search) {
+    useDidUpdateEffect(props.user, props.wip, props.curated, props.search, props.fallbackOrder) {
         setUser(null)
         setResultsKey(Any())
     }
@@ -100,10 +99,11 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
         if (props.wip == true) {
             "${Config.apibase}/maps/wip/$page"
         } else if (props.curated == true && props.user != null) {
-            "${Config.apibase}/search/${if (config?.v2Search == true) "v2" else "text"}/$page?sortOrder=Curated&curator=${props.user}&automapper=true"
+            "${Config.apibase}/search/${if (config?.v2Search == true) "v2" else "text"}/$page?curator=${props.user}&automapper=true" +
+                (props.fallbackOrder?.let { "&sortOrder=$it" } ?: "")
         } else if (props.user != null) {
-            "${Config.apibase}/maps/collaborations/${props.user}?" +
-                (minTimeRef.current?.let { "&before=$it" } ?: "")
+            "${Config.apibase}/search/v2/$page?collaborator=${props.user}&automapper=true" +
+                (props.fallbackOrder?.let { "&sortOrder=$it" } ?: "")
         } else {
             props.search?.let { search ->
                 val tagStr = search.tags.toQuery()
@@ -155,10 +155,6 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
                 return@then null
             }
 
-            val newMin = it.data.docs?.mapNotNull { doc -> doc.uploaded }?.minOrNull()
-            if (newMin != null && (minTimeRef.current?.let { minTime -> newMin < minTime } != false)) {
-                minTimeRef.current = newMin
-            }
             return@then it.data.docs
         }
     }

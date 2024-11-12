@@ -7,7 +7,6 @@ import external.generateConfig
 import external.reactFor
 import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
-import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SearchParamsPlaylist
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.SortOrderTarget
@@ -18,6 +17,7 @@ import io.beatmaps.shared.form.multipleChoice
 import io.beatmaps.shared.form.slider
 import io.beatmaps.shared.form.toggle
 import io.beatmaps.shared.search.presets
+import io.beatmaps.shared.search.sort
 import io.beatmaps.shared.search.tags
 import kotlinx.datetime.Instant
 import kotlinx.html.InputType
@@ -224,21 +224,13 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                     attrs.reactFor = "sort-by"
                     +"Sort by"
                 }
-                select("form-select") {
-                    attrs {
-                        id = "sort-by"
-                        disabled = props.loading
-                        onChangeFunction = { ev ->
-                            setOrder(SearchOrder.fromString((ev.target as HTMLSelectElement).value) ?: SearchOrder.Relevance)
-                        }
+                sort {
+                    attrs.target = SortOrderTarget.Map
+                    attrs.cb = {
+                        setOrder(it)
                     }
-                    SearchOrder.entries.filter { SortOrderTarget.Map in it.targets }.forEach {
-                        option {
-                            attrs.value = it.toString()
-                            attrs.selected = it == order
-                            +it.toString()
-                        }
-                    }
+                    attrs.default = order
+                    attrs.id = "sort-by"
                 }
             }
             div("mb-3") {

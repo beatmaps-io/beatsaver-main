@@ -10,6 +10,8 @@ import io.beatmaps.UserData
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserFollowData
 import io.beatmaps.api.UserFollowRequest
+import io.beatmaps.common.SearchOrder
+import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.common.json
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
@@ -21,6 +23,7 @@ import io.beatmaps.index.modalContext
 import io.beatmaps.playlist.playlistTable
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.review.reviewTable
+import io.beatmaps.shared.search.sort
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.userTitles
 import kotlinx.browser.document
@@ -90,6 +93,9 @@ val profilePage = fc<Props> { _ ->
     val (followData, setFollowData) = useState<UserFollowData>()
     val (followsDropdown, setFollowsDropdown) = useState(false)
     val (loading, setLoading) = useState(false)
+    val publishedSortOrder = useState(SearchOrder.Relevance)
+    val curationsSortOrder = useState(SearchOrder.Curated)
+    val (sortOrder, setSortOrder) = if (tabState == ProfileTab.CURATED) curationsSortOrder else publishedSortOrder
 
     val location = useLocation()
     val history = History(useNavigate())
@@ -498,6 +504,18 @@ val profilePage = fc<Props> { _ ->
                     }
                 }
             }
+
+            if (setOf(ProfileTab.PUBLISHED, ProfileTab.CURATED).contains(tabState)) {
+                li("nav-item right") {
+                    sort {
+                        attrs.target = SortOrderTarget.UserMap
+                        attrs.cb = {
+                            setSortOrder(it)
+                        }
+                        attrs.default = sortOrder
+                    }
+                }
+            }
         }
         if (userDetail != null) {
             playlistTable {
@@ -511,6 +529,7 @@ val profilePage = fc<Props> { _ ->
                     attrs.wip = tabState == ProfileTab.UNPUBLISHED
                     attrs.curated = tabState == ProfileTab.CURATED
                     attrs.visible = setOf(ProfileTab.UNPUBLISHED, ProfileTab.PUBLISHED, ProfileTab.CURATED).contains(tabState)
+                    attrs.fallbackOrder = sortOrder
                 }
             }
         }
