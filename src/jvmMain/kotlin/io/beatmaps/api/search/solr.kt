@@ -41,7 +41,7 @@ fun SolrQuery.getMapIds(page: Int = 0, pageSize: Int = 20, bf: String = "") =
                 .setFields("id")
                 .setStart(page * pageSize).setRows(pageSize)
                 .set("defType", "edismax")
-                .set("qf", "name^3 author^10 description^0.5")
+                .set("qf", "name_en^3 author^10 description_en^0.5")
                 .set("boost", bf)
         )
 
