@@ -5,6 +5,7 @@ import io.beatmaps.api.PlaylistApi
 import io.beatmaps.api.from
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
+import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization
 import io.ktor.server.application.call
@@ -25,9 +26,9 @@ fun Route.playlistCurate() {
                 val playlistUpdate = call.receive<CuratePlaylist>()
 
                 val result = transaction {
-                    io.beatmaps.common.dbo.Playlist.updateReturning(
+                    Playlist.updateReturning(
                         {
-                            (io.beatmaps.common.dbo.Playlist.id eq playlistUpdate.id) and (if (playlistUpdate.curated) io.beatmaps.common.dbo.Playlist.curatedAt.isNull() else io.beatmaps.common.dbo.Playlist.curatedAt.isNotNull()) and io.beatmaps.common.dbo.Playlist.deletedAt.isNull()
+                            (Playlist.id eq playlistUpdate.id) and (if (playlistUpdate.curated) Playlist.curatedAt.isNull() else Playlist.curatedAt.isNotNull()) and Playlist.deletedAt.isNull()
                         },
                         {
                             if (playlistUpdate.curated) {

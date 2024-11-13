@@ -244,7 +244,7 @@ fun Route.searchRoute() {
                     .let { q ->
                         searchInfo.addSortArgs(q, it.seed.hashCode(), actualSortOrder)
                     }
-                    .getMapIds(page = it.page.toInt())
+                    .getMapIds(page = it.page.toInt(), bf = if (actualSortOrder == SearchOrder.Relevance) "voteScore" else "")
 
                 val beatmaps = Beatmap
                     .joinVersions(true)

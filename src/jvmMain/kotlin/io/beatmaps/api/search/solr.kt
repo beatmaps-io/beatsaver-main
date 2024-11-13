@@ -34,12 +34,15 @@ data class SolrResults(val mapIds: List<Int>, val qTime: Int, val numRecords: In
 fun SolrQuery.all(): SolrQuery =
     this.setQuery("*:*")
 
-fun SolrQuery.getMapIds(page: Int = 0, pageSize: Int = 20) =
+fun SolrQuery.getMapIds(page: Int = 0, pageSize: Int = 20, bf: String = "") =
     try {
         val response = SolrHelper.solr.query(
             this
                 .setFields("id")
                 .setStart(page * pageSize).setRows(pageSize)
+                .set("defType", "edismax")
+                .set("qf", "name^3 author^10 description^0.5")
+                .set("boost", bf)
         )
 
         val mapIds = response.results.mapNotNull { it["id"] as? Int }

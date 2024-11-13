@@ -28,7 +28,7 @@ class SolrSearchParams(
     fun addSortArgs(q: SolrQuery, seed: Int?, searchOrder: SearchOrder): SolrQuery =
         when (searchOrder) {
             SearchOrder.Relevance -> listOf(
-                (SolrBaseScore product BsSolr.voteScore).desc()
+                SolrScore.desc()
             )
             SearchOrder.Rating -> listOf(
                 BsSolr.voteScore.desc(),

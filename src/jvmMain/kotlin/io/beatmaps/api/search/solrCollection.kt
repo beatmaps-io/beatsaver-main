@@ -62,6 +62,10 @@ object SolrBaseScore : SolrFunction<Float>() {
     override fun toText() = "query(\$q)"
 }
 
+object SolrScore : SolrFunction<Float>() {
+    override fun toText() = "score"
+}
+
 class SolrProduct<T>(private val a: SolrFunction<T>, private val b: SolrFunction<T>) : SolrFunction<T>() {
     override fun toText() = "product(${a.toText()}, ${b.toText()})"
 }
