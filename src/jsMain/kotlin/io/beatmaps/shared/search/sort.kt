@@ -18,6 +18,7 @@ external interface SortProps : Props {
     var default: SearchOrder?
     var target: SortOrderTarget
     var id: String?
+    var dark: Boolean?
 }
 
 val sort = fc<SortProps> { props ->
@@ -28,7 +29,12 @@ val sort = fc<SortProps> { props ->
         setSortOrder(default)
     }
 
-    select("form-select") {
+    val classes = listOfNotNull(
+        "form-select",
+        if (props.dark == true) "dark" else null
+    ).joinToString(" ")
+
+    select(classes) {
         attrs {
             id = props.id ?: ""
             attributes["aria-label"] = "Sort by"

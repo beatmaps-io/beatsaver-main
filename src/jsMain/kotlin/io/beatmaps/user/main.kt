@@ -513,6 +513,7 @@ val profilePage = fc<Props> { _ ->
                             setSortOrder(it)
                         }
                         attrs.default = sortOrder
+                        attrs.dark = true
                     }
                 }
             }
