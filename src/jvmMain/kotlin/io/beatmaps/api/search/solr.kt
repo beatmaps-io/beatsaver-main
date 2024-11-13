@@ -41,8 +41,9 @@ fun SolrQuery.getMapIds(page: Int = 0, pageSize: Int = 20, bf: String = "") =
                 .setFields("id")
                 .setStart(page * pageSize).setRows(pageSize)
                 .set("defType", "edismax")
-                .set("qf", "name_en^3 author^10 description_en^0.5")
+                .set("qf", "name^4 name_en author^10 author_en^2 description_en^0.5")
                 .set("boost", bf)
+                .set("tie", "0.1")
         )
 
         val mapIds = response.results.mapNotNull { it["id"] as? Int }
