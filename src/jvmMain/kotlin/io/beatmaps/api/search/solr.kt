@@ -5,6 +5,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.solr.client.solrj.impl.BaseHttpSolrClient.RemoteSolrException
 import org.apache.solr.client.solrj.impl.Http2SolrClient
+import org.apache.solr.common.params.ModifiableSolrParams
 import kotlin.math.ceil
 
 object SolrHelper {
@@ -34,15 +35,15 @@ data class SolrResults(val mapIds: List<Int>, val qTime: Int, val numRecords: In
 fun SolrQuery.all(): SolrQuery =
     this.setQuery("*:*")
 
-fun SolrQuery.getMapIds(page: Int = 0, pageSize: Int = 20, bf: String = "") =
+fun SolrQuery.paged(page: Int = 0, pageSize: Int = 20): SolrQuery =
+    this
+        .setFields("id")
+        .setStart(page * pageSize).setRows(pageSize)
+
+fun ModifiableSolrParams.getMapIds() =
     try {
         val response = SolrHelper.solr.query(
             this
-                .setFields("id")
-                .setStart(page * pageSize).setRows(pageSize)
-                .set("defType", "edismax")
-                .set("qf", "name_en^3 author^10 description_en^0.5")
-                .set("boost", bf)
         )
 
         val mapIds = response.results.mapNotNull { it["id"] as? Int }

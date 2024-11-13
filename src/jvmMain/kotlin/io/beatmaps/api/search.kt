@@ -15,6 +15,7 @@ import io.beatmaps.api.search.eq
 import io.beatmaps.api.search.getMapIds
 import io.beatmaps.api.search.greaterEq
 import io.beatmaps.api.search.lessEq
+import io.beatmaps.api.search.paged
 import io.beatmaps.common.MapTagQuery
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.AiDeclarationType
@@ -244,7 +245,12 @@ fun Route.searchRoute() {
                     .let { q ->
                         searchInfo.addSortArgs(q, it.seed.hashCode(), actualSortOrder)
                     }
-                    .getMapIds(page = it.page.toInt(), bf = if (actualSortOrder == SearchOrder.Relevance) "voteScore" else "")
+                    .paged(page = it.page.toInt())
+                    .set("defType", "edismax")
+                    .set("qf", "name^4 name_en author^10 author_en^2 description_en^0.5")
+                    .set("boost", if (actualSortOrder == SearchOrder.Relevance) "voteScore" else "")
+                    .set("tie", "0.1")
+                    .getMapIds()
 
                 val beatmaps = Beatmap
                     .joinVersions(true)
