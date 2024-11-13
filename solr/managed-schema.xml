@@ -137,7 +137,7 @@
             <filter name="lowercase"/>
         </analyzer>
     </fieldType>
-    <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100" multiValued="true">
+    <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
         <analyzer type="index">
             <tokenizer name="standard"/>
             <filter words="stopwords.txt" ignoreCase="true" name="stop"/>
@@ -171,15 +171,18 @@
     </fieldType>
     <field name="_text_" type="text_en" uninvertible="false" indexed="true" multiValued="true" stored="false"/>
     <field name="_version_" type="plong" uninvertible="false" multiValued="false" indexed="true" stored="true"/>
-    <field name="author" type="string" uninvertible="false" indexed="true" stored="true"/>
+    <field name="author" type="text_general" uninvertible="false" indexed="true" stored="true"/>
+    <field name="author_en" type="text_en" uninvertible="false" indexed="true" stored="false"/>
     <field name="created" type="pdate" uninvertible="false" indexed="true" required="true" stored="true"/>
     <field name="deleted" type="pdate" uninvertible="false" indexed="true" stored="true"/>
-    <field name="description" type="string" uninvertible="false" indexed="true" stored="true"/>
+    <field name="description" type="text_general" uninvertible="false" indexed="true" stored="true"/>
+    <field name="description_en" type="text_en" uninvertible="false" indexed="true" stored="false"/>
     <field name="id" type="pint" uninvertible="false" indexed="true" required="true" stored="true"/>
     <field name="mapId" type="string" uninvertible="false" indexed="true" required="true" stored="true"/>
     <field name="mapper" type="string" uninvertible="false" indexed="true" stored="true"/>
     <field name="mapperIds" type="pints" uninvertible="false" indexed="true" stored="true"/>
-    <field name="name" type="string" uninvertible="false" indexed="true" stored="true"/>
+    <field name="name" type="text_general" uninvertible="false" indexed="true" stored="true"/>
+    <field name="name_en" type="text_en" uninvertible="false" indexed="true" stored="false"/>
     <field name="updated" type="pdate" uninvertible="false" indexed="true" required="true" stored="true"/>
     <field name="curated" type="pdate" uninvertible="false" indexed="true" stored="true"/>
     <field name="uploaded" type="pdate" uninvertible="false" indexed="true" stored="true"/>
@@ -200,5 +203,8 @@
     <copyField source="author" dest="_text_"/>
     <copyField source="description" dest="_text_"/>
     <copyField source="name" dest="_text_"/>
+    <copyField source="author" dest="author_en"/>
+    <copyField source="description" dest="description_en"/>
+    <copyField source="name" dest="name_en"/>
     <dynamicField name="random_*" type="random" />
 </schema>
