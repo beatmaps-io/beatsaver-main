@@ -171,15 +171,15 @@
     </fieldType>
     <field name="_text_" type="text_en" uninvertible="false" indexed="true" multiValued="true" stored="false"/>
     <field name="_version_" type="plong" uninvertible="false" multiValued="false" indexed="true" stored="true"/>
-    <field name="author" type="string" uninvertible="false" indexed="true" stored="true"/>
+    <field name="author" type="text_general" uninvertible="false" indexed="true" stored="true"/>
     <field name="created" type="pdate" uninvertible="false" indexed="true" required="true" stored="true"/>
     <field name="deleted" type="pdate" uninvertible="false" indexed="true" stored="true"/>
-    <field name="description" type="string" uninvertible="false" indexed="true" stored="true"/>
+    <field name="description" type="text_en" uninvertible="false" indexed="true" stored="true"/>
     <field name="id" type="pint" uninvertible="false" indexed="true" required="true" stored="true"/>
     <field name="mapId" type="string" uninvertible="false" indexed="true" required="true" stored="true"/>
     <field name="mapper" type="string" uninvertible="false" indexed="true" stored="true"/>
     <field name="mapperIds" type="pints" uninvertible="false" indexed="true" stored="true"/>
-    <field name="name" type="string" uninvertible="false" indexed="true" stored="true"/>
+    <field name="name" type="text_en" uninvertible="false" indexed="true" stored="true"/>
     <field name="updated" type="pdate" uninvertible="false" indexed="true" required="true" stored="true"/>
     <field name="curated" type="pdate" uninvertible="false" indexed="true" stored="true"/>
     <field name="uploaded" type="pdate" uninvertible="false" indexed="true" stored="true"/>
