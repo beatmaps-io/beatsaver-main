@@ -12,6 +12,7 @@ import io.beatmaps.api.search.BsSolr
 import io.beatmaps.api.search.all
 import io.beatmaps.api.search.eq
 import io.beatmaps.api.search.getMapIds
+import io.beatmaps.api.search.paged
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.MapTag
@@ -660,7 +661,8 @@ fun Route.mapDetailRoute() {
             .notNull(it.before) { o -> BsSolr.uploaded less o }
             .notNull(it.id) { o -> BsSolr.mapperIds eq o }
             .setSort(BsSolr.uploaded.desc())
-            .getMapIds(pageSize = pageSize)
+            .paged(pageSize = pageSize)
+            .getMapIds()
 
         val beatmaps = newSuspendedTransaction {
             Beatmap
