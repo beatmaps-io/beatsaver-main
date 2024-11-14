@@ -27,4 +27,9 @@ object BsSolr : SolrCollection() {
     val fullSpread = boolean("fullSpread")
     val bpm = pfloat("bpm")
     val duration = pint("duration")
+
+    // Copy fields
+    val authorEn = string("author_en")
+    val nameEn = string("name_en")
+    val descriptionEn = string("description_en")
 }
