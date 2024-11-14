@@ -7,6 +7,8 @@ import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.api.search.BsSolr
+import io.beatmaps.api.search.EDisMaxQuery
+import io.beatmaps.api.search.PercentageMinimumMatchExpression
 import io.beatmaps.api.search.PgSearchParams
 import io.beatmaps.api.search.SolrFilter
 import io.beatmaps.api.search.SolrSearchParams
@@ -177,7 +179,20 @@ fun Route.searchRoute() {
                     listOf()
                 }
 
-                val results = SolrQuery()
+                val results = EDisMaxQuery()
+                    .setBoost(if (actualSortOrder == SearchOrder.Relevance) BsSolr.voteScore else null)
+                    .setQueryFields(
+                        BsSolr.name to 4.0,
+                        BsSolr.nameEn to 1.0,
+                        BsSolr.author to 10.0,
+                        BsSolr.authorEn to 2.0,
+                        BsSolr.descriptionEn to 0.5
+                    )
+                    .setTie(0.1)
+                    .setMinimumMatch(
+                        // Force 50% of query terms to match
+                        PercentageMinimumMatchExpression(-0.5f)
+                    )
                     .let { q ->
                         searchInfo.applyQuery(q)
                     }
@@ -246,10 +261,6 @@ fun Route.searchRoute() {
                         searchInfo.addSortArgs(q, it.seed.hashCode(), actualSortOrder)
                     }
                     .paged(page = it.page.toInt())
-                    .set("defType", "edismax")
-                    .set("qf", "name^4 name_en author^10 author_en^2 description_en^0.5")
-                    .set("boost", if (actualSortOrder == SearchOrder.Relevance) "voteScore" else "")
-                    .set("tie", "0.1")
                     .getMapIds()
 
                 val beatmaps = Beatmap
