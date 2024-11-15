@@ -9,10 +9,10 @@ import io.beatmaps.api.PlaylistBasic
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistSearchResponse
 import io.beatmaps.api.from
-import io.beatmaps.api.getWithOptions
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
 import io.beatmaps.api.search.PgSearchParams
+import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.db.PgConcat

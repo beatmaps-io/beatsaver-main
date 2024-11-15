@@ -1,4 +1,4 @@
-package io.beatmaps.api
+package io.beatmaps.api.util
 
 import de.nielsfalk.ktor.swagger.Metadata
 import de.nielsfalk.ktor.swagger.get

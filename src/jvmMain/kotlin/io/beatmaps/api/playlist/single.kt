@@ -13,7 +13,7 @@ import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
 import io.beatmaps.api.PlaylistSong
 import io.beatmaps.api.from
-import io.beatmaps.api.getWithOptions
+import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
 import io.beatmaps.api.of

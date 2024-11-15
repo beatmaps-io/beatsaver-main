@@ -2,7 +2,7 @@ package io.beatmaps.controllers
 
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
-import io.beatmaps.api.getWithOptions
+import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.DownloadInfo
 import io.beatmaps.common.DownloadType
 import io.beatmaps.common.Folders

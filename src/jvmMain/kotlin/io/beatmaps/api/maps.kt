@@ -13,6 +13,7 @@ import io.beatmaps.api.search.all
 import io.beatmaps.api.search.eq
 import io.beatmaps.api.search.getMapIds
 import io.beatmaps.api.search.paged
+import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.MapTag
