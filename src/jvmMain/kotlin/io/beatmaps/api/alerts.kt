@@ -34,7 +34,6 @@ import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.not
 import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.unionAll
@@ -62,13 +61,30 @@ class AlertsApi {
     data class MarkAll(val api: AlertsApi)
 }
 
-fun alertCount(userId: Int) = AlertRecipient
-    .join(Collaboration, JoinType.FULL) { Op.FALSE }
-    .select(AlertRecipient.id)
-    .where {
-        (AlertRecipient.recipientId eq userId and AlertRecipient.readAt.isNull()) or
-            (Collaboration.collaboratorId eq userId and not(Collaboration.accepted))
-    }.count().toInt()
+val ac = AlertRecipient.id.count().alias("ac")
+val cc = Collaboration.collaboratorId.count().alias("cc")
+fun alertCount(userId: Int): Int {
+    val alertCount = AlertRecipient
+        .select(ac)
+        .where {
+            AlertRecipient.recipientId eq userId and AlertRecipient.readAt.isNull()
+        }
+        .alias("a")
+
+    val collabCount = Collaboration
+        .select(cc)
+        .where {
+            Collaboration.collaboratorId eq userId and not(Collaboration.accepted)
+        }
+        .alias("c")
+
+    return alertCount
+        .join(collabCount, JoinType.LEFT, additionalConstraint = { Op.TRUE })
+        .select(alertCount[ac], collabCount[cc])
+        .firstOrNull()?.let {
+            it[alertCount[ac]] + it[collabCount[cc]]
+        }?.toInt() ?: 0
+}
 
 fun UserAlert.Companion.from(collaboration: CollaborationDetail) = collaboration.map?.let { map ->
     UserAlert(
@@ -141,30 +157,35 @@ fun Route.alertsRoute() {
         }
     }
 
-    fun getStats(userId: Int) = AlertRecipient
-        .join(Alert, JoinType.LEFT, AlertRecipient.alertId, Alert.id)
-        .join(Collaboration, JoinType.FULL) { Op.FALSE }
-        .select(AlertRecipient.id.count(), AlertRecipient.readAt.isNull(), Alert.type, Collaboration.id.count())
-        .where {
-            (AlertRecipient.recipientId eq userId) or
-                (Collaboration.collaboratorId eq userId and not(Collaboration.accepted))
-        }
-        .groupBy(Alert.type, AlertRecipient.readAt.isNull())
-        .mapNotNull {
-            if (it.getOrNull(Alert.type) != null) {
-                StatPart(
-                    it[Alert.type],
-                    !it[AlertRecipient.readAt.isNull()],
-                    it[AlertRecipient.id.count()]
-                )
-            } else if (it.getOrNull(Collaboration.id.count()) != null) {
-                StatPart(
-                    EAlertType.Collaboration,
-                    false,
-                    it[Collaboration.id.count()]
-                )
-            } else { null }
-        }
+    fun getStats(userId: Int) =
+        AlertRecipient
+            .join(Alert, JoinType.LEFT, AlertRecipient.alertId, Alert.id)
+            .select(AlertRecipient.id.count(), AlertRecipient.readAt.isNull(), Alert.type)
+            .where {
+                (AlertRecipient.recipientId eq userId)
+            }
+            .groupBy(Alert.type, AlertRecipient.readAt.isNull())
+            .unionAll(
+                Collaboration
+                    .select(Collaboration.id.count(), Op.nullOp<Boolean>(), Op.nullOp<EAlertType>())
+                    .where {
+                        Collaboration.collaboratorId eq userId and not(Collaboration.accepted)
+                    }
+            ).map {
+                if (it.getOrNull(Alert.type) != null) {
+                    StatPart(
+                        it[Alert.type],
+                        !it[AlertRecipient.readAt.isNull()],
+                        it[AlertRecipient.id.count()]
+                    )
+                } else {
+                    StatPart(
+                        EAlertType.Collaboration,
+                        false,
+                        it[AlertRecipient.id.count()]
+                    )
+                }
+            }
 
     get<AlertsApi.Stats> {
         requireAuthorization(OauthScope.ALERTS) { _, sess ->
