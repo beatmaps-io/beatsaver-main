@@ -19,4 +19,16 @@ open class DisMaxQuery : SolrQuery() {
     fun setMinimumMatch(vararg exp: MinimumMatchExpression) = this.also {
         set(DisMaxParams.MM, exp.joinToString(" ") { it.toText() })
     }
+
+    fun setPhraseFields(vararg fields: Pair<SolrField<*>, Double>) = this.also {
+        set(DisMaxParams.PF, fields.joinToString(" ") { "${it.first.toText()}^${it.second}" })
+    }
+
+    fun setPhraseSlop(slop: Int) = this.also {
+        set(DisMaxParams.PS, slop.toString())
+    }
+
+    fun setQueryPhraseSlop(slop: Int) = this.also {
+        set(DisMaxParams.QS, slop.toString())
+    }
 }
