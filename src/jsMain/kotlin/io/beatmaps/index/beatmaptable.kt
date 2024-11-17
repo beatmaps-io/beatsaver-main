@@ -99,16 +99,16 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
         if (props.wip == true) {
             "${Config.apibase}/maps/wip/$page"
         } else if (props.curated == true && props.user != null) {
-            "${Config.apibase}/search/${if (config?.v2Search == true) "v2" else "text"}/$page?curator=${props.user}&automapper=true" +
+            "${Config.apibase}/search/${if (config?.v2Search == true) "text" else "v1"}/$page?curator=${props.user}&automapper=true" +
                 (props.fallbackOrder?.let { "&sortOrder=$it" } ?: "")
         } else if (props.user != null) {
-            "${Config.apibase}/search/v2/$page?collaborator=${props.user}&automapper=true" +
+            "${Config.apibase}/search/text/$page?collaborator=${props.user}&automapper=true" +
                 (props.fallbackOrder?.let { "&sortOrder=$it" } ?: "")
         } else {
             props.search?.let { search ->
                 val tagStr = search.tags.toQuery()
 
-                "${Config.apibase}/search/${if (config?.v2Search == true) "v2" else "text"}/$page?sortOrder=${search.sortOrder}" +
+                "${Config.apibase}/search/${if (config?.v2Search == true) "text" else "v1"}/$page?sortOrder=${search.sortOrder}" +
                     (if (search.automapper != null) "&automapper=${search.automapper}" else "") +
                     (if (search.chroma != null) "&chroma=${search.chroma}" else "") +
                     (if (search.noodle != null) "&noodle=${search.noodle}" else "") +

@@ -7,6 +7,7 @@ import de.nielsfalk.ktor.swagger.responds
 import io.beatmaps.api.user.UserCrypto
 import io.beatmaps.api.user.from
 import io.beatmaps.api.user.getAvatar
+import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.Config
 import io.beatmaps.common.EmailChangedData
 import io.beatmaps.common.PasswordChangedData

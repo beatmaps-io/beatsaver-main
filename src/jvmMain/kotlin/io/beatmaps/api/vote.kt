@@ -7,6 +7,8 @@ import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.api.search.BsSolr
 import io.beatmaps.api.search.insert
+import io.beatmaps.api.util.getWithOptions
+import io.beatmaps.api.util.postWithOptions
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
@@ -33,6 +35,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
+import org.apache.solr.client.solrj.SolrServerException
 import org.jetbrains.exposed.sql.Count
 import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.coalesce
@@ -91,7 +94,6 @@ fun Route.voteRoute(client: HttpClient) {
                 val rawScore = upVotes / totalVotes
                 val scoreWeighted = rawScore - (rawScore - 0.5) * 2.0.pow(-log(totalVotes / 2 + 1, 3.0))
 
-                var uploader: Int? = null
                 Beatmap.updateReturning(
                     {
                         Beatmap.id eq body.mapId
@@ -102,17 +104,24 @@ fun Route.voteRoute(client: HttpClient) {
                         it[downVotesInt] = downVotes.toInt()
                         it[lastVoteAt] = NowExpression(lastVoteAt)
                     },
-                    Beatmap.uploader
-                )?.firstOrNull()?.let {
-                    uploader = it[Beatmap.uploader].value
-                }
+                    Beatmap.uploader, Beatmap.deletedAt
+                )?.firstOrNull()?.let { row ->
+                    // Don't even try to update index if map is deleted
+                    val mapDeleted = row[Beatmap.deletedAt] != null
+                    if (!mapDeleted) {
+                        try {
+                            BsSolr.insert {
+                                it[mapId] = toHexString(body.mapId)
+                                it.update(voteScore, scoreWeighted.toFloat())
+                            }
+                        } catch (ex: SolrServerException) {
+                            // This can fail when voting on maps that have been unpublished / deleted
+                            // Assume future votes / map updates will correct any inconsistency
+                        }
+                    }
 
-                BsSolr.insert {
-                    it[mapId] = toHexString(body.mapId)
-                    it.update(voteScore, scoreWeighted.toFloat())
+                    row[Beatmap.uploader].value
                 }
-
-                uploader
             }?.let { uploader ->
                 publish("beatmaps", "user.stats.$uploader", null, uploader)
                 publish("beatmaps", "voteupdate.${body.mapId}", null, body.mapId)

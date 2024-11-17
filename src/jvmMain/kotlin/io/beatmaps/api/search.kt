@@ -11,6 +11,7 @@ import io.beatmaps.api.search.EDisMaxQuery
 import io.beatmaps.api.search.PercentageMinimumMatchExpression
 import io.beatmaps.api.search.PgSearchParams
 import io.beatmaps.api.search.SolrFilter
+import io.beatmaps.api.search.SolrHelper
 import io.beatmaps.api.search.SolrSearchParams
 import io.beatmaps.api.search.apply
 import io.beatmaps.api.search.eq
@@ -18,6 +19,7 @@ import io.beatmaps.api.search.getMapIds
 import io.beatmaps.api.search.greaterEq
 import io.beatmaps.api.search.lessEq
 import io.beatmaps.api.search.paged
+import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.MapTagQuery
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.AiDeclarationType
@@ -46,9 +48,11 @@ import io.beatmaps.common.toQuery
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
+import io.ktor.http.path
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
@@ -74,7 +78,7 @@ private val searchLogger = Logger.getLogger("bmio.Search")
 @Location("/api")
 class SearchApi {
     @Group("Search")
-    @Location("/search/text/{page}")
+    @Location("/search/v1/{page}")
     data class Text(
         val q: String = "",
         @Description("Options are a little weird, I may add another enum field in future to make this clearer.\ntrue = both, false = only ai, null = no ai") val automapper: Boolean? = null,
@@ -108,7 +112,7 @@ class SearchApi {
     )
 
     @Group("Search")
-    @Location("/search/v2/{page}")
+    @Location("/search/text/{page}")
     data class Solr(
         val q: String = "",
         @Description("Options are a little weird, I may add another enum field in future to make this clearer.\ntrue = both, false = only ai, null = no ai") val automapper: Boolean? = null,
@@ -141,6 +145,9 @@ class SearchApi {
         @Ignore val curator: Int? = null,
         @Ignore val seed: String? = null
     )
+
+    @Location("/search/v2/{page}")
+    class SolrRedirect(@DefaultValue("0") val page: Long = 0, @Ignore val api: SearchApi)
 }
 
 fun <T> Op<Boolean>.notNull(b: T?, block: (T) -> Op<Boolean>) = if (b == null) this else this.and(block(b))
@@ -160,6 +167,12 @@ fun MapTagQuery.applyToQuery(q: SolrQuery) =
     }
 
 fun Route.searchRoute() {
+    getWithOptions<SearchApi.SolrRedirect> {
+        call.respondRedirect {
+            path("/api/search/${if (SolrHelper.enabled) "text" else "v1"}/${it.page}")
+        }
+    }
+
     getWithOptions<SearchApi.Solr>("Search for maps with solr".responds(ok<SearchResponse>())) {
         optionalAuthorization { _, user ->
             val sess = call.sessions.get<Session>()
