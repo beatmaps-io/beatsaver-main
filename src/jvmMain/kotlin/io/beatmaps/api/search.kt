@@ -128,6 +128,7 @@ class SearchApi {
         val to: Instant? = null,
         @Ignore val api: SearchApi,
         val noodle: Boolean? = null,
+        @Ignore val ranked: Boolean? = null,
         val leaderboard: RankedFilter = RankedFilter.All,
         val curated: Boolean? = null,
         val verified: Boolean? = null,
@@ -232,6 +233,7 @@ fun Route.searchRoute() {
                             q.apply(it)
                         }
                     }
+                    .notNull(it.ranked) { o -> (BsSolr.rankedbl eq o) or (BsSolr.rankedss eq o) }
                     .notNull(it.minNps) { o -> BsSolr.nps greaterEq o }
                     .notNull(it.maxNps) { o -> BsSolr.nps lessEq o }
                     .let { q ->
