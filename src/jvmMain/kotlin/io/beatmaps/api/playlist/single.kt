@@ -66,7 +66,7 @@ import java.util.Base64
 import io.beatmaps.common.dbo.Playlist as PlaylistTable
 
 fun Route.playlistSingle() {
-    suspend fun performSearchForPlaylist(config: SearchPlaylistConfig, cdnPrefix: String, page: Long, pageSize: Int = 20): List<MapDetailWithOrder> {
+    suspend fun performSearchForPlaylist(playlistId: Int, config: SearchPlaylistConfig, cdnPrefix: String, page: Long, pageSize: Int = 20): List<MapDetailWithOrder> {
         val offset = page.toInt() * pageSize
         val actualPageSize = Integer.min(offset + pageSize, Integer.min(500, config.mapCount)) - offset
 
@@ -133,6 +133,9 @@ fun Route.playlistSingle() {
                 .also { q ->
                     params.tags.asQuery().applyToQuery(q)
                 }
+                .let { q ->
+                    searchInfo.addSortArgs(q, playlistId, actualSortOrder)
+                }
                 .setFields("id")
                 .setStart(offset).setRows(actualPageSize)
                 .getMapIds()
@@ -185,7 +188,7 @@ fun Route.playlistSingle() {
 
             val mapsWithOrder = page?.let { page ->
                 if (playlist?.type == EPlaylistType.Search && playlist.config is SearchPlaylistConfig) {
-                    performSearchForPlaylist(playlist.config, cdnPrefix, page)
+                    performSearchForPlaylist(playlist.playlistId, playlist.config, cdnPrefix, page, 100)
                 } else {
                     val mapsSubQuery = PlaylistMap
                         .join(Beatmap, JoinType.INNER, PlaylistMap.mapId, Beatmap.id) { Beatmap.deletedAt.isNull() }
@@ -282,7 +285,7 @@ fun Route.playlistSingle() {
             val playlist = getPlaylist()
 
             if (playlist?.type == EPlaylistType.Search && playlist.config is SearchPlaylistConfig) {
-                playlist to performSearchForPlaylist(playlist.config, cdnPrefix(), 0, 1000)
+                playlist to performSearchForPlaylist(playlist.playlistId, playlist.config, cdnPrefix(), 0, 1000)
                     .mapNotNull {
                         it.map.publishedVersion()?.let { v ->
                             PlaylistSong(
