@@ -160,11 +160,11 @@ fun Op.Companion.of(b: Boolean): Op<Boolean> = if (b) Op.TRUE else Op.FALSE
 
 fun MapTagQuery.applyToQuery(q: SolrQuery) =
     flatMap { x ->
-        x.groupBy { it.first }.map { y ->
+        x.groupBy { it.first }.mapNotNull { y ->
             y.value
                 .filterNot { t -> t.second == MapTag.None }
                 .map { t -> (BsSolr.tags eq t.second.slug).let { if (y.key) it else it.not() } }
-                .reduce { a, b ->
+                .reduceOrNull { a, b ->
                     if (y.key) a or b else a and b
                 }
         }
