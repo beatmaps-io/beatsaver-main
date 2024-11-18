@@ -7,8 +7,6 @@ import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.api.search.BsSolr
-import io.beatmaps.api.search.EDisMaxQuery
-import io.beatmaps.api.search.PercentageMinimumMatchExpression
 import io.beatmaps.api.search.PgSearchParams
 import io.beatmaps.api.search.SolrFilter
 import io.beatmaps.api.search.SolrHelper
@@ -199,20 +197,7 @@ fun Route.searchRoute() {
                     listOf()
                 }
 
-                val results = EDisMaxQuery()
-                    .setBoost(if (actualSortOrder == SearchOrder.Relevance) BsSolr.voteScore else null)
-                    .setQueryFields(
-                        BsSolr.name to 4.0,
-                        BsSolr.nameEn to 1.0,
-                        BsSolr.author to 10.0,
-                        BsSolr.authorEn to 2.0,
-                        BsSolr.descriptionEn to 0.5
-                    )
-                    .setTie(0.1)
-                    .setMinimumMatch(
-                        // Force 50% of query terms to match
-                        PercentageMinimumMatchExpression(-0.5f)
-                    )
+                val results = BsSolr.newQuery(actualSortOrder)
                     .let { q ->
                         searchInfo.applyQuery(q)
                     }

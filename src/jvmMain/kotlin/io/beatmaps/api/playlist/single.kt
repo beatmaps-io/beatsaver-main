@@ -12,26 +12,25 @@ import io.beatmaps.api.PlaylistCustomData
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
 import io.beatmaps.api.PlaylistSong
+import io.beatmaps.api.applyToQuery
 import io.beatmaps.api.from
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
-import io.beatmaps.api.of
-import io.beatmaps.api.search.PgSearchParams
+import io.beatmaps.api.search.BsSolr
+import io.beatmaps.api.search.SolrFilter
+import io.beatmaps.api.search.SolrSearchParams
+import io.beatmaps.api.search.apply
+import io.beatmaps.api.search.eq
+import io.beatmaps.api.search.getMapIds
+import io.beatmaps.api.search.greaterEq
+import io.beatmaps.api.search.lessEq
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.Folders
-import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SearchPlaylistConfig
-import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
-import io.beatmaps.common.api.RankedFilter
-import io.beatmaps.common.applyToQuery
 import io.beatmaps.common.asQuery
 import io.beatmaps.common.cleanString
-import io.beatmaps.common.db.PgConcat
-import io.beatmaps.common.db.greaterEqF
-import io.beatmaps.common.db.lateral
-import io.beatmaps.common.db.lessEqF
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.PlaylistMap
@@ -57,105 +56,101 @@ import io.ktor.server.application.call
 import io.ktor.server.locations.get
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
-import kotlinx.datetime.toJavaInstant
-import org.jetbrains.exposed.sql.EqOp
 import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.intLiteral
-import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.io.File
 import java.util.Base64
 import io.beatmaps.common.dbo.Playlist as PlaylistTable
 
 fun Route.playlistSingle() {
-    fun performSearchForPlaylist(config: SearchPlaylistConfig, cdnPrefix: String, page: Long, pageSize: Int = 20): List<MapDetailWithOrder> {
+    suspend fun performSearchForPlaylist(config: SearchPlaylistConfig, cdnPrefix: String, page: Long, pageSize: Int = 20): List<MapDetailWithOrder> {
         val offset = page.toInt() * pageSize
         val actualPageSize = Integer.min(offset + pageSize, Integer.min(500, config.mapCount)) - offset
 
         if (actualPageSize <= 0 || actualPageSize > pageSize) return listOf()
 
         val params = config.searchParams
-        val needsDiff = params.minNps != null || params.maxNps != null
-        val searchFields = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
-        val searchInfo = PgSearchParams.parseSearchQuery(params.search, searchFields, needsDiff)
+        val searchInfo = SolrSearchParams.parseSearchQuery(params.search)
         val actualSortOrder = searchInfo.validateSearchOrder(params.sortOrder)
-        val sortArgs = searchInfo.sortArgsFor(actualSortOrder)
 
-        return transaction {
+        return newSuspendedTransaction {
+            val results = BsSolr.newQuery(actualSortOrder)
+                .let { q ->
+                    searchInfo.applyQuery(q)
+                }
+                .also { q ->
+                    when (params.automapper) {
+                        true -> null
+                        false -> BsSolr.ai eq true
+                        null -> BsSolr.ai eq false
+                    }?.let { filter ->
+                        q.apply(filter)
+                    }
+                }
+                .also { q ->
+                    val mapperIds = params.mappers + (searchInfo.userSubQuery?.map { it[User.id].value } ?: listOf())
+
+                    mapperIds.map { id ->
+                        BsSolr.mapperIds eq id
+                    }.reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }?.let {
+                        q.apply(it)
+                    }
+                }
+                .notNull(params.chroma) { o ->
+                    val chromaQuery = (BsSolr.suggestions eq "Chroma") or (BsSolr.requirements eq "Chroma")
+                    if (o) chromaQuery else chromaQuery.not()
+                }
+                .notNull(params.noodle) { o ->
+                    val noodleQuery = BsSolr.requirements eq "Noodle Extensions"
+                    if (o) noodleQuery else noodleQuery.not()
+                }
+                .notNull(params.me) { o ->
+                    val meQuery = BsSolr.requirements eq "Mapping Extensions"
+                    if (o) meQuery else meQuery.not()
+                }
+                .notNull(params.cinema) { o ->
+                    val cinemaQuery = (BsSolr.suggestions eq "Cinema") or (BsSolr.requirements eq "Cinema")
+                    if (o) cinemaQuery else cinemaQuery.not()
+                }
+                .also { q ->
+                    listOfNotNull(
+                        if (params.ranked.blRanked) BsSolr.rankedbl eq true else null,
+                        if (params.ranked.ssRanked) BsSolr.rankedss eq true else null
+                    ).reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }?.let {
+                        q.apply(it)
+                    }
+                }
+                .notNull(params.curated) { o -> BsSolr.curated.any().let { if (o) it else it.not() } }
+                .notNull(params.verified) { o -> BsSolr.verified eq o }
+                .notNull(params.fullSpread) { o -> BsSolr.fullSpread eq o }
+                .notNull(params.minNps) { o -> BsSolr.nps greaterEq o }
+                .notNull(params.maxNps) { o -> BsSolr.nps lessEq o }
+                .notNull(params.from) { o -> BsSolr.uploaded greaterEq o }
+                .notNull(params.to) { o -> BsSolr.uploaded lessEq o }
+                .also { q ->
+                    params.tags.asQuery().applyToQuery(q)
+                }
+                .setFields("id")
+                .setStart(offset).setRows(actualPageSize)
+                .getMapIds()
+
             Beatmap
                 .joinVersions(true)
                 .joinUploader()
                 .joinCurator()
                 .joinCollaborators()
                 .select(
-                    (if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) +
-                        Beatmap.columns + Versions.columns + Difficulty.columns + User.columns +
+                    Beatmap.columns + Versions.columns + Difficulty.columns + User.columns +
                         curatorAlias.columns + collaboratorAlias.columns
                 )
                 .where {
-                    Beatmap.id.inSubQuery(
-                        Beatmap
-                            .joinUploader()
-                            .crossJoin(
-                                Versions
-                                    .let { q ->
-                                        if (needsDiff) q.join(Difficulty, JoinType.INNER, Versions.id, Difficulty.versionId) else q
-                                    }
-                                    .select(intLiteral(1))
-                                    .where {
-                                        EqOp(Versions.mapId, Beatmap.id) and (Versions.state eq EMapState.Published)
-                                            .notNull(params.minNps) { o -> (Difficulty.nps greaterEqF o) }
-                                            .notNull(params.maxNps) { o -> (Difficulty.nps lessEqF o) }
-                                    }
-                                    .limit(1)
-                                    .lateral().alias("diff")
-                            )
-                            .select(Beatmap.id)
-                            .where {
-                                Beatmap.deletedAt.isNull()
-                                    .let { q -> searchInfo.applyQuery(q) }
-                                    .let { q ->
-                                        // Doesn't quite make sense but we want to exclude beat sage by default
-                                        when (params.automapper) {
-                                            true -> q
-                                            false -> q.and(Beatmap.declaredAi neq AiDeclarationType.None)
-                                            null -> q.and(Beatmap.declaredAi eq AiDeclarationType.None)
-                                        }
-                                    }
-                                    .notNull(searchInfo.userSubQuery) { o -> Beatmap.uploader inSubQuery o }
-                                    .notNull(params.chroma) { o -> Beatmap.chroma eq o }
-                                    .notNull(params.noodle) { o -> Beatmap.noodle eq o }
-                                    .notNull(params.ranked) { o ->
-                                        Op.of(o == RankedFilter.All).run {
-                                            if (o.blRanked) this or Beatmap.blRanked else this
-                                        }.run {
-                                            if (o.ssRanked) this or Beatmap.ranked else this
-                                        }
-                                    }
-                                    .notNull(params.curated) { o -> with(Beatmap.curatedAt) { if (o) isNotNull() else isNull() } }
-                                    .notNull(params.verified) { o -> User.verifiedMapper eq o }
-                                    .notNull(params.fullSpread) { o -> Beatmap.fullSpread eq o }
-                                    .notNull(params.minNps) { o -> (Beatmap.maxNps greaterEqF o) }
-                                    .notNull(params.maxNps) { o -> (Beatmap.minNps lessEqF o) }
-                                    .notNull(params.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }
-                                    .notNull(params.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
-                                    .notNull(params.me) { o -> Beatmap.me eq o }
-                                    .notNull(params.cinema) { o -> Beatmap.cinema eq o }
-                                    .notNull(params.tags) { o -> o.asQuery().applyToQuery() }
-                                    .let { q ->
-                                        if (params.mappers.isEmpty()) q else q.and(Beatmap.uploader inList params.mappers)
-                                    }
-                            }
-                            .orderBy(*sortArgs)
-                            .limit(actualPageSize, offset.toLong())
-                    )
+                    Beatmap.id.inList(results.mapIds)
                 }
-                .orderBy(*sortArgs)
                 .complexToBeatmap()
+                .sortedBy { results.order[it.id.value] } // Match order from solr
                 .mapIndexed { idx, m ->
                     MapDetailWithOrder(
                         MapDetail.from(m, cdnPrefix),
@@ -165,8 +160,8 @@ fun Route.playlistSingle() {
         }
     }
 
-    fun getDetail(id: Int, cdnPrefix: String, userId: Int?, isAdmin: Boolean, page: Long?): PlaylistPage? {
-        val detailPage = transaction {
+    suspend fun getDetail(id: Int, cdnPrefix: String, userId: Int?, isAdmin: Boolean, page: Long?): PlaylistPage? {
+        val detailPage = newSuspendedTransaction {
             val playlist = PlaylistTable
                 .joinMaps()
                 .joinOwner()
@@ -249,7 +244,7 @@ fun Route.playlistSingle() {
 
     val bookmarksIcon = javaClass.classLoader.getResourceAsStream("assets/favicon/android-chrome-512x512.png")!!.readAllBytes()
     get<PlaylistApi.Download> { req ->
-        val (playlist, playlistSongs) = transaction {
+        val (playlist, playlistSongs) = newSuspendedTransaction {
             fun getPlaylist() =
                 PlaylistTable
                     .joinPlaylistCurator()
