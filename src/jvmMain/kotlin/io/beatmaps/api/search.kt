@@ -20,6 +20,7 @@ import io.beatmaps.api.search.greaterEq
 import io.beatmaps.api.search.lessEq
 import io.beatmaps.api.search.paged
 import io.beatmaps.api.util.getWithOptions
+import io.beatmaps.common.MapTag
 import io.beatmaps.common.MapTagQuery
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.AiDeclarationType
@@ -51,6 +52,8 @@ import io.beatmaps.util.optionalAuthorization
 import io.ktor.http.path
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
+import io.ktor.server.plugins.origin
+import io.ktor.server.request.userAgent
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
@@ -158,9 +161,12 @@ fun Op.Companion.of(b: Boolean): Op<Boolean> = if (b) Op.TRUE else Op.FALSE
 fun MapTagQuery.applyToQuery(q: SolrQuery) =
     flatMap { x ->
         x.groupBy { it.first }.map { y ->
-            y.value.map { t -> (BsSolr.tags eq t.second.slug).let { if (y.key) it else it.not() } }.reduce { a, b ->
-                if (y.key) a or b else a and b
-            }
+            y.value
+                .filterNot { t -> t.second == MapTag.None }
+                .map { t -> (BsSolr.tags eq t.second.slug).let { if (y.key) it else it.not() } }
+                .reduce { a, b ->
+                    if (y.key) a or b else a and b
+                }
         }
     }.fold(q) { query, it ->
         query.apply(it)
@@ -229,7 +235,18 @@ fun Route.searchRoute() {
                     .notNull(it.minNps) { o -> BsSolr.nps greaterEq o }
                     .notNull(it.maxNps) { o -> BsSolr.nps lessEq o }
                     .let { q ->
-                        it.tags?.toQuery()?.applyToQuery(q) ?: q
+                        val tq = it.tags?.toQuery()
+                        val emptyTags = tq?.any { a ->
+                            a.any { b ->
+                                b.second == MapTag.None
+                            }
+                        } == true
+
+                        if (emptyTags) {
+                            searchLogger.warning("Query contained empty tag (${it.tags}) [${call.request.origin.remoteAddress}] (${call.request.userAgent()})")
+                        }
+
+                        tq?.applyToQuery(q) ?: q
                     }
                     .notNull(it.curated) { o -> BsSolr.curated.any().let { if (o) it else it.not() } }
                     .notNull(it.verified) { o -> BsSolr.verified eq o }

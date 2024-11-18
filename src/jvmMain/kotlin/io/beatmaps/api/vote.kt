@@ -186,11 +186,11 @@ fun Route.voteRoute(client: HttpClient) {
 
         newSuspendedTransaction {
             try {
-                val mapIdArr = Versions.select(Versions.mapId).where {
+                val mapIdRow = Versions.select(Versions.mapId).where {
                     Versions.hash eq req.hash.lowercase()
-                }.limit(1).toList()
+                }.limit(1).singleOrNull()
 
-                if (mapIdArr.isEmpty()) {
+                if (mapIdRow == null) {
                     call.respond(HttpStatusCode.NotFound)
                     return@newSuspendedTransaction
                 }
@@ -211,7 +211,7 @@ fun Route.voteRoute(client: HttpClient) {
                     oculusId.toLong() to false
                 } ?: error("No user identifier provided")
 
-                val mapId = mapIdArr.first()[Versions.mapId]
+                val mapId = mapIdRow[Versions.mapId]
                 call.pub("beatmaps", "vote.$mapId", null, QueuedVote(userId, steam, mapId.value, req.direction))
 
                 call.respond(ActionResponse.success())
