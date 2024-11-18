@@ -36,6 +36,7 @@ import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
+import io.beatmaps.common.dbo.bookmark
 import io.beatmaps.common.dbo.collaboratorAlias
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
@@ -66,7 +67,7 @@ import java.util.Base64
 import io.beatmaps.common.dbo.Playlist as PlaylistTable
 
 fun Route.playlistSingle() {
-    suspend fun performSearchForPlaylist(playlistId: Int, config: SearchPlaylistConfig, cdnPrefix: String, page: Long, pageSize: Int = 20): List<MapDetailWithOrder> {
+    suspend fun performSearchForPlaylist(playlistId: Int, userId: Int?, config: SearchPlaylistConfig, cdnPrefix: String, page: Long, pageSize: Int = 20): List<MapDetailWithOrder> {
         val offset = page.toInt() * pageSize
         val actualPageSize = Integer.min(offset + pageSize, Integer.min(500, config.mapCount)) - offset
 
@@ -145,9 +146,10 @@ fun Route.playlistSingle() {
                 .joinUploader()
                 .joinCurator()
                 .joinCollaborators()
+                .joinBookmarked(userId)
                 .select(
                     Beatmap.columns + Versions.columns + Difficulty.columns + User.columns +
-                        curatorAlias.columns + collaboratorAlias.columns
+                        curatorAlias.columns + bookmark.columns + collaboratorAlias.columns
                 )
                 .where {
                     Beatmap.id.inList(results.mapIds)
@@ -188,7 +190,7 @@ fun Route.playlistSingle() {
 
             val mapsWithOrder = page?.let { page ->
                 if (playlist?.type == EPlaylistType.Search && playlist.config is SearchPlaylistConfig) {
-                    performSearchForPlaylist(playlist.playlistId, playlist.config, cdnPrefix, page, 100)
+                    performSearchForPlaylist(playlist.playlistId, userId, playlist.config, cdnPrefix, page, 100)
                 } else {
                     val mapsSubQuery = PlaylistMap
                         .join(Beatmap, JoinType.INNER, PlaylistMap.mapId, Beatmap.id) { Beatmap.deletedAt.isNull() }
@@ -285,7 +287,7 @@ fun Route.playlistSingle() {
             val playlist = getPlaylist()
 
             if (playlist?.type == EPlaylistType.Search && playlist.config is SearchPlaylistConfig) {
-                playlist to performSearchForPlaylist(playlist.playlistId, playlist.config, cdnPrefix(), 0, 1000)
+                playlist to performSearchForPlaylist(playlist.playlistId, null, playlist.config, cdnPrefix(), 0, 1000)
                     .mapNotNull {
                         it.map.publishedVersion()?.let { v ->
                             PlaylistSong(
