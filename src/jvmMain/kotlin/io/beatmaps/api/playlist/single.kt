@@ -36,7 +36,6 @@ import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
-import io.beatmaps.common.dbo.bookmark
 import io.beatmaps.common.dbo.collaboratorAlias
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
