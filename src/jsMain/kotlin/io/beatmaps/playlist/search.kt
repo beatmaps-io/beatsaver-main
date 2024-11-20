@@ -48,7 +48,7 @@ external interface PSEProps : Props {
     var callback: (SearchPlaylistConfig) -> Unit
 }
 
-val mapCounts = listOf(10, 20, 50, 100, 200, 500)
+val mapCounts = listOf(10, 20, 50, 100, 200, 500, 1000)
 
 interface PlaylistSearchFilter<out T> {
     val id: String
