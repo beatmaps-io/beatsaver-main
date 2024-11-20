@@ -8,6 +8,7 @@ import io.beatmaps.api.MapDetailWithOrder
 import io.beatmaps.api.OauthScope
 import io.beatmaps.api.Playlist
 import io.beatmaps.api.PlaylistApi
+import io.beatmaps.api.PlaylistConstants
 import io.beatmaps.api.PlaylistCustomData
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
@@ -69,7 +70,7 @@ import io.beatmaps.common.dbo.Playlist as PlaylistTable
 fun Route.playlistSingle() {
     suspend fun performSearchForPlaylist(playlistId: Int, userId: Int?, config: SearchPlaylistConfig, cdnPrefix: String, page: Long, pageSize: Int = 20): List<MapDetailWithOrder> {
         val offset = page.toInt() * pageSize
-        val actualPageSize = Integer.min(offset + pageSize, Integer.min(500, config.mapCount)) - offset
+        val actualPageSize = Integer.min(offset + pageSize, Integer.min(PlaylistConstants.MAX_SEARCH_MAPS, config.mapCount)) - offset
 
         if (actualPageSize <= 0 || actualPageSize > pageSize) return listOf()
 

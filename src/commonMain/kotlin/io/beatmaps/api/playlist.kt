@@ -7,6 +7,12 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+class PlaylistConstants {
+    companion object {
+        const val MAX_SEARCH_MAPS = 1000
+    }
+}
+
 @Serializable
 data class Playlist(
     val playlistTitle: String,
