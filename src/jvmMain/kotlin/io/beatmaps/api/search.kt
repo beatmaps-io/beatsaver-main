@@ -175,7 +175,7 @@ fun Route.searchRoute() {
     getWithOptions<SearchApi.SolrRedirect> {
         val params = call.request.queryString()
         call.respondRedirect(
-            "/api/search/${if (SolrHelper.enabled) "text" else "v1"}/${it.page}${if (params.isNotEmpty()) "?" else ""}${params}"
+            "/api/search/${if (SolrHelper.enabled) "text" else "v1"}/${it.page}${if (params.isNotEmpty()) "?" else ""}$params"
         )
     }
 

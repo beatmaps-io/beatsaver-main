@@ -34,7 +34,7 @@ private fun sessionFromToken(token: AccessToken) = (token.identity?.metadata?.ge
 suspend fun <T> ApplicationCall.optionalAuthorization(scope: OauthScope? = null, block: suspend ApplicationCall.(AuthType, Session?) -> T) {
     // Oauth
     checkOauthHeader(scope)?.let(::sessionFromToken)?.also { block(AuthType.Oauth, it) }
-    // Session
+        // Session
         ?: sessions.get<Session>()?.also { block(AuthType.Session, it) }
         // Fallback
         ?: run { block(AuthType.None, null) }
