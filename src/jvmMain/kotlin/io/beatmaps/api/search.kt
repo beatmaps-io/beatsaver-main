@@ -44,7 +44,6 @@ import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.toQuery
-import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
 import io.ktor.server.application.call
@@ -55,8 +54,6 @@ import io.ktor.server.request.userAgent
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
-import io.ktor.server.sessions.get
-import io.ktor.server.sessions.sessions
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import org.apache.solr.client.solrj.SolrQuery
@@ -181,8 +178,6 @@ fun Route.searchRoute() {
 
     getWithOptions<SearchApi.Solr>("Search for maps with solr".responds(ok<SearchResponse>())) {
         optionalAuthorization { _, user ->
-            val sess = call.sessions.get<Session>()
-
             val searchInfo = SolrSearchParams.parseSearchQuery(it.q)
             val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
 
@@ -192,7 +187,7 @@ fun Route.searchRoute() {
                 val followingSubQuery = if (user != null && it.followed == true) {
                     Follows
                         .select(Follows.userId)
-                        .where { Follows.followerId eq user.userId }
+                        .where { Follows.followerId eq user.userId and Follows.following }
                         .map { it[Follows.userId].value }
                 } else {
                     listOf()
@@ -285,7 +280,7 @@ fun Route.searchRoute() {
                     .joinVersions(true)
                     .joinUploader()
                     .joinCurator()
-                    .joinBookmarked(sess?.userId)
+                    .joinBookmarked(user?.userId)
                     .joinCollaborators()
                     .select(
                         Beatmap.columns + Versions.columns + Difficulty.columns + User.columns +
@@ -304,8 +299,6 @@ fun Route.searchRoute() {
 
     getWithOptions<SearchApi.Text>("Search for maps".responds(ok<SearchResponse>())) {
         optionalAuthorization { _, user ->
-            val sess = call.sessions.get<Session>()
-
             val needsDiff = it.minNps != null || it.maxNps != null
             val searchFields = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
             val searchInfo = PgSearchParams.parseSearchQuery(it.q, searchFields, needsDiff)
@@ -316,7 +309,7 @@ fun Route.searchRoute() {
                 val followingSubQuery = if (user != null && it.followed == true) {
                     Follows
                         .select(Follows.userId)
-                        .where { Follows.followerId eq user.userId }
+                        .where { Follows.followerId eq user.userId and Follows.following }
                 } else {
                     null
                 }
@@ -328,7 +321,7 @@ fun Route.searchRoute() {
                         .joinVersions(true)
                         .joinUploader()
                         .joinCurator()
-                        .joinBookmarked(sess?.userId)
+                        .joinBookmarked(user?.userId)
                         .joinCollaborators()
                         .select(
                             (if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) +
@@ -410,7 +403,7 @@ fun Route.searchRoute() {
                 }
 
                 if (time > searchThreshold) {
-                    searchLogger.info("Search took longer than $searchThreshold ($time)\n$sess\n$it")
+                    searchLogger.info("Search took longer than $searchThreshold ($time)\n$user\n$it")
                 }
             }
         }
