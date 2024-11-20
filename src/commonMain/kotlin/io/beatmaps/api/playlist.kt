@@ -10,6 +10,7 @@ import kotlinx.serialization.Serializable
 class PlaylistConstants {
     companion object {
         const val MAX_SEARCH_MAPS = 1000
+        const val PAGE_SIZE = 500
     }
 }
 

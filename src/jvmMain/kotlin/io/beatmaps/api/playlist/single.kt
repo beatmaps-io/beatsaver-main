@@ -191,7 +191,7 @@ fun Route.playlistSingle() {
 
             val mapsWithOrder = page?.let { page ->
                 if (playlist?.type == EPlaylistType.Search && playlist.config is SearchPlaylistConfig) {
-                    performSearchForPlaylist(playlist.playlistId, userId, playlist.config, cdnPrefix, page, 100)
+                    performSearchForPlaylist(playlist.playlistId, userId, playlist.config, cdnPrefix, page, PlaylistConstants.PAGE_SIZE)
                 } else {
                     val mapsSubQuery = PlaylistMap
                         .join(Beatmap, JoinType.INNER, PlaylistMap.mapId, Beatmap.id) { Beatmap.deletedAt.isNull() }
@@ -201,7 +201,7 @@ fun Route.playlistSingle() {
                             (PlaylistMap.playlistId eq id)
                         }
                         .orderBy(PlaylistMap.order)
-                        .limit(page, 100)
+                        .limit(page, PlaylistConstants.PAGE_SIZE)
                         .alias("subquery")
 
                     val orderList = mutableListOf<Float>()
@@ -288,7 +288,7 @@ fun Route.playlistSingle() {
             val playlist = getPlaylist()
 
             if (playlist?.type == EPlaylistType.Search && playlist.config is SearchPlaylistConfig) {
-                playlist to performSearchForPlaylist(playlist.playlistId, null, playlist.config, cdnPrefix(), 0, 1000)
+                playlist to performSearchForPlaylist(playlist.playlistId, null, playlist.config, cdnPrefix(), 0, PlaylistConstants.MAX_SEARCH_MAPS)
                     .mapNotNull {
                         it.map.publishedVersion()?.let { v ->
                             PlaylistSong(

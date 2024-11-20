@@ -11,6 +11,7 @@ import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.MapDetailWithOrder
+import io.beatmaps.api.PlaylistConstants
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistMapRequest
 import io.beatmaps.api.PlaylistPage
@@ -57,7 +58,7 @@ val playlistPage = fc<Props> {
 
     val modalRef = useRef<ModalComponent>()
     val reasonRef = useRef<HTMLTextAreaElement>()
-    val itemsPerPage = 100
+    val itemsPerPage = PlaylistConstants.PAGE_SIZE
 
     val audio = useAudio()
     val userData = useContext(globalContext)
