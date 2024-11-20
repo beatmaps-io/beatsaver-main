@@ -47,10 +47,10 @@ import io.beatmaps.common.toQuery
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
-import io.ktor.http.path
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.plugins.origin
+import io.ktor.server.request.queryString
 import io.ktor.server.request.userAgent
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
@@ -173,9 +173,10 @@ fun MapTagQuery.applyToQuery(q: SolrQuery) =
 
 fun Route.searchRoute() {
     getWithOptions<SearchApi.SolrRedirect> {
-        call.respondRedirect {
-            path("/api/search/${if (SolrHelper.enabled) "text" else "v1"}/${it.page}")
-        }
+        val params = call.request.queryString()
+        call.respondRedirect(
+            "/api/search/${if (SolrHelper.enabled) "text" else "v1"}/${it.page}${if (params.isNotEmpty()) "?" else ""}${params}"
+        )
     }
 
     getWithOptions<SearchApi.Solr>("Search for maps with solr".responds(ok<SearchResponse>())) {
