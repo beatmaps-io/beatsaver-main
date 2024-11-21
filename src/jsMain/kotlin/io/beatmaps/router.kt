@@ -6,7 +6,6 @@ import js.objects.jso
 import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLElement
@@ -116,13 +115,13 @@ private fun initWithHistory(history: History, replaceHomelink: Boolean = true) {
     })
 
     (document.getElementById("site-notice") as? HTMLElement)?.let { banner ->
-        if (localStorage["banner"] != "4") {
+        if (localStorage["banner"] != "5") {
             banner.style.display = "block"
 
             val closeButton = banner.getElementsByTagName("button")[0]
             closeButton?.addEventListener("click", {
                 banner.style.opacity = "0"
-                localStorage["banner"] = "4"
+                localStorage["banner"] = "5"
 
                 setTimeout({
                     banner.style.display = "none"

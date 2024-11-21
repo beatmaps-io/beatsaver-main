@@ -229,9 +229,9 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                 id = "site-notice"
                 div("container flex-nowrap") {
                     div("navbar-text flex-grow-1 text-center") {
-                        +"The Beasties Awards Voting Now Live Through Jan 14th! Everyone Can Vote! Click the link for playlists and voting. "
-                        a("https://forms.gle/v69wKinCfZzVHfZ17", target = "_blank") {
-                            +"https://forms.gle/v69wKinCfZzVHfZ17"
+                        +"The 4th Annual Beasties Awards is here! Submit your favorite maps of the past year at "
+                        a("https://saera.dev/beasties", target = "_blank") {
+                            +"https://saera.dev/beasties"
                         }
                     }
                     button(type = ButtonType.button, classes = "btn-close btn-close-white") { }
