@@ -11,11 +11,11 @@ import io.beatmaps.common.rabbitOptional
 import io.ktor.server.application.Application
 import kotlinx.serialization.builtins.serializer
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.transactions.transaction
 
 object SolrImporter {
-    private suspend fun trigger(updateMapId: Int) {
-        newSuspendedTransaction {
+    private fun trigger(updateMapId: Int) {
+        transaction {
             val map = Beatmap
                 .joinVersions(true)
                 .joinUploader()
