@@ -143,3 +143,9 @@ data class SearchResponse(val docs: List<MapDetail>? = null, val info: SearchInf
 
 @Serializable
 data class SearchInfo(val total: Int, val pages: Int, val duration: Float)
+
+@Serializable
+data class DeletedResponse(val docs: List<DeletedMap>? = null)
+
+@Serializable
+data class DeletedMap(val id: String, val deletedAt: Instant)

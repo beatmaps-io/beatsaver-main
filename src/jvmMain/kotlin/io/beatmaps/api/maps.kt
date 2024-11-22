@@ -56,6 +56,7 @@ import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
+import kotlinx.datetime.toKotlinInstant
 import org.apache.solr.client.solrj.SolrQuery
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.JoinType
@@ -135,6 +136,19 @@ class MapsApi {
         @Description("false = no verified mappers, null = both, true = verified mappers only")
         val verified: Boolean? = null,
         val sort: LatestSort? = LatestSort.FIRST_PUBLISHED,
+        @Description("1 - 100") @DefaultValue("20")
+        val pageSize: Int? = 20,
+        @Ignore
+        val api: MapsApi
+    )
+
+    @Group("Maps")
+    @Location("/maps/deleted")
+    data class Deleted(
+        @Description("You probably want this. Supplying the deleted time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
+        val before: Instant? = null,
+        @Description("Like `before` but will get you maps deleted more recently than the time supplied.\nYYYY-MM-DDTHH:MM:SS+00:00")
+        val after: Instant? = null,
         @Description("1 - 100") @DefaultValue("20")
         val pageSize: Int? = 20,
         @Ignore
@@ -747,6 +761,37 @@ fun Route.mapDetailRoute() {
         }
 
         call.respond(SearchResponse(beatmaps))
+    }
+
+    getWithOptions<MapsApi.Deleted>(
+        "Get deleted maps since or before a certain date.".responds(
+            ok<DeletedResponse>()
+        )
+    ) {
+        val pageSize = (it.pageSize ?: 20).coerceIn(1, 100)
+        val sortField = Beatmap.deletedAt
+        val beatmaps = transaction {
+            Beatmap
+                .select(Beatmap.id, Beatmap.deletedAt)
+                .where {
+                    Beatmap.deletedAt.isNotNull()
+                        .notNull(it.before) { o -> sortField less o.toJavaInstant() }
+                        .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
+                }
+                .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
+                .limit(pageSize)
+                .mapNotNull { map ->
+                    val instant = map[Beatmap.deletedAt]
+                    if (instant == null) {
+                        null
+                    } else {
+                        DeletedMap(toHexString(map[Beatmap.id].value), instant.toKotlinInstant())
+                    }
+                }
+                .sortedByDescending { map -> map.deletedAt }
+        }
+
+        call.respond(DeletedResponse(beatmaps))
     }
 
     getWithOptions<MapsApi.ByPlayCount>("Get maps ordered by play count (Not currently tracked)".responds(ok<SearchResponse>())) {
