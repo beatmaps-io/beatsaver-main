@@ -30,6 +30,16 @@ fun <T : SolrCollection> T.insert(block: T.(SolrDocumentBuilder) -> Unit) {
     SolrHelper.solr.add(inputDoc)
 }
 
+fun <T : SolrCollection, U> T.insertMany(input: List<U>, block: T.(SolrDocumentBuilder, U) -> Unit) {
+    val inputDocs = input.map { i ->
+        SolrInputDocument().also {
+            block(this, SolrDocumentBuilder(it), i)
+        }
+    }
+
+    SolrHelper.solr.add(inputDocs)
+}
+
 class SolrDocumentBuilder(private val inputDoc: SolrInputDocument) {
     operator fun set(field: SolrField<Instant>, value: java.time.Instant?) =
         inputDoc.setField(field.name, value?.toString())

@@ -2,6 +2,7 @@ package io.beatmaps.api.search
 
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
@@ -10,8 +11,10 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.rabbitOptional
 import io.ktor.server.application.Application
 import kotlinx.serialization.builtins.serializer
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.lang.Integer.toHexString
 
 object SolrImporter {
     private fun trigger(updateMapId: Int) {
@@ -67,6 +70,27 @@ object SolrImporter {
         rabbitOptional {
             consumeAck("bm.solr", Int.serializer()) { _, mapId ->
                 trigger(mapId)
+            }
+
+            consumeAck("bm.solr-user", Int.serializer()) { _, userId ->
+                transaction {
+                    val userVerified = User
+                        .select(User.verifiedMapper)
+                        .where { User.id eq userId }
+                        .singleOrNull()
+                        ?.let { it[User.verifiedMapper] }
+
+                    val mapIds = Beatmap
+                        .joinVersions()
+                        .select(Beatmap.id)
+                        .where { Beatmap.uploader eq userId and Beatmap.deletedAt.isNull() }
+                        .map { it[Beatmap.id].value }
+
+                    BsSolr.insertMany(mapIds) { it, mId ->
+                        it[mapId] = toHexString(mId)
+                        it.update(verified, userVerified)
+                    }
+                }
             }
         }
     }

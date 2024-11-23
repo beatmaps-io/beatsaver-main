@@ -407,6 +407,9 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
                 queueDeclare("bm.solr", true, false, false, genericQueueConfig)
                 queueBind("bm.solr", "beatmaps", "maps.*.updated")
                 queueBind("bm.solr", "beatmaps", "maps.*.updated.*")
+
+                queueDeclare("bm.solr-user", true, false, false, genericQueueConfig)
+                queueBind("bm.solr-user", "beatmaps", "user.*.updated.admin")
             }
         }
         downloadsThread()
