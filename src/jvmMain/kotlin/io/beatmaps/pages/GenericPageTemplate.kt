@@ -1,6 +1,6 @@
 package io.beatmaps.pages
 
-import io.beatmaps.api.search.SolrHelper
+import io.beatmaps.api.solr.SolrHelper
 import io.beatmaps.controllers.reCaptchaVerify
 import io.beatmaps.login.Session
 import io.ktor.server.html.Template

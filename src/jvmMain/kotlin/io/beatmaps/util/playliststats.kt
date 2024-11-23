@@ -56,6 +56,8 @@ fun Application.playlistStats() {
                     it[maxNps] = maxNpsVal
                 }
             }
+
+            publish("beatmaps", "playlists.$playlistId.updated.stats", null, playlistId)
         }
     }
 }

@@ -15,6 +15,7 @@ import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
+import io.beatmaps.common.pub
 import io.beatmaps.controllers.UploadException
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
@@ -132,6 +133,7 @@ fun Route.playlistCreate() {
                     Files.move(temp.toPath(), localFile.toPath())
                 }
 
+                call.pub("beatmaps", "playlists.$newId.created", null, newId)
                 call.respond(newId.value)
             } finally {
                 files.values.forEach { temp ->
@@ -226,6 +228,7 @@ fun Route.playlistCreate() {
                 }
             }
 
+            call.pub("beatmaps", "playlists.${req.id}.updated.detail", null, req.id)
             call.respond(HttpStatusCode.OK)
         }
     }

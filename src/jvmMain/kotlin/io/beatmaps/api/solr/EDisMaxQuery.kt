@@ -1,4 +1,4 @@
-package io.beatmaps.api.search
+package io.beatmaps.api.solr
 
 class EDisMaxQuery : DisMaxQuery() {
     init {

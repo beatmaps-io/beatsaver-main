@@ -377,12 +377,12 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
                 queueBind("bm.updateStream", "beatmaps", "maps.*.updated.*")
 
                 queueDeclare("bm.mapPlaylistTrigger", true, false, false, genericQueueConfig)
-                queueBind("bm.mapPlaylistTrigger", "beatmaps", "maps.*.updated.deleted")
-                queueBind("bm.mapPlaylistTrigger", "beatmaps", "maps.*.updated.state")
+                queueBind("bm.mapPlaylistTrigger", "beatmaps", "maps.*.updated.deleted") // Map deleted
+                queueBind("bm.mapPlaylistTrigger", "beatmaps", "maps.*.updated.state") // Map publish / unpublish
 
                 queueDeclare("bm.playlistStats", true, false, false, genericQueueConfig)
-                queueBind("bm.playlistStats", "beatmaps", "playlists.*.updated")
-                queueBind("bm.playlistStats", "beatmaps", "playlists.*.stats")
+                queueBind("bm.playlistStats", "beatmaps", "playlists.*.updated") // New songs
+                queueBind("bm.playlistStats", "beatmaps", "playlists.*.stats") // Stats trigger from map change
 
                 queueDeclare("bm.downloadCount", true, false, false, genericQueueConfig)
                 queueBind("bm.downloadCount", "beatmaps", "download.#")
@@ -410,6 +410,11 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
 
                 queueDeclare("bm.solr-user", true, false, false, genericQueueConfig)
                 queueBind("bm.solr-user", "beatmaps", "user.*.updated.admin")
+
+                queueDeclare("bm.solr-playlist", true, false, false, genericQueueConfig)
+                queueBind("bm.solr-playlist", "beatmaps", "playlists.*.updated.stats") // New songs -> stats updated
+                queueBind("bm.solr-playlist", "beatmaps", "playlists.*.created") // Created
+                queueBind("bm.solr-playlist", "beatmaps", "playlists.*.updated.detail") // Updated
             }
         }
         downloadsThread()

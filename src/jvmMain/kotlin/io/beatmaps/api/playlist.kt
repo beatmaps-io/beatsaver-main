@@ -90,6 +90,7 @@ class PlaylistApi {
         val includeEmpty: Boolean? = null,
         val curated: Boolean? = null,
         val verified: Boolean? = null,
+        @Ignore val seed: String? = null,
         @Ignore val api: PlaylistApi
     )
 }

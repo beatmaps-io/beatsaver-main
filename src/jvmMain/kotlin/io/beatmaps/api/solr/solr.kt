@@ -1,4 +1,4 @@
-package io.beatmaps.api.search
+package io.beatmaps.api.solr
 
 import io.beatmaps.api.SearchInfo
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -12,13 +12,11 @@ object SolrHelper {
     private val solrHost = System.getenv("SOLR_HOST") ?: "https://solr.beatsaver.com/solr"
     private val solrUser = System.getenv("SOLR_USER") ?: "solr"
     private val solrPass = System.getenv("SOLR_PASS") ?: "insecure-password"
-    private val solrCollection = System.getenv("SOLR_COLLECTION") ?: "beatsaver"
     val enabled = System.getenv("SOLR_ENABLED") == "true"
 
     val solr: Http2SolrClient by lazy {
         Http2SolrClient.Builder(solrHost)
             .withBasicAuthCredentials(solrUser, solrPass)
-            .withDefaultCollection(solrCollection)
             .build()
     }
 
@@ -33,20 +31,18 @@ data class SolrResults(val mapIds: List<Int>, val qTime: Int, val numRecords: In
 }
 
 fun SolrQuery.all(): SolrQuery =
-    this.setQuery("*:*")
+    setQuery("*:*")
 
 fun SolrQuery.paged(page: Int = 0, pageSize: Int = 20): SolrQuery =
-    this
-        .setFields("id")
+    setFields("id")
         .setStart(page * pageSize).setRows(pageSize)
 
-fun ModifiableSolrParams.getMapIds() =
+fun ModifiableSolrParams.getIds(coll: SolrCollection, field: SolrField<Int>? = null) =
     try {
-        val response = SolrHelper.solr.query(
-            this
-        )
+        val fieldName = field?.name ?: "id"
+        val response = coll.query(this)
 
-        val mapIds = response.results.mapNotNull { it["id"] as? Int }
+        val mapIds = response.results.mapNotNull { it[fieldName] as? Int }
         val numRecords = response.results.numFound.toInt()
 
         SolrResults(mapIds, response.qTime, numRecords)

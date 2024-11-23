@@ -70,43 +70,11 @@
             <str name="indent">true</str>
         </lst>
     </requestHandler>
-    <initParams path="/update/**,/query,/select,/spell">
+    <initParams path="/update/**,/query,/select">
         <lst name="defaults">
             <str name="df">_text_</str>
         </lst>
     </initParams>
-    <searchComponent name="spellcheck" class="solr.SpellCheckComponent">
-        <str name="queryAnalyzerFieldType">text_general</str>
-        <lst name="spellchecker">
-            <str name="name">default</str>
-            <str name="field">_text_</str>
-            <str name="classname">solr.DirectSolrSpellChecker</str>
-            <str name="distanceMeasure">internal</str>
-            <float name="accuracy">0.5</float>
-            <int name="maxEdits">2</int>
-            <int name="minPrefix">1</int>
-            <int name="maxInspections">5</int>
-            <int name="minQueryLength">4</int>
-            <float name="maxQueryFrequency">0.01</float>
-        </lst>
-    </searchComponent>
-    <requestHandler name="/spell" class="solr.SearchHandler" startup="lazy">
-        <lst name="defaults">
-            <str name="spellcheck.dictionary">default</str>
-            <str name="spellcheck">on</str>
-            <str name="spellcheck.extendedResults">true</str>
-            <str name="spellcheck.count">10</str>
-            <str name="spellcheck.alternativeTermCount">5</str>
-            <str name="spellcheck.maxResultsForSuggest">5</str>
-            <str name="spellcheck.collate">true</str>
-            <str name="spellcheck.collateExtendedResults">true</str>
-            <str name="spellcheck.maxCollationTries">10</str>
-            <str name="spellcheck.maxCollations">5</str>
-        </lst>
-        <arr name="last-components">
-            <str>spellcheck</str>
-        </arr>
-    </requestHandler>
     <requestHandler name="/dataimport" class="org.apache.solr.handler.dataimport.DataImportHandler">
         <lst name="defaults">
             <str name="config">solr-data-config.xml</str>

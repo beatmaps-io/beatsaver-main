@@ -11,13 +11,16 @@ import io.beatmaps.api.PlaylistSearchResponse
 import io.beatmaps.api.from
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
-import io.beatmaps.api.search.PgSearchParams
+import io.beatmaps.api.search.BsSolr
+import io.beatmaps.api.search.PlaylistSolr
+import io.beatmaps.api.search.SolrSearchParams
+import io.beatmaps.api.solr.SolrFilter
+import io.beatmaps.api.solr.apply
+import io.beatmaps.api.solr.eq
+import io.beatmaps.api.solr.getIds
+import io.beatmaps.api.solr.paged
 import io.beatmaps.api.util.getWithOptions
-import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.EPlaylistType
-import io.beatmaps.common.db.PgConcat
-import io.beatmaps.common.db.greaterEqF
-import io.beatmaps.common.db.lessEqF
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.curatorAlias
@@ -88,57 +91,66 @@ fun Route.playlistSearch() {
         }
     }
 
-    getWithOptions<PlaylistApi.Text>("Search for playlists".responds(ok<PlaylistSearchResponse>())) {
-        val searchFields = PgConcat(" ", Playlist.name, Playlist.description)
-        val searchInfo = PgSearchParams.parseSearchQuery(it.q, searchFields)
-        val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
-        val sortArgs = when (actualSortOrder) {
-            SearchOrder.Relevance -> listOf(searchInfo.similarRank to SortOrder.DESC, Playlist.createdAt to SortOrder.DESC)
-            SearchOrder.Rating, SearchOrder.Random, SearchOrder.Latest -> listOf(Playlist.createdAt to SortOrder.DESC)
-            SearchOrder.Curated -> listOf(Playlist.curatedAt to SortOrder.DESC_NULLS_LAST, Playlist.createdAt to SortOrder.DESC)
-        }.toTypedArray()
+    getWithOptions<PlaylistApi.Text>("Search for playlists".responds(ok<PlaylistSearchResponse>())) { req ->
+        val searchInfo = SolrSearchParams.parseSearchQuery(req.q)
+        val actualSortOrder = searchInfo.validateSearchOrder(req.sortOrder)
 
         newSuspendedTransaction {
+            val results = PlaylistSolr.newQuery()
+                .let { q ->
+                    searchInfo.applyQuery(q)
+                }
+                .also { q ->
+                    EPlaylistType.entries
+                        .filter { v -> v.anonymousAllowed }
+                        .map { PlaylistSolr.type eq it.name }
+                        .reduce<SolrFilter, SolrFilter> { acc, f -> acc or f }
+                        .let { q.apply(it) }
+                }
+                .also { q ->
+                    if (req.includeEmpty != true) {
+                        q.apply((PlaylistSolr.totalMaps greater 0) or (PlaylistSolr.type eq EPlaylistType.Search.name))
+                    }
+                }
+                .also { q ->
+                    val mapperIds = searchInfo.userSubQuery?.map { it[User.id].value } ?: listOf()
+
+                    mapperIds.map { id ->
+                        BsSolr.mapperIds eq id
+                    }.reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }?.let {
+                        q.apply(it)
+                    }
+                }
+                .notNull(req.minNps) { o -> PlaylistSolr.maxNps greaterEq o }
+                .notNull(req.maxNps) { o -> PlaylistSolr.minNps lessEq o }
+                .notNull(req.from) { o -> PlaylistSolr.created greaterEq o }
+                .notNull(req.to) { o -> PlaylistSolr.created lessEq o }
+                .notNull(req.curated) { o -> PlaylistSolr.curated.any().let { if (o) it else it.not() } }
+                .notNull(req.verified) { o -> PlaylistSolr.verified eq o }
+                .let { q ->
+                    PlaylistSolr.addSortArgs(q, req.seed.hashCode(), actualSortOrder)
+                }
+                .setFields("id")
+                .paged(req.page.toInt())
+                .getIds(PlaylistSolr)
+
             val playlists = Playlist
                 .joinMaps()
                 .joinOwner()
                 .joinPlaylistCurator()
                 .select(
-                    (if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) +
-                        Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all
+                    Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all
                 )
                 .where {
-                    Playlist.id.inSubQuery(
-                        Playlist
-                            .joinOwner()
-                            .select(Playlist.id)
-                            .where {
-                                (Playlist.deletedAt.isNull() and (Playlist.type inList EPlaylistType.entries.filter { v -> v.anonymousAllowed }))
-                                    .let { q -> searchInfo.applyQuery(q) }
-                                    .let { q ->
-                                        if (it.includeEmpty != true) {
-                                            q.and((Playlist.totalMaps greater 0) or (Playlist.type eq EPlaylistType.Search))
-                                        } else { q }
-                                    }
-                                    .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
-                                    .notNull(it.minNps) { o -> Playlist.maxNps greaterEqF o }
-                                    .notNull(it.maxNps) { o -> Playlist.minNps lessEqF o }
-                                    .notNull(it.from) { o -> Playlist.createdAt greaterEq o.toJavaInstant() }
-                                    .notNull(it.to) { o -> Playlist.createdAt lessEq o.toJavaInstant() }
-                                    .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }
-                                    .notNull(it.verified) { o -> User.verifiedMapper eq o }
-                            }
-                            .orderBy(*sortArgs)
-                            .limit(it.page)
-                    )
+                    Playlist.id inList results.mapIds
                 }
                 .groupBy(Playlist.id, User.id, curatorAlias[User.id])
-                .orderBy(*sortArgs)
                 .handleCurator()
                 .handleOwner()
                 .map { playlist ->
                     PlaylistFull.from(playlist, cdnPrefix())
                 }
+                .sortedBy { results.order[it.playlistId] }
 
             call.respond(PlaylistSearchResponse(playlists))
         }

@@ -18,13 +18,13 @@ import io.beatmaps.api.from
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
 import io.beatmaps.api.search.BsSolr
-import io.beatmaps.api.search.SolrFilter
 import io.beatmaps.api.search.SolrSearchParams
-import io.beatmaps.api.search.apply
-import io.beatmaps.api.search.eq
-import io.beatmaps.api.search.getMapIds
-import io.beatmaps.api.search.greaterEq
-import io.beatmaps.api.search.lessEq
+import io.beatmaps.api.solr.SolrFilter
+import io.beatmaps.api.solr.apply
+import io.beatmaps.api.solr.eq
+import io.beatmaps.api.solr.getIds
+import io.beatmaps.api.solr.greaterEq
+import io.beatmaps.api.solr.lessEq
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.Folders
 import io.beatmaps.common.SearchPlaylistConfig
@@ -136,11 +136,11 @@ fun Route.playlistSingle() {
                     params.tags.asQuery().applyToQuery(q)
                 }
                 .let { q ->
-                    searchInfo.addSortArgs(q, playlistId, actualSortOrder)
+                    BsSolr.addSortArgs(q, playlistId, actualSortOrder)
                 }
                 .setFields("id")
                 .setStart(offset).setRows(actualPageSize)
-                .getMapIds()
+                .getIds(BsSolr)
 
             Beatmap
                 .joinVersions(true)

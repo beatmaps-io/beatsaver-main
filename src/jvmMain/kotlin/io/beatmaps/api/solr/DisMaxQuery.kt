@@ -1,4 +1,4 @@
-package io.beatmaps.api.search
+package io.beatmaps.api.solr
 
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.solr.common.params.DisMaxParams
