@@ -43,6 +43,7 @@ import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.handlePatreon
 import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.common.pub
 import io.beatmaps.common.sendEmail
 import io.beatmaps.login.MongoClient
 import io.beatmaps.login.MongoSession
@@ -311,6 +312,7 @@ fun Route.userRoute(client: HttpClient) {
                         }
                     }.let { success ->
                         if (success) {
+                            call.pub("beatmaps", "user.${req.userId}.updated.admin", null, req.userId)
                             ActionResponse.success()
                         } else {
                             ActionResponse.error("User not found")
