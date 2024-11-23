@@ -116,7 +116,6 @@ import org.litote.kmongo.descending
 import org.litote.kmongo.div
 import org.litote.kmongo.eq
 import org.litote.kmongo.ne
-import pl.jutupe.ktor_rabbitmq.publish
 import java.lang.Integer.toHexString
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
