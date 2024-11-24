@@ -11,7 +11,7 @@ class SolrProduct<T : Number>(private val a: SolrFunction<T>, private val b: Sol
  * recip(x,m,a,b) implementing a/(m*x+b)
  * where m,a,b are constants, and x is any arbitrarily complex function
  */
-class SolrRecip<T : Number, U: Number, V: Number, W: Number>(private val x: SolrFunction<T>, private val m: U, private val a: V, private val b: W) : SolrFunction<Float>() {
+class SolrRecip<T : Number, U : Number, V : Number, W : Number>(private val x: SolrFunction<T>, private val m: U, private val a: V, private val b: W) : SolrFunction<Float>() {
     override fun toText() = "recip(${x.toText()},$m,$a,$b)"
 }
 
