@@ -9,7 +9,11 @@ RUN mkdir -p /var/solr/lib && \
 RUN mkdir -p /var/solr/data && \
     /opt/solr/bin/solr start && \
     /opt/solr/bin/solr create_core -c beatsaver && \
+    /opt/solr/bin/solr create_core -c playlists && \
     /opt/solr/bin/solr stop
 
 WORKDIR /var/solr/data/beatsaver/conf
-ADD . .
+ADD beatsaver .
+
+WORKDIR /var/solr/data/playlists/conf
+ADD playlists .

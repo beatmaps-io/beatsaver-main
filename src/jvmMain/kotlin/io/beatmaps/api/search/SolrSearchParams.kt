@@ -1,5 +1,6 @@
 package io.beatmaps.api.search
 
+import io.beatmaps.api.solr.all
 import io.beatmaps.common.SearchOrder
 import org.apache.solr.client.solrj.SolrQuery
 
@@ -23,29 +24,6 @@ class SolrSearchParams(
             SearchOrder.Relevance
         } else {
             super.validateSearchOrder(originalOrder)
-        }
-
-    fun addSortArgs(q: SolrQuery, seed: Int?, searchOrder: SearchOrder): SolrQuery =
-        when (searchOrder) {
-            SearchOrder.Relevance -> listOf(
-                SolrScore.desc()
-            )
-            SearchOrder.Rating -> listOf(
-                BsSolr.voteScore.desc(),
-                BsSolr.uploaded.desc()
-            )
-            SearchOrder.Latest -> listOf(
-                BsSolr.uploaded.desc()
-            )
-            SearchOrder.Curated -> listOf(
-                BsSolr.curated.desc(),
-                BsSolr.uploaded.desc()
-            )
-            SearchOrder.Random -> listOf(
-                SolrQuery.SortClause("random_$seed", SolrQuery.ORDER.desc)
-            )
-        }.let {
-            q.setSorts(it)
         }
 
     companion object {

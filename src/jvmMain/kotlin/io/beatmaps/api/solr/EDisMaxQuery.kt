@@ -1,4 +1,4 @@
-package io.beatmaps.api.search
+package io.beatmaps.api.solr
 
 class EDisMaxQuery : DisMaxQuery() {
     init {
@@ -7,6 +7,10 @@ class EDisMaxQuery : DisMaxQuery() {
 
     fun setBoost(field: SolrField<*>?) = this.also {
         set(BOOST, field?.toText())
+    }
+
+    fun <T : Number> setBoostFunction(func: SolrFunction<T>?) = this.also {
+        set(BOOST_FUNCTION, func?.toText())
     }
 
     fun setSplitOnWhitespace(split: Boolean = true) = this.also {
@@ -34,6 +38,7 @@ class EDisMaxQuery : DisMaxQuery() {
 
     companion object {
         const val BOOST = "boost"
+        const val BOOST_FUNCTION = "bf"
         const val SOW = "sow"
         const val USER_FIELDS = "uf"
         const val LOWERCASE_OPERATORS = "lowercaseOperators"

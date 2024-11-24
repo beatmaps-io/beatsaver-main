@@ -6,7 +6,7 @@ import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.api.search.BsSolr
-import io.beatmaps.api.search.insert
+import io.beatmaps.api.solr.insert
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.api.util.postWithOptions
 import io.beatmaps.common.consumeAck

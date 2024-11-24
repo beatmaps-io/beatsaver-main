@@ -8,15 +8,15 @@ import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.api.search.BsSolr
 import io.beatmaps.api.search.PgSearchParams
-import io.beatmaps.api.search.SolrFilter
-import io.beatmaps.api.search.SolrHelper
 import io.beatmaps.api.search.SolrSearchParams
-import io.beatmaps.api.search.apply
-import io.beatmaps.api.search.eq
-import io.beatmaps.api.search.getMapIds
-import io.beatmaps.api.search.greaterEq
-import io.beatmaps.api.search.lessEq
-import io.beatmaps.api.search.paged
+import io.beatmaps.api.solr.SolrFilter
+import io.beatmaps.api.solr.SolrHelper
+import io.beatmaps.api.solr.apply
+import io.beatmaps.api.solr.eq
+import io.beatmaps.api.solr.getIds
+import io.beatmaps.api.solr.greaterEq
+import io.beatmaps.api.solr.lessEq
+import io.beatmaps.api.solr.paged
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.MapTagQuery
@@ -238,8 +238,6 @@ fun Route.searchRoute() {
                     .notNull(it.maxRating) { o -> BsSolr.voteScore lessEq o }
                     .notNull(it.mapper) { o -> BsSolr.mapperId eq o }
                     .notNull(it.collaborator) { o -> BsSolr.mapperIds eq o }
-                    .notNull(it.from) { o -> BsSolr.uploaded greaterEq o }
-                    .notNull(it.to) { o -> BsSolr.uploaded lessEq o }
                     .notNull(it.minBpm) { o -> BsSolr.bpm greaterEq o }
                     .notNull(it.maxBpm) { o -> BsSolr.bpm lessEq o }
                     .notNull(it.minDuration) { o -> BsSolr.duration greaterEq o }
@@ -271,10 +269,10 @@ fun Route.searchRoute() {
                         if (o) cinemaQuery else cinemaQuery.not()
                     }
                     .let { q ->
-                        searchInfo.addSortArgs(q, it.seed.hashCode(), actualSortOrder)
+                        BsSolr.addSortArgs(q, it.seed.hashCode(), actualSortOrder)
                     }
                     .paged(page = it.page.toInt())
-                    .getMapIds()
+                    .getIds(BsSolr)
 
                 val beatmaps = Beatmap
                     .joinVersions(true)

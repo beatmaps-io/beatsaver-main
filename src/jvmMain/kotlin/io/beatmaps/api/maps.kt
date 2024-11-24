@@ -9,10 +9,10 @@ import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.api.search.BsSolr
-import io.beatmaps.api.search.all
-import io.beatmaps.api.search.eq
-import io.beatmaps.api.search.getMapIds
-import io.beatmaps.api.search.paged
+import io.beatmaps.api.solr.all
+import io.beatmaps.api.solr.eq
+import io.beatmaps.api.solr.getIds
+import io.beatmaps.api.solr.paged
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.InfoEditData
@@ -677,7 +677,7 @@ fun Route.mapDetailRoute() {
             .notNull(it.id) { o -> BsSolr.mapperIds eq o }
             .setSort(BsSolr.uploaded.desc())
             .paged(pageSize = pageSize)
-            .getMapIds()
+            .getIds(BsSolr)
 
         val beatmaps = newSuspendedTransaction {
             Beatmap

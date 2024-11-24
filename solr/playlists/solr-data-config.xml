@@ -1,0 +1,48 @@
+<dataConfig>
+    <dataSource type="JdbcDataSource" driver="org.postgresql.Driver" url="jdbc:postgresql://db:5432/beatmaps" user="beatmaps" password="insecure-password"></dataSource>
+    <document>
+        <entity pk="id" name="Playlists"
+                query="
+                    SELECT p.&quot;playlistId&quot; id, p.name, p.owner, p.&quot;createdAt&quot;, p.&quot;updatedAt&quot;, p.description, p.&quot;deletedAt&quot;,
+                        p.&quot;songsChangedAt&quot;, p.&quot;curatedAt&quot;, p.&quot;curatedBy&quot;, p.&quot;minNps&quot;, p.&quot;maxNps&quot;, p.&quot;totalMaps&quot;, p.type,
+                        STRING_AGG(pm.&quot;mapId&quot;::varchar, ',') mids, u.&quot;verifiedMapper&quot;
+                    FROM playlist p
+                        LEFT JOIN public.playlist_map pm on p.&quot;playlistId&quot; = pm.&quot;playlistId&quot;
+                        JOIN uploader u ON p.owner = u.id
+                        WHERE &quot;deletedAt&quot; IS NULL GROUP BY p.&quot;playlistId&quot;, u.id"
+                deltaQuery="SELECT &quot;playlistId&quot; id FROM playlist WHERE &quot;deletedAt&quot; IS NULL AND
+                                CASE WHEN &quot;updatedAt&quot; > &quot;songsChangedAt&quot; THEN &quot;updatedAt&quot; ELSE &quot;songsChangedAt&quot; END >= '${dataimporter.last_index_time}'"
+                deltaImportQuery="
+                    SELECT p.&quot;playlistId&quot; id, p.name, p.owner, p.&quot;createdAt&quot;, p.&quot;updatedAt&quot;, p.description, p.&quot;deletedAt&quot;,
+                        p.&quot;songsChangedAt&quot;, p.&quot;curatedAt&quot;, p.&quot;curatedBy&quot;, p.&quot;minNps&quot;, p.&quot;maxNps&quot;, p.&quot;totalMaps&quot;, p.type,
+                        STRING_AGG(pm.&quot;mapId&quot;::varchar, ',') mids, u.&quot;verifiedMapper&quot;
+                    FROM playlist p
+                        LEFT JOIN public.playlist_map pm on p.&quot;playlistId&quot; = pm.&quot;playlistId&quot;
+                        JOIN uploader u ON p.owner = u.id
+                        WHERE &quot;playlistId&quot; = ${dataimporter.delta.id} GROUP BY p.&quot;playlistId&quot;, u.id"
+                deletedPkQuery="
+                    SELECT &quot;playlistId&quot; id FROM playlist
+                    WHERE &quot;deletedAt&quot; > '${dataimporter.last_index_time}'"
+                transformer="RegexTransformer"
+        >
+
+            <field column="id" name="id"></field>
+            <field column="id" name="sId"></field>
+            <field column="owner" name="ownerId"></field>
+            <field column="name" name="name"></field>
+            <field column="description" name="description"></field>
+            <field column="createdAt" name="created"></field>
+            <field column="deletedAt" name="deleted"></field>
+            <field column="updatedAt" name="updated"></field>
+            <field column="songsChangedAt" name="songsChanged"></field>
+            <field column="curatedAt" name="curated"></field>
+            <field column="curatedBy" name="curatorId"></field>
+            <field column="minNps" name="minNps"></field>
+            <field column="maxNps" name="maxNps"></field>
+            <field column="totalMaps" name="totalMaps"></field>
+            <field column="type" name="type"></field>
+            <field column="mids" splitBy="," name="mapIds"></field>
+            <field column="verifiedMapper" name="verified"></field>
+        </entity>
+    </document>
+</dataConfig>
