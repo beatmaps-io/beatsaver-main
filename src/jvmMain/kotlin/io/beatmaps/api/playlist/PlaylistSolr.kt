@@ -41,7 +41,7 @@ object PlaylistSolr : SolrCollection() {
         descriptionEn to 0.5
     )
 
-    private val boostFunction = SolrRecip(SolrMs(SolrNow, songsChanged), SolrHelper.msPerYear, 1f, 1f)
+    private val boostFunction = SolrRecip(SolrMs(SolrNow, songsChanged), SolrHelper.msPerYear, 1, 1)
 
     fun newQuery() =
         EDisMaxQuery()

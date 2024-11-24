@@ -9,7 +9,7 @@ class EDisMaxQuery : DisMaxQuery() {
         set(BOOST, field?.toText())
     }
 
-    fun setBoostFunction(func: NumericSolrFunction<*>?) = this.also {
+    fun <T : Number> setBoostFunction(func: SolrFunction<T>?) = this.also {
         set(BOOST_FUNCTION, func?.toText())
     }
 

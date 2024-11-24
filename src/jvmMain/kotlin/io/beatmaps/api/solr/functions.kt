@@ -3,7 +3,7 @@ package io.beatmaps.api.solr
 import kotlinx.datetime.Instant
 import org.apache.solr.client.solrj.SolrQuery
 
-class SolrProduct<T : Number>(private val a: NumericSolrFunction<T>, private val b: NumericSolrFunction<T>) : NumericSolrFunction<T>() {
+class SolrProduct<T : Number>(private val a: SolrFunction<T>, private val b: SolrFunction<T>) : SolrFunction<T>() {
     override fun toText() = "product(${a.toText()}, ${b.toText()})"
 }
 
@@ -11,11 +11,11 @@ class SolrProduct<T : Number>(private val a: NumericSolrFunction<T>, private val
  * recip(x,m,a,b) implementing a/(m*x+b)
  * where m,a,b are constants, and x is any arbitrarily complex function
  */
-class SolrRecip(private val x: NumericSolrFunction<*>, private val m: Float, private val a: Float, private val b: Float) : NumericSolrFunction<Float>() {
+class SolrRecip<T : Number, U: Number, V: Number, W: Number>(private val x: SolrFunction<T>, private val m: U, private val a: V, private val b: W) : SolrFunction<Float>() {
     override fun toText() = "recip(${x.toText()},$m,$a,$b)"
 }
 
-class SolrMs(private val a: SolrFunction<Instant>? = null, private val b: SolrFunction<Instant>? = null) : NumericSolrFunction<Long>() {
+class SolrMs(private val a: SolrFunction<Instant>? = null, private val b: SolrFunction<Instant>? = null) : SolrFunction<Long>() {
     override fun toText() = listOfNotNull(a, b).joinToString(",", "ms(", ")") { it.toText() }
 }
 
@@ -27,12 +27,8 @@ class SolrInstant(private val t: Instant) : SolrFunction<Instant>() {
     override fun toText() = t.toString()
 }
 
-object SolrBaseScore : NumericSolrFunction<Float>() {
+object SolrBaseScore : SolrFunction<Float>() {
     override fun toText() = "query(\$q)"
-}
-
-abstract class NumericSolrFunction<T : Number> : SolrFunction<T>() {
-    infix fun product(other: NumericSolrFunction<T>) = SolrProduct(this, other)
 }
 
 abstract class SolrFunction<T> {
