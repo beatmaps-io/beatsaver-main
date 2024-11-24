@@ -21,13 +21,18 @@ object SolrHelper {
     }
 
     val logger = KotlinLogging.logger {}
+
+    const val msPerYear = 3.16e-11f
 }
 
-val emptyResults = SolrResults(listOf(), 0, 0)
 data class SolrResults(val mapIds: List<Int>, val qTime: Int, val numRecords: Int) {
     val pages = ceil(numRecords / 20f).toInt()
     val order = mapIds.mapIndexed { idx, i -> i to idx }.toMap()
     val searchInfo = SearchInfo(numRecords, pages, qTime / 1000f)
+
+    companion object {
+        val empty = SolrResults(listOf(), 0, 0)
+    }
 }
 
 fun SolrQuery.all(): SolrQuery =
@@ -48,5 +53,5 @@ fun ModifiableSolrParams.getIds(coll: SolrCollection, field: SolrField<Int>? = n
         SolrResults(mapIds, response.qTime, numRecords)
     } catch (e: RemoteSolrException) {
         SolrHelper.logger.warn(e) { "Failed to perform solr query $this" }
-        emptyResults
+        SolrResults.empty
     }

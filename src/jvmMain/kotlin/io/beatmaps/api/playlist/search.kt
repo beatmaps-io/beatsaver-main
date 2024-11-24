@@ -12,7 +12,6 @@ import io.beatmaps.api.from
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
 import io.beatmaps.api.search.BsSolr
-import io.beatmaps.api.search.PlaylistSolr
 import io.beatmaps.api.search.SolrSearchParams
 import io.beatmaps.api.solr.SolrFilter
 import io.beatmaps.api.solr.apply

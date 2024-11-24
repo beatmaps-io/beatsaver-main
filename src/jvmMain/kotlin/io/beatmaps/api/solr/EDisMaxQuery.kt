@@ -9,6 +9,10 @@ class EDisMaxQuery : DisMaxQuery() {
         set(BOOST, field?.toText())
     }
 
+    fun setBoostFunction(func: NumericSolrFunction<*>?) = this.also {
+        set(BOOST_FUNCTION, func?.toText())
+    }
+
     fun setSplitOnWhitespace(split: Boolean = true) = this.also {
         set(SOW, split.toString())
     }
@@ -34,6 +38,7 @@ class EDisMaxQuery : DisMaxQuery() {
 
     companion object {
         const val BOOST = "boost"
+        const val BOOST_FUNCTION = "bf"
         const val SOW = "sow"
         const val USER_FIELDS = "uf"
         const val LOWERCASE_OPERATORS = "lowercaseOperators"

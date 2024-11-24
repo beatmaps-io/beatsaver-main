@@ -86,26 +86,8 @@ data class SolrField<T>(private val collection: SolrCollection, val name: String
     fun any() = eq(this, "*")
 }
 
-object SolrBaseScore : SolrFunction<Float>() {
-    override fun toText() = "query(\$q)"
-}
-
 object SolrScore : SolrFunction<Float>() {
     override fun toText() = "score"
-}
-
-class SolrProduct<T>(private val a: SolrFunction<T>, private val b: SolrFunction<T>) : SolrFunction<T>() {
-    override fun toText() = "product(${a.toText()}, ${b.toText()})"
-}
-
-abstract class SolrFunction<T> {
-    abstract fun toText(): String
-
-    private fun sort(order: SolrQuery.ORDER) = SolrQuery.SortClause(toText(), order)
-    fun asc() = sort(SolrQuery.ORDER.asc)
-    fun desc() = sort(SolrQuery.ORDER.desc)
-
-    infix fun product(other: SolrFunction<T>) = SolrProduct(this, other)
 }
 
 private fun lessThanEq(field: SolrField<*>, value: String) =

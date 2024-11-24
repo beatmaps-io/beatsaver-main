@@ -1,8 +1,12 @@
-package io.beatmaps.api.search
+package io.beatmaps.api.playlist
 
 import io.beatmaps.api.solr.EDisMaxQuery
 import io.beatmaps.api.solr.PercentageMinimumMatchExpression
 import io.beatmaps.api.solr.SolrCollection
+import io.beatmaps.api.solr.SolrHelper
+import io.beatmaps.api.solr.SolrMs
+import io.beatmaps.api.solr.SolrNow
+import io.beatmaps.api.solr.SolrRecip
 import io.beatmaps.api.solr.SolrScore
 import io.beatmaps.common.SearchOrder
 import org.apache.solr.client.solrj.SolrQuery
@@ -37,8 +41,11 @@ object PlaylistSolr : SolrCollection() {
         descriptionEn to 0.5
     )
 
+    private val boostFunction = SolrRecip(SolrMs(SolrNow, songsChanged), SolrHelper.msPerYear, 1f, 1f)
+
     fun newQuery() =
         EDisMaxQuery()
+            .setBoostFunction(boostFunction)
             .setQueryFields(*queryFields)
             .setTie(0.1)
             .setMinimumMatch(

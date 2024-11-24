@@ -1,5 +1,6 @@
 package io.beatmaps.api.search
 
+import io.beatmaps.api.playlist.PlaylistSolr
 import io.beatmaps.api.solr.insert
 import io.beatmaps.api.solr.insertMany
 import io.beatmaps.common.consumeAck
