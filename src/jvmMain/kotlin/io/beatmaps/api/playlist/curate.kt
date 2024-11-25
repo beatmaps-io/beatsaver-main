@@ -47,10 +47,9 @@ fun Route.playlistCurate() {
                     )?.firstOrNull()?.let {
                         PlaylistFull.from(it, cdnPrefix())
                     }
+                }?.also {
+                    call.pub("beatmaps", "playlists.${it.playlistId}.updated.curation", null, it.playlistId)
                 }
-
-                if (result != null)
-                    call.pub("beatmaps", "playlists.${result.playlistId}.updated.curation", null, result.playlistId)
 
                 call.respond(result ?: HttpStatusCode.BadRequest)
             }
