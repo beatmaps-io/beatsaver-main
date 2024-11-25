@@ -79,7 +79,7 @@ class PlaylistApi {
 
     @Group("Playlists")
     @Location("$prefix/search/{page}")
-    data class Text(
+    data class Solr(
         val q: String = "",
         @DefaultValue("0") val page: Long = 0,
         val sortOrder: SearchOrder = SearchOrder.Relevance,
@@ -91,6 +91,22 @@ class PlaylistApi {
         val curated: Boolean? = null,
         val verified: Boolean? = null,
         @Ignore val seed: String? = null,
+        @Ignore val api: PlaylistApi
+    )
+
+    @Group("Playlists")
+    @Location("$prefix/search/v1/{page}")
+    data class Text(
+        val q: String = "",
+        @DefaultValue("0") val page: Long = 0,
+        val sortOrder: SearchOrder = SearchOrder.Relevance,
+        val minNps: Float? = null,
+        val maxNps: Float? = null,
+        val from: Instant? = null,
+        val to: Instant? = null,
+        val includeEmpty: Boolean? = null,
+        val curated: Boolean? = null,
+        val verified: Boolean? = null,
         @Ignore val api: PlaylistApi
     )
 }

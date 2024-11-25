@@ -3,6 +3,7 @@ package io.beatmaps.api.solr
 import io.beatmaps.api.SearchInfo
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.solr.client.solrj.SolrQuery
+import org.apache.solr.client.solrj.SolrServerException
 import org.apache.solr.client.solrj.impl.BaseHttpSolrClient.RemoteSolrException
 import org.apache.solr.client.solrj.impl.Http2SolrClient
 import org.apache.solr.common.params.ModifiableSolrParams
@@ -52,6 +53,9 @@ fun ModifiableSolrParams.getIds(coll: SolrCollection, field: SolrField<Int>? = n
 
         SolrResults(mapIds, response.qTime, numRecords)
     } catch (e: RemoteSolrException) {
+        SolrHelper.logger.warn(e) { "Failed to perform solr query $this" }
+        SolrResults.empty
+    } catch (e: SolrServerException) {
         SolrHelper.logger.warn(e) { "Failed to perform solr query $this" }
         SolrResults.empty
     }
