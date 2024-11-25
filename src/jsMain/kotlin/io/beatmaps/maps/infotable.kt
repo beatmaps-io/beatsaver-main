@@ -171,8 +171,7 @@ val infoTable = fc<InfoTableProps> { props ->
                     +"Environment"
                     span("text-truncate ms-4") {
                         envs.forEach { (env, diffs) ->
-                            val color = if (env?.v3 == true) "warning" else if (env?.rotation == true) "danger" else "blue"
-                            div("badge badge-$color ms-2") {
+                            div("badge badge-${env?.color()} ms-2") {
                                 span {
                                     attrs.title = diffs.joinToString { "${it.difficulty.human()} ${it.characteristic.human()}" }
                                     +(env?.short ?: "")
