@@ -7,6 +7,7 @@ import io.beatmaps.Config
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistSearchResponse
 import io.beatmaps.common.SearchOrder
+import io.beatmaps.configContext
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.search.CommonParams
@@ -16,6 +17,7 @@ import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
 import react.fc
+import react.useContext
 import react.useRef
 import react.useState
 
@@ -40,6 +42,7 @@ external interface PlaylistTableProps : Props {
 
 val playlistTable = fc<PlaylistTableProps> { props ->
     val (resultsKey, setResultsKey) = useState(Any())
+    val config = useContext(configContext)
 
     val resultsTable = useRef<HTMLElement>()
 
@@ -52,7 +55,7 @@ val playlistTable = fc<PlaylistTableProps> { props ->
             "${Config.apibase}/playlists/user/${props.userId}/$page"
         } else {
             props.search?.let { search ->
-                "${Config.apibase}/playlists/search/$page?sortOrder=${search.sortOrder}" +
+                "${Config.apibase}/playlists/search${if (config?.v2Search == true) "" else "/v1"}/$page?sortOrder=${search.sortOrder}" +
                     (if (search.curated != null) "&curated=${search.curated}" else "") +
                     (if (search.verified != null) "&verified=${search.verified}" else "") +
                     (if (search.search.isNotBlank()) "&q=${encodeURIComponent(search.search)}" else "") +
