@@ -95,7 +95,7 @@ data class MapDetailWithOrder(val map: MapDetail, val order: Float)
 data class PlaylistPage(val playlist: PlaylistFull? = null, val maps: List<MapDetailWithOrder>? = null)
 
 @Serializable
-data class PlaylistSearchResponse(val docs: List<PlaylistFull>)
+data class PlaylistSearchResponse(val docs: List<PlaylistFull>, val info: SearchInfo? = null)
 
 @Serializable
 data class CuratePlaylist(val id: Int, val curated: Boolean = false)

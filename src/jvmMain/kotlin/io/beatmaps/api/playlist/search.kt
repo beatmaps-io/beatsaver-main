@@ -156,7 +156,7 @@ fun Route.playlistSearch() {
                 }
                 .sortedBy { results.order[it.playlistId] }
 
-            call.respond(PlaylistSearchResponse(playlists))
+            call.respond(PlaylistSearchResponse(playlists, results.searchInfo))
         }
     }
 
