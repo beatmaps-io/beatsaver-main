@@ -34,6 +34,7 @@ object BsSolr : SolrCollection() {
     val fullSpread = boolean("fullSpread")
     val bpm = pfloat("bpm")
     val duration = pint("duration")
+    val environment = strings("environment")
 
     // Copy fields
     val authorEn = string("author_en")

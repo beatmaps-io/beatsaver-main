@@ -76,6 +76,7 @@ object SolrImporter {
                     it[fullSpread] = map.fullSpread
                     it[bpm] = map.bpm
                     it[duration] = map.duration
+                    it[environment] = diffs.mapNotNull { d -> d.environment?.name }.distinct()
                 }
             }
         }
