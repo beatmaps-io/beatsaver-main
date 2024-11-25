@@ -2,12 +2,15 @@ package io.beatmaps.api.playlist
 
 import io.beatmaps.api.CuratePlaylist
 import io.beatmaps.api.PlaylistApi
+import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.from
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Playlist
+import io.beatmaps.common.pub
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.post
 import io.ktor.server.request.receive
@@ -40,13 +43,16 @@ fun Route.playlistCurate() {
                             }
                             it[updatedAt] = NowExpression(updatedAt)
                         },
-                        *io.beatmaps.common.dbo.Playlist.columns.toTypedArray()
+                        *Playlist.columns.toTypedArray()
                     )?.firstOrNull()?.let {
-                        io.beatmaps.api.PlaylistFull.from(it, cdnPrefix())
+                        PlaylistFull.from(it, cdnPrefix())
                     }
                 }
 
-                call.respond(result ?: io.ktor.http.HttpStatusCode.BadRequest)
+                if (result != null)
+                    call.pub("beatmaps", "playlists.${result.playlistId}.updated.curation", null, result.playlistId)
+
+                call.respond(result ?: HttpStatusCode.BadRequest)
             }
         }
     }
