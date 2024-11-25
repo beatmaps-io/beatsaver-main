@@ -125,7 +125,7 @@ fun Route.playlistCreate() {
                         it[owner] = toCreate.owner
                         it[type] = toCreate.type
                         it[config] = toCreate.config
-                    }
+                    }.value
                 }
 
                 files.forEach { (s, temp) ->
@@ -134,7 +134,7 @@ fun Route.playlistCreate() {
                 }
 
                 call.pub("beatmaps", "playlists.$newId.created", null, newId)
-                call.respond(newId.value)
+                call.respond(newId)
             } finally {
                 files.values.forEach { temp ->
                     temp.delete()
