@@ -98,6 +98,7 @@
     <field name="fullSpread" type="boolean" uninvertible="false" indexed="true" required="true" stored="true"/>
     <field name="bpm" type="pfloat" uninvertible="false" indexed="true" stored="true"/>
     <field name="duration" type="pint" uninvertible="false" indexed="true" stored="true"/>
+    <field name="environment" type="strings" uninvertible="false" indexed="true" stored="true"/>
     <copyField source="author" dest="_text_"/>
     <copyField source="description" dest="_text_"/>
     <copyField source="name" dest="_text_"/>

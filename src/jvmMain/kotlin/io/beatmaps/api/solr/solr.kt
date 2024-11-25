@@ -23,7 +23,7 @@ object SolrHelper {
 
     val logger = KotlinLogging.logger {}
 
-    const val msPerYear = 3.16e-11f
+    const val MS_PER_YEAR = 3.16e-11f
 }
 
 data class SolrResults(val mapIds: List<Int>, val qTime: Int, val numRecords: Int) {
