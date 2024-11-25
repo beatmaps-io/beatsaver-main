@@ -240,6 +240,8 @@ fun Route.searchRoute() {
                     .notNull(it.collaborator) { o -> BsSolr.mapperIds eq o }
                     .notNull(it.minBpm) { o -> BsSolr.bpm greaterEq o }
                     .notNull(it.maxBpm) { o -> BsSolr.bpm lessEq o }
+                    .notNull(it.from) { o -> BsSolr.uploaded greaterEq o }
+                    .notNull(it.to) { o -> BsSolr.uploaded lessEq o }
                     .notNull(it.minDuration) { o -> BsSolr.duration greaterEq o }
                     .notNull(it.maxDuration) { o -> BsSolr.duration lessEq o }
                     .notNull(it.curator) { o -> BsSolr.curatorId eq o }
