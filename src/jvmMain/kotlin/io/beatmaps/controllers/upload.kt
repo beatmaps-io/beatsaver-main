@@ -338,7 +338,7 @@ fun Route.uploadController() {
                                 it[mapId] = newMap
                                 it[versionId] = newVersion
 
-                                sharedInsert(it, diffInfo, bsdiff, bslights, extractedInfo.mapInfo, sli)
+                                sharedInsert(it, cLoop.key, diffInfo, bsdiff, bslights, extractedInfo.mapInfo, sli)
                                 it[characteristic] = cLoop.key
                                 it[difficulty] = dLoop.key.enumValue()
                             }
