@@ -1,7 +1,7 @@
 package io.beatmaps.api.search
 
-import io.beatmaps.api.solr.all
 import io.beatmaps.common.SearchOrder
+import io.beatmaps.common.solr.all
 import org.apache.solr.client.solrj.SolrQuery
 
 class SolrSearchParams(
@@ -27,7 +27,7 @@ class SolrSearchParams(
         }
 
     companion object {
-        val specialRegex = Regex("[\\+\\-\\&\\|\\!\\(\\)\\{\\}\\[\\]\\^\\\"\\~\\*\\?\\:\\\\]")
+        val specialRegex = Regex("[\\&\\|\\!\\(\\)\\{\\}\\[\\]\\^\\\"\\~\\*\\?\\:\\\\]")
 
         fun parseSearchQuery(q: String) =
             parseSearchQuery(q) { originalQuery, query, quotedSections, bothWithoutQuotes, mappers ->

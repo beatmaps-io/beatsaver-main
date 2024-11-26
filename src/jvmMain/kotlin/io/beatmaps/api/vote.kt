@@ -5,8 +5,6 @@ import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
-import io.beatmaps.api.search.BsSolr
-import io.beatmaps.api.solr.insert
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.api.util.postWithOptions
 import io.beatmaps.common.consumeAck
@@ -22,6 +20,8 @@ import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.common.rabbitOptional
+import io.beatmaps.common.solr.collections.BsSolr
+import io.beatmaps.common.solr.insert
 import io.beatmaps.common.tag
 import io.beatmaps.util.GameTokenValidator
 import io.ktor.client.HttpClient

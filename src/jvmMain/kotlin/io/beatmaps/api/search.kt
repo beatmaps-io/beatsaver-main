@@ -6,24 +6,17 @@ import de.nielsfalk.ktor.swagger.Ignore
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
-import io.beatmaps.api.search.BsSolr
 import io.beatmaps.api.search.PgSearchParams
 import io.beatmaps.api.search.SolrSearchParams
-import io.beatmaps.api.solr.SolrFilter
-import io.beatmaps.api.solr.SolrHelper
-import io.beatmaps.api.solr.apply
-import io.beatmaps.api.solr.eq
-import io.beatmaps.api.solr.getIds
-import io.beatmaps.api.solr.greaterEq
-import io.beatmaps.api.solr.lessEq
-import io.beatmaps.api.solr.paged
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.MapTagQuery
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.AiDeclarationType
+import io.beatmaps.common.api.EBeatsaberEnvironment
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.RankedFilter
+import io.beatmaps.common.api.searchEnumOrNull
 import io.beatmaps.common.applyToQuery
 import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.greaterEqF
@@ -43,6 +36,15 @@ import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.common.solr.SolrHelper
+import io.beatmaps.common.solr.collections.BsSolr
+import io.beatmaps.common.solr.field.SolrFilter
+import io.beatmaps.common.solr.field.apply
+import io.beatmaps.common.solr.field.eq
+import io.beatmaps.common.solr.field.greaterEq
+import io.beatmaps.common.solr.field.lessEq
+import io.beatmaps.common.solr.getIds
+import io.beatmaps.common.solr.paged
 import io.beatmaps.common.toQuery
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
@@ -139,6 +141,8 @@ class SearchApi {
         val cinema: Boolean? = null,
         @Description("Tag query, separated by `,` (and) or `|` (or). Excluded tags are prefixed with `!`.")
         val tags: String? = null,
+        @Description("Comma seperated list of environments")
+        val environments: String? = null,
         @Ignore val mapper: Int? = null,
         @Ignore val collaborator: Int? = null,
         @Ignore val curator: Int? = null,
@@ -230,6 +234,15 @@ fun Route.searchRoute() {
                         }
 
                         tq?.applyToQuery(q) ?: q
+                    }
+                    .also { q ->
+                        it.environments?.let { env ->
+                            env.split(",")
+                                .mapNotNull { e -> searchEnumOrNull<EBeatsaberEnvironment>(e) }
+                                .map { e -> BsSolr.environment eq e.name }
+                                .reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }
+                                ?.let { q.apply(it) }
+                        }
                     }
                     .notNull(it.curated) { o -> BsSolr.curated.any().let { if (o) it else it.not() } }
                     .notNull(it.verified) { o -> BsSolr.verified eq o }

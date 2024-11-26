@@ -8,11 +8,6 @@ import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
-import io.beatmaps.api.search.BsSolr
-import io.beatmaps.api.solr.all
-import io.beatmaps.api.solr.eq
-import io.beatmaps.api.solr.getIds
-import io.beatmaps.api.solr.paged
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.InfoEditData
@@ -39,6 +34,11 @@ import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
+import io.beatmaps.common.solr.all
+import io.beatmaps.common.solr.collections.BsSolr
+import io.beatmaps.common.solr.field.eq
+import io.beatmaps.common.solr.getIds
+import io.beatmaps.common.solr.paged
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization

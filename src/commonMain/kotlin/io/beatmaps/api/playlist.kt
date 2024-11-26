@@ -3,6 +3,7 @@ package io.beatmaps.api
 import io.beatmaps.common.IPlaylistConfig
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.fixed
+import io.beatmaps.common.solr.SearchInfo
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

@@ -10,6 +10,7 @@ import io.beatmaps.common.api.ECharacteristicSerializer
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.fixed
+import io.beatmaps.common.solr.SearchInfo
 import kotlinx.datetime.Instant
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -142,9 +143,6 @@ data class MapTestplay(val feedback: String? = null, val video: String? = null, 
 
 @Serializable
 data class SearchResponse(val docs: List<MapDetail>? = null, val info: SearchInfo? = null, val redirect: String? = null)
-
-@Serializable
-data class SearchInfo(val total: Int, val pages: Int, val duration: Float)
 
 @Serializable
 data class DeletedResponse(val docs: List<DeletedMap>? = null)
