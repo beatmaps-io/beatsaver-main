@@ -51,9 +51,7 @@ abstract class SearchParams(
 
     companion object {
         private val quotedPattern = Regex("\"([^\"]*)\"")
-        fun <T : SearchParams> parseSearchQuery(q: String, block: (String, String, List<String>, String, List<String>) -> T): T {
-            val originalQuery = q.replace("%", "\\%")
-
+        fun <T : SearchParams> parseSearchQuery(originalQuery: String, block: (String, String, List<String>, String, List<String>) -> T): T {
             val matches = quotedPattern.findAll(originalQuery)
             val quotedSections = matches.map { match -> match.groupValues[1] }.toList()
             val withoutQuotedSections = quotedPattern.split(originalQuery).filter { s -> s.isNotBlank() }.joinToString(" ") { s -> s.trim() }

@@ -11,14 +11,8 @@ import io.beatmaps.api.PlaylistSearchResponse
 import io.beatmaps.api.from
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
-import io.beatmaps.api.search.BsSolr
 import io.beatmaps.api.search.PgSearchParams
 import io.beatmaps.api.search.SolrSearchParams
-import io.beatmaps.api.solr.SolrFilter
-import io.beatmaps.api.solr.apply
-import io.beatmaps.api.solr.eq
-import io.beatmaps.api.solr.getIds
-import io.beatmaps.api.solr.paged
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.EPlaylistType
@@ -32,6 +26,11 @@ import io.beatmaps.common.dbo.handleCurator
 import io.beatmaps.common.dbo.handleOwner
 import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinPlaylistCurator
+import io.beatmaps.common.solr.collections.PlaylistSolr
+import io.beatmaps.common.solr.field.SolrFilter
+import io.beatmaps.common.solr.field.apply
+import io.beatmaps.common.solr.getIds
+import io.beatmaps.common.solr.paged
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
 import io.ktor.server.application.call
@@ -120,7 +119,7 @@ fun Route.playlistSearch() {
                     val mapperIds = searchInfo.userSubQuery?.map { it[User.id].value } ?: listOf()
 
                     mapperIds.map { id ->
-                        BsSolr.mapperIds eq id
+                        PlaylistSolr.ownerId eq id
                     }.reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }?.let {
                         q.apply(it)
                     }

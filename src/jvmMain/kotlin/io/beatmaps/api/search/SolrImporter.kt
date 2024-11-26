@@ -1,8 +1,5 @@
 package io.beatmaps.api.search
 
-import io.beatmaps.api.playlist.PlaylistSolr
-import io.beatmaps.api.solr.insert
-import io.beatmaps.api.solr.insertMany
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.arrayAgg
 import io.beatmaps.common.db.boolOr
@@ -20,6 +17,10 @@ import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.rabbitOptional
+import io.beatmaps.common.solr.collections.BsSolr
+import io.beatmaps.common.solr.collections.PlaylistSolr
+import io.beatmaps.common.solr.insert
+import io.beatmaps.common.solr.insertMany
 import io.ktor.server.application.Application
 import kotlinx.serialization.builtins.serializer
 import org.jetbrains.exposed.sql.JoinType

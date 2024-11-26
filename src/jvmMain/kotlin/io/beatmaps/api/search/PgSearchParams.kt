@@ -63,7 +63,7 @@ class PgSearchParams(
 
     companion object {
         fun parseSearchQuery(q: String, searchFields: ExpressionWithColumnType<String>, useLiteral: Boolean = false) =
-            parseSearchQuery(q) { originalQuery, query, quotedSections, bothWithoutQuotes, mappers ->
+            parseSearchQuery(q.replace("%", "\\%")) { originalQuery, query, quotedSections, bothWithoutQuotes, mappers ->
                 PgSearchParams(originalQuery, useLiteral, unaccent(searchFields), query, quotedSections, bothWithoutQuotes, mappers)
             }
     }
