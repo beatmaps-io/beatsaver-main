@@ -9,6 +9,7 @@ import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.SearchResponse
 import io.beatmaps.api.UserDetail
+import io.beatmaps.common.EnvironmentSet
 import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.RankedFilter
@@ -62,7 +63,8 @@ data class SearchParams(
     val fullSpread: Boolean?,
     val me: Boolean?,
     val cinema: Boolean?,
-    val tags: MapTagSet
+    val tags: MapTagSet,
+    val environments: EnvironmentSet
 ) : CommonParams()
 
 val beatmapTable = fc<BeatmapTableProps> { props ->
@@ -124,7 +126,8 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
                     (if (search.minNps != null) "&minNps=${search.minNps}" else "") +
                     (if (search.from != null) "&from=${search.from}" else "") +
                     (if (search.to != null) "&to=${search.to}" else "") +
-                    (if (tagStr.isNotEmpty()) "&tags=$tagStr" else "")
+                    (if (tagStr.isNotEmpty()) "&tags=$tagStr" else "") +
+                    (if (search.environments.isNotEmpty()) "&environments=${search.environments.joinToString(",")}" else "")
             } ?: ""
         }
 

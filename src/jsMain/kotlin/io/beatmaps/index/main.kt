@@ -2,10 +2,12 @@ package io.beatmaps.index
 
 import io.beatmaps.Config.dateFormat
 import io.beatmaps.History
+import io.beatmaps.common.EnvironmentSet
 import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.common.api.RankedFilter
+import io.beatmaps.common.toEnvironmentSet
 import io.beatmaps.common.toQuery
 import io.beatmaps.common.toTagSet
 import io.beatmaps.globalContext
@@ -16,6 +18,7 @@ import io.beatmaps.shared.search.FilterCategory
 import io.beatmaps.shared.search.FilterInfo
 import io.beatmaps.shared.search.MultipleChoiceFilterInfo
 import io.beatmaps.shared.search.SearchParamGenerator
+import io.beatmaps.shared.search.environments
 import io.beatmaps.shared.search.getByKeyOrNull
 import io.beatmaps.shared.search.search
 import io.beatmaps.shared.search.tags
@@ -63,7 +66,8 @@ val homePage = fc<Props> {
             params.get("fullSpread")?.toBoolean(),
             params.get("me")?.toBoolean(),
             params.get("cinema")?.toBoolean(),
-            params.get("tags")?.toQuery()?.toTagSet() ?: mapOf()
+            params.get("tags")?.toQuery()?.toTagSet() ?: mapOf(),
+            params.get("environments").toEnvironmentSet()
         )
     }
 
@@ -72,6 +76,7 @@ val homePage = fc<Props> {
     }
 
     val (tags, setTags) = useState<MapTagSet?>(null)
+    val (environments, setEnvironments) = useState<EnvironmentSet?>(null)
     val (searchParams, setSearchParams) = useState(fromURL())
 
     val modalRef = useRef<ModalComponent>()
@@ -122,7 +127,8 @@ val homePage = fc<Props> {
                     includeIfNotNull(automapper, "auto"),
                     includeIfNotNull(fullSpread, "fullSpread"),
                     includeIfNotNull(followed, "followed"),
-                    (if (tagStr.isNotEmpty()) "tags=$tagStr" else null)
+                    (if (tagStr.isNotEmpty()) "tags=$tagStr" else null),
+                    (if (environments?.isNotEmpty() == true) "environments=${environments.joinToString(",")}" else null)
                 ),
                 "", row, searchParams, history
             )
@@ -166,7 +172,8 @@ val homePage = fc<Props> {
                     if (isFiltered("fs")) true else null,
                     if (isFiltered("me")) true else null,
                     if (isFiltered("cinema")) true else null,
-                    tags ?: mapOf()
+                    tags ?: mapOf(),
+                    environments ?: emptySet()
                 )
             }
             extraFilters = ExtraContentRenderer {
@@ -176,12 +183,20 @@ val homePage = fc<Props> {
                         setTags(it)
                     }
                 }
+                environments {
+                    attrs.default = environments
+                    attrs.callback = {
+                        setEnvironments(it)
+                    }
+                }
             }
             updateUI = { params ->
                 setTags(params?.tags)
+                setEnvironments(params?.environments)
             }
             filterTexts = {
-                (tags?.flatMap { y -> y.value.map { z -> (if (y.key) "" else "!") + z.slug } } ?: listOf())
+                (tags?.flatMap { y -> y.value.map { z -> (if (y.key) "" else "!") + z.slug } } ?: listOf()) +
+                    (environments?.map { e -> e.short } ?: listOf())
             }
             updateSearchParams = ::updateSearchParams
         }
