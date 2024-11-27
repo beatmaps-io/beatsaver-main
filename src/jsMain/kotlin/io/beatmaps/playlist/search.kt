@@ -16,6 +16,7 @@ import io.beatmaps.maps.userSearch
 import io.beatmaps.shared.form.multipleChoice
 import io.beatmaps.shared.form.slider
 import io.beatmaps.shared.form.toggle
+import io.beatmaps.shared.search.environments
 import io.beatmaps.shared.search.presets
 import io.beatmaps.shared.search.sort
 import io.beatmaps.shared.search.tags
@@ -71,6 +72,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
     val (order, setOrder) = useState(props.config.searchParams.sortOrder)
     val (mapCount, setMapCount) = useState(props.config.mapCount)
     val (tags, setTags) = useState(props.config.searchParams.tags)
+    val (environments, setEnvironments) = useState(props.config.searchParams.environments)
 
     val maxMappersInFilter = 30
     val (currentMappers, setCurrentMappers) = useState(listOf<UserDetail>())
@@ -132,14 +134,15 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                     fromFilter("me"),
                     fromFilter("cinema"),
                     tags,
-                    currentMappers.map { it.id }
+                    currentMappers.map { it.id },
+                    environments
                 ),
                 mapCount
             )
         )
     }
 
-    useEffect(automapper, minNps, maxNps, startDate, endDate, ranked, order, mapCount, tags, currentMappers) {
+    useEffect(automapper, minNps, maxNps, startDate, endDate, ranked, order, mapCount, tags, currentMappers, environments) {
         doCallback()
     }
 
@@ -292,6 +295,12 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                 attrs.default = props.config.searchParams.tags
                 attrs.callback = {
                     setTags(it)
+                }
+            }
+            environments {
+                attrs.default = props.config.searchParams.environments
+                attrs.callback = {
+                    setEnvironments(it)
                 }
             }
         }
