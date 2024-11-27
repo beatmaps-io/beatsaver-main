@@ -40,6 +40,7 @@ import io.beatmaps.common.solr.SolrHelper
 import io.beatmaps.common.solr.collections.BsSolr
 import io.beatmaps.common.solr.field.SolrFilter
 import io.beatmaps.common.solr.field.apply
+import io.beatmaps.common.solr.field.betweenInc
 import io.beatmaps.common.solr.field.eq
 import io.beatmaps.common.solr.field.greaterEq
 import io.beatmaps.common.solr.field.lessEq
@@ -219,8 +220,19 @@ fun Route.searchRoute() {
                         }
                     }
                     .notNull(it.ranked) { o -> (BsSolr.rankedbl eq o) or (BsSolr.rankedss eq o) }
-                    .notNull(it.minNps) { o -> BsSolr.nps greaterEq o }
-                    .notNull(it.maxNps) { o -> BsSolr.nps lessEq o }
+                    .also { q ->
+                        val f = if (it.minNps != null && it.maxNps != null) {
+                            BsSolr.nps.betweenInc(it.minNps, it.maxNps)
+                        } else if (it.minNps != null) {
+                            BsSolr.nps greaterEq it.minNps
+                        } else if (it.maxNps != null) {
+                            BsSolr.nps lessEq it.maxNps
+                        } else {
+                            null
+                        }
+
+                        f?.let { q.apply(it) }
+                    }
                     .let { q ->
                         val tq = it.tags?.toQuery()
                         val emptyTags = tq?.any { a ->
