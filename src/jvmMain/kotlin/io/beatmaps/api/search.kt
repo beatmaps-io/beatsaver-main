@@ -326,7 +326,7 @@ fun Route.searchRoute() {
         optionalAuthorization { _, user ->
             val needsDiff = it.minNps != null || it.maxNps != null
             val searchFields = PgConcat(" ", Beatmap.name, Beatmap.description, Beatmap.levelAuthorName)
-            val searchInfo = PgSearchParams.parseSearchQuery(it.q, searchFields, needsDiff)
+            val searchInfo = PgSearchParams.parseSearchQuery(it.q, searchFields)
             val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
             val sortArgs = searchInfo.sortArgsFor(actualSortOrder)
 
@@ -349,8 +349,7 @@ fun Route.searchRoute() {
                         .joinBookmarked(user?.userId)
                         .joinCollaborators()
                         .select(
-                            (if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) +
-                                Beatmap.columns + Versions.columns + Difficulty.columns + User.columns +
+                            Beatmap.columns + Versions.columns + Difficulty.columns + User.columns +
                                 curatorAlias.columns + bookmark.columns + collaboratorAlias.columns
                         )
                         .where {

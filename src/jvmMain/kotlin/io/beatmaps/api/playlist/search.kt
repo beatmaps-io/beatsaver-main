@@ -164,9 +164,8 @@ fun Route.playlistSearch() {
         val searchInfo = PgSearchParams.parseSearchQuery(it.q, searchFields)
         val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
         val sortArgs = when (actualSortOrder) {
-            SearchOrder.Relevance -> listOf(searchInfo.similarRank to SortOrder.DESC, Playlist.createdAt to SortOrder.DESC)
-            SearchOrder.Rating, SearchOrder.Random, SearchOrder.Latest -> listOf(Playlist.createdAt to SortOrder.DESC)
             SearchOrder.Curated -> listOf(Playlist.curatedAt to SortOrder.DESC_NULLS_LAST, Playlist.createdAt to SortOrder.DESC)
+            else -> listOf(Playlist.createdAt to SortOrder.DESC)
         }.toTypedArray()
 
         newSuspendedTransaction {
@@ -175,8 +174,7 @@ fun Route.playlistSearch() {
                 .joinOwner()
                 .joinPlaylistCurator()
                 .select(
-                    (if (actualSortOrder == SearchOrder.Relevance) listOf(searchInfo.similarRank) else listOf()) +
-                        Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all
+                    Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all
                 )
                 .where {
                     Playlist.id.inSubQuery(
