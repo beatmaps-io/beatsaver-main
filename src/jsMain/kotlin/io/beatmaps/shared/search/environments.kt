@@ -5,6 +5,7 @@ import io.beatmaps.common.api.EBeatsaberEnvironment
 import io.beatmaps.util.applyIf
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
@@ -12,12 +13,14 @@ import react.Props
 import react.dom.div
 import react.dom.h4
 import react.dom.h5
+import react.dom.input
 import react.dom.jsStyle
 import react.dom.span
 import react.fc
 import react.useEffect
 import react.useEffectOnce
 import react.useState
+import web.html.HTMLInputElement
 
 external interface EnvironmentsProps : Props {
     var default: EnvironmentSet?
@@ -62,7 +65,24 @@ val environments = fc<EnvironmentsProps> { props ->
             .sortedBy { it.v3 }
 
         sortedEntries.fold(null as Boolean?) { prev, it ->
-            if (it.v3 != prev) h5 { +it.category() }
+            if (it.v3 != prev) {
+                h5 {
+                    input(InputType.checkBox) {
+                        val envs = EBeatsaberEnvironment.entries.filter { e -> e.v3 == it.v3 }.toSet()
+
+                        attrs.checked = selected.containsAll(envs)
+
+                        attrs.onClickFunction = { ev: Event ->
+                            if ((ev.target as? HTMLInputElement?)?.checked == true) {
+                                setSelected(selected + envs)
+                            } else {
+                                setSelected(selected - envs)
+                            }
+                        }
+                    }
+                    +it.category()
+                }
+            }
 
             div("badge badge-${it.color()} me-2 mb-2") {
                 attrs.jsStyle {
