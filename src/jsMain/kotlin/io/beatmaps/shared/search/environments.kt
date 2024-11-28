@@ -1,11 +1,13 @@
 package io.beatmaps.shared.search
 
+import external.reactFor
 import io.beatmaps.common.EnvironmentSet
 import io.beatmaps.common.api.EBeatsaberEnvironment
 import io.beatmaps.util.applyIf
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.html.InputType
+import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
@@ -15,6 +17,7 @@ import react.dom.h4
 import react.dom.h5
 import react.dom.input
 import react.dom.jsStyle
+import react.dom.label
 import react.dom.span
 import react.fc
 import react.useEffect
@@ -67,7 +70,9 @@ val environments = fc<EnvironmentsProps> { props ->
         sortedEntries.fold(null as Boolean?) { prev, it ->
             if (it.v3 != prev) {
                 h5 {
+                    val id = "env-cat-${it.category().lowercase()}"
                     input(InputType.checkBox) {
+                        attrs.id = id
                         val envs = EBeatsaberEnvironment.entries.filter { e -> e.v3 == it.v3 }.toSet()
 
                         attrs.checked = selected.containsAll(envs)
@@ -80,7 +85,10 @@ val environments = fc<EnvironmentsProps> { props ->
                             }
                         }
                     }
-                    +it.category()
+                    label {
+                        attrs.reactFor = id
+                        +it.category()
+                    }
                 }
             }
 
