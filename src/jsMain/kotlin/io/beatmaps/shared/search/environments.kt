@@ -1,11 +1,13 @@
 package io.beatmaps.shared.search
 
+import external.reactFor
 import io.beatmaps.common.EnvironmentSet
 import io.beatmaps.common.api.EBeatsaberEnvironment
 import io.beatmaps.util.applyIf
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.html.InputType
+import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
@@ -15,6 +17,7 @@ import react.dom.h4
 import react.dom.h5
 import react.dom.input
 import react.dom.jsStyle
+import react.dom.label
 import react.dom.span
 import react.fc
 import react.useEffect
@@ -43,6 +46,11 @@ val environments = fc<EnvironmentsProps> { props ->
         props.default?.let { setSelected(it) }
     }
 
+    fun updateSelected(newSelected: EnvironmentSet) {
+        setSelected(newSelected)
+        props.callback?.invoke(newSelected)
+    }
+
     useEffectOnce {
         document.addEventListener("keyup", handleShift)
         document.addEventListener("keydown", handleShift)
@@ -67,20 +75,25 @@ val environments = fc<EnvironmentsProps> { props ->
         sortedEntries.fold(null as Boolean?) { prev, it ->
             if (it.v3 != prev) {
                 h5 {
+                    val id = "env-cat-${it.category().lowercase()}"
                     input(InputType.checkBox) {
+                        attrs.id = id
                         val envs = EBeatsaberEnvironment.entries.filter { e -> e.v3 == it.v3 }.toSet()
 
                         attrs.checked = selected.containsAll(envs)
 
                         attrs.onClickFunction = { ev: Event ->
                             if ((ev.target as? HTMLInputElement?)?.checked == true) {
-                                setSelected(selected + envs)
+                                updateSelected(selected + envs)
                             } else {
-                                setSelected(selected - envs)
+                                updateSelected(selected - envs)
                             }
                         }
                     }
-                    +it.category()
+                    label {
+                        attrs.reactFor = id
+                        +it.category()
+                    }
                 }
             }
 
@@ -99,14 +112,13 @@ val environments = fc<EnvironmentsProps> { props ->
                             minus(it)
                         }
 
-                    setSelected(newSelected)
-                    props.callback?.invoke(newSelected)
+                    updateSelected(newSelected)
                     window.asDynamic().getSelection().removeAllRanges()
                     Unit
                 }
 
                 span {
-                    +it.short
+                    +it.human()
                 }
             }
 

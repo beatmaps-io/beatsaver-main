@@ -174,7 +174,7 @@ val infoTable = fc<InfoTableProps> { props ->
                             div("badge badge-${env?.color()} ms-2") {
                                 span {
                                     attrs.title = diffs.joinToString { "${it.difficulty.human()} ${it.characteristic.human()}" }
-                                    +(env?.short ?: "")
+                                    +(env?.human() ?: "")
                                 }
                             }
                         }

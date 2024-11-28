@@ -196,7 +196,7 @@ val homePage = fc<Props> {
             }
             filterTexts = {
                 (tags?.flatMap { y -> y.value.map { z -> (if (y.key) "" else "!") + z.slug } } ?: listOf()) +
-                    (environments?.map { e -> e.short } ?: listOf())
+                    (environments?.map { e -> e.human() } ?: listOf())
             }
             updateSearchParams = ::updateSearchParams
         }
