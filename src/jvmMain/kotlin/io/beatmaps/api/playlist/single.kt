@@ -135,6 +135,12 @@ fun Route.playlistSingle() {
                 .also { q ->
                     params.tags.asQuery().applyToQuery(q)
                 }
+                .also { q ->
+                    params.environments
+                        .map { e -> BsSolr.environment eq e.name }
+                        .reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }
+                        ?.let { q.apply(it) }
+                }
                 .let { q ->
                     BsSolr.addSortArgs(q, playlistId, actualSortOrder)
                 }
