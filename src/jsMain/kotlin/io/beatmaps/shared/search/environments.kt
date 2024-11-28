@@ -46,6 +46,11 @@ val environments = fc<EnvironmentsProps> { props ->
         props.default?.let { setSelected(it) }
     }
 
+    fun updateSelected(newSelected: EnvironmentSet) {
+        setSelected(newSelected)
+        props.callback?.invoke(newSelected)
+    }
+
     useEffectOnce {
         document.addEventListener("keyup", handleShift)
         document.addEventListener("keydown", handleShift)
@@ -79,9 +84,9 @@ val environments = fc<EnvironmentsProps> { props ->
 
                         attrs.onClickFunction = { ev: Event ->
                             if ((ev.target as? HTMLInputElement?)?.checked == true) {
-                                setSelected(selected + envs)
+                                updateSelected(selected + envs)
                             } else {
-                                setSelected(selected - envs)
+                                updateSelected(selected - envs)
                             }
                         }
                     }
@@ -107,8 +112,7 @@ val environments = fc<EnvironmentsProps> { props ->
                             minus(it)
                         }
 
-                    setSelected(newSelected)
-                    props.callback?.invoke(newSelected)
+                    updateSelected(newSelected)
                     window.asDynamic().getSelection().removeAllRanges()
                     Unit
                 }
