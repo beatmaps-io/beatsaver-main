@@ -16,7 +16,6 @@ import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EBeatsaberEnvironment
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.RankedFilter
-import io.beatmaps.common.api.searchEnumOrNull
 import io.beatmaps.common.applyToQuery
 import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.greaterEqF
@@ -250,7 +249,7 @@ fun Route.searchRoute() {
                     .also { q ->
                         it.environments?.let { env ->
                             env.split(",")
-                                .mapNotNull { e -> searchEnumOrNull<EBeatsaberEnvironment>(e) }
+                                .mapNotNull { e -> EBeatsaberEnvironment.fromString(e) }
                                 .map { e -> BsSolr.environment eq e.name }
                                 .reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }
                                 ?.let { q.apply(it) }

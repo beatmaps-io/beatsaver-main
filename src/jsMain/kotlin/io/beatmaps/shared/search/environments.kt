@@ -106,7 +106,7 @@ val environments = fc<EnvironmentsProps> { props ->
                 }
 
                 span {
-                    +it.short
+                    +it.human()
                 }
             }
 
