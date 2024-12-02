@@ -298,7 +298,7 @@ fun Route.searchRoute() {
                         BsSolr.addSortArgs(q, it.seed.hashCode(), actualSortOrder)
                     }
                     .paged(page = it.page.toInt())
-                    .getIds(BsSolr)
+                    .getIds(BsSolr, call = call)
 
                 val beatmaps = Beatmap
                     .joinVersions(true)

@@ -135,7 +135,7 @@ fun Route.playlistSearch() {
                 }
                 .setFields("id")
                 .paged(req.page.toInt())
-                .getIds(PlaylistSolr)
+                .getIds(PlaylistSolr, call = call)
 
             val playlists = Playlist
                 .joinMaps()
