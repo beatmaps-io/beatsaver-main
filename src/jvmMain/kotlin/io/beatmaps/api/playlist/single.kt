@@ -267,7 +267,7 @@ fun Route.playlistSingle() {
 
     val bookmarksIcon = javaClass.classLoader.getResourceAsStream("assets/favicon/android-chrome-512x512.png")!!.readAllBytes()
     get<PlaylistApi.Download> { req ->
-        val signed = CdnSig.verify("${req.id}", call.request)
+        val signed = CdnSig.verify("playlist-${req.id}", call.request)
 
         val (playlist, playlistSongs) = newSuspendedTransaction {
             fun getPlaylist() =
@@ -362,7 +362,7 @@ fun Route.playlistSingle() {
         }?.let { playlist ->
             val sig = if (!playlist.type.anonymousAllowed && playlist.ownerId.value == sess?.userId) {
                 val exp = Clock.System.now().plus(60.seconds).epochSeconds
-                "?" + CdnSig.queryParams("${req.id}", exp)
+                "?" + CdnSig.queryParams("playlist-${req.id}", exp)
             } else {
                 ""
             }
