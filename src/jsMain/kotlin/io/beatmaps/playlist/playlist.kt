@@ -275,7 +275,7 @@ val playlistPage = fc<Props> {
                         a(pl.downloadURL, classes = "btn btn-success") {
                             +"Download"
                         }
-                        a("bsplaylist://playlist/${pl.downloadURL}/beatsaver-${pl.playlistId}.bplist", classes = "btn btn-info") {
+                        a(pl.oneClickURL(), classes = "btn btn-info") {
                             +"One-Click"
                         }
                     }

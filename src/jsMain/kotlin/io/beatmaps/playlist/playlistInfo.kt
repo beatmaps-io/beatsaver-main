@@ -175,7 +175,7 @@ class PlaylistInfo : AutoSizeComponent<PlaylistFull, PlaylistInfoProps, Playlist
                                 attrs.attributes["aria-label"] = "Download"
                                 i("fas fa-download text-info") { }
                             }
-                            a("bsplaylist://playlist/${pl.downloadURL}/beatsaver-${pl.playlistId}.bplist") {
+                            a(pl.oneClickURL()) {
                                 attrs.title = "One-Click"
                                 attrs.attributes["aria-label"] = "One-Click"
                                 i("fas fa-cloud-download-alt text-info") { }

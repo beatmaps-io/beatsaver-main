@@ -19,6 +19,7 @@ import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
 import io.beatmaps.api.search.SolrSearchParams
 import io.beatmaps.api.util.getWithOptions
+import io.beatmaps.common.Config
 import io.beatmaps.common.Folders
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.EMapState
@@ -27,6 +28,7 @@ import io.beatmaps.common.asQuery
 import io.beatmaps.common.cleanString
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
+import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
@@ -50,6 +52,8 @@ import io.beatmaps.common.solr.field.eq
 import io.beatmaps.common.solr.field.greaterEq
 import io.beatmaps.common.solr.field.lessEq
 import io.beatmaps.common.solr.getIds
+import io.beatmaps.controllers.CdnSig
+import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
 import io.ktor.http.HttpHeaders
@@ -58,14 +62,20 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.locations.get
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
+import kotlinx.datetime.Clock
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.util.Base64
+import kotlin.time.Duration.Companion.seconds
 import io.beatmaps.common.dbo.Playlist as PlaylistTable
 
 fun Route.playlistSingle() {
@@ -257,6 +267,8 @@ fun Route.playlistSingle() {
 
     val bookmarksIcon = javaClass.classLoader.getResourceAsStream("assets/favicon/android-chrome-512x512.png")!!.readAllBytes()
     get<PlaylistApi.Download> { req ->
+        val signed = CdnSig.verify("${req.id}", call.request)
+
         val (playlist, playlistSongs) = newSuspendedTransaction {
             fun getPlaylist() =
                 PlaylistTable
@@ -311,7 +323,7 @@ fun Route.playlistSingle() {
         }
 
         optionalAuthorization(OauthScope.PLAYLISTS) { _, sess ->
-            if (playlist != null && (playlist.type.anonymousAllowed || playlist.owner.id == sess?.userId)) {
+            if (playlist != null && (signed || playlist.type.anonymousAllowed || playlist.owner.id == sess?.userId)) {
                 val localFile = when (playlist.type) {
                     EPlaylistType.System -> bookmarksIcon
                     else -> File(Folders.localPlaylistCoverFolder(), "${playlist.playlistId}.jpg").readBytes()
@@ -333,6 +345,31 @@ fun Route.playlistSingle() {
             } else {
                 call.respond(HttpStatusCode.NotFound)
             }
+        }
+    }
+
+    get<PlaylistApi.OneClickSign> { req ->
+        val sess = call.sessions.get<Session>()
+
+        transaction {
+            PlaylistTable
+                .selectAll()
+                .where {
+                    (PlaylistTable.id eq req.id) and PlaylistTable.deletedAt.isNull()
+                }
+                .firstOrNull()
+                ?.let { PlaylistDao.wrapRow(it) }
+        }?.let { playlist ->
+            val sig = if (!playlist.type.anonymousAllowed && playlist.ownerId.value == sess?.userId) {
+                val exp = Clock.System.now().plus(60.seconds).epochSeconds
+                "?" + CdnSig.queryParams("${req.id}", exp)
+            } else {
+                ""
+            }
+
+            val url = "bsplaylist://playlist/${Config.apiBase(true)}/playlists/id/${playlist.id.value}/download$sig"
+
+            call.respondRedirect(url)
         }
     }
 }

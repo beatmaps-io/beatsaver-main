@@ -60,6 +60,12 @@ data class PlaylistFull(
     val type: EPlaylistType
 ) {
     companion object
+    fun oneClickURL() =
+        if (type.anonymousAllowed) {
+            "bsplaylist://playlist/$downloadURL/beatsaver-$playlistId.bplist"
+        } else {
+            downloadURL.replace("download", "sign")
+        }
 }
 
 @Serializable
