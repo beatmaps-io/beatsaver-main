@@ -19,10 +19,14 @@ object UserCrypto {
     private val ephemeralIv = ByteArray(16).apply { SecureRandom().nextBytes(this) }
     private val envIv = System.getenv("BSIV")?.let { Base64.getDecoder().decode(it) } ?: ephemeralIv
 
-    fun md5(input: String) =
-        MessageDigest.getInstance("MD5").let { md ->
-            BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
-        }
+    fun md5(input: String) = hash("MD5", input, 32)
+    fun sha256(input: String) = hash("SHA256", input, 64)
+
+    private fun hash(algo: String, input: String, len: Int) =
+        MessageDigest.getInstance(algo)
+            .digest(input.toByteArray()).toHex(len)
+
+    private fun ByteArray.toHex(len: Int) = BigInteger(1, this).toString(16).padStart(len, '0')
 
     fun keyForUser(user: UserDao) = key(user.password ?: "")
 

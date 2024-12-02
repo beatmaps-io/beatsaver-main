@@ -36,6 +36,9 @@ class PlaylistApi {
     @Location("$prefix/id/{id}/download/{filename?}")
     data class Download(val id: Int, val filename: String? = null, val api: PlaylistApi)
 
+    @Location("$prefix/id/{id}/sign")
+    data class OneClickSign(val id: Int, val api: PlaylistApi)
+
     @Location("$prefix/id/{id}/add")
     data class Add(val id: Int, val api: PlaylistApi)
 

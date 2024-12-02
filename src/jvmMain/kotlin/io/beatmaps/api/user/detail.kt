@@ -10,7 +10,7 @@ import io.beatmaps.common.dbo.UserDao
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.ResultRow
 
-fun UserDetail.Companion.getAvatar(other: UserDao) = other.avatar ?: "https://www.gravatar.com/avatar/${other.hash ?: UserCrypto.md5(other.uniqueName ?: other.name)}?d=retro"
+fun UserDetail.Companion.getAvatar(other: UserDao) = other.avatar ?: "https://www.gravatar.com/avatar/${other.hash ?: UserCrypto.sha256(other.uniqueName ?: other.name)}?d=retro"
 
 fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: UserStats? = null, followData: UserFollowData? = null, description: Boolean = false, patreon: Boolean = false) =
     UserDetail(
