@@ -668,7 +668,7 @@ fun Route.mapDetailRoute() {
         call.respond(SearchResponse(beatmaps))
     }
 
-    get<MapsApi.Collaborations>("Get maps by a user, including collaborations".responds(ok<SearchResponse>())) {
+    getWithOptions<MapsApi.Collaborations>("Get maps by a user, including collaborations".responds(ok<SearchResponse>())) {
         val sess = call.sessions.get<Session>()
         val pageSize = (it.pageSize ?: 20).coerceIn(1, 100)
 
@@ -677,7 +677,7 @@ fun Route.mapDetailRoute() {
             .notNull(it.id) { o -> BsSolr.mapperIds eq o }
             .setSort(BsSolr.uploaded.desc())
             .paged(pageSize = pageSize)
-            .getIds(BsSolr)
+            .getIds(BsSolr, call = call)
 
         val beatmaps = newSuspendedTransaction {
             Beatmap

@@ -1,5 +1,6 @@
 package io.beatmaps.login
 
+import io.beatmaps.common.timeIt
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.log
 import io.ktor.server.sessions.SessionTracker
@@ -26,7 +27,9 @@ class TypedSessionTracker<S : Any>(
 
         call.attributes.put(sessionIdKey, sessionId)
         try {
-            return storage.read(sessionId)
+            return call.timeIt("session") {
+                storage.read(sessionId)
+            }
         } catch (notFound: NoSuchElementException) {
             call.application.log.debug(
                 "Failed to lookup session: ${notFound.message ?: notFound.toString()}. " + "The session id is wrong or outdated."

@@ -15,6 +15,7 @@ import io.ktor.server.sessions.generateSessionId
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.litote.kmongo.EMPTY_BSON
 import org.litote.kmongo.KMongo
@@ -39,7 +40,7 @@ val cookieName = System.getenv("COOKIE_NAME") ?: "BMSESSIONID"
 val cookieDomain = System.getenv("COOKIE_DOMAIN") ?: null
 
 @Serializable
-data class MongoSession(val _id: String, val session: Session, @Contextual val expireAt: Instant)
+data class MongoSession(@SerialName("_id") val id: String, val session: Session, @Contextual val expireAt: Instant)
 
 object MongoClient {
     private val mongoClient = if (mongoHost.isEmpty()) { null } else {
@@ -95,13 +96,13 @@ fun Application.installSessions() {
 }
 
 class MongoSessionStorage(private val collection: MongoCollection<MongoSession>) : TypedSessionStorage<Session> {
-    override suspend fun read(id: String) = collection.findOne(MongoSession::_id eq id)?.session ?: throw NoSuchElementException()
+    override suspend fun read(id: String) = collection.findOne(MongoSession::id eq id)?.session ?: throw NoSuchElementException()
 
     override suspend fun write(id: String, value: Session) = writeLocal(id, value)
 
-    fun writeLocal(id: String, value: Session, ttl: Long = 7 * 24 * 3600L) {
+    private fun writeLocal(id: String, value: Session, ttl: Long = 7 * 24 * 3600L) {
         collection.replaceOne(
-            MongoSession::_id eq id,
+            MongoSession::id eq id,
             MongoSession(id, value, Clock.System.now().plus(ttl.toDuration(DurationUnit.SECONDS))),
             ReplaceOptions().upsert(true)
         )
@@ -109,7 +110,7 @@ class MongoSessionStorage(private val collection: MongoCollection<MongoSession>)
 
     override suspend fun invalidate(id: String) {
         collection.deleteOne(
-            MongoSession::_id eq id
+            MongoSession::id eq id
         )
     }
 }

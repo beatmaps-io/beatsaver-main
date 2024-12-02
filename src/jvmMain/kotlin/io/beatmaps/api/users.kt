@@ -517,10 +517,10 @@ fun Route.userRoute(client: HttpClient) {
                     .sort(descending(MongoSession::expireAt))
                     .map { row ->
                         SiteSession(
-                            UserCrypto.encrypt(row._id),
+                            UserCrypto.encrypt(row.id),
                             row.session.countryCode,
                             row.expireAt,
-                            row._id == sessionId
+                            row.id == sessionId
                         )
                     }.toList()
             } else { listOf() }
@@ -554,7 +554,7 @@ fun Route.userRoute(client: HttpClient) {
 
                     if (req.site != false && MongoClient.connected) {
                         MongoClient.sessions.deleteMany(
-                            and(MongoSession::_id ne sessionId, MongoSession::session / Session::userId eq userId)
+                            and(MongoSession::id ne sessionId, MongoSession::session / Session::userId eq userId)
                         )
                     }
                 }
@@ -596,7 +596,7 @@ fun Route.userRoute(client: HttpClient) {
                         ActionResponse.error("Can't revoke current session")
                     } else {
                         MongoClient.sessions.deleteOne(
-                            MongoSession::_id eq id
+                            MongoSession::id eq id
                         )
                         ActionResponse.success()
                     }
