@@ -88,7 +88,7 @@ val playlistTable = fc<PlaylistTableProps> { props ->
                 attrs.container = resultsTable
                 attrs.renderElement = InfiniteScrollElementRenderer { pl ->
                     playlistInfo {
-                        obj = pl
+                        attrs.playlist = pl
                     }
                 }
                 attrs.updateScrollIndex = props.updateScrollIndex

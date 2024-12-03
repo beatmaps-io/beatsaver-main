@@ -194,6 +194,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                     props.mapInfo.mainVersion()?.let { version ->
                         div("thin-dd" + if (dropdown) " show" else "") {
                             a("#", classes = "dd") {
+                                attrs.attributes["aria-label"] = "${if (dropdown) "Hide" else "Show"} dropdown"
                                 attrs.onClickFunction = {
                                     setDropdown(!dropdown)
                                 }
