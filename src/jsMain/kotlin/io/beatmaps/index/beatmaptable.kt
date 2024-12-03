@@ -104,7 +104,7 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
             "${Config.apibase}/search/${if (config?.v2Search == true) "text" else "v1"}/$page?curator=${props.user}&automapper=true" +
                 (props.fallbackOrder?.let { "&sortOrder=$it" } ?: "")
         } else if (props.user != null) {
-            "${Config.apibase}/search/text/$page?collaborator=${props.user}&automapper=true" +
+            "${Config.apibase}/search/${if (config?.v2Search == true) "text" else "v1"}/$page?collaborator=${props.user}&automapper=true" +
                 (props.fallbackOrder?.let { "&sortOrder=$it" } ?: "")
         } else {
             props.search?.let { search ->
