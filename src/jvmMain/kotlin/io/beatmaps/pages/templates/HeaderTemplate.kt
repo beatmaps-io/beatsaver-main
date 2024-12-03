@@ -33,6 +33,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                     img("BeatSaver", "/static/beatsaver_logo.svg") {
                         title = "BeatSaver"
                         height = "23px"
+                        width = "146px"
                     }
                 }
                 button(classes = "navbar-toggler", type = ButtonType.button) {
@@ -234,7 +235,9 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                             +"https://saera.dev/beasties"
                         }
                     }
-                    button(type = ButtonType.button, classes = "btn-close btn-close-white") { }
+                    button(type = ButtonType.button, classes = "btn-close btn-close-white") {
+                        attributes["aria-label"] = "Hide banner"
+                    }
                 }
             }
         }
