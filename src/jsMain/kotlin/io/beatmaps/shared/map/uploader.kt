@@ -5,6 +5,7 @@ import external.routeLink
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
 import io.beatmaps.common.api.EMapState
+import kotlinx.browser.window
 import react.Props
 import react.fc
 import web.window.WindowTarget
@@ -16,8 +17,9 @@ external interface UploaderProps : Props {
 
 val uploader = fc<UploaderProps> { props ->
     (listOf(props.map.uploader) + (props.map.collaborators ?: listOf())).let {
+        val target = if (window.top == window.self) null else WindowTarget._top
         it.forEachIndexed { idx, u ->
-            routeLink(u.profileLink(), target = WindowTarget._top) {
+            routeLink(u.profileLink(), target = target) {
                 +u.name
             }
             if (idx < it.lastIndex) +", "
