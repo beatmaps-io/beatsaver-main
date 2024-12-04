@@ -17,7 +17,7 @@ external interface UploaderProps : Props {
 
 val uploader = fc<UploaderProps> { props ->
     (listOf(props.map.uploader) + (props.map.collaborators ?: listOf())).let {
-        val target = if (window.top == window.self) null else WindowTarget._top
+        val target = if (window.top === window.self) null else WindowTarget._top
         it.forEachIndexed { idx, u ->
             routeLink(u.profileLink(), target = target) {
                 +u.name
