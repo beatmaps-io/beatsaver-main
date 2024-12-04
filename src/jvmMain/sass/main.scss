@@ -298,7 +298,6 @@ table.search-results {
     border: 5px solid transparent;
     border-radius: calc(0.25rem - 1px + 5px);
     background-clip: padding-box;
-    height: 117px;
   }
 
   .drag-beatmap {
@@ -418,6 +417,10 @@ table.search-results {
 
   .playlist-card {
     width: 100%;
+
+    &.loading {
+      height: 117px;
+    }
 
     .content {
       display: flex;
