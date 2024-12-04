@@ -1742,6 +1742,10 @@ select.dark {
 }
 
 @include media-breakpoint-down(lg) {
+  .playlist-info img {
+    aspect-ratio: 2 / 1;
+    object-fit: contain;
+  }
   .thin-dd {
     > div {
       display: none;
