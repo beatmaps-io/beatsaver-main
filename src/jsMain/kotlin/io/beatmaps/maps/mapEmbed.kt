@@ -14,6 +14,7 @@ import react.useState
 
 val mapEmbed = fc<Props> {
     val (map, setMap) = useState<MapDetail?>(null)
+    val (missing, setMissing) = useState(false)
 
     val params = useParams()
     val audio = useAudio()
@@ -21,13 +22,14 @@ val mapEmbed = fc<Props> {
     fun loadMap() {
         val mapKey = params["mapKey"]
 
+        setMissing(false)
         setMap(null)
 
         axiosGet<MapDetail>(
             "${Config.apibase}/maps/id/$mapKey"
         ).then {
             setMap(it.data)
-        }.catch { }
+        }.catch { setMissing(true) }
     }
 
     useEffect(params["mapKey"]) {
@@ -43,7 +45,11 @@ val mapEmbed = fc<Props> {
             }
         } else {
             div("card missing") {
-                +"Missing beatmap"
+                if (missing) {
+                    +"Missing beatmap"
+                } else {
+                    +"Loading beatmap..."
+                }
             }
         }
     }
