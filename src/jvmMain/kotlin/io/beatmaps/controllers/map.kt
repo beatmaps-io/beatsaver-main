@@ -24,6 +24,7 @@ import io.ktor.server.sessions.sessions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
+import kotlinx.html.link
 import kotlinx.html.meta
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
@@ -119,7 +120,7 @@ fun Route.mapController() {
         }
     }
 
-    get<MapController.Detail> {
+    get<MapController.Detail> { req ->
         genericPage(
             headerTemplate = {
                 try {
@@ -129,13 +130,14 @@ fun Route.mapController() {
                             .joinVersions()
                             .selectAll()
                             .where {
-                                Beatmap.id eq it.key.toInt(16) and Beatmap.deletedAt.isNull()
+                                Beatmap.id eq req.key.toInt(16) and Beatmap.deletedAt.isNull()
                             }.limit(1).complexToBeatmap().map { MapDetail.from(it, cdnPrefix()) }.firstOrNull()
                     }?.let {
                         meta("og:type", "website")
                         meta("og:site_name", "BeatSaver")
                         meta("og:title", it.name)
                         meta("og:url", "${Config.siteBase()}/maps/${it.id}")
+                        link("${Config.siteBase()}/maps/${it.id}", "canonical")
                         meta("og:image", it.publishedVersion()?.coverURL)
                         meta("og:description", it.description.take(400))
 

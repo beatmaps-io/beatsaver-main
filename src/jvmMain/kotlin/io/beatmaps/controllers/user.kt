@@ -1,7 +1,6 @@
 package io.beatmaps.controllers
 
 import io.beatmaps.api.UserDetail
-import io.beatmaps.api.from
 import io.beatmaps.api.user.from
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
@@ -15,6 +14,7 @@ import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
+import kotlinx.html.link
 import kotlinx.html.meta
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
@@ -66,22 +66,23 @@ fun Route.userController() {
         }
     }
 
-    get<UserController.Detail> {
-        if (it.id == null && call.sessions.get<Session>() == null) {
+    get<UserController.Detail> { req ->
+        if (req.id == null && call.sessions.get<Session>() == null) {
             call.respondRedirect("/login")
         } else {
             genericPage(
                 headerTemplate = {
-                    if (it.id != null) {
+                    if (req.id != null) {
                         transaction {
                             User.selectAll().where {
-                                User.id eq it.id and User.active
+                                User.id eq req.id and User.active
                             }.limit(1).map { u -> UserDetail.from(u) }.firstOrNull()
                         }?.let { detail ->
                             meta("og:type", "profile:${detail.name}")
                             meta("og:site_name", "BeatSaver")
                             meta("og:title", detail.name)
                             meta("og:url", detail.profileLink(absolute = true))
+                            link(detail.profileLink(absolute = true), "canonical")
                             meta("og:image", detail.avatar)
                             meta("og:description", "${detail.name}'s BeatSaver profile")
                         }
