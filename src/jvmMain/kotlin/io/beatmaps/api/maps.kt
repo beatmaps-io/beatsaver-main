@@ -132,8 +132,6 @@ class MapsApi {
         val after: Instant? = null,
         @Description("true = both, false = no ai")
         val automapper: Boolean? = false,
-        @Description("false = no verified mappers, null = both, true = verified mappers only")
-        val verified: Boolean? = null,
         val sort: LatestSort? = LatestSort.FIRST_PUBLISHED,
         @Description("1 - 100") @DefaultValue("20")
         val pageSize: Int = 20,
@@ -731,7 +729,6 @@ fun Route.mapDetailRoute() {
                                     .let { q ->
                                         if (it.automapper != true) q.and(Beatmap.declaredAi eq AiDeclarationType.None) else q
                                     }
-                                    .notNull(it.verified) { o -> User.verifiedMapper eq o }
                                     .notNull(it.before) { o -> sortField less o.toJavaInstant() }
                                     .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
                                     .let { q ->
