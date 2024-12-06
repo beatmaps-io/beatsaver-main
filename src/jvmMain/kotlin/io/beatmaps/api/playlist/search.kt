@@ -58,7 +58,6 @@ fun Route.playlistSearch() {
                 LatestPlaylistSort.CURATED -> Playlist.curatedAt
             }
 
-            val pageSize = (it.pageSize ?: 20).coerceIn(1, 100)
             val playlists = transaction {
                 Playlist
                     .joinMaps()
@@ -78,7 +77,7 @@ fun Route.playlistSearch() {
                                         }
                                 }
                                 .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
-                                .limit(pageSize)
+                                .limit(it.pageSize.coerceIn(1, 100))
                         )
                     }
                     .groupBy(Playlist.id, User.id, curatorAlias[User.id])

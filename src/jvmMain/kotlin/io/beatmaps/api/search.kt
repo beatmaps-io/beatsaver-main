@@ -146,7 +146,8 @@ class SearchApi {
         @Ignore val mapper: Int? = null,
         @Ignore val collaborator: Int? = null,
         @Ignore val curator: Int? = null,
-        @Ignore val seed: String? = null
+        @Ignore val seed: String? = null,
+        @DefaultValue("20") val pageSize: Int = 20
     )
 
     @Location("/search/v2/{page}")
@@ -297,7 +298,7 @@ fun Route.searchRoute() {
                     .let { q ->
                         BsSolr.addSortArgs(q, it.seed.hashCode(), actualSortOrder)
                     }
-                    .paged(page = it.page.toInt())
+                    .paged(page = it.page.toInt(), pageSize = it.pageSize.coerceIn(1, 100))
                     .getIds(BsSolr, call = call)
 
                 val beatmaps = Beatmap

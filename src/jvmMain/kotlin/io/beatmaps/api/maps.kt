@@ -3,7 +3,6 @@ package io.beatmaps.api
 import de.nielsfalk.ktor.swagger.DefaultValue
 import de.nielsfalk.ktor.swagger.Description
 import de.nielsfalk.ktor.swagger.Ignore
-import de.nielsfalk.ktor.swagger.get
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
@@ -122,7 +121,7 @@ class MapsApi {
 
     @Group("Maps")
     @Location("/maps/collaborations/{id}")
-    data class Collaborations(val id: Int, val before: Instant? = null, @DefaultValue("20") @Description("1 - 100") val pageSize: Int? = 20, @Ignore val api: MapsApi)
+    data class Collaborations(val id: Int, val before: Instant? = null, @DefaultValue("20") @Description("1 - 100") val pageSize: Int = 20, @Ignore val api: MapsApi)
 
     @Group("Maps")
     @Location("/maps/latest")
@@ -137,7 +136,7 @@ class MapsApi {
         val verified: Boolean? = null,
         val sort: LatestSort? = LatestSort.FIRST_PUBLISHED,
         @Description("1 - 100") @DefaultValue("20")
-        val pageSize: Int? = 20,
+        val pageSize: Int = 20,
         @Ignore
         val api: MapsApi
     )
@@ -150,7 +149,7 @@ class MapsApi {
         @Description("Like `before` but will get you maps deleted more recently than the time supplied.\nYYYY-MM-DDTHH:MM:SS+00:00")
         val after: Instant? = null,
         @Description("1 - 100") @DefaultValue("20")
-        val pageSize: Int? = 20,
+        val pageSize: Int = 20,
         @Ignore
         val api: MapsApi
     )
@@ -670,13 +669,12 @@ fun Route.mapDetailRoute() {
 
     getWithOptions<MapsApi.Collaborations>("Get maps by a user, including collaborations".responds(ok<SearchResponse>())) {
         val sess = call.sessions.get<Session>()
-        val pageSize = (it.pageSize ?: 20).coerceIn(1, 100)
 
         val results = SolrQuery().all()
             .notNull(it.before) { o -> BsSolr.uploaded less o }
             .notNull(it.id) { o -> BsSolr.mapperIds eq o }
             .setSort(BsSolr.uploaded.desc())
-            .paged(pageSize = pageSize)
+            .paged(pageSize = it.pageSize.coerceIn(1, 100))
             .getIds(BsSolr, call = call)
 
         val beatmaps = newSuspendedTransaction {
@@ -715,7 +713,6 @@ fun Route.mapDetailRoute() {
             LatestSort.CURATED -> Beatmap.curatedAt
         }
 
-        val pageSize = (it.pageSize ?: 20).coerceIn(1, 100)
         val beatmaps = transaction {
             Beatmap
                 .joinVersions(true)
@@ -742,7 +739,7 @@ fun Route.mapDetailRoute() {
                                     }
                             }
                             .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
-                            .limit(pageSize)
+                            .limit(it.pageSize.coerceIn(1, 100))
                     )
                 }
                 .complexToBeatmap()
@@ -768,7 +765,6 @@ fun Route.mapDetailRoute() {
             ok<DeletedResponse>()
         )
     ) {
-        val pageSize = (it.pageSize ?: 20).coerceIn(1, 100)
         val sortField = Beatmap.deletedAt
         val beatmaps = transaction {
             Beatmap
@@ -779,7 +775,7 @@ fun Route.mapDetailRoute() {
                         .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
                 }
                 .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
-                .limit(pageSize)
+                .limit(it.pageSize.coerceIn(1, 100))
                 .mapNotNull { map ->
                     val instant = map[Beatmap.deletedAt]
                     if (instant == null) {
