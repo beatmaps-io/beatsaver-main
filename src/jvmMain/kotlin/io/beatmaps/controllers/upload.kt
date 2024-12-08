@@ -326,6 +326,7 @@ fun Route.uploadController() {
                         it[hash] = digest
                         it[state] = EMapState.Uploaded
                         it[sageScore] = extractedInfo.score
+                        it[schemaVersion] = extractedInfo.mapInfo.version.orNull()
                     }
 
                     extractedInfo.diffs.forEach { cLoop ->
