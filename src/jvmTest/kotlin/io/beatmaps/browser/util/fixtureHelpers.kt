@@ -90,6 +90,14 @@ abstract class FixtureHelpers {
                 it[hash] = digest
                 it[state] = if (published) EMapState.Published else EMapState.Uploaded
                 it[sageScore] = 0
+
+                it[schemaVersion] = "2.1.0"
+                it[bpm] = map.metadata.bpm
+                it[duration] = map.metadata.duration
+                it[songName] = map.metadata.songName
+                it[songSubName] = map.metadata.songSubName
+                it[levelAuthorName] = map.metadata.levelAuthorName
+                it[songAuthorName] = map.metadata.songAuthorName
             }
 
             val diff = fixture<MapDifficulty>()
@@ -117,10 +125,6 @@ abstract class FixtureHelpers {
                 it[label] = diff.label
 
                 it[nps] = diff.nps.toBigDecimal()
-                it[chroma] = diff.chroma
-                it[ne] = diff.ne
-                it[me] = diff.me
-                it[cinema] = diff.cinema
 
                 it[characteristic] = ECharacteristic.Standard
                 it[difficulty] = EDifficulty.ExpertPlus
