@@ -327,6 +327,13 @@ fun Route.uploadController() {
                         it[state] = EMapState.Uploaded
                         it[sageScore] = extractedInfo.score
                         it[schemaVersion] = extractedInfo.mapInfo.version.orNull()
+
+                        it[bpm] = extractedInfo.mapInfo.getBpm() ?: 0f
+                        it[duration] = extractedInfo.duration.roundToInt()
+                        it[songName] = extractedInfo.mapInfo.getSongName() ?: ""
+                        it[songSubName] = extractedInfo.mapInfo.getSubName() ?: ""
+                        it[levelAuthorName] = extractedInfo.mapInfo.getLevelAuthorNamesString()
+                        it[songAuthorName] = extractedInfo.mapInfo.getSongAuthorName() ?: ""
                     }
 
                     extractedInfo.diffs.forEach { cLoop ->

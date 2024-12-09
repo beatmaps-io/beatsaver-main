@@ -65,8 +65,8 @@ object SolrImporter {
                     it[uploaded] = map.uploaded
                     it[voteScore] = map.score.toFloat()
                     it[verified] = map.uploader.verifiedMapper || map.collaborators.values.any { c -> c.verifiedMapper }
-                    it[rankedss] = map.ranked
-                    it[rankedbl] = map.blRanked
+                    it[rankedss] = diffs.any { d -> d.rankedAt != null }
+                    it[rankedbl] = diffs.any { d -> d.blRankedAt != null }
                     it[ai] = map.declaredAi.markAsBot
                     it[mapperId] = map.uploader.id
                     it[curatorId] = map.curator?.id
