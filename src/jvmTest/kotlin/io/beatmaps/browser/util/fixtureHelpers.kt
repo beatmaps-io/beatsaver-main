@@ -74,10 +74,6 @@ abstract class FixtureHelpers {
 
                 it[bpm] = map.metadata.bpm
                 it[duration] = map.metadata.duration
-                it[songName] = map.metadata.songName
-                it[songSubName] = map.metadata.songSubName
-                it[levelAuthorName] = map.metadata.levelAuthorName
-                it[songAuthorName] = map.metadata.songAuthorName
 
                 it[declaredAi] = AiDeclarationType.None
                 it[plays] = map.stats.plays

@@ -54,7 +54,6 @@ import kotlinx.serialization.SerializationException
 import net.coobird.thumbnailator.Thumbnails
 import net.coobird.thumbnailator.tasks.UnsupportedFormatException
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
@@ -227,19 +226,6 @@ fun Route.uploadController() {
                     throw UploadException("Your map is fine but we're not accepting uploads yet")
                 }
 
-                fun setBasicMapInfo(
-                    setFloat: (column: Column<Float>, value: Float) -> Unit,
-                    setInt: (column: Column<Int>, value: Int) -> Unit,
-                    setString: (column: Column<String>, value: String) -> Unit
-                ) {
-                    setFloat(Beatmap.bpm, extractedInfo.mapInfo.getBpm() ?: 0f)
-                    setInt(Beatmap.duration, extractedInfo.duration.roundToInt())
-                    setString(Beatmap.songName, extractedInfo.mapInfo.getSongName() ?: "")
-                    setString(Beatmap.songSubName, extractedInfo.mapInfo.getSubName() ?: "")
-                    setString(Beatmap.levelAuthorName, extractedInfo.mapInfo.getLevelAuthorNamesString())
-                    setString(Beatmap.songAuthorName, extractedInfo.mapInfo.getSongAuthorName() ?: "")
-                }
-
                 val newMap = try {
                     fun insertOrUpdate() =
                         data.mapId?.let { mapId ->
@@ -248,7 +234,7 @@ fun Route.uploadController() {
                                     (Beatmap.id eq mapId) and (Beatmap.uploader eq session.userId)
                                 },
                                 {
-                                    setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
+                                    // Bpm and duration will be updated on publish
                                     it[updatedAt] = NowExpression(updatedAt)
                                 },
                                 Beatmap.id
@@ -283,7 +269,9 @@ fun Route.uploadController() {
                             }
                             it[uploader] = EntityID(session.userId, User)
 
-                            setBasicMapInfo({ a, b -> it[a] = b }, { a, b -> it[a] = b }, { a, b -> it[a] = b })
+                            // Should these be real data, fields are updated on publish
+                            it[bpm] = extractedInfo.mapInfo.getBpm() ?: 0f
+                            it[duration] = extractedInfo.duration.roundToInt()
 
                             val declaredAsAI = !data.beatsage.isNullOrEmpty()
                             it[declaredAi] = when {

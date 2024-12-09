@@ -31,8 +31,9 @@ fun getActualPrefixForTime(cdnPrefix: String, time: Instant, r2: Boolean = false
     }
 
 fun MapDetail.Companion.from(other: BeatmapDao, cdnPrefix: String) = MapDetail(
-    toHexString(other.id.value), other.name, other.description,
-    UserDetail.from(other.uploader), MapDetailMetadata.from(other), MapStats.from(other), other.uploaded?.toKotlinInstant(), other.declaredAi.markAsBot, other.ranked, other.qualified,
+    toHexString(other.id.value), other.name, other.description, UserDetail.from(other.uploader),
+    other.versions.values.maxByOrNull { it.state == EMapState.Published }?.let { MapDetailMetadata.from(it) } ?: MapDetailMetadata.default,
+    MapStats.from(other), other.uploaded?.toKotlinInstant(), other.declaredAi.markAsBot, other.ranked, other.qualified,
     other.versions.values.map { MapVersion.from(it, cdnPrefix) }.partition { it.state == EMapState.Published }.let {
         // Once a map is published hide previous versions
         it.first.ifEmpty {
@@ -82,7 +83,7 @@ fun MapDifficulty.Companion.from(other: DifficultyDao) = MapDifficulty(
 
 fun MapParitySummary.Companion.from(other: DifficultyDao) = MapParitySummary(other.pError, other.pWarn, other.pReset)
 
-fun MapDetailMetadata.Companion.from(other: BeatmapDao) = MapDetailMetadata(other.bpm, other.duration, other.songName, other.songSubName, other.songAuthorName, other.levelAuthorName)
+fun MapDetailMetadata.Companion.from(other: VersionsDao) = MapDetailMetadata(other.bpm, other.duration, other.songName, other.songSubName, other.songAuthorName, other.levelAuthorName)
 
 fun MapStats.Companion.from(other: BeatmapDao) = MapStats(
     other.plays,
