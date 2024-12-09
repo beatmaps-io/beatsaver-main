@@ -1,5 +1,6 @@
 package io.beatmaps.api.search
 
+import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.arrayAgg
 import io.beatmaps.common.db.boolOr
@@ -51,8 +52,13 @@ object SolrImporter {
                 val version = map.versions.values.firstOrNull()
                 val diffs = version?.difficulties?.values ?: emptyList()
 
+                val fullSpreadLocal = diffs
+                    .filter { diff -> diff.characteristic == ECharacteristic.Standard }
+                    .map { diff -> diff.difficulty }
+                    .distinct().count() == 5
+
                 BsSolr.insert {
-                    it[author] = map.levelAuthorName
+                    it[author] = version?.levelAuthorName
                     it[created] = map.createdAt
                     it[description] = map.description.take(10000)
                     it[id] = updateMapId
@@ -74,9 +80,9 @@ object SolrImporter {
                     it[suggestions] = diffs.flatMap { d -> d.suggestions ?: listOf() }.distinct()
                     it[requirements] = diffs.flatMap { d -> d.requirements ?: listOf() }.distinct()
                     it[nps] = diffs.map { d -> d.nps.toFloat() }
-                    it[fullSpread] = map.fullSpread
-                    it[bpm] = map.bpm
-                    it[duration] = map.duration
+                    it[fullSpread] = fullSpreadLocal
+                    it[bpm] = version?.bpm
+                    it[duration] = version?.duration
                     it[environment] = diffs.mapNotNull { d -> d.environment?.name }.distinct()
                 }
             }

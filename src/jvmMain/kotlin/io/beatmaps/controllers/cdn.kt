@@ -126,7 +126,9 @@ fun Route.cdnRoute() {
                     .complexToBeatmap()
                     .firstOrNull()
                     ?.let { map ->
-                        downloadFilename(Integer.toHexString(map.id.value), map.songName, map.levelAuthorName)
+                        map.versions.values.singleOrNull()?.let { version ->
+                            downloadFilename(Integer.toHexString(map.id.value), version.songName, version.levelAuthorName)
+                        }
                     }
             }?.also { _ ->
                 call.pub("beatmaps", "download.hash.${it.file}", null, DownloadInfo(it.file, DownloadType.HASH, call.request.origin.remoteHost))

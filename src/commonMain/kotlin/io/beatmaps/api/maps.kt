@@ -116,13 +116,17 @@ data class MapParitySummary(val errors: Int, val warns: Int, val resets: Int) { 
 
 @Serializable
 data class MapDetailMetadata(
-    val bpm: Float,
-    val duration: Int,
-    val songName: String,
-    val songSubName: String,
-    val songAuthorName: String,
-    val levelAuthorName: String
-) { companion object }
+    val bpm: Float = 0f,
+    val duration: Int = 0,
+    val songName: String = "",
+    val songSubName: String = "",
+    val songAuthorName: String = "",
+    val levelAuthorName: String = ""
+) {
+    companion object {
+        val default = MapDetailMetadata()
+    }
+}
 
 @Serializable
 data class MapStats(

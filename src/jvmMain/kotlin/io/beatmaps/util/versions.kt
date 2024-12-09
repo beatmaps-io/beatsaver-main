@@ -4,7 +4,6 @@ import io.beatmaps.api.MapVersion
 import io.beatmaps.api.from
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EAlertType
-import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
@@ -97,19 +96,10 @@ fun publishVersion(mapId: Int, hash: String, alert: Boolean?, rb: RabbitMQInstan
                 it[lastPublishedAt] = NowExpression(lastPublishedAt, transactionTime = false)
                 it[updatedAt] = NowExpression(updatedAt, transactionTime = false)
 
-                // TODO: After populating version
-                /*it[bpm] = publishingVersion.bpm
+                it[bpm] = publishingVersion.bpm
                 it[duration] = publishingVersion.duration
-                it[songName] = publishingVersion.songName
-                it[songSubName] = publishingVersion.songSubName
-                it[songAuthorName] = publishingVersion.songAuthorName
-                it[levelAuthorName] = publishingVersion.levelAuthorName*/
-
                 it[minNps] = stats.minByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
                 it[maxNps] = stats.maxByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
-                it[fullSpread] = stats.filter { diff -> diff.characteristic == ECharacteristic.Standard }
-                    .map { diff -> diff.difficulty }
-                    .distinct().count() == 5
 
                 // Only override None and SageScore
                 if (map?.declaredAi?.override == true) {

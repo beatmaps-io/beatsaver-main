@@ -1040,7 +1040,7 @@ fun Route.userRoute(client: HttpClient) {
                     Beatmap.bpm.avg(),
                     Beatmap.score.avg(3),
                     Beatmap.duration.avg(0),
-                    countWithFilter(Beatmap.ranked),
+                    countWithFilter(Beatmap.ranked or Beatmap.blRanked),
                     Beatmap.uploaded.min(),
                     Beatmap.uploaded.max()
                 ).where {
@@ -1050,7 +1050,7 @@ fun Route.userRoute(client: HttpClient) {
                         it[Beatmap.upVotesInt.sum()] ?: 0,
                         it[Beatmap.downVotesInt.sum()] ?: 0,
                         it[Beatmap.id.count()].toInt(),
-                        it[countWithFilter(Beatmap.ranked)],
+                        it[countWithFilter(Beatmap.ranked or Beatmap.blRanked)],
                         it[Beatmap.bpm.avg()]?.toFloat() ?: 0f,
                         it[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f,
                         it[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
