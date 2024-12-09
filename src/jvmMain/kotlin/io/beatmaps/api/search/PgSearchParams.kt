@@ -2,7 +2,6 @@ package io.beatmaps.api.search
 
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.db.ilike
-import io.beatmaps.common.db.similar
 import io.beatmaps.common.db.unaccent
 import io.beatmaps.common.db.wildcard
 import io.beatmaps.common.dbo.Beatmap
@@ -27,8 +26,6 @@ class PgSearchParams(
     private fun preApplyQuery(q: Op<Boolean>) =
         if (query.isBlank()) {
             q
-        } else if (query.length > 3) {
-            q.and(searchIndex similar unaccent(query))
         } else {
             q.and(searchIndex ilike wildcard(unaccent(query)))
         }
