@@ -97,10 +97,13 @@ fun publishVersion(mapId: Int, hash: String, alert: Boolean?, rb: RabbitMQInstan
                 it[lastPublishedAt] = NowExpression(lastPublishedAt, transactionTime = false)
                 it[updatedAt] = NowExpression(updatedAt, transactionTime = false)
 
-                it[chroma] = stats.any { s -> s.chroma }
-                it[noodle] = stats.any { s -> s.ne }
-                it[me] = stats.any { s -> s.me }
-                it[cinema] = stats.any { s -> s.cinema }
+                // TODO: After populating version
+                /*it[bpm] = publishingVersion.bpm
+                it[duration] = publishingVersion.duration
+                it[songName] = publishingVersion.songName
+                it[songSubName] = publishingVersion.songSubName
+                it[songAuthorName] = publishingVersion.songAuthorName
+                it[levelAuthorName] = publishingVersion.levelAuthorName*/
 
                 it[minNps] = stats.minByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
                 it[maxNps] = stats.maxByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO

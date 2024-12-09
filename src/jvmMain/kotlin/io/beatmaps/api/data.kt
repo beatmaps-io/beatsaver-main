@@ -4,6 +4,7 @@ import io.beatmaps.api.user.from
 import io.beatmaps.common.Config
 import io.beatmaps.common.Folders
 import io.beatmaps.common.MapTag
+import io.beatmaps.common.ModChecker
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.dbo.BeatmapDao
@@ -74,8 +75,9 @@ fun MapVersion.Companion.from(row: ResultRow, cdnPrefix: String) = from(Versions
 
 fun MapDifficulty.Companion.from(other: DifficultyDao) = MapDifficulty(
     other.njs, other.offset, other.notes, other.bombs, other.obstacles, other.nps.toDouble(),
-    other.length.toDouble(), other.characteristic, other.difficulty, other.events, other.chroma, other.me, other.ne, other.cinema, other.seconds.toDouble(), MapParitySummary.from(other),
-    other.stars?.toFloat(), other.maxScore, if (other.label.isNullOrEmpty()) null else other.label, other.blStars?.toFloat(), other.environment
+    other.length.toDouble(), other.characteristic, other.difficulty, other.events, ModChecker.chroma(other), ModChecker.me(other), ModChecker.ne(other), ModChecker.cinema(other),
+    other.seconds.toDouble(), MapParitySummary.from(other), other.stars?.toFloat(), other.maxScore, if (other.label.isNullOrEmpty()) null else other.label,
+    other.blStars?.toFloat(), other.environment
 )
 
 fun MapParitySummary.Companion.from(other: DifficultyDao) = MapParitySummary(other.pError, other.pWarn, other.pReset)
