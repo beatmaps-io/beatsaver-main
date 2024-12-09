@@ -384,8 +384,6 @@ fun Route.searchRoute() {
                                             }
                                             .notNull(searchInfo.userSubQuery) { o -> Beatmap.uploader inSubQuery o }
                                             .notNull(followingSubQuery) { o -> Beatmap.uploader inSubQuery o }
-                                            //.notNull(it.chroma) { o -> Beatmap.chroma eq o }
-                                            //.notNull(it.noodle) { o -> Beatmap.noodle eq o }
                                             .notNull(it.ranked) { o -> (Beatmap.ranked eq o) or (Beatmap.blRanked eq o) }
                                             .notNull(it.leaderboard) { o ->
                                                 Op.of(o == RankedFilter.All).run {
@@ -407,8 +405,6 @@ fun Route.searchRoute() {
                                             .notNull(it.maxBpm) { o -> Beatmap.bpm lessEq o }
                                             .notNull(it.from) { o -> Beatmap.uploaded greaterEq o.toJavaInstant() }
                                             .notNull(it.to) { o -> Beatmap.uploaded lessEq o.toJavaInstant() }
-                                            //.notNull(it.me) { o -> Beatmap.me eq o }
-                                            //.notNull(it.cinema) { o -> Beatmap.cinema eq o }
                                             .notNull(it.tags) { o ->
                                                 o.toQuery()?.applyToQuery() ?: Op.TRUE
                                             }
