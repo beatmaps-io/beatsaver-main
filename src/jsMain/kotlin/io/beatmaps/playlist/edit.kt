@@ -50,6 +50,7 @@ import react.router.useNavigate
 import react.router.useParams
 import react.useContext
 import react.useEffect
+import react.useEffectOnce
 import react.useRef
 import react.useState
 
@@ -72,6 +73,12 @@ val editPlaylist = fc<Props> {
     val hasSearchQuery = query.has("search")
 
     val userData = useContext(globalContext)
+
+    useEffectOnce {
+        if (userData == null) {
+            history.push(if (id != null) "/playlists/$id" else "/")
+        }
+    }
 
     val (loading, setLoading) = useState(false)
     val (init, setInit) = useState(false)
