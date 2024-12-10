@@ -30,7 +30,9 @@ class PlaylistController {
 
 fun Route.playlistController() {
     get<PlaylistController> {
-        genericPage()
+        genericPage {
+            link("${Config.siteBase()}/playlists", "canonical")
+        }
     }
 
     get<PlaylistController.New> {
