@@ -248,8 +248,15 @@ tasks.getByName<Jar>("jvmJar") {
     }
 }
 
+tasks.create<JavaExec>("installPlaywrightBrowsers") {
+    mainClass.set("com.microsoft.playwright.CLI")
+    classpath(sourceSets.test.get().runtimeClasspath)
+    args = listOf("install", "chromium")
+}
+
 tasks.getByName<Test>("jvmTest") {
-    dependsOn(tasks.getByName("jsBrowserProductionWebpack"), tasks.getByName("compileSass"))
+    dependsOn(tasks.getByName("jsBrowserProductionWebpack"), tasks.getByName("compileSass"), tasks.getByName("installPlaywrightBrowsers"))
+    environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
 }
 
 ktlint {
