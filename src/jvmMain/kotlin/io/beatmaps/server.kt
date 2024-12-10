@@ -27,6 +27,7 @@ import io.beatmaps.api.testplayRoute
 import io.beatmaps.api.userRoute
 import io.beatmaps.api.voteRoute
 import io.beatmaps.cloudflare.filenameUpdater
+import io.beatmaps.common.Config
 import io.beatmaps.common.StatusPagesCustom
 import io.beatmaps.common.beatsaber.BMConstraintViolation
 import io.beatmaps.common.beatsaber.BMConstraintViolationMessage
@@ -107,6 +108,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.html.HEAD
+import kotlinx.html.link
 import nl.myndocs.oauth2.exception.InvalidGrantException
 import nl.myndocs.oauth2.exception.OauthException
 import nl.myndocs.oauth2.exception.toMap
@@ -433,7 +435,9 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
 
     routing {
         get("/") {
-            genericPage()
+            genericPage {
+                link(Config.siteBase(), "canonical")
+            }
         }
 
         cdnRoute()

@@ -75,7 +75,9 @@ class Testplays
 
 fun Route.mapController() {
     get<Mappers> {
-        genericPage()
+        genericPage {
+            link("${Config.siteBase()}/mappers", "canonical")
+        }
     }
 
     get<Testplays> {
@@ -184,6 +186,8 @@ fun Route.mapController() {
     }
 
     get<BeatsaverController.Detail> {
-        genericPage()
+        genericPage {
+            link("${Config.siteBase()}/maps/${it.key}", "canonical")
+        }
     }
 }
