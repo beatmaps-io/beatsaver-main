@@ -188,6 +188,7 @@ kotlin {
                 implementation(npm("bootswatch", "5.1.3"))
                 implementation(npm("bootstrap", "5.1.3"))
                 implementation(devNpm("webpack-bundle-analyzer", "4.6.1"))
+                implementation(devNpm("@jridgewell/gen-mapping", "0.3.5")) // Remove if possible
             }
         }
         val jsTest by getting {
