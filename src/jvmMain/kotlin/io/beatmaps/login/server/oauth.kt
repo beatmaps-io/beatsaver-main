@@ -74,7 +74,7 @@ fun Application.installOauth2(deviceCodeStore: InMemoryDeviceCodeStore) {
         tokenEndpoint = "/api/oauth2/token"
         authorizationEndpoint = "/oauth2/authorize"
         tokenInfoEndpoint = "/api/oauth2/identity"
-        deviceCodeEndpoint = "/oauth2/devicecode"
+        deviceCodeEndpoint = "/api/oauth2/devicecode"
 
         identityService = object : IdentityService {
             override fun allowedScopes(forClient: Client, identity: Identity, scopes: Set<String>) = scopes
