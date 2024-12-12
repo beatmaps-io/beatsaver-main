@@ -181,7 +181,7 @@ fun Route.searchRoute() {
     }
 
     getWithOptions<SearchApi.Solr>("Search for maps with solr".responds(ok<SearchResponse>())) {
-        optionalAuthorization { _, user ->
+        optionalAuthorization(OauthScope.SEARCH) { _, user ->
             val searchInfo = SolrSearchParams.parseSearchQuery(it.q)
             val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
 
