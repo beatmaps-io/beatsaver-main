@@ -50,6 +50,7 @@ import io.beatmaps.login.MongoSession
 import io.beatmaps.login.Session
 import io.beatmaps.login.cookieName
 import io.beatmaps.login.server.DBTokenStore
+import io.beatmaps.util.optionalAuthorization
 import io.beatmaps.util.requireAuthorization
 import io.beatmaps.util.requireCaptcha
 import io.beatmaps.util.updateAlertCount
@@ -857,7 +858,7 @@ fun Route.userRoute(client: HttpClient) {
     }
 
     post<UsersApi.Follow> {
-        requireAuthorization { _, user ->
+        requireAuthorization(OauthScope.MANAGE_FOLLOW) { _, user ->
             val req = call.receive<UserFollowRequest>()
 
             if (req.userId == user.userId && req.following) {
@@ -1110,22 +1111,24 @@ fun Route.userRoute(client: HttpClient) {
     }
 
     getWithOptions<MapsApi.UserId>("Get user info".responds(ok<UserDetail>(), notFound())) {
-        val userDetail = transaction {
-            val user = userBy {
-                (User.id eq it.id) and User.active
-            }
-            val followData = followData(user.id.value, call.sessions.get<Session>()?.userId)
+        optionalAuthorization(OauthScope.FOLLOW) { _, sess ->
+            val userDetail = transaction {
+                val user = userBy {
+                    (User.id eq it.id) and User.active
+                }
+                val followData = followData(user.id.value, sess?.userId)
 
-            UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let {
-                if (call.sessions.get<Session>()?.isAdmin() == true) {
-                    it.copy(uploadLimit = user.uploadLimit)
-                } else {
-                    it
+                UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let {
+                    if (call.sessions.get<Session>()?.isAdmin() == true) {
+                        it.copy(uploadLimit = user.uploadLimit)
+                    } else {
+                        it
+                    }
                 }
             }
-        }
 
-        call.respond(userDetail)
+            call.respond(userDetail)
+        }
     }
 
     getWithOptions<MapsApi.UserIds>("Get user info".responds(ok<UserDetail>(), notFound())) {
@@ -1192,7 +1195,7 @@ fun Route.userRoute(client: HttpClient) {
     }
 
     get<UsersApi.FollowedBy> {
-        requireAuthorization { _, sess ->
+        requireAuthorization(OauthScope.FOLLOW) { _, sess ->
             if (it.user != sess.userId) call.respond(HttpStatusCode.Forbidden, ActionResponse.error())
 
             val users = getFollowerData(it.page, Follows.userId) {

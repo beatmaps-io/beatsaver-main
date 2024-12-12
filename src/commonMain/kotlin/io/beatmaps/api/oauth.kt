@@ -8,7 +8,10 @@ enum class OauthScope(val tag: String, val description: String) {
     ADMIN_PLAYLISTS("playlists.admin", "Create/edit/delete your public and private playlists"),
     MANAGE_PLAYLISTS("playlists.manage", "Update maps in your public and private playlists"),
     ALERTS("alerts", "Read your alerts"),
-    MARK_ALERTS("alerts.mark", "Mark your alerts as read/unread");
+    MARK_ALERTS("alerts.mark", "Mark your alerts as read/unread"),
+    SEARCH("search", "Perform searches for you (filter following)"),
+    FOLLOW("follow", "View who you follow"),
+    MANAGE_FOLLOW("follow.manage", "Change who you follow");
 
     companion object {
         private val map = entries.associateBy(OauthScope::tag)
