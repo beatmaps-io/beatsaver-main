@@ -5,6 +5,7 @@ import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.getCountry
+import io.beatmaps.common.pub
 import io.beatmaps.genericPage
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
@@ -136,6 +137,8 @@ fun Route.authRoute(client: HttpClient) {
                         it[active] = true
                         it[verifyToken] = null
                     } > 0
+                }.also {
+                    if (it) call.pub("beatmaps", "user.$userId.updated.active", null, userId)
                 }
             }
         } catch (e: SignatureException) {
