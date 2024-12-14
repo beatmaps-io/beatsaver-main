@@ -4,6 +4,7 @@ import io.beatmaps.api.alertCount
 import io.beatmaps.api.user.UserCrypto
 import io.beatmaps.common.Config
 import io.beatmaps.common.Folders
+import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
@@ -153,16 +154,20 @@ fun Route.discordLogin(client: HttpClient) {
                             it[Beatmap.id.count()] to (it[User.email] != null)
                         } ?: (0L to null)
 
-                    if (existingMaps > 0 || dualAccount == true) {
+                    val deadUserId = if (existingMaps > 0 || dualAccount == true) {
                         // User has maps, can't link
-                        return@newSuspendedTransaction
+                        return@newSuspendedTransaction null
                     } else if (dualAccount == false) {
                         // Email = false means the other account is a pure discord account
                         // and as it has no maps we can set it to inactive before linking it to the current account
-                        User.update({ User.discordId eq data.id }) {
+                        User.updateReturning({ User.discordId eq data.id }, {
                             it[active] = false
                             it[discordId] = null
+                        }, User.id)?.singleOrNull()?.let { row ->
+                            row[User.id].value
                         }
+                    } else {
+                        null
                     }
 
                     val avatarLocal = data.avatar?.let { discordHelper.downloadDiscordAvatar(it, data.id) }
@@ -171,6 +176,10 @@ fun Route.discordLogin(client: HttpClient) {
                         it[discordId] = data.id
                         it[avatar] = avatarLocal
                     }
+
+                    deadUserId
+                }?.let { userId ->
+                    call.pub("beatmaps", "user.${userId}.updated.active", null, userId)
                 }
 
                 call.respondRedirect("/profile#account")
