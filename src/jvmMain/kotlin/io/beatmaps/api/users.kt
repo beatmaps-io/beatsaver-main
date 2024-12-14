@@ -258,6 +258,7 @@ fun Route.userRoute(client: HttpClient) {
                 success || throw UserApiException("You can only set a new username once per day")
 
                 call.sessions.set(sess.copy(uniqueName = req.textContent))
+                call.pub("beatmaps", "user.${sess.userId}.updated.name", null, sess.userId)
                 call.respond(ActionResponse.success())
             }
         }
@@ -278,6 +279,7 @@ fun Route.userRoute(client: HttpClient) {
             }
 
             success || throw ServerApiException("Something went wrong")
+            call.pub("beatmaps", "user.${sess.userId}.updated.info", null, sess.userId)
             call.respond(ActionResponse.success())
         }
     }
@@ -800,8 +802,11 @@ fun Route.userRoute(client: HttpClient) {
                                 ActionResponse.error("Reset token no longer valid")
                             } catch (e: JwtException) {
                                 ActionResponse.error("Bad token")
-                            }
-                        } ?: ActionResponse.error("User not found")
+                            }.let { it to user.active }
+                        } ?: (ActionResponse.error("User not found") to false)
+                    }.let { (response, previousActive) ->
+                        if (response.success && !previousActive) call.pub("beatmaps", "user.${userId}.updated.active", null, userId)
+                        response
                     }
                 }
             } catch (e: IllegalArgumentException) {

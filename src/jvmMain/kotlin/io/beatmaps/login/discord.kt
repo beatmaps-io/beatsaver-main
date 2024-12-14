@@ -8,6 +8,7 @@ import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.pub
 import io.beatmaps.util.requireAuthorization
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -122,6 +123,7 @@ fun Route.discordLogin(client: HttpClient) {
             }
 
             call.sessions.set(Session.fromUser(user, alertCount, call = call))
+            call.pub("beatmaps", "user.${user.id.value}.updated.active", null, user.id.value)
             req.state?.let { String(hex(it)) }.orEmpty().let { query ->
                 if (query.isNotEmpty() && query.contains("client_id")) {
                     call.respondRedirect("/oauth2/authorize/success$query")
