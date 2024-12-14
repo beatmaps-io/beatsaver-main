@@ -805,7 +805,7 @@ fun Route.userRoute(client: HttpClient) {
                             }.let { it to user.active }
                         } ?: (ActionResponse.error("User not found") to false)
                     }.let { (response, previousActive) ->
-                        if (response.success && !previousActive) call.pub("beatmaps", "user.${userId}.updated.active", null, userId)
+                        if (response.success && !previousActive) call.pub("beatmaps", "user.$userId.updated.active", null, userId)
                         response
                     }
                 }

@@ -179,7 +179,7 @@ fun Route.discordLogin(client: HttpClient) {
 
                     deadUserId
                 }?.let { userId ->
-                    call.pub("beatmaps", "user.${userId}.updated.active", null, userId)
+                    call.pub("beatmaps", "user.$userId.updated.active", null, userId)
                 }
 
                 call.respondRedirect("/profile#account")

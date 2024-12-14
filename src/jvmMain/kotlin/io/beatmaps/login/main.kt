@@ -138,7 +138,7 @@ fun Route.authRoute(client: HttpClient) {
                         it[verifyToken] = null
                     } > 0
                 }.also {
-                    if (it) call.pub("beatmaps", "user.${userId}.updated.active", null, userId)
+                    if (it) call.pub("beatmaps", "user.$userId.updated.active", null, userId)
                 }
             }
         } catch (e: SignatureException) {
