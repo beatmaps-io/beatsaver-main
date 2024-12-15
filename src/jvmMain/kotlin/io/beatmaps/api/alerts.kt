@@ -205,6 +205,7 @@ fun Route.alertsRoute() {
                     it[reviewAlerts] = req.reviewAlerts
                     it[curationAlerts] = req.curationAlerts
                     it[followAlerts] = req.followAlerts
+                    it[updatedAt] = NowExpression(updatedAt)
                 }
             }
 

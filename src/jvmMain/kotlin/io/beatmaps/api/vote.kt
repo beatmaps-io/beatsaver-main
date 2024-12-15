@@ -151,6 +151,7 @@ fun Route.voteRoute(client: HttpClient) {
                     User.id eq body
                 }) {
                     it[upvotes] = wrapAsExpressionNotNull(subQuery)
+                    it[statsUpdatedAt] = NowExpression(updatedAt)
                 }
             }
         }

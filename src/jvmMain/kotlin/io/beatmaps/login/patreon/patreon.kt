@@ -152,6 +152,7 @@ fun Route.patreonLink(client: HttpClient) {
 
                     User.update({ User.id eq sess.userId }) {
                         it[patreonId] = user.id.toInt()
+                        it[updatedAt] = NowExpression(updatedAt)
                     }
                 }
 

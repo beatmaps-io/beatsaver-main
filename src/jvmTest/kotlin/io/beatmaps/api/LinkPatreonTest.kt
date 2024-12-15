@@ -1,5 +1,6 @@
 package io.beatmaps.api
 
+import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.json
 import io.beatmaps.login.patreon.PatreonIncluded
@@ -97,6 +98,7 @@ class LinkPatreonTest : ApiTestBase() {
         val uid = transaction {
             User.update({ User.id eq patreonUserId.toInt() }) {
                 it[patreonId] = null
+                it[updatedAt] = NowExpression(updatedAt)
             }
             createUser().first
         }
