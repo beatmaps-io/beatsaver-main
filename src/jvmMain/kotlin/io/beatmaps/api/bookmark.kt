@@ -80,6 +80,7 @@ fun getNewId(userId: Int) =
         get(Playlist.id).value.also { playlistId ->
             User.update({ User.id eq userId }) {
                 it[bookmarksId] = playlistId
+                it[updatedAt] = NowExpression(updatedAt)
             }
         }
     }

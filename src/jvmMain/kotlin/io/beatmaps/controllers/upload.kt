@@ -126,6 +126,7 @@ fun Route.uploadController() {
                         transaction {
                             User.update({ User.id eq sess.userId }) {
                                 it[avatar] = "${Config.cdnBase("", true)}/avatar/$filename"
+                                it[updatedAt] = NowExpression(updatedAt)
                             }
                         }
                     }

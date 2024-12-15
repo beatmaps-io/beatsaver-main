@@ -2,6 +2,7 @@ package io.beatmaps.controllers
 
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.user.from
+import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.genericPage
@@ -110,6 +111,7 @@ fun Route.userController() {
             transaction {
                 User.update({ User.id eq sess.userId }) {
                     it[discordId] = null
+                    it[updatedAt] = NowExpression(updatedAt)
                 }
             }
             call.respondRedirect("/profile#account")
@@ -124,6 +126,7 @@ fun Route.userController() {
             transaction {
                 User.update({ User.id eq sess.userId }) {
                     it[patreonId] = null
+                    it[updatedAt] = NowExpression(updatedAt)
                 }
             }
             call.respondRedirect("/profile#account")

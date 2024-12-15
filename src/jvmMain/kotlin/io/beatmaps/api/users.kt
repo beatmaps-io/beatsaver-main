@@ -249,6 +249,7 @@ fun Route.userRoute(client: HttpClient) {
                         User.update({ User.id eq sess.userId and (User.uniqueName.isNull() or User.renamedAt.lessEq(DateMinusDays(NowExpression(User.renamedAt), 1))) }) { u ->
                             u[uniqueName] = req.textContent
                             u[renamedAt] = Expression.build { case().When(uniqueName eq req.textContent, renamedAt).Else(NowExpression(renamedAt)) }
+                            u[updatedAt] = NowExpression(updatedAt)
                         } > 0
                     } catch (e: ExposedSQLException) {
                         throw UserApiException("Username already taken")
@@ -272,6 +273,7 @@ fun Route.userRoute(client: HttpClient) {
                 try {
                     User.update({ User.id eq sess.userId }) { u ->
                         u[description] = req.textContent.take(500)
+                        u[updatedAt] = NowExpression(updatedAt)
                     } > 0
                 } catch (e: ExposedSQLException) {
                     false
@@ -301,6 +303,7 @@ fun Route.userRoute(client: HttpClient) {
                                 u[seniorCurator] = req.curator && req.seniorCurator
                                 u[verifiedMapper] = req.verifiedMapper
                                 u[curatorTab] = req.curatorTab
+                                u[updatedAt] = NowExpression(updatedAt)
                             } > 0
 
                         runUpdate().also {
@@ -346,6 +349,7 @@ fun Route.userRoute(client: HttpClient) {
                             } else {
                                 u[suspendedAt] = null
                             }
+                            u[updatedAt] = NowExpression(updatedAt)
                         } > 0
 
                     runUpdate().also {
@@ -709,6 +713,7 @@ fun Route.userRoute(client: HttpClient) {
                             }) {
                                 it[email] = newEmail
                                 it[emailChangedAt] = NowExpression(emailChangedAt)
+                                it[updatedAt] = NowExpression(updatedAt)
                             } > 0
 
                             if (success) {
@@ -783,6 +788,7 @@ fun Route.userRoute(client: HttpClient) {
                                     // we can also activate their account
                                     it[verifyToken] = null
                                     it[active] = true
+                                    it[updatedAt] = NowExpression(updatedAt)
                                 } > 0
 
                                 if (success) {
@@ -845,6 +851,7 @@ fun Route.userRoute(client: HttpClient) {
                                     User.id eq sess.userId
                                 }) {
                                     it[password] = bcrypt
+                                    it[updatedAt] = NowExpression(updatedAt)
                                 }
                                 DBTokenStore.deleteForUser(sess.userId)
                                 ActionResponse.success()

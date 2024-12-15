@@ -4,6 +4,7 @@ import io.beatmaps.api.alertCount
 import io.beatmaps.api.user.UserCrypto
 import io.beatmaps.common.Config
 import io.beatmaps.common.Folders
+import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
@@ -163,6 +164,7 @@ fun Route.discordLogin(client: HttpClient) {
                         User.updateReturning({ User.discordId eq data.id }, {
                             it[active] = false
                             it[discordId] = null
+                            it[updatedAt] = NowExpression(updatedAt)
                         }, User.id)?.singleOrNull()?.let { row ->
                             row[User.id].value
                         }
@@ -175,6 +177,7 @@ fun Route.discordLogin(client: HttpClient) {
                     User.update({ User.id eq sess.userId }) {
                         it[discordId] = data.id
                         it[avatar] = avatarLocal
+                        it[updatedAt] = NowExpression(updatedAt)
                     }
 
                     deadUserId

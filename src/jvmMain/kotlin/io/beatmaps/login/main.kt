@@ -2,6 +2,7 @@ package io.beatmaps.login
 
 import io.beatmaps.api.user.UserCrypto
 import io.beatmaps.common.Config
+import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.getCountry
@@ -136,6 +137,7 @@ fun Route.authRoute(client: HttpClient) {
                     }) {
                         it[active] = true
                         it[verifyToken] = null
+                        it[updatedAt] = NowExpression(updatedAt)
                     } > 0
                 }.also {
                     if (it) call.pub("beatmaps", "user.$userId.updated.active", null, userId)
@@ -262,6 +264,7 @@ fun Route.authRoute(client: HttpClient) {
             transaction {
                 User.update({ User.id eq sess.userId }) {
                     it[steamId] = steamid
+                    it[updatedAt] = NowExpression(updatedAt)
                 }
             }
             call.sessions.set(sess.copy(steamId = steamid))
