@@ -17,6 +17,8 @@ data class PatreonMembership(
     val isFollower: Boolean? = null,
     @JsonNames("is_free_trial")
     val isFreeTrial: Boolean? = null,
+    @JsonNames("is_gifted")
+    val isGifted: Boolean? = null,
     @JsonNames("last_charge_date")
     val lastChargeDate: Instant? = null,
     @JsonNames("last_charge_status")
@@ -39,7 +41,7 @@ data class PatreonMembership(
         override val fieldKey = "member"
         override val fields = listOf(
             "campaign_lifetime_support_cents", "currently_entitled_amount_cents", "email", "full_name", "is_follower", "is_free_trial", "last_charge_date", "last_charge_status",
-            "lifetime_support_cents", "next_charge_date", "note", "patron_status", "pledge_cadence", "pledge_relationship_start", "will_pay_amount_cents"
+            "lifetime_support_cents", "next_charge_date", "note", "patron_status", "pledge_cadence", "pledge_relationship_start", "will_pay_amount_cents", "is_gifted"
         )
     }
 }
