@@ -4,7 +4,6 @@ import external.TimeAgo
 import external.routeLink
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
-import io.beatmaps.api.ReviewConstants
 import io.beatmaps.common.fixedStr
 import io.beatmaps.common.formatTime
 import io.beatmaps.shared.map.uploader
@@ -203,15 +202,13 @@ val infoTable = fc<InfoTableProps> { props ->
         props.map.stats.let { stats ->
             infoItem("Rating", "${stats.upvotes} / ${stats.downvotes} (${stats.scoreOneDP}%)")
 
-            if (ReviewConstants.COMMENTS_ENABLED) {
-                div(itemClasses) {
-                    +"Reviews"
-                    span("text-truncate ms-4") {
-                        span("text-" + stats.sentiment.color) {
-                            +stats.sentiment.human
-                        }
-                        +" (${stats.reviews} ${if (stats.reviews == 1) "review" else "reviews"})"
+            div(itemClasses) {
+                +"Reviews"
+                span("text-truncate ms-4") {
+                    span("text-" + stats.sentiment.color) {
+                        +stats.sentiment.human
                     }
+                    +" (${stats.reviews} ${if (stats.reviews == 1) "review" else "reviews"})"
                 }
             }
         }

@@ -36,6 +36,8 @@ data class PlaylistSearchParams(
 external interface PlaylistTableProps : Props {
     var search: PlaylistSearchParams?
     var userId: Int?
+    var mapId: String?
+    var small: Boolean?
     var visible: Boolean?
     var updateScrollIndex: ((Int) -> Unit)?
 }
@@ -53,6 +55,8 @@ val playlistTable = fc<PlaylistTableProps> { props ->
     fun getUrl(page: Int) =
         if (props.userId != null) {
             "${Config.apibase}/playlists/user/${props.userId}/$page"
+        } else if (props.mapId != null) {
+            "${Config.apibase}/playlists/map/${props.mapId}/$page"
         } else {
             props.search?.let { search ->
                 "${Config.apibase}/playlists/search${if (config?.v2Search == true) "" else "/v1"}/$page?sortOrder=${search.sortOrder}" +
@@ -89,6 +93,7 @@ val playlistTable = fc<PlaylistTableProps> { props ->
                 attrs.renderElement = InfiniteScrollElementRenderer { pl ->
                     playlistInfo {
                         attrs.playlist = pl
+                        attrs.small = props.small
                     }
                 }
                 attrs.updateScrollIndex = props.updateScrollIndex
