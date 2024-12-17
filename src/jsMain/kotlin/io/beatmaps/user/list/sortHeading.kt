@@ -1,6 +1,7 @@
 package io.beatmaps.user.list
 
 import io.beatmaps.common.api.ApiOrder
+import io.beatmaps.configContext
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import react.Props
@@ -8,6 +9,7 @@ import react.dom.i
 import react.dom.jsStyle
 import react.dom.th
 import react.fc
+import react.useContext
 
 external interface SortThProps : Props {
     var column: MapperColumn
@@ -17,8 +19,9 @@ external interface SortThProps : Props {
 }
 
 val sortTh = fc<SortThProps> { props ->
+    val config = useContext(configContext)
     th {
-        if (props.column.sortEnum != null) {
+        if (config?.v2Search == true && props.column.sortEnum != null) {
             attrs.attributes["aria-sort"] = when (props.sort) {
                 props.column -> props.order.aria
                 else -> "none"

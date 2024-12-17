@@ -105,6 +105,7 @@ class SearchApi {
         @Description("Tag query, separated by `,` (and) or `|` (or). Excluded tags are prefixed with `!`.")
         val tags: String? = null,
         @Ignore val mapper: Int? = null,
+        @Ignore val collaborator: Int? = null,
         @Ignore val curator: Int? = null
     )
 
@@ -390,7 +391,7 @@ fun Route.searchRoute() {
                                             .notNull(it.tags) { o ->
                                                 o.toQuery()?.applyToQuery() ?: Op.TRUE
                                             }
-                                            .notNull(it.mapper) { o -> Beatmap.uploader eq o }
+                                            .notNull(it.mapper ?: it.collaborator) { o -> Beatmap.uploader eq o }
                                             .notNull(it.curator) { o -> Beatmap.curator eq o }
                                     }
                                     .orderBy(*sortArgs)
