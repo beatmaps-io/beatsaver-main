@@ -4,6 +4,7 @@ import external.Axios
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
+import io.beatmaps.api.UserSearchResponse
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
@@ -44,10 +45,10 @@ val userSearch = fc<UserSearchProps> { props ->
             attrs.onClickFunction = {
                 it.preventDefault()
                 inputRef.current?.value?.ifBlank { null }?.let { q ->
-                    Axios.get<List<UserDetail>>(
-                        "${Config.apibase}/users/search?q=$q",
-                        generateConfig<String, List<UserDetail>>()
-                    ).then { res -> setFoundUsers(res.data) }
+                    Axios.get<UserSearchResponse>(
+                        "${Config.apibase}/users/search/0?q=$q",
+                        generateConfig<String, UserSearchResponse>()
+                    ).then { res -> setFoundUsers(res.data.docs) }
                 } ?: setFoundUsers(listOf())
             }
             +"Search"
@@ -56,7 +57,7 @@ val userSearch = fc<UserSearchProps> { props ->
 
     foundUsers?.filter {
         props.excludeUsers?.contains(it.id) != true
-    }?.let { users ->
+    }?.take(10)?.let { users ->
         div("search-results") {
             if (users.isNotEmpty()) {
                 users.forEach { user ->

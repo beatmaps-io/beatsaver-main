@@ -20,13 +20,13 @@ import io.beatmaps.upload.uploadPage
 import io.beatmaps.user.alerts.alertsPage
 import io.beatmaps.user.changeEmailPage
 import io.beatmaps.user.forgotPage
+import io.beatmaps.user.list.userList
 import io.beatmaps.user.loginPage
 import io.beatmaps.user.oauth.authorizePage
 import io.beatmaps.user.pickUsernamePage
 import io.beatmaps.user.profilePage
 import io.beatmaps.user.resetPage
 import io.beatmaps.user.signupPage
-import io.beatmaps.user.userList
 import kotlinx.browser.window
 import kotlinx.serialization.Serializable
 import react.Props

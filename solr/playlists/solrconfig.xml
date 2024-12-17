@@ -80,6 +80,15 @@
             <str name="config">solr-data-config.xml</str>
         </lst>
     </requestHandler>
+    <requestHandler name="/admin/ping" class="solr.PingRequestHandler">
+        <lst name="invariants">
+            <str name="q">solrpingquery</str>
+        </lst>
+        <lst name="defaults">
+            <str name="echoParams">all</str>
+        </lst>
+        <str name="healthcheckFile">server-enabled.txt</str>
+    </requestHandler>
     <searchComponent class="solr.HighlightComponent" name="highlight">
         <highlighting>
             <fragmenter name="gap"

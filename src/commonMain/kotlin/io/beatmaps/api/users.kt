@@ -2,6 +2,7 @@
 
 package io.beatmaps.api
 
+import io.beatmaps.common.solr.SearchInfo
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
@@ -114,3 +115,6 @@ data class UserFollowRequest(val userId: Int, val following: Boolean, val upload
 
 @Serializable
 data class SessionRevokeRequest(val userId: Int? = null, val site: Boolean? = null, val reason: String? = null)
+
+@Serializable
+data class UserSearchResponse(override val docs: List<UserDetail>, override val info: SearchInfo? = null) : GenericSearchResponse<UserDetail>

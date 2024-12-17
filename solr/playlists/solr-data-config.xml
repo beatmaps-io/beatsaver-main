@@ -11,7 +11,7 @@
                         JOIN uploader u ON p.owner = u.id
                         WHERE &quot;deletedAt&quot; IS NULL GROUP BY p.&quot;playlistId&quot;, u.id"
                 deltaQuery="SELECT &quot;playlistId&quot; id FROM playlist WHERE &quot;deletedAt&quot; IS NULL AND
-                                CASE WHEN &quot;updatedAt&quot; > &quot;songsChangedAt&quot; THEN &quot;updatedAt&quot; ELSE &quot;songsChangedAt&quot; END >= '${dataimporter.last_index_time}'"
+                                GREATEST(&quot;updatedAt&quot;, &quot;songsChangedAt&quot;) >= '${dataimporter.last_index_time}'"
                 deltaImportQuery="
                     SELECT p.&quot;playlistId&quot; id, p.name, p.owner, p.&quot;createdAt&quot;, p.&quot;updatedAt&quot;, p.description, p.&quot;deletedAt&quot;,
                         p.&quot;songsChangedAt&quot;, p.&quot;curatedAt&quot;, p.&quot;curatedBy&quot;, p.&quot;minNps&quot;, p.&quot;maxNps&quot;, p.&quot;totalMaps&quot;, p.type,

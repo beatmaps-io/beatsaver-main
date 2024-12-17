@@ -1,4 +1,4 @@
-package io.beatmaps.user
+package io.beatmaps.user.list
 
 import external.Axios
 import external.CancelTokenSource
@@ -9,14 +9,19 @@ import io.beatmaps.Config
 import io.beatmaps.Config.dateFormat
 import io.beatmaps.History
 import io.beatmaps.api.UserDetail
+import io.beatmaps.api.UserSearchResponse
+import io.beatmaps.common.api.ApiOrder
+import io.beatmaps.common.api.UserSearchSort
 import io.beatmaps.common.fixedStr
 import io.beatmaps.common.formatTime
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.IndexedInfiniteScrollElementRenderer
 import io.beatmaps.shared.InfiniteScroll
+import io.beatmaps.util.buildURL
+import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.datetime.Clock
-import kotlinx.html.title
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.url.URLSearchParams
 import react.Props
 import react.dom.a
 import react.dom.i
@@ -24,16 +29,31 @@ import react.dom.img
 import react.dom.table
 import react.dom.tbody
 import react.dom.td
-import react.dom.th
 import react.dom.thead
 import react.dom.tr
 import react.fc
+import react.router.useLocation
 import react.router.useNavigate
+import react.useEffect
 import react.useEffectOnce
 import react.useRef
+import react.useState
 
 val userList = fc<Props> {
+    val location = useLocation()
+
+    val (urlSearch, urlOrder) = URLSearchParams(location.search).let { params ->
+        val s = UserSearchSort.fromString(params.get("sort"))
+            ?.let { MapperColumn.fromSort(it) } ?: MapperColumn.UPVOTES
+        val d = ApiOrder.fromString(params.get("order")) ?: ApiOrder.DESC
+
+        s to d
+    }
+
     val resultsTable = useRef<HTMLElement>()
+    val (resultsKey, setResultsKey) = useState(Any())
+    val (sort, setSort) = useState(urlSearch)
+    val (order, setOrder) = useState(urlOrder)
 
     val history = History(useNavigate())
 
@@ -41,33 +61,50 @@ val userList = fc<Props> {
         setPageTitle("Mappers")
     }
 
+    useDidUpdateEffect(sort, order) {
+        setResultsKey(Any())
+    }
+
+    useEffect(location.search) {
+        if (urlSearch != sort) setSort(urlSearch)
+        if (urlOrder != order) setOrder(urlOrder)
+    }
+
     val loadPage = { toLoad: Int, token: CancelTokenSource ->
-        Axios.get<Array<UserDetail>>(
-            "${Config.apibase}/users/list/$toLoad",
-            generateConfig<String, Array<UserDetail>>(token.token)
+        Axios.get<UserSearchResponse>(
+            "${Config.apibase}/users/search/$toLoad?sort=${sort.sortEnum}&order=$order",
+            generateConfig<String, UserSearchResponse>(token.token)
         ).then {
-            return@then it.data.toList()
+            return@then it.data.docs
         }
+    }
+
+    fun toURL(sortLocal: UserSearchSort?, orderLocal: ApiOrder, row: Int? = null) {
+        val state = if (sortLocal == sort.sortEnum && orderLocal == order) this else null
+        buildURL(
+            listOfNotNull(
+                (if (sortLocal != null && sortLocal != UserSearchSort.UPVOTES) "sort=$sortLocal" else null),
+                (if (orderLocal != ApiOrder.DESC) "order=$orderLocal" else null)
+            ),
+            "mappers", row, state, history
+        )
     }
 
     table("table table-dark table-striped mappers") {
         thead {
             tr {
-                th { +"#" }
-                th { i("fas fa-image") { attrs.title = "Avatar" } }
-                th { +"Mapper" }
-                th { i("fas fa-tachometer-alt") { attrs.title = "Avg BPM" } }
-                th { i("fas fa-clock") { attrs.title = "Avg Duration" } }
-                th { i("fas fa-thumbs-up") { attrs.title = "Total Upvotes" } }
-                th { i("fas fa-thumbs-down") { attrs.title = "Total Downvotes" } }
-                th { i("fas fa-percentage") { attrs.title = "Ratio" } }
-                th { i("fas fa-map-marked") { attrs.title = "Total Maps" } }
-                th { i("fas fa-star") { attrs.title = "Ranked Maps" } }
-                th { +"First" }
-                th { +"Last" }
-                th { +"Since" }
-                th { +"Age" }
-                th { +"Playlist" }
+                MapperColumn.entries.forEach { col ->
+                    sortTh {
+                        attrs.column = col
+                        attrs.sort = sort
+                        attrs.order = order
+                        attrs.updateSort = { s, d ->
+                            toURL(s.sortEnum, d)
+                            setSort(s)
+                            setOrder(d)
+                        }
+                    }
+                }
             }
         }
         tbody {
@@ -75,13 +112,15 @@ val userList = fc<Props> {
             key = "mapperTable"
 
             child(UserInfiniteScroll::class) {
+                attrs.resultsKey = resultsKey
                 attrs.rowHeight = 54.0
                 attrs.itemsPerPage = 20
                 attrs.headerSize = 94.0
                 attrs.container = resultsTable
                 attrs.loadPage = loadPage
                 attrs.updateScrollIndex = {
-                    history.replace("/mappers#$it")
+                    val hash = if (it > 1) it else null
+                    toURL(sort.sortEnum, order, hash)
                 }
                 attrs.renderElement = IndexedInfiniteScrollElementRenderer { idx, u ->
                     tr {
@@ -114,8 +153,8 @@ val userList = fc<Props> {
                                     +"${u.stats.totalDownvotes}"
                                 }
                                 td {
-                                    val total = ((u.stats.totalUpvotes + u.stats.totalDownvotes) * 0.01f)
-                                    +"${(u.stats.totalUpvotes / if (total < 0.01f) 0.01f else total).fixedStr(2)}%"
+                                    val total = ((u.stats.totalUpvotes + u.stats.totalDownvotes + 0.001f) * 0.01f)
+                                    +"${(u.stats.totalUpvotes / total).fixedStr(2)}%"
                                 }
                                 td {
                                     +"${u.stats.totalMaps}"
@@ -142,9 +181,7 @@ val userList = fc<Props> {
                                     }
                                 }
                             } else {
-                                td {
-                                    attrs.colSpan = "11"
-                                }
+                                repeat(11) { td { } }
                             }
                             td {
                                 a("${Config.apibase}/users/id/${u.id}/playlist", "_blank", "btn btn-secondary") {
@@ -153,9 +190,7 @@ val userList = fc<Props> {
                                 }
                             }
                         } else {
-                            td {
-                                attrs.colSpan = "14"
-                            }
+                            repeat(14) { td { } }
                         }
                     }
                 }

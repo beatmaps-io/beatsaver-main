@@ -607,6 +607,7 @@ table.search-results {
   }
 }
 .table.mappers {
+  table-layout: fixed;
   td, th {
     text-align: center;
 
@@ -616,6 +617,8 @@ table.search-results {
   }
   th {
     border: 0;
+    box-sizing: content-box;
+    padding: 0.75rem 0.4rem;
   }
   thead {
     position: sticky;
@@ -632,22 +635,50 @@ table.search-results {
     }
   }
   td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
     padding: 0.4rem;
     vertical-align: middle;
     height: 54px;
 
+    &:nth-child(n+4) {
+      font-size: 13px;
+    }
     &:nth-child(3) {
       text-align: left;
       width: 175px;
 
       a {
-        width: 162px;
         display: block;
         overflow: hidden;
         text-overflow: ellipsis;
       }
     }
   }
+}
+[aria-sort] {
+  position: relative;
+  cursor: pointer;
+  &:before {
+    content: "▼";
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    font-size: .5em;
+  }
+  &:after {
+    content: "▲";
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    font-size: .5em;
+    margin-top: -9px;
+  }
+}
+[aria-sort=ascending]:before, [aria-sort=descending]:after {
+  opacity: 0.2;
 }
 .filter-dropdown {
   background: none;
@@ -1784,6 +1815,14 @@ select.dark {
 }
 
 @include media-breakpoint-up(lg) {
+  .table.mappers {
+    th {
+      padding: .75rem .75rem;
+    }
+    td:nth-child(n+4) {
+      font-size: 15px;
+    }
+  }
   .search-results, .embed {
     img.mode {
       margin-right: 0;

@@ -1,0 +1,56 @@
+<dataConfig>
+    <dataSource type="JdbcDataSource" driver="org.postgresql.Driver" url="jdbc:postgresql://db:5432/beatmaps" user="beatmaps" password="insecure-password"></dataSource>
+    <document>
+        <entity pk="id" name="Users"
+                query="
+                    SELECT u.id, COALESCE(u.&quot;uniqueName&quot;, u.name) name, u.description, u.&quot;createdAt&quot;, u.admin, u.curator, u.&quot;seniorCurator&quot;,
+                        u.&quot;verifiedMapper&quot;, COALESCE(stats.avgbpm, 0) &quot;avgBpm&quot;, COALESCE(stats.avgduration, 0) &quot;avgDuration&quot;,
+                        COALESCE(stats.upvote, 0) &quot;totalUpvotes&quot;, COALESCE(stats.downvote, 0) &quot;totalDownvotes&quot;, COALESCE(stats.avgscore, 0) &quot;avgScore&quot;,
+                        COALESCE(stats.total, 0) &quot;totalMaps&quot;, COALESCE(stats.ranked, 0) &quot;rankedMaps&quot;, stats.min &quot;firstUpload&quot;,
+                        stats.max &quot;lastUpload&quot;, COALESCE(DATE_PART('DAY', stats.max - stats.min), 0) &quot;mapAge&quot;
+                    FROM uploader u
+                        LEFT JOIN (
+                            SELECT SUM(upvote) upvote, SUM(downvote) downvote, ROUND(AVG(score) * 100, 1) avgscore, ROUND(AVG(v.duration)::numeric, 2) avgduration, ROUND(AVG(v.bpm)::numeric, 2) avgbpm, COUNT(*) total, COUNT(*) FILTER (WHERE b.ranked OR b.&quot;blRanked&quot;) ranked, MIN(uploaded), MAX(uploaded), b.uploader FROM beatmap b INNER JOIN versions v ON b.&quot;mapId&quot; = v.&quot;mapId&quot; AND v.state = 'Published' WHERE b.&quot;deletedAt&quot; IS NULL GROUP BY b.uploader
+                        ) stats ON stats.uploader = u.id
+                    WHERE active"
+                deltaQuery="SELECT id FROM uploader WHERE active AND
+                                GREATEST(&quot;updatedAt&quot;, &quot;statsUpdatedAt&quot;) >= '${dataimporter.last_index_time}'"
+                deltaImportQuery="
+                    SELECT u.id, COALESCE(u.&quot;uniqueName&quot;, u.name) name, u.description, u.&quot;createdAt&quot;, u.admin, u.curator, u.&quot;seniorCurator&quot;,
+                        u.&quot;verifiedMapper&quot;, COALESCE(stats.avgbpm, 0) &quot;avgBpm&quot;, COALESCE(stats.avgduration, 0) &quot;avgDuration&quot;,
+                        COALESCE(stats.upvote, 0) &quot;totalUpvotes&quot;, COALESCE(stats.downvote, 0) &quot;totalDownvotes&quot;, COALESCE(stats.avgscore, 0) &quot;avgScore&quot;,
+                        COALESCE(stats.total, 0) &quot;totalMaps&quot;, COALESCE(stats.ranked, 0) &quot;rankedMaps&quot;, stats.min &quot;firstUpload&quot;,
+                        stats.max &quot;lastUpload&quot;, COALESCE(DATE_PART('DAY', stats.max - stats.min), 0) &quot;mapAge&quot;
+                    FROM uploader u
+                        LEFT JOIN (
+                            SELECT SUM(upvote) upvote, SUM(downvote) downvote, ROUND(AVG(score) * 100, 1) avgscore, ROUND(AVG(v.duration)::numeric, 2) avgduration, ROUND(AVG(v.bpm)::numeric, 2) avgbpm, COUNT(*) total, COUNT(*) FILTER (WHERE b.ranked OR b.&quot;blRanked&quot;) ranked, MIN(uploaded), MAX(uploaded), b.uploader FROM beatmap b INNER JOIN versions v ON b.&quot;mapId&quot; = v.&quot;mapId&quot; AND v.state = 'Published' WHERE b.&quot;deletedAt&quot; IS NULL GROUP BY b.uploader
+                        ) stats ON stats.uploader = u.id
+                    WHERE active AND u.id = ${dataimporter.delta.id}"
+                deletedPkQuery="
+                    SELECT id FROM uploader
+                    WHERE NOT active AND &quot;updatedAt&quot; > '${dataimporter.last_index_time}'"
+                transformer="RegexTransformer"
+        >
+
+            <field column="id" name="id"></field>
+            <field column="id" name="sId"></field>
+            <field column="name" name="name"></field>
+            <field column="description" name="description"></field>
+            <field column="createdAt" name="created"></field>
+            <field column="admin" name="admin"></field>
+            <field column="curator" name="curator"></field>
+            <field column="seniorCurator" name="seniorCurator"></field>
+            <field column="verifiedMapper" name="verifiedMapper"></field>
+            <field column="avgBpm" name="avgBpm"></field>
+            <field column="avgDuration" name="avgDuration"></field>
+            <field column="totalUpvotes" name="totalUpvotes"></field>
+            <field column="totalDownvotes" name="totalDownvotes"></field>
+            <field column="avgScore" name="avgScore"></field>
+            <field column="totalMaps" name="totalMaps"></field>
+            <field column="rankedMaps" name="rankedMaps"></field>
+            <field column="firstUpload" name="firstUpload"></field>
+            <field column="lastUpload" name="lastUpload"></field>
+            <field column="mapAge" name="mapAge"></field>
+        </entity>
+    </document>
+</dataConfig>

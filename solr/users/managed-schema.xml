@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema name="default-config" version="1.7">
+    <uniqueKey>sId</uniqueKey>
+    <fieldType name="binary" class="solr.BinaryField"/>
+    <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
+    <fieldType name="booleans" class="solr.BoolField" sortMissingLast="true" multiValued="true"/>
+    <fieldType name="ignored" class="solr.StrField" indexed="false" stored="false" docValues="false" multiValued="true"/>
+    <fieldType name="location" class="solr.LatLonPointSpatialField"/>
+    <fieldType name="location_rpt" class="solr.SpatialRecursivePrefixTreeFieldType" geo="true" maxDistErr="0.001" distErrPct="0.025" distanceUnits="kilometers"/>
+    <fieldType name="lowercase" class="solr.TextField" positionIncrementGap="100">
+        <analyzer>
+            <tokenizer name="keyword"/>
+            <filter name="lowercase"/>
+        </analyzer>
+    </fieldType>
+    <fieldType name="pdate" class="solr.DatePointField"/>
+    <fieldType name="pdates" class="solr.DatePointField" multiValued="true"/>
+    <fieldType name="pdouble" class="solr.DoublePointField"/>
+    <fieldType name="pdoubles" class="solr.DoublePointField" multiValued="true"/>
+    <fieldType name="pfloat" class="solr.FloatPointField"/>
+    <fieldType name="pfloats" class="solr.FloatPointField" multiValued="true"/>
+    <fieldType name="phonetic_en" class="solr.TextField" indexed="true" stored="false">
+        <analyzer>
+            <tokenizer name="standard"/>
+            <filter name="doubleMetaphone" inject="false"/>
+        </analyzer>
+    </fieldType>
+    <fieldType name="pint" class="solr.IntPointField"/>
+    <fieldType name="pints" class="solr.IntPointField" multiValued="true"/>
+    <fieldType name="plong" class="solr.LongPointField"/>
+    <fieldType name="plongs" class="solr.LongPointField" multiValued="true"/>
+    <fieldType name="point" class="solr.PointType" subFieldSuffix="_d" dimension="2"/>
+    <fieldType name="random" class="solr.RandomSortField" indexed="true"/>
+    <fieldType name="rank" class="solr.RankField"/>
+    <fieldType name="string" class="solr.StrField" sortMissingLast="true"/>
+    <fieldType name="strings" class="solr.StrField" sortMissingLast="true" multiValued="true"/>
+    <fieldType name="text_en" class="solr.TextField" positionIncrementGap="100">
+        <analyzer type="index">
+            <tokenizer name="standard"/>
+            <filter words="lang/stopwords_en.txt" ignoreCase="true" name="stop"/>
+            <filter name="lowercase"/>
+            <filter name="englishPossessive"/>
+            <filter name="keywordMarker" protected="protwords.txt"/>
+            <filter name="porterStem"/>
+            <filter name="edgeNGram" minGramSize="3" maxGramSize="8" preserveOriginal="true"/>
+        </analyzer>
+        <analyzer type="query">
+            <tokenizer name="standard"/>
+            <filter synonyms="synonyms.txt" ignoreCase="true" expand="true" name="synonymGraph"/>
+            <filter words="lang/stopwords_en.txt" ignoreCase="true" name="stop"/>
+            <filter name="lowercase"/>
+            <filter name="englishPossessive"/>
+            <filter name="keywordMarker" protected="protwords.txt"/>
+            <filter name="porterStem"/>
+        </analyzer>
+    </fieldType>
+    <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
+        <analyzer type="index">
+            <tokenizer name="standard"/>
+            <filter words="stopwords.txt" ignoreCase="true" name="stop"/>
+            <filter name="lowercase"/>
+        </analyzer>
+        <analyzer type="query">
+            <tokenizer name="standard"/>
+            <filter words="stopwords.txt" ignoreCase="true" name="stop"/>
+            <filter synonyms="synonyms.txt" ignoreCase="true" expand="true" name="synonymGraph"/>
+            <filter name="lowercase"/>
+        </analyzer>
+    </fieldType>
+    <field name="_text_" type="text_en" uninvertible="false" indexed="true" multiValued="true" stored="false"/>
+    <field name="_version_" type="plong" uninvertible="false" multiValued="false" indexed="true" stored="true"/>
+    <field name="sId" type="string" uninvertible="false" indexed="true" required="true" stored="true"/>
+    <field name="id" type="pint" uninvertible="false" indexed="true" required="true" stored="true"/>
+    <field name="name" type="text_general" uninvertible="false" indexed="true" stored="true"/>
+    <field name="name_en" type="text_en" uninvertible="false" indexed="true" stored="false"/>
+    <field name="description" type="text_general" uninvertible="false" indexed="true" stored="true"/>
+    <field name="description_en" type="text_en" uninvertible="false" indexed="true" stored="false"/>
+    <field name="created" type="pdate" uninvertible="false" indexed="true" required="true" stored="true"/>
+    <field name="admin" type="boolean" uninvertible="false" indexed="true" stored="true"/>
+    <field name="curator" type="boolean" uninvertible="false" indexed="true" stored="true"/>
+    <field name="seniorCurator" type="boolean" uninvertible="false" indexed="true" stored="true"/>
+    <field name="verifiedMapper" type="boolean" uninvertible="false" indexed="true" stored="true"/>
+    <field name="avgBpm" type="pfloat" uninvertible="false" indexed="true" stored="true"/>
+    <field name="avgDuration" type="pfloat" uninvertible="false" indexed="true" stored="true"/>
+    <field name="totalUpvotes" type="pint" uninvertible="false" indexed="true" stored="true"/>
+    <field name="totalDownvotes" type="pint" uninvertible="false" indexed="true" stored="true"/>
+    <field name="avgScore" type="pfloat" uninvertible="false" indexed="true" stored="true"/>
+    <field name="totalMaps" type="pint" uninvertible="false" indexed="true" stored="true"/>
+    <field name="rankedMaps" type="pint" uninvertible="false" indexed="true" stored="true"/>
+    <field name="firstUpload" type="pdate" uninvertible="false" indexed="true" stored="true"/>
+    <field name="lastUpload" type="pdate" uninvertible="false" indexed="true" stored="true"/>
+    <field name="mapAge" type="pint" uninvertible="false" indexed="true" stored="true"/>
+    <copyField source="description" dest="_text_"/>
+    <copyField source="name" dest="_text_"/>
+    <copyField source="description" dest="description_en"/>
+    <copyField source="name" dest="name_en"/>
+    <dynamicField name="random_*" type="random" />
+</schema>
