@@ -12,7 +12,7 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserSearchResponse
 import io.beatmaps.common.api.ApiOrder
 import io.beatmaps.common.api.UserSearchSort
-import io.beatmaps.common.fixedStr
+import io.beatmaps.common.fixed
 import io.beatmaps.common.formatTime
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.IndexedInfiniteScrollElementRenderer
@@ -38,6 +38,8 @@ import react.useEffect
 import react.useEffectOnce
 import react.useRef
 import react.useState
+
+fun Int.toLocaleString(locale: String? = undefined): String = asDynamic().toLocaleString(locale) as String
 
 val userList = fc<Props> {
     val location = useLocation()
@@ -147,20 +149,20 @@ val userList = fc<Props> {
                                     +u.stats.avgDuration.formatTime()
                                 }
                                 td {
-                                    +"${u.stats.totalUpvotes}"
+                                    +u.stats.totalUpvotes.toLocaleString()
                                 }
                                 td {
-                                    +"${u.stats.totalDownvotes}"
+                                    +u.stats.totalDownvotes.toLocaleString()
                                 }
                                 td {
                                     val total = ((u.stats.totalUpvotes + u.stats.totalDownvotes + 0.001f) * 0.01f)
-                                    +"${(u.stats.totalUpvotes / total).fixedStr(2)}%"
+                                    +"${(u.stats.totalUpvotes / total).fixed(2)}%"
                                 }
                                 td {
-                                    +"${u.stats.totalMaps}"
+                                    +u.stats.totalMaps.toLocaleString()
                                 }
                                 td {
-                                    +"${u.stats.rankedMaps}"
+                                    +u.stats.rankedMaps.toLocaleString()
                                 }
                                 td {
                                     +Moment(u.stats.firstUpload.toString()).format(dateFormat)
@@ -170,14 +172,12 @@ val userList = fc<Props> {
                                 }
                                 td {
                                     u.stats.lastUpload?.let {
-                                        val diff = (Clock.System.now() - it).inWholeDays
-                                        +"$diff"
+                                        +(Clock.System.now() - it).inWholeDays.toInt().toLocaleString()
                                     }
                                 }
                                 td {
                                     if (u.stats.lastUpload != null && u.stats.firstUpload != null) {
-                                        val diff = (u.stats.lastUpload - u.stats.firstUpload).inWholeDays
-                                        +"$diff"
+                                        +(u.stats.lastUpload - u.stats.firstUpload).inWholeDays.toInt().toLocaleString()
                                     }
                                 }
                             } else {
