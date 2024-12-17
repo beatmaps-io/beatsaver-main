@@ -28,6 +28,8 @@ import io.beatmaps.common.api.UserSearchSort
 import io.beatmaps.common.db.DateMinusDays
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
+import io.beatmaps.common.db.length
+import io.beatmaps.common.db.startsWith
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
@@ -50,6 +52,7 @@ import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.common.sendEmail
+import io.beatmaps.common.solr.SolrHelper
 import io.beatmaps.common.solr.SolrResults
 import io.beatmaps.common.solr.collections.UserSolr
 import io.beatmaps.common.solr.field.apply
@@ -1016,7 +1019,7 @@ fun Route.userRoute(client: HttpClient) {
             }
         }
 
-        call.respond(us)
+        call.respond(UserSearchResponse(us))
     }
 
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -1254,7 +1257,27 @@ fun Route.userRoute(client: HttpClient) {
         }
     }
 
+    fun legacySearch(q: String?) = UserSearchResponse(
+        transaction {
+            User
+                .selectAll()
+                .where {
+                    User.uniqueName startsWith q and User.active
+                }
+                .orderBy(length(User.uniqueName), SortOrder.ASC)
+                .limit(10)
+                .map { row ->
+                    UserDetail.from(row)
+                }
+        }
+    )
+
     getWithOptions<UsersApi.Search>("Search for users".responds(ok<UserSearchResponse>())) { req ->
+        if (!SolrHelper.enabled) {
+            call.respond(legacySearch(req.q))
+            return@getWithOptions
+        }
+
         val searchInfo = (req.q ?: "").let { query -> SolrSearchParams(query, query, listOf()) }
 
         newSuspendedTransaction {

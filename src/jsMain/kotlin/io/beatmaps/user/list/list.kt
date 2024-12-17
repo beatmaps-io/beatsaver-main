@@ -14,6 +14,7 @@ import io.beatmaps.common.api.ApiOrder
 import io.beatmaps.common.api.UserSearchSort
 import io.beatmaps.common.fixed
 import io.beatmaps.common.formatTime
+import io.beatmaps.configContext
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.IndexedInfiniteScrollElementRenderer
 import io.beatmaps.shared.InfiniteScroll
@@ -34,6 +35,7 @@ import react.dom.tr
 import react.fc
 import react.router.useLocation
 import react.router.useNavigate
+import react.useContext
 import react.useEffect
 import react.useEffectOnce
 import react.useRef
@@ -57,6 +59,7 @@ val userList = fc<Props> {
     val (sort, setSort) = useState(urlSearch)
     val (order, setOrder) = useState(urlOrder)
 
+    val config = useContext(configContext)
     val history = History(useNavigate())
 
     useEffectOnce {
@@ -71,14 +74,11 @@ val userList = fc<Props> {
         if (urlSearch != sort) setSort(urlSearch)
         if (urlOrder != order) setOrder(urlOrder)
     }
-
     val loadPage = { toLoad: Int, token: CancelTokenSource ->
         Axios.get<UserSearchResponse>(
-            "${Config.apibase}/users/search/$toLoad?sort=${sort.sortEnum}&order=$order",
+            "${Config.apibase}/users/${if (config?.v2Search == true) "search" else "list"}/$toLoad?sort=${sort.sortEnum}&order=$order",
             generateConfig<String, UserSearchResponse>(token.token)
-        ).then {
-            return@then it.data.docs
-        }
+        ).then { it.data.docs }
     }
 
     fun toURL(sortLocal: UserSearchSort?, orderLocal: ApiOrder, row: Int? = null) {
