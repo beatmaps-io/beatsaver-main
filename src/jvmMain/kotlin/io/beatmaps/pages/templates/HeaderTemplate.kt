@@ -1,6 +1,5 @@
 package io.beatmaps.pages.templates
 
-import io.beatmaps.api.ReviewConstants
 import io.beatmaps.common.Config
 import io.beatmaps.login.Session
 import io.ktor.server.html.Template
@@ -92,7 +91,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                 }
                             }
                         }
-                        if (s?.admin == true || (s?.curator == true && ReviewConstants.COMMENTS_ENABLED)) {
+                        if (s?.admin == true || s?.curator == true) {
                             li("nav-item dropdown") {
                                 a("#", classes = "nav-link dropdown-toggle") {
                                     +"Mod"

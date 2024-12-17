@@ -6,13 +6,14 @@ import io.beatmaps.History
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
-import io.beatmaps.api.ReviewConstants
 import io.beatmaps.index.ModalComponent
 import io.beatmaps.index.modal
 import io.beatmaps.index.modalContext
 import io.beatmaps.maps.testplay.testplay
+import io.beatmaps.playlist.playlistTable
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.review.reviewTable
+import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import org.w3c.dom.get
@@ -28,6 +29,15 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
+enum class MapTabs(val id: String, val enabled: Boolean = true) {
+    ScoreSaber("ss"), BeatLeader("bl"), Reviews("rv"), Playlists("pl", enabled = false);
+
+    companion object {
+        private val map = MapTabs.entries.associateBy(MapTabs::name)
+        fun fromName(name: String?) = map[name]
+    }
+}
+
 external interface MapPageProps : Props {
     var beatsaver: Boolean
 }
@@ -35,12 +45,30 @@ external interface MapPageProps : Props {
 val mapPage = fc<MapPageProps> { props ->
     val (map, setMap) = useState<MapDetail?>(null)
     val (selectedDiff, setSelectedDiff) = useState<MapDifficulty?>(null)
-    val (type, setType) = useState<LeaderboardType?>(null)
-    val (comments, setComments) = useState<Boolean?>(null)
+
+    fun fromLegacy(): MapTabs {
+        val leaderBoardType = LeaderboardType.fromName(localStorage["maps.leaderboardType"]) ?: LeaderboardType.ScoreSaber
+        val showComments = localStorage["maps.showComments"] == "true"
+        val showPlaylists = localStorage["maps.showPlaylists"] == "true"
+
+        return when {
+            showComments -> MapTabs.Reviews
+            showPlaylists -> MapTabs.Playlists
+            leaderBoardType == LeaderboardType.BeatLeader -> MapTabs.BeatLeader
+            else -> MapTabs.ScoreSaber
+        }
+    }
+
+    val localStorageTab = MapTabs.fromName(localStorage["maps.selectedTab"]) ?: fromLegacy()
+    val (tab, setTab) = useState(localStorageTab)
 
     val modalRef = useRef<ModalComponent>()
     val params = useParams()
     val history = History(useNavigate())
+
+    useDidUpdateEffect(tab) {
+        localStorage["maps.selectedTab"] = tab.name
+    }
 
     fun loadMap() {
         val mapKey = params["mapKey"]
@@ -48,8 +76,7 @@ val mapPage = fc<MapPageProps> { props ->
 
         setMap(null)
         setSelectedDiff(null)
-        setType(null)
-        setComments(null)
+        setTab(localStorageTab)
 
         axiosGet<MapDetail>(
             "${Config.apibase}/maps/$subPath/$mapKey"
@@ -107,8 +134,6 @@ val mapPage = fc<MapPageProps> { props ->
                     }
                 }
                 div("row mt-3") {
-                    val leaderBoardType = type ?: LeaderboardType.fromName(localStorage["maps.leaderboardType"]) ?: LeaderboardType.ScoreSaber
-                    val showComments = ReviewConstants.COMMENTS_ENABLED && comments ?: (localStorage["maps.showComments"] == "true")
                     div("col-lg-4 text-nowrap") {
                         infoTable {
                             attrs.map = it
@@ -122,31 +147,30 @@ val mapPage = fc<MapPageProps> { props ->
                     div("col-lg-8") {
                         mapPageNav {
                             attrs.map = it
-                            attrs.comments = showComments
-                            attrs.setComments = {
-                                localStorage["maps.showComments"] = "true"
-                                setComments(true)
-                            }
-                            attrs.type = leaderBoardType
-                            attrs.setType = { lt ->
-                                localStorage["maps.leaderboardType"] = lt.name
-                                localStorage["maps.showComments"] = "false"
-                                setType(lt)
-                                setComments(false)
+                            attrs.tab = tab
+                            attrs.setTab = {
+                                setTab(it)
                             }
                         }
 
-                        if (showComments) {
-                            reviewTable {
-                                attrs.map = it
-                                attrs.mapUploaderId = it.uploader.id
-                                attrs.collaborators = it.collaborators
-                            }
-                        } else if (version != null && it.deletedAt == null) {
+                        playlistTable {
+                            attrs.mapId = it.id
+                            attrs.visible = tab == MapTabs.Playlists
+                            attrs.small = true
+                        }
+
+                        reviewTable {
+                            attrs.map = it
+                            attrs.mapUploaderId = it.uploader.id
+                            attrs.collaborators = it.collaborators
+                            attrs.visible = tab == MapTabs.Reviews
+                        }
+
+                        if ((tab == MapTabs.ScoreSaber || tab == MapTabs.BeatLeader) && version != null && it.deletedAt == null) {
                             scoreTable {
                                 attrs.mapKey = version.hash
                                 attrs.selected = selectedDiff
-                                attrs.type = leaderBoardType
+                                attrs.type = if (tab == MapTabs.BeatLeader) LeaderboardType.BeatLeader else LeaderboardType.ScoreSaber
                             }
                         }
                     }

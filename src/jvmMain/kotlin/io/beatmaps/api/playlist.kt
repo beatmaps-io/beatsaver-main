@@ -67,6 +67,18 @@ class PlaylistApi {
     )
 
     @Group("Playlists")
+    @Location("$prefix/map/{mapId}/{page}")
+    data class ByMap(
+        val mapId: String,
+        val curated: Boolean? = null,
+        val page: Long,
+        @Ignore
+        val basic: Boolean = false,
+        @Ignore
+        val api: PlaylistApi
+    )
+
+    @Group("Playlists")
     @Location("$prefix/latest")
     data class ByUploadDate(
         @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")

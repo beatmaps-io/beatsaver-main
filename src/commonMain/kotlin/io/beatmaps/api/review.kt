@@ -6,7 +6,6 @@ import kotlinx.serialization.Serializable
 
 class ReviewConstants {
     companion object {
-        const val COMMENTS_ENABLED = true
         const val MAX_LENGTH = 2000
         const val MAX_REPLY_LENGTH = 1000
         const val MINIMUM_REVIEWS = 5

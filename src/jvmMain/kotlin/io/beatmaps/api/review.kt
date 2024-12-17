@@ -147,8 +147,6 @@ fun Query.complexToReview() = this.fold(mutableMapOf<EntityID<Int>, ReviewDao>()
 }.values.toList()
 
 fun Route.reviewRoute() {
-    if (!ReviewConstants.COMMENTS_ENABLED) return
-
     get<ReviewApi.ByDate> {
         val reviews = transaction {
             try {

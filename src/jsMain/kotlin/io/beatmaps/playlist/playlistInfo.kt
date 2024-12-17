@@ -21,6 +21,7 @@ import react.fc
 
 external interface PlaylistInfoProps : Props {
     var playlist: PlaylistFull?
+    var small: Boolean?
 }
 
 data class StatInfo(val icon: String, val text: (SearchPlaylistConfig) -> String, val filter: (SearchPlaylistConfig) -> Boolean = { true }, val value: (SearchPlaylistConfig) -> String? = { null })
@@ -59,7 +60,7 @@ val playlistInfo = fc<PlaylistInfoProps> { props ->
             }
         )
 
-        div("playlist-card") {
+        div("playlist-card" + if (props.small == true) "-small" else "") {
             coloredCard {
                 attrs.color = plAttrs.joinToString(" ") { it.color }
                 attrs.title = plAttrs.joinToString(" + ") { it.name }

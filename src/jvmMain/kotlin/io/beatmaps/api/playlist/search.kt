@@ -20,6 +20,7 @@ import io.beatmaps.common.db.PgConcat
 import io.beatmaps.common.db.greaterEqF
 import io.beatmaps.common.db.lessEqF
 import io.beatmaps.common.dbo.Playlist
+import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.handleCurator
@@ -38,6 +39,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import kotlinx.datetime.toJavaInstant
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Query
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
@@ -103,8 +105,7 @@ fun Route.playlistSearch() {
                     searchInfo.applyQuery(q)
                 }
                 .also { q ->
-                    EPlaylistType.entries
-                        .filter { v -> v.anonymousAllowed }
+                    EPlaylistType.publicTypes
                         .map { PlaylistSolr.type eq it.name }
                         .reduce<SolrFilter, SolrFilter> { acc, f -> acc or f }
                         .let { q.apply(it) }
@@ -180,7 +181,7 @@ fun Route.playlistSearch() {
                             .joinOwner()
                             .select(Playlist.id)
                             .where {
-                                (Playlist.deletedAt.isNull() and (Playlist.type inList EPlaylistType.entries.filter { v -> v.anonymousAllowed }))
+                                (Playlist.deletedAt.isNull() and (Playlist.type inList EPlaylistType.publicTypes))
                                     .let { q -> searchInfo.applyQuery(q) }
                                     .let { q ->
                                         if (it.includeEmpty != true) {
@@ -225,7 +226,7 @@ fun Route.playlistSearch() {
                                             if (req.userId == sess?.userId) {
                                                 it
                                             } else {
-                                                it and (Playlist.type eq EPlaylistType.Public)
+                                                it and (Playlist.type inList EPlaylistType.publicTypes)
                                             }
                                         }
                                     }
@@ -238,6 +239,61 @@ fun Route.playlistSearch() {
                         }
                         .orderBy(
                             (Playlist.type neq EPlaylistType.System) to SortOrder.ASC,
+                            Playlist.createdAt to SortOrder.DESC
+                        )
+                        .groupBy(*groupBy)
+                        .handleOwner()
+                        .handleCurator()
+                        .map(block)
+                }
+
+            if (req.basic) {
+                val page = doQuery {
+                    PlaylistBasic.from(it, cdnPrefix())
+                }
+
+                call.respond(page)
+            } else {
+                val page = doQuery(
+                    Playlist
+                        .joinMaps()
+                        .joinOwner()
+                        .joinPlaylistCurator()
+                        .select(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all),
+                    arrayOf(Playlist.id, User.id, curatorAlias[User.id])
+                ) {
+                    PlaylistFull.from(it, cdnPrefix())
+                }
+
+                call.respond(PlaylistSearchResponse(page))
+            }
+        }
+    }
+
+    getWithOptions<PlaylistApi.ByMap>("Get playlists by map".responds(ok<PlaylistSearchResponse>())) { req ->
+        optionalAuthorization(OauthScope.PLAYLISTS) { _, sess ->
+            fun <T> doQuery(table: Query = Playlist.selectAll(), groupBy: Array<Column<*>> = arrayOf(Playlist.id), block: (ResultRow) -> T) =
+                transaction {
+                    table
+                        .where {
+                            Playlist.id.inSubQuery(
+                                Playlist
+                                    .join(PlaylistMap, JoinType.INNER, Playlist.id, PlaylistMap.playlistId)
+                                    .select(PlaylistMap.playlistId)
+                                    .where {
+                                        (PlaylistMap.mapId eq req.mapId.toInt(16) and Playlist.deletedAt.isNull()) and
+                                            ((Playlist.type inList EPlaylistType.publicTypes) or (Playlist.owner eq sess?.userId))
+                                                .notNull(req.curated) { o -> Playlist.curator.run { if (o) isNotNull() else isNull() } }
+                                    }
+                                    .orderBy(
+                                        Playlist.curatedAt to SortOrder.DESC_NULLS_LAST,
+                                        Playlist.createdAt to SortOrder.DESC
+                                    )
+                                    .limit(req.page, 20)
+                            )
+                        }
+                        .orderBy(
+                            Playlist.curatedAt to SortOrder.DESC_NULLS_LAST,
                             Playlist.createdAt to SortOrder.DESC
                         )
                         .groupBy(*groupBy)

@@ -28,6 +28,7 @@ external interface ReviewTableProps : Props {
     var mapUploaderId: Int?
     var userDetail: UserDetail?
     var collaborators: List<UserDetail>?
+    var visible: Boolean?
 }
 
 val reviewTable = fc<ReviewTableProps> { props ->
@@ -60,50 +61,52 @@ val reviewTable = fc<ReviewTableProps> { props ->
         }
     }
 
-    div("reviews") {
-        ref = resultsTable
-        key = "resultsTable"
+    if (props.visible != false) {
+        div("reviews") {
+            ref = resultsTable
+            key = "resultsTable"
 
-        globalContext.Consumer { userData ->
-            props.map?.let { map ->
-                val userIsCollaborator = props.collaborators?.any { singleCollaborator ->
-                    singleCollaborator.id == userData?.userId
-                } ?: false
-                if (userData != null && !userData.suspended && userData.userId != props.mapUploaderId && !userIsCollaborator) {
-                    newReview {
-                        attrs.mapId = map.id
-                        attrs.userId = userData.userId
-                        attrs.existingReview = existingReview
-                        attrs.captcha = captchaRef
-                        attrs.setExistingReview = { nv ->
+            globalContext.Consumer { userData ->
+                props.map?.let { map ->
+                    val userIsCollaborator = props.collaborators?.any { singleCollaborator ->
+                        singleCollaborator.id == userData?.userId
+                    } ?: false
+                    if (userData != null && !userData.suspended && userData.userId != props.mapUploaderId && !userIsCollaborator) {
+                        newReview {
+                            attrs.mapId = map.id
+                            attrs.userId = userData.userId
+                            attrs.existingReview = existingReview
+                            attrs.captcha = captchaRef
+                            attrs.setExistingReview = { nv ->
+                                setExistingReview(nv)
+                            }
+                            attrs.reloadList = {
+                                setResultsKey(Any())
+                            }
+                        }
+                    }
+                }
+            }
+
+            child(CommentsInfiniteScroll::class) {
+                attrs.resultsKey = resultsKey
+                attrs.rowHeight = 116.0
+                attrs.itemsPerPage = 20
+                attrs.container = resultsTable
+                attrs.renderElement = InfiniteScrollElementRenderer { rv ->
+                    reviewItem {
+                        obj = rv?.copy(creator = props.userDetail ?: rv.creator)
+                        userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
+                        map = props.map ?: rv?.map
+                        this.modal = modal
+                        this.captcha = captchaRef
+                        this.setExistingReview = { nv ->
                             setExistingReview(nv)
                         }
-                        attrs.reloadList = {
-                            setResultsKey(Any())
-                        }
                     }
                 }
+                attrs.loadPage = loadPage
             }
-        }
-
-        child(CommentsInfiniteScroll::class) {
-            attrs.resultsKey = resultsKey
-            attrs.rowHeight = 116.0
-            attrs.itemsPerPage = 20
-            attrs.container = resultsTable
-            attrs.renderElement = InfiniteScrollElementRenderer { rv ->
-                reviewItem {
-                    obj = rv?.copy(creator = props.userDetail ?: rv.creator)
-                    userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
-                    map = props.map ?: rv?.map
-                    this.modal = modal
-                    this.captcha = captchaRef
-                    this.setExistingReview = { nv ->
-                        setExistingReview(nv)
-                    }
-                }
-            }
-            attrs.loadPage = loadPage
         }
     }
 }
