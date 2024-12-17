@@ -1,9 +1,14 @@
 package io.beatmaps.api
 
 import com.toxicbakery.bcrypt.Bcrypt
+import de.nielsfalk.ktor.swagger.DefaultValue
+import de.nielsfalk.ktor.swagger.Description
+import de.nielsfalk.ktor.swagger.Ignore
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
+import de.nielsfalk.ktor.swagger.version.shared.Group
+import io.beatmaps.api.search.SolrSearchParams
 import io.beatmaps.api.user.UserCrypto
 import io.beatmaps.api.user.from
 import io.beatmaps.api.user.getAvatar
@@ -14,15 +19,15 @@ import io.beatmaps.common.PasswordChangedData
 import io.beatmaps.common.RevokeSessionsData
 import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UploadLimitData
+import io.beatmaps.common.api.ApiOrder
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
+import io.beatmaps.common.api.UserSearchSort
 import io.beatmaps.common.db.DateMinusDays
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
-import io.beatmaps.common.db.length
-import io.beatmaps.common.db.startsWith
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
@@ -45,6 +50,11 @@ import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.common.sendEmail
+import io.beatmaps.common.solr.SolrResults
+import io.beatmaps.common.solr.collections.UserSolr
+import io.beatmaps.common.solr.field.apply
+import io.beatmaps.common.solr.get
+import io.beatmaps.common.solr.paged
 import io.beatmaps.login.MongoClient
 import io.beatmaps.login.MongoSession
 import io.beatmaps.login.Session
@@ -83,6 +93,7 @@ import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.util.pipeline.PipelineContext
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.dao.id.EntityID
@@ -155,7 +166,7 @@ class UsersApi {
     data class Username(val api: UsersApi)
 
     @Location("/description")
-    data class Description(val api: UsersApi)
+    data class DescriptionApi(val api: UsersApi)
 
     @Location("/admin")
     data class Admin(val api: UsersApi)
@@ -202,8 +213,33 @@ class UsersApi {
     @Location("/followedBy/{user}/{page}")
     data class FollowedBy(val user: Int, val page: Long = 0, val api: UsersApi)
 
-    @Location("/search")
-    data class Search(val api: UsersApi, val q: String? = "")
+    @Group("Users")
+    @Location("/search/{page}")
+    data class Search(
+        val q: String? = "",
+        val curator: Boolean? = null,
+        val verified: Boolean? = null,
+        val minUpvotes: Int? = null,
+        val maxUpvotes: Int? = null,
+        val minDownvotes: Int? = null,
+        val maxDownvotes: Int? = null,
+        val minMaps: Int? = null,
+        val maxMaps: Int? = null,
+        val minRankedMaps: Int? = null,
+        val maxRankedMaps: Int? = null,
+        val firstUploadBefore: Instant? = null,
+        val firstUploadAfter: Instant? = null,
+        val lastUploadBefore: Instant? = null,
+        val lastUploadAfter: Instant? = null,
+        @DefaultValue("0")
+        val page: Long = 0,
+        @Description("1 - 100") @DefaultValue("20")
+        val pageSize: Int = 20,
+        val sort: UserSearchSort = UserSearchSort.RELEVANCE,
+        val order: ApiOrder = ApiOrder.DESC,
+        @Ignore
+        val api: UsersApi
+    )
 
     @Location("/curators")
     data class Curators(val api: UsersApi)
@@ -265,7 +301,7 @@ fun Route.userRoute(client: HttpClient) {
         }
     }
 
-    post<UsersApi.Description> {
+    post<UsersApi.DescriptionApi> {
         requireAuthorization { _, sess ->
             val req = call.receive<AccountDetailReq>()
 
@@ -921,11 +957,11 @@ fun Route.userRoute(client: HttpClient) {
         }
     }
 
-    get<UsersApi.List> {
+    get<UsersApi.List> { req ->
         val us = transaction {
             val userAlias = User.select(User.upvotes, User.id, User.name, User.uniqueName, User.description, User.avatar, User.hash, User.discordId).where {
                 Op.TRUE and User.active
-            }.orderBy(User.upvotes, SortOrder.DESC).limit(it.page).alias("u")
+            }.orderBy(User.upvotes, SortOrder.DESC).limit(req.page).alias("u")
 
             val query = userAlias
                 .join(Beatmap, JoinType.INNER, userAlias[User.id], Beatmap.uploader) {
@@ -1218,21 +1254,65 @@ fun Route.userRoute(client: HttpClient) {
         }
     }
 
-    get<UsersApi.Search> {
-        val users = transaction {
-            User
+    getWithOptions<UsersApi.Search>("Search for users".responds(ok<UserSearchResponse>())) { req ->
+        val searchInfo = (req.q ?: "").let { query -> SolrSearchParams(query, query, listOf()) }
+
+        newSuspendedTransaction {
+            val response = UserSolr.newQuery()
+                .let { q ->
+                    searchInfo.applyQuery(q)
+                }
+                .let { q ->
+                    UserSolr.addSortArgs(q, req.sort, req.order)
+                }
+                .notNull(req.curator) { o -> UserSolr.curator eq o }
+                .notNull(req.verified) { o -> UserSolr.verifiedMapper eq o }
+                .also { q ->
+                    q.apply(UserSolr.totalUpvotes.betweenNullableInc(req.minUpvotes, req.maxUpvotes))
+                    q.apply(UserSolr.totalDownvotes.betweenNullableInc(req.minDownvotes, req.maxDownvotes))
+                    q.apply(UserSolr.totalMaps.betweenNullableInc(req.minMaps, req.maxMaps))
+                    q.apply(UserSolr.rankedMaps.betweenNullableInc(req.minRankedMaps, req.maxRankedMaps))
+
+                    q.apply(UserSolr.firstUpload.betweenNullableInc(req.firstUploadAfter, req.firstUploadBefore))
+                    q.apply(UserSolr.lastUpload.betweenNullableInc(req.lastUploadAfter, req.lastUploadBefore))
+                }
+                .paged(req.page.toInt(), req.pageSize.coerceIn(1, 100))
+                .let { UserSolr.query(it) }
+
+            val userIds = response.results.mapNotNull { it[UserSolr.id] }
+            val statsLookup = response.results.associateBy { it[UserSolr.id] }
+            val numRecords = response.results.numFound.toInt()
+            val results = SolrResults(userIds, response.qTime, numRecords)
+
+            val users = User
                 .selectAll()
                 .where {
-                    User.uniqueName startsWith it.q and User.active
+                    User.id inList results.mapIds and User.active
                 }
-                .orderBy(length(User.uniqueName), SortOrder.ASC)
-                .limit(10)
                 .map { row ->
-                    UserDetail.from(row)
-                }
-        }
+                    val statsFromSolr = statsLookup[row[User.id].value]?.let { s ->
+                        UserStats(
+                            s[UserSolr.totalUpvotes],
+                            s[UserSolr.totalDownvotes],
+                            s[UserSolr.totalMaps],
+                            s[UserSolr.rankedMaps],
+                            s[UserSolr.avgBpm],
+                            s[UserSolr.avgScore],
+                            s[UserSolr.avgDuration],
+                            s[UserSolr.firstUpload],
+                            s[UserSolr.lastUpload]
+                        )
+                    }
 
-        call.respond(users)
+                    UserDetail.from(
+                        row,
+                        stats = statsFromSolr
+                    )
+                }
+                .sortedBy { results.order[it.id] }
+
+            call.respond(UserSearchResponse(users, results.searchInfo))
+        }
     }
 
     getWithOptions<UsersApi.Curators> {

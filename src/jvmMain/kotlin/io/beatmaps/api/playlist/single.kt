@@ -155,7 +155,6 @@ fun Route.playlistSingle() {
                 .let { q ->
                     BsSolr.addSortArgs(q, playlistId, actualSortOrder)
                 }
-                .setFields("id")
                 .setStart(offset).setRows(actualPageSize)
                 .getIds(BsSolr, call = call)
 

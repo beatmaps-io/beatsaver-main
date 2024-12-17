@@ -132,7 +132,6 @@ fun Route.playlistSearch() {
                 .let { q ->
                     PlaylistSolr.addSortArgs(q, req.seed.hashCode(), actualSortOrder)
                 }
-                .setFields("id")
                 .paged(req.page.toInt())
                 .getIds(PlaylistSolr, call = call)
 

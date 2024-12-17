@@ -1,15 +1,20 @@
 package io.beatmaps.api.search
 
+import io.beatmaps.api.UserStats
 import io.beatmaps.common.api.ECharacteristic
+import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.arrayAgg
 import io.beatmaps.common.db.boolOr
+import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
+import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.collaboratorAlias
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinCollaborators
@@ -20,16 +25,24 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.rabbitOptional
 import io.beatmaps.common.solr.collections.BsSolr
 import io.beatmaps.common.solr.collections.PlaylistSolr
+import io.beatmaps.common.solr.collections.UserSolr
 import io.beatmaps.common.solr.insert
 import io.beatmaps.common.solr.insertMany
 import io.ktor.server.application.Application
+import kotlinx.datetime.toKotlinInstant
 import kotlinx.serialization.builtins.serializer
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.avg
+import org.jetbrains.exposed.sql.count
+import org.jetbrains.exposed.sql.max
+import org.jetbrains.exposed.sql.min
 import org.jetbrains.exposed.sql.not
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.lang.Integer.toHexString
 
@@ -139,6 +152,73 @@ object SolrImporter {
         }
     }
 
+    private fun triggerUserInfo(updateUserId: Int) {
+        transaction {
+            val (user, stats) = User
+                .join(Beatmap, JoinType.INNER, User.id, Beatmap.uploader) {
+                    Beatmap.deletedAt.isNull()
+                }
+                .join(Versions, JoinType.INNER, onColumn = Beatmap.id, otherColumn = Versions.mapId, additionalConstraint = { Versions.state eq EMapState.Published })
+                .select(
+                    User.columns +
+                        Beatmap.uploader +
+                        Beatmap.id.count() +
+                        Beatmap.upVotesInt.sum() +
+                        Beatmap.downVotesInt.sum() +
+                        Beatmap.bpm.avg() +
+                        Beatmap.score.avg(3) +
+                        Beatmap.duration.avg(0) +
+                        countWithFilter(Beatmap.ranked or Beatmap.blRanked) +
+                        Beatmap.uploaded.min() +
+                        Beatmap.uploaded.max()
+                )
+                .where {
+                    User.id eq updateUserId and User.active
+                }
+                .groupBy(Beatmap.uploader, User.id)
+                .singleOrNull()
+                ?.let { row ->
+                    UserDao.wrapRow(row) to UserStats(
+                        row[Beatmap.upVotesInt.sum()] ?: 0,
+                        row[Beatmap.downVotesInt.sum()] ?: 0,
+                        row[Beatmap.id.count()].toInt(),
+                        row[countWithFilter(Beatmap.ranked or Beatmap.blRanked)],
+                        row[Beatmap.bpm.avg()]?.toFloat() ?: 0f,
+                        row[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f,
+                        row[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
+                        row[Beatmap.uploaded.min()]?.toKotlinInstant(),
+                        row[Beatmap.uploaded.max()]?.toKotlinInstant()
+                    )
+                } ?: (null to null)
+
+            if (user == null || stats == null) {
+                UserSolr.delete(updateUserId.toString())
+            } else {
+                UserSolr.insert {
+                    it[id] = user.id
+                    it[sId] = user.id.toString()
+                    it[name] = user.name
+                    it[description] = user.description
+                    it[created] = user.createdAt
+                    it[admin] = user.admin
+                    it[curator] = user.curator
+                    it[seniorCurator] = user.seniorCurator
+                    it[verifiedMapper] = user.verifiedMapper
+                    it[avgBpm] = stats.avgBpm
+                    it[avgDuration] = stats.avgDuration
+                    it[totalUpvotes] = stats.totalUpvotes
+                    it[totalDownvotes] = stats.totalDownvotes
+                    it[avgScore] = stats.avgScore
+                    it[totalMaps] = stats.totalMaps
+                    it[rankedMaps] = stats.rankedMaps
+                    it[firstUpload] = stats.firstUpload
+                    it[lastUpload] = stats.lastUpload
+                    it[mapAge] = if (stats.lastUpload != null && stats.firstUpload != null) (stats.lastUpload - stats.firstUpload).inWholeDays.toInt() else null
+                }
+            }
+        }
+    }
+
     private fun triggerPlaylist(updatePlaylistId: Int) {
         transaction {
             val mapIdsAgg = arrayAgg(PlaylistMap.mapId)
@@ -190,6 +270,10 @@ object SolrImporter {
 
             consumeAck("bm.solr-user", Int.serializer()) { _, userId ->
                 triggerUser(userId)
+            }
+
+            consumeAck("bm.solr-user-info", Int.serializer()) { _, userId ->
+                triggerUserInfo(userId)
             }
 
             consumeAck("bm.solr-playlist", Int.serializer()) { _, playlistId ->

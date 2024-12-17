@@ -413,6 +413,10 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
                 queueDeclare("bm.solr-user", true, false, false, genericQueueConfig)
                 queueBind("bm.solr-user", "beatmaps", "user.*.updated.admin")
 
+                queueDeclare("bm.solr-user-info", true, false, false, genericQueueConfig)
+                queueBind("bm.solr-user-info", "beatmaps", "user.*.updated.*")
+                queueBind("bm.solr-user-info", "beatmaps", "user.stats.*")
+
                 queueDeclare("bm.solr-playlist", true, false, false, genericQueueConfig)
                 queueBind("bm.solr-playlist", "beatmaps", "playlists.*.updated.*")
                 queueBind("bm.solr-playlist", "beatmaps", "playlists.*.created")

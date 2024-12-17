@@ -38,10 +38,8 @@ import io.beatmaps.common.solr.SolrHelper
 import io.beatmaps.common.solr.collections.BsSolr
 import io.beatmaps.common.solr.field.SolrFilter
 import io.beatmaps.common.solr.field.apply
-import io.beatmaps.common.solr.field.betweenInc
+import io.beatmaps.common.solr.field.betweenNullableInc
 import io.beatmaps.common.solr.field.eq
-import io.beatmaps.common.solr.field.greaterEq
-import io.beatmaps.common.solr.field.lessEq
 import io.beatmaps.common.solr.getIds
 import io.beatmaps.common.solr.paged
 import io.beatmaps.common.toQuery
@@ -220,17 +218,7 @@ fun Route.searchRoute() {
                     }
                     .notNull(it.ranked) { o -> (BsSolr.rankedbl eq o) or (BsSolr.rankedss eq o) }
                     .also { q ->
-                        val f = if (it.minNps != null && it.maxNps != null) {
-                            BsSolr.nps.betweenInc(it.minNps, it.maxNps)
-                        } else if (it.minNps != null) {
-                            BsSolr.nps greaterEq it.minNps
-                        } else if (it.maxNps != null) {
-                            BsSolr.nps lessEq it.maxNps
-                        } else {
-                            null
-                        }
-
-                        f?.let { q.apply(it) }
+                        q.apply(BsSolr.nps.betweenNullableInc(it.minNps, it.maxNps))
                     }
                     .let { q ->
                         val tq = it.tags?.toQuery()

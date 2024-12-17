@@ -146,7 +146,12 @@ data class MapStats(
 data class MapTestplay(val feedback: String? = null, val video: String? = null, val user: UserDetail, val createdAt: Instant, val feedbackAt: Instant? = null) { companion object }
 
 @Serializable
-data class SearchResponse(val docs: List<MapDetail>? = null, val info: SearchInfo? = null, val redirect: String? = null)
+data class SearchResponse(override val docs: List<MapDetail>? = null, override val info: SearchInfo? = null, val redirect: String? = null) : GenericSearchResponse<MapDetail>
+
+interface GenericSearchResponse<T> {
+    val docs: List<T>?
+    val info: SearchInfo?
+}
 
 @Serializable
 data class DeletedResponse(val docs: List<DeletedMap>? = null)
