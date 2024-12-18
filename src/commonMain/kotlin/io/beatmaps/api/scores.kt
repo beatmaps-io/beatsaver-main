@@ -11,8 +11,8 @@ enum class LeaderboardType(
         "https://scoresaber.com/u/"
     ),
     BeatLeader(
-        "https://www.beatleader.com/leaderboard/global/",
-        "https://www.beatleader.com/u/"
+        "https://beatleader.com/leaderboard/global/",
+        "https://beatleader.com/u/"
     );
 
     companion object {
