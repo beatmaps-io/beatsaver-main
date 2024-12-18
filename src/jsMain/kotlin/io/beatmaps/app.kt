@@ -185,12 +185,12 @@ val app = fc<Props> {
     }
 
     configContext.Provider {
-        attrs.value = kotlinx.browser.document.getElementById("config-data")?.let {
+        attrs.value = document.getElementById("config-data")?.let {
             json.decodeFromString<ConfigData>(it.textContent ?: "{}")
         }
 
         globalContext.Provider {
-            attrs.value = kotlinx.browser.document.getElementById("user-data")?.let {
+            attrs.value = document.getElementById("user-data")?.let {
                 json.decodeFromString<UserData>(it.textContent ?: "{}")
             }
 

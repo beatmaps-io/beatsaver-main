@@ -6,29 +6,26 @@ import js.objects.jso
 import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
+import kotlinx.dom.removeClass
 import kotlinx.serialization.encodeToString
 import org.w3c.dom.HTMLAnchorElement
+import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.asList
 import org.w3c.dom.get
 import org.w3c.dom.set
-import react.Component
 import react.Props
 import react.RBuilder
 import react.createElement
 import react.fc
-import react.react
 import react.router.NavigateFunction
 import react.router.NavigateOptions
 import react.router.RouteObject
-import react.router.useLocation
 import react.router.useNavigate
-import react.router.useParams
 import remix.run.router.Location
 import remix.run.router.Params
 import web.timers.setTimeout
-import kotlin.reflect.KClass
 
 external interface WithRouterProps : Props {
     var history: History
@@ -62,17 +59,6 @@ class History(private val navigation: NavigateFunction) {
     }
 }
 
-fun <P : WithRouterProps> RBuilder.withRouter(klazz: KClass<out Component<P, *>>, block: P.() -> Unit) =
-    child(
-        klazz.react,
-        jso {
-            location = useLocation()
-            history = History(useNavigate())
-            params = useParams()
-            block(this)
-        }
-    )
-
 fun bsroute(
     path: String,
     replaceHomelink: Boolean = true,
@@ -105,6 +91,11 @@ private fun fixLink(id: String = "", history: History, element: HTMLAnchorElemen
 private fun initWithHistory(history: History, replaceHomelink: Boolean = true) {
     if (init) return
 
+    val navMenu = document.getElementById("navbar") as? HTMLDivElement
+    val hideMenu: () -> Unit = {
+        navMenu?.removeClass("collapsing", "show")
+    }
+
     (document.getElementById("root") as? HTMLElement)?.addEventListener("click", { e ->
         (e.target as HTMLElement).closest("a")?.let { link ->
             if (link.getAttribute("data-bs") == "local") {
@@ -132,13 +123,14 @@ private fun initWithHistory(history: History, replaceHomelink: Boolean = true) {
 
     if (replaceHomelink) {
         fixLink("home-link", history) {
+            hideMenu()
             window.dispatchEvent(HashChangeEvent("hashchange"))
         }
         document.getElementsByClassName("auto-router")
             .asList()
             .filterIsInstance<HTMLAnchorElement>()
             .forEach {
-                fixLink(element = it, history = history)
+                fixLink(element = it, history = history) { hideMenu() }
             }
     }
 
