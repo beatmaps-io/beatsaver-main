@@ -2,9 +2,18 @@ package io.beatmaps.api
 
 import kotlinx.serialization.Serializable
 
-enum class LeaderboardType(val url: String) {
-    ScoreSaber("https://scoresaber.com/leaderboard/"),
-    BeatLeader("https://www.beatleader.xyz/leaderboard/global/");
+enum class LeaderboardType(
+    val url: String,
+    val userPrefix: String
+) {
+    ScoreSaber(
+        "https://scoresaber.com/leaderboard/",
+        "https://scoresaber.com/u/"
+    ),
+    BeatLeader(
+        "https://www.beatleader.com/leaderboard/global/",
+        "https://www.beatleader.com/u/"
+    );
 
     companion object {
         private val map = entries.associateBy(LeaderboardType::name)
