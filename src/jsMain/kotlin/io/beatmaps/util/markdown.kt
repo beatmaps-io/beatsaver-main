@@ -1,5 +1,6 @@
 package io.beatmaps.util
 
+import io.beatmaps.api.LeaderboardType
 import kotlinx.html.Tag
 import react.dom.InnerHTML
 import react.dom.RDOMBuilder
@@ -36,8 +37,8 @@ fun String.parseSocialLinks() =
         "(^|\\s)yth@([\\w.-]+?)($|[^\\w.-])" to """$1<a href="https://www.youtube.com/@$2">yth@$2</a>$3""",
         "(^|\\s)ttv@(\\w+?)($|\\W)" to """$1<a href="https://www.twitch.tv/$2">ttv@$2</a>$3""",
         "(^|\\s)steam@(\\d+?)($|\\W)" to """$1<a href="https://steamcommunity.com/profiles/$2">steam@$2</a>$3""",
-        "(^|\\s)ss@(\\d+?)($|\\W)" to """$1<a href="https://scoresaber.com/u/$2">ss@$2</a>$3""",
-        "(^|\\s)bl@(\\d+?)($|\\W)" to """$1<a href="https://www.beatleader.xyz/u/$2">bl@$2</a>$3""",
+        "(^|\\s)ss@(\\d+?)($|\\W)" to """$1<a href="${LeaderboardType.ScoreSaber.userPrefix}$2">ss@$2</a>$3""",
+        "(^|\\s)bl@(\\d+?)($|\\W)" to """$1<a href="${LeaderboardType.BeatLeader.userPrefix}$2">bl@$2</a>$3""",
         "(^|\\s)gh@([\\w.-]+?)($|[^\\w.-])" to """$1<a href="https://www.github.com/$2">gh@$2</a>$3"""
     ).fold(this) { v, it ->
         v.replace(it.first.toRegex(setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE)), it.second)

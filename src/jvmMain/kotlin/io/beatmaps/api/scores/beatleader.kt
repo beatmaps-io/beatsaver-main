@@ -13,7 +13,7 @@ class BeatLeaderScores(private val client: HttpClient) : RemoteScores {
     override suspend fun getLeaderboard(hash: String, diff: EDifficulty, mode: SSGameMode, page: Int) =
         ssTry {
             client.get(
-                "https://api.beatleader.xyz/v5/scores/$hash/${diff.enumName()}/${mode.characteristic.enumName()}?page=$page&count=12"
+                "https://api.beatleader.com/v5/scores/$hash/${diff.enumName()}/${mode.characteristic.enumName()}?page=$page&count=12"
             ).body<BLPaged>()
         }.let {
             LeaderboardData(
