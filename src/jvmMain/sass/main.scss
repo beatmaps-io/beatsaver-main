@@ -643,7 +643,7 @@ table.search-results {
     vertical-align: middle;
     height: 54px;
 
-    &:nth-child(n+4) {
+    &:nth-child(n+4), &:nth-child(1) {
       font-size: 13px;
     }
     &:nth-child(3) {
@@ -1819,7 +1819,7 @@ select.dark {
     th {
       padding: .75rem .75rem;
     }
-    td:nth-child(n+4) {
+    td:nth-child(n+4), td:nth-child(1) {
       font-size: 15px;
     }
   }
