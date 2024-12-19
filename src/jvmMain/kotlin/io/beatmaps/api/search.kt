@@ -243,15 +243,15 @@ fun Route.searchRoute() {
                             env.split(",")
                                 .mapNotNull { e -> EBeatsaberEnvironment.fromString(e)?.name }
                                 .let {
-                                    BsSolr.environment inList it
+                                    q.apply(BsSolr.environment inList it)
                                 }
                         }
 
                         it.characteristics?.let { char ->
                             char.split(",")
-                                .mapNotNull { c -> searchEnumOrNull<ECharacteristic>(c)?.name }
+                                .mapNotNull { c -> searchEnumOrNull<ECharacteristic>(c)?.human() }
                                 .let {
-                                    BsSolr.characteristics inList it
+                                    q.apply(BsSolr.characteristics inList it)
                                 }
                         }
                     }
