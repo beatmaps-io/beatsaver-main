@@ -13,11 +13,6 @@ RUN mkdir -p /var/solr/data && \
     /opt/solr/bin/solr create_core -c users && \
     /opt/solr/bin/solr stop
 
-WORKDIR /var/solr/data/beatsaver/conf
-ADD beatsaver .
-
-WORKDIR /var/solr/data/playlists/conf
-ADD playlists .
-
-WORKDIR /var/solr/data/users/conf
-ADD users .
+# Symlink to where we will mount files
+COPY symlink.sh .
+RUN ./symlink.sh
