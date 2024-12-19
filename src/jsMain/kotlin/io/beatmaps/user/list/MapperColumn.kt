@@ -3,7 +3,7 @@ package io.beatmaps.user.list
 import io.beatmaps.common.api.UserSearchSort
 
 enum class MapperColumn(val text: String, val icon: String? = null, val width: Int? = null, val sortEnum: UserSearchSort? = null) {
-    NUMERAL("#", width = 17),
+    NUMERAL("#", width = 24),
     AVATAR("Avatar", "fas fa-image", width = 43),
     NAME("Mapper"),
     BPM("Avg BPM", "fa-tachometer-alt", width = 41, sortEnum = UserSearchSort.BPM),
