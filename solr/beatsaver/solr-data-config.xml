@@ -8,7 +8,9 @@
                         (u.&quot;verifiedMapper&quot; OR COALESCE(bool_or(u2.&quot;verifiedMapper&quot;), FALSE)) verified, ARRAY_TO_STRING(b.tags, ',') tagstr, STRING_AGG(d.nps::varchar, ',') npsstr,
                         COUNT(DISTINCT d.difficulty) FILTER (WHERE d.characteristic = 'Standard') = 5 &quot;fullSpread&quot;, ARRAY_TO_STRING(array_merge_agg(d.suggestions), '||') suggestions,
                         ARRAY_TO_STRING(array_merge_agg(d.requirements), '||') requirements, b.ranked rankedss, b.&quot;blRanked&quot; rankedbl, b.&quot;declaredAi&quot; != 'None' ai, b.bpm, b.duration, b.&quot;curatedBy&quot;,
-                        ARRAY_TO_STRING(array_merge(ARRAY_AGG(c.&quot;collaboratorId&quot;), ARRAY[b.uploader]), ',') collaborators, ARRAY_TO_STRING(ARRAY_AGG(DISTINCT d.environment), '||') environment
+                        ARRAY_TO_STRING(array_merge(ARRAY_AGG(c.&quot;collaboratorId&quot;), ARRAY[b.uploader]), ',') collaborators, ARRAY_TO_STRING(ARRAY_AGG(DISTINCT d.environment), '||') environment,
+                        ARRAY_TO_STRING(ARRAY_AGG(DISTINCT d.characteristic), '||') characteristics, b.upvote upvotes, b.downvote downvotes, b.upvote + b.downvote votes,
+                        STRING_AGG(d.stars::varchar, ',') &quot;ssStars&quot;, STRING_AGG(d.&quot;blStars&quot;::varchar, ',') &quot;blStars&quot;
                     FROM beatmap b JOIN uploader u ON b.uploader = u.id JOIN versions v ON b.&quot;mapId&quot; = v.&quot;mapId&quot; AND v.state = 'Published' JOIN difficulty d ON v.&quot;versionId&quot; = d.&quot;versionId&quot;
                         LEFT JOIN collaboration c ON b.&quot;mapId&quot; = c.&quot;mapId&quot; AND c.accepted LEFT JOIN uploader u2 ON c.&quot;collaboratorId&quot; = u2.id
                         WHERE b.&quot;deletedAt&quot; IS NULL GROUP BY b.&quot;mapId&quot;, u.id"
@@ -19,7 +21,9 @@
                         (u.&quot;verifiedMapper&quot; OR COALESCE(bool_or(u2.&quot;verifiedMapper&quot;), FALSE)) verified, ARRAY_TO_STRING(b.tags, ',') tagstr, STRING_AGG(d.nps::varchar, ',') npsstr,
                         COUNT(DISTINCT d.difficulty) FILTER (WHERE d.characteristic = 'Standard') = 5 &quot;fullSpread&quot;, ARRAY_TO_STRING(array_merge_agg(d.suggestions), '||') suggestions,
                         ARRAY_TO_STRING(array_merge_agg(d.requirements), '||') requirements, b.ranked rankedss, b.&quot;blRanked&quot; rankedbl, b.&quot;declaredAi&quot; != 'None' ai, b.bpm, b.duration, b.&quot;curatedBy&quot;,
-                        ARRAY_TO_STRING(array_merge(ARRAY_AGG(c.&quot;collaboratorId&quot;), ARRAY[b.uploader]), ',') collaborators, ARRAY_TO_STRING(ARRAY_AGG(DISTINCT d.environment), '||') environment
+                        ARRAY_TO_STRING(array_merge(ARRAY_AGG(c.&quot;collaboratorId&quot;), ARRAY[b.uploader]), ',') collaborators, ARRAY_TO_STRING(ARRAY_AGG(DISTINCT d.environment), '||') environment,
+                        ARRAY_TO_STRING(ARRAY_AGG(DISTINCT d.characteristic), '||') characteristics, b.upvote upvotes, b.downvote downvotes, b.upvote + b.downvote votes,
+                        STRING_AGG(d.stars::varchar, ',') &quot;ssStars&quot;, STRING_AGG(d.&quot;blStars&quot;::varchar, ',') &quot;blStars&quot;
                     FROM beatmap b JOIN uploader u ON b.uploader = u.id JOIN versions v ON b.&quot;mapId&quot; = v.&quot;mapId&quot; AND v.state = 'Published' JOIN difficulty d ON v.&quot;versionId&quot; = d.&quot;versionId&quot;
                         LEFT JOIN collaboration c ON b.&quot;mapId&quot; = c.&quot;mapId&quot; AND c.accepted LEFT JOIN uploader u2 ON c.&quot;collaboratorId&quot; = u2.id
                         WHERE b.&quot;mapId&quot; = ${dataimporter.delta.id} GROUP BY b.&quot;mapId&quot;, u.id"
@@ -57,6 +61,12 @@
             <field column="rankedbl" name="rankedbl"></field>
             <field column="ai" name="ai"></field>
             <field column="environment" splitBy="\|\|" name="environment"></field>
+            <field column="characteristics" splitBy="\|\|" name="characteristics"></field>
+            <field column="upvotes" name="upvotes"></field>
+            <field column="downvotes" name="downvotes"></field>
+            <field column="votes" name="votes"></field>
+            <field column="blStars" splitBy="," name="blStars"></field>
+            <field column="ssStars" splitBy="," name="ssStars"></field>
         </entity>
     </document>
 </dataConfig>

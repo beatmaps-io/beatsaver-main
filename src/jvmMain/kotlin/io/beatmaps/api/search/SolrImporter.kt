@@ -97,6 +97,12 @@ object SolrImporter {
                     it[bpm] = version?.bpm
                     it[duration] = version?.duration
                     it[environment] = diffs.mapNotNull { d -> d.environment?.name }.distinct()
+                    it[characteristics] = diffs.map { d -> d.characteristic.name }.distinct()
+                    it[upvotes] = map.upVotesInt
+                    it[downvotes] = map.downVotesInt
+                    it[votes] = map.upVotesInt + map.downVotesInt
+                    it[blStars] = diffs.mapNotNull { d -> d.blStars?.toFloat() }
+                    it[ssStars] = diffs.mapNotNull { d -> d.stars?.toFloat() }
                 }
             }
         }

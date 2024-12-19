@@ -14,8 +14,10 @@ import io.beatmaps.common.MapTagQuery
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EBeatsaberEnvironment
+import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.RankedFilter
+import io.beatmaps.common.api.searchEnumOrNull
 import io.beatmaps.common.applyToQuery
 import io.beatmaps.common.db.greaterEqF
 import io.beatmaps.common.db.lateral
@@ -40,6 +42,7 @@ import io.beatmaps.common.solr.field.SolrFilter
 import io.beatmaps.common.solr.field.apply
 import io.beatmaps.common.solr.field.betweenNullableInc
 import io.beatmaps.common.solr.field.eq
+import io.beatmaps.common.solr.field.inList
 import io.beatmaps.common.solr.getIds
 import io.beatmaps.common.solr.paged
 import io.beatmaps.common.toQuery
@@ -135,6 +138,18 @@ class SearchApi {
         val maxRating: Float? = null,
         val minBpm: Float? = null,
         val maxBpm: Float? = null,
+        val minVotes: Int? = null,
+        val maxVotes: Int? = null,
+        val minUpVotes: Int? = null,
+        val maxUpVotes: Int? = null,
+        val minDownVotes: Int? = null,
+        val maxDownVotes: Int? = null,
+        val minSsStars: Float? = null,
+        val maxSsStars: Float? = null,
+        val minBlStars: Float? = null,
+        val maxBlStars: Float? = null,
+        @Description("Comma seperated list of characteristics")
+        val characteristics: String? = null,
         val me: Boolean? = null,
         val cinema: Boolean? = null,
         @Description("Tag query, separated by `,` (and) or `|` (or). Excluded tags are prefixed with `!`.")
@@ -142,7 +157,8 @@ class SearchApi {
         @Description("Comma seperated list of environments")
         val environments: String? = null,
         @Ignore val mapper: Int? = null,
-        @Ignore val collaborator: Int? = null,
+        @Description("Comma seperated list of collaborators")
+        val collaborator: String? = null,
         @Ignore val curator: Int? = null,
         @Ignore val seed: String? = null,
         @DefaultValue("20") val pageSize: Int = 20
@@ -153,7 +169,7 @@ class SearchApi {
 }
 
 fun <T> Op<Boolean>.notNull(b: T?, block: (T) -> Op<Boolean>) = if (b == null) this else this.and(block(b))
-fun <T> SolrQuery.notNull(b: T?, block: (T) -> SolrFilter): SolrQuery = if (b == null) this else apply(block(b))
+fun <T> SolrQuery.notNull(b: T?, block: (T) -> SolrFilter?): SolrQuery = if (b == null) this else apply(block(b))
 
 fun Op.Companion.of(b: Boolean): Op<Boolean> = if (b) Op.TRUE else Op.FALSE
 
@@ -208,19 +224,38 @@ fun Route.searchRoute() {
                         }?.let { filter ->
                             q.apply(filter)
                         }
-                    }
-                    .also { q ->
+
                         listOfNotNull(
                             if (it.leaderboard.blRanked) BsSolr.rankedbl eq true else null,
                             if (it.leaderboard.ssRanked) BsSolr.rankedss eq true else null
                         ).reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }?.let {
                             q.apply(it)
                         }
+
+                        q.apply(BsSolr.nps.betweenNullableInc(it.minNps, it.maxNps))
+                        q.apply(BsSolr.votes.betweenNullableInc(it.minVotes, it.maxVotes))
+                        q.apply(BsSolr.upvotes.betweenNullableInc(it.minUpVotes, it.maxUpVotes))
+                        q.apply(BsSolr.downvotes.betweenNullableInc(it.minDownVotes, it.maxDownVotes))
+                        q.apply(BsSolr.blStars.betweenNullableInc(it.minBlStars, it.maxBlStars))
+                        q.apply(BsSolr.ssStars.betweenNullableInc(it.minSsStars, it.maxSsStars))
+
+                        it.environments?.let { env ->
+                            env.split(",")
+                                .mapNotNull { e -> EBeatsaberEnvironment.fromString(e)?.name }
+                                .let {
+                                    BsSolr.environment inList it
+                                }
+                        }
+
+                        it.characteristics?.let { char ->
+                            char.split(",")
+                                .mapNotNull { c -> searchEnumOrNull<ECharacteristic>(c)?.name }
+                                .let {
+                                    BsSolr.characteristics inList it
+                                }
+                        }
                     }
                     .notNull(it.ranked) { o -> (BsSolr.rankedbl eq o) or (BsSolr.rankedss eq o) }
-                    .also { q ->
-                        q.apply(BsSolr.nps.betweenNullableInc(it.minNps, it.maxNps))
-                    }
                     .let { q ->
                         val tq = it.tags?.toQuery()
                         val emptyTags = tq?.any { a ->
@@ -235,22 +270,13 @@ fun Route.searchRoute() {
 
                         tq?.applyToQuery(q) ?: q
                     }
-                    .also { q ->
-                        it.environments?.let { env ->
-                            env.split(",")
-                                .mapNotNull { e -> EBeatsaberEnvironment.fromString(e) }
-                                .map { e -> BsSolr.environment eq e.name }
-                                .reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }
-                                ?.let { q.apply(it) }
-                        }
-                    }
                     .notNull(it.curated) { o -> BsSolr.curated.any().let { if (o) it else it.not() } }
                     .notNull(it.verified) { o -> BsSolr.verified eq o }
                     .notNull(it.fullSpread) { o -> BsSolr.fullSpread eq o }
                     .notNull(it.minRating) { o -> BsSolr.voteScore greaterEq o }
                     .notNull(it.maxRating) { o -> BsSolr.voteScore lessEq o }
                     .notNull(it.mapper) { o -> BsSolr.mapperId eq o }
-                    .notNull(it.collaborator) { o -> BsSolr.mapperIds eq o }
+                    .notNull(it.collaborator) { o -> BsSolr.mapperIds inList o.split(",").mapNotNull { it.toIntOrNull() } }
                     .notNull(it.minBpm) { o -> BsSolr.bpm greaterEq o }
                     .notNull(it.maxBpm) { o -> BsSolr.bpm lessEq o }
                     .notNull(it.from) { o -> BsSolr.uploaded greaterEq o }

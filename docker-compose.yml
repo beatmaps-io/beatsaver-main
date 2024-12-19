@@ -41,6 +41,8 @@ services:
     build: solr
     ports:
       - "8983:8983"
+    volumes:
+      - ./solr:/mnt/solr
     environment:
       SOLR_OPTS: "-Dsolr.sharedLib=/var/solr/lib"
       PGPASSFILE: "/var/solr/lib"
