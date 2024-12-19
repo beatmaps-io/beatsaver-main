@@ -42,6 +42,7 @@ Once running you can access the admin ui via http://localhost:8983 there is no a
 If you already have data in postgres this won't automatically be reflected in the search index. To run a full import go to:
 - For maps - http://localhost:8983/solr/beatsaver/dataimport?command=full-import&clean=true
 - For playlists - http://localhost:8983/solr/playlists/dataimport?command=full-import&clean=true
+- For users - http://localhost:8983/solr/users/dataimport?command=full-import&clean=true
 
 The `clean=true` at the end means all documents will be purged before the import. Without it maps/playlists would be added and updated but not removed if they were missing. It's also possible to swap `full-import` for `delta-import` to do a partial update which  will delete objects.
 

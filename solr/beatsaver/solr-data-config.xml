@@ -5,7 +5,7 @@
                 query="
                     SELECT b.&quot;mapId&quot; id, to_hex(b.&quot;mapId&quot;) hexid, SUBSTRING(b.name, 0, 2000)::varchar name, SUBSTRING(b.description, 0, 10000)::varchar description, MAX(v.&quot;levelAuthorName&quot;::varchar),
                         u.&quot;uniqueName&quot;::varchar, b.&quot;createdAt&quot;, b.uploaded, b.&quot;updatedAt&quot;, b.&quot;deletedAt&quot;, b.&quot;curatedAt&quot;, b.score, b.uploader,
-                        (u.&quot;verifiedMapper&quot; OR COALESCE(bool_or(u2.&quot;verifiedMapper&quot;), FALSE)) verified, ARRAY_TO_STRING(b.tags, ',') tagstr, STRING_AGG(d.nps::varchar, ',') npsstr,
+                        (u.&quot;verifiedMapper&quot; OR COALESCE(bool_or(u2.&quot;verifiedMapper&quot;), FALSE)) verified, NULLIF(ARRAY_TO_STRING(b.tags, ','), '') tagstr, STRING_AGG(d.nps::varchar, ',') npsstr,
                         COUNT(DISTINCT d.difficulty) FILTER (WHERE d.characteristic = 'Standard') = 5 &quot;fullSpread&quot;, ARRAY_TO_STRING(array_merge_agg(d.suggestions), '||') suggestions,
                         ARRAY_TO_STRING(array_merge_agg(d.requirements), '||') requirements, b.ranked rankedss, b.&quot;blRanked&quot; rankedbl, b.&quot;declaredAi&quot; != 'None' ai, b.bpm, b.duration, b.&quot;curatedBy&quot;,
                         ARRAY_TO_STRING(array_merge(ARRAY_AGG(c.&quot;collaboratorId&quot;), ARRAY[b.uploader]), ',') collaborators, ARRAY_TO_STRING(ARRAY_AGG(DISTINCT d.environment), '||') environment,
@@ -18,7 +18,7 @@
                 deltaImportQuery="
                     SELECT b.&quot;mapId&quot; id, to_hex(b.&quot;mapId&quot;) hexid, SUBSTRING(b.name, 0, 2000)::varchar name, SUBSTRING(b.description, 0, 10000)::varchar description, MAX(v.&quot;levelAuthorName&quot;::varchar),
                         u.&quot;uniqueName&quot;::varchar, b.&quot;createdAt&quot;, b.uploaded, b.&quot;updatedAt&quot;, b.&quot;deletedAt&quot;, b.&quot;curatedAt&quot;, b.score, b.uploader,
-                        (u.&quot;verifiedMapper&quot; OR COALESCE(bool_or(u2.&quot;verifiedMapper&quot;), FALSE)) verified, ARRAY_TO_STRING(b.tags, ',') tagstr, STRING_AGG(d.nps::varchar, ',') npsstr,
+                        (u.&quot;verifiedMapper&quot; OR COALESCE(bool_or(u2.&quot;verifiedMapper&quot;), FALSE)) verified, NULLIF(ARRAY_TO_STRING(b.tags, ','), '') tagstr, STRING_AGG(d.nps::varchar, ',') npsstr,
                         COUNT(DISTINCT d.difficulty) FILTER (WHERE d.characteristic = 'Standard') = 5 &quot;fullSpread&quot;, ARRAY_TO_STRING(array_merge_agg(d.suggestions), '||') suggestions,
                         ARRAY_TO_STRING(array_merge_agg(d.requirements), '||') requirements, b.ranked rankedss, b.&quot;blRanked&quot; rankedbl, b.&quot;declaredAi&quot; != 'None' ai, b.bpm, b.duration, b.&quot;curatedBy&quot;,
                         ARRAY_TO_STRING(array_merge(ARRAY_AGG(c.&quot;collaboratorId&quot;), ARRAY[b.uploader]), ',') collaborators, ARRAY_TO_STRING(ARRAY_AGG(DISTINCT d.environment), '||') environment,
