@@ -46,7 +46,7 @@ import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.solr.collections.BsSolr
-import io.beatmaps.common.solr.field.SolrFilter
+import io.beatmaps.common.solr.field.ComposableSolrFilter
 import io.beatmaps.common.solr.field.apply
 import io.beatmaps.common.solr.field.eq
 import io.beatmaps.common.solr.field.greaterEq
@@ -108,7 +108,7 @@ fun Route.playlistSingle() {
 
                     mapperIds.map { id ->
                         BsSolr.mapperIds eq id
-                    }.reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }?.let {
+                    }.reduceOrNull<ComposableSolrFilter, ComposableSolrFilter> { a, b -> a or b }?.let {
                         q.apply(it)
                     }
                 }
@@ -132,7 +132,7 @@ fun Route.playlistSingle() {
                     listOfNotNull(
                         if (params.ranked.blRanked) BsSolr.rankedbl eq true else null,
                         if (params.ranked.ssRanked) BsSolr.rankedss eq true else null
-                    ).reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }?.let {
+                    ).reduceOrNull<ComposableSolrFilter, ComposableSolrFilter> { a, b -> a or b }?.let {
                         q.apply(it)
                     }
                 }
@@ -149,7 +149,7 @@ fun Route.playlistSingle() {
                 .also { q ->
                     params.environments
                         .map { e -> BsSolr.environment eq e.name }
-                        .reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }
+                        .reduceOrNull<ComposableSolrFilter, ComposableSolrFilter> { a, b -> a or b }
                         ?.let { q.apply(it) }
                 }
                 .let { q ->

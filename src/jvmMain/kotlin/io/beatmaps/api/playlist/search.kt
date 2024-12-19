@@ -28,7 +28,7 @@ import io.beatmaps.common.dbo.handleOwner
 import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.solr.collections.PlaylistSolr
-import io.beatmaps.common.solr.field.SolrFilter
+import io.beatmaps.common.solr.field.ComposableSolrFilter
 import io.beatmaps.common.solr.field.apply
 import io.beatmaps.common.solr.getIds
 import io.beatmaps.common.solr.paged
@@ -107,7 +107,7 @@ fun Route.playlistSearch() {
                 .also { q ->
                     EPlaylistType.publicTypes
                         .map { PlaylistSolr.type eq it.name }
-                        .reduce<SolrFilter, SolrFilter> { acc, f -> acc or f }
+                        .reduce<ComposableSolrFilter, ComposableSolrFilter> { acc, f -> acc or f }
                         .let { q.apply(it) }
                 }
                 .also { q ->
@@ -120,7 +120,7 @@ fun Route.playlistSearch() {
 
                     mapperIds.map { id ->
                         PlaylistSolr.ownerId eq id
-                    }.reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }?.let {
+                    }.reduceOrNull<ComposableSolrFilter, ComposableSolrFilter> { a, b -> a or b }?.let {
                         q.apply(it)
                     }
                 }

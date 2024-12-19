@@ -38,6 +38,7 @@ import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.solr.SolrHelper
 import io.beatmaps.common.solr.collections.BsSolr
+import io.beatmaps.common.solr.field.ComposableSolrFilter
 import io.beatmaps.common.solr.field.SolrFilter
 import io.beatmaps.common.solr.field.apply
 import io.beatmaps.common.solr.field.betweenNullableInc
@@ -228,7 +229,7 @@ fun Route.searchRoute() {
                         listOfNotNull(
                             if (it.leaderboard.blRanked) BsSolr.rankedbl eq true else null,
                             if (it.leaderboard.ssRanked) BsSolr.rankedss eq true else null
-                        ).reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }?.let {
+                        ).reduceOrNull<ComposableSolrFilter, ComposableSolrFilter> { a, b -> a or b }?.let {
                             q.apply(it)
                         }
 
@@ -289,7 +290,7 @@ fun Route.searchRoute() {
 
                         mapperIds.map { id ->
                             BsSolr.mapperIds eq id
-                        }.reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }?.let {
+                        }.reduceOrNull<ComposableSolrFilter, ComposableSolrFilter> { a, b -> a or b }?.let {
                             q.apply(it)
                         }
                     }
