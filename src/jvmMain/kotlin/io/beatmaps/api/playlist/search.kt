@@ -28,7 +28,6 @@ import io.beatmaps.common.dbo.handleOwner
 import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.solr.collections.PlaylistSolr
-import io.beatmaps.common.solr.field.ComposableSolrFilter
 import io.beatmaps.common.solr.field.apply
 import io.beatmaps.common.solr.getIds
 import io.beatmaps.common.solr.paged
@@ -104,12 +103,9 @@ fun Route.playlistSearch() {
                 .let { q ->
                     searchInfo.applyQuery(q)
                 }
-                .also { q ->
-                    EPlaylistType.publicTypes
-                        .map { PlaylistSolr.type eq it.name }
-                        .reduce<ComposableSolrFilter, ComposableSolrFilter> { acc, f -> acc or f }
-                        .let { q.apply(it) }
-                }
+                .apply(
+                    PlaylistSolr.type inList EPlaylistType.publicTypes.map { it.name }
+                )
                 .also { q ->
                     if (req.includeEmpty != true) {
                         q.apply((PlaylistSolr.totalMaps greater 0) or (PlaylistSolr.type eq EPlaylistType.Search.name))
@@ -117,12 +113,7 @@ fun Route.playlistSearch() {
                 }
                 .also { q ->
                     val mapperIds = searchInfo.userSubQuery?.map { it[User.id].value } ?: listOf()
-
-                    mapperIds.map { id ->
-                        PlaylistSolr.ownerId eq id
-                    }.reduceOrNull<ComposableSolrFilter, ComposableSolrFilter> { a, b -> a or b }?.let {
-                        q.apply(it)
-                    }
+                    q.apply(PlaylistSolr.ownerId inList mapperIds)
                 }
                 .notNull(req.minNps) { o -> PlaylistSolr.maxNps greaterEq o }
                 .notNull(req.maxNps) { o -> PlaylistSolr.minNps lessEq o }

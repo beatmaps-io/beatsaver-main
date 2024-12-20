@@ -46,9 +46,10 @@ import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.solr.collections.BsSolr
-import io.beatmaps.common.solr.field.ComposableSolrFilter
+import io.beatmaps.common.solr.field.anyOf
 import io.beatmaps.common.solr.field.apply
 import io.beatmaps.common.solr.field.eq
+import io.beatmaps.common.solr.field.inList
 import io.beatmaps.common.solr.field.greaterEq
 import io.beatmaps.common.solr.field.lessEq
 import io.beatmaps.common.solr.getIds
@@ -105,12 +106,7 @@ fun Route.playlistSingle() {
                 }
                 .also { q ->
                     val mapperIds = params.mappers + (searchInfo.userSubQuery?.map { it[User.id].value } ?: listOf())
-
-                    mapperIds.map { id ->
-                        BsSolr.mapperIds eq id
-                    }.reduceOrNull<ComposableSolrFilter, ComposableSolrFilter> { a, b -> a or b }?.let {
-                        q.apply(it)
-                    }
+                    q.apply(BsSolr.mapperIds inList mapperIds)
                 }
                 .notNull(params.chroma) { o ->
                     val chromaQuery = (BsSolr.suggestions eq "Chroma") or (BsSolr.requirements eq "Chroma")
@@ -128,13 +124,11 @@ fun Route.playlistSingle() {
                     val cinemaQuery = (BsSolr.suggestions eq "Cinema") or (BsSolr.requirements eq "Cinema")
                     if (o) cinemaQuery else cinemaQuery.not()
                 }
-                .also { q ->
+                .apply {
                     listOfNotNull(
                         if (params.ranked.blRanked) BsSolr.rankedbl eq true else null,
                         if (params.ranked.ssRanked) BsSolr.rankedss eq true else null
-                    ).reduceOrNull<ComposableSolrFilter, ComposableSolrFilter> { a, b -> a or b }?.let {
-                        q.apply(it)
-                    }
+                    ).anyOf()
                 }
                 .notNull(params.curated) { o -> BsSolr.curated.any().let { if (o) it else it.not() } }
                 .notNull(params.verified) { o -> BsSolr.verified eq o }
@@ -146,11 +140,8 @@ fun Route.playlistSingle() {
                 .also { q ->
                     params.tags.asQuery().applyToQuery(q)
                 }
-                .also { q ->
-                    params.environments
-                        .map { e -> BsSolr.environment eq e.name }
-                        .reduceOrNull<ComposableSolrFilter, ComposableSolrFilter> { a, b -> a or b }
-                        ?.let { q.apply(it) }
+                .apply {
+                    BsSolr.environment inList params.environments.map { e -> e.name }
                 }
                 .let { q ->
                     BsSolr.addSortArgs(q, playlistId, actualSortOrder)
