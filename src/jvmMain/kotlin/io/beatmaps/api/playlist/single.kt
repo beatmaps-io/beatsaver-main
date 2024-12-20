@@ -49,8 +49,8 @@ import io.beatmaps.common.solr.collections.BsSolr
 import io.beatmaps.common.solr.field.anyOf
 import io.beatmaps.common.solr.field.apply
 import io.beatmaps.common.solr.field.eq
-import io.beatmaps.common.solr.field.inList
 import io.beatmaps.common.solr.field.greaterEq
+import io.beatmaps.common.solr.field.inList
 import io.beatmaps.common.solr.field.lessEq
 import io.beatmaps.common.solr.getIds
 import io.beatmaps.controllers.CdnSig
