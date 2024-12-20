@@ -39,6 +39,7 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.solr.SolrHelper
 import io.beatmaps.common.solr.collections.BsSolr
 import io.beatmaps.common.solr.field.SolrFilter
+import io.beatmaps.common.solr.field.anyOf
 import io.beatmaps.common.solr.field.apply
 import io.beatmaps.common.solr.field.betweenNullableInc
 import io.beatmaps.common.solr.field.eq
@@ -216,29 +217,26 @@ fun Route.searchRoute() {
                     .let { q ->
                         searchInfo.applyQuery(q)
                     }
-                    .also { q ->
+                    .apply(
                         when (it.automapper) {
                             true -> null
                             false -> BsSolr.ai eq true
                             null -> BsSolr.ai eq false
-                        }?.let { filter ->
-                            q.apply(filter)
                         }
-
+                    )
+                    .apply(
                         listOfNotNull(
                             if (it.leaderboard.blRanked) BsSolr.rankedbl eq true else null,
                             if (it.leaderboard.ssRanked) BsSolr.rankedss eq true else null
-                        ).reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }?.let {
-                            q.apply(it)
-                        }
-
-                        q.apply(BsSolr.nps.betweenNullableInc(it.minNps, it.maxNps))
-                        q.apply(BsSolr.votes.betweenNullableInc(it.minVotes, it.maxVotes))
-                        q.apply(BsSolr.upvotes.betweenNullableInc(it.minUpVotes, it.maxUpVotes))
-                        q.apply(BsSolr.downvotes.betweenNullableInc(it.minDownVotes, it.maxDownVotes))
-                        q.apply(BsSolr.blStars.betweenNullableInc(it.minBlStars, it.maxBlStars))
-                        q.apply(BsSolr.ssStars.betweenNullableInc(it.minSsStars, it.maxSsStars))
-
+                        ).anyOf()
+                    )
+                    .apply(BsSolr.nps.betweenNullableInc(it.minNps, it.maxNps))
+                    .apply(BsSolr.votes.betweenNullableInc(it.minVotes, it.maxVotes))
+                    .apply(BsSolr.upvotes.betweenNullableInc(it.minUpVotes, it.maxUpVotes))
+                    .apply(BsSolr.downvotes.betweenNullableInc(it.minDownVotes, it.maxDownVotes))
+                    .apply(BsSolr.blStars.betweenNullableInc(it.minBlStars, it.maxBlStars))
+                    .apply(BsSolr.ssStars.betweenNullableInc(it.minSsStars, it.maxSsStars))
+                    .also { q ->
                         it.environments?.let { env ->
                             env.split(",")
                                 .mapNotNull { e -> EBeatsaberEnvironment.fromString(e)?.name }
@@ -286,12 +284,7 @@ fun Route.searchRoute() {
                     .notNull(it.curator) { o -> BsSolr.curatorId eq o }
                     .also { q ->
                         val mapperIds = followingSubQuery + (searchInfo.userSubQuery?.map { it[User.id].value } ?: listOf())
-
-                        mapperIds.map { id ->
-                            BsSolr.mapperIds eq id
-                        }.reduceOrNull<SolrFilter, SolrFilter> { a, b -> a or b }?.let {
-                            q.apply(it)
-                        }
+                        q.apply(BsSolr.mapperIds inList mapperIds)
                     }
                     .notNull(it.chroma) { o ->
                         val chromaQuery = (BsSolr.suggestions eq "Chroma") or (BsSolr.requirements eq "Chroma")
