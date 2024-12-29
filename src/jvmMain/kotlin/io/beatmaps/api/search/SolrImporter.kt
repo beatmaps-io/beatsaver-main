@@ -1,7 +1,5 @@
 package io.beatmaps.api.search
 
-import io.beatmaps.api.MapConstants
-import io.beatmaps.api.PlaylistConstants
 import io.beatmaps.api.UserStats
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EMapState
