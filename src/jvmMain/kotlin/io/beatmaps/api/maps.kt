@@ -24,7 +24,6 @@ import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.PlaylistMap
-import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinBookmarked
@@ -57,7 +56,6 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import kotlinx.datetime.toKotlinInstant
 import org.apache.solr.client.solrj.SolrQuery
-import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
@@ -192,7 +190,7 @@ fun Route.mapDetailRoute() {
                         }) {
                             if (mapUpdate.curated) {
                                 it[curatedAt] = NowExpression(curatedAt)
-                                it[curator] = EntityID(user.userId, User)
+                                it[curator] = user.userId
                             } else {
                                 it[curatedAt] = null
                                 it[curator] = null
@@ -310,8 +308,8 @@ fun Route.mapDetailRoute() {
                         if (mapUpdate.deleted) {
                             it[deletedAt] = NowExpression(deletedAt)
                         } else {
-                            mapUpdate.name?.let { n -> it[name] = n.take(1000) }
-                            mapUpdate.description?.let { d -> it[description] = d.take(10000) }
+                            mapUpdate.name?.let { n -> it[name] = n.take(MapConstants.MAX_NAME_LENGTH) }
+                            mapUpdate.description?.let { d -> it[description] = d.take(MapConstants.MAX_DESCRIPTION_LENGTH) }
                             if (tooMany != true) { // Don't update tags if request is trying to add too many tags
                                 mapUpdate.tags?.filter { t -> t != MapTag.None }?.map { t -> t.slug }?.let { t -> it[tags] = t }
                             }

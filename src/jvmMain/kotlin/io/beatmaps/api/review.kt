@@ -28,6 +28,7 @@ import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
 import io.beatmaps.common.pub
@@ -340,7 +341,7 @@ fun Route.reviewRoute() {
                         return@newSuspendedTransaction false
                     }
 
-                    if (sess.suspended || UserDao[sess.userId].suspendedAt != null) {
+                    if (sess.suspended) {
                         // User is suspended
                         throw UserApiException("Suspended account")
                     }
@@ -543,7 +544,7 @@ fun Route.reviewRoute() {
                         val uploadUserId = intermediaryResult[Beatmap.uploader].value
 
                         val collaborators = Collaboration
-                            .join(User, JoinType.LEFT, Collaboration.collaboratorId, User.id)
+                            .joinUser(Collaboration.collaboratorId)
                             .select(Collaboration.collaboratorId, User.reviewAlerts)
                             .where { Collaboration.mapId eq mapId and Collaboration.accepted }
 
@@ -710,6 +711,7 @@ fun Route.reviewRoute() {
                             EAlertType.ReviewDeletion,
                             d[ReviewReply.userId].value
                         )
+                        updateAlertCount(d[ReviewReply.userId].value)
                     }
                 }
 

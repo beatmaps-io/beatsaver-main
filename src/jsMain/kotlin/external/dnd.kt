@@ -119,12 +119,14 @@ fun RElementBuilder<DroppableProps>.droppableContainer(cb: RDOMBuilder<DIV>.() -
     }
 }
 
-external enum class DropReason {
-    DROP, CANCEL
+sealed external class DropReason {
+    object DROP : DropReason
+    object CANCEL : DropReason
 }
 
-external enum class MovementMode {
-    FLUID, SNAP
+sealed external class MovementMode {
+    object FLUID : DropReason
+    object SNAP : DropReason
 }
 
 external interface Combine {

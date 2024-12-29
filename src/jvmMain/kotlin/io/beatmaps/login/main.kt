@@ -61,8 +61,8 @@ data class Session(
     val userAgent: String? = null,
     val countryCode: String? = null
 ) {
-    fun isAdmin() = admin && transaction { UserDao[userId].admin }
-    fun isCurator() = isAdmin() || (curator && transaction { UserDao[userId].curator })
+    fun isAdmin() = admin
+    fun isCurator() = isAdmin() || curator
 
     companion object {
         fun fromUser(user: UserDao, alertCount: Int? = null, oauth2ClientId: String? = null, call: ApplicationCall? = null) = Session(

@@ -14,6 +14,7 @@ import io.beatmaps.api.UserApiException
 import io.beatmaps.api.alertsRoute
 import io.beatmaps.api.bookmarkRoute
 import io.beatmaps.api.collaborationRoute
+import io.beatmaps.api.issueRoute
 import io.beatmaps.api.mapDetailRoute
 import io.beatmaps.api.modLogRoute
 import io.beatmaps.api.playlistRoute
@@ -403,6 +404,9 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
                 queueDeclare("bm.reviewDiscordHook", true, false, false, genericQueueConfig)
                 queueBind("bm.reviewDiscordHook", "beatmaps", "reviews.*.created")
 
+                queueDeclare("bm.issuesDiscordHook", true, false, false, genericQueueConfig)
+                queueBind("bm.issuesDiscordHook", "beatmaps", "issues.*.created")
+
                 queueDeclare("bm.alertCount", true, false, false, genericQueueConfig)
                 queueBind("bm.alertCount", "beatmaps", "user.alerts.*")
 
@@ -462,6 +466,7 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
         bookmarkRoute()
         collaborationRoute()
         questRoute(deviceCodeStore)
+        issueRoute()
 
         mapController()
         userController()

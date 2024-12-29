@@ -23,13 +23,19 @@ repositories {
 }
 
 kotlin {
+    targets.all {
+        compilations.all {
+            compilerOptions.configure {
+                freeCompilerArgs.add("-Xexpect-actual-classes")
+            }
+        }
+    }
     jvmToolchain {
         languageVersion.set(JavaLanguageVersion.of(16))
     }
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "16"
-            kotlinOptions.freeCompilerArgs = listOf("-XXLanguage:+NewInference", "-Xexpect-actual-classes")
         }
         testRuns["test"].executionTask.configure {
             useJUnit()

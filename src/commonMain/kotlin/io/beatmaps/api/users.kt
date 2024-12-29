@@ -11,6 +11,12 @@ enum class AccountType {
     DISCORD, SIMPLE, DUAL
 }
 
+class UserConstants {
+    companion object {
+        const val MAX_DESCRIPTION_LENGTH = 500
+    }
+}
+
 enum class PatreonTier(val pledge: Int, val supporting: Boolean, val title: String, val maxWips: Int) {
     None(0, false, "", 10), Supporter(350, true, "Supporter", 20), SupporterPlus(1000, true, "Supporter+", 50);
 

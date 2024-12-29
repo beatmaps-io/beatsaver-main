@@ -2,6 +2,7 @@ package io.beatmaps.controllers
 
 import ch.compile.recaptcha.ReCaptchaVerify
 import io.beatmaps.api.FailedUploadResponse
+import io.beatmaps.api.MapConstants
 import io.beatmaps.api.PatreonTier
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.api.toTier
@@ -257,8 +258,8 @@ fun Route.uploadController() {
                                 }
                             }
                         } ?: Beatmap.insertAndGetId {
-                            it[name] = (data.title ?: "").take(1000)
-                            it[description] = (data.description ?: "").take(10000)
+                            it[name] = (data.title ?: "").take(MapConstants.MAX_NAME_LENGTH)
+                            it[description] = (data.description ?: "").take(MapConstants.MAX_DESCRIPTION_LENGTH)
 
                             val tagsList = (data.tags ?: "").split(',').mapNotNull { t -> MapTag.fromSlug(t) }.toSet()
                             val tooMany = tagsList.groupBy { t -> t.type }.mapValues { t -> t.value.size }.withDefault { 0 }.let { byType ->

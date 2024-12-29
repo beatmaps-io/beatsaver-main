@@ -1,5 +1,8 @@
 package io.beatmaps.util
 
+import io.beatmaps.api.HydratedMapReportData
+import io.beatmaps.api.HydratedUserReportData
+import io.beatmaps.api.IssueDetail
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewUpdateInfo
 import io.beatmaps.api.UserDetail
@@ -10,10 +13,13 @@ import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.avgWithFilter
 import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Issue
 import io.beatmaps.common.dbo.Review
 import io.beatmaps.common.dbo.User
+import io.beatmaps.common.dbo.handleUser
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
 import io.beatmaps.common.rabbitOptional
@@ -91,6 +97,7 @@ data class DiscordEmbed(
 }
 
 val discordWebhookUrl: String? = System.getenv("DISCORD_WEBHOOK_URL")
+val discordIssueWebhookUrl: String? = System.getenv("DISCORD_ISSUE_WEBHOOK_URL")
 
 class DiscordWebhookHandler(private val client: HttpClient, private val webhookUrl: String) {
     companion object {
@@ -139,6 +146,56 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
             )
         }
     }
+
+    suspend fun post(issue: IssueDetail) {
+        client.post(webhookUrl) {
+            contentType(ContentType.Application.Json)
+            userAgent("BeatSaver")
+
+            setBody(
+                DiscordWebhookBody(
+                    username = "BeatSaver",
+                    avatar_url = "https://avatars.githubusercontent.com/u/83342266",
+                    embeds = listOf(
+                        DiscordEmbed(
+                            author = issue.creator.let { user -> DiscordEmbed.Author(user) },
+                            title = "New ${issue.type.human()} created",
+                            url = "${Config.siteBase()}/issues/${issue.id}",
+                            thumbnail = when (issue.data) {
+                                is HydratedMapReportData -> issue.data.map.mainVersion()?.let {
+                                    "${Config.cdnBase("", true)}/${it.hash}.jpg"
+                                }
+                                is HydratedUserReportData -> issue.data.user.avatar
+                            }?.let {
+                                DiscordEmbed.HasUrl(it)
+                            },
+                            fields = when (issue.data) {
+                                is HydratedMapReportData -> listOf(
+                                    DiscordEmbed.Field(
+                                        "Map",
+                                        issue.data.map.let { "[${it.name}](${Config.siteBase()}/maps/${it.id})" }
+                                    ),
+                                    issue.data.map.uploader.let { u ->
+                                        DiscordEmbed.Field(
+                                            "Uploader",
+                                            "[${u.name}](${u.profileLink(absolute = true)})"
+                                        )
+                                    }
+                                )
+                                is HydratedUserReportData -> listOf(
+                                    DiscordEmbed.Field(
+                                        "User",
+                                        "[${issue.data.user.name}](${issue.data.user.profileLink(absolute = true)})"
+                                    )
+                                )
+                            },
+                            color = 11431783
+                        )
+                    )
+                )
+            )
+        }
+    }
 }
 
 fun Application.reviewListeners(client: HttpClient) {
@@ -178,6 +235,26 @@ fun Application.reviewListeners(client: HttpClient) {
                         }
                 }?.let { review ->
                     handler.post(review)
+                }
+            }
+        }
+
+        discordIssueWebhookUrl?.let { webhookUrl ->
+            val handler = DiscordWebhookHandler(client, webhookUrl)
+            consumeAck("bm.issuesDiscordHook", Int::class) { _, issueId ->
+                transaction {
+                    Issue
+                        .joinUser(Issue.creator)
+                        .selectAll()
+                        .where {
+                            Issue.id eq issueId
+                        }
+                        .handleUser()
+                        .singleOrNull()?.let { row ->
+                            IssueDetail.from(row, "")
+                        }
+                }?.let { issue ->
+                    handler.post(issue)
                 }
             }
         }

@@ -19,8 +19,8 @@ import io.beatmaps.common.dbo.collaboratorAlias
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
-import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.rabbitOptional
 import io.beatmaps.common.solr.collections.BsSolr
@@ -73,7 +73,7 @@ object SolrImporter {
                 BsSolr.insert {
                     it[author] = version?.levelAuthorName
                     it[created] = map.createdAt
-                    it[description] = map.description.take(10000)
+                    it[description] = map.description
                     it[id] = updateMapId
                     it[mapId] = toHexString(updateMapId)
                     it[mapper] = map.uploader.name
@@ -144,7 +144,7 @@ object SolrImporter {
 
             // Playlists
             val playlistStates = Playlist
-                .joinOwner()
+                .joinUser(Playlist.owner)
                 .select(Playlist.id, User.verifiedMapper)
                 .where { Playlist.deletedAt.isNull() }
                 .map {
@@ -230,7 +230,7 @@ object SolrImporter {
             val mapIdsAgg = arrayAgg(PlaylistMap.mapId)
             val (playlist, verifiedMapper, pMapIds) = Playlist
                 .joinMaps()
-                .joinOwner()
+                .joinUser(Playlist.owner)
                 .select(Playlist.columns + User.verifiedMapper + mapIdsAgg)
                 .where { Playlist.id eq updatePlaylistId }
                 .groupBy(Playlist.id, User.id)
@@ -252,7 +252,7 @@ object SolrImporter {
                     it[ownerId] = playlist.ownerId.value
                     it[verified] = verifiedMapper
                     it[name] = playlist.name
-                    it[description] = playlist.description.take(10000)
+                    it[description] = playlist.description
                     it[created] = playlist.createdAt
                     it[updated] = playlist.updatedAt
                     it[songsChanged] = playlist.songsChangedAt

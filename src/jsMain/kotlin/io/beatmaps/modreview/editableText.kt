@@ -8,7 +8,7 @@ import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
-import react.Props
+import react.PropsWithChildren
 import react.dom.button
 import react.dom.div
 import react.dom.jsStyle
@@ -19,7 +19,7 @@ import react.useRef
 import react.useState
 import kotlin.js.Promise
 
-external interface EditableTextProps : Props {
+external interface EditableTextProps : PropsWithChildren {
     var buttonText: String?
     var text: String?
     var renderText: Boolean?
@@ -64,7 +64,7 @@ val editableText = fc<EditableTextProps> { props ->
             }
         }
 
-        div("d-grid") {
+        div("d-flex flex-row-reverse") {
             button(classes = "btn " + (props.btnClass ?: "btn-primary mt-1"), type = ButtonType.submit) {
                 attrs.disabled = textLength < 1 || props.maxLength?.let { textLength > it } ?: false
 
@@ -91,6 +91,8 @@ val editableText = fc<EditableTextProps> { props ->
                 }
                 +(props.buttonText ?: "Save")
             }
+
+            props.children()
         }
     } else if (props.renderText == true) {
         div {

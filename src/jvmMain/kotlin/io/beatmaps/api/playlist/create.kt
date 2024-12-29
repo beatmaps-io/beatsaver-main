@@ -3,6 +3,7 @@ package io.beatmaps.api.playlist
 import io.beatmaps.api.OauthScope
 import io.beatmaps.api.PlaylistApi
 import io.beatmaps.api.PlaylistBasic
+import io.beatmaps.api.PlaylistConstants
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.from
 import io.beatmaps.common.DeletedPlaylistData
@@ -112,7 +113,7 @@ fun Route.playlistCreate() {
                 )
 
                 validate(toCreate) {
-                    validate(io.beatmaps.api.PlaylistBasic::name).isNotBlank().hasSize(3, 255)
+                    validate(io.beatmaps.api.PlaylistBasic::name).isNotBlank().hasSize(3, PlaylistConstants.MAX_NAME_LENGTH)
                     validate(io.beatmaps.api.PlaylistBasic::playlistImage).validate(org.valiktor.constraints.NotBlank) {
                         files.isNotEmpty()
                     }
@@ -121,7 +122,7 @@ fun Route.playlistCreate() {
                 val newId = transaction {
                     Playlist.insertAndGetId {
                         it[name] = toCreate.name
-                        it[description] = data.description ?: ""
+                        it[description] = data.description?.take(PlaylistConstants.MAX_DESCRIPTION_LENGTH) ?: ""
                         it[owner] = toCreate.owner
                         it[type] = toCreate.type
                         it[config] = toCreate.config
@@ -176,7 +177,7 @@ fun Route.playlistCreate() {
             }
             val data = multipart.get<PlaylistEditMultipart>()
 
-            val newDescription = data.description ?: ""
+            val newDescription = data.description?.take(PlaylistConstants.MAX_DESCRIPTION_LENGTH) ?: ""
             val toCreate = PlaylistBasic(
                 0, "",
                 data.name ?: "",
@@ -187,7 +188,7 @@ fun Route.playlistCreate() {
 
             if (data.deleted != true) {
                 validate(toCreate) {
-                    validate(PlaylistBasic::name).isNotBlank().hasSize(3, 255)
+                    validate(PlaylistBasic::name).isNotBlank().hasSize(3, PlaylistConstants.MAX_NAME_LENGTH)
                 }
             }
 

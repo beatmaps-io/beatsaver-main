@@ -3,7 +3,7 @@
     <document>
         <entity pk="hexid" name="Beatmaps"
                 query="
-                    SELECT b.&quot;mapId&quot; id, to_hex(b.&quot;mapId&quot;) hexid, SUBSTRING(b.name, 0, 2000)::varchar name, SUBSTRING(b.description, 0, 10000)::varchar description, MAX(v.&quot;levelAuthorName&quot;::varchar),
+                    SELECT b.&quot;mapId&quot; id, to_hex(b.&quot;mapId&quot;) hexid, SUBSTRING(b.name, 0, 2000)::varchar name, SUBSTRING(b.description, 0, 10000)::varchar description, MAX(v.&quot;levelAuthorName&quot;::varchar) &quot;levelAuthorName&quot;,
                         u.&quot;uniqueName&quot;::varchar, b.&quot;createdAt&quot;, b.uploaded, b.&quot;updatedAt&quot;, b.&quot;deletedAt&quot;, b.&quot;curatedAt&quot;, b.score, b.uploader,
                         (u.&quot;verifiedMapper&quot; OR COALESCE(bool_or(u2.&quot;verifiedMapper&quot;), FALSE)) verified, NULLIF(ARRAY_TO_STRING(b.tags, ','), '') tagstr, STRING_AGG(d.nps::varchar, ',') npsstr,
                         COUNT(DISTINCT d.difficulty) FILTER (WHERE d.characteristic = 'Standard') = 5 &quot;fullSpread&quot;, ARRAY_TO_STRING(array_merge_agg(d.suggestions), '||') suggestions,
@@ -16,7 +16,7 @@
                         WHERE b.&quot;deletedAt&quot; IS NULL GROUP BY b.&quot;mapId&quot;, u.id"
                 deltaQuery="SELECT &quot;mapId&quot; id, to_hex(&quot;mapId&quot;) hexid FROM beatmap WHERE &quot;deletedAt&quot; IS NULL AND &quot;updatedAt&quot; >= '${dataimporter.last_index_time}'"
                 deltaImportQuery="
-                    SELECT b.&quot;mapId&quot; id, to_hex(b.&quot;mapId&quot;) hexid, SUBSTRING(b.name, 0, 2000)::varchar name, SUBSTRING(b.description, 0, 10000)::varchar description, MAX(v.&quot;levelAuthorName&quot;::varchar),
+                    SELECT b.&quot;mapId&quot; id, to_hex(b.&quot;mapId&quot;) hexid, SUBSTRING(b.name, 0, 2000)::varchar name, SUBSTRING(b.description, 0, 10000)::varchar description, MAX(v.&quot;levelAuthorName&quot;::varchar) &quot;levelAuthorName&quot;,
                         u.&quot;uniqueName&quot;::varchar, b.&quot;createdAt&quot;, b.uploaded, b.&quot;updatedAt&quot;, b.&quot;deletedAt&quot;, b.&quot;curatedAt&quot;, b.score, b.uploader,
                         (u.&quot;verifiedMapper&quot; OR COALESCE(bool_or(u2.&quot;verifiedMapper&quot;), FALSE)) verified, NULLIF(ARRAY_TO_STRING(b.tags, ','), '') tagstr, STRING_AGG(d.nps::varchar, ',') npsstr,
                         COUNT(DISTINCT d.difficulty) FILTER (WHERE d.characteristic = 'Standard') = 5 &quot;fullSpread&quot;, ARRAY_TO_STRING(array_merge_agg(d.suggestions), '||') suggestions,

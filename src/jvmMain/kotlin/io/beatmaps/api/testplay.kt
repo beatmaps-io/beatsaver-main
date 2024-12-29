@@ -21,6 +21,7 @@ import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.handlePatreon
 import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.common.rb
@@ -142,7 +143,7 @@ fun PipelineContext<*, ApplicationCall>.getTestplayRecent(userId: Int, page: Lon
         .join(Versions, JoinType.INNER, Testplay.versionId, Versions.id)
         .join(Difficulty, JoinType.INNER, Versions.id, Difficulty.versionId)
         .join(Beatmap, JoinType.INNER, Versions.mapId, Beatmap.id)
-        .join(User, JoinType.INNER, Beatmap.uploader, User.id)
+        .joinUser(Beatmap.uploader, JoinType.INNER)
         .selectAll()
         .where {
             Testplay.userId eq userId
@@ -240,7 +241,7 @@ fun Route.testplayRoute(client: HttpClient) {
             valid || throw ServerApiException("Error updating map state")
 
             call.pub("beatmaps", "maps.${newState.mapId}.updated.state", null, newState.mapId)
-            call.respond(HttpStatusCode.OK)
+            call.respond(HttpStatusCode.OK, ActionResponse.success())
         }
     }
 

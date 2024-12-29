@@ -10,6 +10,7 @@ import io.ktor.server.plugins.origin
 import io.ktor.server.request.receiveMultipart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -37,11 +38,15 @@ suspend fun ApplicationCall.handleMultipart(cb: suspend (PartData.FileItem) -> U
                     verifyResponse.isSuccess || throw UploadException("Could not verify user [${verifyResponse.errorCodes.joinToString(", ")}]")
                 }
             } else {
-                dataMap[part.name.toString()] = if (part.value.startsWith("{") && part.value.endsWith("}")) {
-                    json.parseToJsonElement(part.value)
-                } else {
-                    JsonPrimitive(part.value)
-                }
+                dataMap[part.name.toString()] = try {
+                    if (part.value.startsWith("{") && part.value.endsWith("}")) {
+                        json.parseToJsonElement(part.value)
+                    } else {
+                        null
+                    }
+                } catch (e: SerializationException) {
+                    null
+                } ?: JsonPrimitive(part.value)
             }
         } else if (part is PartData.FileItem) {
             cb(part)

@@ -6,22 +6,18 @@ import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.util.textToContent
-import kotlinx.datetime.internal.JSJoda.Instant
+import kotlinx.datetime.Clock
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.RBuilder
-import react.RComponent
-import react.State
-import react.createRef
-import react.dom.article
 import react.dom.button
 import react.dom.div
 import react.dom.h3
-import react.dom.i
 import react.dom.small
 import react.dom.textarea
-import react.setState
+import react.fc
+import react.useRef
+import react.useState
 
 external interface FeedbackProps : Props {
     var hash: String
@@ -31,103 +27,78 @@ external interface FeedbackProps : Props {
     var isOwner: Boolean
 }
 
-external interface FeedbackState : State {
-    var editing: Boolean?
-    var loading: Boolean?
-    var text: String?
-    var time: String?
-}
+val feedback = fc<FeedbackProps> { props ->
+    val (editing, setEditing) = useState(false)
+    val (loading, setLoading) = useState(false)
+    val (text, setText) = useState(props.feedback)
+    val (time, setTime) = useState(props.time)
 
-class Feedback : RComponent<FeedbackProps, FeedbackState>() {
-    private val textareaRef = createRef<HTMLTextAreaElement>()
+    val textareaRef = useRef<HTMLTextAreaElement>()
 
-    override fun componentWillMount() {
-        setState {
-            text = props.feedback
-            time = props.time
-        }
-    }
-
-    override fun RBuilder.render() {
-        article("card border-primary") {
-            div("card-header icon bg-primary") {
-                i("fas fa-comments") {}
-            }
-            div("card-header") {
-                if (props.isOwner) {
-                    div("float-end") {
-                        if (state.editing == true) {
-                            button(classes = "btn btn-success m-1") {
-                                attrs.onClickFunction = {
-                                    val newText = textareaRef.current?.value ?: ""
-
-                                    setState {
-                                        loading = true
-                                    }
-
-                                    Axios.post<String>("${Config.apibase}/testplay/feedback", FeedbackUpdate(props.hash, newText), generateConfig<FeedbackUpdate, String>()).then({
-                                        setState {
-                                            text = newText
-                                            time = Instant.now().toString()
-                                            editing = false
-                                            loading = false
-                                        }
-                                    }) {
-                                        setState {
-                                            loading = false
-                                        }
-                                    }
-                                }
-                                attrs.disabled = state.loading == true
-                                +"Save"
-                            }
-                        }
-                        button(classes = "btn btn-info m-1") {
+    timelineEntry {
+        attrs.icon = "fa-comments"
+        attrs.color = "primary"
+        attrs.headerCallback = TimelineEntrySectionRenderer {
+            if (props.isOwner) {
+                div("float-end") {
+                    if (editing) {
+                        button(classes = "btn btn-success m-1") {
                             attrs.onClickFunction = {
-                                setState {
-                                    editing = state.editing != true
+                                val newText = textareaRef.current?.value ?: ""
+
+                                setLoading(true)
+
+                                Axios.post<String>("${Config.apibase}/testplay/feedback", FeedbackUpdate(props.hash, newText), generateConfig<FeedbackUpdate, String>()).then({
+                                    setText(newText)
+                                    setTime(Clock.System.now().toString())
+                                    setEditing(false)
+                                    setLoading(false)
+                                }) {
+                                    setLoading(false)
                                 }
                             }
-                            attrs.disabled = state.loading == true
-                            +(if (state.editing == true) "Cancel" else "Edit")
+                            attrs.disabled = loading
+                            +"Save"
                         }
                     }
-                }
-                h3 {
-                    if (props.isOwner) {
-                        +"Your feedback"
-                    } else {
-                        +"${props.name}'s feedback"
+                    button(classes = "btn btn-info m-1") {
+                        attrs.onClickFunction = {
+                            setEditing(!editing)
+                        }
+                        attrs.disabled = loading
+                        +(if (editing) "Cancel" else "Edit")
                     }
-                }
-                small {
-                    +props.hash
                 }
             }
-            div("card-body") {
-                if (state.editing == true) {
-                    textarea("10", classes = "form-control") {
-                        ref = textareaRef
-                        attrs.disabled = state.loading == true
-                        +(state.text ?: "")
-                    }
+            h3 {
+                if (props.isOwner) {
+                    +"Your feedback"
                 } else {
-                    textToContent(state.text ?: "")
+                    +"${props.name}'s feedback"
                 }
             }
-            div("card-footer") {
-                small {
-                    TimeAgo.default {
-                        key = state.time
-                        attrs.date = state.time ?: ""
-                    }
+            small {
+                +props.hash
+            }
+        }
+        attrs.bodyCallback = TimelineEntrySectionRenderer {
+            if (editing) {
+                textarea("10", classes = "form-control") {
+                    ref = textareaRef
+                    attrs.disabled = loading
+                    +text
+                }
+            } else {
+                textToContent(text)
+            }
+        }
+        attrs.footerCallback = TimelineEntrySectionRenderer {
+            small {
+                TimeAgo.default {
+                    key = time
+                    attrs.date = time
                 }
             }
         }
     }
 }
-
-fun RBuilder.feedback(handler: FeedbackProps.() -> Unit) =
-    child(Feedback::class) {
-        this.attrs(handler)
-    }

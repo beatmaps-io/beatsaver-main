@@ -19,12 +19,12 @@ import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinUploader
+import org.jetbrains.exposed.sql.Coalesce
 import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.NoOpConversion
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.QueryParameter
-import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
@@ -92,7 +92,7 @@ fun publishVersion(mapId: Int, hash: String, alert: Boolean?, rb: RabbitMQInstan
         Beatmap.updateReturning(
             { Beatmap.id eq mapId },
             {
-                it[uploaded] = SqlExpressionBuilder.coalesce(uploaded, NowExpression(uploaded, transactionTime = false))
+                it[uploaded] = Coalesce(uploaded, NowExpression(uploaded, transactionTime = false))
                 it[lastPublishedAt] = NowExpression(lastPublishedAt, transactionTime = false)
                 it[updatedAt] = NowExpression(updatedAt, transactionTime = false)
 
