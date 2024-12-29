@@ -16,7 +16,6 @@ import io.ktor.server.locations.post
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
-import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -24,7 +23,7 @@ fun Route.playlistCurate() {
     post<PlaylistApi.Curate> {
         requireAuthorization { _, user ->
             if (!user.isCurator()) {
-                call.respond(io.ktor.http.HttpStatusCode.BadRequest)
+                call.respond(HttpStatusCode.BadRequest)
             } else {
                 val playlistUpdate = call.receive<CuratePlaylist>()
 
@@ -36,9 +35,10 @@ fun Route.playlistCurate() {
                         {
                             if (playlistUpdate.curated) {
                                 it[curatedAt] = NowExpression(curatedAt)
-                                it[curator] = EntityID(user.userId, io.beatmaps.common.dbo.User)
+                                it[curator] = user.userId
                             } else {
                                 it[curatedAt] = null
+
                                 it[curator] = null
                             }
                             it[updatedAt] = NowExpression(updatedAt)

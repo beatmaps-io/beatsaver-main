@@ -74,7 +74,7 @@ fun ApplicationCall.checkOauthHeader(scope: OauthScope? = null) =
         } else { null }
     }
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(captcha: String, block: suspend PipelineContext<*, ApplicationCall>.() -> T, error: (suspend PipelineContext<*, ApplicationCall>.(SiteVerifyResponse) -> T)? = null) =
+suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(captcha: String?, block: suspend PipelineContext<*, ApplicationCall>.() -> T, error: (suspend PipelineContext<*, ApplicationCall>.(SiteVerifyResponse) -> T)? = null) =
     if (reCaptchaVerify == null) {
         pipelineLogger.warning("ReCAPTCHA not setup. Allowing request anyway")
         block()
