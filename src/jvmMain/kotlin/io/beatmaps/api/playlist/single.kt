@@ -37,13 +37,13 @@ import io.beatmaps.common.dbo.collaboratorAlias
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.handleCurator
-import io.beatmaps.common.dbo.handleOwner
+import io.beatmaps.common.dbo.handleUser
 import io.beatmaps.common.dbo.joinBookmarked
 import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
-import io.beatmaps.common.dbo.joinOwner
 import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUploader
+import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.solr.collections.BsSolr
 import io.beatmaps.common.solr.field.anyOf
@@ -177,7 +177,7 @@ fun Route.playlistSingle() {
         val detailPage = newSuspendedTransaction {
             val playlist = PlaylistTable
                 .joinMaps()
-                .joinOwner()
+                .joinUser(PlaylistTable.owner)
                 .joinPlaylistCurator()
                 .select(PlaylistTable.columns + User.columns + curatorAlias.columns + PlaylistTable.Stats.all)
                 .where {
@@ -190,7 +190,7 @@ fun Route.playlistSingle() {
                     }
                 }
                 .groupBy(PlaylistTable.id, User.id, curatorAlias[User.id])
-                .handleOwner()
+                .handleUser()
                 .handleCurator()
                 .firstOrNull()?.let {
                     PlaylistFull.from(it, cdnPrefix)
@@ -263,12 +263,12 @@ fun Route.playlistSingle() {
             fun getPlaylist() =
                 PlaylistTable
                     .joinPlaylistCurator()
-                    .joinOwner()
+                    .joinUser(PlaylistTable.owner)
                     .selectAll()
                     .where {
                         (PlaylistTable.id eq req.id) and PlaylistTable.deletedAt.isNull()
                     }
-                    .handleOwner()
+                    .handleUser()
                     .handleCurator()
                     .firstOrNull()?.let {
                         PlaylistFull.from(it, cdnPrefix())

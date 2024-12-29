@@ -9,6 +9,7 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization
@@ -124,7 +125,7 @@ fun Route.alertsRoute() {
                 .join(Alert, JoinType.LEFT, u[AlertRecipient.alertId], Alert.id) { u[s1] eq intLiteral(1) }
                 .join(Collaboration, JoinType.LEFT, u[AlertRecipient.alertId], Collaboration.id) { u[s1] eq intLiteral(0) }
                 .join(Beatmap, JoinType.LEFT, Beatmap.id, Collaboration.mapId)
-                .join(User, JoinType.LEFT, User.id, Beatmap.uploader)
+                .joinUser(Beatmap.uploader, JoinType.LEFT)
                 .selectAll()
                 .orderBy(u[Alert.sentAt] to SortOrder.DESC)
                 .limit(page)

@@ -24,9 +24,9 @@ import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.handleCurator
-import io.beatmaps.common.dbo.handleOwner
-import io.beatmaps.common.dbo.joinOwner
+import io.beatmaps.common.dbo.handleUser
 import io.beatmaps.common.dbo.joinPlaylistCurator
+import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.solr.collections.PlaylistSolr
 import io.beatmaps.common.solr.field.apply
 import io.beatmaps.common.solr.getIds
@@ -63,7 +63,7 @@ fun Route.playlistSearch() {
                 Playlist
                     .joinMaps()
                     .joinPlaylistCurator()
-                    .joinOwner()
+                    .joinUser(Playlist.owner)
                     .select(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all)
                     .where {
                         Playlist.id.inSubQuery(
@@ -82,7 +82,7 @@ fun Route.playlistSearch() {
                         )
                     }
                     .groupBy(Playlist.id, User.id, curatorAlias[User.id])
-                    .handleOwner()
+                    .handleUser()
                     .handleCurator()
                     .sortedByDescending { row -> row[sortField] }
                     .map { playlist ->
@@ -129,7 +129,7 @@ fun Route.playlistSearch() {
 
             val playlists = Playlist
                 .joinMaps()
-                .joinOwner()
+                .joinUser(Playlist.owner)
                 .joinPlaylistCurator()
                 .select(
                     Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all
@@ -139,7 +139,7 @@ fun Route.playlistSearch() {
                 }
                 .groupBy(Playlist.id, User.id, curatorAlias[User.id])
                 .handleCurator()
-                .handleOwner()
+                .handleUser()
                 .map { playlist ->
                     PlaylistFull.from(playlist, cdnPrefix())
                 }
@@ -161,7 +161,7 @@ fun Route.playlistSearch() {
         newSuspendedTransaction {
             val playlists = Playlist
                 .joinMaps()
-                .joinOwner()
+                .joinUser(Playlist.owner)
                 .joinPlaylistCurator()
                 .select(
                     Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all
@@ -169,7 +169,7 @@ fun Route.playlistSearch() {
                 .where {
                     Playlist.id.inSubQuery(
                         Playlist
-                            .joinOwner()
+                            .joinUser(Playlist.owner)
                             .select(Playlist.id)
                             .where {
                                 (Playlist.deletedAt.isNull() and (Playlist.type inList EPlaylistType.publicTypes))
@@ -194,7 +194,7 @@ fun Route.playlistSearch() {
                 .groupBy(Playlist.id, User.id, curatorAlias[User.id])
                 .orderBy(*sortArgs)
                 .handleCurator()
-                .handleOwner()
+                .handleUser()
                 .map { playlist ->
                     PlaylistFull.from(playlist, cdnPrefix())
                 }
@@ -233,7 +233,7 @@ fun Route.playlistSearch() {
                             Playlist.createdAt to SortOrder.DESC
                         )
                         .groupBy(*groupBy)
-                        .handleOwner()
+                        .handleUser()
                         .handleCurator()
                         .map(block)
                 }
@@ -248,7 +248,7 @@ fun Route.playlistSearch() {
                 val page = doQuery(
                     Playlist
                         .joinMaps()
-                        .joinOwner()
+                        .joinUser(Playlist.owner)
                         .joinPlaylistCurator()
                         .select(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all),
                     arrayOf(Playlist.id, User.id, curatorAlias[User.id])
@@ -288,7 +288,7 @@ fun Route.playlistSearch() {
                             Playlist.createdAt to SortOrder.DESC
                         )
                         .groupBy(*groupBy)
-                        .handleOwner()
+                        .handleUser()
                         .handleCurator()
                         .map(block)
                 }
@@ -303,7 +303,7 @@ fun Route.playlistSearch() {
                 val page = doQuery(
                     Playlist
                         .joinMaps()
-                        .joinOwner()
+                        .joinUser(Playlist.owner)
                         .joinPlaylistCurator()
                         .select(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all),
                     arrayOf(Playlist.id, User.id, curatorAlias[User.id])

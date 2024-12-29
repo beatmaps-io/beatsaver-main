@@ -14,6 +14,7 @@ import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.SessionInfo
 import io.beatmaps.api.SessionRevokeRequest
 import io.beatmaps.api.SessionsData
+import io.beatmaps.api.UserConstants
 import io.beatmaps.api.UserDetail
 import io.beatmaps.modreview.editableText
 import io.beatmaps.shared.form.errors
@@ -170,7 +171,7 @@ val accountTab = fc<AccountComponentProps> { props ->
                 attrs.justify = "stretch"
                 attrs.text = props.userDetail.description ?: ""
                 attrs.buttonText = "Change description"
-                attrs.maxLength = 500
+                attrs.maxLength = UserConstants.MAX_DESCRIPTION_LENGTH
                 attrs.saveText = { newDescription ->
                     if (props.userDetail.description != newDescription) {
                         Axios.post<ActionResponse>(

@@ -5,6 +5,8 @@ import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.common.json
 import io.beatmaps.index.homePage
+import io.beatmaps.issues.issueList
+import io.beatmaps.issues.issuesPage
 import io.beatmaps.maps.mapEmbed
 import io.beatmaps.maps.mapPage
 import io.beatmaps.maps.recent.recentTestplays
@@ -172,6 +174,12 @@ val appRouter = createBrowserRouter(
         },
         bsroute("/quest") {
             quest { }
+        },
+        bsroute("/issues") {
+            issueList { }
+        },
+        bsroute("/issues/:id") {
+            issuesPage { }
         },
         bsroute("*") {
             notFound { }

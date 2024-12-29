@@ -9,6 +9,7 @@ import io.beatmaps.common.dbo.ModLogDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.curatorAlias
+import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.util.requireAuthorization
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -45,7 +46,7 @@ fun Route.modLogRoute() {
                 val entries = transaction {
                     ModLog
                         .join(curatorAlias, JoinType.LEFT, ModLog.opBy, curatorAlias[User.id])
-                        .join(User, JoinType.LEFT, ModLog.targetUser, User.id)
+                        .joinUser(ModLog.targetUser)
                         .join(Beatmap, JoinType.LEFT, ModLog.opOn, Beatmap.id)
                         .selectAll()
                         .where {

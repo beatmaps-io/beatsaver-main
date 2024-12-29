@@ -14,9 +14,8 @@ import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.modalContext
 import io.beatmaps.shared.form.errors
+import io.beatmaps.shared.form.toggle
 import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
@@ -28,7 +27,6 @@ import react.dom.button
 import react.dom.div
 import react.dom.h5
 import react.dom.hr
-import react.dom.input
 import react.dom.jsStyle
 import react.dom.label
 import react.dom.option
@@ -133,57 +131,41 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
                 }
                 ref = maxUploadRef
             }
-            div("form-check form-switch mb-3 mt-3") {
+            toggle {
                 key = "curator"
-                input(InputType.checkBox, classes = "form-check-input") {
-                    attrs.id = "curator"
-                    attrs.disabled = loading
-                    ref = curatorRef
-                    attrs.onChangeFunction = {
-                        setCurator(curatorRef.current?.checked ?: false)
-                        seniorCuratorRef.current?.apply { checked = checked && curatorRef.current?.checked ?: false }
-                    }
+                ref = curatorRef
+                attrs.id = "curator"
+                attrs.disabled = loading
+                attrs.block = {
+                    setCurator(it)
+                    seniorCuratorRef.current?.apply { checked = checked && it }
                 }
-                label("form-check-label") {
-                    attrs.reactFor = "curator"
-                    +"Curator"
-                }
+                attrs.className = "mb-3 mt-3"
+                attrs.text = "Curator"
             }
-            div("form-check form-switch mb-3 mt-3") {
+            toggle {
                 key = "senior-curator"
-                input(InputType.checkBox, classes = "form-check-input") {
-                    attrs.id = "senior-curator"
-                    attrs.disabled = loading || !curator
-                    ref = seniorCuratorRef
-                }
-                label("form-check-label") {
-                    attrs.reactFor = "senior-curator"
-                    +"Senior Curator"
-                }
+                ref = seniorCuratorRef
+                attrs.id = "senior-curator"
+                attrs.disabled = loading || !curator
+                attrs.className = "mb-3 mt-3"
+                attrs.text = "Senior Curator"
             }
-            div("form-check form-switch mb-3 mt-3") {
+            toggle {
                 key = "curator-tab"
-                input(InputType.checkBox, classes = "form-check-input") {
-                    attrs.id = "curator-tab"
-                    attrs.disabled = loading
-                    ref = curatorTabRef
-                }
-                label("form-check-label") {
-                    attrs.reactFor = "curator-tab"
-                    +"Curator tab"
-                }
+                ref = curatorTabRef
+                attrs.id = "curator-tab"
+                attrs.disabled = loading
+                attrs.className = "mb-3 mt-3"
+                attrs.text = "Curator tab"
             }
-            div("form-check form-switch mb-3 mt-3") {
+            toggle {
                 key = "verifiedMapper"
-                input(InputType.checkBox, classes = "form-check-input") {
-                    attrs.id = "verifiedMapper"
-                    attrs.disabled = loading
-                    ref = verifiedMapperRef
-                }
-                label("form-check-label") {
-                    attrs.reactFor = "verifiedMapper"
-                    +"Verified Mapper"
-                }
+                ref = verifiedMapperRef
+                attrs.id = "verifiedMapper"
+                attrs.disabled = loading
+                attrs.className = "mb-3 mt-3"
+                attrs.text = "Verified Mapper"
             }
             errors {
                 attrs.errors = errors

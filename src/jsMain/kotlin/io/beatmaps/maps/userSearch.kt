@@ -21,6 +21,7 @@ import react.dom.span
 import react.fc
 import react.useRef
 import react.useState
+import kotlin.js.Promise
 
 external interface UserSearchProps : Props {
     var callback: ((UserDetail) -> Unit)?
@@ -31,6 +32,7 @@ external interface UserSearchProps : Props {
 
 val userSearch = fc<UserSearchProps> { props ->
     val (foundUsers, setFoundUsers) = useState<List<UserDetail>?>(null)
+    val (loading, setLoading) = useState(false)
     val inputRef = useRef<HTMLInputElement>()
 
     form("", classes = "search") {
@@ -42,14 +44,23 @@ val userSearch = fc<UserSearchProps> { props ->
         }
 
         button(type = ButtonType.submit, classes = "btn btn-primary") {
+            attrs.disabled = loading
             attrs.onClickFunction = {
                 it.preventDefault()
-                inputRef.current?.value?.ifBlank { null }?.let { q ->
+                setLoading(true)
+                val q = inputRef.current?.value
+
+                if (q.isNullOrBlank()) {
+                    setFoundUsers(listOf())
+                    Promise.resolve(null)
+                } else {
                     Axios.get<UserSearchResponse>(
                         "${Config.apibase}/users/search/0?q=$q",
                         generateConfig<String, UserSearchResponse>()
                     ).then { res -> setFoundUsers(res.data.docs) }
-                } ?: setFoundUsers(listOf())
+                }.finally {
+                    setLoading(false)
+                }
             }
             +"Search"
         }

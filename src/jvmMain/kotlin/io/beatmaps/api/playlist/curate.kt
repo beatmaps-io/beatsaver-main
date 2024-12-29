@@ -38,7 +38,6 @@ fun Route.playlistCurate() {
                                 it[curator] = user.userId
                             } else {
                                 it[curatedAt] = null
-
                                 it[curator] = null
                             }
                             it[updatedAt] = NowExpression(updatedAt)

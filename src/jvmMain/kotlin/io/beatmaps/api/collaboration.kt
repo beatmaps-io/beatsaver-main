@@ -19,6 +19,7 @@ import io.beatmaps.common.pub
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.isUploader
 import io.beatmaps.util.requireAuthorization
+import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -153,6 +154,7 @@ fun Route.collaborationRoute() {
                                 EAlertType.MapRelease,
                                 recipients
                             )
+                            updateAlertCount(recipients)
                         }
                         Pair(true, map)
                     } else {

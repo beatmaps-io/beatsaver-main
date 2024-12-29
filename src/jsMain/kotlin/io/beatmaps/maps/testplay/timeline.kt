@@ -119,8 +119,8 @@ val timeline = fc<TimelineProps> { props ->
             }
         } else if (!givenFeedback && latestVersion != null) {
             newFeedback {
-                hash = latestVersion.hash
-                captcha = captchaRef
+                attrs.hash = latestVersion.hash
+                attrs.captcha = captchaRef
             }
         }
 
@@ -148,11 +148,11 @@ val timeline = fc<TimelineProps> { props ->
                 }
                 EventType.Feedback ->
                     feedback {
-                        hash = it.hash
-                        isOwner = it.userId != null && it.userId == loggedInId
-                        feedback = it.body
-                        name = it.title
-                        time = it.time.toString()
+                        attrs.hash = it.hash
+                        attrs.isOwner = it.userId != null && it.userId == loggedInId
+                        attrs.feedback = it.body
+                        attrs.name = it.title
+                        attrs.time = it.time.toString()
                     }
                 EventType.Play -> {
                     article("card card-outline") {

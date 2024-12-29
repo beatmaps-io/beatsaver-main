@@ -1,13 +1,16 @@
 package io.beatmaps.maps
 
 import external.Axios
-import external.AxiosResponse
+import external.IReCAPTCHA
 import external.generateConfig
+import external.recaptcha
 import io.beatmaps.Config
+import io.beatmaps.History
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.AiDeclaration
 import io.beatmaps.api.BookmarkRequest
 import io.beatmaps.api.CurateMap
+import io.beatmaps.api.IssueCreationRequest
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.SimpleMapInfoUpdate
@@ -15,7 +18,7 @@ import io.beatmaps.api.StateUpdate
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.MapAttr
-import io.beatmaps.common.json
+import io.beatmaps.common.api.MapReportData
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalData
@@ -50,6 +53,7 @@ import react.dom.p
 import react.dom.span
 import react.dom.textarea
 import react.fc
+import react.router.useNavigate
 import react.useContext
 import react.useEffect
 import react.useRef
@@ -68,6 +72,7 @@ val mapInfo = fc<MapInfoProps> { props ->
     val textareaRef = useRef<HTMLTextAreaElement>()
     val reasonRef = useRef<HTMLTextAreaElement>()
     val audio = useAudio()
+    val history = History(useNavigate())
 
     val (tags, setTags) = useState(props.mapInfo.tags.toSet())
     val (loading, setLoading) = useState(false)
@@ -91,21 +96,20 @@ val mapInfo = fc<MapInfoProps> { props ->
     val isCollaboratorLocal = props.mapInfo.collaborators?.let { loggedInId in it.map { collaborator -> collaborator.id } } == true
 
     val modal = useContext(modalContext)
+    val captchaRef = useRef<IReCAPTCHA>()
 
-    @Suppress("UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
     fun recall() {
         setLoading(true)
 
         props.mapInfo.publishedVersion()?.hash?.let { hash ->
-            Axios.post<String>("${Config.apibase}/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.intId(), reasonRef.current?.value), generateConfig<StateUpdate, String>())
+            Axios.post<ActionResponse>("${Config.apibase}/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.intId(), reasonRef.current?.value), generateConfig<StateUpdate, ActionResponse>(validStatus = arrayOf(200, 400)))
                 .then({
-                    props.reloadMap()
-                }) {
-                    val response = it.asDynamic().response as? AxiosResponse<String>
-                    if (response?.status == 400) {
-                        setErrors(json.decodeFromString<ActionResponse>(response.data).errors)
+                    if (it.data.success) {
+                        props.reloadMap()
+                    } else {
+                        setErrors(it.data.errors)
                     }
-
+                }) {
                     setLoading(false)
                 }
         }
@@ -151,6 +155,24 @@ val mapInfo = fc<MapInfoProps> { props ->
         }
     }
 
+    fun report() {
+        captchaRef.current?.let { cc ->
+            setLoading(true)
+            cc.executeAsync().then { captcha ->
+                val reason = reasonRef.current?.value?.trim() ?: ""
+                Axios.post<String>(
+                    "${Config.apibase}/issues/create",
+                    IssueCreationRequest(captcha, reason, MapReportData(props.mapInfo.id)),
+                    generateConfig<IssueCreationRequest, String>()
+                ).then {
+                    history.push("/issues/${it.data}")
+                }
+            }.finally {
+                setLoading(false)
+            }
+        }
+    }
+
     val deleted = props.mapInfo.deletedAt != null
 
     if (props.mapInfo.let { it.declaredAi == AiDeclarationType.SageScore && userData?.userId == it.uploader.id }) {
@@ -189,7 +211,7 @@ val mapInfo = fc<MapInfoProps> { props ->
             } else {
                 +props.mapInfo.name
             }
-            div("ms-auto flex-shrink-0") {
+            div("ms-auto link-buttons flex-shrink-0") {
                 if (!deleted) {
                     props.mapInfo.mainVersion()?.let { version ->
                         div("thin-dd" + if (dropdown) " show" else "") {
@@ -229,9 +251,9 @@ val mapInfo = fc<MapInfoProps> { props ->
                                     attrs.version = version
                                 }
 
-                                if (userData?.curator == true || isOwnerLocal) {
-                                    div("dropdown-divider") {}
+                                div("dropdown-divider") {}
 
+                                if (userData?.curator == true || isOwnerLocal) {
                                     a("#") {
                                         attrs.title = "Edit"
                                         attrs.attributes["aria-label"] = "Edit"
@@ -350,6 +372,34 @@ val mapInfo = fc<MapInfoProps> { props ->
                                         }
                                         span("dd-text") { +"Delete" }
                                         i("fas fa-trash text-danger-light") { }
+                                    }
+                                } else {
+                                    a("#") {
+                                        attrs.title = "Report"
+                                        attrs.attributes["aria-label"] = "Report"
+                                        attrs.onClickFunction = {
+                                            it.preventDefault()
+                                            modal?.current?.showDialog(
+                                                ModalData(
+                                                    "Report map",
+                                                    bodyCallback = {
+                                                        p {
+                                                            +"Why are you reporting this content? Please give as much detail as possible why you feel this map violates our TOS:"
+                                                        }
+                                                        textarea(classes = "form-control") {
+                                                            ref = reasonRef
+                                                        }
+                                                        recaptcha(captchaRef)
+                                                    },
+                                                    buttons = listOf(
+                                                        ModalButton("Report", "danger", ::report),
+                                                        ModalButton("Cancel")
+                                                    )
+                                                )
+                                            )
+                                        }
+                                        span("dd-text") { +"Report" }
+                                        i("fas fa-flag text-danger-light") { }
                                     }
                                 }
                             }

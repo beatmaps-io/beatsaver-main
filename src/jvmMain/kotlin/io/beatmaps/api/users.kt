@@ -49,6 +49,7 @@ import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.handlePatreon
 import io.beatmaps.common.dbo.joinPatreon
+import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.pub
 import io.beatmaps.common.sendEmail
@@ -131,6 +132,7 @@ import org.litote.kmongo.descending
 import org.litote.kmongo.div
 import org.litote.kmongo.eq
 import org.litote.kmongo.ne
+import org.litote.kmongo.setValue
 import java.lang.Integer.toHexString
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -311,7 +313,7 @@ fun Route.userRoute(client: HttpClient) {
             val success = transaction {
                 try {
                     User.update({ User.id eq sess.userId }) { u ->
-                        u[description] = req.textContent.take(500)
+                        u[description] = req.textContent.take(UserConstants.MAX_DESCRIPTION_LENGTH)
                         u[updatedAt] = NowExpression(updatedAt)
                     } > 0
                 } catch (e: ExposedSQLException) {
@@ -357,6 +359,13 @@ fun Route.userRoute(client: HttpClient) {
                         }
                     }.let { success ->
                         if (success) {
+                            if (MongoClient.connected) {
+                                MongoClient.sessions.updateMany(
+                                    MongoSession::session / Session::userId eq req.userId,
+                                    setValue(MongoSession::session / Session::curator, req.curator)
+                                )
+                            }
+
                             call.pub("beatmaps", "user.${req.userId}.updated.admin", null, req.userId)
                             ActionResponse.success()
                         } else {
@@ -411,6 +420,13 @@ fun Route.userRoute(client: HttpClient) {
                     }
                 }.let { success ->
                     if (success) {
+                        if (MongoClient.connected) {
+                            MongoClient.sessions.updateMany(
+                                MongoSession::session / Session::userId eq req.userId,
+                                setValue(MongoSession::session / Session::suspended, req.suspended)
+                            )
+                        }
+
                         ActionResponse.success()
                     } else {
                         ActionResponse.error("User not found")
@@ -1220,7 +1236,7 @@ fun Route.userRoute(client: HttpClient) {
             .alias("fs")
 
         followsSubquery
-            .join(User, JoinType.LEFT, followsSubquery[joinOn], User.id)
+            .joinUser(followsSubquery[joinOn])
             .joinPatreon()
             .join(Beatmap, JoinType.LEFT, User.id, Beatmap.uploader) {
                 Beatmap.deletedAt.isNull()

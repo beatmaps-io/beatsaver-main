@@ -27,6 +27,13 @@ object InstantAsStringSerializer : KSerializer<Instant> {
     override fun deserialize(decoder: Decoder): Instant = Instant.parse(decoder.decodeString())
 }
 
+class MapConstants {
+    companion object {
+        const val MAX_NAME_LENGTH = 1000
+        const val MAX_DESCRIPTION_LENGTH = 10000
+    }
+}
+
 @Serializable
 data class MapDetail(
     val id: String,

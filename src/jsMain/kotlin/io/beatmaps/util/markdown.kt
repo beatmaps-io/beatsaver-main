@@ -25,6 +25,11 @@ fun String.parseMapReference() =
         """${it.groupValues[1]}<a data-bs="local" href="/maps/${it.groupValues[2].lowercase()}">#${it.groupValues[2]}</a>${it.groupValues[3]}"""
     }
 
+fun String.parseIssueReference() =
+    replace("(^|\\s)\\{([\\da-f]+?)\\}($|[^\\da-z])".toRegex(setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))) {
+        """${it.groupValues[1]}<a data-bs="local" href="/issues/${it.groupValues[2].lowercase()}">{${it.groupValues[2]}}</a>${it.groupValues[3]}"""
+    }
+
 fun String.parseUserReference() =
     replace("(^|\\s)@([\\w.-]+?)($|[^\\w.-])".toRegex(setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE))) {
         """${it.groupValues[1]}<a href="/profile/username/${it.groupValues[2].lowercase()}">@${it.groupValues[2]}</a>${it.groupValues[3]}"""
@@ -55,6 +60,7 @@ fun <T : Tag> RDOMBuilder<T>.textToContent(text: String) {
             .parseItalicMarkdown()
             .parseMapReference()
             .parseUserReference()
+            .parseIssueReference()
             .transformURLIntoLinks()
             .parseSocialLinks()
             .replace(Regex("\n{3,}"), "\n\n")

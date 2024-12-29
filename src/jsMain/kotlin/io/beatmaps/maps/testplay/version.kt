@@ -5,6 +5,7 @@ import external.Moment
 import external.TimeAgo
 import external.generateConfig
 import io.beatmaps.Config
+import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.StateUpdate
@@ -18,7 +19,6 @@ import kotlinx.datetime.Instant
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.dom.article
 import react.dom.button
 import react.dom.div
 import react.dom.h3
@@ -65,7 +65,7 @@ val version = fc<VersionProps> { props ->
     val mapState = { nextState: EMapState ->
         setLoadingState(true)
 
-        Axios.post<String>("${Config.apibase}/testplay/state", StateUpdate(props.hash, nextState, props.mapId, scheduleAt = scheduleAt.current, alert = alert.current), generateConfig<StateUpdate, String>()).then({
+        Axios.post<ActionResponse>("${Config.apibase}/testplay/state", StateUpdate(props.hash, nextState, props.mapId, scheduleAt = scheduleAt.current, alert = alert.current), generateConfig<StateUpdate, ActionResponse>()).then({
             if (nextState == EMapState.Published) {
                 if (scheduleAt.current == null) {
                     props.reloadMap()
@@ -87,11 +87,10 @@ val version = fc<VersionProps> { props ->
 
     val shouldDisable = loading || loadingState
 
-    article("card border-danger") {
-        div("card-header icon bg-danger") {
-            i("fas fa-upload") {}
-        }
-        div("card-header") {
+    timelineEntry {
+        attrs.icon = "fa-upload"
+        attrs.color = "danger"
+        attrs.headerCallback = TimelineEntrySectionRenderer {
             if (props.isOwner) {
                 div("float-end") {
                     if (props.firstVersion && textareaRef.current != null) {
@@ -183,7 +182,7 @@ val version = fc<VersionProps> { props ->
                 +props.hash
             }
         }
-        div("card-body") {
+        attrs.bodyCallback = TimelineEntrySectionRenderer {
             if (props.isOwner) {
                 val anyErrors = props.diffs?.any {
                     (it.paritySummary.errors / it.notes.toFloat()) > 0.1
@@ -244,7 +243,7 @@ val version = fc<VersionProps> { props ->
                 }
             }
         }
-        div("card-footer") {
+        attrs.footerCallback = TimelineEntrySectionRenderer {
             small {
                 TimeAgo.default {
                     attrs.date = time

@@ -756,7 +756,7 @@ table.search-results {
   }
 }
 .mapinfo {
-  & > img {
+  > img {
     width: 200px;
     float: left;
   }
@@ -779,7 +779,10 @@ table.modreview {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
-.card-header, .action-cell {
+.link-buttons {
+  > i {
+    padding: 0 10px;
+  }
   a {
     padding: 14px 10px;
 
@@ -929,7 +932,7 @@ th a {
     border-radius: 50%;
   }
 
-  & > form {
+  > form {
     display: flex;
     gap: 0.5rem;
   }
@@ -1637,6 +1640,7 @@ small.alert-count {
     td {
       padding: 0;
       height: auto;
+      border-width: 0;
 
       > div {
         overflow: hidden;

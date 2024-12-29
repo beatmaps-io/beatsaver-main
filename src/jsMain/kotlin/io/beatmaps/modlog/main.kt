@@ -172,7 +172,7 @@ val modlog = fc<Props> {
 
                 child(ModLogInfiniteScroll::class) {
                     attrs.resultsKey = resultsKey
-                    attrs.rowHeight = 48.5
+                    attrs.rowHeight = 48.0
                     attrs.itemsPerPage = 30
                     attrs.container = resultsTable
                     attrs.loadPage = loadPage
