@@ -26,7 +26,7 @@ val reviewer = fc<ReviewerProps> { props ->
         }
         props.map?.let { map ->
             +" on "
-            routeLink("/maps/${map.id}") {
+            routeLink(map.link()) {
                 +map.name
             }
         }

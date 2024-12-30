@@ -64,6 +64,7 @@ data class MapDetail(
     fun latestVersion() = versions.maxByOrNull { it.createdAt }
     fun publishedVersion() = versions.firstOrNull { it.state == EMapState.Published }
     fun mainVersion() = publishedVersion() ?: latestVersion()
+    fun link(absolute: Boolean = false) = LinkHelper.mapLink(this, absolute)
     companion object
 }
 

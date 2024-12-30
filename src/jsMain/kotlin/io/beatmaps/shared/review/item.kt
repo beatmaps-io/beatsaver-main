@@ -6,16 +6,20 @@ import external.axiosDelete
 import external.axiosGet
 import external.generateConfig
 import external.reactFor
+import external.recaptcha
 import io.beatmaps.Config
+import io.beatmaps.History
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.CurateReview
 import io.beatmaps.api.DeleteReview
+import io.beatmaps.api.IssueCreationRequest
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.PutReview
 import io.beatmaps.api.ReplyRequest
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewReplyDetail
+import io.beatmaps.common.api.ReviewReportData
 import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
@@ -33,6 +37,7 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
+import react.MutableRefObject
 import react.Props
 import react.RBuilder
 import react.RefObject
@@ -54,6 +59,7 @@ external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
     var modal: RefObject<ModalComponent>?
     var captcha: RefObject<IReCAPTCHA>?
     var setExistingReview: ((Boolean) -> Unit)?
+    var history: History?
 }
 external interface ReviewItemState : AutoSizeComponentState {
     var featured: Boolean?
@@ -85,6 +91,7 @@ val sentimentIcon = fc<SentimentIconProps> {
 
 class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemState>(2) {
     private val reasonRef = createRef<HTMLTextAreaElement>()
+    private val captchaRef = createRef<IReCAPTCHA>().unsafeCast<MutableRefObject<IReCAPTCHA>>()
 
     override fun componentWillReceiveProps(nextProps: ReviewItemProps) {
         state.replies = nextProps.obj?.replies
@@ -116,6 +123,28 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
         }) { }
     }
 
+    private fun report(reviewId: Int) {
+        captchaRef.current?.let { cc ->
+            setState {
+                loading = true
+            }
+            cc.executeAsync().then { captcha ->
+                val reason = reasonRef.current?.value?.trim() ?: ""
+                Axios.post<String>(
+                    "${Config.apibase}/issues/create",
+                    IssueCreationRequest(captcha, reason, ReviewReportData(reviewId)),
+                    generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
+                ).then {
+                    props.history?.push("/issues/${it.data}")
+                }
+            }.finally {
+                setState {
+                    loading = false
+                }
+            }
+        }
+    }
+
     override fun RBuilder.render() {
         props.obj?.let { rv ->
             val featLocal = state.featured ?: (rv.curatedAt != null)
@@ -140,10 +169,9 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                             if (featLocal) span("badge badge-success") { +"Featured" }
 
                             globalContext.Consumer { userData ->
-                                // Show tools if commenter or curator
-                                if (userData != null && !userData.suspended && (props.userId == userData.userId || userData.curator)) {
+                                if (userData != null) {
                                     div("options") {
-                                        // Admin gets to feature and delete
+                                        // Curator/Admin gets to feature and delete
                                         if (userData.curator) {
                                             div("form-check form-switch d-inline-block") {
                                                 input(InputType.checkBox, classes = "form-check-input") {
@@ -160,46 +188,78 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                                 }
                                             }
                                         }
-                                        a("#") {
-                                            attrs.title = "Edit"
-                                            attrs.attributes["aria-label"] = "Edit"
-                                            attrs.onClickFunction = {
-                                                it.preventDefault()
-                                                setState {
-                                                    editing = editing != true
+                                        if (!userData.suspended && !userData.curator && props.userId != userData.userId) {
+                                            a("#") {
+                                                attrs.title = "Report"
+                                                attrs.attributes["aria-label"] = "Report"
+                                                attrs.onClickFunction = {
+                                                    it.preventDefault()
+                                                    if (state.loading != true) {
+                                                        props.modal?.current?.showDialog(
+                                                            ModalData(
+                                                                "Report review",
+                                                                bodyCallback = {
+                                                                    p {
+                                                                        +"Why are you reporting this content? Please give as much detail as possible why you feel this review has violated our TOS:"
+                                                                    }
+                                                                    textarea(classes = "form-control") {
+                                                                        ref = reasonRef
+                                                                    }
+                                                                    recaptcha(captchaRef)
+                                                                },
+                                                                buttons = listOf(
+                                                                    ModalButton("Report", "danger") { report(rv.id) },
+                                                                    ModalButton("Cancel")
+                                                                )
+                                                            )
+                                                        )
+                                                    }
                                                 }
+                                                i("fas fa-flag text-danger") { }
                                             }
-                                            i("fas fa-pen text-warning") { }
                                         }
-                                        a("#") {
-                                            attrs.title = "Delete"
-                                            attrs.attributes["aria-label"] = "Delete"
-                                            attrs.onClickFunction = {
-                                                it.preventDefault()
-                                                props.modal?.current?.showDialog(
-                                                    ModalData(
-                                                        "Delete review",
-                                                        bodyCallback = {
-                                                            p {
-                                                                +"Are you sure? This action cannot be reversed."
-                                                            }
-                                                            if (props.userId != userData.userId) {
+                                        if (!userData.suspended && (props.userId == userData.userId || userData.curator)) {
+                                            a("#") {
+                                                attrs.title = "Edit"
+                                                attrs.attributes["aria-label"] = "Edit"
+                                                attrs.onClickFunction = {
+                                                    it.preventDefault()
+                                                    setState {
+                                                        editing = editing != true
+                                                    }
+                                                }
+                                                i("fas fa-pen text-warning") { }
+                                            }
+                                            a("#") {
+                                                attrs.title = "Delete"
+                                                attrs.attributes["aria-label"] = "Delete"
+                                                attrs.onClickFunction = {
+                                                    it.preventDefault()
+                                                    props.modal?.current?.showDialog(
+                                                        ModalData(
+                                                            "Delete review",
+                                                            bodyCallback = {
                                                                 p {
-                                                                    +"Reason for action:"
+                                                                    +"Are you sure? This action cannot be reversed."
                                                                 }
-                                                                textarea(classes = "form-control") {
-                                                                    ref = reasonRef
+                                                                if (props.userId != userData.userId) {
+                                                                    p {
+                                                                        +"Reason for action:"
+                                                                    }
+                                                                    textarea(classes = "form-control") {
+                                                                        ref = reasonRef
+                                                                    }
                                                                 }
-                                                            }
-                                                        },
-                                                        buttons = listOf(
-                                                            ModalButton("YES, DELETE", "danger") { delete(userData.userId == props.userId) },
-                                                            ModalButton("Cancel")
+                                                            },
+                                                            buttons = listOf(
+                                                                ModalButton("YES, DELETE", "danger") { delete(userData.userId == props.userId) },
+                                                                ModalButton("Cancel")
+                                                            )
                                                         )
                                                     )
-                                                )
+                                                }
+                                                i("fas fa-trash text-danger-light") { }
                                             }
-                                            i("fas fa-trash text-danger-light") { }
                                         }
                                     }
                                 }

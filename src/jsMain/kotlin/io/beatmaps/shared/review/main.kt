@@ -6,6 +6,7 @@ import external.IReCAPTCHA
 import external.generateConfig
 import external.recaptcha
 import io.beatmaps.Config
+import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewsResponse
@@ -19,6 +20,7 @@ import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
 import react.fc
+import react.router.useNavigate
 import react.useContext
 import react.useRef
 import react.useState
@@ -37,6 +39,7 @@ val reviewTable = fc<ReviewTableProps> { props ->
 
     val resultsTable = useRef<HTMLElement>()
     val modal = useContext(modalContext)
+    val history = History(useNavigate())
 
     val captchaRef = useRef<IReCAPTCHA>()
 
@@ -99,10 +102,11 @@ val reviewTable = fc<ReviewTableProps> { props ->
                         userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
                         map = props.map ?: rv?.map
                         this.modal = modal
-                        this.captcha = captchaRef
+                        captcha = captchaRef
                         this.setExistingReview = { nv ->
                             setExistingReview(nv)
                         }
+                        this.history = history
                     }
                 }
                 attrs.loadPage = loadPage

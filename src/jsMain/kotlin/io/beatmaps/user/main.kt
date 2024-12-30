@@ -1,17 +1,21 @@
 package io.beatmaps.user
 
 import external.Axios
+import external.IReCAPTCHA
 import external.axiosGet
 import external.generateConfig
+import external.recaptcha
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.UserData
+import io.beatmaps.api.IssueCreationRequest
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserFollowData
 import io.beatmaps.api.UserFollowRequest
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
+import io.beatmaps.common.api.UserReportData
 import io.beatmaps.common.json
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
@@ -36,6 +40,7 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.html.role
 import kotlinx.html.title
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.get
 import org.w3c.dom.set
@@ -57,6 +62,7 @@ import react.dom.span
 import react.dom.table
 import react.dom.tbody
 import react.dom.td
+import react.dom.textarea
 import react.dom.th
 import react.dom.thead
 import react.dom.tr
@@ -84,6 +90,8 @@ enum class ProfileTab(val tabText: String, val condition: (UserData?, TabContext
 }
 
 val profilePage = fc<Props> { _ ->
+    val captchaRef = useRef<IReCAPTCHA>()
+    val reasonRef = useRef<HTMLTextAreaElement>()
     val modalRef = useRef<ModalComponent>()
     val userData = useContext(globalContext)
 
@@ -185,6 +193,24 @@ val profilePage = fc<Props> { _ ->
                 )
             )
         }) { }
+    }
+
+    fun report(userId: Int) {
+        captchaRef.current?.let { cc ->
+            setLoading(true)
+            cc.executeAsync().then { captcha ->
+                val reason = reasonRef.current?.value?.trim() ?: ""
+                Axios.post<String>(
+                    "${Config.apibase}/issues/create",
+                    IssueCreationRequest(captcha, reason, UserReportData(userId)),
+                    generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
+                ).then {
+                    history.push("/issues/${it.data}")
+                }
+            }.finally {
+                setLoading(false)
+            }
+        }
     }
 
     useEffectOnce {
@@ -313,7 +339,7 @@ val profilePage = fc<Props> { _ ->
                                                     +"Follow"
                                                 }
                                             }
-                                            div("btn-group") {
+                                            div("btn-group m-0") {
                                                 button(classes = "dropdown-toggle $btnClasses") {
                                                     attrs.onClickFunction = {
                                                         it.stopPropagation()
@@ -376,6 +402,38 @@ val profilePage = fc<Props> { _ ->
                                                         +"Collabs"
                                                     }
                                                 }
+                                            }
+                                        }
+                                    }
+
+                                    if (!userData.suspended && !userData.admin && loggedInLocal != userDetail?.id && userDetail?.id != null) {
+                                        div("btn-group") {
+                                            button(classes = "btn btn-danger") {
+                                                attrs.disabled = loading
+                                                attrs.attributes["aria-label"] = "Report"
+                                                attrs.onClickFunction = { e ->
+                                                    e.preventDefault()
+                                                    modalRef.current?.showDialog(
+                                                        ModalData(
+                                                            "Report user",
+                                                            bodyCallback = {
+                                                                p {
+                                                                    +"Why are you reporting this user? Please give as much detail as possible why you feel this user has violated our TOS:"
+                                                                }
+                                                                textarea(classes = "form-control") {
+                                                                    ref = reasonRef
+                                                                }
+                                                                recaptcha(captchaRef)
+                                                            },
+                                                            buttons = listOf(
+                                                                ModalButton("Report", "danger") { report(userDetail.id) },
+                                                                ModalButton("Cancel")
+                                                            )
+                                                        )
+                                                    )
+                                                }
+
+                                                i("fas fa-flag m-0") { }
                                             }
                                         }
                                     }

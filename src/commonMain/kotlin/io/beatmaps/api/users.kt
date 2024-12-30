@@ -49,13 +49,15 @@ data class UserDetail(
     val playlistUrl: String? = null,
     val patreon: PatreonTier? = null
 ) {
-    fun profileLink(tab: String? = null, absolute: Boolean = false) = UserDetailHelper.profileLink(this, tab, absolute)
+    fun profileLink(tab: String? = null, absolute: Boolean = false) = LinkHelper.profileLink(this, tab, absolute)
     companion object
 }
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-expect object UserDetailHelper {
+expect object LinkHelper {
     fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean): String
+    fun mapLink(mapDetail: MapDetail, absolute: Boolean): String
+    fun playlistLink(playlist: PlaylistFull, absolute: Boolean): String
 }
 
 @Serializable

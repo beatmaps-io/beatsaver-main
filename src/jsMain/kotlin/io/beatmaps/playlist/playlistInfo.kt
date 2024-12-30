@@ -70,7 +70,7 @@ val playlistInfo = fc<PlaylistInfoProps> { props ->
                     img(src = pl.playlistImage, alt = "Cover Image", classes = "cover") { }
 
                     div("title") {
-                        routeLink("/playlists/${pl.playlistId}") {
+                        routeLink(pl.link()) {
                             +pl.name.ifEmpty {
                                 "<NO NAME>"
                             }

@@ -1567,8 +1567,10 @@ li.KeyboardShortcutRow {
     border: 1px solid #444;
     border-bottom: 0;
   }
-  .btn-group a {
-    flex: 1 1 0;
+  .btn-group {
+    a, button {
+      flex: 1 1 0;
+    }
   }
   .list-group, .btn-group {
     width: 100%;

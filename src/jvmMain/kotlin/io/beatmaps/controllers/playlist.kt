@@ -50,12 +50,12 @@ fun Route.playlistController() {
                     meta("og:type", "website")
                     meta("og:site_name", "BeatSaver")
                     meta("og:title", it.name)
-                    meta("og:url", "${Config.siteBase()}/playlists/${it.playlistId}")
-                    link("${Config.siteBase()}/playlists/${it.playlistId}", "canonical")
+                    meta("og:url", it.link(true))
+                    link(it.link(true), "canonical")
                     meta("og:image", it.playlistImage)
                     meta("og:description", it.description.take(400))
                     meta("og:author", it.owner.name)
-                    meta("og:author:url", "${Config.siteBase()}/profile/${it.owner.id}")
+                    meta("og:author:url", it.owner.profileLink(absolute = true))
                 }
             }
         )

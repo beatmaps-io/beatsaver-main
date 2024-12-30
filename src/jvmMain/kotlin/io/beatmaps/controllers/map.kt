@@ -138,8 +138,8 @@ fun Route.mapController() {
                         meta("og:type", "website")
                         meta("og:site_name", "BeatSaver")
                         meta("og:title", it.name)
-                        meta("og:url", "${Config.siteBase()}/maps/${it.id}")
-                        link("${Config.siteBase()}/maps/${it.id}", "canonical")
+                        meta("og:url", it.link(true))
+                        link(it.link(true), "canonical")
                         meta("og:image", it.publishedVersion()?.coverURL)
                         meta("og:description", it.description.take(400))
 
@@ -175,7 +175,7 @@ fun Route.mapController() {
                     Beatmap.id eq it.key.toInt(16)
                 }.limit(1).map { MapDetail.from(it, "") }.firstOrNull()
             }?.let {
-                call.respondRedirect("/maps/${it.id}")
+                call.respondRedirect(it.link())
                 true
             }
         } catch (_: NumberFormatException) {

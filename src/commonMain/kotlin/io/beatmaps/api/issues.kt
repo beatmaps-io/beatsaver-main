@@ -5,8 +5,10 @@ package io.beatmaps.api
 import io.beatmaps.common.api.EIssueType
 import io.beatmaps.common.api.IDbIssueData
 import io.beatmaps.common.api.IIssueData
-import io.beatmaps.common.api.IMapReportData
-import io.beatmaps.common.api.IUserReportData
+import io.beatmaps.common.api.MapReportDataBase
+import io.beatmaps.common.api.PlaylistReportDataBase
+import io.beatmaps.common.api.ReviewReportDataBase
+import io.beatmaps.common.api.UserReportDataBase
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -25,7 +27,7 @@ data class IssueDetail(
     val creator: UserDetail,
     val createdAt: Instant,
     val closedAt: Instant? = null,
-    val data: IHydratedIssueData,
+    val data: IHydratedIssueData? = null,
     val comments: List<IssueCommentDetail>? = null
 ) {
     companion object
@@ -48,16 +50,26 @@ sealed interface IHydratedIssueData : IIssueData
 
 @Serializable
 @SerialName("MapReport")
-data class HydratedMapReportData(val map: MapDetail) : IHydratedIssueData, IMapReportData {
-    override val typeEnum = EIssueType.MapReport
+data class HydratedMapReportData(val map: MapDetail) : IHydratedIssueData, MapReportDataBase() {
     override val mapId = map.id
 }
 
 @Serializable
+@SerialName("PlaylistReport")
+data class HydratedPlaylistReportData(val playlist: PlaylistFull) : IHydratedIssueData, PlaylistReportDataBase() {
+    override val playlistId = playlist.playlistId
+}
+
+@Serializable
 @SerialName("UserReport")
-data class HydratedUserReportData(val user: UserDetail) : IHydratedIssueData, IUserReportData {
-    override val typeEnum = EIssueType.UserReport
+data class HydratedUserReportData(val user: UserDetail) : IHydratedIssueData, UserReportDataBase() {
     override val userId = user.id
+}
+
+@Serializable
+@SerialName("ReviewReport")
+data class HydratedReviewReportData(val review: ReviewDetail) : IHydratedIssueData, ReviewReportDataBase() {
+    override val reviewId = review.id
 }
 
 @Serializable

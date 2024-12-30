@@ -1,6 +1,8 @@
 package io.beatmaps.util
 
 import io.beatmaps.api.HydratedMapReportData
+import io.beatmaps.api.HydratedPlaylistReportData
+import io.beatmaps.api.HydratedReviewReportData
 import io.beatmaps.api.HydratedUserReportData
 import io.beatmaps.api.IssueDetail
 import io.beatmaps.api.ReviewDetail
@@ -166,6 +168,11 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                                     "${Config.cdnBase("", true)}/${it.hash}.jpg"
                                 }
                                 is HydratedUserReportData -> issue.data.user.avatar
+                                is HydratedPlaylistReportData -> issue.data.playlist.playlistImage
+                                is HydratedReviewReportData -> issue.data.review.map?.mainVersion()?.let {
+                                    "${Config.cdnBase("", true)}/${it.hash}.jpg"
+                                }
+                                null -> "https://avatars.githubusercontent.com/u/83342266"
                             }?.let {
                                 DiscordEmbed.HasUrl(it)
                             },
@@ -188,6 +195,31 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                                         "[${issue.data.user.name}](${issue.data.user.profileLink(absolute = true)})"
                                     )
                                 )
+                                is HydratedPlaylistReportData -> listOf(
+                                    DiscordEmbed.Field(
+                                        "Playlist",
+                                        "[${issue.data.playlist.name}](${issue.data.playlist.link(true)})"
+                                    ),
+                                    DiscordEmbed.Field(
+                                        "Uploader",
+                                        "[${issue.data.playlist.owner.name}](${issue.data.playlist.owner.profileLink(absolute = true)})"
+                                    )
+                                )
+                                is HydratedReviewReportData -> listOfNotNull(
+                                    issue.data.review.map?.let { m ->
+                                        DiscordEmbed.Field(
+                                            "Map",
+                                            "[${m.name}](${m.link(true)})"
+                                        )
+                                    },
+                                    issue.data.review.creator?.let { u ->
+                                        DiscordEmbed.Field(
+                                            "Reviewer",
+                                            "[${u.name}](${u.profileLink(absolute = true)})"
+                                        )
+                                    }
+                                )
+                                null -> listOf()
                             },
                             color = 11431783
                         )
@@ -251,7 +283,7 @@ fun Application.reviewListeners(client: HttpClient) {
                         }
                         .handleUser()
                         .singleOrNull()?.let { row ->
-                            IssueDetail.from(row, "")
+                            IssueDetail.from(row, "", false)
                         }
                 }?.let { issue ->
                     handler.post(issue)
