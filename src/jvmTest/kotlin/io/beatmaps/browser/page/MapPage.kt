@@ -39,7 +39,7 @@ class MapPage(page: Page) : PageBase(page) {
 
         class NewReview(element: Locator) : ElementBase(element) {
             val text = element("textarea")
-            val save = element("button[class~='float-end'], :scope > .d-grid button")
+            val save = element("button[class~='float-end'], :scope > .d-flex button")
 
             fun sentiment(type: ReviewSentiment): Locator =
                 element("button").all()[1 - type.dbValue]
