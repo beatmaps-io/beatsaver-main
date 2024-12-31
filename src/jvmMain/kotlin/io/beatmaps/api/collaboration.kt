@@ -80,7 +80,6 @@ fun Route.collaborationRoute() {
                             it[mapId] = req.mapId
                             it[collaboratorId] = req.collaboratorId
                             it[requestedAt] = NowExpression(requestedAt)
-                            it[uploadedAt] = Beatmap.select(Beatmap.uploaded).where { Beatmap.id eq req.mapId }
                         }
                     }
                 }

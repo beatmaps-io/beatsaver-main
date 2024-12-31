@@ -527,7 +527,8 @@ fun Route.reviewRoute() {
                     val (insertedId, response) = newSuspendedTransaction {
                         val intermediaryResult = Review
                             .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
-                            .select(Review.userId, Beatmap.id, Beatmap.name, Beatmap.uploader)
+                            .joinUser(Beatmap.uploader)
+                            .select(Review.userId, Beatmap.id, Beatmap.name, Beatmap.uploader, User.reviewAlerts)
                             .where { Review.id eq req.reviewId and Beatmap.deletedAt.isNull() and Review.deletedAt.isNull() }
                             .firstOrNull()
 
@@ -542,6 +543,7 @@ fun Route.reviewRoute() {
                         val mapId = intermediaryResult[Beatmap.id].value
                         val mapName = intermediaryResult[Beatmap.name]
                         val uploadUserId = intermediaryResult[Beatmap.uploader].value
+                        val uploaderAlerts = intermediaryResult[User.reviewAlerts]
 
                         val collaborators = Collaboration
                             .joinUser(Collaboration.collaboratorId)
@@ -584,7 +586,10 @@ fun Route.reviewRoute() {
                         val collaboratorIdsToNotify = collaborators.filter {
                             it[Collaboration.collaboratorId].value != user.userId &&
                                 it[User.reviewAlerts]
-                        }.map { it[Collaboration.collaboratorId].value }
+                        }.map { it[Collaboration.collaboratorId].value }.let {
+                            // Also notify uploader
+                            if (uploaderAlerts && user.userId != uploadUserId) it.plus(uploadUserId) else it
+                        }
 
                         if (collaboratorIdsToNotify.isNotEmpty()) {
                             Alert.insert(
@@ -611,7 +616,8 @@ fun Route.reviewRoute() {
                 ActionResponse.error(*e.errorCodes.map { "Captcha error: $it" }.toTypedArray())
             }
 
-            call.respond(response)
+            // TODO: Check frontend still shows errors
+            call.respond(if (response.success) HttpStatusCode.OK else HttpStatusCode.BadRequest, response)
         }
     }
 

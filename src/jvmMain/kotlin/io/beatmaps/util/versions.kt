@@ -6,11 +6,9 @@ import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.db.NowExpression
-import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
-import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.DifficultyDao
 import io.beatmaps.common.dbo.Follows
@@ -89,33 +87,25 @@ fun publishVersion(mapId: Int, hash: String, alert: Boolean?, rb: RabbitMQInstan
             }
 
         // Set published time for sorting, but don't allow gaming the system
-        Beatmap.updateReturning(
-            { Beatmap.id eq mapId },
-            {
-                it[uploaded] = Coalesce(uploaded, NowExpression(uploaded, transactionTime = false))
-                it[lastPublishedAt] = NowExpression(lastPublishedAt, transactionTime = false)
-                it[updatedAt] = NowExpression(updatedAt, transactionTime = false)
+        Beatmap.update(
+            { Beatmap.id eq mapId }
+        ) {
+            it[uploaded] = Coalesce(uploaded, NowExpression(uploaded, transactionTime = false))
+            it[lastPublishedAt] = NowExpression(lastPublishedAt, transactionTime = false)
+            it[updatedAt] = NowExpression(updatedAt, transactionTime = false)
 
-                it[bpm] = publishingVersion.bpm
-                it[duration] = publishingVersion.duration
-                it[minNps] = stats.minByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
-                it[maxNps] = stats.maxByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
+            it[bpm] = publishingVersion.bpm
+            it[duration] = publishingVersion.duration
+            it[minNps] = stats.minByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
+            it[maxNps] = stats.maxByOrNull { s -> s.nps }?.nps ?: BigDecimal.ZERO
 
-                // Only override None and SageScore
-                if (map?.declaredAi?.override == true) {
-                    it[declaredAi] = if (originalState.sageScore != null && originalState.sageScore < 0) {
-                        AiDeclarationType.SageScore
-                    } else {
-                        AiDeclarationType.None
-                    }
+            // Only override None and SageScore
+            if (map?.declaredAi?.override == true) {
+                it[declaredAi] = if (originalState.sageScore != null && originalState.sageScore < 0) {
+                    AiDeclarationType.SageScore
+                } else {
+                    AiDeclarationType.None
                 }
-            },
-            Beatmap.uploaded
-        )?.singleOrNull()?.let { rr ->
-            Collaboration.update({
-                Collaboration.mapId eq mapId
-            }) {
-                it[uploadedAt] = rr[Beatmap.uploaded]
             }
         }
     }
