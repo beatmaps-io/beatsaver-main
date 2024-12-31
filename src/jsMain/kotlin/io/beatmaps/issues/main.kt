@@ -7,6 +7,8 @@ import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.HydratedMapReportData
+import io.beatmaps.api.HydratedPlaylistReportData
+import io.beatmaps.api.HydratedReviewReportData
 import io.beatmaps.api.HydratedUserReportData
 import io.beatmaps.api.IssueDetail
 import io.beatmaps.common.api.EIssueType
@@ -195,7 +197,7 @@ val issueList = fc<Props> {
                                 td {
                                     when (it.data) {
                                         is HydratedMapReportData -> {
-                                            routeLink("/maps/${it.data.mapId}") {
+                                            routeLink(it.data.map.link()) {
                                                 +it.data.map.name
                                             }
                                         }
@@ -203,6 +205,21 @@ val issueList = fc<Props> {
                                             routeLink(it.data.user.profileLink()) {
                                                 +it.data.user.name
                                             }
+                                        }
+                                        is HydratedPlaylistReportData -> {
+                                            routeLink(it.data.playlist.link()) {
+                                                +it.data.playlist.name
+                                            }
+                                        }
+                                        is HydratedReviewReportData -> {
+                                            it.data.review.map?.let { m ->
+                                                routeLink(m.link()) {
+                                                    +m.name
+                                                }
+                                            }
+                                        }
+                                        null -> {
+                                            +"[DELETED]"
                                         }
                                     }
                                 }

@@ -17,6 +17,7 @@ import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.Playlist
@@ -27,6 +28,7 @@ import io.beatmaps.common.dbo.Versions
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.json.JsonObject
+import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -43,7 +45,7 @@ abstract class FixtureHelpers {
         property(ReviewReplyDetail::review) { null }
     }
 
-    fun createUser(renamedAtOffset: Duration? = null): Pair<Int, String> {
+    fun createUser(renamedAtOffset: Duration? = null, suspended: Boolean = false, reviewAlerts: Boolean = true): Pair<Int, String> {
         val now = Clock.System.now().epochSeconds
         val fuzz = fixture(1..100000)
 
@@ -61,11 +63,15 @@ abstract class FixtureHelpers {
                 it[verifyToken] = null
                 it[uniqueName] = username
                 it[active] = true
+                if (suspended) {
+                    it[suspendedAt] = NowExpression(suspendedAt)
+                }
+                it[User.reviewAlerts] = reviewAlerts
             }.value to username
         }
     }
 
-    fun createMap(userId: Int, published: Boolean = true): Pair<Int, String> = transaction {
+    fun createMap(userId: Int, published: Boolean = true, collaborators: List<Int> = listOf()): Pair<Int, String> = transaction {
         fixture<MapDetail>().let { map ->
             val mId = Beatmap.insertAndGetId {
                 it[name] = map.name
@@ -124,6 +130,13 @@ abstract class FixtureHelpers {
 
                 it[characteristic] = ECharacteristic.Standard
                 it[difficulty] = EDifficulty.ExpertPlus
+            }
+
+            Collaboration.batchInsert(collaborators) {
+                this[Collaboration.collaboratorId] = it
+                this[Collaboration.mapId] = mId
+                this[Collaboration.requestedAt] = NowExpression(Collaboration.requestedAt)
+                this[Collaboration.accepted] = true
             }
 
             mId to digest

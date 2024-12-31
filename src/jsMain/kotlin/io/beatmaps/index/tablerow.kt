@@ -28,7 +28,7 @@ val beatmapTableRow = fc<TableRowProps> { props ->
             }
         }
         td {
-            routeLink("/maps/${props.map.id}") {
+            routeLink(props.map.link()) {
                 +props.map.name
             }
             p {

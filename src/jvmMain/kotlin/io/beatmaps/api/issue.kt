@@ -5,6 +5,8 @@ import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EIssueType
 import io.beatmaps.common.api.IDbIssueData
 import io.beatmaps.common.api.MapReportData
+import io.beatmaps.common.api.PlaylistReportData
+import io.beatmaps.common.api.ReviewReportData
 import io.beatmaps.common.api.UserReportData
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
@@ -14,13 +16,20 @@ import io.beatmaps.common.dbo.Issue
 import io.beatmaps.common.dbo.IssueComment
 import io.beatmaps.common.dbo.IssueCommentDao
 import io.beatmaps.common.dbo.IssueDao
+import io.beatmaps.common.dbo.Playlist
+import io.beatmaps.common.dbo.Review
+import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.complexToBeatmap
+import io.beatmaps.common.dbo.curatorAlias
+import io.beatmaps.common.dbo.handleCurator
 import io.beatmaps.common.dbo.handleUser
 import io.beatmaps.common.dbo.joinCurator
+import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.common.dbo.reviewerAlias
 import io.beatmaps.common.pub
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
@@ -39,6 +48,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.Coalesce
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
@@ -70,36 +80,77 @@ class IssueApi {
     data class Issue(val api: IssueApi)
 }
 
-fun IDbIssueData.hydrate(cdnPrefix: String): IHydratedIssueData = when (this) {
-    is MapReportData -> HydratedMapReportData(
+fun IDbIssueData.hydrate(cdnPrefix: String, isAdmin: Boolean): IHydratedIssueData? = when (this) {
+    is MapReportData ->
         Beatmap
             .joinVersions()
             .joinUploader()
             .joinCurator()
             .selectAll()
             .where {
-                (Beatmap.id eq id()) and (Beatmap.deletedAt.isNull())
+                (Beatmap.id eq id()).let { q ->
+                    if (isAdmin) {
+                        q
+                    } else {
+                        q and Beatmap.deletedAt.isNull()
+                    }
+                }
             }
             .complexToBeatmap()
-            .map { map ->
-                MapDetail.from(map, cdnPrefix)
+            .singleOrNull()
+            ?.let { HydratedMapReportData(MapDetail.from(it, cdnPrefix)) }
+    is UserReportData -> HydratedUserReportData(UserDetail.from(UserDao[userId]))
+    is PlaylistReportData ->
+        Playlist
+            .joinMaps()
+            .joinUser(Playlist.owner)
+            .joinPlaylistCurator()
+            .select(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all)
+            .where {
+                (Playlist.id eq playlistId).let { q ->
+                    if (isAdmin) {
+                        q
+                    } else {
+                        q and Playlist.deletedAt.isNull()
+                    }
+                }
             }
-            .singleOrNull() ?: throw NotFoundException("Map not found")
-    )
-    is UserReportData -> HydratedUserReportData(
-        UserDetail.from(UserDao[userId])
-    )
+            .groupBy(Playlist.id, User.id, curatorAlias[User.id])
+            .handleUser()
+            .handleCurator()
+            .singleOrNull()
+            ?.let { HydratedPlaylistReportData(PlaylistFull.from(it, cdnPrefix)) }
+    is ReviewReportData ->
+        Review
+            .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
+            .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+            .joinVersions()
+            .joinUploader()
+            .joinCurator()
+            .selectAll()
+            .where {
+                (Review.id eq reviewId).let { q ->
+                    if (isAdmin) {
+                        q
+                    } else {
+                        q and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
+                    }
+                }
+            }
+            .complexToReview()
+            .singleOrNull()
+            ?.let { HydratedReviewReportData(ReviewDetail.from(it, cdnPrefix)) }
 }
 
-fun IssueDetail.Companion.from(row: ResultRow, cdnPrefix: String, comments: Iterable<ResultRow>? = null) = from(IssueDao.wrapRow(row), cdnPrefix, comments)
+fun IssueDetail.Companion.from(row: ResultRow, cdnPrefix: String, isAdmin: Boolean, comments: Iterable<ResultRow>? = null) = from(IssueDao.wrapRow(row), cdnPrefix, isAdmin, comments)
 
-fun IssueDetail.Companion.from(other: IssueDao, cdnPrefix: String, comments: Iterable<ResultRow>? = null) = IssueDetail(
+fun IssueDetail.Companion.from(other: IssueDao, cdnPrefix: String, isAdmin: Boolean, comments: Iterable<ResultRow>? = null) = IssueDetail(
     other.id.value,
     other.type,
     UserDetail.from(other.creator),
     other.createdAt.toKotlinInstant(),
     other.closedAt?.toKotlinInstant(),
-    other.data.hydrate(cdnPrefix),
+    other.data.hydrate(cdnPrefix, isAdmin),
     comments?.map { IssueCommentDetail.from(it) }
 )
 
@@ -189,7 +240,7 @@ fun Route.issueRoute() {
                     .orderBy(IssueComment.createdAt, SortOrder.ASC)
                     .handleUser()
 
-                IssueDetail.from(issue, cdnPrefix(), comments)
+                IssueDetail.from(issue, cdnPrefix(), sess?.isAdmin() == true, comments)
             }
 
             call.respond(issue)
@@ -307,7 +358,7 @@ fun Route.issueRoute() {
                     .limit(req.page)
                     .handleUser()
                     .map {
-                        IssueDetail.from(it, cdnPrefix())
+                        IssueDetail.from(it, cdnPrefix(), sess.isAdmin())
                     }
             }
             call.respond(ans)

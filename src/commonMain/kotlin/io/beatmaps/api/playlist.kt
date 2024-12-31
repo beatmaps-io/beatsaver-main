@@ -62,6 +62,7 @@ data class PlaylistFull(
     val type: EPlaylistType
 ) {
     companion object
+    fun link(absolute: Boolean = false) = LinkHelper.playlistLink(this, absolute)
     fun oneClickURL() =
         if (type.anonymousAllowed) {
             "bsplaylist://playlist/$downloadURL/beatsaver-$playlistId.bplist"

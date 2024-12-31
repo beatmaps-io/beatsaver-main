@@ -2,8 +2,6 @@ package io.beatmaps.api
 
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.dbo.Collaboration
-import io.ktor.client.call.body
-import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -45,17 +43,6 @@ class PublishAlertsTest : ApiTestBase() {
             follows(cid, fid3)
 
             SetupInfo(uid, mid, hash, cid, fid, fid2, fid3)
-        }
-
-        suspend fun checkAlertCount(user: Int, count: Int, message: String? = null) {
-            login(client, user)
-            val alertsResponse = client.get("/api/alerts/unread").body<List<UserAlert>>()
-            client.post("/api/alerts/markall") {
-                contentType(ContentType.Application.Json)
-                setBody(AlertUpdateAll(true))
-            }
-
-            assertEquals(count, alertsResponse.size, message)
         }
 
         suspend fun changeMapState(published: Boolean) {
@@ -104,30 +91,30 @@ class PublishAlertsTest : ApiTestBase() {
 
         addCollaborator()
 
-        checkAlertCount(info.followsMapper, 0, "No mapper alert when unpublished")
-        checkAlertCount(info.followsCollaborator, 0, "No collaborator alert when unpublished")
-        checkAlertCount(info.followsBoth, 0, "No alerts when unpublished")
+        checkAlertCount(client, info.followsMapper, 0, "No mapper alert when unpublished")
+        checkAlertCount(client, info.followsCollaborator, 0, "No collaborator alert when unpublished")
+        checkAlertCount(client, info.followsBoth, 0, "No alerts when unpublished")
 
         changeMapState(true)
 
-        checkAlertCount(info.followsMapper, 1, "Single mapper alert when published")
-        checkAlertCount(info.followsCollaborator, 1, "Single collaborator alert when published")
-        checkAlertCount(info.followsBoth, 1, "Single alert when published even when following mapper and collaborator")
+        checkAlertCount(client, info.followsMapper, 1, "Single mapper alert when published")
+        checkAlertCount(client, info.followsCollaborator, 1, "Single collaborator alert when published")
+        checkAlertCount(client, info.followsBoth, 1, "Single alert when published even when following mapper and collaborator")
 
         removeCollaborator()
         addCollaborator()
 
-        checkAlertCount(info.followsMapper, 0, "No mapper alert for collab when published")
-        checkAlertCount(info.followsCollaborator, 1, "Single collaborator alert for new collab when published")
-        checkAlertCount(info.followsBoth, 0, "No alert for new collab when published when following mapper and collaborator")
+        checkAlertCount(client, info.followsMapper, 0, "No mapper alert for collab when published")
+        checkAlertCount(client, info.followsCollaborator, 1, "Single collaborator alert for new collab when published")
+        checkAlertCount(client, info.followsBoth, 0, "No alert for new collab when published when following mapper and collaborator")
 
         changeMapState(false)
 
         removeCollaborator()
         addCollaborator()
 
-        checkAlertCount(info.followsMapper, 0, "No mapper alert when unpublished (prev published)")
-        checkAlertCount(info.followsCollaborator, 0, "No collaborator alert when unpublished (prev published)")
-        checkAlertCount(info.followsBoth, 0, "No alerts when unpublished  (prev published)")
+        checkAlertCount(client, info.followsMapper, 0, "No mapper alert when unpublished (prev published)")
+        checkAlertCount(client, info.followsCollaborator, 0, "No collaborator alert when unpublished (prev published)")
+        checkAlertCount(client, info.followsBoth, 0, "No alerts when unpublished  (prev published)")
     }
 }

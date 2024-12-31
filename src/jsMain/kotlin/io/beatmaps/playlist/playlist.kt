@@ -2,20 +2,24 @@ package io.beatmaps.playlist
 
 import external.Axios
 import external.DragAndDrop.DragDropContext
+import external.IReCAPTCHA
 import external.draggable
 import external.droppable
 import external.generateConfig
 import external.invoke
+import external.recaptcha
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.CurateMap
+import io.beatmaps.api.IssueCreationRequest
 import io.beatmaps.api.MapDetailWithOrder
 import io.beatmaps.api.PlaylistConstants
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistMapRequest
 import io.beatmaps.api.PlaylistPage
 import io.beatmaps.common.api.EPlaylistType
+import io.beatmaps.common.api.PlaylistReportData
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
 import io.beatmaps.index.ModalComponent
@@ -35,7 +39,9 @@ import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.xhr.FormData
 import react.Props
 import react.dom.a
+import react.dom.button
 import react.dom.div
+import react.dom.i
 import react.dom.img
 import react.dom.p
 import react.dom.span
@@ -52,12 +58,14 @@ import react.useState
 import kotlin.math.ceil
 
 val playlistPage = fc<Props> {
+    val (loading, setLoading) = useState(false)
     val (playlist, setPlaylist) = useState<PlaylistFull?>(null)
     val (maps, setMaps) = useState(listOf<MapDetailWithOrder>())
     val tokenRef = useRef(Axios.CancelToken.source())
 
     val modalRef = useRef<ModalComponent>()
     val reasonRef = useRef<HTMLTextAreaElement>()
+    val captchaRef = useRef<IReCAPTCHA>()
     val itemsPerPage = PlaylistConstants.PAGE_SIZE
 
     val audio = useAudio()
@@ -153,6 +161,24 @@ val playlistPage = fc<Props> {
         }) { }
     }
 
+    fun report(playlistId: Int) {
+        captchaRef.current?.let { cc ->
+            setLoading(true)
+            cc.executeAsync().then { captcha ->
+                val reason = reasonRef.current?.value?.trim() ?: ""
+                Axios.post<String>(
+                    "${Config.apibase}/issues/create",
+                    IssueCreationRequest(captcha, reason, PlaylistReportData(playlistId)),
+                    generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
+                ).then {
+                    history.push("/issues/${it.data}")
+                }
+            }.finally {
+                setLoading(false)
+            }
+        }
+    }
+
     useEffectOnce {
         setPageTitle("Playlist")
     }
@@ -186,11 +212,11 @@ val playlistPage = fc<Props> {
                         }
                     } else if (pl.type != EPlaylistType.System && (pl.owner.id == userData?.userId || userData?.admin == true)) {
                         div("btn-group") {
-                            routeLink("/playlists/${pl.playlistId}/edit", className = "btn btn-primary") {
+                            routeLink("${pl.link()}/edit", className = "btn btn-primary") {
                                 +"Edit"
                             }
                             if (pl.type != EPlaylistType.Search) {
-                                routeLink("/playlists/${pl.playlistId}/add", className = "btn btn-purple") {
+                                routeLink("${pl.link()}/add", className = "btn btn-purple") {
                                     +"Multi-Add"
                                 }
                             }
@@ -297,6 +323,39 @@ val playlistPage = fc<Props> {
                                             +it.second.name
                                         }
                                     }
+                            }
+                        }
+                    }
+                    if (userData?.suspended == false && !userData.admin && userData.userId != pl.owner.id) {
+                        div("btn-group") {
+                            button(classes = "btn btn-danger") {
+                                val text = "Report"
+                                attrs.disabled = loading
+                                attrs.title = text
+                                attrs.attributes["aria-label"] = text
+                                attrs.onClickFunction = {
+                                    it.preventDefault()
+                                    modalRef.current?.showDialog(
+                                        ModalData(
+                                            "Report playlist",
+                                            bodyCallback = {
+                                                p {
+                                                    +"Why are you reporting this content? Please give as much detail as possible why you feel this playlist violates our TOS:"
+                                                }
+                                                textarea(classes = "form-control") {
+                                                    ref = reasonRef
+                                                }
+                                                recaptcha(captchaRef)
+                                            },
+                                            buttons = listOf(
+                                                ModalButton("Report", "danger") { report(pl.playlistId) },
+                                                ModalButton("Cancel")
+                                            )
+                                        )
+                                    )
+                                }
+                                i("fas fa-flag me-2") { }
+                                +text
                             }
                         }
                     }

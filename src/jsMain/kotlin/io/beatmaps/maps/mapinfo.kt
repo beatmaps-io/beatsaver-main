@@ -119,7 +119,7 @@ val mapInfo = fc<MapInfoProps> { props ->
         setLoading(true)
 
         Axios.post<String>("${Config.apibase}/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.value?.trim()), generateConfig<MapInfoUpdate, String>()).then({
-            props.deleteMap(props.mapInfo.uploader.id == userData?.userId)
+            props.deleteMap(isOwnerLocal)
         }) {
             setLoading(false)
         }
@@ -163,7 +163,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
                     IssueCreationRequest(captcha, reason, MapReportData(props.mapInfo.id)),
-                    generateConfig<IssueCreationRequest, String>()
+                    generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
                 ).then {
                     history.push("/issues/${it.data}")
                 }
@@ -175,7 +175,7 @@ val mapInfo = fc<MapInfoProps> { props ->
 
     val deleted = props.mapInfo.deletedAt != null
 
-    if (props.mapInfo.let { it.declaredAi == AiDeclarationType.SageScore && userData?.userId == it.uploader.id }) {
+    if (props.mapInfo.let { it.declaredAi == AiDeclarationType.SageScore && isOwnerLocal }) {
         div("alert alert-danger alert-dismissible") {
             +"This map was automatically flagged as an AI-generated map. If you believe this was a mistake, please report it in the "
             a("https://discord.gg/rjVDapkMmj", classes = "alert-link") {
@@ -251,7 +251,9 @@ val mapInfo = fc<MapInfoProps> { props ->
                                     attrs.version = version
                                 }
 
-                                div("dropdown-divider") {}
+                                if (userData != null) {
+                                    div("dropdown-divider") {}
+                                }
 
                                 if (userData?.curator == true || isOwnerLocal) {
                                     a("#") {
@@ -373,7 +375,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                                         span("dd-text") { +"Delete" }
                                         i("fas fa-trash text-danger-light") { }
                                     }
-                                } else {
+                                } else if (userData?.suspended == false && !isOwnerLocal) {
                                     a("#") {
                                         attrs.title = "Report"
                                         attrs.attributes["aria-label"] = "Report"

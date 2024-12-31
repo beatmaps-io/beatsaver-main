@@ -11,6 +11,8 @@ import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.HydratedMapReportData
+import io.beatmaps.api.HydratedPlaylistReportData
+import io.beatmaps.api.HydratedReviewReportData
 import io.beatmaps.api.HydratedUserReportData
 import io.beatmaps.api.IssueCommentRequest
 import io.beatmaps.api.IssueDetail
@@ -22,6 +24,7 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.toggle
 import io.beatmaps.shared.map.mapTitle
 import io.beatmaps.shared.map.uploaderWithInfo
+import io.beatmaps.util.textToContent
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import react.Props
@@ -132,10 +135,31 @@ val issuesPage = fc<Props> {
                                 }
                             }
                         }
-
                         is HydratedUserReportData -> {
-                            +"User report"
+                            routeLink(i.data.user.profileLink()) {
+                                +i.data.user.name
+                            }
                         }
+                        is HydratedPlaylistReportData -> {
+                            routeLink(i.data.playlist.link()) {
+                                +i.data.playlist.name
+                            }
+                        }
+                        is HydratedReviewReportData -> {
+                            i.data.review.map?.let { map ->
+                                mapTitle {
+                                    attrs.title = map.name
+                                    attrs.mapKey = map.id
+                                }
+                            }
+                            i.data.review.creator?.let { user ->
+                                routeLink(user.profileLink()) {
+                                    +user.name
+                                }
+                            }
+                            textToContent(i.data.review.text)
+                        }
+                        null -> {}
                     }
                 }
             }
