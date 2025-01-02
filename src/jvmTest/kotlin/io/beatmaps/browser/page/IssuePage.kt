@@ -10,6 +10,7 @@ class IssuePage(page: Page) : PageBase(page) {
     class Info(element: Locator) : ElementBase(element) {
         val archive = element(".fa-archive")
         val unArchive = element(".fa-folder-open")
+
         // val action = element(".fa-archive|.fa-folder-open")
     }
 
@@ -36,7 +37,8 @@ class IssuePage(page: Page) : PageBase(page) {
         val body = element(".card-body")
         val public = element(".fa-unlock")
         val private = element(".fa-lock")
-        // val publicOrPrivate = element(".fa-lock|.fa-unlock")
         val edit = element(".fa-pen")
+
+        // val publicOrPrivate = element(".fa-lock|.fa-unlock")
     }
 }
