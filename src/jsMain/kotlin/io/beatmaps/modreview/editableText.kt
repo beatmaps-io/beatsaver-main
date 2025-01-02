@@ -67,6 +67,7 @@ val editableText = fc<EditableTextProps> { props ->
         div("d-flex flex-row-reverse") {
             button(classes = "btn " + (props.btnClass ?: "btn-primary mt-1"), type = ButtonType.submit) {
                 attrs.disabled = textLength < 1 || props.maxLength?.let { textLength > it } ?: false
+                attrs.attributes["data-loading"] = "$loading"
 
                 attrs.jsStyle {
                     justifySelf = props.justify ?: "end"

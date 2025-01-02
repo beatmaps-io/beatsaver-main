@@ -76,6 +76,7 @@ val issuesPage = fc<Props> {
             val open = i.closedAt == null
 
             timelineEntry {
+                attrs.id = "issue-info"
                 attrs.icon = "fa-plus"
                 attrs.color = "success"
                 attrs.headerCallback = TimelineEntrySectionRenderer {
@@ -147,17 +148,23 @@ val issuesPage = fc<Props> {
                         }
                         is HydratedReviewReportData -> {
                             i.data.review.map?.let { map ->
-                                mapTitle {
-                                    attrs.title = map.name
-                                    attrs.mapKey = map.id
+                                p {
+                                    mapTitle {
+                                        attrs.title = map.name
+                                        attrs.mapKey = map.id
+                                    }
                                 }
                             }
                             i.data.review.creator?.let { user ->
-                                routeLink(user.profileLink()) {
-                                    +user.name
+                                p {
+                                    routeLink(user.profileLink()) {
+                                        +user.name
+                                    }
                                 }
                             }
-                            textToContent(i.data.review.text)
+                            p {
+                                textToContent(i.data.review.text)
+                            }
                         }
                         null -> {}
                     }

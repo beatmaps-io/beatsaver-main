@@ -32,6 +32,7 @@ import io.beatmaps.upload.UploadRequestConfig
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.useAudio
 import kotlinx.html.classes
+import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import kotlinx.serialization.SerializationException
@@ -330,6 +331,7 @@ val playlistPage = fc<Props> {
                         div("btn-group") {
                             button(classes = "btn btn-danger") {
                                 val text = "Report"
+                                attrs.id = "report"
                                 attrs.disabled = loading
                                 attrs.title = text
                                 attrs.attributes["aria-label"] = text

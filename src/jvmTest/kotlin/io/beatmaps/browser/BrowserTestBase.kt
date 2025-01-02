@@ -7,6 +7,7 @@ import com.microsoft.playwright.Route
 import io.beatmaps.DbMigrationType
 import io.beatmaps.beatmapsio
 import io.beatmaps.common.db.setupDB
+import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.login.Session
 import io.beatmaps.migrateDB
 import io.ktor.client.HttpClient
@@ -29,6 +30,7 @@ import io.ktor.server.testing.TestApplication
 import io.ktor.test.dispatcher.testSuspend
 import io.ktor.util.toMap
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.Rule
 import org.junit.rules.TestName
 
@@ -63,7 +65,7 @@ abstract class BrowserTestBase {
 
         runBlocking {
             fun shared(builder: HttpRequestBuilder, it: Route) {
-                it.request().headersArray().forEach {
+                it.request().headersArray().filter { !it.name.equals("Cookie", true) }.forEach {
                     builder.header(it.name, it.value)
                 }
             }
@@ -123,7 +125,8 @@ abstract class BrowserTestBase {
                 routing {
                     get("/login-test/{id?}") {
                         val id = call.parameters["id"]?.toIntOrNull() ?: 1
-                        call.sessions.set(Session(id, userEmail = "test@example.com", userName = "test", uniqueName = "test"))
+                        val user = transaction { UserDao[id] }
+                        call.sessions.set(Session(id, userEmail = user.email, userName = user.name, uniqueName = user.uniqueName, suspended = user.suspendedAt != null, admin = user.admin, curator = user.curator))
                     }
                 }
             }

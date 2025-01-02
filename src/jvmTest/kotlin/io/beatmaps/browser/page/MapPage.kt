@@ -5,6 +5,7 @@ import com.microsoft.playwright.Page
 import io.beatmaps.common.api.ReviewSentiment
 
 class MapPage(page: Page) : PageBase(page) {
+    val options = MapOptions(element(".card-header .link-buttons"))
     val tabs = Tabs(element(".nav-minimal"))
     val scores = Scores(element(".scores"))
     val reviews = Reviews(element(".reviews"))
@@ -13,6 +14,10 @@ class MapPage(page: Page) : PageBase(page) {
         val scoresaber = element("#nav-ss")
         val beatleader = element("#nav-bl")
         val reviews = element("#nav-rv")
+    }
+
+    class MapOptions(element: Locator) : ElementBase(element) {
+        val report = element("#report")
     }
 
     class Scores(element: Locator) : ElementBase(element) {
@@ -46,6 +51,7 @@ class MapPage(page: Page) : PageBase(page) {
         }
 
         class Review(element: Locator) : ElementBase(element) {
+            val report = element(".options i[class~='fa-flag']")
             val edit = element(".options i[class~='fa-pen']")
             val delete = element(".options i[class~='fa-trash']")
 

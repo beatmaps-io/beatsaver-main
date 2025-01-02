@@ -40,6 +40,7 @@ val issueComment = fc<IssueCommentProps> { props ->
     val userData = useContext(globalContext)
 
     timelineEntry {
+        attrs.className = "comment"
         attrs.icon = "fa-comments"
         attrs.color = "primary"
         attrs.headerCallback = TimelineEntrySectionRenderer {

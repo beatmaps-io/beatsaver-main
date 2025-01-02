@@ -1,6 +1,7 @@
 package io.beatmaps.maps.testplay
 
 import kotlinx.html.DIV
+import kotlinx.html.id
 import react.Props
 import react.dom.RDOMBuilder
 import react.dom.article
@@ -14,6 +15,8 @@ external interface TimelineEntryProps : Props {
     var footerCallback: TimelineEntrySectionRenderer?
     var icon: String?
     var color: String?
+    var id: String?
+    var className: String?
 }
 
 fun interface TimelineEntrySectionRenderer {
@@ -21,7 +24,10 @@ fun interface TimelineEntrySectionRenderer {
 }
 
 val timelineEntry = fc<TimelineEntryProps> { props ->
-    article("card border-${props.color ?: "primary"}") {
+    article("card border-${props.color ?: "primary"} ${props.className ?: ""}") {
+        props.id?.let { id ->
+            attrs.id = id
+        }
         div("card-header icon bg-${props.color ?: "primary"}") {
             i("fas ${props.icon ?: "fa-comments"}") {}
         }
