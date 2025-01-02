@@ -302,161 +302,157 @@ val profilePage = fc<Props> { _ ->
                                 }
                             }
                         }
-                        div {
-                            div {
-                                userDetail?.playlistUrl?.let { url ->
+                        div("button-wrap") {
+                            userDetail?.playlistUrl?.let { url ->
+                                div("btn-group") {
+                                    a(url, "_blank", "btn btn-secondary") {
+                                        attrs.id = "dl-playlist"
+                                        attrs.attributes["download"] = ""
+                                        i("fas fa-download") { }
+                                        +"Playlist"
+                                    }
+                                    a(
+                                        "bsplaylist://playlist/$url/beatsaver-user-${userDetail.id}.bplist",
+                                        classes = "btn btn-primary"
+                                    ) {
+                                        attrs.id = "oc-playlist"
+                                        attrs.attributes["aria-label"] = "One-Click"
+                                        i("fas fa-cloud-download-alt m-0") { }
+                                    }
+                                }
+                            }
+                            if (loggedInLocal != null && loggedInLocal != userDetail?.id) {
+                                followData?.let { fd ->
                                     div("btn-group") {
-                                        a(url, "_blank", "btn btn-secondary") {
-                                            attrs.id = "dl-playlist"
-                                            attrs.attributes["download"] = ""
-                                            i("fas fa-download") { }
-                                            +"Playlist"
+                                        val btnClasses = "btn btn-" + if (fd.following) "secondary" else "primary"
+                                        button(classes = btnClasses) {
+                                            attrs.id = "follow"
+                                            attrs.disabled = loading
+                                            attrs.onClickFunction = { e ->
+                                                e.preventDefault()
+                                                setFollowStatus(!fd.following, !fd.following, !fd.following, !fd.following)
+                                            }
+
+                                            if (fd.following) {
+                                                i("fas fa-user-minus") { }
+                                                +"Unfollow"
+                                            } else {
+                                                i("fas fa-user-plus") { }
+                                                +"Follow"
+                                            }
                                         }
-                                        a(
-                                            "bsplaylist://playlist/$url/beatsaver-user-${userDetail.id}.bplist",
-                                            classes = "btn btn-primary"
-                                        ) {
-                                            attrs.id = "oc-playlist"
-                                            attrs.attributes["aria-label"] = "One-Click"
-                                            i("fas fa-cloud-download-alt m-0") { }
+                                        div("btn-group m-0") {
+                                            button(classes = "dropdown-toggle $btnClasses") {
+                                                attrs.id = "follow-dd"
+                                                attrs.onClickFunction = {
+                                                    it.stopPropagation()
+                                                    setFollowsDropdown(!followsDropdown)
+                                                }
+                                            }
+                                            div("dropdown-menu mt-4" + if (followsDropdown) " show" else "") {
+                                                label("dropdown-item") {
+                                                    attrs.htmlFor = "follow-uploads"
+                                                    attrs.role = "button"
+                                                    attrs.onClickFunction = {
+                                                        it.stopPropagation()
+                                                    }
+                                                    input(InputType.checkBox, classes = "form-check-input me-2") {
+                                                        key = "follow-uploads-${fd.upload}"
+                                                        attrs.id = "follow-uploads"
+                                                        attrs.disabled = loading
+                                                        attrs.checked = fd.upload
+                                                        attrs.onChangeFunction = { ev ->
+                                                            val newUpload = (ev.target as HTMLInputElement).checked
+                                                            setFollowStatus(fd.following || newUpload || fd.curation || fd.collab, newUpload, fd.curation, fd.collab)
+                                                        }
+                                                    }
+                                                    +"Uploads"
+                                                }
+                                                label("dropdown-item") {
+                                                    attrs.htmlFor = "follow-curations"
+                                                    attrs.role = "button"
+                                                    attrs.onClickFunction = {
+                                                        it.stopPropagation()
+                                                    }
+                                                    input(InputType.checkBox, classes = "form-check-input me-2") {
+                                                        key = "follow-curations-${fd.curation}"
+                                                        attrs.id = "follow-curations"
+                                                        attrs.disabled = loading
+                                                        attrs.checked = fd.curation
+                                                        attrs.onChangeFunction = { ev ->
+                                                            val newCuration = (ev.target as HTMLInputElement).checked
+                                                            setFollowStatus(fd.following || fd.upload || newCuration || fd.collab, fd.upload, newCuration, fd.collab)
+                                                        }
+                                                    }
+                                                    +"Curations"
+                                                }
+                                                label("dropdown-item") {
+                                                    attrs.htmlFor = "follow-collabs"
+                                                    attrs.role = "button"
+                                                    attrs.onClickFunction = {
+                                                        it.stopPropagation()
+                                                    }
+                                                    input(InputType.checkBox, classes = "form-check-input me-2") {
+                                                        key = "follow-collabs-${fd.collab}"
+                                                        attrs.id = "follow-collabs"
+                                                        attrs.disabled = loading
+                                                        attrs.checked = fd.collab
+                                                        attrs.onChangeFunction = { ev ->
+                                                            val newCollab = (ev.target as HTMLInputElement).checked
+                                                            setFollowStatus(fd.following || fd.upload || fd.curation || newCollab, fd.upload, fd.curation, newCollab)
+                                                        }
+                                                    }
+                                                    +"Collabs"
+                                                }
+                                            }
                                         }
                                     }
                                 }
-                                if (loggedInLocal != null && loggedInLocal != userDetail?.id) {
-                                    followData?.let { fd ->
-                                        div("btn-group") {
-                                            val btnClasses = "btn btn-" + if (fd.following) "secondary" else "primary"
-                                            button(classes = btnClasses) {
-                                                attrs.id = "follow"
-                                                attrs.disabled = loading
-                                                attrs.onClickFunction = { e ->
-                                                    e.preventDefault()
-                                                    setFollowStatus(!fd.following, !fd.following, !fd.following, !fd.following)
-                                                }
 
-                                                if (fd.following) {
-                                                    i("fas fa-user-minus") { }
-                                                    +"Unfollow"
-                                                } else {
-                                                    i("fas fa-user-plus") { }
-                                                    +"Follow"
-                                                }
-                                            }
-                                            div("btn-group m-0") {
-                                                button(classes = "dropdown-toggle $btnClasses") {
-                                                    attrs.id = "follow-dd"
-                                                    attrs.onClickFunction = {
-                                                        it.stopPropagation()
-                                                        setFollowsDropdown(!followsDropdown)
-                                                    }
-                                                }
-                                                div("dropdown-menu mt-4" + if (followsDropdown) " show" else "") {
-                                                    label("dropdown-item") {
-                                                        attrs.htmlFor = "follow-uploads"
-                                                        attrs.role = "button"
-                                                        attrs.onClickFunction = {
-                                                            it.stopPropagation()
-                                                        }
-                                                        input(InputType.checkBox, classes = "form-check-input me-2") {
-                                                            key = "follow-uploads-${fd.upload}"
-                                                            attrs.id = "follow-uploads"
-                                                            attrs.disabled = loading
-                                                            attrs.checked = fd.upload
-                                                            attrs.onChangeFunction = { ev ->
-                                                                val newUpload = (ev.target as HTMLInputElement).checked
-                                                                setFollowStatus(fd.following || newUpload || fd.curation || fd.collab, newUpload, fd.curation, fd.collab)
+                                if (!userData.suspended && !userData.admin && loggedInLocal != userDetail?.id && userDetail?.id != null) {
+                                    div("btn-group") {
+                                        button(classes = "btn btn-danger") {
+                                            attrs.id = "report"
+                                            attrs.disabled = loading
+                                            attrs.attributes["aria-label"] = "Report"
+                                            attrs.onClickFunction = { e ->
+                                                e.preventDefault()
+                                                modalRef.current?.showDialog(
+                                                    ModalData(
+                                                        "Report user",
+                                                        bodyCallback = {
+                                                            p {
+                                                                +"Why are you reporting this user? Please give as much detail as possible why you feel this user has violated our TOS:"
                                                             }
-                                                        }
-                                                        +"Uploads"
-                                                    }
-                                                    label("dropdown-item") {
-                                                        attrs.htmlFor = "follow-curations"
-                                                        attrs.role = "button"
-                                                        attrs.onClickFunction = {
-                                                            it.stopPropagation()
-                                                        }
-                                                        input(InputType.checkBox, classes = "form-check-input me-2") {
-                                                            key = "follow-curations-${fd.curation}"
-                                                            attrs.id = "follow-curations"
-                                                            attrs.disabled = loading
-                                                            attrs.checked = fd.curation
-                                                            attrs.onChangeFunction = { ev ->
-                                                                val newCuration = (ev.target as HTMLInputElement).checked
-                                                                setFollowStatus(fd.following || fd.upload || newCuration || fd.collab, fd.upload, newCuration, fd.collab)
+                                                            textarea(classes = "form-control") {
+                                                                ref = reasonRef
                                                             }
-                                                        }
-                                                        +"Curations"
-                                                    }
-                                                    label("dropdown-item") {
-                                                        attrs.htmlFor = "follow-collabs"
-                                                        attrs.role = "button"
-                                                        attrs.onClickFunction = {
-                                                            it.stopPropagation()
-                                                        }
-                                                        input(InputType.checkBox, classes = "form-check-input me-2") {
-                                                            key = "follow-collabs-${fd.collab}"
-                                                            attrs.id = "follow-collabs"
-                                                            attrs.disabled = loading
-                                                            attrs.checked = fd.collab
-                                                            attrs.onChangeFunction = { ev ->
-                                                                val newCollab = (ev.target as HTMLInputElement).checked
-                                                                setFollowStatus(fd.following || fd.upload || fd.curation || newCollab, fd.upload, fd.curation, newCollab)
-                                                            }
-                                                        }
-                                                        +"Collabs"
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    if (!userData.suspended && !userData.admin && loggedInLocal != userDetail?.id && userDetail?.id != null) {
-                                        div("btn-group") {
-                                            button(classes = "btn btn-danger") {
-                                                attrs.id = "report"
-                                                attrs.disabled = loading
-                                                attrs.attributes["aria-label"] = "Report"
-                                                attrs.onClickFunction = { e ->
-                                                    e.preventDefault()
-                                                    modalRef.current?.showDialog(
-                                                        ModalData(
-                                                            "Report user",
-                                                            bodyCallback = {
-                                                                p {
-                                                                    +"Why are you reporting this user? Please give as much detail as possible why you feel this user has violated our TOS:"
-                                                                }
-                                                                textarea(classes = "form-control") {
-                                                                    ref = reasonRef
-                                                                }
-                                                                recaptcha(captchaRef)
-                                                            },
-                                                            buttons = listOf(
-                                                                ModalButton("Report", "danger") { report(userDetail.id) },
-                                                                ModalButton("Cancel")
-                                                            )
+                                                            recaptcha(captchaRef)
+                                                        },
+                                                        buttons = listOf(
+                                                            ModalButton("Report", "danger") { report(userDetail.id) },
+                                                            ModalButton("Cancel")
                                                         )
                                                     )
-                                                }
-
-                                                i("fas fa-flag m-0") { }
+                                                )
                                             }
+
+                                            i("fas fa-flag m-0") { }
                                         }
                                     }
                                 }
                             }
                             if (userData?.admin == true || userData?.curator == true) {
-                                div("mt-2") {
-                                    div("btn-group") {
-                                        if (userData.admin) {
-                                            routeLink("/modlog?user=${userDetail?.name}", className = "btn btn-secondary") {
-                                                i("fas fa-scroll") { }
-                                                +"Mod Log"
-                                            }
+                                div("btn-group") {
+                                    if (userData.admin) {
+                                        routeLink("/modlog?user=${userDetail?.name}", className = "btn btn-secondary") {
+                                            i("fas fa-scroll") { }
+                                            +"Mod Log"
                                         }
-                                        routeLink("/modreview?user=${userDetail?.name}", className = "btn btn-secondary") {
-                                            i("fas fa-heartbeat") { }
-                                            +"Review Log"
-                                        }
+                                    }
+                                    routeLink("/modreview?user=${userDetail?.name}", className = "btn btn-secondary") {
+                                        i("fas fa-heartbeat") { }
+                                        +"Review Log"
                                     }
                                 }
                             }

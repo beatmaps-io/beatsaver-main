@@ -115,6 +115,7 @@ val reply = fc<ReplyProps> { props ->
                     attrs.text = text
                     attrs.editing = editing
                     attrs.renderText = true
+                    attrs.textClass = "mt-2"
                     attrs.maxLength = ReviewConstants.MAX_REPLY_LENGTH
                     attrs.saveText = { newReply ->
                         props.captcha?.current?.executeAsync()?.then {

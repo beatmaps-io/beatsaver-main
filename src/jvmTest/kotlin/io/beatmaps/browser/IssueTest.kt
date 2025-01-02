@@ -11,7 +11,6 @@ import java.lang.Integer.toHexString
 import kotlin.test.assertEquals
 
 class IssueTest : BrowserTestBase() {
-    // TODO: Can't for playlist/user/review
     @Test
     fun `Can't report maps`() = bmTest {
         val (mapId, userIds) = newSuspendedTransaction {

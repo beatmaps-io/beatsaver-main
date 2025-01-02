@@ -96,7 +96,7 @@ val modReviewEntry = fc<ModReviewEntryProps> { props ->
                     }
                 }
                 td("action-cell") {
-                    div("d-flex") {
+                    div("d-flex link-buttons") {
                         a("#") {
                             attrs.title = "Edit"
                             attrs.attributes["aria-label"] = "Edit"
@@ -159,6 +159,7 @@ val modReviewEntry = fc<ModReviewEntryProps> { props ->
                                 attrs.text = text ?: review.text
                                 attrs.editing = editing
                                 attrs.maxLength = ReviewConstants.MAX_LENGTH
+                                attrs.textClass = "mt-2"
                                 attrs.saveText = { newReview ->
                                     val newSentimentLocal = if (review is ReviewDetail) {
                                         newSentiment ?: sentiment ?: review.sentiment
