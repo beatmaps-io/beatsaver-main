@@ -1,5 +1,6 @@
 import io.miret.etienne.gradle.sass.CompileSass
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
+import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
@@ -189,6 +190,8 @@ kotlin {
                 implementation(npm("react-beautiful-dnd", "13.1.0"))
                 implementation(npm("react-dates", "21.8.0"))
                 implementation(npm("react-google-recaptcha", "2.1.0"))
+                implementation(npm("@marsidev/react-turnstile", "1.0.2"))
+                implementation(npm("@hcaptcha/react-hcaptcha", "1.11.0"))
                 implementation(npm("axios", "0.21.1"))
                 implementation(npm("react-slider", "1.1.2"))
                 implementation(npm("bootswatch", "5.1.3"))
@@ -252,6 +255,7 @@ tasks.getByName<Jar>("jvmJar") {
     listOf(jsBrowserProductionWebpack.mainOutputFileName.get(), jsBrowserProductionWebpack.mainOutputFileName.get() + ".map", "modules.js", "modules.js.map").forEach {
         from(File(jsBrowserProductionWebpack.outputDirectory.get().asFile, it))
     }
+    jsBrowserProductionWebpack.mode = Mode.DEVELOPMENT
 }
 
 tasks.create<JavaExec>("installPlaywrightBrowsers") {

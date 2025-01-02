@@ -1,10 +1,10 @@
 package io.beatmaps.user
 
 import external.Axios
-import external.IReCAPTCHA
+import external.ICaptchaHandler
 import external.axiosGet
 import external.generateConfig
-import external.recaptcha
+import external.captcha
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
@@ -90,7 +90,7 @@ enum class ProfileTab(val tabText: String, val condition: (UserData?, TabContext
 }
 
 val profilePage = fc<Props> { _ ->
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
     val reasonRef = useRef<HTMLTextAreaElement>()
     val modalRef = useRef<ModalComponent>()
     val userData = useContext(globalContext)
@@ -198,7 +198,7 @@ val profilePage = fc<Props> { _ ->
     fun report(userId: Int) {
         captchaRef.current?.let { cc ->
             setLoading(true)
-            cc.executeAsync().then { captcha ->
+            cc.execute()?.then { captcha ->
                 val reason = reasonRef.current?.value?.trim() ?: ""
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
@@ -207,7 +207,7 @@ val profilePage = fc<Props> { _ ->
                 ).then {
                     history.push("/issues/${it.data}")
                 }
-            }.finally {
+            }?.finally {
                 setLoading(false)
             }
         }
@@ -427,7 +427,7 @@ val profilePage = fc<Props> { _ ->
                                                             textarea(classes = "form-control") {
                                                                 ref = reasonRef
                                                             }
-                                                            recaptcha(captchaRef)
+                                                            captcha(captchaRef)
                                                         },
                                                         buttons = listOf(
                                                             ModalButton("Report", "danger") { report(userDetail.id) },

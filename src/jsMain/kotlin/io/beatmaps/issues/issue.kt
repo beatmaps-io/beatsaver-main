@@ -1,11 +1,11 @@
 package io.beatmaps.issues
 
 import external.Axios
-import external.IReCAPTCHA
+import external.ICaptchaHandler
 import external.TimeAgo
 import external.axiosGet
 import external.generateConfig
-import external.recaptcha
+import external.captcha
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
@@ -47,7 +47,7 @@ import kotlin.js.Promise
 val issuesPage = fc<Props> {
     val (loading, setLoading) = useState(false)
     val (issue, setIssue) = useState<IssueDetail?>(null)
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
     val publicRef = useRef<HTMLInputElement>()
 
     val userData = useContext(globalContext)
@@ -186,7 +186,7 @@ val issuesPage = fc<Props> {
                         setLoading(it)
                     }
                     attrs.saveCallback = { text ->
-                        val res = captchaRef.current?.executeAsync()?.then {
+                        val res = captchaRef.current?.execute()?.then {
                             Axios.put<ActionResponse>(
                                 "${Config.apibase}/issues/comments/${issue.id}",
                                 IssueCommentRequest(it, text, publicRef.current?.checked),
@@ -211,7 +211,7 @@ val issuesPage = fc<Props> {
                         }
                     }
 
-                    recaptcha(captchaRef)
+                    captcha(captchaRef)
                 }
             }
         }

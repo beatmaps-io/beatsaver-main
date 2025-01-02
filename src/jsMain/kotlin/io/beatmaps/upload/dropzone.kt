@@ -3,7 +3,7 @@ package io.beatmaps.upload
 import external.Axios
 import external.AxiosResponse
 import external.DropzoneProps
-import external.IReCAPTCHA
+import external.ICaptchaHandler
 import io.beatmaps.History
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.UploadValidationInfo
@@ -41,14 +41,14 @@ fun RElementBuilder<DropzoneProps>.simple(
     errors: Boolean,
     progressBarInnerRef: RefObject<HTMLElement>,
     dropText: String,
-    captchaRef: RefObject<IReCAPTCHA>,
+    captchaRef: RefObject<ICaptchaHandler>,
     block: (FormData) -> Unit,
     errorsBlock: (List<UploadValidationInfo>) -> Unit,
     extraInfo: List<String> = emptyList(),
     successBlock: ((AxiosResponse<dynamic>) -> Unit)? = null
 ) {
     attrs.onDrop = { file ->
-        captchaRef.current?.executeAsync()?.then {
+        captchaRef.current?.execute()?.then {
             val data = FormData().also(block)
             data.append("recaptcha", it)
             data.asDynamic().append("file", file[0]) // Kotlin doesn't have an equivalent method to this js

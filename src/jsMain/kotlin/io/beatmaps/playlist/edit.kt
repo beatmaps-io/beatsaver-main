@@ -1,10 +1,10 @@
 package io.beatmaps.playlist
 
 import external.Axios
-import external.IReCAPTCHA
+import external.ICaptchaHandler
+import external.captcha
 import external.generateConfig
 import external.reactFor
-import external.recaptcha
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
@@ -55,7 +55,7 @@ import react.useRef
 import react.useState
 
 val editPlaylist = fc<Props> {
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
     val coverRef = useRef<HTMLInputElement>()
 
     val nameRef = useRef<HTMLInputElement>()
@@ -167,7 +167,7 @@ val editPlaylist = fc<Props> {
                     }
 
                     val data = FormData()
-                    captchaRef.current?.executeAsync()?.then {
+                    captchaRef.current?.execute()?.then {
                         data.append("recaptcha", it)
                         sendForm(data)
                     } ?: run {
@@ -245,7 +245,7 @@ val editPlaylist = fc<Props> {
                     }
                     if (id == null) {
                         // Middle element otherwise the button corners don't round properly
-                        recaptcha(captchaRef)
+                        captcha(captchaRef)
                     }
                     button(classes = "btn btn-success w-50", type = ButtonType.submit) {
                         attrs.disabled = loading

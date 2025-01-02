@@ -1,7 +1,7 @@
 package io.beatmaps.maps.testplay
 
 import external.Axios
-import external.IReCAPTCHA
+import external.ICaptchaHandler
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
@@ -16,7 +16,7 @@ import kotlin.js.Promise
 
 external interface NewFeedbackProps : Props {
     var hash: String
-    var captcha: RefObject<IReCAPTCHA>
+    var captcha: RefObject<ICaptchaHandler>
 }
 
 val newFeedback = fc<NewFeedbackProps> { props ->
@@ -36,7 +36,7 @@ val newFeedback = fc<NewFeedbackProps> { props ->
         newIssueComment {
             attrs.buttonText = "Leave feedback"
             attrs.saveCallback = { newText ->
-                val res = props.captcha.current?.executeAsync()?.then {
+                props.captcha.current?.execute()?.then {
                     Axios.post<ActionResponse>("${Config.apibase}/testplay/feedback", FeedbackUpdate(props.hash, newText, it), generateConfig<FeedbackUpdate, ActionResponse>()).then { res ->
                         setDone(true)
                         setTime(Instant.now().toString())
@@ -44,9 +44,7 @@ val newFeedback = fc<NewFeedbackProps> { props ->
 
                         res
                     }
-                } ?: Promise.reject(IllegalStateException("Captcha not present"))
-
-                res.then { it }
+                }?.then { it } ?: Promise.reject(IllegalStateException("Captcha not present"))
             }
         }
     }

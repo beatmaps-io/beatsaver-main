@@ -1,9 +1,9 @@
 package io.beatmaps.maps
 
 import external.Axios
-import external.IReCAPTCHA
+import external.ICaptchaHandler
 import external.generateConfig
-import external.recaptcha
+import external.captcha
 import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.ActionResponse
@@ -96,7 +96,7 @@ val mapInfo = fc<MapInfoProps> { props ->
     val isCollaboratorLocal = props.mapInfo.collaborators?.let { loggedInId in it.map { collaborator -> collaborator.id } } == true
 
     val modal = useContext(modalContext)
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
 
     fun recall() {
         setLoading(true)
@@ -158,7 +158,7 @@ val mapInfo = fc<MapInfoProps> { props ->
     fun report() {
         captchaRef.current?.let { cc ->
             setLoading(true)
-            cc.executeAsync().then { captcha ->
+            cc.execute()?.then { captcha ->
                 val reason = reasonRef.current?.value?.trim() ?: ""
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
@@ -167,7 +167,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                 ).then {
                     history.push("/issues/${it.data}")
                 }
-            }.finally {
+            }?.finally {
                 setLoading(false)
             }
         }
@@ -392,7 +392,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                                                         textarea(classes = "form-control") {
                                                             ref = reasonRef
                                                         }
-                                                        recaptcha(captchaRef)
+                                                        captcha(captchaRef)
                                                     },
                                                     buttons = listOf(
                                                         ModalButton("Report", "danger", ::report),

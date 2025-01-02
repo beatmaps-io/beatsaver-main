@@ -1,7 +1,8 @@
 package io.beatmaps.shared.review
 
 import external.Axios
-import external.IReCAPTCHA
+import external.ICaptchaHandler
+import external.ITurnstile
 import external.axiosDelete
 import external.generateConfig
 import io.beatmaps.Config
@@ -34,7 +35,7 @@ import react.useState
 external interface ReplyProps : Props {
     var reply: ReviewReplyDetail
     var modal: RefObject<ModalComponent>?
-    var captcha: RefObject<IReCAPTCHA>?
+    var captcha: RefObject<ICaptchaHandler>?
 }
 
 val reply = fc<ReplyProps> { props ->
@@ -118,7 +119,7 @@ val reply = fc<ReplyProps> { props ->
                     attrs.textClass = "mt-2"
                     attrs.maxLength = ReviewConstants.MAX_REPLY_LENGTH
                     attrs.saveText = { newReply ->
-                        props.captcha?.current?.executeAsync()?.then {
+                        props.captcha?.current?.execute()?.then {
                             props.captcha?.current?.reset()
 
                             Axios.put<ActionResponse>("${Config.apibase}/reply/single/${props.reply.id}", ReplyRequest(newReply, it), generateConfig<ReplyRequest, ActionResponse>())

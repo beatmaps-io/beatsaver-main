@@ -325,7 +325,7 @@ fun Route.testplayRoute(client: HttpClient) {
         requireAuthorization(OauthScope.TESTPLAY) { _, sess ->
             val update = call.receive<FeedbackUpdate>()
 
-            captchaIfPresent(update.captcha) {
+            captchaIfPresent(client, update.captcha) {
                 transaction {
                     val subQuery = Versions.select(Versions.id).where { Versions.hash eq update.hash }
 

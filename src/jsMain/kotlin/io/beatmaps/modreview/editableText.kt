@@ -10,6 +10,7 @@ import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.PropsWithChildren
 import react.dom.button
+import react.dom.defaultValue
 import react.dom.div
 import react.dom.jsStyle
 import react.dom.span
@@ -48,7 +49,7 @@ val editableText = fc<EditableTextProps> { props ->
                 attrs.id = "review"
                 attrs.disabled = loading == true
                 attrs.placeholder = props.placeholder ?: ""
-                +displayText
+                attrs.defaultValue = displayText
                 ref = textareaRef
                 props.maxLength?.let { max ->
                     attrs.maxLength = "$max"

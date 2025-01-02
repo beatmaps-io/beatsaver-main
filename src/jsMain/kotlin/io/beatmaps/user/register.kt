@@ -1,9 +1,9 @@
 package io.beatmaps.user
 
 import external.Axios
-import external.IReCAPTCHA
+import external.ICaptchaHandler
 import external.generateConfig
-import external.recaptcha
+import external.captcha
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
@@ -40,7 +40,7 @@ val signupPage = fc<Props> {
     val passwordRef = useRef<HTMLInputElement>()
     val password2Ref = useRef<HTMLInputElement>()
 
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
 
     useEffectOnce {
         setPageTitle("Register")
@@ -63,7 +63,7 @@ val signupPage = fc<Props> {
                     ev.preventDefault()
                     setLoading(true)
 
-                    captchaRef.current?.executeAsync()?.then { captcha ->
+                    captchaRef.current?.execute()?.then { captcha ->
                         Axios.post<ActionResponse>(
                             "${Config.apibase}/users/register",
                             RegisterRequest(
@@ -149,5 +149,5 @@ val signupPage = fc<Props> {
         }
     }
 
-    recaptcha(captchaRef)
+    captcha(captchaRef)
 }

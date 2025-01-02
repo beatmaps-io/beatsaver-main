@@ -1,7 +1,8 @@
 package io.beatmaps.user.account
 
 import external.Axios
-import external.IReCAPTCHA
+import external.ICaptchaHandler
+import external.ITurnstile
 import external.generateConfig
 import external.reactFor
 import io.beatmaps.Config
@@ -27,7 +28,7 @@ import react.useState
 
 external interface AccountEmailProps : Props {
     var userDetail: UserDetail
-    var captchaRef: RefObject<IReCAPTCHA>
+    var captchaRef: RefObject<ICaptchaHandler>
 }
 
 val accountEmail = fc<AccountEmailProps> { props ->
@@ -65,7 +66,7 @@ val accountEmail = fc<AccountEmailProps> { props ->
                     } else {
                         setLoading(true)
 
-                        props.captchaRef.current?.executeAsync()?.then { captcha ->
+                        props.captchaRef.current?.execute()?.then { captcha ->
                             Axios.post<ActionResponse>(
                                 "${Config.apibase}/users/email",
                                 EmailRequest(captcha, email),

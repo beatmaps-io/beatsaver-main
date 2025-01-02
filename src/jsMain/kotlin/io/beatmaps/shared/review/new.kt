@@ -1,7 +1,7 @@
 package io.beatmaps.shared.review
 
 import external.Axios
-import external.IReCAPTCHA
+import external.ICaptchaHandler
 import external.axiosGet
 import external.generateConfig
 import io.beatmaps.Config
@@ -32,7 +32,7 @@ external interface NewReviewProps : Props {
     var mapId: String
     var userId: Int
     var existingReview: Boolean?
-    var captcha: RefObject<IReCAPTCHA>?
+    var captcha: RefObject<ICaptchaHandler>?
     var setExistingReview: ((Boolean) -> Unit)?
     var reloadList: (() -> Unit)?
 }
@@ -111,7 +111,7 @@ val newReview = fc<NewReviewProps> { props ->
 
                             setLoading(true)
 
-                            props.captcha?.current?.executeAsync()?.then { captcha ->
+                            props.captcha?.current?.execute()?.then { captcha ->
                                 props.captcha?.current?.reset()
 
                                 Axios.put<ActionResponse>(

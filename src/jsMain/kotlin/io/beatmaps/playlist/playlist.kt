@@ -2,12 +2,12 @@ package io.beatmaps.playlist
 
 import external.Axios
 import external.DragAndDrop.DragDropContext
-import external.IReCAPTCHA
+import external.ICaptchaHandler
 import external.draggable
 import external.droppable
 import external.generateConfig
 import external.invoke
-import external.recaptcha
+import external.captcha
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
@@ -66,7 +66,7 @@ val playlistPage = fc<Props> {
 
     val modalRef = useRef<ModalComponent>()
     val reasonRef = useRef<HTMLTextAreaElement>()
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
     val itemsPerPage = PlaylistConstants.PAGE_SIZE
 
     val audio = useAudio()
@@ -165,7 +165,7 @@ val playlistPage = fc<Props> {
     fun report(playlistId: Int) {
         captchaRef.current?.let { cc ->
             setLoading(true)
-            cc.executeAsync().then { captcha ->
+            cc.execute()?.then { captcha ->
                 val reason = reasonRef.current?.value?.trim() ?: ""
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
@@ -174,7 +174,7 @@ val playlistPage = fc<Props> {
                 ).then {
                     history.push("/issues/${it.data}")
                 }
-            }.finally {
+            }?.finally {
                 setLoading(false)
             }
         }
@@ -347,7 +347,7 @@ val playlistPage = fc<Props> {
                                                 textarea(classes = "form-control") {
                                                     ref = reasonRef
                                                 }
-                                                recaptcha(captchaRef)
+                                                captcha(captchaRef)
                                             },
                                             buttons = listOf(
                                                 ModalButton("Report", "danger") { report(pl.playlistId) },

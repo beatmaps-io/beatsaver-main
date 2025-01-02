@@ -1,12 +1,12 @@
 package io.beatmaps.shared.review
 
 import external.Axios
-import external.IReCAPTCHA
+import external.ICaptchaHandler
 import external.axiosDelete
 import external.axiosGet
 import external.generateConfig
 import external.reactFor
-import external.recaptcha
+import external.captcha
 import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.ActionResponse
@@ -57,7 +57,7 @@ external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
     var userId: Int
     var map: MapDetail?
     var modal: RefObject<ModalComponent>?
-    var captcha: RefObject<IReCAPTCHA>?
+    var captcha: RefObject<ICaptchaHandler>?
     var setExistingReview: ((Boolean) -> Unit)?
     var history: History?
 }
@@ -91,7 +91,7 @@ val sentimentIcon = fc<SentimentIconProps> {
 
 class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemState>(2) {
     private val reasonRef = createRef<HTMLTextAreaElement>()
-    private val captchaRef = createRef<IReCAPTCHA>().unsafeCast<MutableRefObject<IReCAPTCHA>>()
+    private val captchaRef = createRef<ICaptchaHandler>().unsafeCast<MutableRefObject<ICaptchaHandler>>()
 
     override fun componentWillReceiveProps(nextProps: ReviewItemProps) {
         state.replies = nextProps.obj?.replies
@@ -128,7 +128,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
             setState {
                 loading = true
             }
-            cc.executeAsync().then { captcha ->
+            cc.execute()?.then { captcha ->
                 val reason = reasonRef.current?.value?.trim() ?: ""
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
@@ -137,7 +137,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                 ).then {
                     props.history?.push("/issues/${it.data}")
                 }
-            }.finally {
+            }?.finally {
                 setState {
                     loading = false
                 }
@@ -205,7 +205,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                                                     textarea(classes = "form-control") {
                                                                         ref = reasonRef
                                                                     }
-                                                                    recaptcha(captchaRef)
+                                                                    captcha(captchaRef)
                                                                 },
                                                                 buttons = listOf(
                                                                     ModalButton("Report", "danger") { report(rv.id) },
@@ -318,7 +318,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                 if (state.editing != true && userData != null && (userData.userId == rv.creator?.id || userData.userId == props.map?.uploader?.id || props.map?.collaborators?.any { it.id == userData.userId } == true)) {
                                     replyInput {
                                         attrs.onSave = { reply ->
-                                            props.captcha?.current?.executeAsync()?.then {
+                                            props.captcha?.current?.execute()?.then {
                                                 props.captcha?.current?.reset()
                                                 Axios.post<ActionResponse>("${Config.apibase}/reply/create/${rv.id}", ReplyRequest(reply, it), generateConfig<ReplyRequest, ActionResponse>(validStatus = arrayOf(200, 400)))
                                             }?.then { it }

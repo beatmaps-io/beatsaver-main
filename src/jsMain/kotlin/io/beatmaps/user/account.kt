@@ -1,12 +1,12 @@
 package io.beatmaps.user
 
 import external.Axios
-import external.IReCAPTCHA
+import external.ICaptchaHandler
 import external.axiosDelete
 import external.axiosGet
 import external.generateConfig
+import external.captcha
 import external.reactFor
-import external.recaptcha
 import io.beatmaps.Config
 import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.AccountType
@@ -67,7 +67,7 @@ val accountTab = fc<AccountComponentProps> { props ->
 
     val (sessions, setSessions) = useState<SessionsData?>(null)
 
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
 
     useEffect(props.userDetail) {
         axiosGet<SessionsData>(
@@ -304,5 +304,5 @@ val accountTab = fc<AccountComponentProps> { props ->
         }
     }
 
-    recaptcha(captchaRef)
+    captcha(captchaRef)
 }
