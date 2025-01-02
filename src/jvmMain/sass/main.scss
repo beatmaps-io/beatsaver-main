@@ -2070,13 +2070,10 @@ select.dark {
   cursor: pointer; // Why this isn't already the case is beyond me
 }
 
-.invalid-feedback {
-  flex-basis: 100%;
-  a {
-    color: #b52a1c;
-    text-decoration: underline;
-    text-decoration-style: dashed;
-  }
+.invalid-feedback a {
+  color: #b52a1c;
+  text-decoration: underline;
+  text-decoration-style: dashed;
 }
 
 .ranked-statuses {
