@@ -255,9 +255,11 @@ table.search-results {
     }
 
     .reply-input {
+      margin-top: .5rem;
       display: flex;
-      gap: 0.5rem;
+      column-gap: 0.5rem;
       align-items: flex-end;
+      flex-wrap: wrap;
 
       div:has(textarea) {
         flex-grow: 1;
@@ -780,6 +782,9 @@ table.modreview {
   padding-bottom: 0 !important;
 }
 .link-buttons {
+  margin-left: auto;
+  flex-shrink: 0 !important;
+
   > i {
     padding: 0 10px;
   }
@@ -1334,9 +1339,13 @@ div.mapstats {
       margin: auto 0 0 0;
     }
 
-    .btn-group {
-      margin-right: 5px;
+    .button-wrap {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
 
+    .btn-group {
       .btn i {
         margin-right: 5px;
       }

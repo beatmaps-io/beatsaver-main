@@ -54,7 +54,7 @@ val issueComment = fc<IssueCommentProps> { props ->
                 }
             }
 
-            div("ms-auto link-buttons flex-shrink-0") {
+            div("link-buttons") {
                 if (props.issueOpen && userData?.userId == props.comment.user.id) {
                     a("#") {
                         attrs.title = "Edit"

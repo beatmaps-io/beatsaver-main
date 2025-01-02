@@ -280,6 +280,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                 attrs.text = state.text ?: rv.text
                                 attrs.editing = state.editing
                                 attrs.renderText = true
+                                attrs.textClass = "mt-2"
                                 attrs.maxLength = ReviewConstants.MAX_LENGTH
                                 attrs.saveText = { newReview ->
                                     val newSentiment = state.newSentiment ?: sentimentLocal
@@ -319,7 +320,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                         attrs.onSave = { reply ->
                                             props.captcha?.current?.executeAsync()?.then {
                                                 props.captcha?.current?.reset()
-                                                Axios.post<ActionResponse>("${Config.apibase}/reply/create/${rv.id}", ReplyRequest(reply, it), generateConfig<ReplyRequest, ActionResponse>())
+                                                Axios.post<ActionResponse>("${Config.apibase}/reply/create/${rv.id}", ReplyRequest(reply, it), generateConfig<ReplyRequest, ActionResponse>(validStatus = arrayOf(200, 400)))
                                             }?.then { it }
                                         }
                                         attrs.onSuccess = {

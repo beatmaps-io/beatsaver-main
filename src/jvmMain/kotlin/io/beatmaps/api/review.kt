@@ -616,7 +616,6 @@ fun Route.reviewRoute() {
                 ActionResponse.error(*e.errorCodes.map { "Captcha error: $it" }.toTypedArray())
             }
 
-            // TODO: Check frontend still shows errors
             call.respond(if (response.success) HttpStatusCode.OK else HttpStatusCode.BadRequest, response)
         }
     }

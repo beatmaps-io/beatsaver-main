@@ -31,6 +31,7 @@ external interface EditableTextProps : PropsWithChildren {
     var btnClass: String?
     var justify: String?
     var placeholder: String?
+    var textClass: String?
 }
 
 val editableText = fc<EditableTextProps> { props ->
@@ -42,8 +43,8 @@ val editableText = fc<EditableTextProps> { props ->
     val displayText = (props.text ?: "")
 
     if (props.editing == true) {
-        div {
-            textarea((props.rows ?: 10).toString(), classes = "form-control mt-2") {
+        div(classes = props.textClass) {
+            textarea((props.rows ?: 10).toString(), classes = "form-control") {
                 attrs.id = "review"
                 attrs.disabled = loading == true
                 attrs.placeholder = props.placeholder ?: ""

@@ -95,7 +95,7 @@ val issuesPage = fc<Props> {
                         }
                     }
                     if (userData?.admin == true) {
-                        div("ms-auto link-buttons flex-shrink-0") {
+                        div("link-buttons") {
                             a("#") {
                                 attrs.title = if (open) "Archive" else "Reopen"
                                 attrs.onClickFunction = { ev ->

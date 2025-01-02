@@ -114,7 +114,7 @@ val alert = fc<AlertProps> { props ->
                 }
                 if (props.alert?.id != null) {
                     props.markAlert?.let { ma ->
-                        div("ms-auto link-buttons flex-shrink-0") {
+                        div("link-buttons") {
                             a("#") {
                                 attrs.title = if (props.read != true) "Mark as read" else "Mark as unread"
                                 attrs.onClickFunction = { ev ->

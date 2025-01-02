@@ -211,7 +211,7 @@ val mapInfo = fc<MapInfoProps> { props ->
             } else {
                 +props.mapInfo.name
             }
-            div("ms-auto link-buttons flex-shrink-0") {
+            div("link-buttons") {
                 if (!deleted) {
                     props.mapInfo.mainVersion()?.let { version ->
                         div("thin-dd" + if (dropdown) " show" else "") {
