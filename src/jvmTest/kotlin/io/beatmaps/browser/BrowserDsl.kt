@@ -5,15 +5,18 @@ import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Request
 import com.microsoft.playwright.Route
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import com.microsoft.playwright.options.LoadState
 import io.beatmaps.browser.page.HomePage
+import io.beatmaps.browser.page.IssuePage
 import io.beatmaps.browser.page.LoginPage
 import io.beatmaps.browser.page.MapPage
 import io.beatmaps.browser.page.Modals
 import io.beatmaps.browser.page.PageHeader
+import io.beatmaps.browser.page.PlaylistPage
 import io.beatmaps.browser.page.RegisterPage
 import io.beatmaps.browser.page.UploadPage
-import io.beatmaps.browser.page.UserAccountPage
+import io.beatmaps.browser.page.UserPage
 import io.beatmaps.browser.util.FixtureHelpers
 import io.beatmaps.common.json
 import io.ktor.client.HttpClient
@@ -27,6 +30,11 @@ import java.nio.file.Paths
 class BrowserDsl(private val testHost: String, private val client: HttpClient, private val page: Page) : FixtureHelpers() {
     fun navigate(url: String) {
         page.navigate("$testHost$url")
+        waitForNetwork()
+    }
+
+    fun reload() {
+        page.navigate(page.url())
         waitForNetwork()
     }
 
@@ -44,7 +52,7 @@ class BrowserDsl(private val testHost: String, private val client: HttpClient, p
         }
     }
 
-    fun url(): String = page.url()
+    fun url(): String = page.url().removePrefix(testHost)
 
     fun clipboard(): String? = page.evaluate("navigator.clipboard.readText()") as? String
 
@@ -68,6 +76,12 @@ class BrowserDsl(private val testHost: String, private val client: HttpClient, p
 
     private fun waitForNetwork() {
         page.waitForLoadState(LoadState.NETWORKIDLE)
+    }
+
+    fun assertVisible(locator: Locator, expected: Boolean) {
+        with(assertThat(locator)) {
+            if (expected) this else not()
+        }.isVisible()
     }
 
     fun delay(t: Double) {
@@ -102,5 +116,7 @@ class BrowserDsl(private val testHost: String, private val client: HttpClient, p
     fun mapPage(block: MapPage.() -> Unit) = block(MapPage(page))
     fun loginPage(block: LoginPage.() -> Unit) = block(LoginPage(page))
     fun registerPage(block: RegisterPage.() -> Unit) = block(RegisterPage(page))
-    fun userAccountPage(block: UserAccountPage.() -> Unit) = block(UserAccountPage(page))
+    fun userPage(block: UserPage.() -> Unit) = block(UserPage(page))
+    fun issuePage(block: IssuePage.() -> Unit) = block(IssuePage(page))
+    fun playlistPage(block: PlaylistPage.() -> Unit) = block(PlaylistPage(page))
 }

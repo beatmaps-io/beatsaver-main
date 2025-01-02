@@ -8,33 +8,35 @@ import kotlin.time.Duration.Companion.days
 class UserAccountActionTest : BrowserTestBase() {
     @Test
     fun `Can change username`() = bmTest {
-        val (uid, username) = transaction {
+        val (uid, name) = transaction {
             createUser(2.days)
         }
 
         login(uid)
         navigate("/profile#account")
 
-        userAccountPage {
-            usernameChange.click()
-            assertThat(usernameErrors()).hasText("That's already your username!")
+        userPage {
+            accountTab {
+                username.change.click()
+                assertThat(username.errors()).hasText("That's already your username!")
 
-            // We could create a second account and use that for this test but "test" should always exist
-            usernameField.fill("test")
-            usernameChange.click()
-            assertThat(usernameErrors()).hasText("Username already taken")
+                // We could create a second account and use that for this test but "test" should always exist
+                username.field.fill("test")
+                username.change.click()
+                assertThat(username.errors()).hasText("Username already taken")
 
-            usernameField.fill("username with spaces")
-            usernameChange.click()
-            assertThat(usernameErrors()).hasText("Username not valid")
+                username.field.fill("username with spaces")
+                username.change.click()
+                assertThat(username.errors()).hasText("Username not valid")
 
-            usernameField.fill("${username}2")
-            usernameChange.click()
-            assertThat(username()).hasText("${username}2")
+                username.field.fill("${name}2")
+                username.change.click()
+                assertThat(userInfo.username()).hasText("${name}2")
 
-            usernameField.fill(username)
-            usernameChange.click()
-            assertThat(usernameErrors()).hasText("You can only set a new username once per day")
+                username.field.fill(name)
+                username.change.click()
+                assertThat(username.errors()).hasText("You can only set a new username once per day")
+            }
         }
     }
 }

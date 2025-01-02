@@ -27,6 +27,7 @@ val newIssueComment = fc<NewCommentProps> { props ->
     }
 
     timelineEntry {
+        attrs.id = "new-comment"
         attrs.icon = "fa-plus"
         attrs.color = "success"
         attrs.bodyCallback = TimelineEntrySectionRenderer {

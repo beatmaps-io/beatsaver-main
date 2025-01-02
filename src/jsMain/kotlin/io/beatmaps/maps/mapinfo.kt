@@ -377,6 +377,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                                     }
                                 } else if (userData?.suspended == false && !isOwnerLocal) {
                                     a("#") {
+                                        attrs.id = "report"
                                         attrs.title = "Report"
                                         attrs.attributes["aria-label"] = "Report"
                                         attrs.onClickFunction = {

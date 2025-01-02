@@ -307,6 +307,7 @@ val profilePage = fc<Props> { _ ->
                                 userDetail?.playlistUrl?.let { url ->
                                     div("btn-group") {
                                         a(url, "_blank", "btn btn-secondary") {
+                                            attrs.id = "dl-playlist"
                                             attrs.attributes["download"] = ""
                                             i("fas fa-download") { }
                                             +"Playlist"
@@ -315,6 +316,7 @@ val profilePage = fc<Props> { _ ->
                                             "bsplaylist://playlist/$url/beatsaver-user-${userDetail.id}.bplist",
                                             classes = "btn btn-primary"
                                         ) {
+                                            attrs.id = "oc-playlist"
                                             attrs.attributes["aria-label"] = "One-Click"
                                             i("fas fa-cloud-download-alt m-0") { }
                                         }
@@ -325,6 +327,7 @@ val profilePage = fc<Props> { _ ->
                                         div("btn-group") {
                                             val btnClasses = "btn btn-" + if (fd.following) "secondary" else "primary"
                                             button(classes = btnClasses) {
+                                                attrs.id = "follow"
                                                 attrs.disabled = loading
                                                 attrs.onClickFunction = { e ->
                                                     e.preventDefault()
@@ -341,6 +344,7 @@ val profilePage = fc<Props> { _ ->
                                             }
                                             div("btn-group m-0") {
                                                 button(classes = "dropdown-toggle $btnClasses") {
+                                                    attrs.id = "follow-dd"
                                                     attrs.onClickFunction = {
                                                         it.stopPropagation()
                                                         setFollowsDropdown(!followsDropdown)
@@ -409,6 +413,7 @@ val profilePage = fc<Props> { _ ->
                                     if (!userData.suspended && !userData.admin && loggedInLocal != userDetail?.id && userDetail?.id != null) {
                                         div("btn-group") {
                                             button(classes = "btn btn-danger") {
+                                                attrs.id = "report"
                                                 attrs.disabled = loading
                                                 attrs.attributes["aria-label"] = "Report"
                                                 attrs.onClickFunction = { e ->

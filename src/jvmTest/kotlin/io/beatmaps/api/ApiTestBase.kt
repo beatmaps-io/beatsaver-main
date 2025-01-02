@@ -42,7 +42,7 @@ open class ApiTestBase : FixtureHelpers() {
             get("/login-test/{id?}") {
                 val id = call.parameters["id"]?.toIntOrNull() ?: 1
                 val user = transaction { UserDao[id] }
-                call.sessions.set(Session(id, userEmail = user.email, userName = user.name, uniqueName = user.uniqueName, suspended = user.suspendedAt != null))
+                call.sessions.set(Session(id, userEmail = user.email, userName = user.name, uniqueName = user.uniqueName, suspended = user.suspendedAt != null, admin = user.admin, curator = user.curator))
             }
         }
 

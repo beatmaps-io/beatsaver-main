@@ -45,7 +45,7 @@ abstract class FixtureHelpers {
         property(ReviewReplyDetail::review) { null }
     }
 
-    fun createUser(renamedAtOffset: Duration? = null, suspended: Boolean = false, reviewAlerts: Boolean = true): Pair<Int, String> {
+    fun createUser(renamedAtOffset: Duration? = null, admin: Boolean = false, suspended: Boolean = false, reviewAlerts: Boolean = true): Pair<Int, String> {
         val now = Clock.System.now().epochSeconds
         val fuzz = fixture(1..100000)
 
@@ -67,6 +67,7 @@ abstract class FixtureHelpers {
                     it[suspendedAt] = NowExpression(suspendedAt)
                 }
                 it[User.reviewAlerts] = reviewAlerts
+                it[User.admin] = admin
             }.value to username
         }
     }
