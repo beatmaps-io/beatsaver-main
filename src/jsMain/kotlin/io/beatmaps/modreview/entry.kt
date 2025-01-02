@@ -147,19 +147,24 @@ val modReviewEntry = fc<ModReviewEntryProps> { props ->
                 props.entry?.let { review ->
                     div("text-wrap text-break expand") {
                         p("card-text") {
-                            if (editing && review is ReviewDetail) {
+                            val textClass = if (editing && review is ReviewDetail) {
                                 sentimentPicker {
                                     attrs.sentiment = newSentiment ?: sentiment ?: review.sentiment
                                     attrs.updateSentiment = { newSentiment ->
                                         setNewSentiment(newSentiment)
                                     }
                                 }
+
+                                "mt-2"
+                            } else {
+                                null
                             }
+
                             editableText {
                                 attrs.text = text ?: review.text
                                 attrs.editing = editing
                                 attrs.maxLength = ReviewConstants.MAX_LENGTH
-                                attrs.textClass = "mt-2"
+                                attrs.textClass = textClass
                                 attrs.saveText = { newReview ->
                                     val newSentimentLocal = if (review is ReviewDetail) {
                                         newSentiment ?: sentiment ?: review.sentiment

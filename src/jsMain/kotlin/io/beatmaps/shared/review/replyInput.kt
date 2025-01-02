@@ -30,7 +30,7 @@ val replyInput = fc<ReplyInputProps> { props ->
             attrs.rows = 1
             attrs.maxLength = ReviewConstants.MAX_REPLY_LENGTH
             attrs.saveText = props.onSave?.let { f ->
-                { newStr: String ->
+                val newFunc = { newStr: String ->
                     f.invoke(newStr)?.then { res ->
                         if (!res.data.success) {
                             setErrors(res.data.errors)
@@ -39,6 +39,8 @@ val replyInput = fc<ReplyInputProps> { props ->
                         res
                     }
                 }
+
+                newFunc
             }
             attrs.stopEditing = props.onSuccess
         }
