@@ -18,9 +18,11 @@ import kotlinx.html.small
 import kotlinx.html.span
 import kotlinx.html.title
 import kotlinx.html.ul
+import kotlinx.html.unsafe
 import kotlin.time.Duration.Companion.days
 
-val bannerEnabled = System.getenv("BANNER_ENABLED") == "true"
+val bannerId = System.getenv("BANNER_ID")
+val bannerText = System.getenv("BANNER_TEXT")
 val supportLink = System.getenv("SUPPORT_LINK")
 
 class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
@@ -227,14 +229,14 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                 }
             }
         }
-        if (bannerEnabled) {
+        if (bannerId != null && bannerText != null) {
             div("navbar navbar-expand-lg navbar-light bg-warning") {
                 id = "site-notice"
+                attributes["data-id"] = bannerId
                 div("container flex-nowrap") {
                     div("navbar-text flex-grow-1 text-center") {
-                        +"The 4th Annual Beasties Awards is here! Submit your favorite maps of the past year at "
-                        a("https://saera.dev/beasties", target = "_blank") {
-                            +"https://saera.dev/beasties"
+                        unsafe {
+                            +bannerText
                         }
                     }
                     button(type = ButtonType.button, classes = "btn-close btn-close-white") {
