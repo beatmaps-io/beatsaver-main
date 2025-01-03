@@ -4,8 +4,8 @@ import external.Axios
 import external.ICaptchaHandler
 import external.TimeAgo
 import external.axiosGet
-import external.generateConfig
 import external.captcha
+import external.generateConfig
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
@@ -42,7 +42,6 @@ import react.useEffect
 import react.useRef
 import react.useState
 import web.html.HTMLInputElement
-import kotlin.js.Promise
 
 val issuesPage = fc<Props> {
     val (loading, setLoading) = useState(false)
@@ -186,15 +185,13 @@ val issuesPage = fc<Props> {
                         setLoading(it)
                     }
                     attrs.saveCallback = { text ->
-                        val res = captchaRef.current?.execute()?.then {
+                        captchaRef.current?.execute()?.then {
                             Axios.put<ActionResponse>(
                                 "${Config.apibase}/issues/comments/${issue.id}",
                                 IssueCommentRequest(it, text, publicRef.current?.checked),
                                 generateConfig<IssueCommentRequest, ActionResponse>()
                             )
-                        } ?: Promise.reject(IllegalStateException("Captcha not present"))
-
-                        res.then { it }
+                        }?.then { it }
                     }
                     attrs.successCallback = {
                         loadIssue()

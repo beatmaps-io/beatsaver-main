@@ -466,7 +466,7 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
         bookmarkRoute()
         collaborationRoute()
         questRoute(deviceCodeStore)
-        issueRoute()
+        issueRoute(httpClient)
 
         mapController()
         userController()

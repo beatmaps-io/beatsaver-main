@@ -36,7 +36,6 @@ import react.dom.div
 import react.dom.i
 import react.dom.jsStyle
 import react.fc
-import react.ref
 import react.router.useLocation
 import react.router.useNavigate
 import react.useContext
@@ -79,7 +78,7 @@ val homePage = fc<Props> {
     val (environments, setEnvironments) = useState<EnvironmentSet?>(null)
     val (searchParams, setSearchParams) = useState(fromURL())
 
-    val modalRef = useRef<ModalComponent>()
+    val modalRef = useRef<ModalCallbacks>()
     val history = History(useNavigate())
 
     val userData = useContext(globalContext)
@@ -143,7 +142,7 @@ val homePage = fc<Props> {
     }
 
     modal {
-        ref = modalRef
+        attrs.callbacks = modalRef
     }
 
     modalContext.Provider {

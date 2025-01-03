@@ -30,7 +30,7 @@ import react.useState
 
 val changeEmailPage = fc<Props> {
     val (loading, setLoading) = useState(false)
-    val (errors, setErrors) = useState(listOf<String>())
+    val (errors, setErrors) = useState(emptyList<String>())
     val passwordRef = useRef<HTMLInputElement>()
     val params = useParams()
     val history = History(useNavigate())

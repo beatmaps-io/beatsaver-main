@@ -2,8 +2,8 @@ package io.beatmaps.user
 
 import external.Axios
 import external.ICaptchaHandler
-import external.generateConfig
 import external.captcha
+import external.generateConfig
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
@@ -28,7 +28,7 @@ import react.useState
 val forgotPage = fc<Props> {
     val (complete, setComplete) = useState(false)
     val (loading, setLoading) = useState(false)
-    val (errors, setErrors) = useState(listOf<String>())
+    val (errors, setErrors) = useState(emptyList<String>())
 
     val emailRef = useRef<HTMLInputElement>()
     val captchaRef = useRef<ICaptchaHandler>()
@@ -67,10 +67,11 @@ val forgotPage = fc<Props> {
                                 setErrors(it.data.errors)
                                 setLoading(false)
                             }
-                        }.catch {
-                            // Cancelled request
-                            setLoading(false)
                         }
+                    }?.catch {
+                        // Cancelled request or bad captcha
+                        setErrors(listOfNotNull(it.message))
+                        setLoading(false)
                     }
                 }
                 errors {

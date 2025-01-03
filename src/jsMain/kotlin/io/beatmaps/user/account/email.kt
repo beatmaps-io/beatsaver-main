@@ -2,7 +2,6 @@ package io.beatmaps.user.account
 
 import external.Axios
 import external.ICaptchaHandler
-import external.ITurnstile
 import external.generateConfig
 import external.reactFor
 import io.beatmaps.Config
@@ -33,7 +32,7 @@ external interface AccountEmailProps : Props {
 
 val accountEmail = fc<AccountEmailProps> { props ->
     val (email, setEmail) = useState(props.userDetail.email ?: "")
-    val (errors, setErrors) = useState(listOf<String>())
+    val (errors, setErrors) = useState(emptyList<String>())
     val (valid, setValid) = useState(false)
     val (loading, setLoading) = useState(false)
     val emailRef = useRef<HTMLInputElement>()
@@ -67,25 +66,24 @@ val accountEmail = fc<AccountEmailProps> { props ->
                         setLoading(true)
 
                         props.captchaRef.current?.execute()?.then { captcha ->
+                            props.captchaRef.current?.reset()
+
                             Axios.post<ActionResponse>(
                                 "${Config.apibase}/users/email",
                                 EmailRequest(captcha, email),
                                 generateConfig<EmailRequest, ActionResponse>()
                             ).then {
-                                if (it.data.success) {
-                                    setValid(true)
-                                    setErrors(listOf("Email sent"))
-                                    setLoading(false)
-                                } else {
-                                    props.captchaRef.current?.reset()
-                                    setValid(false)
-                                    setErrors(it.data.errors)
-                                    setLoading(false)
-                                }
-                            }.catch {
-                                // Cancelled request
-                                setLoading(false)
+                                setValid(it.data.success)
+                                setErrors(
+                                    if (it.data.success) listOf("Email sent") else it.data.errors
+                                )
                             }
+                        }?.catch {
+                            // Cancelled request
+                            setValid(false)
+                            setErrors(listOfNotNull(it.message))
+                        }?.finally {
+                            setLoading(false)
                         }
                     }
                 }

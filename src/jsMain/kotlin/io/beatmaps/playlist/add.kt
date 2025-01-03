@@ -21,6 +21,7 @@ import react.dom.span
 import react.fc
 import react.useContext
 import react.useState
+import kotlin.js.Promise
 
 external interface AddToPlaylistProps : Props {
     var map: MapDetail
@@ -31,7 +32,7 @@ val addToPlaylist = fc<AddToPlaylistProps> { props ->
 
     val modal = useContext(modalContext)
 
-    fun save(mapId: String, data: MutableMap<Int, Boolean>) {
+    fun save(mapId: String, data: MutableMap<Int, Boolean>) = Promise.resolve(true).also {
         launch {
             data.forEach {
                 Axios.post<String>(
@@ -51,7 +52,7 @@ val addToPlaylist = fc<AddToPlaylistProps> { props ->
             setLoading(false)
 
             val changes: MutableMap<Int, Boolean> = mutableMapOf()
-            modal?.current?.showDialog(
+            modal?.current?.showDialog?.invoke(
                 ModalData(
                     "Add to playlist",
                     bodyCallback = {

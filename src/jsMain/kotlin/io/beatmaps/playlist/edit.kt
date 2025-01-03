@@ -167,9 +167,12 @@ val editPlaylist = fc<Props> {
                     }
 
                     val data = FormData()
-                    captchaRef.current?.execute()?.then {
+                    captchaRef.current?.execute()?.then({
                         data.append("recaptcha", it)
                         sendForm(data)
+                    }) {
+                        setErrors(listOf(UploadValidationInfo(it.message ?: "Unknown error")))
+                        setLoading(false)
                     } ?: run {
                         sendForm(data)
                     }

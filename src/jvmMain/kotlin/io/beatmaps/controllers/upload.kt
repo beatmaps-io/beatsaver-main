@@ -6,7 +6,6 @@ import io.beatmaps.api.PatreonTier
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.api.toTier
 import io.beatmaps.cloudflare.CaptchaVerifier
-import io.beatmaps.cloudflare.HCaptchaConfig
 import io.beatmaps.cloudflare.TurnstileConfig
 import io.beatmaps.common.Config
 import io.beatmaps.common.CopyException

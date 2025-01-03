@@ -7,7 +7,6 @@ import external.draggable
 import external.droppable
 import external.generateConfig
 import external.invoke
-import external.captcha
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
@@ -22,13 +21,15 @@ import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.api.PlaylistReportData
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalComponent
+import io.beatmaps.index.ModalCallbacks
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.beatmapInfo
 import io.beatmaps.index.modal
 import io.beatmaps.index.modalContext
 import io.beatmaps.setPageTitle
 import io.beatmaps.upload.UploadRequestConfig
+import io.beatmaps.user.reportModal
+import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.useAudio
 import kotlinx.html.classes
@@ -48,7 +49,6 @@ import react.dom.p
 import react.dom.span
 import react.dom.textarea
 import react.fc
-import react.ref
 import react.router.useNavigate
 import react.router.useParams
 import react.useContext
@@ -56,17 +56,18 @@ import react.useEffect
 import react.useEffectOnce
 import react.useRef
 import react.useState
+import kotlin.js.Promise
 import kotlin.math.ceil
 
 val playlistPage = fc<Props> {
-    val (loading, setLoading) = useState(false)
     val (playlist, setPlaylist) = useState<PlaylistFull?>(null)
     val (maps, setMaps) = useState(listOf<MapDetailWithOrder>())
     val tokenRef = useRef(Axios.CancelToken.source())
 
-    val modalRef = useRef<ModalComponent>()
+    val modalRef = useRef<ModalCallbacks>()
     val reasonRef = useRef<HTMLTextAreaElement>()
     val captchaRef = useRef<ICaptchaHandler>()
+    val errorRef = useRef<List<String>>()
     val itemsPerPage = PlaylistConstants.PAGE_SIZE
 
     val audio = useAudio()
@@ -139,20 +140,21 @@ val playlistPage = fc<Props> {
         )
     }
 
-    fun delete() {
+    fun delete(): Promise<Boolean> {
         val data = FormData()
         data.append("deleted", "true")
         data.append("reason", reasonRef.current?.value ?: "")
 
-        Axios.post<String>(
+        return Axios.post<String>(
             "${Config.apibase}/playlists/id/$id/edit", data,
             UploadRequestConfig { }
         ).then { r ->
             if (r.status == 200) {
                 history.push(playlist?.owner?.profileLink("playlists") ?: "/")
             }
+            true
         }.catch {
-            // Do nothing
+            false
         }
     }
 
@@ -162,9 +164,8 @@ val playlistPage = fc<Props> {
         }) { }
     }
 
-    fun report(playlistId: Int) {
+    fun report(playlistId: Int) =
         captchaRef.current?.let { cc ->
-            setLoading(true)
             cc.execute()?.then { captcha ->
                 val reason = reasonRef.current?.value?.trim() ?: ""
                 Axios.post<String>(
@@ -173,12 +174,13 @@ val playlistPage = fc<Props> {
                     generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
                 ).then {
                     history.push("/issues/${it.data}")
+                    true
                 }
-            }?.finally {
-                setLoading(false)
+            }?.orCatch {
+                errorRef.current = listOfNotNull(it.message)
+                false
             }
-        }
-    }
+        } ?: Promise.resolve(false)
 
     useEffectOnce {
         setPageTitle("Playlist")
@@ -198,7 +200,7 @@ val playlistPage = fc<Props> {
     }
 
     modal {
-        ref = modalRef
+        attrs.callbacks = modalRef
     }
 
     modalContext.Provider {
@@ -224,7 +226,7 @@ val playlistPage = fc<Props> {
                             a("#", classes = "btn btn-danger") {
                                 attrs.onClickFunction = {
                                     it.preventDefault()
-                                    modalRef.current?.showDialog(
+                                    modalRef.current?.showDialog?.invoke(
                                         ModalData(
                                             "Delete playlist",
                                             bodyCallback = {
@@ -332,22 +334,20 @@ val playlistPage = fc<Props> {
                             button(classes = "btn btn-danger") {
                                 val text = "Report"
                                 attrs.id = "report"
-                                attrs.disabled = loading
                                 attrs.title = text
                                 attrs.attributes["aria-label"] = text
                                 attrs.onClickFunction = {
                                     it.preventDefault()
-                                    modalRef.current?.showDialog(
+                                    modalRef.current?.showDialog?.invoke(
                                         ModalData(
                                             "Report playlist",
                                             bodyCallback = {
-                                                p {
-                                                    +"Why are you reporting this content? Please give as much detail as possible why you feel this playlist violates our TOS:"
+                                                reportModal {
+                                                    attrs.subject = "playlist"
+                                                    attrs.reasonRef = reasonRef
+                                                    attrs.captchaRef = captchaRef
+                                                    attrs.errorsRef = errorRef
                                                 }
-                                                textarea(classes = "form-control") {
-                                                    ref = reasonRef
-                                                }
-                                                captcha(captchaRef)
                                             },
                                             buttons = listOf(
                                                 ModalButton("Report", "danger") { report(pl.playlistId) },

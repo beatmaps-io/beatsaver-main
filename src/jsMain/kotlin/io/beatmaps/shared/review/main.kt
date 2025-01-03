@@ -3,8 +3,8 @@ package io.beatmaps.shared.review
 import external.Axios
 import external.CancelTokenSource
 import external.ICaptchaHandler
-import external.generateConfig
 import external.captcha
+import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.MapDetail

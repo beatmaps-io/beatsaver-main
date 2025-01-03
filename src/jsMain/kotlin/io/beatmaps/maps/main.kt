@@ -6,7 +6,7 @@ import io.beatmaps.History
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
-import io.beatmaps.index.ModalComponent
+import io.beatmaps.index.ModalCallbacks
 import io.beatmaps.index.modal
 import io.beatmaps.index.modalContext
 import io.beatmaps.maps.testplay.testplay
@@ -21,7 +21,6 @@ import org.w3c.dom.set
 import react.Props
 import react.dom.div
 import react.fc
-import react.ref
 import react.router.useNavigate
 import react.router.useParams
 import react.useEffect
@@ -62,7 +61,7 @@ val mapPage = fc<MapPageProps> { props ->
     val localStorageTab = MapTabs.fromName(localStorage["maps.selectedTab"]) ?: fromLegacy()
     val (tab, setTab) = useState(localStorageTab)
 
-    val modalRef = useRef<ModalComponent>()
+    val modalRef = useRef<ModalCallbacks>()
     val params = useParams()
     val history = History(useNavigate())
 
@@ -115,7 +114,7 @@ val mapPage = fc<MapPageProps> { props ->
             }
         } else {
             modal {
-                ref = modalRef
+                attrs.callbacks = modalRef
             }
 
             modalContext.Provider {

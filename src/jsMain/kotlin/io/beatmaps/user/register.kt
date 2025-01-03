@@ -2,8 +2,8 @@ package io.beatmaps.user
 
 import external.Axios
 import external.ICaptchaHandler
-import external.generateConfig
 import external.captcha
+import external.generateConfig
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
@@ -31,7 +31,7 @@ import react.useRef
 import react.useState
 
 val signupPage = fc<Props> {
-    val (errors, setErrors) = useState(listOf<String>())
+    val (errors, setErrors) = useState(emptyList<String>())
     val (loading, setLoading) = useState(false)
     val (complete, setComplete) = useState(false)
 
@@ -64,6 +64,8 @@ val signupPage = fc<Props> {
                     setLoading(true)
 
                     captchaRef.current?.execute()?.then { captcha ->
+                        captchaRef.current?.reset()
+
                         Axios.post<ActionResponse>(
                             "${Config.apibase}/users/register",
                             RegisterRequest(
@@ -75,17 +77,14 @@ val signupPage = fc<Props> {
                             ),
                             generateConfig<RegisterRequest, ActionResponse>()
                         ).then {
-                            if (it.data.success) {
-                                setComplete(true)
-                            } else {
-                                captchaRef.current?.reset()
-                                setErrors(it.data.errors)
-                                setLoading(false)
-                            }
-                        }.catch {
-                            // Cancelled request
-                            setLoading(false)
+                            setComplete(it.data.success)
+                            setErrors(it.data.errors)
                         }
+                    }?.catch {
+                        // Cancelled request or bad captcha
+                        setErrors(listOfNotNull(it.message))
+                    }?.finally {
+                        setLoading(false)
                     }
                 }
                 errors {

@@ -48,7 +48,7 @@ fun RElementBuilder<DropzoneProps>.simple(
     successBlock: ((AxiosResponse<dynamic>) -> Unit)? = null
 ) {
     attrs.onDrop = { file ->
-        captchaRef.current?.execute()?.then {
+        captchaRef.current?.execute()?.then({
             val data = FormData().also(block)
             data.append("recaptcha", it)
             data.asDynamic().append("file", file[0]) // Kotlin doesn't have an equivalent method to this js
@@ -59,7 +59,7 @@ fun RElementBuilder<DropzoneProps>.simple(
                     val v = ((progress.loaded * 100f) / progress.total).toInt()
                     progressBarInnerRef.current?.style?.width = "$v%"
                 }
-            ).then { r ->
+            ).then({ r ->
                 if (r.status == 200) {
                     if (successBlock != null) {
                         successBlock(r)
@@ -75,9 +75,11 @@ fun RElementBuilder<DropzoneProps>.simple(
                     val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)
                     errorsBlock(failedResponse.errors)
                 }
-            }.catch {
+            }) {
                 errorsBlock(listOf(UploadValidationInfo("Internal server error")))
             }
+        }) {
+            errorsBlock(listOf(UploadValidationInfo(it.message ?: "Unknown error")))
         }
     }
     attrs.children = { info ->

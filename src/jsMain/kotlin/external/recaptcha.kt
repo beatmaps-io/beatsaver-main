@@ -5,6 +5,7 @@ import react.ComponentClass
 import react.MutableRefObject
 import react.Props
 import react.RBuilder
+import react.fc
 import react.useRef
 import kotlin.js.Promise
 
@@ -53,7 +54,11 @@ external interface IReCAPTCHA {
     fun reset()
 }
 
-fun RBuilder.recaptcha(captchaRef: MutableRefObject<ICaptchaHandler>) {
+external interface CaptchaProps : Props {
+    var captchaRef: MutableRefObject<ICaptchaHandler>
+}
+
+val recaptcha = fc<CaptchaProps> { props ->
     val ref = useRef<IReCAPTCHA>()
     configContext.Consumer { configData ->
         if (configData?.showCaptcha != false) {
@@ -62,12 +67,14 @@ fun RBuilder.recaptcha(captchaRef: MutableRefObject<ICaptchaHandler>) {
                 attrs.size = "invisible"
                 this.ref = ref
             }
-            captchaRef.current = ReCAPTCHAHandler(ref)
+            props.captchaRef.current = ReCAPTCHAHandler(ref)
         } else {
-            captchaRef.current = FakeCaptchaHandler
+            props.captchaRef.current = FakeCaptchaHandler
         }
     }
 }
 
 // Easily switch between captcha implementations
-fun RBuilder.captcha(captchaRef: MutableRefObject<ICaptchaHandler>) = turnstile(captchaRef)
+fun RBuilder.captcha(captchaRef: MutableRefObject<ICaptchaHandler>) = turnstile {
+    attrs.captchaRef = captchaRef
+}

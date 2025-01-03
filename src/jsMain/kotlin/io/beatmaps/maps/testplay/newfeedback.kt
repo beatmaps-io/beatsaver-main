@@ -12,7 +12,6 @@ import react.Props
 import react.RefObject
 import react.fc
 import react.useState
-import kotlin.js.Promise
 
 external interface NewFeedbackProps : Props {
     var hash: String
@@ -44,7 +43,7 @@ val newFeedback = fc<NewFeedbackProps> { props ->
 
                         res
                     }
-                }?.then { it } ?: Promise.reject(IllegalStateException("Captcha not present"))
+                }?.then { it }
             }
         }
     }

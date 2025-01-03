@@ -6,7 +6,6 @@ import external.axiosDelete
 import external.axiosGet
 import external.generateConfig
 import external.reactFor
-import external.captcha
 import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.ActionResponse
@@ -23,13 +22,15 @@ import io.beatmaps.common.api.ReviewReportData
 import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalComponent
+import io.beatmaps.index.ModalCallbacks
 import io.beatmaps.index.ModalData
 import io.beatmaps.modreview.editableText
 import io.beatmaps.shared.reviewer
+import io.beatmaps.user.reportModal
 import io.beatmaps.util.AutoSizeComponent
 import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.AutoSizeComponentState
+import io.beatmaps.util.orCatch
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
@@ -52,11 +53,12 @@ import react.dom.span
 import react.dom.textarea
 import react.fc
 import react.setState
+import kotlin.js.Promise
 
 external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
     var userId: Int
     var map: MapDetail?
-    var modal: RefObject<ModalComponent>?
+    var modal: RefObject<ModalCallbacks>?
     var captcha: RefObject<ICaptchaHandler>?
     var setExistingReview: ((Boolean) -> Unit)?
     var history: History?
@@ -92,9 +94,12 @@ val sentimentIcon = fc<SentimentIconProps> {
 class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemState>(2) {
     private val reasonRef = createRef<HTMLTextAreaElement>()
     private val captchaRef = createRef<ICaptchaHandler>().unsafeCast<MutableRefObject<ICaptchaHandler>>()
+    private val errorRef = createRef<List<String>>().unsafeCast<MutableRefObject<List<String>>>()
 
     override fun componentWillReceiveProps(nextProps: ReviewItemProps) {
-        state.replies = nextProps.obj?.replies
+        if (props.obj != nextProps.obj) {
+            state.replies = nextProps.obj?.replies
+        }
     }
 
     private fun curate(id: Int, curated: Boolean = true) {
@@ -107,27 +112,25 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
         }) { }
     }
 
-    private fun delete(currentUser: Boolean) {
-        val reason = reasonRef.current?.value ?: ""
-        reasonRef.current?.value = ""
+    private fun delete(currentUser: Boolean) =
+        (reasonRef.current?.value ?: "").let { reason ->
+            reasonRef.current?.value = ""
 
-        axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/${props.map?.id}/${props.userId}", DeleteReview(reason)).then({
-            setState {
-                sentiment = null
-                featured = null
-                text = null
-            }
-            hide()
+            axiosDelete<DeleteReview, String>("${Config.apibase}/review/single/${props.map?.id}/${props.userId}", DeleteReview(reason)).then({
+                setState {
+                    sentiment = null
+                    featured = null
+                    text = null
+                }
+                hide()
 
-            if (currentUser) props.setExistingReview?.invoke(false)
-        }) { }
-    }
+                if (currentUser) props.setExistingReview?.invoke(false)
+                true
+            }) { false }
+        }
 
-    private fun report(reviewId: Int) {
+    private fun report(reviewId: Int) =
         captchaRef.current?.let { cc ->
-            setState {
-                loading = true
-            }
             cc.execute()?.then { captcha ->
                 val reason = reasonRef.current?.value?.trim() ?: ""
                 Axios.post<String>(
@@ -136,14 +139,13 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                     generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
                 ).then {
                     props.history?.push("/issues/${it.data}")
+                    true
                 }
-            }?.finally {
-                setState {
-                    loading = false
-                }
+            }?.orCatch {
+                errorRef.current = listOfNotNull(it.message)
+                false
             }
-        }
-    }
+        } ?: Promise.resolve(false)
 
     override fun RBuilder.render() {
         props.obj?.let { rv ->
@@ -195,17 +197,16 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                                 attrs.onClickFunction = {
                                                     it.preventDefault()
                                                     if (state.loading != true) {
-                                                        props.modal?.current?.showDialog(
+                                                        props.modal?.current?.showDialog?.invoke(
                                                             ModalData(
                                                                 "Report review",
                                                                 bodyCallback = {
-                                                                    p {
-                                                                        +"Why are you reporting this content? Please give as much detail as possible why you feel this review has violated our TOS:"
+                                                                    reportModal {
+                                                                        attrs.subject = "review"
+                                                                        attrs.reasonRef = reasonRef
+                                                                        attrs.captchaRef = captchaRef
+                                                                        attrs.errorsRef = errorRef
                                                                     }
-                                                                    textarea(classes = "form-control") {
-                                                                        ref = reasonRef
-                                                                    }
-                                                                    captcha(captchaRef)
                                                                 },
                                                                 buttons = listOf(
                                                                     ModalButton("Report", "danger") { report(rv.id) },
@@ -235,7 +236,7 @@ class ReviewItem : AutoSizeComponent<ReviewDetail, ReviewItemProps, ReviewItemSt
                                                 attrs.attributes["aria-label"] = "Delete"
                                                 attrs.onClickFunction = {
                                                     it.preventDefault()
-                                                    props.modal?.current?.showDialog(
+                                                    props.modal?.current?.showDialog?.invoke(
                                                         ModalData(
                                                             "Delete review",
                                                             bodyCallback = {

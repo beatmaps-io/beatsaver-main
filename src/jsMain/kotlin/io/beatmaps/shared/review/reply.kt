@@ -2,7 +2,6 @@ package io.beatmaps.shared.review
 
 import external.Axios
 import external.ICaptchaHandler
-import external.ITurnstile
 import external.axiosDelete
 import external.generateConfig
 import io.beatmaps.Config
@@ -13,9 +12,10 @@ import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalComponent
+import io.beatmaps.index.ModalCallbacks
 import io.beatmaps.index.ModalData
 import io.beatmaps.modreview.editableText
+import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.reviewer
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
@@ -34,7 +34,7 @@ import react.useState
 
 external interface ReplyProps : Props {
     var reply: ReviewReplyDetail
-    var modal: RefObject<ModalComponent>?
+    var modal: RefObject<ModalCallbacks>?
     var captcha: RefObject<ICaptchaHandler>?
 }
 
@@ -42,17 +42,19 @@ val reply = fc<ReplyProps> { props ->
     val (editing, setEditing) = useState(false)
     val (text, setText) = useState(props.reply.text)
     val (deleted, setDeleted) = useState(props.reply.deletedAt != null)
+    val (errors, setErrors) = useState(emptyList<String>())
 
     val reasonRef = useRef<HTMLTextAreaElement>()
 
-    fun delete() {
-        val reason = reasonRef.current?.value ?: ""
-        reasonRef.current?.value = ""
+    fun delete() =
+        (reasonRef.current?.value ?: "").let { reason ->
+            reasonRef.current?.value = ""
 
-        axiosDelete<DeleteReview, String>("${Config.apibase}/reply/single/${props.reply.id}", DeleteReview(reason)).then({
-            setDeleted(true)
-        }) { }
-    }
+            axiosDelete<DeleteReview, String>("${Config.apibase}/reply/single/${props.reply.id}", DeleteReview(reason)).then({
+                setDeleted(true)
+                true
+            }) { false }
+        }
 
     div("reply") {
         div("reply-header") {
@@ -79,7 +81,7 @@ val reply = fc<ReplyProps> { props ->
                                 attrs.attributes["aria-label"] = "Delete"
                                 attrs.onClickFunction = {
                                     it.preventDefault()
-                                    props.modal?.current?.showDialog(
+                                    props.modal?.current?.showDialog?.invoke(
                                         ModalData(
                                             "Delete review",
                                             bodyCallback = {
@@ -118,6 +120,9 @@ val reply = fc<ReplyProps> { props ->
                     attrs.renderText = true
                     attrs.textClass = "mt-2"
                     attrs.maxLength = ReviewConstants.MAX_REPLY_LENGTH
+                    attrs.onError = {
+                        setErrors(it)
+                    }
                     attrs.saveText = { newReply ->
                         props.captcha?.current?.execute()?.then {
                             props.captcha?.current?.reset()
@@ -128,6 +133,10 @@ val reply = fc<ReplyProps> { props ->
                     attrs.stopEditing = { t ->
                         setText(t)
                         setEditing(false)
+                    }
+
+                    errors {
+                        attrs.errors = errors
                     }
                 }
             } else {

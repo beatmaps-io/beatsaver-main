@@ -23,7 +23,7 @@ class GenericPageTemplate(private val s: Session?) : Template<BODY> {
         }
         div("d-none") {
             id = "config-data"
-            +"""{"showCaptcha": ${captchaVerify != null}, "v2Search": ${SolrHelper.enabled}}"""
+            +"""{"showCaptcha": ${captchaVerify?.enabled() == true}, "v2Search": ${SolrHelper.enabled}}"""
         }
         script(src = "/static/modules.js") {}
         script(src = "/static/output.js") {}

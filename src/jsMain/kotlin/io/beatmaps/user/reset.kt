@@ -25,7 +25,7 @@ import react.useRef
 import react.useState
 
 val resetPage = fc<Props> {
-    val (errors, setErrors) = useState(listOf<String>())
+    val (errors, setErrors) = useState(emptyList<String>())
     val (loading, setLoading) = useState(false)
 
     val passwordRef = useRef<HTMLInputElement>()

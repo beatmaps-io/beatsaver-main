@@ -2,14 +2,13 @@ package io.beatmaps.maps.testplay
 
 import io.beatmaps.History
 import io.beatmaps.api.MapDetail
-import io.beatmaps.index.ModalComponent
+import io.beatmaps.index.ModalCallbacks
 import io.beatmaps.index.modal
 import io.beatmaps.index.modalContext
 import io.beatmaps.maps.infoTable
 import io.beatmaps.maps.mapInfo
 import react.Props
 import react.fc
-import react.ref
 import react.useRef
 
 external interface TestplayProps : Props {
@@ -20,10 +19,10 @@ external interface TestplayProps : Props {
 }
 
 val testplay = fc<TestplayProps> { props ->
-    val modalRef = useRef<ModalComponent>()
+    val modalRef = useRef<ModalCallbacks>()
 
     modal {
-        ref = modalRef
+        attrs.callbacks = modalRef
     }
 
     modalContext.Provider {
