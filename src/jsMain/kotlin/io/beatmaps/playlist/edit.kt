@@ -1,10 +1,8 @@
 package io.beatmaps.playlist
 
 import external.Axios
-import external.IReCAPTCHA
 import external.generateConfig
 import external.reactFor
-import external.recaptcha
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
@@ -12,6 +10,8 @@ import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
 import io.beatmaps.api.UploadValidationInfo
+import io.beatmaps.captcha.ICaptchaHandler
+import io.beatmaps.captcha.captcha
 import io.beatmaps.common.SearchParamsPlaylist
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.EPlaylistType
@@ -55,7 +55,7 @@ import react.useRef
 import react.useState
 
 val editPlaylist = fc<Props> {
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
     val coverRef = useRef<HTMLInputElement>()
 
     val nameRef = useRef<HTMLInputElement>()
@@ -167,9 +167,12 @@ val editPlaylist = fc<Props> {
                     }
 
                     val data = FormData()
-                    captchaRef.current?.executeAsync()?.then {
-                        data.append("recaptcha", it)
+                    captchaRef.current?.execute()?.then({
+                        data.append("captcha", it)
                         sendForm(data)
+                    }) {
+                        setErrors(listOf(UploadValidationInfo(it.message ?: "Unknown error")))
+                        setLoading(false)
                     } ?: run {
                         sendForm(data)
                     }
@@ -245,7 +248,7 @@ val editPlaylist = fc<Props> {
                     }
                     if (id == null) {
                         // Middle element otherwise the button corners don't round properly
-                        recaptcha(captchaRef)
+                        captcha(captchaRef)
                     }
                     button(classes = "btn btn-success w-50", type = ButtonType.submit) {
                         attrs.disabled = loading

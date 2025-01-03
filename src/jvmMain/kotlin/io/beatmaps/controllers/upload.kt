@@ -1,11 +1,12 @@
 package io.beatmaps.controllers
 
-import ch.compile.recaptcha.ReCaptchaVerify
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.MapConstants
 import io.beatmaps.api.PatreonTier
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.api.toTier
+import io.beatmaps.cloudflare.CaptchaVerifier
+import io.beatmaps.cloudflare.ReCaptchaConfig
 import io.beatmaps.common.Config
 import io.beatmaps.common.CopyException
 import io.beatmaps.common.Folders
@@ -37,6 +38,7 @@ import io.beatmaps.genericPage
 import io.beatmaps.login.Session
 import io.beatmaps.util.handleMultipart
 import io.beatmaps.util.requireAuthorization
+import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.streamProvider
 import io.ktor.server.application.call
@@ -74,7 +76,7 @@ import java.util.logging.Logger
 import kotlin.math.roundToInt
 
 val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
-val reCaptchaVerify = System.getenv("RECAPTCHA_SECRET")?.let { ReCaptchaVerify(it) }
+val captchaVerify = try { CaptchaVerifier(ReCaptchaConfig) } catch (_: Exception) { null }
 
 @Location("/upload")
 class UploadMap
@@ -100,7 +102,7 @@ fun userWipCount(userId: Int) = Beatmap
         Beatmap.uploader eq userId and Beatmap.deletedAt.isNull() and Versions.id.isNull()
     }.count()
 
-fun Route.uploadController() {
+fun Route.uploadController(client: HttpClient) {
     get<UploadMap> {
         if (call.sessions.get<Session>().let { it == null || it.suspended }) {
             call.respondRedirect("/")
@@ -115,7 +117,7 @@ fun Route.uploadController() {
                 val filename = "${sess.userId}.jpg"
                 val localFile = File(Folders.localAvatarFolder(), filename)
 
-                call.handleMultipart { part ->
+                call.handleMultipart(client) { part ->
                     part.streamProvider().use { its ->
                         Thumbnails
                             .of(its)
@@ -134,7 +136,7 @@ fun Route.uploadController() {
                 }
 
                 call.respond(HttpStatusCode.OK)
-            } catch (e: UnsupportedFormatException) {
+            } catch (_: UnsupportedFormatException) {
                 throw UploadException("Bad or unknown image format")
             }
         }
@@ -168,7 +170,7 @@ fun Route.uploadController() {
             val md = MessageDigest.getInstance("SHA1")
             var extractedInfoTmp: ExtractedInfo? = null
 
-            val multipart = call.handleMultipart { part ->
+            val multipart = call.handleMultipart(client) { part ->
                 uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
                 extractedInfoTmp = part.streamProvider().use { its ->
                     try {
@@ -181,7 +183,7 @@ fun Route.uploadController() {
                                 }
                             }
                         }
-                    } catch (e: RarException) {
+                    } catch (_: RarException) {
                         file.delete()
                         throw UploadException("Don't upload rar files. Use the package button in your map editor.")
                     } catch (e: SerializationException) {
@@ -191,7 +193,7 @@ fun Route.uploadController() {
                     } catch (e: ZipHelperException) {
                         file.delete()
                         throw UploadException(e.msg)
-                    } catch (e: CopyException) {
+                    } catch (_: CopyException) {
                         file.delete()
                         throw UploadException("Zip file too big")
                     } catch (e: Exception) {

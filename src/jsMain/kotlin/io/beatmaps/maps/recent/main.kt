@@ -5,10 +5,11 @@ import io.beatmaps.Config
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapTestplay
 import io.beatmaps.api.MapVersion
-import io.beatmaps.index.ModalComponent
+import io.beatmaps.index.ModalCallbacks
 import io.beatmaps.index.modal
 import io.beatmaps.index.modalContext
 import io.beatmaps.setPageTitle
+import react.MutableRefObject
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -16,7 +17,6 @@ import react.State
 import react.createRef
 import react.dom.table
 import react.dom.tbody
-import react.ref
 import react.setState
 
 external interface RecentTestplaysState : State {
@@ -28,7 +28,7 @@ external interface RecentTestplaysState : State {
 data class RecentTestplay(val mapDetail: MapDetail, val version: MapVersion, val testplay: MapTestplay)
 
 class RecentTestplays : RComponent<Props, RecentTestplaysState>() {
-    private val modalRef = createRef<ModalComponent>()
+    private val modalRef = createRef<ModalCallbacks>().unsafeCast<MutableRefObject<ModalCallbacks>>()
 
     override fun componentDidMount() {
         setPageTitle("Testplays")
@@ -70,7 +70,7 @@ class RecentTestplays : RComponent<Props, RecentTestplaysState>() {
 
     override fun RBuilder.render() {
         modal {
-            ref = modalRef
+            attrs.callbacks = modalRef
         }
 
         modalContext.Provider {

@@ -2,7 +2,8 @@ package io.beatmaps.util
 
 import io.beatmaps.common.json
 import io.beatmaps.controllers.UploadException
-import io.beatmaps.controllers.reCaptchaVerify
+import io.beatmaps.controllers.captchaVerify
+import io.ktor.client.HttpClient
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
 import io.ktor.server.application.ApplicationCall
@@ -21,7 +22,7 @@ data class MultipartRequest(val dataMap: JsonElement, private val recaptchaSucce
     fun validRecaptcha(authType: AuthType) = authType == AuthType.Oauth || recaptchaSuccess
 }
 
-suspend fun ApplicationCall.handleMultipart(cb: suspend (PartData.FileItem) -> Unit): MultipartRequest {
+suspend fun ApplicationCall.handleMultipart(client: HttpClient, cb: suspend (PartData.FileItem) -> Unit): MultipartRequest {
     val multipart = receiveMultipart()
     val dataMap = mutableMapOf<String, JsonElement>()
     var recaptchaSuccess = false
@@ -30,12 +31,12 @@ suspend fun ApplicationCall.handleMultipart(cb: suspend (PartData.FileItem) -> U
         if (part is PartData.FormItem) {
             // Process recaptcha immediately as it is time-critical
             if (part.name.toString() == "recaptcha") {
-                recaptchaSuccess = (reCaptchaVerify == null) || run {
+                recaptchaSuccess = (captchaVerify == null) || run {
                     val verifyResponse = withContext(Dispatchers.IO) {
-                        reCaptchaVerify.verify(part.value, request.origin.remoteHost)
+                        captchaVerify.verify(client, part.value, request.origin.remoteHost)
                     }
 
-                    verifyResponse.isSuccess || throw UploadException("Could not verify user [${verifyResponse.errorCodes.joinToString(", ")}]")
+                    verifyResponse.success || throw UploadException("Could not verify user [${verifyResponse.errorCodes.joinToString(", ")}]")
                 }
             } else {
                 dataMap[part.name.toString()] = try {

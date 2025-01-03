@@ -34,7 +34,7 @@ import react.useState
 val pickUsernamePage = fc<Props> {
     val (submitted, setSubmitted) = useState(false)
     val (loading, setLoading) = useState(false)
-    val (errors, setErrors) = useState(listOf<String>())
+    val (errors, setErrors) = useState(emptyList<String>())
 
     val inputRef = useRef<HTMLInputElement>()
     val history = History(useNavigate())

@@ -46,13 +46,14 @@ val modReviewEntry = fc<ModReviewEntryProps> { props ->
     val (newSentiment, setNewSentiment) = useState(null as ReviewSentiment?)
     val (text, setText) = useState(null as String?)
 
-    fun delete() {
+    fun delete(): Promise<Boolean> {
         val reason = reasonRef.current?.value ?: ""
         reasonRef.current?.value = ""
 
-        props.onDelete(reason).then {
+        return props.onDelete(reason).then({
             setHidden(true)
-        }
+            true
+        }) { false }
     }
 
     if (!hidden) {
@@ -112,7 +113,7 @@ val modReviewEntry = fc<ModReviewEntryProps> { props ->
                                 attrs.attributes["aria-label"] = "Delete"
                                 attrs.onClickFunction = { e ->
                                     e.preventDefault()
-                                    modal?.current?.showDialog(
+                                    modal?.current?.showDialog?.invoke(
                                         ModalData(
                                             "Delete review",
                                             bodyCallback = {

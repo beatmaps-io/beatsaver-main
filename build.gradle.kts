@@ -113,7 +113,6 @@ kotlin {
 
                 // Helpful
                 implementation("org.valiktor:valiktor-core:0.12.0")
-                implementation("io.github.keetraxx:recaptcha:0.5")
                 implementation("de.nielsfalk.ktor:ktor-swagger:0.8.17")
                 implementation("org.bouncycastle:bcprov-jdk15:1.46")
 

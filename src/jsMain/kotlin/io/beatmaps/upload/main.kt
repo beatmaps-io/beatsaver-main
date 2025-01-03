@@ -3,12 +3,12 @@ package io.beatmaps.upload
 import external.AxiosProgress
 import external.AxiosRequestConfig
 import external.Dropzone
-import external.IReCAPTCHA
 import external.reactFor
-import external.recaptcha
 import io.beatmaps.History
 import io.beatmaps.WithRouterProps
 import io.beatmaps.api.UploadValidationInfo
+import io.beatmaps.captcha.ICaptchaHandler
+import io.beatmaps.captcha.captcha
 import io.beatmaps.common.MapTag
 import io.beatmaps.maps.TagPickerHeadingRenderer
 import io.beatmaps.maps.tagPicker
@@ -57,7 +57,7 @@ val uploadPage = fc<UploadPageProps> {
     val (hasTitle, setHasTitle) = useState<Boolean>()
     val (tags, setTags) = useState(setOf<MapTag>())
 
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
     val titleRef = useRef<HTMLInputElement>()
     val descrRef = useRef<HTMLInputElement>()
     val beatsageRef = useRef<HTMLInputElement>()
@@ -187,7 +187,7 @@ val uploadPage = fc<UploadPageProps> {
                         }
                     }
 
-                    recaptcha(captchaRef)
+                    captcha(captchaRef)
                 }
             }
         }

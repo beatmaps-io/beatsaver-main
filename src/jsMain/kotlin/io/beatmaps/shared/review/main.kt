@@ -2,15 +2,15 @@ package io.beatmaps.shared.review
 
 import external.Axios
 import external.CancelTokenSource
-import external.IReCAPTCHA
 import external.generateConfig
-import external.recaptcha
 import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewsResponse
 import io.beatmaps.api.UserDetail
+import io.beatmaps.captcha.ICaptchaHandler
+import io.beatmaps.captcha.captcha
 import io.beatmaps.globalContext
 import io.beatmaps.index.modalContext
 import io.beatmaps.shared.InfiniteScroll
@@ -41,9 +41,9 @@ val reviewTable = fc<ReviewTableProps> { props ->
     val modal = useContext(modalContext)
     val history = History(useNavigate())
 
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
 
-    recaptcha(captchaRef)
+    captcha(captchaRef)
 
     useDidUpdateEffect(props.map) {
         setResultsKey(Any())

@@ -6,7 +6,7 @@ import io.beatmaps.Config
 import io.beatmaps.api.CollaborationRemoveData
 import io.beatmaps.api.MapDetail
 import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalComponent
+import io.beatmaps.index.ModalCallbacks
 import io.beatmaps.index.ModalData
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
@@ -22,7 +22,7 @@ external interface CollaboratorLeaveProps : Props {
     var map: MapDetail
     var collaboratorId: Int
     var reloadMap: () -> Unit
-    var modal: RefObject<ModalComponent>?
+    var modal: RefObject<ModalCallbacks>?
 }
 
 val collaboratorLeave = fc<CollaboratorLeaveProps> { props ->
@@ -33,7 +33,7 @@ val collaboratorLeave = fc<CollaboratorLeaveProps> { props ->
         attrs.onClickFunction = {
             it.preventDefault()
 
-            props.modal?.current?.showDialog(
+            props.modal?.current?.showDialog?.invoke(
                 ModalData(
                     "Leave collaboration",
                     bodyCallback = {
@@ -47,7 +47,10 @@ val collaboratorLeave = fc<CollaboratorLeaveProps> { props ->
                                 "${Config.apibase}/collaborations/remove",
                                 CollaborationRemoveData(props.map.intId(), props.collaboratorId),
                                 generateConfig<CollaborationRemoveData, String>()
-                            ).then { props.reloadMap() }
+                            ).then {
+                                props.reloadMap()
+                                true
+                            }.catch { false }
                         },
                         ModalButton("Cancel")
                     )

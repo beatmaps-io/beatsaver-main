@@ -1,12 +1,10 @@
 package io.beatmaps.user
 
 import external.Axios
-import external.IReCAPTCHA
 import external.axiosDelete
 import external.axiosGet
 import external.generateConfig
 import external.reactFor
-import external.recaptcha
 import io.beatmaps.Config
 import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.AccountType
@@ -16,6 +14,8 @@ import io.beatmaps.api.SessionRevokeRequest
 import io.beatmaps.api.SessionsData
 import io.beatmaps.api.UserConstants
 import io.beatmaps.api.UserDetail
+import io.beatmaps.captcha.ICaptchaHandler
+import io.beatmaps.captcha.captcha
 import io.beatmaps.modreview.editableText
 import io.beatmaps.shared.form.errors
 import io.beatmaps.upload.UploadRequestConfig
@@ -56,10 +56,10 @@ external interface AccountComponentProps : Props {
 
 val accountTab = fc<AccountComponentProps> { props ->
     val (username, setUsername) = useState(props.userDetail.name)
-    val (usernameErrors, setUsernameErrors) = useState(listOf<String>())
+    val (usernameErrors, setUsernameErrors) = useState(emptyList<String>())
     val (userLoading, setUserLoading) = useState(false)
 
-    val (descriptionErrors, setDescriptionErrors) = useState(listOf<String>())
+    val (descriptionErrors, setDescriptionErrors) = useState(emptyList<String>())
 
     val (uploading, setUploading) = useState(false)
     val avatarRef = useRef<HTMLInputElement>()
@@ -67,7 +67,7 @@ val accountTab = fc<AccountComponentProps> { props ->
 
     val (sessions, setSessions) = useState<SessionsData?>(null)
 
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
 
     useEffect(props.userDetail) {
         axiosGet<SessionsData>(
@@ -88,11 +88,11 @@ val accountTab = fc<AccountComponentProps> { props ->
         )
     }
 
-    fun revokeAll() {
-        axiosDelete<SessionRevokeRequest, String>("${Config.apibase}/users/sessions", SessionRevokeRequest(site = true)).then {
+    fun revokeAll() =
+        axiosDelete<SessionRevokeRequest, String>("${Config.apibase}/users/sessions", SessionRevokeRequest(site = true)).then({
             setSessions(SessionsData(sessions?.oauth ?: listOf(), sessions?.site?.filter { c -> c.current } ?: listOf()))
-        }
-    }
+            true
+        }) { false }
 
     // Having 2 forms confuses password managers, only the password section needs to invoke them
     div(classes = "user-form") {
@@ -172,21 +172,19 @@ val accountTab = fc<AccountComponentProps> { props ->
                 attrs.text = props.userDetail.description ?: ""
                 attrs.buttonText = "Change description"
                 attrs.maxLength = UserConstants.MAX_DESCRIPTION_LENGTH
+                attrs.onError = {
+                    setDescriptionErrors(it)
+                }
+                attrs.stopEditing = {
+                    props.onUpdate()
+                }
                 attrs.saveText = { newDescription ->
                     if (props.userDetail.description != newDescription) {
-                        Axios.post<ActionResponse>(
+                        Axios.post(
                             "${Config.apibase}/users/description",
                             AccountDetailReq(newDescription),
                             generateConfig<AccountDetailReq, ActionResponse>()
-                        ).then {
-                            if (it.data.success) {
-                                props.onUpdate()
-                            } else {
-                                setDescriptionErrors(it.data.errors)
-                            }
-
-                            it
-                        }
+                        )
                     } else {
                         Promise.reject(IllegalStateException("Description unchanged"))
                     }
@@ -304,5 +302,5 @@ val accountTab = fc<AccountComponentProps> { props ->
         }
     }
 
-    recaptcha(captchaRef)
+    captcha(captchaRef)
 }

@@ -36,6 +36,7 @@ import io.beatmaps.util.optionalAuthorization
 import io.beatmaps.util.requireAuthorization
 import io.beatmaps.util.requireCaptcha
 import io.beatmaps.util.updateAlertCount
+import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -165,7 +166,7 @@ fun IssueCommentDetail.Companion.from(other: IssueCommentDao) = IssueCommentDeta
     other.updatedAt.toKotlinInstant()
 )
 
-fun Route.issueRoute() {
+fun Route.issueRoute(client: HttpClient) {
     post<IssueApi.Issue> {
         requireAuthorization { _, sess ->
             if (sess.suspended) {
@@ -176,6 +177,7 @@ fun Route.issueRoute() {
             val req = call.receive<IssueCreationRequest>()
 
             requireCaptcha(
+                client,
                 req.captcha,
                 {
                     transaction {
@@ -299,6 +301,7 @@ fun Route.issueRoute() {
 
                 if (req.commentId == null) {
                     requireCaptcha(
+                        client,
                         comment.captcha,
                         {
                             if (!sess.isAdmin() && sess.userId != intermediaryResult.creatorId.value) {

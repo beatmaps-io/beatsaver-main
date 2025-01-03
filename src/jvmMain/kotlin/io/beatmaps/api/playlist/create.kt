@@ -22,6 +22,7 @@ import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.handleMultipart
 import io.beatmaps.util.requireAuthorization
+import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.streamProvider
 import io.ktor.server.application.call
@@ -38,6 +39,7 @@ import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import org.valiktor.constraints.NotBlank
 import org.valiktor.functions.hasSize
 import org.valiktor.functions.isNotBlank
 import org.valiktor.validate
@@ -76,13 +78,13 @@ fun typeFromReq(data: IPlaylistUpdate, sess: Session) =
 
 val thumbnailSizes = listOf(256, 512)
 
-fun Route.playlistCreate() {
+fun Route.playlistCreate(client: HttpClient) {
     post<PlaylistApi.Create> {
         requireAuthorization(OauthScope.ADMIN_PLAYLISTS) { authType, sess ->
             val files = mutableMapOf<Int, File>()
 
             try {
-                val multipart = call.handleMultipart { part ->
+                val multipart = call.handleMultipart(client) { part ->
                     part.streamProvider().use { its ->
                         val tmp = ByteArrayOutputStream()
                         its.copyToSuspend(tmp, sizeLimit = FileLimits.PLAYLIST_IMAGE_LIMIT)
@@ -113,8 +115,8 @@ fun Route.playlistCreate() {
                 )
 
                 validate(toCreate) {
-                    validate(io.beatmaps.api.PlaylistBasic::name).isNotBlank().hasSize(3, PlaylistConstants.MAX_NAME_LENGTH)
-                    validate(io.beatmaps.api.PlaylistBasic::playlistImage).validate(org.valiktor.constraints.NotBlank) {
+                    validate(PlaylistBasic::name).isNotBlank().hasSize(3, PlaylistConstants.MAX_NAME_LENGTH)
+                    validate(PlaylistBasic::playlistImage).validate(NotBlank) {
                         files.isNotEmpty()
                     }
                 }
@@ -158,7 +160,7 @@ fun Route.playlistCreate() {
                 Playlist.selectAll().where(query).firstOrNull()?.let { PlaylistFull.from(it, cdnPrefix()) }
             } ?: throw UploadException("Playlist not found")
 
-            val multipart = call.handleMultipart { part ->
+            val multipart = call.handleMultipart(client) { part ->
                 part.streamProvider().use { its ->
                     val tmp = ByteArrayOutputStream()
                     its.copyToSuspend(tmp, sizeLimit = FileLimits.PLAYLIST_IMAGE_LIMIT)

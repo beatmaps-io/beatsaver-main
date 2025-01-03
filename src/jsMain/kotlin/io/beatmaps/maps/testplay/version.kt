@@ -56,7 +56,7 @@ val version = fc<VersionProps> { props ->
     val (time, setTime) = useState(props.time)
     val (scheduledAt, setScheduledAt) = useState(props.scheduledAt)
     val scheduleAt = useRef<Instant>(null)
-    val alert = useRef<Boolean>(true)
+    val alert = useRef(true)
 
     val textareaRef = useRef<HTMLTextAreaElement>()
 
@@ -80,8 +80,10 @@ val version = fc<VersionProps> { props ->
                 setLoadingState(false)
                 setScheduledAt(scheduleAt.current)
             }
+            true
         }) {
             setLoadingState(false)
+            false
         }
     }
 
@@ -117,7 +119,7 @@ val version = fc<VersionProps> { props ->
                             button(classes = "btn btn-danger m-1") {
                                 attrs.onClickFunction = {
                                     alert.current = props.alreadyPublished != true
-                                    modal?.current?.showDialog(
+                                    modal?.current?.showDialog?.invoke(
                                         ModalData(
                                             "Are you sure?",
                                             buttons = listOf(ModalButton("Publish", "primary") { mapState(EMapState.Published) }, ModalButton("Cancel")),

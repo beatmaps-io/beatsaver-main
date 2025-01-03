@@ -55,7 +55,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
     val (loading, setLoading) = useState(false)
     val (curator, setCurator) = useState(props.userDetail.curator == true)
     val (success, setSuccess) = useState(false)
-    val (errors, setErrors) = useState(listOf<String>())
+    val (errors, setErrors) = useState(emptyList<String>())
     val (uploadLimit, setUploadLimit) = useState(props.userDetail.uploadLimit ?: 1)
 
     val modal = useContext(modalContext)
@@ -67,7 +67,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
         verifiedMapperRef.current?.checked = props.userDetail.verifiedMapper
     }
 
-    fun suspend(suspended: Boolean, reason: String? = null) {
+    fun suspend(suspended: Boolean, reason: String? = null) =
         Axios.post<ActionResponse>(
             "${Config.apibase}/users/suspend",
             UserSuspendRequest(props.userDetail.id, suspended, reason),
@@ -77,14 +77,15 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
             setErrors(it.data.errors)
             setLoading(false)
             setSuccess(it.data.success)
+            true
         }.catch {
             // Cancelled request
             setLoading(false)
             setSuccess(false)
+            false
         }
-    }
 
-    fun revoke(reason: String? = null) {
+    fun revoke(reason: String? = null) =
         axiosDelete<SessionRevokeRequest, ActionResponse>(
             "${Config.apibase}/users/sessions",
             SessionRevokeRequest(userId = props.userDetail.id, site = true, reason = reason)
@@ -92,12 +93,13 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
             setErrors(it.data.errors)
             setLoading(false)
             setSuccess(it.data.success)
+            false
         }.catch {
             // Cancelled request
             setLoading(false)
             setSuccess(false)
+            true
         }
-    }
 
     div(classes = "user-form") {
         h5("mt-5") {
@@ -218,7 +220,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
                             ev.preventDefault()
                             setLoading(true)
 
-                            modal?.current?.showDialog(
+                            modal?.current?.showDialog?.invoke(
                                 ModalData(
                                     "Suspend user",
                                     bodyCallback = {
@@ -247,7 +249,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
                         ev.preventDefault()
                         setLoading(true)
 
-                        modal?.current?.showDialog(
+                        modal?.current?.showDialog?.invoke(
                             ModalData(
                                 "Revoke logins",
                                 bodyCallback = {

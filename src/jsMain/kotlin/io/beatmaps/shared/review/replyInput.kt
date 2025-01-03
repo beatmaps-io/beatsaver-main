@@ -17,7 +17,7 @@ external interface ReplyInputProps : Props {
 }
 
 val replyInput = fc<ReplyInputProps> { props ->
-    val (errors, setErrors) = useState(listOf<String>())
+    val (errors, setErrors) = useState(emptyList<String>())
     div("reply-input") {
         errors {
             attrs.errors = errors
@@ -29,19 +29,10 @@ val replyInput = fc<ReplyInputProps> { props ->
             attrs.editing = true
             attrs.rows = 1
             attrs.maxLength = ReviewConstants.MAX_REPLY_LENGTH
-            attrs.saveText = props.onSave?.let { f ->
-                val newFunc = { newStr: String ->
-                    f.invoke(newStr)?.then { res ->
-                        if (!res.data.success) {
-                            setErrors(res.data.errors)
-                        }
-
-                        res
-                    }
-                }
-
-                newFunc
+            attrs.onError = {
+                setErrors(it)
             }
+            attrs.saveText = props.onSave
             attrs.stopEditing = props.onSuccess
         }
     }

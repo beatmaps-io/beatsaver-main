@@ -1,11 +1,12 @@
 package io.beatmaps.util
 
-import ch.compile.recaptcha.model.SiteVerifyResponse
 import io.beatmaps.api.OauthScope
+import io.beatmaps.cloudflare.SiteVerifyResponse
 import io.beatmaps.common.dbo.UserDao
-import io.beatmaps.controllers.reCaptchaVerify
+import io.beatmaps.controllers.captchaVerify
 import io.beatmaps.login.Session
 import io.beatmaps.login.server.DBTokenStore
+import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.auth.HttpAuthHeader
 import io.ktor.server.application.ApplicationCall
@@ -74,15 +75,15 @@ fun ApplicationCall.checkOauthHeader(scope: OauthScope? = null) =
         } else { null }
     }
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(captcha: String?, block: suspend PipelineContext<*, ApplicationCall>.() -> T, error: (suspend PipelineContext<*, ApplicationCall>.(SiteVerifyResponse) -> T)? = null) =
-    if (reCaptchaVerify == null) {
+suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(client: HttpClient, captcha: String?, block: suspend PipelineContext<*, ApplicationCall>.() -> T, error: (suspend PipelineContext<*, ApplicationCall>.(SiteVerifyResponse) -> T)? = null) =
+    if (captchaVerify == null) {
         pipelineLogger.warning("ReCAPTCHA not setup. Allowing request anyway")
         block()
     } else {
         withContext(Dispatchers.IO) {
-            reCaptchaVerify.verify(captcha, call.request.origin.remoteHost)
+            captchaVerify.verify(client, captcha ?: "", call.request.origin.remoteHost)
         }.let { result ->
-            if (result.isSuccess) {
+            if (result.success) {
                 block()
             } else {
                 error?.invoke(this, result) ?: throw BadRequestException("Bad captcha")
@@ -90,9 +91,9 @@ suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(captcha: Stri
         }
     }
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.captchaIfPresent(captcha: String?, block: suspend PipelineContext<*, ApplicationCall>.() -> T) =
+suspend fun <T> PipelineContext<*, ApplicationCall>.captchaIfPresent(client: HttpClient, captcha: String?, block: suspend PipelineContext<*, ApplicationCall>.() -> T) =
     if (captcha != null) {
-        this.requireCaptcha(captcha, block)
+        this.requireCaptcha(client, captcha, block)
     } else {
         block()
     }

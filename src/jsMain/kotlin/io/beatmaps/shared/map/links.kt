@@ -49,10 +49,10 @@ val links = fc<LinksProps> { props ->
             if (modal?.current != null) it.preventDefault()
 
             if (props.version?.state == EMapState.Published) {
-                modal?.current?.showById(props.map.id)
+                modal?.current?.showById?.invoke(props.map.id)
             } else {
                 props.version?.hash?.let { hash ->
-                    modal?.current?.show(hash)
+                    modal?.current?.show?.invoke(hash)
                 }
             }
         }

@@ -37,6 +37,7 @@ import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization
 import io.beatmaps.util.requireCaptcha
 import io.beatmaps.util.updateAlertCount
+import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
@@ -147,7 +148,7 @@ fun Query.complexToReview() = this.fold(mutableMapOf<EntityID<Int>, ReviewDao>()
     }
 }.values.toList()
 
-fun Route.reviewRoute() {
+fun Route.reviewRoute(client: HttpClient) {
     get<ReviewApi.ByDate> {
         val reviews = transaction {
             try {
@@ -334,7 +335,7 @@ fun Route.reviewRoute() {
             val updateMapId = single.mapId.toInt(16)
             val newText = update.text.take(ReviewConstants.MAX_LENGTH)
 
-            captchaIfPresent(update.captcha) {
+            captchaIfPresent(client, update.captcha) {
                 val success = newSuspendedTransaction {
                     if (single.userId != sess.userId && !sess.isCurator()) {
                         call.respond(HttpStatusCode.Forbidden, ActionResponse.error())
@@ -522,6 +523,7 @@ fun Route.reviewRoute() {
             if (reply.captcha == null) throw UserApiException("Missing Captcha")
 
             val response = requireCaptcha(
+                client,
                 reply.captcha,
                 {
                     val (insertedId, response) = newSuspendedTransaction {
@@ -624,7 +626,7 @@ fun Route.reviewRoute() {
         requireAuthorization { _, user ->
             val update = call.receive<ReplyRequest>()
 
-            captchaIfPresent(update.captcha) {
+            captchaIfPresent(client, update.captcha) {
                 val response = newSuspendedTransaction {
                     val ownerId = ReviewReply
                         .select(ReviewReply.userId)

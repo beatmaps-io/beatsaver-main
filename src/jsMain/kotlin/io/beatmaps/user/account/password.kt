@@ -36,7 +36,7 @@ val changePassword = fc<ChangePasswordProps> { props ->
     val passwordRef = useRef<HTMLInputElement>()
     val password2Ref = useRef<HTMLInputElement>()
 
-    val (errors, setErrors) = useState(listOf<String>())
+    val (errors, setErrors) = useState(emptyList<String>())
     val (valid, setValid) = useState(false)
     val (loading, setLoading) = useState<Boolean>()
 
