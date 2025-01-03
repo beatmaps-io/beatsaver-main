@@ -54,7 +54,7 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val editPlaylist = fc<Props> {
+val editPlaylist = fc<Props>("editPlaylist") {
     val captchaRef = useRef<ICaptchaHandler>()
     val coverRef = useRef<HTMLInputElement>()
 
@@ -210,7 +210,7 @@ val editPlaylist = fc<Props> {
                         attrs.id = "public"
                         attrs.disabled = loading
                         attrs.default = playlist?.type?.anonymousAllowed != false
-                        attrs.ref = publicRef
+                        attrs.toggleRef = publicRef
                         attrs.text = "Public"
                         attrs.className = "mb-3"
                     }

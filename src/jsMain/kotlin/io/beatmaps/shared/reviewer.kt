@@ -16,7 +16,7 @@ external interface ReviewerProps : Props {
     var time: Instant
 }
 
-val reviewer = fc<ReviewerProps> { props ->
+val reviewer = fc<ReviewerProps>("reviewer") { props ->
     div("owner") {
         props.reviewer?.let { owner ->
             img(src = owner.avatar) { }

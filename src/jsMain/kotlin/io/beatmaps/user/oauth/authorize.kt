@@ -21,7 +21,7 @@ import react.useState
 @Serializable
 data class OauthData(val id: String, val name: String, val icon: String)
 
-val authorizePage = fc<Props> {
+val authorizePage = fc<Props>("authorizePage") {
     val (loggedIn, setLoggedIn) = useState<Boolean>()
     val params = URLSearchParams(window.location.search)
     val oauth = (document.querySelector("meta[name=\"oauth-data\"]") as? HTMLMetaElement)?.let {

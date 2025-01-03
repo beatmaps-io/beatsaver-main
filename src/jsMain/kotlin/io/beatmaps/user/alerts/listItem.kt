@@ -15,7 +15,7 @@ external interface AlertListItemProps : Props {
     var action: (() -> Unit)?
 }
 
-val alertsListItem = fc<AlertListItemProps> {
+val alertsListItem = fc<AlertListItemProps>("alertsListItem") {
     a("#", classes = "list-group-item list-group-item-action d-flex justify-content-between align-items-center" + if (it.active == true) " active" else "") {
         attrs.onClickFunction = { ev ->
             ev.preventDefault()

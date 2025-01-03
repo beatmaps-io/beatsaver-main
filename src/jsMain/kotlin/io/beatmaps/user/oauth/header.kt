@@ -24,7 +24,7 @@ external interface OauthHeaderProps : Props {
     var logoutLink: String?
 }
 
-val oauthHeader = fc<OauthHeaderProps> { props ->
+val oauthHeader = fc<OauthHeaderProps>("oauthHeader") { props ->
     val (username, setUsername) = useState<String?>(null)
     val (avatar, setAvatar) = useState<String?>(null)
 

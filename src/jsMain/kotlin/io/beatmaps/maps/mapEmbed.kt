@@ -12,7 +12,7 @@ import react.router.useParams
 import react.useEffect
 import react.useState
 
-val mapEmbed = fc<Props> {
+val mapEmbed = fc<Props>("mapEmbed") {
     val (map, setMap) = useState<MapDetail?>(null)
     val (missing, setMissing) = useState(false)
 

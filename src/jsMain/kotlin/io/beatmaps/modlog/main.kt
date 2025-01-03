@@ -15,6 +15,7 @@ import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.dom.hasClass
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
@@ -41,12 +42,11 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val modlog = fc<Props> {
+val modlog = fc<Props>("modlog") {
     val resultsTable = useRef<HTMLElement>()
 
     val modRef = useRef<HTMLInputElement>()
     val userRef = useRef<HTMLInputElement>()
-    val typeRef = useRef<HTMLSelectElement>()
 
     val userData = useContext(globalContext)
     val history = History(useNavigate())
@@ -59,6 +59,7 @@ val modlog = fc<Props> {
     val (mod, setMod) = useState(modLocal)
     val (user, setUser) = useState(userLocal)
     val (type, setType) = useState(typeLocal)
+    val (newType, setNewType) = useState(typeLocal)
     val (resultsKey, setResultsKey) = useState(Any())
 
     useEffectOnce {
@@ -72,7 +73,7 @@ val modlog = fc<Props> {
     useEffect(location) {
         modRef.current?.value = modLocal
         userRef.current?.value = userLocal
-        typeRef.current?.value = typeLocal?.name ?: ""
+        setNewType(typeLocal)
 
         setMod(modLocal)
         setUser(userLocal)
@@ -87,7 +88,7 @@ val modlog = fc<Props> {
         val params = listOfNotNull(
             modRef.current?.value?.let { if (it.isNotBlank()) "mod=$it" else null },
             userRef.current?.value?.let { if (it.isNotBlank()) "user=$it" else null },
-            typeRef.current?.value?.let { if (it.isNotBlank()) "type=$it" else null }
+            newType?.let { "type=$it" }
         )
 
         return if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
@@ -138,18 +139,20 @@ val modlog = fc<Props> {
                     td {
                         select("form-select") {
                             attrs.attributes["aria-label"] = "Type"
-                            ref = typeRef
+                            attrs.value = newType?.name ?: ""
+                            attrs.onChangeFunction = {
+                                val elem = it.currentTarget as HTMLSelectElement
+                                setNewType(ModLogOpType.fromName(elem.value))
+                            }
 
                             ModLogOpType.entries.forEach {
                                 option {
                                     attrs.value = it.toString()
-                                    attrs.selected = type == it
                                     +it.toString()
                                 }
                             }
                             option {
                                 attrs.value = ""
-                                attrs.selected = type == null
                                 +"All"
                             }
                         }

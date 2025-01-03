@@ -11,7 +11,7 @@ external interface UploadErrorProps : Props {
     var info: UploadValidationInfo
 }
 
-val uploadError = fc<UploadErrorProps> { props ->
+val uploadError = fc<UploadErrorProps>("uploadError") { props ->
     props.info.property.forEachIndexed { idx, it ->
         if (idx > 0) {
             +"."

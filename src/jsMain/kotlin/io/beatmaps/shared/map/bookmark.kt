@@ -14,7 +14,7 @@ external interface BookmarkButtonProps : Props {
     var onClick: (Event, Boolean) -> Unit
 }
 
-var bookmarkButton = fc<BookmarkButtonProps> { props ->
+var bookmarkButton = fc<BookmarkButtonProps>("bookmarkButton") { props ->
     a("#", classes = "me-1") {
         val title = if (props.bookmarked) "Remove Bookmark" else "Add Bookmark"
         attrs.title = title

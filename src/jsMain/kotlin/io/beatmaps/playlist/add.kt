@@ -27,7 +27,7 @@ external interface AddToPlaylistProps : Props {
     var map: MapDetail
 }
 
-val addToPlaylist = fc<AddToPlaylistProps> { props ->
+val addToPlaylist = fc<AddToPlaylistProps>("addToPlaylist") { props ->
     val (loading, setLoading) = useState(false)
 
     val modal = useContext(modalContext)

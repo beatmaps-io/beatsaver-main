@@ -27,6 +27,7 @@ import io.beatmaps.shared.map.uploaderWithInfo
 import io.beatmaps.util.textToContent
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
+import org.w3c.dom.HTMLInputElement
 import react.Props
 import react.dom.a
 import react.dom.b
@@ -41,9 +42,8 @@ import react.useContext
 import react.useEffect
 import react.useRef
 import react.useState
-import web.html.HTMLInputElement
 
-val issuesPage = fc<Props> {
+val issuesPage = fc<Props>("issuesPage") {
     val (loading, setLoading) = useState(false)
     val (issue, setIssue) = useState<IssueDetail?>(null)
     val captchaRef = useRef<ICaptchaHandler>()
@@ -199,7 +199,7 @@ val issuesPage = fc<Props> {
 
                     if (userData?.admin == true) {
                         toggle {
-                            ref = publicRef
+                            attrs.toggleRef = publicRef
                             attrs.className = "me-4 mb-2 mt-auto"
                             attrs.id = "new-public"
                             attrs.disabled = loading

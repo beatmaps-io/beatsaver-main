@@ -42,7 +42,7 @@ external interface PlaylistTableProps : Props {
     var updateScrollIndex: ((Int) -> Unit)?
 }
 
-val playlistTable = fc<PlaylistTableProps> { props ->
+val playlistTable = fc<PlaylistTableProps>("playlistTable") { props ->
     val (resultsKey, setResultsKey) = useState(Any())
     val config = useContext(configContext)
 

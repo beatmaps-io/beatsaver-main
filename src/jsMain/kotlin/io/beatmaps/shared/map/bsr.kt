@@ -15,7 +15,7 @@ external interface CopyBSProps : Props {
     var map: MapDetail
 }
 
-val copyBsr = fc<CopyBSProps> { props ->
+val copyBsr = fc<CopyBSProps>("copyBsr") { props ->
     a("#") {
         val text = "Copy BSR"
         attrs.title = text
@@ -31,7 +31,7 @@ val copyBsr = fc<CopyBSProps> { props ->
     }
 }
 
-val copyEmbed = fc<CopyBSProps> { props ->
+val copyEmbed = fc<CopyBSProps>("copyEmbed") { props ->
     a("#") {
         //language=html
         val iframe = """

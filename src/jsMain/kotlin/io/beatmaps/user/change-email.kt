@@ -28,7 +28,7 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val changeEmailPage = fc<Props> {
+val changeEmailPage = fc<Props>("changeEmailPage") {
     val (loading, setLoading) = useState(false)
     val (errors, setErrors) = useState(emptyList<String>())
     val passwordRef = useRef<HTMLInputElement>()

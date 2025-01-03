@@ -21,7 +21,7 @@ external interface SortProps : Props {
     var dark: Boolean?
 }
 
-val sort = fc<SortProps> { props ->
+val sort = fc<SortProps>("sort") { props ->
     val default = props.default ?: SearchOrder.Relevance
     val (sortOrder, setSortOrder) = useState(default)
 
@@ -45,11 +45,11 @@ val sort = fc<SortProps> { props ->
                     props.cb?.invoke(newOrder)
                 }
             }
+            value = sortOrder.toString()
         }
         SearchOrder.entries.filter { props.target in it.targets }.forEach {
             option {
                 attrs.value = it.toString()
-                attrs.selected = sortOrder == it
                 +it.toString()
             }
         }

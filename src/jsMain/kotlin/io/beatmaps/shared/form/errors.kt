@@ -13,7 +13,7 @@ external interface ErrorProps : Props {
     var valid: Boolean?
 }
 
-val errors = fc<ErrorProps> { props ->
+val errors = fc<ErrorProps>("errors") { props ->
     props.errors?.forEach { error ->
         div((if (props.valid == true) "" else "in") + "valid-feedback") {
             attrs.jsStyle {

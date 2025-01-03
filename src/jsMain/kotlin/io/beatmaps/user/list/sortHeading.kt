@@ -18,7 +18,7 @@ external interface SortThProps : Props {
     var order: ApiOrder
 }
 
-val sortTh = fc<SortThProps> { props ->
+val sortTh = fc<SortThProps>("sortTh") { props ->
     val config = useContext(configContext)
     th {
         if (config?.v2Search == true && props.column.sortEnum != null) {

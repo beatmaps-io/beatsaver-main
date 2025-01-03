@@ -10,7 +10,7 @@ external interface DiffImgProps : Props {
     var diff: MapDifficulty
 }
 
-val diffImg = fc<DiffImgProps> { props ->
+val diffImg = fc<DiffImgProps>("diffImg") { props ->
     val humanText = props.diff.characteristic.human()
 
     img(humanText, "/static/icons/${humanText.lowercase()}.svg", classes = "mode") {

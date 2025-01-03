@@ -23,7 +23,7 @@ fun interface TimelineEntrySectionRenderer {
     fun RDOMBuilder<DIV>.invoke()
 }
 
-val timelineEntry = fc<TimelineEntryProps> { props ->
+val timelineEntry = fc<TimelineEntryProps>("timelineEntry") { props ->
     article("card border-${props.color ?: "primary"} ${props.className ?: ""}") {
         props.id?.let { id ->
             attrs.id = id

@@ -36,7 +36,7 @@ external interface EditableTextProps : PropsWithChildren {
     var textClass: String?
 }
 
-val editableText = fc<EditableTextProps> { props ->
+val editableText = fc<EditableTextProps>("editableText") { props ->
     val (loading, setLoading) = useState(false)
     val (textLength, setTextLength) = useState(props.text?.length ?: 0)
 

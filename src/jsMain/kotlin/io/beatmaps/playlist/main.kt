@@ -26,7 +26,7 @@ val playlistFilters = listOf<FilterInfo<PlaylistSearchParams, *>>(
     BooleanFilterInfo("verified", "Verified Mapper", FilterCategory.GENERAL) { it.verified == true }
 )
 
-val playlistFeed = fc<Props> {
+val playlistFeed = fc<Props>("playlistFeed") {
     useEffectOnce {
         setPageTitle("Playlists")
     }

@@ -18,7 +18,7 @@ external interface NewFeedbackProps : Props {
     var captcha: RefObject<ICaptchaHandler>
 }
 
-val newFeedback = fc<NewFeedbackProps> { props ->
+val newFeedback = fc<NewFeedbackProps>("newFeedback") { props ->
     val (done, setDone) = useState(false)
     val (text, setText) = useState<String?>(null)
     val (time, setTime) = useState<String?>(null)

@@ -6,7 +6,7 @@ import react.dom.div
 import react.fc
 import react.useEffectOnce
 
-val notFound = fc<Props> {
+val notFound = fc<Props>("notFound") {
     useEffectOnce {
         setPageTitle("Page Not Found")
     }

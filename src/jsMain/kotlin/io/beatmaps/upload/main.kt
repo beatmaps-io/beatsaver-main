@@ -50,7 +50,7 @@ class UploadRequestConfig(block: (AxiosProgress) -> Unit) : AxiosRequestConfig {
 
 external interface UploadPageProps : WithRouterProps
 
-val uploadPage = fc<UploadPageProps> {
+val uploadPage = fc<UploadPageProps>("uploadPage") {
     val (errors, setErrors) = useState(listOf<UploadValidationInfo>())
     val (loading, setLoading) = useState(false)
     val (beatsage, setBeatsage) = useState<Boolean>()

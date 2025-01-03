@@ -59,7 +59,7 @@ import react.useState
 import kotlin.js.Promise
 import kotlin.math.ceil
 
-val playlistPage = fc<Props> {
+val playlistPage = fc<Props>("playlistPage") {
     val (playlist, setPlaylist) = useState<PlaylistFull?>(null)
     val (maps, setMaps) = useState(listOf<MapDetailWithOrder>())
     val tokenRef = useRef(Axios.CancelToken.source())

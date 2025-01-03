@@ -31,7 +31,7 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val pickUsernamePage = fc<Props> {
+val pickUsernamePage = fc<Props>("pickUsernamePage") {
     val (submitted, setSubmitted) = useState(false)
     val (loading, setLoading) = useState(false)
     val (errors, setErrors) = useState(emptyList<String>())

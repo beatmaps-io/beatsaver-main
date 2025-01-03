@@ -15,7 +15,7 @@ external interface ColoredCardProps : PropsWithChildren {
     var classes: String?
 }
 
-val coloredCard = fc<ColoredCardProps> {
+val coloredCard = fc<ColoredCardProps>("coloredCard") {
     div("card colored " + (it.classes ?: "")) {
         it.extra?.invoke(attrs)
 

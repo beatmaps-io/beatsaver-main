@@ -48,7 +48,7 @@ private fun markAlert(alert: UserAlert, read: Boolean, cb: (UserAlertStats) -> U
         // Bad request -> failed to mark
     }
 
-val alert = fc<AlertProps> { props ->
+val alert = fc<AlertProps>("alert") { props ->
     val (height, setHeight) = useState<String?>(null)
     val (opacity, setOpacity) = useState<String?>(null)
     val (margin, setMargin) = useState<String?>(null)

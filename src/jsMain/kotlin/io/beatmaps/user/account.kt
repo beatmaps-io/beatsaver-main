@@ -54,7 +54,7 @@ external interface AccountComponentProps : Props {
     var onUpdate: () -> Unit
 }
 
-val accountTab = fc<AccountComponentProps> { props ->
+val accountTab = fc<AccountComponentProps>("accountTab") { props ->
     val (username, setUsername) = useState(props.userDetail.name)
     val (usernameErrors, setUsernameErrors) = useState(emptyList<String>())
     val (userLoading, setUserLoading) = useState(false)

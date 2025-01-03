@@ -23,7 +23,7 @@ external interface PlaylistMapEditableProps : Props {
     var removeMap: (() -> Unit)?
 }
 
-var playlistMapEditable = fc<PlaylistMapEditableProps> { props ->
+var playlistMapEditable = fc<PlaylistMapEditableProps>("playlistMapEditable") { props ->
     fun remove() {
         Axios.post<String>(
             "${Config.apibase}/playlists/id/${props.playlistKey}/add",

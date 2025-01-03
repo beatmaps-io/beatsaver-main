@@ -15,7 +15,7 @@ external interface UserCardProps : Props {
     var titles: List<String>
 }
 
-var userCard = fc<UserCardProps> {
+var userCard = fc<UserCardProps>("userCard") {
     div("d-flex align-items-center my-2") {
         img("Profile Image", it.avatar, classes = "rounded-circle me-3") {
             attrs.width = "50"

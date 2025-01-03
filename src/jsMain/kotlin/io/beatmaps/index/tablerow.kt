@@ -19,7 +19,7 @@ external interface TableRowProps : Props {
     var version: MapVersion?
 }
 
-val beatmapTableRow = fc<TableRowProps> { props ->
+val beatmapTableRow = fc<TableRowProps>("beatmapTableRow") { props ->
     tr {
         td {
             img(src = props.version?.coverURL, alt = "Cover Image", classes = "cover") {

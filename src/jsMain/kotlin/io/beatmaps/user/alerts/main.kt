@@ -44,7 +44,7 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val alertsPage = fc<Props> {
+val alertsPage = fc<Props>("alertsPage") {
     val location = useLocation()
     val params = URLSearchParams(location.search)
 

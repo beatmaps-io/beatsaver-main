@@ -48,7 +48,7 @@ val stats = listOf(
     StatInfo("fa-sort-amount-down", { it.searchParams.sortOrder.name }, { true })
 )
 
-val playlistInfo = fc<PlaylistInfoProps> { props ->
+val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
     props.playlist?.let { pl ->
         val plAttrs = listOfNotNull(
             if (pl.curator != null) {

@@ -14,7 +14,7 @@ import react.dom.i
 import react.fc
 import react.useEffectOnce
 
-val loginPage = fc<Props> {
+val loginPage = fc<Props>("loginPage") {
     useEffectOnce {
         setPageTitle("Login")
     }

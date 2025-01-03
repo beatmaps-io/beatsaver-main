@@ -24,7 +24,7 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val resetPage = fc<Props> {
+val resetPage = fc<Props>("resetPage") {
     val (errors, setErrors) = useState(emptyList<String>())
     val (loading, setLoading) = useState(false)
 

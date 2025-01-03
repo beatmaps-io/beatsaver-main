@@ -43,7 +43,7 @@ import react.useState
 
 fun Int.toLocaleString(locale: String? = undefined): String = asDynamic().toLocaleString(locale) as String
 
-val userList = fc<Props> {
+val userList = fc<Props>("userList") {
     val location = useLocation()
 
     val (urlSearch, urlOrder) = URLSearchParams(location.search).let { params ->

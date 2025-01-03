@@ -15,7 +15,7 @@ external interface CollaboratorCardProps : Props {
     var accepted: Boolean?
 }
 
-val collaboratorCard = fc<CollaboratorCardProps> { props ->
+val collaboratorCard = fc<CollaboratorCardProps>("collaboratorCard") { props ->
     div("collaborator" + if (props.accepted != false) " accepted" else "") {
         img(props.user.name, props.user.avatar) { }
         span {

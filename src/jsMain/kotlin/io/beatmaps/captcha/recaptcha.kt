@@ -13,7 +13,7 @@ class ReCAPTCHAHandler(val ext: MutableRefObject<IReCAPTCHA>) : ICaptchaHandler 
     override fun reset() = ext.current?.reset()
 }
 
-val recaptcha = fc<CaptchaProps> { props ->
+val recaptcha = fc<CaptchaProps>("ReCAPTCHA") { props ->
     val ref = useRef<IReCAPTCHA>()
     configContext.Consumer { configData ->
         if (configData?.showCaptcha != false) {

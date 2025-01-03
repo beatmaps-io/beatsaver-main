@@ -20,7 +20,7 @@ external interface CollaboratorPickerProps : Props {
     var disabled: Boolean
 }
 
-val collaboratorPicker = fc<CollaboratorPickerProps> { props ->
+val collaboratorPicker = fc<CollaboratorPickerProps>("collaboratorPicker") { props ->
     val (collaborators, setCollaborators) = useState(listOf<CollaborationDetail>())
 
     fun updateCollaborators() {

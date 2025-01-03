@@ -55,7 +55,7 @@ external interface ModReviewProps : Props {
     var type: KClass<*>
 }
 
-val modReview = fc<ModReviewProps> { props ->
+val modReview = fc<ModReviewProps>("modReview") { props ->
     val userData = useContext(globalContext)
     val history = History(useNavigate())
     val location = useLocation()

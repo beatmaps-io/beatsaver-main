@@ -14,7 +14,7 @@ external interface DownloadProps : Props {
     var version: MapVersion
 }
 
-val downloadZip = fc<DownloadProps> { props ->
+val downloadZip = fc<DownloadProps>("downloadZip") { props ->
     a(props.version.downloadURL) {
         val text = "Download zip"
         attrs.rel = "noopener"

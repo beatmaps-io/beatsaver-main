@@ -17,7 +17,7 @@ external interface MapTagProps : Props {
     var onClick: (Event) -> Unit
 }
 
-val mapTag = fc<MapTagProps> { props ->
+val mapTag = fc<MapTagProps>("mapTag") { props ->
     val dark = !props.selected && !props.excluded
     val margins = props.margins ?: "me-2 mb-2"
     span("badge badge-${if (props.excluded) "danger" else props.tag.type.color} $margins") {

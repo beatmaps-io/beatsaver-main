@@ -27,7 +27,7 @@ external interface SiteRowProps : Props {
     var removeSessionCallback: (SessionInfo) -> Unit
 }
 
-val siteRow = fc<SiteRowProps> { props ->
+val siteRow = fc<SiteRowProps>("siteRow") { props ->
     tr {
         td {
             props.session.countryCode?.let { cc ->
@@ -57,7 +57,7 @@ external interface OauthRowProps : Props {
     var removeSessionCallback: (SessionInfo) -> Unit
 }
 
-val oauthRow = fc<OauthRowProps> { props ->
+val oauthRow = fc<OauthRowProps>("oauthRow") { props ->
     tr {
         td {
             attrs.jsStyle {
@@ -94,7 +94,7 @@ external interface SessionRowProps : Props {
     var removeSessionCallback: (SessionInfo) -> Unit
 }
 
-val sessionRowCommon = fc<SessionRowProps> { props ->
+val sessionRowCommon = fc<SessionRowProps>("sessionRowCommon") { props ->
     val session = props.session
     val (loading, setLoading) = useState<Boolean>()
 

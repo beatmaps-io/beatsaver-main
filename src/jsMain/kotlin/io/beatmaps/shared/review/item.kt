@@ -61,7 +61,7 @@ external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
     var setExistingReview: ((Boolean) -> Unit)?
 }
 
-val reviewItem = fc<ReviewItemProps> { props ->
+val reviewItem = fc<ReviewItemProps>("reviewItem") { props ->
     val autoSize = useAutoSize(props, 2)
 
     val (featured, setFeatured) = useState<Boolean?>(null)

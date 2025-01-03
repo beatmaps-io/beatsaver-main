@@ -27,7 +27,7 @@ external interface PublishModalProps : Props {
     var notifyFollowersRef: MutableRefObject<Boolean>
 }
 
-val publishModal = fc<PublishModalProps> { props ->
+val publishModal = fc<PublishModalProps>("publishModal") { props ->
     val (publishType, setPublishType) = useState(false)
 
     val format = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm")

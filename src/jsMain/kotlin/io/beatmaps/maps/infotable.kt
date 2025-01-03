@@ -28,7 +28,7 @@ external interface InfoTableProps : Props {
     var changeSelectedDiff: ((MapDifficulty) -> Unit)?
 }
 
-val infoTable = fc<InfoTableProps> { props ->
+val infoTable = fc<InfoTableProps>("infoTable") { props ->
     val itemClasses by lazy { "list-group-item d-flex justify-content-between" + if (props.horizontal == true) " col-lg" else "" }
 
     fun formatStat(value: Int) = when {

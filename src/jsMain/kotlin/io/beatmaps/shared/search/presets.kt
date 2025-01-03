@@ -21,7 +21,7 @@ external interface PresetProps : Props {
     var callback: (Moment?, Moment?) -> Unit
 }
 
-val presets = fc<PresetProps> { props ->
+val presets = fc<PresetProps>("presets") { props ->
     div("presets") {
         presetsMap.forEach { preset ->
             button {

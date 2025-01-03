@@ -19,6 +19,7 @@ import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.form.toggle
 import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.html.ButtonType
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
@@ -44,11 +45,10 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val issueList = fc<Props> {
+val issueList = fc<Props>("issueList") {
     val resultsTable = useRef<HTMLElement>()
 
     val openRef = useRef<HTMLInputElement>()
-    val typeRef = useRef<HTMLSelectElement>()
 
     val userData = useContext(globalContext)
     val history = History(useNavigate())
@@ -60,6 +60,7 @@ val issueList = fc<Props> {
 
     val (isOpen, setIsOpen) = useState(openLocal)
     val (type, setType) = useState(typeLocal)
+    val (newType, setNewType) = useState(typeLocal)
     val (resultsKey, setResultsKey) = useState(Any())
 
     useEffectOnce {
@@ -72,7 +73,7 @@ val issueList = fc<Props> {
 
     useEffect(location) {
         openRef.current?.checked = openLocal
-        typeRef.current?.value = typeLocal?.name ?: ""
+        setNewType(typeLocal)
 
         setIsOpen(openLocal)
         setType(typeLocal)
@@ -85,7 +86,7 @@ val issueList = fc<Props> {
     fun urlExtension(): String {
         val params = listOfNotNull(
             openRef.current?.checked?.let { if (it) "open=$it" else null },
-            typeRef.current?.value?.let { if (it.isNotBlank()) "type=$it" else null }
+            newType?.let { "type=$it" }
         )
 
         return if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
@@ -119,18 +120,20 @@ val issueList = fc<Props> {
                     td {
                         select("form-select") {
                             attrs.attributes["aria-label"] = "Type"
-                            ref = typeRef
+                            attrs.value = newType?.name ?: ""
+                            attrs.onChangeFunction = {
+                                val elem = it.currentTarget as HTMLSelectElement
+                                setNewType(EIssueType.fromName(elem.value))
+                            }
 
                             EIssueType.entries.forEach {
                                 option {
-                                    attrs.value = it.toString()
-                                    attrs.selected = type == it
+                                    attrs.value = it.name
                                     +it.toString()
                                 }
                             }
                             option {
                                 attrs.value = ""
-                                attrs.selected = type == null
                                 +"All"
                             }
                         }
@@ -139,7 +142,7 @@ val issueList = fc<Props> {
                     td {
                         toggle {
                             attrs.id = "openOnly"
-                            attrs.ref = openRef
+                            attrs.toggleRef = openRef
                             attrs.text = "Open only"
                             attrs.default = isOpen
                             attrs.className = "mb-2"

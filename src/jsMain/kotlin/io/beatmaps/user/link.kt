@@ -13,7 +13,7 @@ external interface UserLinkProps : Props {
     var callback: (() -> Unit)?
 }
 
-val userLink = fc<UserLinkProps> { props ->
+val userLink = fc<UserLinkProps>("userLink") { props ->
     a("#", classes = "me-1") {
         attrs.onClickFunction = { ev ->
             ev.preventDefault()

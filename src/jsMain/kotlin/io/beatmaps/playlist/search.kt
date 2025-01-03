@@ -61,7 +61,7 @@ class PlaylistSearchBooleanFilter(override val id: String, val text: String, val
 
 class PlaylistSearchMultipleChoiceFilter<T : Any?>(override val id: String, val choices: Map<String, T>, val getter: T, val setter: StateSetter<T>) : PlaylistSearchFilter<T>
 
-val playlistSearchEditor = fc<PSEProps> { props ->
+val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
     val (automapper, setAutomapper) = useState(props.config.searchParams.automapper)
     val (minNps, setMinNps) = useState(props.config.searchParams.minNps ?: 0f)
     val (maxNps, setMaxNps) = useState(props.config.searchParams.maxNps ?: 16f)
@@ -248,11 +248,11 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                         onChangeFunction = { ev ->
                             setMapCount((ev.target as HTMLSelectElement).value.toIntOrNull() ?: 100)
                         }
+                        value = mapCount.toString()
                     }
                     mapCounts.forEach {
                         option {
                             attrs.value = it.toString()
-                            attrs.selected = it == mapCount
                             +it.toString()
                         }
                     }
@@ -272,7 +272,7 @@ val playlistSearchEditor = fc<PSEProps> { props ->
                             attrs.disabled = props.loading
                             attrs.default = f.filter(props.config.searchParams)
                             attrs.text = f.text
-                            attrs.ref = f.ref
+                            attrs.toggleRef = f.ref
                             attrs.block = {
                                 doCallback()
                             }

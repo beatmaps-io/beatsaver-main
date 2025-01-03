@@ -49,7 +49,7 @@ fun RefObject<ScoreTableRef>.update(block: ScoreTableRef.() -> Unit) = current?.
     block(it)
 }
 
-val scoreTable = fc<ScoreTableProps> { props ->
+val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
     val (uid, setUid) = useState<String?>(null)
     val state = useRef<ScoreTableRef>(jso())
     val (scores, setScores) = useState(listOf<LeaderboardScore>())
