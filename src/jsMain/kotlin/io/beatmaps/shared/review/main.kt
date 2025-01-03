@@ -4,7 +4,6 @@ import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
 import io.beatmaps.Config
-import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewsResponse
@@ -12,7 +11,6 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.captcha.captcha
 import io.beatmaps.globalContext
-import io.beatmaps.index.modalContext
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.util.useDidUpdateEffect
@@ -20,8 +18,6 @@ import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
 import react.fc
-import react.router.useNavigate
-import react.useContext
 import react.useRef
 import react.useState
 
