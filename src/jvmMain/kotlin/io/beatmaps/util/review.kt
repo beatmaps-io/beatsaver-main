@@ -4,6 +4,7 @@ import io.beatmaps.api.HydratedMapReportData
 import io.beatmaps.api.HydratedPlaylistReportData
 import io.beatmaps.api.HydratedReviewReportData
 import io.beatmaps.api.HydratedUserReportData
+import io.beatmaps.api.IssueCommentDetail
 import io.beatmaps.api.IssueDetail
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewUpdateInfo
@@ -16,6 +17,7 @@ import io.beatmaps.common.db.avgWithFilter
 import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Issue
+import io.beatmaps.common.dbo.IssueComment
 import io.beatmaps.common.dbo.Review
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.handleUser
@@ -37,6 +39,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ExpressionWithColumnType
 import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.alias
@@ -149,7 +152,7 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
         }
     }
 
-    suspend fun post(issue: IssueDetail) {
+    suspend fun post(issue: IssueDetail, comment: IssueCommentDetail) {
         client.post(webhookUrl) {
             contentType(ContentType.Application.Json)
             userAgent("BeatSaver")
@@ -160,8 +163,8 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                     avatar_url = "https://avatars.githubusercontent.com/u/83342266",
                     embeds = listOf(
                         DiscordEmbed(
-                            author = issue.creator.let { user -> DiscordEmbed.Author(user) },
                             title = "New ${issue.type.human()} created",
+                            description = comment.text,
                             url = "${Config.siteBase()}/issues/${issue.id}",
                             thumbnail = when (issue.data) {
                                 is HydratedMapReportData -> issue.data.map.mainVersion()?.let {
@@ -276,17 +279,20 @@ fun Application.reviewListeners(client: HttpClient) {
             consumeAck("bm.issuesDiscordHook", Int::class) { _, issueId ->
                 transaction {
                     Issue
+                        .join(IssueComment, JoinType.LEFT, Issue.id, IssueComment.issueId)
                         .joinUser(Issue.creator)
                         .selectAll()
                         .where {
-                            Issue.id eq issueId
+                            (Issue.id eq issueId) and IssueComment.public
                         }
+                        .orderBy(IssueComment.createdAt to SortOrder.ASC)
+                        .limit(1)
                         .handleUser()
                         .singleOrNull()?.let { row ->
-                            IssueDetail.from(row, "", false)
+                            IssueDetail.from(row, "", false) to IssueCommentDetail.from(row)
                         }
-                }?.let { issue ->
-                    handler.post(issue)
+                }?.let { (issue, comment) ->
+                    handler.post(issue, comment)
                 }
             }
         }
