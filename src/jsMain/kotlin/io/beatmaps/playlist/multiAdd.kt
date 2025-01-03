@@ -40,7 +40,7 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val multiAddPlaylist = fc<Props> {
+val multiAddPlaylist = fc<Props>("multiAddPlaylist") {
     val (progress, setProgress) = useState<Pair<Int, Int>?>(null)
 
     val hashRef = useRef<HTMLTextAreaElement>()

@@ -30,7 +30,7 @@ external interface AccountEmailProps : Props {
     var captchaRef: RefObject<ICaptchaHandler>
 }
 
-val accountEmail = fc<AccountEmailProps> { props ->
+val accountEmail = fc<AccountEmailProps>("accountEmail") { props ->
     val (email, setEmail) = useState(props.userDetail.email ?: "")
     val (errors, setErrors) = useState(emptyList<String>())
     val (valid, setValid) = useState(false)

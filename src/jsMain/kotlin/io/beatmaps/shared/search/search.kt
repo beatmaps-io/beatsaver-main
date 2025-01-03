@@ -98,7 +98,6 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
     private val filterRefs = props.filters.associateWith { createRef<HTMLInputElement>() }
 
     val inputRef = createRef<HTMLInputElement>()
-    private val sortRef = createRef<HTMLSelectElement>()
     private val dropdownRef = createRef<HTMLButtonElement>()
     private val dropdownDivRef = createRef<HTMLDivElement>()
 
@@ -153,8 +152,10 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
     }
 
     private val hideFilters = { _: Event ->
-        setState {
-            filtersOpen = false
+        if (state.filtersOpen == true) {
+            setState {
+                filtersOpen = false
+            }
         }
     }
 
@@ -229,7 +230,7 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                                         toggle {
                                             attrs.id = filter.key
                                             attrs.text = filter.name
-                                            attrs.ref = filterRef
+                                            attrs.toggleRef = filterRef
                                             attrs.block = {
                                                 setState {
                                                     filterMap?.put(filter, it)

@@ -25,7 +25,7 @@ import react.router.useLocation
 import react.useEffectOnce
 import react.useState
 
-val quest = fc<Props> {
+val quest = fc<Props>("quest") {
     useEffectOnce {
         setPageTitle("Link device")
     }

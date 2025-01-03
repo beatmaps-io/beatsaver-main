@@ -21,7 +21,7 @@ external interface LinksProps : Props {
     var limited: Boolean?
 }
 
-val links = fc<LinksProps> { props ->
+val links = fc<LinksProps>("links") { props ->
     val modal = useContext(modalContext)
 
     copyBsr {

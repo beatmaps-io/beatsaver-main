@@ -12,7 +12,7 @@ external interface DiffTextProps : Props {
     var new: String
 }
 
-val diffText = fc<DiffTextProps> { props ->
+val diffText = fc<DiffTextProps>("diffText") { props ->
     if (props.new != props.old) {
         p("card-text") {
             if (props.new.isNotEmpty()) {

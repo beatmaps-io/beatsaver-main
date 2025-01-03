@@ -67,7 +67,7 @@ data class SearchParams(
     val environments: EnvironmentSet
 ) : CommonParams()
 
-val beatmapTable = fc<BeatmapTableProps> { props ->
+val beatmapTable = fc<BeatmapTableProps>("beatmapTable") { props ->
     val (user, setUser) = useState<UserDetail?>(null)
     val (resultsKey, setResultsKey) = useState(Any())
 

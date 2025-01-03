@@ -15,7 +15,7 @@ external interface UploaderProps : Props {
     var version: MapVersion?
 }
 
-val uploader = fc<UploaderProps> { props ->
+val uploader = fc<UploaderProps>("uploader") { props ->
     (listOf(props.map.uploader) + (props.map.collaborators ?: listOf())).let {
         val target = if (window.top === window.self) null else WindowTarget._top
         it.forEachIndexed { idx, u ->
@@ -27,7 +27,7 @@ val uploader = fc<UploaderProps> { props ->
     }
 }
 
-val uploaderWithInfo = fc<UploaderProps> { props ->
+val uploaderWithInfo = fc<UploaderProps>("uploaderWithInfo") { props ->
     uploader {
         attrs.map = props.map
     }

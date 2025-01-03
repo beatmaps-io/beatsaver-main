@@ -15,7 +15,7 @@ external interface RatingProps : Props {
     var rating: Float
 }
 
-val rating = fc<RatingProps> {
+val rating = fc<RatingProps>("rating") {
     val totalVotes = (it.up + it.down).toDouble()
     var uncertainty = 2.0.pow(-log(totalVotes / 2 + 1, 3.0))
     val weightedRange = 25.0

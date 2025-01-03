@@ -14,7 +14,7 @@ external interface SliderProps : Props {
     var className: String?
 }
 
-val slider = fc<SliderProps> { props ->
+val slider = fc<SliderProps>("slider") { props ->
     val max = props.max ?: 16
 
     div(props.className ?: "") {

@@ -10,7 +10,7 @@ external interface RankedStatusProps : Props {
     var map: MapDetail
 }
 
-val rankedStatus = fc<RankedStatusProps> { props ->
+val rankedStatus = fc<RankedStatusProps>("rankedStatus") { props ->
     val criteria = with(props.map) {
         listOf(
             // Name, ranked, qualified

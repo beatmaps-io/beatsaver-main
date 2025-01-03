@@ -44,7 +44,7 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val homePage = fc<Props> {
+val homePage = fc<Props>("homePage") {
     val location = useLocation()
 
     fun fromURL() = URLSearchParams(location.search).let { params ->

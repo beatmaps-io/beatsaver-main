@@ -25,7 +25,7 @@ external interface ManageSessionsProps : Props {
     var revokeAllCallback: () -> Promise<Boolean>
 }
 
-val manageSessions = fc<ManageSessionsProps> { props ->
+val manageSessions = fc<ManageSessionsProps>("manageSessions") { props ->
     val (full, setFull) = useState<Boolean>()
 
     val modal = useContext(modalContext)

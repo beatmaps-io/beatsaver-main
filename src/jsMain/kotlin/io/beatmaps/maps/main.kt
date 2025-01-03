@@ -41,7 +41,7 @@ external interface MapPageProps : Props {
     var beatsaver: Boolean
 }
 
-val mapPage = fc<MapPageProps> { props ->
+val mapPage = fc<MapPageProps>("mapPage") { props ->
     val (map, setMap) = useState<MapDetail?>(null)
     val (selectedDiff, setSelectedDiff) = useState<MapDifficulty?>(null)
 

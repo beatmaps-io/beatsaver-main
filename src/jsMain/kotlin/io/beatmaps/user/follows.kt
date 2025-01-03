@@ -24,7 +24,7 @@ external interface FollowListProps : Props {
     var followedBy: Int?
 }
 
-val followList = fc<FollowListProps> { props ->
+val followList = fc<FollowListProps>("followList") { props ->
     val (resultsKey, setResultsKey) = useState(Any())
 
     val resultRef = useRef<HTMLElement>()

@@ -11,7 +11,7 @@ external interface MapTitleProps : Props {
     var mapKey: String
 }
 
-val mapTitle = fc<MapTitleProps> {
+val mapTitle = fc<MapTitleProps>("mapTitle") {
     val target = if (window.top === window.self) null else WindowTarget._top
     routeLink("/maps/${it.mapKey}", target = target) {
         +it.title.ifBlank {

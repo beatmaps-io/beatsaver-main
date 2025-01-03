@@ -21,7 +21,7 @@ external interface SortProps : Props {
     var dark: Boolean?
 }
 
-val sort = fc<SortProps> { props ->
+val sort = fc<SortProps>("sort") { props ->
     val default = props.default ?: SearchOrder.Relevance
     val (sortOrder, setSortOrder) = useState(default)
 

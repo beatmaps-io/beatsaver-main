@@ -31,7 +31,7 @@ external interface ChangePasswordProps : Props {
     var userDetail: UserDetail
 }
 
-val changePassword = fc<ChangePasswordProps> { props ->
+val changePassword = fc<ChangePasswordProps>("changePassword") { props ->
     val currpassRef = useRef<HTMLInputElement>()
     val passwordRef = useRef<HTMLInputElement>()
     val password2Ref = useRef<HTMLInputElement>()

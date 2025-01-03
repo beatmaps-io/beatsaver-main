@@ -38,7 +38,7 @@ external interface NewReviewProps : Props {
     var reloadList: (() -> Unit)?
 }
 
-val newReview = fc<NewReviewProps> { props ->
+val newReview = fc<NewReviewProps>("newReview") { props ->
     val (loading, setLoading) = useState(false)
     val (errors, setErrors) = useState(emptyList<String>())
     val (sentiment, setSentiment) = useState<ReviewSentiment?>(null)

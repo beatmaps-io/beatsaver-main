@@ -19,7 +19,7 @@ external interface ScoreProps : Props {
     var mods: List<String>
 }
 
-val score = fc<ScoreProps> { props ->
+val score = fc<ScoreProps>("score") { props ->
     tr {
         th(scope = ThScope.row) {
             +"${props.position}"

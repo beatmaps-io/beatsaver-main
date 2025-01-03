@@ -88,7 +88,7 @@ enum class ProfileTab(val tabText: String, val condition: (UserData?, TabContext
     ACCOUNT("Account", condition = { it, c, _ -> (it?.admin == true || c.userId == null) })
 }
 
-val profilePage = fc<Props> { _ ->
+val profilePage = fc<Props>("profilePage") { _ ->
     val captchaRef = useRef<ICaptchaHandler>()
     val reasonRef = useRef<HTMLTextAreaElement>()
     val modalRef = useRef<ModalCallbacks>()

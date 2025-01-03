@@ -12,7 +12,7 @@ external interface PlaylistOwnerProps : Props {
     var time: Instant
 }
 
-val playlistOwner = fc<PlaylistOwnerProps> { props ->
+val playlistOwner = fc<PlaylistOwnerProps>("playlistOwner") { props ->
     props.owner?.let { owner ->
         routeLink(owner.profileLink("playlists")) {
             +owner.name

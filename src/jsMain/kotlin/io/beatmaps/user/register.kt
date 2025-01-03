@@ -30,7 +30,7 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val signupPage = fc<Props> {
+val signupPage = fc<Props>("signupPage") {
     val (errors, setErrors) = useState(emptyList<String>())
     val (loading, setLoading) = useState(false)
     val (complete, setComplete) = useState(false)

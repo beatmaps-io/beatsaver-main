@@ -23,7 +23,7 @@ external interface TagsProps : Props {
     var highlightOnEmpty: Boolean?
 }
 
-val tags = fc<TagsProps> { props ->
+val tags = fc<TagsProps>("tags") { props ->
     val (selected, setSelected) = useState<MapTagSet>(emptyMap())
     val (altHeld, setAltHeld) = useState(false)
     val (shiftHeld, setShiftHeld) = useState(false)

@@ -37,7 +37,7 @@ external interface ModLogEntryProps : Props {
     var setUser: (String, String) -> Unit
 }
 
-val modLogEntryRenderer = fc<ModLogEntryProps> {
+val modLogEntryRenderer = fc<ModLogEntryProps>("modLogEntryRenderer") {
     fun userCallback(mod: Boolean, userDetail: UserDetail): () -> Unit = {
         it.setUser(
             if (mod) userDetail.name else "",

@@ -31,7 +31,7 @@ external interface EnvironmentsProps : Props {
     var highlightOnEmpty: Boolean?
 }
 
-val environments = fc<EnvironmentsProps> { props ->
+val environments = fc<EnvironmentsProps>("environments") { props ->
     val (selected, setSelected) = useState<EnvironmentSet>(emptySet())
     val (shiftHeld, setShiftHeld) = useState(false)
 

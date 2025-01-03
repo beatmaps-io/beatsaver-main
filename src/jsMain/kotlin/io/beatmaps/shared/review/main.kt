@@ -29,7 +29,7 @@ external interface ReviewTableProps : Props {
     var visible: Boolean?
 }
 
-val reviewTable = fc<ReviewTableProps> { props ->
+val reviewTable = fc<ReviewTableProps>("reviewTable") { props ->
     val (resultsKey, setResultsKey) = useState(Any())
     val (existingReview, setExistingReview) = useState(false)
 

@@ -41,7 +41,7 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val modlog = fc<Props> {
+val modlog = fc<Props>("modlog") {
     val resultsTable = useRef<HTMLElement>()
 
     val modRef = useRef<HTMLInputElement>()

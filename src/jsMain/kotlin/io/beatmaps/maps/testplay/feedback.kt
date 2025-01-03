@@ -27,7 +27,7 @@ external interface FeedbackProps : Props {
     var isOwner: Boolean
 }
 
-val feedback = fc<FeedbackProps> { props ->
+val feedback = fc<FeedbackProps>("feedback") { props ->
     val (editing, setEditing) = useState(false)
     val (loading, setLoading) = useState(false)
     val (text, setText) = useState(props.feedback)

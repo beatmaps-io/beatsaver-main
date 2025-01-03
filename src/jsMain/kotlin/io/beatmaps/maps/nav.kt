@@ -16,7 +16,7 @@ external interface MapPageNavProps : Props {
     var setTab: ((MapTabs) -> Unit)?
 }
 
-val mapPageNav = fc<MapPageNavProps> { props ->
+val mapPageNav = fc<MapPageNavProps>("mapPageNav") { props ->
     ul("nav nav-minimal mb-3") {
         MapTabs.entries.filter { it.enabled }.forEach { tab ->
             li("nav-item") {

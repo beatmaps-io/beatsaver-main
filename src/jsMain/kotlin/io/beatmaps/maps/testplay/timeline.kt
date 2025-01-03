@@ -37,7 +37,7 @@ external interface TimelineProps : Props {
     var history: History
 }
 
-val timeline = fc<TimelineProps> { props ->
+val timeline = fc<TimelineProps>("timeline") { props ->
     val (errors, setErrors) = useState(listOf<UploadValidationInfo>())
     val (loading, setLoading) = useState(false)
 

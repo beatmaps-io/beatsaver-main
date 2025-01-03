@@ -39,7 +39,7 @@ external interface ModalProps : Props {
     var callbacks: MutableRefObject<ModalCallbacks>?
 }
 
-val modal = fc<ModalProps> { props ->
+val modal = fc<ModalProps>("Modal") { props ->
     val backdrop = useRef<HTMLDivElement>()
     val modalRef = useRef<HTMLDivElement>()
     val iframe = useRef<HTMLIFrameElement>()

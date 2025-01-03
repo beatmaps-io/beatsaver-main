@@ -30,7 +30,7 @@ external interface UserSearchProps : Props {
     var addText: String?
 }
 
-val userSearch = fc<UserSearchProps> { props ->
+val userSearch = fc<UserSearchProps>("userSearch") { props ->
     val (foundUsers, setFoundUsers) = useState<List<UserDetail>?>(null)
     val (loading, setLoading) = useState(false)
     val inputRef = useRef<HTMLInputElement>()

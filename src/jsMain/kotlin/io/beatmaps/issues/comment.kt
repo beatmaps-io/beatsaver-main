@@ -33,7 +33,7 @@ external interface IssueCommentProps : Props {
     var comment: IssueCommentDetail
 }
 
-val issueComment = fc<IssueCommentProps> { props ->
+val issueComment = fc<IssueCommentProps>("issueComment") { props ->
     val (editing, setEditing) = useState(false)
     val (loading, setLoading) = useState(false)
     val (errors, setErrors) = useState(emptyList<String>())

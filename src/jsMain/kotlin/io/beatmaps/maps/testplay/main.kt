@@ -18,7 +18,7 @@ external interface TestplayProps : Props {
     var updateMapinfo: (MapDetail) -> Unit
 }
 
-val testplay = fc<TestplayProps> { props ->
+val testplay = fc<TestplayProps>("testplay") { props ->
     val modalRef = useRef<ModalCallbacks>()
 
     modal {

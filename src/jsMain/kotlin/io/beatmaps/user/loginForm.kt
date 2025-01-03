@@ -17,7 +17,7 @@ external interface LoginFormProps : PropsWithChildren {
     var discordLink: String?
 }
 
-val loginForm = fc<LoginFormProps> { props ->
+val loginForm = fc<LoginFormProps>("loginForm") { props ->
     a(href = props.discordLink ?: "/discord", classes = "btn discord-btn") {
         span {
             i("fab fa-discord") {}

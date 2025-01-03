@@ -38,7 +38,7 @@ external interface ReplyProps : Props {
     var captcha: RefObject<ICaptchaHandler>?
 }
 
-val reply = fc<ReplyProps> { props ->
+val reply = fc<ReplyProps>("reply") { props ->
     val (editing, setEditing) = useState(false)
     val (text, setText) = useState(props.reply.text)
     val (deleted, setDeleted) = useState(props.reply.deletedAt != null)

@@ -19,7 +19,7 @@ external interface ReportModalProps : Props {
     var errorsRef: RefObject<List<String>>?
 }
 
-val reportModal = fc<ReportModalProps> { props ->
+val reportModal = fc<ReportModalProps>("reportModal") { props ->
     p {
         +"Why are you reporting this ${if (props.content != false || props.subject == null) "content" else props.subject}? Please give as much detail as possible why you feel this ${props.subject ?: "item"} has violated our TOS:"
     }

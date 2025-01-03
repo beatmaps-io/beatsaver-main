@@ -28,7 +28,7 @@ external interface QuestCodeProps : Props {
     var error: Boolean
 }
 
-val questCode = fc<QuestCodeProps> { props ->
+val questCode = fc<QuestCodeProps>("questCode") { props ->
     val location = useLocation()
     val inputRef = useRef<HTMLInputElement>()
 

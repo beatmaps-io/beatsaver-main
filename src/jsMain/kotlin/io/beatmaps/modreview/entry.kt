@@ -39,7 +39,7 @@ external interface ModReviewEntryProps : Props {
     var onSave: (ReviewSentiment?, String) -> Promise<AxiosResponse<ActionResponse>>?
 }
 
-val modReviewEntry = fc<ModReviewEntryProps> { props ->
+val modReviewEntry = fc<ModReviewEntryProps>("modReviewEntry") { props ->
     val modal = useContext(modalContext)
     val reasonRef = useRef<HTMLTextAreaElement>()
     val (hidden, setHidden) = useState(false)

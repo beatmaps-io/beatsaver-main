@@ -44,7 +44,7 @@ external interface AdminAccountComponentProps : Props {
     var onUpdate: () -> Unit
 }
 
-val adminAccount = fc<AdminAccountComponentProps> { props ->
+val adminAccount = fc<AdminAccountComponentProps>("adminAccount") { props ->
     val maxUploadRef = useRef<HTMLSelectElement>()
     val curatorRef = useRef<HTMLInputElement>()
     val seniorCuratorRef = useRef<HTMLInputElement>()
@@ -135,7 +135,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
             }
             toggle {
                 key = "curator"
-                ref = curatorRef
+                attrs.toggleRef = curatorRef
                 attrs.id = "curator"
                 attrs.disabled = loading
                 attrs.block = {
@@ -147,7 +147,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
             }
             toggle {
                 key = "senior-curator"
-                ref = seniorCuratorRef
+                attrs.toggleRef = seniorCuratorRef
                 attrs.id = "senior-curator"
                 attrs.disabled = loading || !curator
                 attrs.className = "mb-3 mt-3"
@@ -155,7 +155,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
             }
             toggle {
                 key = "curator-tab"
-                ref = curatorTabRef
+                attrs.toggleRef = curatorTabRef
                 attrs.id = "curator-tab"
                 attrs.disabled = loading
                 attrs.className = "mb-3 mt-3"
@@ -163,7 +163,7 @@ val adminAccount = fc<AdminAccountComponentProps> { props ->
             }
             toggle {
                 key = "verifiedMapper"
-                ref = verifiedMapperRef
+                attrs.toggleRef = verifiedMapperRef
                 attrs.id = "verifiedMapper"
                 attrs.disabled = loading
                 attrs.className = "mb-3 mt-3"

@@ -69,7 +69,7 @@ external interface MapInfoProps : Props {
     var updateMapinfo: (MapDetail) -> Unit
 }
 
-val mapInfo = fc<MapInfoProps> { props ->
+val mapInfo = fc<MapInfoProps>("mapInfo") { props ->
     val inputRef = useRef<HTMLInputElement>()
     val textareaRef = useRef<HTMLTextAreaElement>()
     val reasonRef = useRef<HTMLTextAreaElement>()

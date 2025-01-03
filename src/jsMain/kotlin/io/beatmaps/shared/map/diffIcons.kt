@@ -10,7 +10,7 @@ external interface DiffIconsProps : Props {
     var diffs: List<MapDifficulty>?
 }
 
-val diffIcons = fc<DiffIconsProps> { props ->
+val diffIcons = fc<DiffIconsProps>("diffIcons") { props ->
     props.diffs?.forEach { d ->
         span("badge rounded-pill badge-${d.difficulty.color}") {
             diffImg {

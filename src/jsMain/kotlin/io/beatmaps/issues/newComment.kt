@@ -20,7 +20,7 @@ external interface NewCommentProps : PropsWithChildren {
     var buttonText: String
 }
 
-val newIssueComment = fc<NewCommentProps> { props ->
+val newIssueComment = fc<NewCommentProps>("newIssueComment") { props ->
     val (loading, setLoading) = useState(false)
     val (errors, setErrors) = useState(emptyList<String>())
 

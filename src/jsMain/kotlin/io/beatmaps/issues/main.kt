@@ -44,7 +44,7 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val issueList = fc<Props> {
+val issueList = fc<Props>("issueList") {
     val resultsTable = useRef<HTMLElement>()
 
     val openRef = useRef<HTMLInputElement>()
@@ -139,7 +139,7 @@ val issueList = fc<Props> {
                     td {
                         toggle {
                             attrs.id = "openOnly"
-                            attrs.ref = openRef
+                            attrs.toggleRef = openRef
                             attrs.text = "Open only"
                             attrs.default = isOpen
                             attrs.className = "mb-2"

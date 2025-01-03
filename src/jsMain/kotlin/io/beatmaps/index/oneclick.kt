@@ -11,7 +11,7 @@ external interface OneClickProps : Props {
     var mapId: String
 }
 
-val oneclick = fc<OneClickProps> { props ->
+val oneclick = fc<OneClickProps>("oneClick") { props ->
     a("beatsaver://${props.mapId}") {
         val text = "One-Click"
         attrs.title = text

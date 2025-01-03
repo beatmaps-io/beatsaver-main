@@ -39,7 +39,7 @@ external interface BeatmapInfoProps : AutoSizeComponentProps<MapDetail> {
     var audio: RefObject<Audio>
 }
 
-val beatmapInfo = fc<BeatmapInfoProps> { props ->
+val beatmapInfo = fc<BeatmapInfoProps>("beatmapInfo") { props ->
     val autoSize = useAutoSize(props, 30)
     val (bookmarked, setBookmarked) = useState<Boolean?>(null)
 

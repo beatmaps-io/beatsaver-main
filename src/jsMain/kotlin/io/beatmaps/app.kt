@@ -187,7 +187,7 @@ val appRouter = createBrowserRouter(
     )
 )
 
-val app = fc<Props> {
+val app = fc<Props>("BeatSaver Root") {
     useEffectOnce {
         viewportMinWidthPolyfill()
     }

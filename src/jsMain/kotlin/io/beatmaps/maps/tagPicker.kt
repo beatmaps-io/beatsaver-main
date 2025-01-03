@@ -19,7 +19,7 @@ external interface TagPickerProps : Props {
     var renderHeading: TagPickerHeadingRenderer?
 }
 
-val tagPicker = fc<TagPickerProps> { props ->
+val tagPicker = fc<TagPickerProps>("tagPicker") { props ->
     val tags = props.tags
 
     div("tags " + (props.classes ?: "")) {

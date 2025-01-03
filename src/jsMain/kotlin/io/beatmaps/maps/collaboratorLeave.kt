@@ -25,7 +25,7 @@ external interface CollaboratorLeaveProps : Props {
     var modal: RefObject<ModalCallbacks>?
 }
 
-val collaboratorLeave = fc<CollaboratorLeaveProps> { props ->
+val collaboratorLeave = fc<CollaboratorLeaveProps>("collaboratorLeave") { props ->
     a("#") {
         val title = "Leave collaboration"
         attrs.title = title

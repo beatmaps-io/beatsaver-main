@@ -13,7 +13,7 @@ external interface MapRequirementsProps : Props {
     var version: MapVersion
 }
 
-val mapRequirements = fc<MapRequirementsProps> { props ->
+val mapRequirements = fc<MapRequirementsProps>("mapRequirements") { props ->
     val margins = props.margins ?: "me-2 mb-2"
 
     val requirementConditions = mapOf<String, (MapDifficulty) -> Boolean>(

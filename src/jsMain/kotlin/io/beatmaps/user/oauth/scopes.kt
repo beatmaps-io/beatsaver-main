@@ -15,7 +15,7 @@ external interface OauthScopeProps : Props {
     var clientName: String
 }
 
-val oauthScopes = fc<OauthScopeProps> { props ->
+val oauthScopes = fc<OauthScopeProps>("oauthScopes") { props ->
     val (scopes, setScopes) = useState(listOf<OauthScope?>())
     useEffect(props.scopes) {
         setScopes(

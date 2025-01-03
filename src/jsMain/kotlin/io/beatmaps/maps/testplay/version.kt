@@ -48,7 +48,7 @@ external interface VersionProps : Props {
 }
 private const val testplayEnabled = false
 
-val version = fc<VersionProps> { props ->
+val version = fc<VersionProps>("version") { props ->
     val (state, setState) = useState(props.state)
     val (loading, setLoading) = useState(false)
     val (loadingState, setLoadingState) = useState(false)

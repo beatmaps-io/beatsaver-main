@@ -26,7 +26,7 @@ external interface AudioPreviewProps : Props {
     var audio: RefObject<Audio>
 }
 
-val audioPreview = fc<AudioPreviewProps> { props ->
+val audioPreview = fc<AudioPreviewProps>("audioPreview") { props ->
     val audioContainerRef = useRef<HTMLElement>()
     val outerProgressRef = useRef<HTMLElement>()
     val leftProgressRef = useRef<HTMLElement>()

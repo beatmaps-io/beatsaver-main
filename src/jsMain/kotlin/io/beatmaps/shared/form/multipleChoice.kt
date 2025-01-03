@@ -18,7 +18,7 @@ external interface MultipleChoiceProps<T> : Props {
     var className: String?
 }
 
-val multipleChoice = fc<MultipleChoiceProps<Any?>> { props ->
+val multipleChoice = fc<MultipleChoiceProps<Any?>>("multipleChoice") { props ->
     div("multiple-choice ${props.className ?: ""}") {
         props.choices.forEach { (text, value) ->
             val id = "${props.name}:${text.lowercase()}"

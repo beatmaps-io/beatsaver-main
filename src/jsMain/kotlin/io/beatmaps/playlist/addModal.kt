@@ -18,7 +18,7 @@ external interface AddModalProps : Props {
     var inPlaylists: Array<InPlaylist>
 }
 
-val addModal = fc<AddModalProps> { props ->
+val addModal = fc<AddModalProps>("addModal") { props ->
     if (props.inPlaylists.isEmpty()) {
         div {
             +"You don't have any playlists yet!"

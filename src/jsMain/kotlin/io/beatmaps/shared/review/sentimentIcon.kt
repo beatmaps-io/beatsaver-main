@@ -9,7 +9,7 @@ external interface SentimentIconProps : Props {
     var sentiment: ReviewSentiment
 }
 
-val sentimentIcon = fc<SentimentIconProps> {
+val sentimentIcon = fc<SentimentIconProps>("sentimentIcon") {
     val commonSentimentStyles = "fs-4 align-middle me-2 sentiment"
     when (it.sentiment) {
         ReviewSentiment.POSITIVE ->

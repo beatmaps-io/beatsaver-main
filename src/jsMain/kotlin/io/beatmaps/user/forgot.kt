@@ -25,7 +25,7 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val forgotPage = fc<Props> {
+val forgotPage = fc<Props>("forgotPage") {
     val (complete, setComplete) = useState(false)
     val (loading, setLoading) = useState(false)
     val (errors, setErrors) = useState(emptyList<String>())

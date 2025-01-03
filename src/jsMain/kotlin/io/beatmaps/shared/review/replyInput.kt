@@ -16,7 +16,7 @@ external interface ReplyInputProps : Props {
     var onSuccess: ((String) -> Unit)?
 }
 
-val replyInput = fc<ReplyInputProps> { props ->
+val replyInput = fc<ReplyInputProps>("replyInput") { props ->
     val (errors, setErrors) = useState(emptyList<String>())
     div("reply-input") {
         errors {
