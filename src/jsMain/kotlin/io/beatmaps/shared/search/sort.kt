@@ -45,11 +45,11 @@ val sort = fc<SortProps>("sort") { props ->
                     props.cb?.invoke(newOrder)
                 }
             }
+            value = sortOrder.toString()
         }
         SearchOrder.entries.filter { props.target in it.targets }.forEach {
             option {
                 attrs.value = it.toString()
-                attrs.selected = sortOrder == it
                 +it.toString()
             }
         }

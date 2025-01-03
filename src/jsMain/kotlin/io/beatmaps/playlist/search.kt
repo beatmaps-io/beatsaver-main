@@ -248,11 +248,11 @@ val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
                         onChangeFunction = { ev ->
                             setMapCount((ev.target as HTMLSelectElement).value.toIntOrNull() ?: 100)
                         }
+                        value = mapCount.toString()
                     }
                     mapCounts.forEach {
                         option {
                             attrs.value = it.toString()
-                            attrs.selected = it == mapCount
                             +it.toString()
                         }
                     }
