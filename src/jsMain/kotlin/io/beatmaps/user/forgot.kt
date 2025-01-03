@@ -1,13 +1,13 @@
 package io.beatmaps.user
 
 import external.Axios
-import external.IReCAPTCHA
 import external.generateConfig
-import external.recaptcha
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ForgotRequest
+import io.beatmaps.captcha.ICaptchaHandler
+import io.beatmaps.captcha.captcha
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import kotlinx.html.ButtonType
@@ -28,10 +28,10 @@ import react.useState
 val forgotPage = fc<Props> {
     val (complete, setComplete) = useState(false)
     val (loading, setLoading) = useState(false)
-    val (errors, setErrors) = useState(listOf<String>())
+    val (errors, setErrors) = useState(emptyList<String>())
 
     val emailRef = useRef<HTMLInputElement>()
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
 
     useEffectOnce {
         setPageTitle("Forgot password")
@@ -51,7 +51,7 @@ val forgotPage = fc<Props> {
                     ev.preventDefault()
                     setLoading(true)
 
-                    captchaRef.current?.executeAsync()?.then { captcha ->
+                    captchaRef.current?.execute()?.then { captcha ->
                         Axios.post<ActionResponse>(
                             "${Config.apibase}/users/forgot",
                             ForgotRequest(
@@ -67,10 +67,11 @@ val forgotPage = fc<Props> {
                                 setErrors(it.data.errors)
                                 setLoading(false)
                             }
-                        }.catch {
-                            // Cancelled request
-                            setLoading(false)
                         }
+                    }?.catch {
+                        // Cancelled request or bad io.beatmaps.captcha.captcha
+                        setErrors(listOfNotNull(it.message))
+                        setLoading(false)
                     }
                 }
                 errors {
@@ -96,5 +97,5 @@ val forgotPage = fc<Props> {
         }
     }
 
-    recaptcha(captchaRef)
+    captcha(captchaRef)
 }

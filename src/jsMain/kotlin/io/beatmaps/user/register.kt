@@ -1,13 +1,13 @@
 package io.beatmaps.user
 
 import external.Axios
-import external.IReCAPTCHA
 import external.generateConfig
-import external.recaptcha
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.RegisterRequest
+import io.beatmaps.captcha.ICaptchaHandler
+import io.beatmaps.captcha.captcha
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import kotlinx.html.ButtonType
@@ -31,7 +31,7 @@ import react.useRef
 import react.useState
 
 val signupPage = fc<Props> {
-    val (errors, setErrors) = useState(listOf<String>())
+    val (errors, setErrors) = useState(emptyList<String>())
     val (loading, setLoading) = useState(false)
     val (complete, setComplete) = useState(false)
 
@@ -40,7 +40,7 @@ val signupPage = fc<Props> {
     val passwordRef = useRef<HTMLInputElement>()
     val password2Ref = useRef<HTMLInputElement>()
 
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
 
     useEffectOnce {
         setPageTitle("Register")
@@ -63,7 +63,9 @@ val signupPage = fc<Props> {
                     ev.preventDefault()
                     setLoading(true)
 
-                    captchaRef.current?.executeAsync()?.then { captcha ->
+                    captchaRef.current?.execute()?.then { captcha ->
+                        captchaRef.current?.reset()
+
                         Axios.post<ActionResponse>(
                             "${Config.apibase}/users/register",
                             RegisterRequest(
@@ -75,17 +77,14 @@ val signupPage = fc<Props> {
                             ),
                             generateConfig<RegisterRequest, ActionResponse>()
                         ).then {
-                            if (it.data.success) {
-                                setComplete(true)
-                            } else {
-                                captchaRef.current?.reset()
-                                setErrors(it.data.errors)
-                                setLoading(false)
-                            }
-                        }.catch {
-                            // Cancelled request
-                            setLoading(false)
+                            setComplete(it.data.success)
+                            setErrors(it.data.errors)
                         }
+                    }?.catch {
+                        // Cancelled request or bad io.beatmaps.captcha.captcha
+                        setErrors(listOfNotNull(it.message))
+                    }?.finally {
+                        setLoading(false)
                     }
                 }
                 errors {
@@ -149,5 +148,5 @@ val signupPage = fc<Props> {
         }
     }
 
-    recaptcha(captchaRef)
+    captcha(captchaRef)
 }

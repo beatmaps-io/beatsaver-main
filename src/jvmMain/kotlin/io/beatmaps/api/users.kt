@@ -294,7 +294,7 @@ fun Route.userRoute(client: HttpClient) {
                             u[renamedAt] = Expression.build { case().When(uniqueName eq req.textContent, renamedAt).Else(NowExpression(renamedAt)) }
                             u[updatedAt] = NowExpression(updatedAt)
                         } > 0
-                    } catch (e: ExposedSQLException) {
+                    } catch (_: ExposedSQLException) {
                         throw UserApiException("Username already taken")
                     }
                 }
@@ -318,7 +318,7 @@ fun Route.userRoute(client: HttpClient) {
                         u[description] = req.textContent.take(UserConstants.MAX_DESCRIPTION_LENGTH)
                         u[updatedAt] = NowExpression(updatedAt)
                     } > 0
-                } catch (e: ExposedSQLException) {
+                } catch (_: ExposedSQLException) {
                     false
                 }
             }
@@ -444,6 +444,7 @@ fun Route.userRoute(client: HttpClient) {
         val req = call.receive<RegisterRequest>()
 
         val response = requireCaptcha(
+            client,
             req.captcha,
             {
                 if (req.password != req.password2) {
@@ -507,7 +508,7 @@ fun Route.userRoute(client: HttpClient) {
 
                             ActionResponse.success()
                         }
-                    } catch (e: IllegalArgumentException) {
+                    } catch (_: IllegalArgumentException) {
                         ActionResponse.error("Password too long")
                     }
                 }
@@ -523,6 +524,7 @@ fun Route.userRoute(client: HttpClient) {
         val req = call.receive<ForgotRequest>()
 
         val response = requireCaptcha(
+            client,
             req.captcha,
             {
                 transaction {
@@ -676,6 +678,7 @@ fun Route.userRoute(client: HttpClient) {
             val req = call.receive<EmailRequest>()
 
             val response = requireCaptcha(
+                client,
                 req.captcha,
                 {
                     newSuspendedTransaction {
@@ -791,20 +794,20 @@ fun Route.userRoute(client: HttpClient) {
                         } else {
                             ActionResponse.error("Current password incorrect")
                         }
-                    } catch (e: ExposedSQLException) {
+                    } catch (_: ExposedSQLException) {
                         ActionResponse.error("Email in use on another account")
-                    } catch (e: SignatureException) {
+                    } catch (_: SignatureException) {
                         ActionResponse.error("Token no longer valid")
-                    } catch (e: JwtException) {
+                    } catch (_: JwtException) {
                         ActionResponse.error("Bad token")
                     }
                 } ?: ActionResponse.error("User not found")
             }
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             ActionResponse.error("Password too long")
-        } catch (e: ExpiredJwtException) {
+        } catch (_: ExpiredJwtException) {
             ActionResponse.error("Link has expired")
-        } catch (e: JwtException) {
+        } catch (_: JwtException) {
             ActionResponse.error("Token is malformed")
         }.let {
             call.respond(it)
@@ -859,11 +862,11 @@ fun Route.userRoute(client: HttpClient) {
                                 } else {
                                     ActionResponse.error("Failed to update password")
                                 }
-                            } catch (e: SignatureException) {
+                            } catch (_: SignatureException) {
                                 // As previous password is included in key the signature will fail if the password
                                 // has changed since we sent the link
                                 ActionResponse.error("Reset token no longer valid")
-                            } catch (e: JwtException) {
+                            } catch (_: JwtException) {
                                 ActionResponse.error("Bad token")
                             }.let { it to user.active }
                         } ?: (ActionResponse.error("User not found") to false)
@@ -872,11 +875,11 @@ fun Route.userRoute(client: HttpClient) {
                         response
                     }
                 }
-            } catch (e: IllegalArgumentException) {
+            } catch (_: IllegalArgumentException) {
                 ActionResponse.error("Password too long")
-            } catch (e: ExpiredJwtException) {
+            } catch (_: ExpiredJwtException) {
                 ActionResponse.error("Password reset link has expired")
-            } catch (e: JwtException) {
+            } catch (_: JwtException) {
                 ActionResponse.error("Reset token is malformed")
             }
         }
@@ -917,7 +920,7 @@ fun Route.userRoute(client: HttpClient) {
                             }
                         } ?: ActionResponse.error("Account not found") // Shouldn't ever happen
                     }
-                } catch (e: IllegalArgumentException) {
+                } catch (_: IllegalArgumentException) {
                     ActionResponse.error("Password too long")
                 }
             }

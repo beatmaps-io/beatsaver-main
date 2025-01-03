@@ -6,6 +6,7 @@ import io.beatmaps.api.IssueConstants
 import io.beatmaps.maps.testplay.TimelineEntrySectionRenderer
 import io.beatmaps.maps.testplay.timelineEntry
 import io.beatmaps.modreview.editableText
+import io.beatmaps.shared.form.errors
 import io.beatmaps.util.useDidUpdateEffect
 import react.PropsWithChildren
 import react.fc
@@ -14,13 +15,14 @@ import kotlin.js.Promise
 
 external interface NewCommentProps : PropsWithChildren {
     var loadingCallback: ((Boolean) -> Unit)?
-    var saveCallback: (String) -> Promise<AxiosResponse<ActionResponse>>
+    var saveCallback: (String) -> Promise<AxiosResponse<ActionResponse>>?
     var successCallback: (() -> Unit)?
     var buttonText: String
 }
 
 val newIssueComment = fc<NewCommentProps> { props ->
     val (loading, setLoading) = useState(false)
+    val (errors, setErrors) = useState(emptyList<String>())
 
     useDidUpdateEffect(loading) {
         props.loadingCallback?.invoke(loading)
@@ -37,15 +39,22 @@ val newIssueComment = fc<NewCommentProps> { props ->
                 attrs.maxLength = IssueConstants.MAX_COMMENT_LENGTH
                 attrs.saveText = { newText ->
                     props.saveCallback(newText)
-                        .finally {
+                        ?.finally {
                             setLoading(false)
                         }
+                }
+                attrs.onError = {
+                    setErrors(it)
                 }
                 attrs.stopEditing = {
                     props.successCallback?.invoke()
                 }
 
                 props.children()
+
+                errors {
+                    attrs.errors = errors
+                }
             }
         }
     }

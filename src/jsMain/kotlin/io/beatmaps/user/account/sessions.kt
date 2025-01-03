@@ -17,11 +17,12 @@ import react.dom.tbody
 import react.fc
 import react.useContext
 import react.useState
+import kotlin.js.Promise
 
 external interface ManageSessionsProps : Props {
     var sessions: SessionsData
     var removeSessionCallback: (SessionInfo) -> Unit
-    var revokeAllCallback: () -> Unit
+    var revokeAllCallback: () -> Promise<Boolean>
 }
 
 val manageSessions = fc<ManageSessionsProps> { props ->
@@ -71,7 +72,7 @@ val manageSessions = fc<ManageSessionsProps> { props ->
                     button(classes = "d-inline-block btn btn-danger ms-2 m-0", type = ButtonType.submit) {
                         attrs.onClickFunction = {
                             it.preventDefault()
-                            modal?.current?.showDialog(
+                            modal?.current?.showDialog?.invoke(
                                 ModalData(
                                     "Are you sure?",
                                     "This will completely log out of BeatSaver on every device you're currently logged in on.",

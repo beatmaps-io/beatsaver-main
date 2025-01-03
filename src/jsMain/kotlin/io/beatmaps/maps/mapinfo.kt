@@ -1,9 +1,7 @@
 package io.beatmaps.maps
 
 import external.Axios
-import external.IReCAPTCHA
 import external.generateConfig
-import external.recaptcha
 import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.ActionResponse
@@ -15,6 +13,7 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
 import io.beatmaps.api.SimpleMapInfoUpdate
 import io.beatmaps.api.StateUpdate
+import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.MapAttr
@@ -30,6 +29,8 @@ import io.beatmaps.shared.coloredCard
 import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.map.bookmarkButton
 import io.beatmaps.shared.map.links
+import io.beatmaps.user.reportModal
+import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.useAudio
 import kotlinx.browser.document
@@ -59,6 +60,7 @@ import react.useEffect
 import react.useRef
 import react.useState
 import kotlin.collections.set
+import kotlin.js.Promise
 
 external interface MapInfoProps : Props {
     var mapInfo: MapDetail
@@ -76,7 +78,8 @@ val mapInfo = fc<MapInfoProps> { props ->
 
     val (tags, setTags) = useState(props.mapInfo.tags.toSet())
     val (loading, setLoading) = useState(false)
-    val (errors, setErrors) = useState(listOf<String>())
+    val (errors, setErrors) = useState(emptyList<String>())
+    val errorRef = useRef<List<String>>()
     val (editing, setEditing) = useState(false)
     val (dropdown, setDropdown) = useState(false)
 
@@ -96,42 +99,48 @@ val mapInfo = fc<MapInfoProps> { props ->
     val isCollaboratorLocal = props.mapInfo.collaborators?.let { loggedInId in it.map { collaborator -> collaborator.id } } == true
 
     val modal = useContext(modalContext)
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
 
-    fun recall() {
-        setLoading(true)
-
+    fun recall() =
         props.mapInfo.publishedVersion()?.hash?.let { hash ->
+            setLoading(true)
+
             Axios.post<ActionResponse>("${Config.apibase}/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.intId(), reasonRef.current?.value), generateConfig<StateUpdate, ActionResponse>(validStatus = arrayOf(200, 400)))
                 .then({
-                    if (it.data.success) {
-                        props.reloadMap()
-                    } else {
-                        setErrors(it.data.errors)
+                    it.data.success.also { success ->
+                        if (success) {
+                            props.reloadMap()
+                        } else {
+                            setErrors(it.data.errors)
+                        }
                     }
                 }) {
                     setLoading(false)
+                    false
                 }
-        }
-    }
+        } ?: Promise.resolve(true)
 
-    fun delete() {
+    fun delete(): Promise<Boolean> {
         setLoading(true)
 
-        Axios.post<String>("${Config.apibase}/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.value?.trim()), generateConfig<MapInfoUpdate, String>()).then({
+        return Axios.post<String>("${Config.apibase}/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.value?.trim()), generateConfig<MapInfoUpdate, String>()).then({
             props.deleteMap(isOwnerLocal)
+            true
         }) {
             setLoading(false)
+            false
         }
     }
 
-    fun curate(curated: Boolean = true) {
+    fun curate(curated: Boolean = true): Promise<Boolean> {
         setLoading(true)
 
-        Axios.post<String>("${Config.apibase}/maps/curate", CurateMap(props.mapInfo.intId(), curated, reason = reasonRef.current?.value?.trim()), generateConfig<CurateMap, String>()).then({
+        return Axios.post<String>("${Config.apibase}/maps/curate", CurateMap(props.mapInfo.intId(), curated, reason = reasonRef.current?.value?.trim()), generateConfig<CurateMap, String>()).then({
             props.reloadMap()
+            true
         }) {
             setLoading(false)
+            false
         }
     }
 
@@ -155,10 +164,9 @@ val mapInfo = fc<MapInfoProps> { props ->
         }
     }
 
-    fun report() {
+    fun report() =
         captchaRef.current?.let { cc ->
-            setLoading(true)
-            cc.executeAsync().then { captcha ->
+            cc.execute()?.then { captcha ->
                 val reason = reasonRef.current?.value?.trim() ?: ""
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
@@ -166,12 +174,13 @@ val mapInfo = fc<MapInfoProps> { props ->
                     generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
                 ).then {
                     history.push("/issues/${it.data}")
+                    true
                 }
-            }.finally {
-                setLoading(false)
+            }?.orCatch {
+                errorRef.current = listOfNotNull(it.message)
+                false
             }
-        }
-    }
+        } ?: Promise.resolve(false)
 
     val deleted = props.mapInfo.deletedAt != null
 
@@ -292,7 +301,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                                         attrs.onClickFunction = {
                                             it.preventDefault()
                                             if (!isCurated) {
-                                                modal?.current?.showDialog(
+                                                modal?.current?.showDialog?.invoke(
                                                     ModalData(
                                                         "Curate map",
                                                         bodyCallback = {
@@ -307,7 +316,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                                                     )
                                                 )
                                             } else {
-                                                modal?.current?.showDialog(
+                                                modal?.current?.showDialog?.invoke(
                                                     ModalData(
                                                         "Uncurate map",
                                                         bodyCallback = {
@@ -350,7 +359,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                                         attrs.attributes["aria-label"] = "Delete"
                                         attrs.onClickFunction = {
                                             it.preventDefault()
-                                            modal?.current?.showDialog(
+                                            modal?.current?.showDialog?.invoke(
                                                 ModalData(
                                                     "Delete map",
                                                     bodyCallback = {
@@ -382,17 +391,16 @@ val mapInfo = fc<MapInfoProps> { props ->
                                         attrs.attributes["aria-label"] = "Report"
                                         attrs.onClickFunction = {
                                             it.preventDefault()
-                                            modal?.current?.showDialog(
+                                            modal?.current?.showDialog?.invoke(
                                                 ModalData(
                                                     "Report map",
                                                     bodyCallback = {
-                                                        p {
-                                                            +"Why are you reporting this content? Please give as much detail as possible why you feel this map violates our TOS:"
+                                                        reportModal {
+                                                            attrs.subject = "map"
+                                                            attrs.reasonRef = reasonRef
+                                                            attrs.captchaRef = captchaRef
+                                                            attrs.errorsRef = errorRef
                                                         }
-                                                        textarea(classes = "form-control") {
-                                                            ref = reasonRef
-                                                        }
-                                                        recaptcha(captchaRef)
                                                     },
                                                     buttons = listOf(
                                                         ModalButton("Report", "danger", ::report),
@@ -413,9 +421,9 @@ val mapInfo = fc<MapInfoProps> { props ->
         }
         div("card-body mapinfo") {
             audioPreview {
-                version = props.mapInfo.mainVersion()
-                size = AudioPreviewSize.Large
-                this.audio = audio
+                attrs.version = props.mapInfo.mainVersion()
+                attrs.size = AudioPreviewSize.Large
+                attrs.audio = audio
             }
             div("card-text clearfix") {
                 if (editing) {
@@ -466,7 +474,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                             button(classes = "btn btn-danger m-1") {
                                 attrs.disabled = loading
                                 attrs.onClickFunction = {
-                                    modal?.current?.showDialog(
+                                    modal?.current?.showDialog?.invoke(
                                         ModalData(
                                             "Are you sure?",
                                             "This will hide your map from other players until you publish a new version",
@@ -480,7 +488,7 @@ val mapInfo = fc<MapInfoProps> { props ->
                             button(classes = "btn btn-danger m-1") {
                                 attrs.disabled = loading
                                 attrs.onClickFunction = {
-                                    modal?.current?.showDialog(
+                                    modal?.current?.showDialog?.invoke(
                                         ModalData(
                                             "Are you sure?",
                                             "You won't be able to recover this map after you delete it",

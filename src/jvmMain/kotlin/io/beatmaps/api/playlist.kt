@@ -13,6 +13,7 @@ import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
+import io.ktor.client.HttpClient
 import io.ktor.server.locations.Location
 import io.ktor.server.routing.Route
 import kotlinx.datetime.Instant
@@ -159,10 +160,10 @@ fun getMaxMap(id: Int) = Coalesce(
     floatLiteral(1f)
 )
 
-fun Route.playlistRoute() {
+fun Route.playlistRoute(client: HttpClient) {
     playlistSearch()
     playlistSingle()
     playlistMaps()
-    playlistCreate()
+    playlistCreate(client)
     playlistCurate()
 }

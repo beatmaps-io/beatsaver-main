@@ -1,10 +1,8 @@
 package io.beatmaps.user
 
 import external.Axios
-import external.IReCAPTCHA
 import external.axiosGet
 import external.generateConfig
-import external.recaptcha
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
@@ -13,13 +11,14 @@ import io.beatmaps.api.IssueCreationRequest
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserFollowData
 import io.beatmaps.api.UserFollowRequest
+import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.common.api.UserReportData
 import io.beatmaps.common.json
 import io.beatmaps.globalContext
 import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalComponent
+import io.beatmaps.index.ModalCallbacks
 import io.beatmaps.index.ModalData
 import io.beatmaps.index.beatmapTable
 import io.beatmaps.index.modal
@@ -28,6 +27,7 @@ import io.beatmaps.playlist.playlistTable
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.review.reviewTable
 import io.beatmaps.shared.search.sort
+import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.userTitles
 import kotlinx.browser.document
@@ -62,13 +62,11 @@ import react.dom.span
 import react.dom.table
 import react.dom.tbody
 import react.dom.td
-import react.dom.textarea
 import react.dom.th
 import react.dom.thead
 import react.dom.tr
 import react.dom.ul
 import react.fc
-import react.ref
 import react.router.useLocation
 import react.router.useNavigate
 import react.router.useParams
@@ -77,6 +75,7 @@ import react.useEffect
 import react.useEffectOnce
 import react.useRef
 import react.useState
+import kotlin.js.Promise
 
 data class TabContext(val userId: Int?)
 
@@ -90,9 +89,9 @@ enum class ProfileTab(val tabText: String, val condition: (UserData?, TabContext
 }
 
 val profilePage = fc<Props> { _ ->
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
     val reasonRef = useRef<HTMLTextAreaElement>()
-    val modalRef = useRef<ModalComponent>()
+    val modalRef = useRef<ModalCallbacks>()
     val userData = useContext(globalContext)
 
     val (startup, setStartup) = useState(false)
@@ -101,6 +100,7 @@ val profilePage = fc<Props> { _ ->
     val (followData, setFollowData) = useState<UserFollowData>()
     val (followsDropdown, setFollowsDropdown) = useState(false)
     val (loading, setLoading) = useState(false)
+    val errorRef = useRef<List<String>>()
     val publishedSortOrder = useState(SearchOrder.Relevance)
     val curationsSortOrder = useState(SearchOrder.Curated)
     val (sortOrder, setSortOrder) = if (tabState == ProfileTab.CURATED) curationsSortOrder else publishedSortOrder
@@ -127,7 +127,7 @@ val profilePage = fc<Props> { _ ->
     }
 
     fun loadState() {
-        modalRef.current?.hide()
+        modalRef.current?.hide?.invoke()
         val userId = params["userId"]?.toIntOrNull()
         val url = "${Config.apibase}/users" + (userId?.let { "/id/$it" } ?: "/me")
 
@@ -151,7 +151,7 @@ val profilePage = fc<Props> { _ ->
     }
 
     fun showFollows(title: String, following: Int? = null, followedBy: Int? = null) {
-        modalRef.current?.showDialog(
+        modalRef.current?.showDialog?.invoke(
             ModalData(
                 title,
                 bodyCallback = {
@@ -195,10 +195,9 @@ val profilePage = fc<Props> { _ ->
         }) { }
     }
 
-    fun report(userId: Int) {
+    fun report(userId: Int) =
         captchaRef.current?.let { cc ->
-            setLoading(true)
-            cc.executeAsync().then { captcha ->
+            cc.execute()?.then { captcha ->
                 val reason = reasonRef.current?.value?.trim() ?: ""
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
@@ -206,12 +205,13 @@ val profilePage = fc<Props> { _ ->
                     generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
                 ).then {
                     history.push("/issues/${it.data}")
+                    true
                 }
-            }.finally {
-                setLoading(false)
+            }?.orCatch {
+                errorRef.current = listOfNotNull(it.message)
+                false
             }
-        }
-    }
+        } ?: Promise.resolve(false)
 
     useEffectOnce {
         val hideDropdown = { _: Event ->
@@ -243,7 +243,7 @@ val profilePage = fc<Props> { _ ->
 
     val loggedInLocal = userData?.userId
     modal {
-        ref = modalRef
+        attrs.callbacks = modalRef
     }
 
     modalContext.Provider {
@@ -417,17 +417,17 @@ val profilePage = fc<Props> { _ ->
                                             attrs.attributes["aria-label"] = "Report"
                                             attrs.onClickFunction = { e ->
                                                 e.preventDefault()
-                                                modalRef.current?.showDialog(
+                                                modalRef.current?.showDialog?.invoke(
                                                     ModalData(
                                                         "Report user",
                                                         bodyCallback = {
-                                                            p {
-                                                                +"Why are you reporting this user? Please give as much detail as possible why you feel this user has violated our TOS:"
+                                                            reportModal {
+                                                                attrs.content = false
+                                                                attrs.subject = "user"
+                                                                attrs.reasonRef = reasonRef
+                                                                attrs.captchaRef = captchaRef
+                                                                attrs.errorsRef = errorRef
                                                             }
-                                                            textarea(classes = "form-control") {
-                                                                ref = reasonRef
-                                                            }
-                                                            recaptcha(captchaRef)
                                                         },
                                                         buttons = listOf(
                                                             ModalButton("Report", "danger") { report(userDetail.id) },

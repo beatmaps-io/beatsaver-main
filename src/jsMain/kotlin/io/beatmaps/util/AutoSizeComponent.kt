@@ -3,83 +3,75 @@ package io.beatmaps.util
 import kotlinx.browser.window
 import org.w3c.dom.HTMLDivElement
 import react.Props
-import react.RComponent
-import react.State
-import react.createRef
+import react.RefObject
 import react.dom.RDOMBuilder
 import react.dom.jsStyle
-import react.setState
+import react.useEffect
+import react.useEffectOnce
+import react.useRef
+import react.useState
 
 external interface AutoSizeComponentProps<T> : Props {
     var obj: T?
 }
 
-external interface AutoSizeComponentState : State {
-    var loaded: Boolean?
-    var height: String
-    var margin: String?
-    var autoSizeHandle: Int?
-}
+data class AutoSizeHelper(
+    val divRef: RefObject<HTMLDivElement>,
+    val style: (RDOMBuilder<*>) -> Unit,
+    val hide: () -> Unit
+)
 
-abstract class AutoSizeComponent<T, U : AutoSizeComponentProps<T>, V : AutoSizeComponentState>(private val padding: Int) : RComponent<U, V>() {
-    protected val divRef = createRef<HTMLDivElement>()
+fun <T> useAutoSize(props: AutoSizeComponentProps<T>, padding: Int): AutoSizeHelper {
+    val (loaded, setLoaded) = useState(false)
+    val (height, setHeight) = useState("")
+    val (margin, setMargin) = useState<String?>(null)
+    val autoSizeHandle = useRef<Int>()
 
-    fun style(builder: RDOMBuilder<*>) {
-        builder.attrs.jsStyle {
-            height = state.height
-            state.margin?.let {
-                margin = it
-            }
+    val divRef = useRef<HTMLDivElement>()
+
+    useEffectOnce {
+        cleanup {
+            autoSizeHandle.current?.let { window.clearTimeout(it) }
         }
     }
 
-    fun hide() {
-        val handleLocal = window.setTimeout({
-            setState {
-                height = "0px"
-            }
-        }, 10)
+    fun autoSize() = divRef.current?.scrollHeight?.let { it + padding } ?: 0
 
-        // Set current size so animation works
-        setState {
-            height = "${autoSize() + 10}px"
-            margin = "0px"
-            autoSizeHandle = handleLocal
-        }
-    }
-
-    private fun autoSize() = divRef.current?.scrollHeight?.let { it + padding } ?: 0
-
-    override fun componentDidMount() {
-        setState {
-            height = ""
-            loaded = false
-        }
-    }
-
-    override fun componentWillUnmount() {
-        state.autoSizeHandle?.let { window.clearTimeout(it) }
-    }
-
-    override fun componentDidUpdate(prevProps: U, prevState: V, snapshot: Any) {
-        if (state.loaded != true && props.obj != null) {
+    useEffect(props.obj) {
+        if (!loaded && props.obj != null) {
             val handleLocal = window.setTimeout({
-                setState {
-                    height = "auto"
-                }
+                setHeight("auto")
             }, 200)
 
-            setState {
-                loaded = true
-                height = "${autoSize()}px"
-                autoSizeHandle = handleLocal
-            }
-        } else if (state.loaded == true && props.obj == null) {
-            setState {
-                height = ""
-                loaded = false
-                margin = null
-            }
+            setLoaded(true)
+            setHeight("${autoSize()}px")
+            autoSizeHandle.current = handleLocal
+        } else if (loaded && props.obj == null) {
+            setHeight("")
+            setLoaded(false)
+            setMargin(null)
         }
     }
+
+    return AutoSizeHelper(
+        divRef,
+        { builder: RDOMBuilder<*> ->
+            builder.attrs.jsStyle {
+                this.height = height
+                margin?.let {
+                    this.margin = it
+                }
+            }
+        },
+        {
+            val handleLocal = window.setTimeout({
+                setHeight("0px")
+            }, 10)
+
+            // Set current size so animation works
+            setHeight("${autoSize() + 10}px")
+            setMargin("0px")
+            autoSizeHandle.current = handleLocal
+        }
+    )
 }

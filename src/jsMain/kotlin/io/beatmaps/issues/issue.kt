@@ -1,11 +1,9 @@
 package io.beatmaps.issues
 
 import external.Axios
-import external.IReCAPTCHA
 import external.TimeAgo
 import external.axiosGet
 import external.generateConfig
-import external.recaptcha
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
@@ -17,6 +15,8 @@ import io.beatmaps.api.HydratedUserReportData
 import io.beatmaps.api.IssueCommentRequest
 import io.beatmaps.api.IssueDetail
 import io.beatmaps.api.IssueUpdateRequest
+import io.beatmaps.captcha.ICaptchaHandler
+import io.beatmaps.captcha.captcha
 import io.beatmaps.globalContext
 import io.beatmaps.maps.testplay.TimelineEntrySectionRenderer
 import io.beatmaps.maps.testplay.timelineEntry
@@ -42,12 +42,11 @@ import react.useEffect
 import react.useRef
 import react.useState
 import web.html.HTMLInputElement
-import kotlin.js.Promise
 
 val issuesPage = fc<Props> {
     val (loading, setLoading) = useState(false)
     val (issue, setIssue) = useState<IssueDetail?>(null)
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
     val publicRef = useRef<HTMLInputElement>()
 
     val userData = useContext(globalContext)
@@ -186,15 +185,13 @@ val issuesPage = fc<Props> {
                         setLoading(it)
                     }
                     attrs.saveCallback = { text ->
-                        val res = captchaRef.current?.executeAsync()?.then {
+                        captchaRef.current?.execute()?.then {
                             Axios.put<ActionResponse>(
                                 "${Config.apibase}/issues/comments/${issue.id}",
                                 IssueCommentRequest(it, text, publicRef.current?.checked),
                                 generateConfig<IssueCommentRequest, ActionResponse>()
                             )
-                        } ?: Promise.reject(IllegalStateException("Captcha not present"))
-
-                        res.then { it }
+                        }?.then { it }
                     }
                     attrs.successCallback = {
                         loadIssue()
@@ -211,7 +208,7 @@ val issuesPage = fc<Props> {
                         }
                     }
 
-                    recaptcha(captchaRef)
+                    captcha(captchaRef)
                 }
             }
         }

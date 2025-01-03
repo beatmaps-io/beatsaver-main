@@ -10,6 +10,7 @@ import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.PropsWithChildren
 import react.dom.button
+import react.dom.defaultValue
 import react.dom.div
 import react.dom.jsStyle
 import react.dom.span
@@ -25,6 +26,7 @@ external interface EditableTextProps : PropsWithChildren {
     var renderText: Boolean?
     var editing: Boolean?
     var saveText: ((String) -> Promise<AxiosResponse<ActionResponse>>?)?
+    var onError: ((List<String>) -> Unit)?
     var stopEditing: ((String) -> Unit)?
     var maxLength: Int?
     var rows: Int?
@@ -48,7 +50,7 @@ val editableText = fc<EditableTextProps> { props ->
                 attrs.id = "review"
                 attrs.disabled = loading == true
                 attrs.placeholder = props.placeholder ?: ""
-                +displayText
+                attrs.defaultValue = displayText
                 ref = textareaRef
                 props.maxLength?.let { max ->
                     attrs.maxLength = "$max"
@@ -66,8 +68,8 @@ val editableText = fc<EditableTextProps> { props ->
         }
 
         div("d-flex flex-row-reverse") {
-            button(classes = "btn " + (props.btnClass ?: "btn-primary mt-1"), type = ButtonType.submit) {
-                attrs.disabled = textLength < 1 || props.maxLength?.let { textLength > it } ?: false
+            button(classes = "text-nowrap btn " + (props.btnClass ?: "btn-primary mt-1"), type = ButtonType.submit) {
+                attrs.disabled = loading || textLength < 1 || props.maxLength?.let { textLength > it } ?: false
                 attrs.attributes["data-loading"] = "$loading"
 
                 attrs.jsStyle {
@@ -78,15 +80,19 @@ val editableText = fc<EditableTextProps> { props ->
                     if (!loading) {
                         setLoading(true)
 
-                        props.saveText?.invoke(newReview)?.then({
+                        val promise = props.saveText?.invoke(newReview) ?: Promise.reject(IllegalStateException("Captcha not present"))
+                        promise.then({
                             setLoading(false)
 
                             if (it.data.success) {
                                 textareaRef.current?.value = ""
                                 setTextLength(0)
                                 props.stopEditing?.invoke(newReview)
+                            } else {
+                                props.onError?.invoke(it.data.errors)
                             }
                         }, {
+                            props.onError?.invoke(listOfNotNull(it.message))
                             setLoading(false)
                         })
                     }

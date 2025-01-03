@@ -13,6 +13,7 @@ import io.beatmaps.globalContext
 import io.beatmaps.maps.testplay.TimelineEntrySectionRenderer
 import io.beatmaps.maps.testplay.timelineEntry
 import io.beatmaps.modreview.editableText
+import io.beatmaps.shared.form.errors
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import react.Props
@@ -35,6 +36,7 @@ external interface IssueCommentProps : Props {
 val issueComment = fc<IssueCommentProps> { props ->
     val (editing, setEditing) = useState(false)
     val (loading, setLoading) = useState(false)
+    val (errors, setErrors) = useState(emptyList<String>())
     val (public, setPublic) = useState(props.comment.public)
     val (text, setText) = useState(props.comment.text)
     val userData = useContext(globalContext)
@@ -101,23 +103,28 @@ val issueComment = fc<IssueCommentProps> { props ->
                 attrs.text = text
                 attrs.buttonText = "Edit comment"
                 attrs.maxLength = IssueConstants.MAX_COMMENT_LENGTH
+                attrs.onError = {
+                    setErrors(it)
+                }
                 attrs.saveText = { newText ->
                     if (text != newText) {
-                        Axios.put<ActionResponse>(
+                        Axios.put(
                             "${Config.apibase}/issues/comments/${props.issueId}/${props.comment.id}",
                             IssueCommentRequest(text = newText),
                             generateConfig<IssueCommentRequest, ActionResponse>()
-                        ).then {
-                            if (it.data.success) {
-                                setText(newText)
-                                setEditing(false)
-                            }
-
-                            it
-                        }
+                        )
                     } else {
                         Promise.reject(IllegalStateException("Comment unchanged"))
                     }
+                }
+                attrs.stopEditing = { newText ->
+                    setText(newText)
+                    setEditing(false)
+                    setErrors(emptyList())
+                }
+
+                errors {
+                    attrs.errors = errors
                 }
             }
         }

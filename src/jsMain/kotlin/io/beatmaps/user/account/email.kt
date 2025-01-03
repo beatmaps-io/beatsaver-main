@@ -1,13 +1,13 @@
 package io.beatmaps.user.account
 
 import external.Axios
-import external.IReCAPTCHA
 import external.generateConfig
 import external.reactFor
 import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.EmailRequest
 import io.beatmaps.api.UserDetail
+import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.shared.form.errors
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
@@ -27,12 +27,12 @@ import react.useState
 
 external interface AccountEmailProps : Props {
     var userDetail: UserDetail
-    var captchaRef: RefObject<IReCAPTCHA>
+    var captchaRef: RefObject<ICaptchaHandler>
 }
 
 val accountEmail = fc<AccountEmailProps> { props ->
     val (email, setEmail) = useState(props.userDetail.email ?: "")
-    val (errors, setErrors) = useState(listOf<String>())
+    val (errors, setErrors) = useState(emptyList<String>())
     val (valid, setValid) = useState(false)
     val (loading, setLoading) = useState(false)
     val emailRef = useRef<HTMLInputElement>()
@@ -65,26 +65,25 @@ val accountEmail = fc<AccountEmailProps> { props ->
                     } else {
                         setLoading(true)
 
-                        props.captchaRef.current?.executeAsync()?.then { captcha ->
+                        props.captchaRef.current?.execute()?.then { captcha ->
+                            props.captchaRef.current?.reset()
+
                             Axios.post<ActionResponse>(
                                 "${Config.apibase}/users/email",
                                 EmailRequest(captcha, email),
                                 generateConfig<EmailRequest, ActionResponse>()
                             ).then {
-                                if (it.data.success) {
-                                    setValid(true)
-                                    setErrors(listOf("Email sent"))
-                                    setLoading(false)
-                                } else {
-                                    props.captchaRef.current?.reset()
-                                    setValid(false)
-                                    setErrors(it.data.errors)
-                                    setLoading(false)
-                                }
-                            }.catch {
-                                // Cancelled request
-                                setLoading(false)
+                                setValid(it.data.success)
+                                setErrors(
+                                    if (it.data.success) listOf("Email sent") else it.data.errors
+                                )
                             }
+                        }?.catch {
+                            // Cancelled request
+                            setValid(false)
+                            setErrors(listOfNotNull(it.message))
+                        }?.finally {
+                            setLoading(false)
                         }
                     }
                 }

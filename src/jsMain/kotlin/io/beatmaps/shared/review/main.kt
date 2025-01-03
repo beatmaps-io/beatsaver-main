@@ -2,17 +2,15 @@ package io.beatmaps.shared.review
 
 import external.Axios
 import external.CancelTokenSource
-import external.IReCAPTCHA
 import external.generateConfig
-import external.recaptcha
 import io.beatmaps.Config
-import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewsResponse
 import io.beatmaps.api.UserDetail
+import io.beatmaps.captcha.ICaptchaHandler
+import io.beatmaps.captcha.captcha
 import io.beatmaps.globalContext
-import io.beatmaps.index.modalContext
 import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.util.useDidUpdateEffect
@@ -20,8 +18,6 @@ import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
 import react.fc
-import react.router.useNavigate
-import react.useContext
 import react.useRef
 import react.useState
 
@@ -38,12 +34,10 @@ val reviewTable = fc<ReviewTableProps> { props ->
     val (existingReview, setExistingReview) = useState(false)
 
     val resultsTable = useRef<HTMLElement>()
-    val modal = useContext(modalContext)
-    val history = History(useNavigate())
 
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
 
-    recaptcha(captchaRef)
+    captcha(captchaRef)
 
     useDidUpdateEffect(props.map) {
         setResultsKey(Any())
@@ -98,15 +92,13 @@ val reviewTable = fc<ReviewTableProps> { props ->
                 attrs.container = resultsTable
                 attrs.renderElement = InfiniteScrollElementRenderer { rv ->
                     reviewItem {
-                        obj = rv?.copy(creator = props.userDetail ?: rv.creator)
-                        userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
-                        map = props.map ?: rv?.map
-                        this.modal = modal
-                        captcha = captchaRef
-                        this.setExistingReview = { nv ->
+                        attrs.obj = rv?.copy(creator = props.userDetail ?: rv.creator)
+                        attrs.userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
+                        attrs.map = props.map ?: rv?.map
+                        attrs.captcha = captchaRef
+                        attrs.setExistingReview = { nv ->
                             setExistingReview(nv)
                         }
-                        this.history = history
                     }
                 }
                 attrs.loadPage = loadPage

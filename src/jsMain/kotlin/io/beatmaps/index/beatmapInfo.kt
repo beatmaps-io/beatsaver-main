@@ -21,152 +21,136 @@ import io.beatmaps.shared.map.mapTitle
 import io.beatmaps.shared.map.rankedStatus
 import io.beatmaps.shared.map.rating
 import io.beatmaps.shared.map.uploaderWithInfo
-import io.beatmaps.util.AutoSizeComponent
 import io.beatmaps.util.AutoSizeComponentProps
-import io.beatmaps.util.AutoSizeComponentState
+import io.beatmaps.util.useAutoSize
 import org.w3c.dom.Audio
-import react.RBuilder
 import react.RefObject
 import react.dom.div
 import react.dom.i
 import react.dom.img
 import react.dom.p
 import react.dom.span
-import react.setState
+import react.fc
+import react.useEffect
+import react.useState
 
 external interface BeatmapInfoProps : AutoSizeComponentProps<MapDetail> {
     var version: MapVersion?
     var audio: RefObject<Audio>
 }
 
-external interface BeatMapInfoState : AutoSizeComponentState {
-    var bookmarked: Boolean?
-}
+val beatmapInfo = fc<BeatmapInfoProps> { props ->
+    val autoSize = useAutoSize(props, 30)
+    val (bookmarked, setBookmarked) = useState<Boolean?>(null)
 
-class BeatmapInfo : AutoSizeComponent<MapDetail, BeatmapInfoProps, BeatMapInfoState>(30) {
-    private fun bookmark(bookmarked: Boolean) =
-        Axios.post<String>("${Config.apibase}/bookmark", BookmarkRequest(props.obj?.id, bookmarked = bookmarked), generateConfig<BookmarkRequest, String>())
-
-    override fun componentDidUpdate(prevProps: BeatmapInfoProps, prevState: BeatMapInfoState, snapshot: Any) {
-        super.componentDidUpdate(prevProps, prevState, snapshot)
-
-        if (prevProps.version != props.version) {
-            setState {
-                bookmarked = null
-            }
-        }
+    useEffect(props.version) {
+        setBookmarked(null)
     }
 
-    override fun RBuilder.render() {
-        props.obj?.let { map ->
-            val mapAttrs = listOfNotNull(
-                if (map.ranked || map.blRanked) MapAttr.Ranked else null,
-                if (map.curator != null) MapAttr.Curated else null
-            ).ifEmpty {
-                listOfNotNull(
-                    if (map.uploader.verifiedMapper || map.collaborators?.any { it.verifiedMapper } == true) MapAttr.Verified else null
-                )
-            }
+    fun bookmark(bookmarked: Boolean) =
+        Axios.post<String>("${Config.apibase}/bookmark", BookmarkRequest(props.obj?.id, bookmarked = bookmarked), generateConfig<BookmarkRequest, String>())
 
-            div("beatmap") {
-                style(this)
+    props.obj?.let { map ->
+        val mapAttrs = listOfNotNull(
+            if (map.ranked || map.blRanked) MapAttr.Ranked else null,
+            if (map.curator != null) MapAttr.Curated else null
+        ).ifEmpty {
+            listOfNotNull(
+                if (map.uploader.verifiedMapper || map.collaborators?.any { it.verifiedMapper } == true) MapAttr.Verified else null
+            )
+        }
 
-                coloredCard {
-                    attrs.color = mapAttrs.joinToString(" ") { it.color }
-                    attrs.title = mapAttrs.joinToString(" + ") { it.name }
+        div("beatmap") {
+            autoSize.style(this)
 
-                    div {
-                        audioPreview {
-                            version = props.version
-                            size = AudioPreviewSize.Small
-                            audio = props.audio
-                        }
-                        rating {
-                            attrs.up = map.stats.upvotes
-                            attrs.down = map.stats.downvotes
-                            attrs.rating = map.stats.scoreOneDP
+            coloredCard {
+                attrs.color = mapAttrs.joinToString(" ") { it.color }
+                attrs.title = mapAttrs.joinToString(" + ") { it.name }
+
+                div {
+                    audioPreview {
+                        attrs.version = props.version
+                        attrs.size = AudioPreviewSize.Small
+                        attrs.audio = props.audio
+                    }
+                    rating {
+                        attrs.up = map.stats.upvotes
+                        attrs.down = map.stats.downvotes
+                        attrs.rating = map.stats.scoreOneDP
+                    }
+                }
+                div("info") {
+                    ref = autoSize.divRef
+
+                    mapTitle {
+                        attrs.title = map.name
+                        attrs.mapKey = map.id
+                    }
+                    p {
+                        uploaderWithInfo {
+                            attrs.map = map
+                            attrs.version = props.version
                         }
                     }
-                    div("info") {
-                        ref = divRef
-
-                        mapTitle {
-                            attrs.title = map.name
-                            attrs.mapKey = map.id
-                        }
-                        p {
-                            uploaderWithInfo {
-                                attrs.map = map
-                                attrs.version = props.version
-                            }
-                        }
-                        div("diffs") {
-                            diffIcons {
-                                attrs.diffs = props.version?.diffs
-                            }
-                        }
-                        div("ranked-statuses") {
-                            rankedStatus {
-                                attrs.map = map
-                            }
+                    div("diffs") {
+                        diffIcons {
+                            attrs.diffs = props.version?.diffs
                         }
                     }
-                    div("additional") {
-                        span {
-                            +map.id
-                            i("fas fa-key") {
-                                attrs.attributes["aria-hidden"] = "true"
-                            }
+                    div("ranked-statuses") {
+                        rankedStatus {
+                            attrs.map = map
                         }
-                        span {
-                            +map.metadata.duration.formatTime()
-                            i("fas fa-clock") {
-                                attrs.attributes["aria-hidden"] = "true"
-                            }
+                    }
+                }
+                div("additional") {
+                    span {
+                        +map.id
+                        i("fas fa-key") {
+                            attrs.attributes["aria-hidden"] = "true"
                         }
-                        span {
-                            +map.metadata.bpm.fixed(2).toString()
-                            img("Metronome", "/static/icons/metronome.svg") {
-                                attrs.width = "12"
-                                attrs.height = "12"
-                            }
+                    }
+                    span {
+                        +map.metadata.duration.formatTime()
+                        i("fas fa-clock") {
+                            attrs.attributes["aria-hidden"] = "true"
                         }
-                        globalContext.Consumer { userData ->
-                            if (userData != null) {
-                                div {
-                                    bookmarkButton {
-                                        attrs.bookmarked = state.bookmarked ?: (map.bookmarked == true)
-                                        attrs.onClick = { e, bm ->
-                                            e.preventDefault()
-                                            setState {
-                                                bookmarked = !bm
-                                            }
-                                            bookmark(!bm)
-                                        }
+                    }
+                    span {
+                        +map.metadata.bpm.fixed(2).toString()
+                        img("Metronome", "/static/icons/metronome.svg") {
+                            attrs.width = "12"
+                            attrs.height = "12"
+                        }
+                    }
+                    globalContext.Consumer { userData ->
+                        if (userData != null) {
+                            div {
+                                bookmarkButton {
+                                    attrs.bookmarked = bookmarked ?: (map.bookmarked == true)
+                                    attrs.onClick = { e, bm ->
+                                        e.preventDefault()
+                                        setBookmarked(!bm)
+                                        bookmark(!bm)
                                     }
-                                    addToPlaylist {
-                                        attrs.map = map
-                                    }
+                                }
+                                addToPlaylist {
+                                    attrs.map = map
                                 }
                             }
                         }
                     }
-                    div("links") {
-                        links {
-                            attrs.map = map
-                            attrs.version = props.version
-                            attrs.limited = true
-                        }
+                }
+                div("links") {
+                    links {
+                        attrs.map = map
+                        attrs.version = props.version
+                        attrs.limited = true
                     }
                 }
             }
-        } ?: run {
-            div("beatmap loading") { }
         }
+    } ?: run {
+        div("beatmap loading") { }
     }
 }
-
-fun RBuilder.beatmapInfo(handler: BeatmapInfoProps.() -> Unit) =
-    child(BeatmapInfo::class) {
-        this.attrs(handler)
-    }

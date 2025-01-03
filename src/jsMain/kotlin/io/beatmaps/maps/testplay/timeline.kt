@@ -1,12 +1,12 @@
 package io.beatmaps.maps.testplay
 
 import external.Dropzone
-import external.IReCAPTCHA
 import external.TimeAgo
-import external.recaptcha
 import io.beatmaps.History
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.UploadValidationInfo
+import io.beatmaps.captcha.ICaptchaHandler
+import io.beatmaps.captcha.captcha
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.globalContext
 import io.beatmaps.shared.form.errors
@@ -41,7 +41,7 @@ val timeline = fc<TimelineProps> { props ->
     val (errors, setErrors) = useState(listOf<UploadValidationInfo>())
     val (loading, setLoading) = useState(false)
 
-    val captchaRef = useRef<IReCAPTCHA>()
+    val captchaRef = useRef<ICaptchaHandler>()
     val progressBarInnerRef = useRef<HTMLElement>()
 
     val userData = useContext(globalContext)
@@ -177,6 +177,6 @@ val timeline = fc<TimelineProps> { props ->
             }
         }
 
-        recaptcha(captchaRef)
+        captcha(captchaRef)
     }
 }

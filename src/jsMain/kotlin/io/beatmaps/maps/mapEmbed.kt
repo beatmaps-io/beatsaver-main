@@ -39,9 +39,9 @@ val mapEmbed = fc<Props> {
     div("embed") {
         if (map != null) {
             beatmapInfo {
-                this.obj = map
-                this.version = map.mainVersion()
-                this.audio = audio
+                attrs.obj = map
+                attrs.version = map.mainVersion()
+                attrs.audio = audio
             }
         } else {
             div("card missing") {

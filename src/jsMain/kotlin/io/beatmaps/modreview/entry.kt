@@ -27,6 +27,7 @@ import react.dom.td
 import react.dom.textarea
 import react.dom.tr
 import react.fc
+import react.useContext
 import react.useRef
 import react.useState
 import kotlin.js.Promise
@@ -39,6 +40,7 @@ external interface ModReviewEntryProps : Props {
 }
 
 val modReviewEntry = fc<ModReviewEntryProps> { props ->
+    val modal = useContext(modalContext)
     val reasonRef = useRef<HTMLTextAreaElement>()
     val (hidden, setHidden) = useState(false)
     val (editing, setEditing) = useState(false)
@@ -46,13 +48,14 @@ val modReviewEntry = fc<ModReviewEntryProps> { props ->
     val (newSentiment, setNewSentiment) = useState(null as ReviewSentiment?)
     val (text, setText) = useState(null as String?)
 
-    fun delete() {
+    fun delete(): Promise<Boolean> {
         val reason = reasonRef.current?.value ?: ""
         reasonRef.current?.value = ""
 
-        props.onDelete(reason).then {
+        return props.onDelete(reason).then({
             setHidden(true)
-        }
+            true
+        }) { false }
     }
 
     if (!hidden) {
@@ -106,32 +109,30 @@ val modReviewEntry = fc<ModReviewEntryProps> { props ->
                             }
                             i("fas fa-pen text-warning") { }
                         }
-                        modalContext.Consumer { modal ->
-                            a("#") {
-                                attrs.title = "Delete"
-                                attrs.attributes["aria-label"] = "Delete"
-                                attrs.onClickFunction = { e ->
-                                    e.preventDefault()
-                                    modal?.current?.showDialog(
-                                        ModalData(
-                                            "Delete review",
-                                            bodyCallback = {
-                                                p {
-                                                    +"Are you sure? This action cannot be reversed."
-                                                }
-                                                p {
-                                                    +"Reason for action:"
-                                                }
-                                                textarea(classes = "form-control") {
-                                                    ref = reasonRef
-                                                }
-                                            },
-                                            buttons = listOf(ModalButton("YES, DELETE", "danger", ::delete), ModalButton("Cancel"))
-                                        )
+                        a("#") {
+                            attrs.title = "Delete"
+                            attrs.attributes["aria-label"] = "Delete"
+                            attrs.onClickFunction = { e ->
+                                e.preventDefault()
+                                modal?.current?.showDialog?.invoke(
+                                    ModalData(
+                                        "Delete review",
+                                        bodyCallback = {
+                                            p {
+                                                +"Are you sure? This action cannot be reversed."
+                                            }
+                                            p {
+                                                +"Reason for action:"
+                                            }
+                                            textarea(classes = "form-control") {
+                                                ref = reasonRef
+                                            }
+                                        },
+                                        buttons = listOf(ModalButton("YES, DELETE", "danger", ::delete), ModalButton("Cancel"))
                                     )
-                                }
-                                i("fas fa-trash text-danger-light") { }
+                                )
                             }
+                            i("fas fa-trash text-danger-light") { }
                         }
                     }
                 }

@@ -16,7 +16,7 @@ import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.api.ReviewsResponse
 import io.beatmaps.globalContext
-import io.beatmaps.index.ModalComponent
+import io.beatmaps.index.ModalCallbacks
 import io.beatmaps.index.modal
 import io.beatmaps.index.modalContext
 import io.beatmaps.setPageTitle
@@ -61,7 +61,7 @@ val modReview = fc<ModReviewProps> { props ->
     val location = useLocation()
 
     val resultsTable = useRef<HTMLElement>()
-    val modalRef = useRef<ModalComponent>()
+    val modalRef = useRef<ModalCallbacks>()
     val userRef = useRef<HTMLInputElement>()
 
     val userLocal = URLSearchParams(location.search).let { u ->
@@ -93,7 +93,7 @@ val modReview = fc<ModReviewProps> { props ->
     }
 
     modal {
-        ref = modalRef
+        attrs.callbacks = modalRef
     }
 
     modalContext.Provider {
