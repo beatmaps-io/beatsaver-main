@@ -38,8 +38,6 @@ val reviewTable = fc<ReviewTableProps> { props ->
     val (existingReview, setExistingReview) = useState(false)
 
     val resultsTable = useRef<HTMLElement>()
-    val modal = useContext(modalContext)
-    val history = History(useNavigate())
 
     val captchaRef = useRef<ICaptchaHandler>()
 
@@ -98,15 +96,13 @@ val reviewTable = fc<ReviewTableProps> { props ->
                 attrs.container = resultsTable
                 attrs.renderElement = InfiniteScrollElementRenderer { rv ->
                     reviewItem {
-                        obj = rv?.copy(creator = props.userDetail ?: rv.creator)
-                        userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
-                        map = props.map ?: rv?.map
-                        this.modal = modal
-                        captcha = captchaRef
-                        this.setExistingReview = { nv ->
+                        attrs.obj = rv?.copy(creator = props.userDetail ?: rv.creator)
+                        attrs.userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
+                        attrs.map = props.map ?: rv?.map
+                        attrs.captcha = captchaRef
+                        attrs.setExistingReview = { nv ->
                             setExistingReview(nv)
                         }
-                        this.history = history
                     }
                 }
                 attrs.loadPage = loadPage

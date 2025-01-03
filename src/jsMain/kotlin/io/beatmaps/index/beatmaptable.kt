@@ -191,9 +191,9 @@ val beatmapTable = fc<BeatmapTableProps> { props ->
                 attrs.container = resultsTable
                 attrs.renderElement = InfiniteScrollElementRenderer { it ->
                     beatmapInfo {
-                        obj = it
-                        version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
-                        this.audio = audio
+                        attrs.obj = it
+                        attrs.version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
+                        attrs.audio = audio
                     }
                 }
                 attrs.updateScrollIndex = props.updateScrollIndex

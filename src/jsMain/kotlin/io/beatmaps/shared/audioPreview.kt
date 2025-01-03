@@ -7,15 +7,13 @@ import kotlinx.html.js.onClickFunction
 import org.w3c.dom.Audio
 import org.w3c.dom.HTMLElement
 import react.Props
-import react.RBuilder
-import react.RComponent
 import react.RefObject
-import react.State
-import react.createRef
 import react.dom.div
 import react.dom.i
 import react.dom.img
-import react.setState
+import react.fc
+import react.useEffectOnce
+import react.useRef
 
 enum class AudioPreviewSize(val size: String) {
     Small("100"),
@@ -28,21 +26,21 @@ external interface AudioPreviewProps : Props {
     var audio: RefObject<Audio>
 }
 
-external interface AudioPreviewState : State {
-    var handle: Int?
-}
+val audioPreview = fc<AudioPreviewProps> { props ->
+    val audioContainerRef = useRef<HTMLElement>()
+    val outerProgressRef = useRef<HTMLElement>()
+    val leftProgressRef = useRef<HTMLElement>()
+    val rightProgressRef = useRef<HTMLElement>()
 
-class AudioPreview : RComponent<AudioPreviewProps, AudioPreviewState>() {
-    private val audioContainerRef = createRef<HTMLElement>()
-    private val outerProgressRef = createRef<HTMLElement>()
-    private val leftProgressRef = createRef<HTMLElement>()
-    private val rightProgressRef = createRef<HTMLElement>()
+    val handle = useRef<Int>()
 
-    override fun componentWillUnmount() {
-        state.handle?.let { window.clearInterval(it) }
+    useEffectOnce {
+        cleanup {
+            handle.current?.let { window.clearInterval(it) }
+        }
     }
 
-    private fun updateView(p: Double = 0.0) {
+    fun updateView(p: Double = 0.0) {
         val firstHalf = p <= 0.5 || p.isNaN()
         leftProgressRef.current?.style?.transform = "rotate(${(p * 360).fixed(2)}deg)"
         outerProgressRef.current?.style?.clip = if (firstHalf) "" else "rect(auto, auto, auto, auto)"
@@ -50,17 +48,15 @@ class AudioPreview : RComponent<AudioPreviewProps, AudioPreviewState>() {
         rightProgressRef.current?.style?.transform = if (firstHalf) "" else "rotate(180deg)"
     }
 
-    private val timeUpdate = { _: Any ->
+    val timeUpdate = { _: Any ->
         props.version?.previewURL.let { ourSrc ->
             props.audio.current?.let {
                 if (it.getAttribute("src") == ourSrc && !it.paused) {
                     updateView(it.currentTime / it.duration)
                 } else {
-                    if (state.handle != null) {
-                        state.handle?.let { h -> window.clearInterval(h) }
-                        setState {
-                            handle = null
-                        }
+                    handle.current?.let { h ->
+                        window.clearInterval(h)
+                        handle.current = null
                     }
                     audioContainerRef.current?.classList?.remove("playing")
                     updateView()
@@ -69,16 +65,13 @@ class AudioPreview : RComponent<AudioPreviewProps, AudioPreviewState>() {
         }
     }
 
-    private fun play(audio: Audio) {
+    fun play(audio: Audio) {
         audio.play()
-        val handleLocal = window.setInterval(timeUpdate, 20)
-        setState {
-            handle = handleLocal
-        }
+        handle.current = window.setInterval(timeUpdate, 20)
         audioContainerRef.current?.classList?.add("playing")
     }
 
-    private val toggleAudio: (Any) -> Unit = { _: Any ->
+    val toggleAudio: (Any) -> Unit = { _: Any ->
         props.version?.previewURL?.let { newSrc ->
             props.audio.current?.let {
                 if (it.getAttribute("src") != newSrc) {
@@ -95,29 +88,22 @@ class AudioPreview : RComponent<AudioPreviewProps, AudioPreviewState>() {
         }
     }
 
-    override fun RBuilder.render() {
-        div("audio-progress" + if (props.size == AudioPreviewSize.Large) " large" else "") {
-            attrs.onClickFunction = toggleAudio
-            ref = audioContainerRef
-            i("fas fa-play") { }
-            div("pie") {
-                ref = outerProgressRef
-                div("left-size half-circle") {
-                    ref = leftProgressRef
-                }
-                div("right-size half-circle") {
-                    ref = rightProgressRef
-                }
+    div("audio-progress" + if (props.size == AudioPreviewSize.Large) " large" else "") {
+        attrs.onClickFunction = toggleAudio
+        ref = audioContainerRef
+        i("fas fa-play") { }
+        div("pie") {
+            ref = outerProgressRef
+            div("left-size half-circle") {
+                ref = leftProgressRef
+            }
+            div("right-size half-circle") {
+                ref = rightProgressRef
             }
         }
-        img(src = props.version?.coverURL, alt = "Cover Image", classes = "cover") {
-            attrs.width = props.size.size
-            attrs.height = props.size.size
-        }
+    }
+    img(src = props.version?.coverURL, alt = "Cover Image", classes = "cover") {
+        attrs.width = props.size.size
+        attrs.height = props.size.size
     }
 }
-
-fun RBuilder.audioPreview(handler: AudioPreviewProps.() -> Unit) =
-    child(AudioPreview::class) {
-        this.attrs(handler)
-    }

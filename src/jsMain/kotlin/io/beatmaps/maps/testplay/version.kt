@@ -55,7 +55,7 @@ val version = fc<VersionProps> { props ->
     val (text, setText) = useState(props.feedback)
     val (time, setTime) = useState(props.time)
     val (scheduledAt, setScheduledAt) = useState(props.scheduledAt)
-    val scheduleAt = useRef<Instant>(null)
+    val scheduleAt = useRef<Instant>()
     val alert = useRef(true)
 
     val textareaRef = useRef<HTMLTextAreaElement>()

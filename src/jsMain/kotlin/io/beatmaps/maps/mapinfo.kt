@@ -421,9 +421,9 @@ val mapInfo = fc<MapInfoProps> { props ->
         }
         div("card-body mapinfo") {
             audioPreview {
-                version = props.mapInfo.mainVersion()
-                size = AudioPreviewSize.Large
-                this.audio = audio
+                attrs.version = props.mapInfo.mainVersion()
+                attrs.size = AudioPreviewSize.Large
+                attrs.audio = audio
             }
             div("card-text clearfix") {
                 if (editing) {

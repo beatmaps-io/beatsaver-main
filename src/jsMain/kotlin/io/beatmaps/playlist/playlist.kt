@@ -393,9 +393,9 @@ val playlistPage = fc<Props> {
                     div("playlist") {
                         maps.map {
                             beatmapInfo {
-                                obj = it.map
-                                version = it.map.publishedVersion()
-                                this.audio = audio
+                                attrs.obj = it.map
+                                attrs.version = it.map.publishedVersion()
+                                attrs.audio = audio
                             }
                         }
                     }

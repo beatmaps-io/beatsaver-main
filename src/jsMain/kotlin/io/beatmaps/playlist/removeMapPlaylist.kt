@@ -36,9 +36,9 @@ var playlistMapEditable = fc<PlaylistMapEditableProps> { props ->
     div("playlist-map") {
         i("fas fa-grip-lines-vertical") { }
         beatmapInfo {
-            obj = props.obj
-            version = props.obj.publishedVersion()
-            this.audio = props.audio
+            attrs.obj = props.obj
+            attrs.version = props.obj.publishedVersion()
+            attrs.audio = props.audio
         }
         div("delete") {
             a("#", classes = "btn btn-danger") {
