@@ -64,6 +64,10 @@ class BrowserDsl(private val testHost: String, private val client: HttpClient, p
         }
     }
 
+    suspend fun logout() {
+        client.get("/logout")
+    }
+
     fun waitUntilGone(l: Locator) = waitUntilNOrLess(l, 0)
 
     fun waitUntilNOrLess(l: Locator, n: Int) {
