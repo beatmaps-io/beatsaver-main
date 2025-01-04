@@ -17,6 +17,7 @@ external interface TimelineEntryProps : Props {
     var color: String?
     var id: String?
     var className: String?
+    var headerClass: String?
 }
 
 fun interface TimelineEntrySectionRenderer {
@@ -33,7 +34,7 @@ val timelineEntry = fc<TimelineEntryProps>("timelineEntry") { props ->
         }
         with(props.headerCallback) {
             this?.let {
-                div("card-header d-flex") {
+                div("card-header ${props.headerClass ?: ""}") {
                     invoke()
                 }
             }
