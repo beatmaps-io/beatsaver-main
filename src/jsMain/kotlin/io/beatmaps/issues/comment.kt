@@ -101,6 +101,7 @@ val issueComment = fc<IssueCommentProps>("issueComment") { props ->
                 attrs.editing = editing
                 attrs.btnClass = "btn-success mt-1"
                 attrs.text = text
+                attrs.renderText = true
                 attrs.buttonText = "Edit comment"
                 attrs.maxLength = IssueConstants.MAX_COMMENT_LENGTH
                 attrs.onError = {
