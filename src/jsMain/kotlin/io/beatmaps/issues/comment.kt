@@ -45,6 +45,7 @@ val issueComment = fc<IssueCommentProps>("issueComment") { props ->
         attrs.className = "comment"
         attrs.icon = "fa-comments"
         attrs.color = "primary"
+        attrs.headerClass = "d-flex"
         attrs.headerCallback = TimelineEntrySectionRenderer {
             span {
                 routeLink(props.comment.user.profileLink()) {

@@ -78,6 +78,7 @@ val issuesPage = fc<Props>("issuesPage") {
                 attrs.id = "issue-info"
                 attrs.icon = "fa-plus"
                 attrs.color = "success"
+                attrs.headerClass = "d-flex"
                 attrs.headerCallback = TimelineEntrySectionRenderer {
                     span {
                         if (!open) {
