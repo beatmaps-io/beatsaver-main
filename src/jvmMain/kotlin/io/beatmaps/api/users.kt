@@ -514,7 +514,7 @@ fun Route.userRoute(client: HttpClient) {
                 }
             }
         ) {
-            ActionResponse.error("Could not verify user [${it.errorCodes.joinToString(", ")}]")
+            it.toActionResponse()
         }
 
         call.respond(response)
@@ -550,7 +550,7 @@ fun Route.userRoute(client: HttpClient) {
                 ActionResponse.success()
             }
         ) {
-            ActionResponse.error("Could not verify user [${it.errorCodes.joinToString(", ")}]")
+            it.toActionResponse()
         }
 
         call.respond(response)
@@ -709,10 +709,10 @@ fun Route.userRoute(client: HttpClient) {
                     } ?: ActionResponse.error("User not found")
                 }
             ) {
-                ActionResponse.error(*it.errorCodes.map { "Captcha error: $it" }.toTypedArray())
+                it.toActionResponse()
             }
 
-            call.respond(response)
+            call.respond(if (response.success) HttpStatusCode.OK else HttpStatusCode.BadRequest, response)
         }
     }
 

@@ -67,8 +67,8 @@ val turnstile = fc<CaptchaProps> { props ->
                 attrs.siteKey = "0x4AAAAAAAk0Ed-ky7FsJ7Ur"
             } else {
                 // attrs.siteKey = "1x00000000000000000000AA" // Always passes
-                attrs.siteKey = "2x00000000000000000000AB" // Always blocks
-                // attrs.siteKey = "3x00000000000000000000FF" // Forced interactive
+                // attrs.siteKey = "2x00000000000000000000AB" // Always blocks
+                attrs.siteKey = "3x00000000000000000000FF" // Forced interactive
             }
             this.ref = ref
             attrs.options = TurnStileRenderOptions(

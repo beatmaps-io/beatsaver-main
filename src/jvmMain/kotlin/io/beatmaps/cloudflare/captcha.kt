@@ -1,9 +1,9 @@
 package io.beatmaps.cloudflare
 
-import io.beatmaps.common.jsonIgnoreUnknown
+import io.beatmaps.api.ActionResponse
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.request.forms.submitForm
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.parameters
 import io.ktor.http.userAgent
 import io.ktor.server.application.ApplicationCall
@@ -51,7 +51,13 @@ class SiteVerifyResponse(
 
     @SerialName("error-codes")
     val errorCodes: List<String> = emptyList()
-)
+) {
+    fun toActionResponse() = if (success) {
+        ActionResponse.success()
+    } else {
+        ActionResponse.error(*errorCodes.map { e -> "Captcha error: $e" }.toTypedArray())
+    }
+}
 
 object CaptchaVerifier {
     private val logger = Logger.getLogger("bmio.CaptchaVerifier")
@@ -77,9 +83,13 @@ object CaptchaVerifier {
     }
 
     private fun pickProvider(call: ApplicationCall) =
-        Random(call.sessionId.hashCode()).nextFloat().let { nextRandom ->
-            cdf.first { it.second > nextRandom }.first
-        }
+        if (cdf.size == 1) {
+            cdf.first()
+        } else {
+            Random(call.sessionId.hashCode()).nextFloat().let { nextRandom ->
+                cdf.first { it.second > nextRandom }
+            }
+        }.first
 
     fun provider(call: ApplicationCall): CaptchaProvider {
         if (!call.attributes.contains(captchaProviderAttr)) {
@@ -90,23 +100,21 @@ object CaptchaVerifier {
     }
     fun enabled(provider: CaptchaProvider) = secrets[provider]?.let { provider.enabled(it) } ?: false
 
-    suspend fun verify(client: HttpClient, provider: CaptchaProvider, gRecaptchaResponse: String, remoteIp: String): SiteVerifyResponse {
+    suspend fun verify(client: HttpClient, provider: CaptchaProvider, gRecaptchaResponse: String, remoteIp: String) =
         if (provider == CaptchaProvider.Fake) {
             logger.warning("ReCAPTCHA not setup. Allowing request anyway")
-            return SiteVerifyResponse(true, errorCodes = emptyList())
+            SiteVerifyResponse(true)
+        } else {
+            val secret = secrets[provider] ?: ""
+            client.submitForm(
+                provider.url,
+                parameters {
+                    append("secret", secret)
+                    append("response", gRecaptchaResponse)
+                    append("remoteip", remoteIp)
+                }
+            ) {
+                userAgent(provider.userAgent)
+            }.body<SiteVerifyResponse>()
         }
-
-        val secret = secrets[provider] ?: ""
-        val txt = client.submitForm(
-            provider.url,
-            parameters {
-                append("secret", secret)
-                append("response", gRecaptchaResponse)
-                append("remoteip", remoteIp)
-            }
-        ) {
-            userAgent(provider.userAgent)
-        }.bodyAsText()
-        return jsonIgnoreUnknown.decodeFromString<SiteVerifyResponse>(txt)
-    }
 }

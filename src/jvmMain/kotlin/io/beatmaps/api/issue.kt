@@ -209,7 +209,7 @@ fun Route.issueRoute(client: HttpClient) {
                     }
                 }
             ) {
-                throw ServerApiException("Could not verify user [${it.errorCodes.joinToString(", ")}]")
+                it.toActionResponse()
             }.let {
                 call.pub("beatmaps", "issues.$it.created", null, it)
                 call.respond(HttpStatusCode.Created, it)
@@ -333,7 +333,7 @@ fun Route.issueRoute(client: HttpClient) {
 
                             ActionResponse.success()
                         }
-                    )
+                    ) { it.toActionResponse() }
                 } else {
                     val success = IssueComment
                         .update({

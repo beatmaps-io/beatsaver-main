@@ -615,7 +615,7 @@ fun Route.reviewRoute(client: HttpClient) {
                     response
                 }
             ) { e ->
-                ActionResponse.error(*e.errorCodes.map { "Captcha error: $it" }.toTypedArray())
+                e.toActionResponse()
             }
 
             call.respond(if (response.success) HttpStatusCode.OK else HttpStatusCode.BadRequest, response)

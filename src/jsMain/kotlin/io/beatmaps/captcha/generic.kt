@@ -27,7 +27,7 @@ object FakeCaptchaHandler : ICaptchaHandler {
 val captcha = fc<CaptchaProps>("CaptchaWrapper") { props ->
     configContext.Consumer { configData ->
         when (configData?.captchaProvider) {
-            "ReCAPTCHA" -> recaptcha {
+            "ReCaptcha" -> recaptcha {
                 attrs.captchaRef = props.captchaRef
                 attrs.enabled = configData.showCaptcha
             }
