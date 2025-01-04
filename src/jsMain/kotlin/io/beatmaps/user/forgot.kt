@@ -69,7 +69,7 @@ val forgotPage = fc<Props>("forgotPage") {
                             }
                         }
                     }?.catch {
-                        // Cancelled request or bad io.beatmaps.captcha.captcha
+                        // Cancelled request or bad captcha
                         setErrors(listOfNotNull(it.message))
                         setLoading(false)
                     }

@@ -81,7 +81,7 @@ val signupPage = fc<Props>("signupPage") {
                             setErrors(it.data.errors)
                         }
                     }?.catch {
-                        // Cancelled request or bad io.beatmaps.captcha.captcha
+                        // Cancelled request or bad captcha
                         setErrors(listOfNotNull(it.message))
                     }?.finally {
                         setLoading(false)
