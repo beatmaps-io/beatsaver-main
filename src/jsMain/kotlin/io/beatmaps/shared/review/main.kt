@@ -37,8 +37,6 @@ val reviewTable = fc<ReviewTableProps>("reviewTable") { props ->
 
     val captchaRef = useRef<ICaptchaHandler>()
 
-    captcha(captchaRef)
-
     useDidUpdateEffect(props.map) {
         setResultsKey(Any())
     }
@@ -56,6 +54,10 @@ val reviewTable = fc<ReviewTableProps>("reviewTable") { props ->
         ).then {
             return@then it.data.docs
         }
+    }
+
+    captcha {
+        attrs.captchaRef = captchaRef
     }
 
     if (props.visible != false) {

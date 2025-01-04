@@ -209,7 +209,9 @@ val issuesPage = fc<Props>("issuesPage") {
                         }
                     }
 
-                    captcha(captchaRef)
+                    captcha {
+                        attrs.captchaRef = captchaRef
+                    }
                 }
             }
         }

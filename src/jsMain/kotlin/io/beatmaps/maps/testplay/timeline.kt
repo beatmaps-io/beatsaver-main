@@ -177,6 +177,8 @@ val timeline = fc<TimelineProps>("timeline") { props ->
             }
         }
 
-        captcha(captchaRef)
+        captcha {
+            attrs.captchaRef = captchaRef
+        }
     }
 }

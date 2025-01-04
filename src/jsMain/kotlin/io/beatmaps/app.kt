@@ -58,7 +58,8 @@ data class UserData(
 data class ConfigData(
     // Safe because if captchas are bypassed the backend will still reject requests
     val showCaptcha: Boolean = true,
-    val v2Search: Boolean = false
+    val v2Search: Boolean = false,
+    val captchaProvider: String = "Fake"
 )
 
 val globalContext = createContext<UserData?>(null)

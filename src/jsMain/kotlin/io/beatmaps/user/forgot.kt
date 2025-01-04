@@ -97,5 +97,7 @@ val forgotPage = fc<Props>("forgotPage") {
         }
     }
 
-    captcha(captchaRef)
+    captcha {
+        attrs.captchaRef = captchaRef
+    }
 }

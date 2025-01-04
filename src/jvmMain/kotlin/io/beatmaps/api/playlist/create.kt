@@ -84,7 +84,7 @@ fun Route.playlistCreate(client: HttpClient) {
             val files = mutableMapOf<Int, File>()
 
             try {
-                val multipart = call.handleMultipart(client) { part ->
+                val multipart = handleMultipart(client) { part ->
                     part.streamProvider().use { its ->
                         val tmp = ByteArrayOutputStream()
                         its.copyToSuspend(tmp, sizeLimit = FileLimits.PLAYLIST_IMAGE_LIMIT)
@@ -160,7 +160,7 @@ fun Route.playlistCreate(client: HttpClient) {
                 Playlist.selectAll().where(query).firstOrNull()?.let { PlaylistFull.from(it, cdnPrefix()) }
             } ?: throw UploadException("Playlist not found")
 
-            val multipart = call.handleMultipart(client) { part ->
+            val multipart = handleMultipart(client) { part ->
                 part.streamProvider().use { its ->
                     val tmp = ByteArrayOutputStream()
                     its.copyToSuspend(tmp, sizeLimit = FileLimits.PLAYLIST_IMAGE_LIMIT)
