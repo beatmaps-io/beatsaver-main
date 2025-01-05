@@ -13,6 +13,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable data class AiDeclaration(val id: Int, val automapper: Boolean = false)
 
+@Serializable data class MarkNsfw(val id: Int, val nsfw: Boolean = false)
+
 @Serializable data class StateUpdate(val hash: String, val state: EMapState, val mapId: Int, val reason: String? = null, val scheduleAt: Instant? = null, val alert: Boolean? = true)
 
 @Serializable data class FeedbackUpdate(val hash: String, val feedback: String, val captcha: String? = null)

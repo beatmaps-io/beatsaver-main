@@ -11,6 +11,7 @@ import io.beatmaps.api.CurateMap
 import io.beatmaps.api.IssueCreationRequest
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapInfoUpdate
+import io.beatmaps.api.MarkNsfw
 import io.beatmaps.api.SimpleMapInfoUpdate
 import io.beatmaps.api.StateUpdate
 import io.beatmaps.captcha.ICaptchaHandler
@@ -148,6 +149,16 @@ val mapInfo = fc<MapInfoProps>("mapInfo") { props ->
         setLoading(true)
 
         Axios.post<String>("${Config.apibase}/maps/declareai", AiDeclaration(props.mapInfo.intId(), automapper), generateConfig<AiDeclaration, String>()).then({
+            props.reloadMap()
+        }) {
+            setLoading(false)
+        }
+    }
+
+    fun markNsfw(nsfw: Boolean = true) {
+        setLoading(true)
+
+        Axios.post<String>("${Config.apibase}/maps/marknsfw", MarkNsfw(props.mapInfo.intId(), nsfw), generateConfig<MarkNsfw, String>()).then({
             props.reloadMap()
         }) {
             setLoading(false)
@@ -355,6 +366,17 @@ val mapInfo = fc<MapInfoProps>("mapInfo") { props ->
                                         i("fas " + if (props.mapInfo.declaredAi.markAsBot) "fa-user-check text-success" else "fa-user-times text-danger-light") { }
                                     }
                                     a("#") {
+                                        val tooltip = if (props.mapInfo.nsfw) "Flag as safe" else "Flag as NSFW"
+                                        attrs.title = tooltip
+                                        attrs.attributes["aria-label"] = tooltip
+                                        attrs.onClickFunction = {
+                                            it.preventDefault()
+                                            if (!loading) markNsfw(!props.mapInfo.nsfw)
+                                        }
+                                        span("dd-text") { +tooltip }
+                                        i("fas fa-shield-alt " + if (props.mapInfo.nsfw) "text-success" else "text-danger-light") { }
+                                    }
+                                    a("#") {
                                         attrs.title = "Delete"
                                         attrs.attributes["aria-label"] = "Delete"
                                         attrs.onClickFunction = {
@@ -421,6 +443,7 @@ val mapInfo = fc<MapInfoProps>("mapInfo") { props ->
         }
         div("card-body mapinfo") {
             audioPreview {
+                attrs.nsfw = props.mapInfo.nsfw
                 attrs.version = props.mapInfo.mainVersion()
                 attrs.size = AudioPreviewSize.Large
                 attrs.audio = audio

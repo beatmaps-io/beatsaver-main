@@ -12,8 +12,10 @@ import react.dom.div
 import react.dom.i
 import react.dom.img
 import react.fc
+import react.useEffect
 import react.useEffectOnce
 import react.useRef
+import react.useState
 
 enum class AudioPreviewSize(val size: String) {
     Small("100"),
@@ -22,6 +24,7 @@ enum class AudioPreviewSize(val size: String) {
 
 external interface AudioPreviewProps : Props {
     var version: MapVersion?
+    var nsfw: Boolean?
     var size: AudioPreviewSize
     var audio: RefObject<Audio>
 }
@@ -31,6 +34,7 @@ val audioPreview = fc<AudioPreviewProps>("audioPreview") { props ->
     val outerProgressRef = useRef<HTMLElement>()
     val leftProgressRef = useRef<HTMLElement>()
     val rightProgressRef = useRef<HTMLElement>()
+    val (blur, setBlur) = useState(false)
 
     val handle = useRef<Int>()
 
@@ -38,6 +42,10 @@ val audioPreview = fc<AudioPreviewProps>("audioPreview") { props ->
         cleanup {
             handle.current?.let { window.clearInterval(it) }
         }
+    }
+
+    useEffect(props.nsfw) {
+        setBlur(props.nsfw == true)
     }
 
     fun updateView(p: Double = 0.0) {
@@ -88,22 +96,27 @@ val audioPreview = fc<AudioPreviewProps>("audioPreview") { props ->
         }
     }
 
-    div("audio-progress" + if (props.size == AudioPreviewSize.Large) " large" else "") {
-        attrs.onClickFunction = toggleAudio
-        ref = audioContainerRef
-        i("fas fa-play") { }
-        div("pie") {
-            ref = outerProgressRef
-            div("left-size half-circle") {
-                ref = leftProgressRef
-            }
-            div("right-size half-circle") {
-                ref = rightProgressRef
+    if (!blur) {
+        div("audio-progress" + if (props.size == AudioPreviewSize.Large) " large" else "") {
+            attrs.onClickFunction = toggleAudio
+            ref = audioContainerRef
+            i("fas fa-play") { }
+            div("pie") {
+                ref = outerProgressRef
+                div("left-size half-circle") {
+                    ref = leftProgressRef
+                }
+                div("right-size half-circle") {
+                    ref = rightProgressRef
+                }
             }
         }
     }
-    img(src = props.version?.coverURL, alt = "Cover Image", classes = "cover") {
+    img(src = props.version?.coverURL, alt = "Cover Image", classes = "cover${if (blur) " nsfw" else ""}") {
         attrs.width = props.size.size
         attrs.height = props.size.size
+        attrs.onClickFunction = {
+            setBlur(false)
+        }
     }
 }

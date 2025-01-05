@@ -561,6 +561,10 @@ table.search-results {
     position: relative;
     font-size: 0;
 
+    &.nsfw {
+      filter: blur(6px);
+    }
+
     &:after {
       content: attr(alt);
       position: absolute;
@@ -761,6 +765,10 @@ table.search-results {
   > img {
     width: 200px;
     float: left;
+
+    &.nsfw {
+      filter: blur(10px);
+    }
   }
   .card-text {
     margin-left: 230px;
