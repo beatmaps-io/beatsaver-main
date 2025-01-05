@@ -126,7 +126,7 @@ val issueList = fc<Props>("issueList") {
                                 setNewType(EIssueType.fromName(elem.value))
                             }
 
-                            EIssueType.entries.filter { userData?.admin == true || it.curatorAllowed  }.forEach {
+                            EIssueType.entries.filter { userData?.admin == true || it.curatorAllowed }.forEach {
                                 option {
                                     attrs.value = it.name
                                     +it.toString()
