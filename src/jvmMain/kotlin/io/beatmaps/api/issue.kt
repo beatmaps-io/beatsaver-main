@@ -227,6 +227,8 @@ fun Route.issueRoute(client: HttpClient) {
                         (Issue.id eq it.id).let { q ->
                             if (sess?.isAdmin() == true) {
                                 q
+                            } else if (sess?.isCurator() == true) {
+                                q and (Issue.type inList(EIssueType.curatorTypes))
                             } else {
                                 q and (Issue.creator eq sess?.userId)
                             }
@@ -251,11 +253,19 @@ fun Route.issueRoute(client: HttpClient) {
 
     post<IssueApi.IssueDetail> { req ->
         requireAuthorization { _, sess ->
-            if (!sess.isAdmin()) return@requireAuthorization ActionResponse.error("Unauthorised")
+            if (!sess.isCurator()) return@requireAuthorization ActionResponse.error("Unauthorised")
 
             val issueUpdate = call.receive<IssueUpdateRequest>()
             val success = transaction {
-                Issue.update({ Issue.id eq req.id }) {
+                Issue.update({
+                    (Issue.id eq req.id).let { q ->
+                        if (sess.isAdmin()) {
+                            q
+                        } else {
+                            q and (Issue.type inList(EIssueType.curatorTypes))
+                        }
+                    }
+                }) {
                     if (issueUpdate.closed) {
                         it[closedAt] = Coalesce(closedAt, NowExpression(closedAt))
                     } else {
@@ -289,7 +299,7 @@ fun Route.issueRoute(client: HttpClient) {
                         {
                             it[updatedAt] = NowExpression(updatedAt)
                         },
-                        Issue.id, Issue.creator
+                        Issue.id, Issue.creator, Issue.type
                     )
                     ?.singleOrNull()
                     ?.let { IssueDao.wrapRow(it) }
@@ -299,12 +309,14 @@ fun Route.issueRoute(client: HttpClient) {
                     return@newSuspendedTransaction ActionResponse.error("Issue not found")
                 }
 
+                val userPrivileged = sess.isAdmin() || (sess.isCurator() && EIssueType.curatorTypes.contains(intermediaryResult.type))
+
                 if (req.commentId == null) {
                     requireCaptcha(
                         client,
                         comment.captcha,
                         {
-                            if (!sess.isAdmin() && sess.userId != intermediaryResult.creatorId.value) {
+                            if (!(userPrivileged || sess.userId == intermediaryResult.creatorId.value)) {
                                 rollback()
                                 return@requireCaptcha ActionResponse.error("Unauthorised")
                             }
@@ -314,7 +326,7 @@ fun Route.issueRoute(client: HttpClient) {
                                     it[issueId] = req.id
                                     it[userId] = sess.userId
                                     it[text] = comment.text?.take(IssueConstants.MAX_COMMENT_LENGTH) ?: ""
-                                    it[public] = if (!sess.isAdmin()) { true } else { comment.public ?: false }
+                                    it[public] = if (!userPrivileged) { true } else { comment.public ?: false }
                                     it[createdAt] = NowExpression(createdAt)
                                     it[updatedAt] = NowExpression(updatedAt)
                                 }
@@ -326,11 +338,11 @@ fun Route.issueRoute(client: HttpClient) {
                     val success = IssueComment
                         .update({
                             ((IssueComment.id eq req.commentId) and (IssueComment.issueId eq req.id)).let { q ->
-                                if (sess.isAdmin()) q else q.and(IssueComment.userId eq sess.userId)
+                                if (userPrivileged) q else q.and(IssueComment.userId eq sess.userId)
                             }
                         }) {
                             if (comment.text != null) it[text] = comment.text.take(IssueConstants.MAX_COMMENT_LENGTH)
-                            if (sess.isAdmin() && comment.public != null) it[public] = comment.public
+                            if (userPrivileged && comment.public != null) it[public] = comment.public
                         } > 0
 
                     if (success) ActionResponse.success() else ActionResponse.error()
@@ -343,7 +355,7 @@ fun Route.issueRoute(client: HttpClient) {
 
     get<IssueApi.IssueList> { req ->
         requireAuthorization { _, sess ->
-            if (!sess.isAdmin()) {
+            if (!sess.isCurator()) {
                 call.respond(HttpStatusCode.Unauthorized)
                 return@requireAuthorization
             }
@@ -354,6 +366,13 @@ fun Route.issueRoute(client: HttpClient) {
                     .selectAll()
                     .where {
                         Op.TRUE
+                            .let { q ->
+                                if (!sess.isAdmin()) {
+                                    q and (Issue.type inList(EIssueType.curatorTypes))
+                                } else {
+                                    q
+                                }
+                            }
                             .notNull(req.type) { o -> Issue.type eq o }
                             .notNull(req.open) { o -> Issue.closedAt.run { if (o) isNull() else isNotNull() } }
                     }

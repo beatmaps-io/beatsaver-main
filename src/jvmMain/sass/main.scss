@@ -563,6 +563,7 @@ table.search-results {
 
     &.nsfw {
       filter: blur(6px);
+      cursor: pointer;
     }
 
     &:after {
@@ -768,6 +769,7 @@ table.search-results {
 
     &.nsfw {
       filter: blur(10px);
+      cursor: pointer;
     }
   }
   .card-text {

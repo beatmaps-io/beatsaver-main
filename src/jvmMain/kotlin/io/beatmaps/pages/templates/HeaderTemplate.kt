@@ -99,10 +99,10 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                     +"Mod"
                                 }
                                 div("dropdown-menu") {
+                                    a("/issues?open=true", classes = "dropdown-item auto-router") {
+                                        +"Issues"
+                                    }
                                     if (s.admin) {
-                                        a("/issues?open=true", classes = "dropdown-item auto-router") {
-                                            +"Issues"
-                                        }
                                         a("/modlog", classes = "dropdown-item auto-router") {
                                             +"Mod Log"
                                         }

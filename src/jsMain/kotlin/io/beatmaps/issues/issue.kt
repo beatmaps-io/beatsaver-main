@@ -94,7 +94,7 @@ val issuesPage = fc<Props>("issuesPage") {
                             attrs.date = i.createdAt.toString()
                         }
                     }
-                    if (userData?.admin == true) {
+                    if (userData?.curator == true) {
                         div("link-buttons") {
                             a("#") {
                                 attrs.title = if (open) "Archive" else "Reopen"
@@ -198,7 +198,7 @@ val issuesPage = fc<Props>("issuesPage") {
                         loadIssue()
                     }
 
-                    if (userData?.admin == true) {
+                    if (userData?.curator == true) {
                         toggle {
                             attrs.toggleRef = publicRef
                             attrs.className = "me-4 mb-2 mt-auto"
