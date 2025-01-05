@@ -22,7 +22,6 @@ import io.ktor.util.pipeline.PipelineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import nl.myndocs.oauth2.token.AccessToken
-import java.util.logging.Logger
 
 enum class AuthType {
     None, Session, Oauth
