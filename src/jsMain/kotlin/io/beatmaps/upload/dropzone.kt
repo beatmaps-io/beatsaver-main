@@ -50,7 +50,7 @@ fun RElementBuilder<DropzoneProps>.simple(
     attrs.onDrop = { file ->
         captchaRef.current?.execute()?.then({
             val data = FormData().also(block)
-            data.append("captcha", it)
+            data.append("recaptcha", it)
             data.asDynamic().append("file", file[0]) // Kotlin doesn't have an equivalent method to this js
 
             Axios.post<dynamic>(
