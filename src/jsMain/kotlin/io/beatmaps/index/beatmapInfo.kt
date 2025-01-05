@@ -69,6 +69,7 @@ val beatmapInfo = fc<BeatmapInfoProps>("beatmapInfo") { props ->
 
                 div {
                     audioPreview {
+                        attrs.nsfw = map.nsfw
                         attrs.version = props.version
                         attrs.size = AudioPreviewSize.Small
                         attrs.audio = props.audio

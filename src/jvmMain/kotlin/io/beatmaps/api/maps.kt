@@ -79,6 +79,9 @@ class MapsApi {
     @Location("/maps/declareai")
     data class DeclareAi(val api: MapsApi)
 
+    @Location("/maps/marknsfw")
+    data class MarkNsfw(val api: MapsApi)
+
     @Location("/maps/wip/{page}")
     data class WIP(val page: Long = 0, val api: MapsApi)
 
@@ -277,6 +280,27 @@ fun Route.mapDetailRoute() {
 
             if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated.ai", null, mapUpdate.id)
             call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+        }
+    }
+
+    post<MapsApi.MarkNsfw> {
+        requireAuthorization { _, user ->
+            if (!user.isAdmin()) {
+                call.respond(HttpStatusCode.BadRequest)
+            } else {
+                val mapUpdate = call.receive<MarkNsfw>()
+                val result = transaction {
+                    Beatmap.update({
+                        (Beatmap.id eq mapUpdate.id)
+                    }) {
+                        it[nsfw] = mapUpdate.nsfw
+                        it[updatedAt] = NowExpression(updatedAt)
+                    } > 0
+                }
+
+                if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated.nsfw", null, mapUpdate.id)
+                call.respond(if (result) HttpStatusCode.OK else HttpStatusCode.BadRequest)
+            }
         }
     }
 
