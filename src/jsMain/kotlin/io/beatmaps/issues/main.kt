@@ -193,7 +193,7 @@ val issueList = fc<Props>("issueList") {
                                         +"OPEN"
                                     } else {
                                         TimeAgo.default {
-                                            attrs.date = it.createdAt.toString()
+                                            attrs.date = it.closedAt.toString()
                                         }
                                     }
                                 }
