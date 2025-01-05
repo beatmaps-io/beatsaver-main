@@ -50,7 +50,7 @@ class SiteVerifyResponse(
     val metadata: JsonObject? = null,
 
     @SerialName("error-codes")
-    val errorCodes: List<String>
+    val errorCodes: List<String> = emptyList()
 )
 
 class CaptchaVerifier(val config: CaptchaConfig) {

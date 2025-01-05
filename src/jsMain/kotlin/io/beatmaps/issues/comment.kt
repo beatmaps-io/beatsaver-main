@@ -72,7 +72,7 @@ val issueComment = fc<IssueCommentProps>("issueComment") { props ->
 
                 fun RBuilder.icon() = i("fas text-${if (public) "info fa-un" else "danger-light fa-"}lock") { }
 
-                if (userData?.admin == true && props.issueOpen && !loading) {
+                if (userData?.curator == true && props.issueOpen && !loading) {
                     a("#") {
                         attrs.title = if (public) "Lock" else "Unlock"
                         attrs.onClickFunction = { ev ->

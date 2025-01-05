@@ -66,7 +66,7 @@ val issueList = fc<Props>("issueList") {
     useEffectOnce {
         setPageTitle("Issues")
 
-        if (userData?.admin != true) {
+        if (userData?.curator != true) {
             history.push("/")
         }
     }
@@ -126,7 +126,7 @@ val issueList = fc<Props>("issueList") {
                                 setNewType(EIssueType.fromName(elem.value))
                             }
 
-                            EIssueType.entries.forEach {
+                            EIssueType.entries.filter { userData?.admin == true || it.curatorAllowed  }.forEach {
                                 option {
                                     attrs.value = it.name
                                     +it.toString()
