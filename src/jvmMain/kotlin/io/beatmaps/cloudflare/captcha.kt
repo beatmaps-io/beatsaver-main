@@ -31,7 +31,8 @@ enum class CaptchaProvider(val url: String = "", val userAgent: String = "", pri
     HCaptcha(
         "https://api.hcaptcha.com/siteverify",
         "Mozilla/5.0",
-        "HCAPTCHA"
+        "HCAPTCHA",
+        { !it.startsWith("0x") }
     ),
     Fake(defaultWeight = 0);
 
