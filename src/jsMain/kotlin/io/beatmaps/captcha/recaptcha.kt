@@ -20,4 +20,3 @@ val recaptcha = fc<CaptchaProps>("ReCAPTCHA") { props ->
     }
     props.captchaRef.current = ReCAPTCHAHandler(ref)
 }
-

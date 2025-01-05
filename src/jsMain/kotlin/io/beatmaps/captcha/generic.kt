@@ -23,7 +23,6 @@ object FakeCaptchaHandler : ICaptchaHandler {
     override fun reset() = Unit
 }
 
-
 val captcha = fc<CaptchaProps>("CaptchaWrapper") { props ->
     configContext.Consumer { configData ->
         when (configData?.captchaProvider) {
