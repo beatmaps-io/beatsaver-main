@@ -11,6 +11,7 @@ import io.beatmaps.api.ReviewUpdateInfo
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.complexToReview
 import io.beatmaps.api.from
+import io.beatmaps.api.preHydrate
 import io.beatmaps.common.Config
 import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.avgWithFilter
@@ -288,8 +289,9 @@ fun Application.reviewListeners(client: HttpClient) {
                         .orderBy(IssueComment.createdAt to SortOrder.ASC)
                         .limit(1)
                         .handleUser()
+                        .preHydrate(true)
                         .singleOrNull()?.let { row ->
-                            IssueDetail.from(row, "", false) to IssueCommentDetail.from(row)
+                            IssueDetail.from(row, "") to IssueCommentDetail.from(row)
                         }
                 }?.let { (issue, comment) ->
                     handler.post(issue, comment)
