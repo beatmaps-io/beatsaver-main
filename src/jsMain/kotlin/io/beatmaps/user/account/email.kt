@@ -71,7 +71,7 @@ val accountEmail = fc<AccountEmailProps>("accountEmail") { props ->
                             Axios.post<ActionResponse>(
                                 "${Config.apibase}/users/email",
                                 EmailRequest(captcha, email),
-                                generateConfig<EmailRequest, ActionResponse>()
+                                generateConfig<EmailRequest, ActionResponse>(validStatus = arrayOf(200, 400))
                             ).then {
                                 setValid(it.data.success)
                                 setErrors(

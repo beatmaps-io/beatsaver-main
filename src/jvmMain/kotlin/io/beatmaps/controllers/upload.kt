@@ -5,8 +5,6 @@ import io.beatmaps.api.MapConstants
 import io.beatmaps.api.PatreonTier
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.api.toTier
-import io.beatmaps.cloudflare.CaptchaVerifier
-import io.beatmaps.cloudflare.ReCaptchaConfig
 import io.beatmaps.common.Config
 import io.beatmaps.common.CopyException
 import io.beatmaps.common.Folders
@@ -76,7 +74,6 @@ import java.util.logging.Logger
 import kotlin.math.roundToInt
 
 val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
-val captchaVerify = try { CaptchaVerifier(ReCaptchaConfig) } catch (_: Exception) { null }
 
 @Location("/upload")
 class UploadMap
@@ -117,7 +114,7 @@ fun Route.uploadController(client: HttpClient) {
                 val filename = "${sess.userId}.jpg"
                 val localFile = File(Folders.localAvatarFolder(), filename)
 
-                call.handleMultipart(client) { part ->
+                handleMultipart(client) { part ->
                     part.streamProvider().use { its ->
                         Thumbnails
                             .of(its)
@@ -170,7 +167,7 @@ fun Route.uploadController(client: HttpClient) {
             val md = MessageDigest.getInstance("SHA1")
             var extractedInfoTmp: ExtractedInfo? = null
 
-            val multipart = call.handleMultipart(client) { part ->
+            val multipart = handleMultipart(client) { part ->
                 uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
                 extractedInfoTmp = part.streamProvider().use { its ->
                     try {

@@ -1,9 +1,10 @@
 package io.beatmaps.util
 
 import io.beatmaps.api.OauthScope
+import io.beatmaps.cloudflare.CaptchaProvider
+import io.beatmaps.cloudflare.CaptchaVerifier
 import io.beatmaps.cloudflare.SiteVerifyResponse
 import io.beatmaps.common.dbo.UserDao
-import io.beatmaps.controllers.captchaVerify
 import io.beatmaps.login.Session
 import io.beatmaps.login.server.DBTokenStore
 import io.ktor.client.HttpClient
@@ -21,9 +22,6 @@ import io.ktor.util.pipeline.PipelineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import nl.myndocs.oauth2.token.AccessToken
-import java.util.logging.Logger
-
-private val pipelineLogger = Logger.getLogger("bmio.Pipeline")
 
 enum class AuthType {
     None, Session, Oauth
@@ -75,13 +73,12 @@ fun ApplicationCall.checkOauthHeader(scope: OauthScope? = null) =
         } else { null }
     }
 
+suspend fun <T> PipelineContext<*, ApplicationCall>.captchaProvider(block: suspend (CaptchaProvider) -> T): T = block(CaptchaVerifier.provider(call))
+
 suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(client: HttpClient, captcha: String?, block: suspend PipelineContext<*, ApplicationCall>.() -> T, error: (suspend PipelineContext<*, ApplicationCall>.(SiteVerifyResponse) -> T)? = null) =
-    if (captchaVerify == null) {
-        pipelineLogger.warning("ReCAPTCHA not setup. Allowing request anyway")
-        block()
-    } else {
+    captchaProvider { provider ->
         withContext(Dispatchers.IO) {
-            captchaVerify.verify(client, captcha ?: "", call.request.origin.remoteHost)
+            CaptchaVerifier.verify(client, provider, captcha ?: "", call.request.origin.remoteHost)
         }.let { result ->
             if (result.success) {
                 block()

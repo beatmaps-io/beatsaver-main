@@ -51,6 +51,7 @@ abstract class BrowserTestBase {
 
         val dsl = BrowserDsl(testHost, client, page)
         try {
+            dsl.logout()
             block(dsl)
         } catch (e: Exception) {
             dsl.screenshot("${name.methodName}-error")

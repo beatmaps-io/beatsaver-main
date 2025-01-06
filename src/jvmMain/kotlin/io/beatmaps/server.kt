@@ -27,6 +27,7 @@ import io.beatmaps.api.searchRoute
 import io.beatmaps.api.testplayRoute
 import io.beatmaps.api.userRoute
 import io.beatmaps.api.voteRoute
+import io.beatmaps.cloudflare.CaptchaVerifier
 import io.beatmaps.cloudflare.filenameUpdater
 import io.beatmaps.common.Config
 import io.beatmaps.common.StatusPagesCustom
@@ -131,6 +132,7 @@ suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStat
 
 suspend fun ApplicationCall.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null, includeHeader: Boolean = true) {
     val sess = sessions.get<Session>()
+    val provider = CaptchaVerifier.provider(this)
 
     // Force renew session
     if (statusCode == HttpStatusCode.OK && sess != null) {
@@ -140,7 +142,7 @@ suspend fun ApplicationCall.genericPage(statusCode: HttpStatusCode = HttpStatusC
     if (sess != null && sess.uniqueName == null && request.path() != "/username") {
         respondRedirect("/username")
     } else {
-        respondHtmlTemplate(MainTemplate(sess, GenericPageTemplate(sess), includeHeader), statusCode) {
+        respondHtmlTemplate(MainTemplate(sess, GenericPageTemplate(sess, provider), includeHeader), statusCode) {
             headElements {
                 headerTemplate?.invoke(this)
             }

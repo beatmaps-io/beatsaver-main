@@ -1,7 +1,8 @@
 package io.beatmaps.pages
 
+import io.beatmaps.cloudflare.CaptchaProvider
+import io.beatmaps.cloudflare.CaptchaVerifier
 import io.beatmaps.common.solr.SolrHelper
-import io.beatmaps.controllers.captchaVerify
 import io.beatmaps.login.Session
 import io.ktor.server.html.Template
 import kotlinx.html.BODY
@@ -10,7 +11,7 @@ import kotlinx.html.id
 import kotlinx.html.main
 import kotlinx.html.script
 
-class GenericPageTemplate(private val s: Session?) : Template<BODY> {
+class GenericPageTemplate(private val s: Session?, private val provider: CaptchaProvider) : Template<BODY> {
     override fun BODY.apply() {
         main("container") {
             id = "root"
@@ -23,7 +24,7 @@ class GenericPageTemplate(private val s: Session?) : Template<BODY> {
         }
         div("d-none") {
             id = "config-data"
-            +"""{"showCaptcha": ${captchaVerify?.enabled() == true}, "v2Search": ${SolrHelper.enabled}}"""
+            +"""{"showCaptcha": ${CaptchaVerifier.enabled(provider)}, "captchaProvider": "${provider.name}", "v2Search": ${SolrHelper.enabled}}"""
         }
         script(src = "/static/modules.js") {}
         script(src = "/static/output.js") {}
