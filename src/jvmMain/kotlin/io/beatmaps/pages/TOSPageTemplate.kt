@@ -50,7 +50,13 @@ class TOSPageTemplate : Template<BODY> {
                     +"AI or Auto-Generated Content"
                 }
                 p {
-                    +"You must declare truthfully whether automated note generation tools were used in the creation of the uploaded content. Misrepresenting your upload by declaring it as human-made when an external auto-generation tool such as BeatSage was used in all or part of the mapping process will result in the removal of the upload and a warning issued. Automated lighting generated from human placed notes such as those generated from Lightmap or lolighter are the only exception."
+                    +"You must declare truthfully whether automated note generation tools were used in the creation of the uploaded content. Misrepresenting your upload by declaring it as human-made when an external auto-generation tool such as BeatSage was used in all or part of the mapping process will result in the removal of the upload and a warning issued. Repeat infractions may lead to account restrictions and/or termination."
+                }
+                p {
+                    +"Automated lighting generated from human placed notes such as those generated from Lightmap or lolighter are the only exception to this polixy."
+                }
+                p {
+                    +"Maps that contain AI or Auto-Generated Content may be subject to, at BeatSaver’s discretion, a 90 day retention period after which the content is removed."
                 }
                 hr("my-4") {}
                 h3 {
@@ -64,15 +70,28 @@ class TOSPageTemplate : Template<BODY> {
                     +"Content Guidelines"
                 }
                 p {
-                    +"The following apply to the content in a beatmap zip upload, map title, and description:"
+                    +"The following apply to all user-generated content (beatmap upload, titles, descriptions, etc.):"
                 }
                 ul {
                     listOf(
                         "Do not advertise or mention any content creation services, monetization, or donation methods. (Ko-fi, Patreon, Commissions, etc.)",
                         "Harassment and Hate speech are not allowed",
-                        "Explicit lyrics or profanities in song audio are only allowed if they are not harmful to the mentioned race, gender, nationality, sexuality, etc. in their intent.",
-                        "Explicit imagery in the map’s cover and any additional images included in the zip needs to be censored.",
-                        "Do not distribute viruses, malware, or phish others by any means such as exploits or links."
+                        "Human (or animated) bodies are not inherently offensive. Cover art should stick to “PG13-rated” themes and imagery to remain fully visible",
+                        "Overtly sexual and excessively violent imagery (\"R-rated\"), such as profile pictures or a map’s cover and any additional images included in the zip, needs to be censored or blurred",
+                        "Explicit Adult content (18+ only) is prohibited",
+                        "Do not distribute viruses, malware, or phish others by any means such as exploits or links"
+                    ).forEach {
+                        li {
+                            +it
+                        }
+                    }
+                }
+                p {
+                    +"The following apply to the content in a beatmap zip upload, map title, and description:"
+                }
+                ul {
+                    listOf(
+                        "Explicit lyrics or profanities in song audio are only allowed if they are not harmful to the mentioned race, gender, nationality, sexuality, etc. in their intent"
                     ).forEach {
                         li {
                             +it
@@ -95,7 +114,10 @@ class TOSPageTemplate : Template<BODY> {
                     }
                 }
                 p {
-                    +"Reviews or replies that violate these terms will be edited or removed and repeated violation may result in the suspension of review privileges or account access."
+                    +"Content that violates these terms will be edited or removed and repeated violation may result in the suspension of review privileges or account access."
+                }
+                p {
+                    +"If you discover content you believe violates these guidelines you can submit a report on the site or in the `#report-content` channel in the BeatSaver Discord. The BeatSaver team has the final say in determining what does and does not violate these guidelines."
                 }
                 hr("my-4") {}
                 h3 {
@@ -133,7 +155,9 @@ class TOSPageTemplate : Template<BODY> {
                     listOf(
                         "Excessive beatmap uploads and/or deletions",
                         "Creating multiple accounts to manipulate the site's review system ratings",
-                        "Posting misleading reviews"
+                        "Posting misleading reviews",
+                        "\"Reserving\" map keys / ids",
+                        "Commercializing content available on the site"
                     ).forEach {
                         li {
                             +it
@@ -170,13 +194,13 @@ class TOSPageTemplate : Template<BODY> {
                     +"BeatSaver may restrict or terminate your account and access to the service at any time and for any reason. You may, as the result of termination, lose your account and all information and data associated."
                 }
                 p {
-                    +"Some reasons that would result in your account being restricted or terminated are:"
+                    +"Reasons that would result in your account being restricted or terminated include, but are not limited to:"
                 }
                 ul {
                     listOf(
                         "Excessive content theft",
                         "Multiple warnings of policy violations",
-                        "Malicious uploads, map titles, or descriptions",
+                        "Malicious uploads, map titles, descriptions, or activity",
                         "Excessive policy violations"
                     ).forEach {
                         li {
@@ -200,7 +224,7 @@ class TOSPageTemplate : Template<BODY> {
                 }
                 hr("my-4") {}
                 p("text-muted") {
-                    +"This document was last updated on March 12, 2023"
+                    +"This document was last updated on January 6, 2025"
                 }
             }
         }
