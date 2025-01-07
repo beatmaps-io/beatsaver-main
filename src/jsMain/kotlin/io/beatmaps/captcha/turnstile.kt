@@ -73,7 +73,8 @@ val turnstile = fc<CaptchaProps> { props ->
             this.ref = ref
             attrs.options = TurnStileRenderOptions(
                 appearance = "interaction-only",
-                execution = "execute"
+                execution = "execute",
+                action = props.page
             )
             attrs.onError = {
                 pRef.current?.invoke()

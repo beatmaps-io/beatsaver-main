@@ -58,6 +58,7 @@ val reviewTable = fc<ReviewTableProps>("reviewTable") { props ->
 
     captcha {
         attrs.captchaRef = captchaRef
+        attrs.page = "review"
     }
 
     if (props.visible != false) {

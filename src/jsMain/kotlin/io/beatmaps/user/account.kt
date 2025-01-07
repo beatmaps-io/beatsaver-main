@@ -304,5 +304,6 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
 
     captcha {
         attrs.captchaRef = captchaRef
+        attrs.page = "account"
     }
 }

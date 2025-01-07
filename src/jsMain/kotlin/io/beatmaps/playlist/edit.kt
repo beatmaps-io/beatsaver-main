@@ -250,6 +250,7 @@ val editPlaylist = fc<Props>("editPlaylist") {
                         // Middle element otherwise the button corners don't round properly
                         captcha {
                             attrs.captchaRef = captchaRef
+                            attrs.page = "playlist"
                         }
                     }
                     button(classes = "btn btn-success w-50", type = ButtonType.submit) {

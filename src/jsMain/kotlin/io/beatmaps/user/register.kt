@@ -150,5 +150,6 @@ val signupPage = fc<Props>("signupPage") {
 
     captcha {
         attrs.captchaRef = captchaRef
+        attrs.page = "register"
     }
 }
