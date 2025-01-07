@@ -20,7 +20,7 @@ class TypedSessionTracker<S : Any>(
     private val storage: TypedSessionStorage<S>,
     private val sessionIdProvider: () -> String
 ) : SessionTracker<S> {
-    private val sessionIdKey: AttributeKey<String> = AttributeKey("SessionId")
+    val sessionIdKey: AttributeKey<String> = AttributeKey("SessionId")
 
     override suspend fun load(call: ApplicationCall, transport: String?): S? {
         val sessionId = transport ?: return null
