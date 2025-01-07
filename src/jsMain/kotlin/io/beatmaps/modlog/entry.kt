@@ -145,7 +145,7 @@ val modLogEntryRenderer = fc<ModLogEntryProps>("modLogEntryRenderer") {
                                 },
                                 it.action.nsfw?.let {
                                     if (it) "Marked as NSFW" else "Marked as clean"
-                                },
+                                }
                             )
                             if (info.any()) {
                                 p("card-text") {
