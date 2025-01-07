@@ -10,6 +10,7 @@ import kotlin.js.Promise
 external interface CaptchaProps : Props {
     var captchaRef: MutableRefObject<ICaptchaHandler>
     var enabled: Boolean
+    var page: String
 }
 
 interface ICaptchaHandler {
@@ -29,14 +30,17 @@ val captcha = fc<CaptchaProps>("CaptchaWrapper") { props ->
             "ReCaptcha" -> recaptcha {
                 attrs.captchaRef = props.captchaRef
                 attrs.enabled = configData.showCaptcha
+                attrs.page = props.page
             }
             "Turnstile" -> turnstile {
                 attrs.captchaRef = props.captchaRef
                 attrs.enabled = configData.showCaptcha
+                attrs.page = props.page
             }
             "HCaptcha" -> hcaptcha {
                 attrs.captchaRef = props.captchaRef
                 attrs.enabled = configData.showCaptcha
+                attrs.page = props.page
             }
             else -> {
                 props.captchaRef.current = FakeCaptchaHandler

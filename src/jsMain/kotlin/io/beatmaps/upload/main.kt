@@ -189,6 +189,7 @@ val uploadPage = fc<UploadPageProps>("uploadPage") {
 
                     captcha {
                         attrs.captchaRef = captchaRef
+                        attrs.page = "upload"
                     }
                 }
             }
