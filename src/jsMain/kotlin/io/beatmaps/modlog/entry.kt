@@ -7,6 +7,7 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.common.DeletedData
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
+import io.beatmaps.common.FlagsEditData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.ReplyDeleteData
 import io.beatmaps.common.ReplyModerationData
@@ -132,6 +133,25 @@ val modLogEntryRenderer = fc<ModLogEntryProps>("modLogEntryRenderer") {
                                                 attrs.tag = it
                                             }
                                         }
+                                    }
+                                }
+                            }
+                        }
+
+                        is FlagsEditData -> {
+                            val info = listOfNotNull(
+                                it.action.ai?.let {
+                                    if (it) "Marked as AI" else "Marked as human-made"
+                                },
+                                it.action.nsfw?.let {
+                                    if (it) "Marked as NSFW" else "Marked as clean"
+                                },
+                            )
+                            if (info.any()) {
+                                p("card-text") {
+                                    info.forEachIndexed { idx, txt ->
+                                        if (idx > 0) br {}
+                                        +txt
                                     }
                                 }
                             }

@@ -53,10 +53,10 @@ class TOSPageTemplate : Template<BODY> {
                     +"You must declare truthfully whether automated note generation tools were used in the creation of the uploaded content. Misrepresenting your upload by declaring it as human-made when an external auto-generation tool such as BeatSage was used in all or part of the mapping process will result in the removal of the upload and a warning issued. Repeat infractions may lead to account restrictions and/or termination."
                 }
                 p {
-                    +"Automated lighting generated from human placed notes such as those generated from Lightmap or lolighter are the only exception to this polixy."
+                    +"Automated lighting generated from human placed notes such as those generated from Lightmap or lolighter are the only exception to this policy."
                 }
                 p {
-                    +"Maps that contain AI or Auto-Generated Content may be subject to, at BeatSaver’s discretion, a 90 day retention period after which the content is removed."
+                    +"Maps that contain AI or Auto-Generated Content may be subject to, at BeatSaver’s discretion, a 90-day retention period after which the content is removed."
                 }
                 hr("my-4") {}
                 h3 {
@@ -91,7 +91,8 @@ class TOSPageTemplate : Template<BODY> {
                 }
                 ul {
                     listOf(
-                        "Explicit lyrics or profanities in song audio are only allowed if they are not harmful to the mentioned race, gender, nationality, sexuality, etc. in their intent"
+                        "Explicit lyrics or profanities in song audio or map descriptions are only allowed if they are not harmful to the mentioned race, gender, nationality, sexuality, etc. in their intent",
+                        "Map titles or descriptions should be free of excessively sexual or violent language"
                     ).forEach {
                         li {
                             +it
