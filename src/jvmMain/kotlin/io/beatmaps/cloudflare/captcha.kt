@@ -7,9 +7,7 @@ import io.ktor.client.call.body
 import io.ktor.client.request.forms.submitForm
 import io.ktor.http.parameters
 import io.ktor.http.userAgent
-import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.sessions.sessionId
 import io.ktor.util.AttributeKey
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
