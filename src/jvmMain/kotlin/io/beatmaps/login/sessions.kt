@@ -3,6 +3,7 @@ package io.beatmaps.login
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.ReplaceOptions
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.install
 import io.ktor.server.sessions.CookieConfiguration
 import io.ktor.server.sessions.SessionProvider
@@ -12,6 +13,8 @@ import io.ktor.server.sessions.SessionTransportCookie
 import io.ktor.server.sessions.Sessions
 import io.ktor.server.sessions.defaultSessionSerializer
 import io.ktor.server.sessions.generateSessionId
+import io.ktor.server.sessions.sessionId
+import io.ktor.util.AttributeKey
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Contextual
@@ -71,6 +74,14 @@ object MongoClient {
         }
 }
 
+val BMSessionProvidersKey = AttributeKey<SessionProvider<*>>("BMSessionProvidersKey")
+fun ApplicationCall.bmSessionId() = application.attributes[BMSessionProvidersKey].let { provider ->
+    when (val tracker = provider.tracker) {
+        is TypedSessionTracker<*> -> attributes.getOrNull(tracker.sessionIdKey)
+        else -> sessionId
+    }
+}
+
 fun Application.installSessions() {
     install(Sessions) {
         val sessionType = Session::class
@@ -92,6 +103,8 @@ fun Application.installSessions() {
 
         val provider = SessionProvider(cookieName, sessionType, transport, tracker)
         register(provider)
+
+        this@installSessions.attributes.put(BMSessionProvidersKey, provider)
     }
 }
 

@@ -1,11 +1,13 @@
 package io.beatmaps.cloudflare
 
 import io.beatmaps.api.ActionResponse
+import io.beatmaps.login.bmSessionId
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.submitForm
 import io.ktor.http.parameters
 import io.ktor.http.userAgent
+import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.sessions.sessionId
 import io.ktor.util.AttributeKey
@@ -75,7 +77,7 @@ object CaptchaVerifier {
         if (totalWeight == 0f) {
             listOf(weights.first().first to 1f)
         } else {
-            weights.fold(0f to emptyList<Pair<CaptchaProvider, Float>>()) { (acc, list), next ->
+            weights.filter { it.second > 0 }.fold(0f to emptyList<Pair<CaptchaProvider, Float>>()) { (acc, list), next ->
                 val thisWeight = next.second / totalWeight
                 val cumulativeWeight = acc + thisWeight
                 cumulativeWeight to list.plus(next.first to cumulativeWeight)
@@ -87,7 +89,7 @@ object CaptchaVerifier {
         if (cdf.size == 1) {
             cdf.first()
         } else {
-            Random(call.sessionId.hashCode()).nextFloat().let { nextRandom ->
+            Random(call.bmSessionId().hashCode()).nextFloat().let { nextRandom ->
                 cdf.first { it.second > nextRandom }
             }
         }.first
