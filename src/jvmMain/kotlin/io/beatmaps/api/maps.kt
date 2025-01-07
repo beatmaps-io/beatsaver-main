@@ -9,6 +9,7 @@ import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.DeletedData
+import io.beatmaps.common.FlagsEditData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.AiDeclarationType
@@ -16,6 +17,7 @@ import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.db.NowExpression
+import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
@@ -260,22 +262,39 @@ fun Route.mapDetailRoute() {
             val mapUpdate = call.receive<AiDeclaration>()
             val result = transaction {
                 val admin = user.isAdmin()
-                Beatmap.update({
-                    (Beatmap.id eq mapUpdate.id).let { q ->
-                        if (admin) {
-                            q // If current user is admin don't check the user
-                        } else {
-                            q and (Beatmap.uploader eq user.userId)
+
+                transaction {
+                    Beatmap.updateReturning(
+                        {
+                            (Beatmap.id eq mapUpdate.id).let { q ->
+                                if (admin) {
+                                    q // If current user is admin don't check the user
+                                } else {
+                                    q and (Beatmap.uploader eq user.userId)
+                                }
+                            }
+                        }, {
+                            it[declaredAi] = when {
+                                !mapUpdate.automapper && admin -> AiDeclarationType.None
+                                mapUpdate.automapper && admin -> AiDeclarationType.Admin
+                                else -> AiDeclarationType.Uploader
+                            }
+                            it[updatedAt] = NowExpression(updatedAt)
+                        },
+                        Beatmap.uploader
+                    ).let { rows ->
+                        (!rows.isNullOrEmpty()).also { success ->
+                            if (success && admin && rows != null) {
+                                ModLog.insert(
+                                    user.userId,
+                                    mapUpdate.id,
+                                    FlagsEditData(ai = mapUpdate.automapper),
+                                    rows.first()[Beatmap.uploader].value
+                                )
+                            }
                         }
                     }
-                }) {
-                    it[declaredAi] = when {
-                        !mapUpdate.automapper && admin -> AiDeclarationType.None
-                        mapUpdate.automapper && admin -> AiDeclarationType.Admin
-                        else -> AiDeclarationType.Uploader
-                    }
-                    it[updatedAt] = NowExpression(updatedAt)
-                } > 0
+                }
             }
 
             if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated.ai", null, mapUpdate.id)
@@ -290,12 +309,26 @@ fun Route.mapDetailRoute() {
             } else {
                 val mapUpdate = call.receive<MarkNsfw>()
                 val result = transaction {
-                    Beatmap.update({
-                        (Beatmap.id eq mapUpdate.id)
-                    }) {
-                        it[nsfw] = mapUpdate.nsfw
-                        it[updatedAt] = NowExpression(updatedAt)
-                    } > 0
+                    Beatmap.updateReturning(
+                        {
+                            (Beatmap.id eq mapUpdate.id)
+                        }, {
+                            it[nsfw] = mapUpdate.nsfw
+                            it[updatedAt] = NowExpression(updatedAt)
+                        },
+                        Beatmap.uploader
+                    ).let { rows ->
+                        (!rows.isNullOrEmpty()).also { success ->
+                            if (success && rows != null) {
+                                ModLog.insert(
+                                    user.userId,
+                                    mapUpdate.id,
+                                    FlagsEditData(nsfw = mapUpdate.nsfw),
+                                    rows.first()[Beatmap.uploader].value
+                                )
+                            }
+                        }
+                    }
                 }
 
                 if (result) call.pub("beatmaps", "maps.${mapUpdate.id}.updated.nsfw", null, mapUpdate.id)
