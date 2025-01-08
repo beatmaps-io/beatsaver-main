@@ -5,12 +5,13 @@ import external.CancelTokenSource
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.History
+import io.beatmaps.api.GenericSearchResponse
 import io.beatmaps.api.ModLogEntry
 import io.beatmaps.common.ModLogOpType
 import io.beatmaps.globalContext
 import io.beatmaps.setPageTitle
-import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
+import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.dom.hasClass
 import kotlinx.html.ButtonType
@@ -39,8 +40,10 @@ import react.router.useNavigate
 import react.useContext
 import react.useEffect
 import react.useEffectOnce
+import react.useMemo
 import react.useRef
 import react.useState
+import kotlin.js.Promise
 
 val modlog = fc<Props>("modlog") {
     val resultsTable = useRef<HTMLElement>()
@@ -60,7 +63,8 @@ val modlog = fc<Props>("modlog") {
     val (user, setUser) = useState(userLocal)
     val (type, setType) = useState(typeLocal)
     val (newType, setNewType) = useState(typeLocal)
-    val (resultsKey, setResultsKey) = useState(Any())
+    val resetRef = useRef<() -> Unit>()
+    val loadPageRef = useRef<(Int, CancelTokenSource) -> Promise<GenericSearchResponse<ModLogEntry>?>>()
 
     useEffectOnce {
         setPageTitle("ModLog")
@@ -81,7 +85,7 @@ val modlog = fc<Props>("modlog") {
     }
 
     useDidUpdateEffect(mod, user, type) {
-        setResultsKey(Any())
+        resetRef.current?.invoke()
     }
 
     fun urlExtension(): String {
@@ -94,12 +98,12 @@ val modlog = fc<Props>("modlog") {
         return if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
     }
 
-    val loadPage = { toLoad: Int, token: CancelTokenSource ->
-        Axios.get<Array<ModLogEntry>>(
+    loadPageRef.current = { toLoad: Int, token: CancelTokenSource ->
+        Axios.get<List<ModLogEntry>>(
             "${Config.apibase}/modlog/$toLoad" + urlExtension(),
-            generateConfig<String, Array<ModLogEntry>>(token.token)
+            generateConfig<String, List<ModLogEntry>>(token.token)
         ).then {
-            return@then it.data.toList()
+            return@then GenericSearchResponse.from(it.data)
         }
     }
 
@@ -107,6 +111,19 @@ val modlog = fc<Props>("modlog") {
         val ext = urlExtension()
         if (location.search != ext) {
             history.push("/modlog$ext")
+        }
+    }
+
+    val renderer = useMemo {
+        InfiniteScrollElementRenderer<ModLogEntry> {
+            modLogEntryRenderer {
+                attrs.entry = it
+                attrs.setUser = { modStr, userStr ->
+                    modRef.current?.value = modStr
+                    userRef.current?.value = userStr
+                    updateHistory()
+                }
+            }
         }
     }
 
@@ -173,29 +190,20 @@ val modlog = fc<Props>("modlog") {
                 ref = resultsTable
                 key = "modlogTable"
 
-                child(ModLogInfiniteScroll::class) {
-                    attrs.resultsKey = resultsKey
+                modLogInfiniteScroll {
+                    attrs.resetRef = resetRef
                     attrs.rowHeight = 48.0
                     attrs.itemsPerPage = 30
                     attrs.container = resultsTable
-                    attrs.loadPage = loadPage
+                    attrs.loadPage = loadPageRef
                     attrs.childFilter = {
                         !it.hasClass("hiddenRow")
                     }
-                    attrs.renderElement = InfiniteScrollElementRenderer {
-                        modLogEntryRenderer {
-                            attrs.entry = it
-                            attrs.setUser = { modStr, userStr ->
-                                modRef.current?.value = modStr
-                                userRef.current?.value = userStr
-                                updateHistory()
-                            }
-                        }
-                    }
+                    attrs.renderElement = renderer
                 }
             }
         }
     }
 }
 
-class ModLogInfiniteScroll : InfiniteScroll<ModLogEntry>()
+val modLogInfiniteScroll = generateInfiniteScrollComponent(ModLogEntry::class)

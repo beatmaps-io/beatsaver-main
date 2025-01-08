@@ -4,10 +4,11 @@ import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
 import io.beatmaps.Config
+import io.beatmaps.api.GenericSearchResponse
 import io.beatmaps.api.UserDetail
-import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.userCard
+import io.beatmaps.user.list.userInfiniteScroll
 import io.beatmaps.util.useDidUpdateEffect
 import io.beatmaps.util.userTitles
 import org.w3c.dom.HTMLDivElement
@@ -15,8 +16,9 @@ import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
 import react.fc
+import react.useMemo
 import react.useRef
-import react.useState
+import kotlin.js.Promise
 
 external interface FollowListProps : Props {
     var scrollParent: HTMLDivElement?
@@ -25,12 +27,13 @@ external interface FollowListProps : Props {
 }
 
 val followList = fc<FollowListProps>("followList") { props ->
-    val (resultsKey, setResultsKey) = useState(Any())
+    val resetRef = useRef<() -> Unit>()
+    val loadPageRef = useRef<(Int, CancelTokenSource) -> Promise<GenericSearchResponse<UserDetail>?>>()
 
     val resultRef = useRef<HTMLElement>()
 
     useDidUpdateEffect(props.following, props.followedBy) {
-        setResultsKey(Any())
+        resetRef.current?.invoke()
     }
 
     fun getUrl(page: Int): String {
@@ -42,38 +45,40 @@ val followList = fc<FollowListProps>("followList") { props ->
             }
     }
 
-    val loadPage = { toLoad: Int, token: CancelTokenSource ->
-        Axios.get<Array<UserDetail>>(
+    loadPageRef.current = { toLoad: Int, token: CancelTokenSource ->
+        Axios.get<List<UserDetail>>(
             getUrl(toLoad),
-            generateConfig<String, Array<UserDetail>>(token.token)
+            generateConfig<String, List<UserDetail>>(token.token)
         ).then {
-            return@then it.data.toList()
+            return@then GenericSearchResponse.from(it.data)
+        }
+    }
+
+    val renderer = useMemo {
+        InfiniteScrollElementRenderer<UserDetail> { u ->
+            if (u != null) {
+                userCard {
+                    attrs.id = u.id
+                    attrs.avatar = u.avatar
+                    attrs.username = u.name
+                    attrs.titles = userTitles(u)
+                }
+            }
         }
     }
 
     div {
         ref = resultRef
 
-        child(FollowerInfiniteScroll::class) {
-            attrs.resultsKey = resultsKey
+        userInfiniteScroll {
+            attrs.resetRef = resetRef
             attrs.rowHeight = 73.5
             attrs.itemsPerPage = 20
             attrs.container = resultRef
             attrs.scrollParent = props.scrollParent
             attrs.headerSize = 0.0
-            attrs.loadPage = loadPage
-            attrs.renderElement = InfiniteScrollElementRenderer { u ->
-                if (u != null) {
-                    userCard {
-                        attrs.id = u.id
-                        attrs.avatar = u.avatar
-                        attrs.username = u.name
-                        attrs.titles = userTitles(u)
-                    }
-                }
-            }
+            attrs.loadPage = loadPageRef
+            attrs.renderElement = renderer
         }
     }
 }
-
-class FollowerInfiniteScroll : InfiniteScroll<UserDetail>()

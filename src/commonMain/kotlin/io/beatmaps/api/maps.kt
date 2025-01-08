@@ -160,6 +160,13 @@ data class SearchResponse(override val docs: List<MapDetail>? = null, override v
 interface GenericSearchResponse<T> {
     val docs: List<T>?
     val info: SearchInfo?
+
+    companion object {
+        fun <T> from(docs: List<T>) = object : GenericSearchResponse<T> {
+            override val docs = docs
+            override val info = null
+        }
+    }
 }
 
 @Serializable
