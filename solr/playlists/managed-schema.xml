@@ -30,7 +30,6 @@
             <filter name="stop" words="lang/stopwords_en.txt" ignoreCase="true"/>
             <filter name="englishPossessive"/>
             <filter name="keywordMarker" protected="protwords.txt"/>
-            <filter name="porterStem"/>
             <filter name="edgeNGram" minGramSize="3" maxGramSize="8" preserveOriginal="true"/>
         </analyzer>
         <analyzer type="query">
@@ -40,7 +39,6 @@
             <filter name="commonGramsQuery" words="lang/stopwords_en.txt" ignoreCase="true"/>
             <filter name="englishPossessive"/>
             <filter name="keywordMarker" protected="protwords.txt"/>
-            <filter name="porterStem"/>
         </analyzer>
     </fieldType>
     <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
