@@ -7,13 +7,14 @@ import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.AlertOptionsRequest
 import io.beatmaps.api.AlertUpdateAll
+import io.beatmaps.api.GenericSearchResponse
 import io.beatmaps.api.UserAlert
 import io.beatmaps.api.UserAlertStats
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
-import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
+import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.util.buildURL
 import io.beatmaps.util.includeIfNotNull
 import io.beatmaps.util.updateAlertDisplay
@@ -41,8 +42,10 @@ import react.router.useLocation
 import react.router.useNavigate
 import react.useEffect
 import react.useEffectOnce
+import react.useMemo
 import react.useRef
 import react.useState
+import kotlin.js.Promise
 
 val alertsPage = fc<Props>("alertsPage") {
     val location = useLocation()
@@ -55,7 +58,8 @@ val alertsPage = fc<Props>("alertsPage") {
     val (filters, setFilters) = useState(newFilters)
 
     val (alertStats, setAlertStats) = useState<UserAlertStats?>(null)
-    val (resultsKey, setResultsKey) = useState(Any())
+    val resetRef = useRef<() -> Unit>()
+    val loadPageRef = useRef<(Int, CancelTokenSource) -> Promise<GenericSearchResponse<UserAlert>?>>()
     val (hiddenAlerts, setHiddenAlerts) = useState(listOf<Int>())
     val (forceHide, setForceHide) = useState(false)
     val (loading, setLoading) = useState(false)
@@ -88,19 +92,19 @@ val alertsPage = fc<Props>("alertsPage") {
     }
 
     useDidUpdateEffect(read, useObjectMemoize(filters)) {
-        setResultsKey(Any())
+        resetRef.current?.invoke()
         setHiddenAlerts(listOf())
         setForceHide(false)
     }
 
-    val loadPage = { toLoad: Int, token: CancelTokenSource ->
+    loadPageRef.current = { toLoad: Int, token: CancelTokenSource ->
         val type = if (read) "read" else "unread"
         val typeFilter = if (filters.any()) "?type=${filters.joinToString(",") { it.name.lowercase() }}" else ""
         Axios.get<List<UserAlert>>(
             "${Config.apibase}/alerts/$type/$toLoad$typeFilter",
             generateConfig<String, List<UserAlert>>(token.token)
         ).then {
-            return@then it.data
+            return@then GenericSearchResponse.from(it.data)
         }
     }
 
@@ -139,6 +143,22 @@ val alertsPage = fc<Props>("alertsPage") {
             )
         }.catch {
             setLoading(false)
+        }
+    }
+
+    val renderer = useMemo(read, forceHide, hiddenAlerts) {
+        InfiniteScrollElementRenderer<UserAlert> {
+            alert {
+                attrs.alert = it
+                attrs.read = read
+                attrs.hidden = (forceHide && it?.type != EAlertType.Collaboration) || hiddenAlerts.contains(it?.hashCode())
+                attrs.markAlert = { stats ->
+                    setAlertStats(stats)
+                    it?.hashCode()?.let { hc ->
+                        setHiddenAlerts(hiddenAlerts + hc)
+                    }
+                }
+            }
         }
     }
 
@@ -280,28 +300,16 @@ val alertsPage = fc<Props>("alertsPage") {
             ref = resultsColumn
             key = "resultsColumn"
 
-            child(AlertInfiniteScroll::class) {
-                attrs.resultsKey = resultsKey
+            alertInfiniteScroll {
+                attrs.resetRef = resetRef
                 attrs.rowHeight = 114.0
                 attrs.itemsPerPage = 20
                 attrs.container = resultsColumn
-                attrs.loadPage = loadPage
-                attrs.renderElement = InfiniteScrollElementRenderer {
-                    alert {
-                        attrs.alert = it
-                        attrs.read = read
-                        attrs.hidden = (forceHide && it?.type != EAlertType.Collaboration) || hiddenAlerts.contains(it?.hashCode())
-                        attrs.markAlert = { stats ->
-                            setAlertStats(stats)
-                            it?.hashCode()?.let { hc ->
-                                setHiddenAlerts(hiddenAlerts + hc)
-                            }
-                        }
-                    }
-                }
+                attrs.loadPage = loadPageRef
+                attrs.renderElement = renderer
             }
         }
     }
 }
 
-class AlertInfiniteScroll : InfiniteScroll<UserAlert>()
+val alertInfiniteScroll = generateInfiniteScrollComponent(UserAlert::class)

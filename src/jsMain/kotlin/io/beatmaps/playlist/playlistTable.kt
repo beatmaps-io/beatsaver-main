@@ -4,22 +4,25 @@ import external.Axios
 import external.CancelTokenSource
 import external.generateConfig
 import io.beatmaps.Config
+import io.beatmaps.api.GenericSearchResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistSearchResponse
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.configContext
-import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
+import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.shared.search.CommonParams
 import io.beatmaps.util.encodeURIComponent
 import io.beatmaps.util.useDidUpdateEffect
 import org.w3c.dom.HTMLElement
 import react.Props
+import react.RefObject
 import react.dom.div
 import react.fc
 import react.useContext
+import react.useMemo
 import react.useRef
-import react.useState
+import kotlin.js.Promise
 
 data class PlaylistSearchParams(
     override val search: String,
@@ -39,17 +42,18 @@ external interface PlaylistTableProps : Props {
     var mapId: String?
     var small: Boolean?
     var visible: Boolean?
-    var updateScrollIndex: ((Int) -> Unit)?
+    var updateScrollIndex: RefObject<(Int) -> Unit>
 }
 
 val playlistTable = fc<PlaylistTableProps>("playlistTable") { props ->
-    val (resultsKey, setResultsKey) = useState(Any())
+    val resetRef = useRef<() -> Unit>()
+    val loadPageRef = useRef<(Int, CancelTokenSource) -> Promise<GenericSearchResponse<PlaylistFull>?>>()
     val config = useContext(configContext)
 
     val resultsTable = useRef<HTMLElement>()
 
     useDidUpdateEffect(props.userId, props.search) {
-        setResultsKey(Any())
+        resetRef.current?.invoke()
     }
 
     fun getUrl(page: Int) =
@@ -71,12 +75,21 @@ val playlistTable = fc<PlaylistTableProps>("playlistTable") { props ->
             } ?: ""
         }
 
-    val loadPage = { toLoad: Int, token: CancelTokenSource ->
+    loadPageRef.current = { toLoad: Int, token: CancelTokenSource ->
         Axios.get<PlaylistSearchResponse>(
             getUrl(toLoad),
             generateConfig<String, PlaylistSearchResponse>(token.token)
         ).then {
-            return@then it.data.docs
+            return@then it.data
+        }
+    }
+
+    val renderer = useMemo(props.small) {
+        InfiniteScrollElementRenderer<PlaylistFull> { pl ->
+            playlistInfo {
+                attrs.playlist = pl
+                attrs.small = props.small
+            }
         }
     }
 
@@ -85,22 +98,17 @@ val playlistTable = fc<PlaylistTableProps>("playlistTable") { props ->
             ref = resultsTable
             key = "resultsTable"
 
-            child(PlaylistInfiniteScroll::class) {
-                attrs.resultsKey = resultsKey
+            playlistInfiniteScroll {
+                attrs.resetRef = resetRef
                 attrs.rowHeight = 80.0
                 attrs.itemsPerPage = 20
                 attrs.container = resultsTable
-                attrs.renderElement = InfiniteScrollElementRenderer { pl ->
-                    playlistInfo {
-                        attrs.playlist = pl
-                        attrs.small = props.small
-                    }
-                }
+                attrs.renderElement = renderer
                 attrs.updateScrollIndex = props.updateScrollIndex
-                attrs.loadPage = loadPage
+                attrs.loadPage = loadPageRef
             }
         }
     }
 }
 
-class PlaylistInfiniteScroll : InfiniteScroll<PlaylistFull>()
+val playlistInfiniteScroll = generateInfiniteScrollComponent(PlaylistFull::class)

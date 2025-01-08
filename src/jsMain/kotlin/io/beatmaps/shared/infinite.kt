@@ -3,21 +3,27 @@ package io.beatmaps.shared
 import external.Axios
 import external.CancelTokenSource
 import external.invoke
+import io.beatmaps.api.GenericSearchResponse
 import kotlinx.browser.window
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.asList
 import org.w3c.dom.events.Event
+import react.MutableRefObject
 import react.Props
 import react.RBuilder
-import react.RComponent
 import react.RefObject
-import react.State
-import react.setState
+import react.fc
+import react.memo
+import react.useEffect
+import react.useEffectOnce
+import react.useRef
+import react.useState
 import kotlin.js.Promise
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.reflect.KClass
 
 sealed interface ElementRenderer<T>
 
@@ -30,194 +36,59 @@ fun interface IndexedInfiniteScrollElementRenderer<T> : ElementRenderer<T> {
 }
 
 external interface InfiniteScrollProps<T> : Props {
-    var resultsKey: Any?
+    var resetRef: MutableRefObject<() -> Unit>
     var rowHeight: Double
-    var itemsPerRow: (() -> Int)?
+    var itemsPerRow: RefObject<() -> Int>?
     var itemsPerPage: Int
     var container: RefObject<HTMLElement>
     var renderElement: ElementRenderer<T>
-    var updateScrollIndex: ((Int) -> Unit)?
-    var loadPage: (Int, CancelTokenSource) -> Promise<List<T>?>
+    var updateScrollIndex: RefObject<(Int) -> Unit>?
+    var loadPage: RefObject<(Int, CancelTokenSource) -> Promise<GenericSearchResponse<T>?>>?
     var grace: Int?
     var childFilter: ((Element) -> Boolean)?
     var scrollParent: Element?
     var headerSize: Double?
 }
 
-external interface InfiniteScrollState<T> : State {
-    var itemsPerRow: Int?
-    var visiblePages: IntRange?
-    var visItem: Int?
-    var visPage: Int?
-    var scroll: Boolean?
-    var firstLoad: Boolean?
-    var loading: Boolean?
-    var token: CancelTokenSource?
-    var pages: Map<Int, List<T>>?
-    var finalPage: Int?
-}
+fun <T : Any> generateInfiniteScrollComponent(clazz: KClass<T>) = memo(internalGenerateInfiniteScrollComponent<T>(clazz.simpleName ?: "Unknown"))
 
-open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScrollState<T>>() {
-    private fun lastPage() = min(
-        state.finalPage ?: Int.MAX_VALUE,
-        (state.pages?.maxByOrNull { it.key }?.key ?: 0).let { alt ->
-            state.visiblePages?.let {
+private fun <T> internalGenerateInfiniteScrollComponent(name: String) = fc<InfiniteScrollProps<T>>("${name}InfiniteScroll") { props ->
+    val (pages, setPages) = useState(emptyMap<Int, List<T>>())
+
+    val loading = useRef(false)
+    val pagesRef = useRef<Map<Int, List<T>>>()
+
+    val finalPage = useRef<Int>()
+    val itemsPerRow = useRef<Int>()
+
+    val visItem = useRef<Int>()
+    val visPage = useRef<Int>()
+    val visiblePages = useRef<IntRange>()
+    val scroll = useRef<Boolean>()
+    val token = useRef<CancelTokenSource>()
+
+    val itemsPerPage = useRef(props.itemsPerPage)
+    val loadNextPage = useRef<() -> Unit>()
+
+    val emptyPage = List<T?>(props.itemsPerPage) { null }
+
+    fun rowsPerPage() = (itemsPerPage.current ?: 20) / (itemsPerRow.current ?: 1)
+    fun pageHeight() = props.rowHeight * rowsPerPage()
+    fun headerSize() = props.headerSize ?: 54.5
+    fun beforeContent() = headerSize() + (props.grace ?: 5)
+
+    fun lastPage() = min(
+        finalPage.current ?: Int.MAX_VALUE,
+        (pages.maxByOrNull { it.key }?.key ?: 0).let { alt ->
+            visiblePages.current?.let {
                 max(it.last, alt)
             } ?: alt
         }
     )
 
-    private fun rowsPerPage() = props.itemsPerPage / (state.itemsPerRow ?: 1)
-    private fun pageHeight() = props.rowHeight * rowsPerPage()
-    private fun headerSize() = props.headerSize ?: 54.5
-    private fun beforeContent() = headerSize() + (props.grace ?: 5)
+    fun filteredChildren() = props.container.current?.children?.asList()?.filter(props.childFilter ?: { true })
 
-    override fun componentDidMount() {
-        onHashChange(null)
-
-        window.addEventListener("resize", onResize)
-        window.addEventListener("hashchange", onHashChange)
-    }
-
-    override fun componentWillUnmount() {
-        state.token?.cancel("Unmounted")
-
-        (props.scrollParent ?: window).removeEventListener("scroll", onScroll)
-        window.removeEventListener("resize", onResize)
-        window.removeEventListener("hashchange", onHashChange)
-    }
-
-    override fun componentWillUpdate(nextProps: InfiniteScrollProps<T>, nextState: InfiniteScrollState<T>) {
-        if (nextProps.resultsKey !== props.resultsKey) {
-            state.token?.cancel("Another request started")
-            nextState.apply {
-                updateState(0)
-
-                scroll = false
-                loading = false
-                pages = mapOf()
-                token = Axios.CancelToken.source()
-                finalPage = null
-            }
-
-            window.setTimeout({
-                scrollTo(0.0, 0.0)
-                loadNextPage()
-            }, 0)
-        }
-    }
-
-    private fun scrollTo(x: Double, y: Double) {
-        props.scrollParent?.scrollTo(x, y) ?: run {
-            window.scrollTo(x, y)
-        }
-    }
-
-    private fun innerHeight() = props.scrollParent?.clientHeight ?: window.innerHeight
-
-    override fun componentDidUpdate(prevProps: InfiniteScrollProps<T>, prevState: InfiniteScrollState<T>, snapshot: Any) {
-        if (state.visItem != prevState.visItem) {
-            loadNextPage()
-        }
-    }
-
-    val loading = { newState: Boolean -> setState { loading = newState } }
-
-    private fun loadNextPage() {
-        if (state.loading == true) return
-
-        // Find first visible page that isn't loaded or beyond the final page
-        val toLoad = state.visiblePages?.firstOrNull { state.finalPage?.let { f -> it < f } != false && state.pages?.containsKey(it) != true } ?: return
-
-        val newToken = state.token ?: Axios.CancelToken.source()
-        setState {
-            loading = true
-            if (token == null) {
-                token = newToken
-            }
-        }
-
-        val shouldScroll = if (state.scroll != false) state.visItem else null
-        props.loadPage(toLoad, newToken).then { page ->
-            if (state.firstLoad != false) {
-                (props.scrollParent ?: window).addEventListener("scroll", onScroll)
-            }
-
-            setState {
-                if (page?.size?.let { s -> s < props.itemsPerPage } == true && toLoad < (finalPage ?: Int.MAX_VALUE)) {
-                    finalPage = toLoad
-                }
-                pages = if (page != null) {
-                    (pages ?: mapOf()).plus(toLoad to page.toList())
-                } else {
-                    pages
-                }
-
-                loading = false
-                scroll = false
-                firstLoad = false
-            }
-
-            shouldScroll?.let { scrollTo(it) }
-            window.setTimeout(onScroll, 1)
-        }.catch {
-            loading(false)
-        }
-    }
-
-    private val onHashChange = { _: Event? ->
-        val hashPos = window.location.hash.substring(1).toIntOrNull()
-
-        val newItem = (hashPos ?: 1) - 1
-
-        setState {
-            val newPage = updateState(newItem)
-            scroll = hashPos != null
-
-            if (newItem == 0) {
-                scrollTo(0.0, 0.0)
-            } else if (state.pages?.containsKey(newPage) == true) {
-                scrollTo(newItem)
-            }
-        }
-    }
-
-    private val onResize = { _: Event ->
-        val newItemsPerRow = props.itemsPerRow?.invoke() ?: 1
-        if (state.itemsPerRow != newItemsPerRow) {
-            state.visItem?.let { scrollTo(it) }
-            setState {
-                itemsPerRow = newItemsPerRow
-            }
-        }
-    }
-
-    private val onScroll = { _: Event? ->
-        val item = currentItem()
-        if (item != state.visItem) {
-            setState {
-                updateState(item)
-            }
-            props.updateScrollIndex?.invoke(item + 1)
-        }
-
-        loadNextPage()
-    }
-
-    private fun InfiniteScrollState<T>.updateState(newItem: Int = currentItem()): Int {
-        val totalVisiblePages = ceil(innerHeight() / pageHeight()).toInt()
-        val newPage = max(1, newItem - (state.itemsPerRow ?: 1)) / props.itemsPerPage
-
-        visItem = newItem
-        visPage = newPage
-        visiblePages = newPage.rangeTo(newPage + totalVisiblePages)
-
-        return newPage
-    }
-
-    private fun filteredChildren() = props.container.current?.children?.asList()?.filter(props.childFilter ?: { true })
-
-    private fun currentItem(): Int {
+    fun currentItem(): Int {
         filteredChildren()?.forEachIndexed { idx, it ->
             val rect = it.getBoundingClientRect()
             if (rect.top >= headerSize()) {
@@ -227,7 +98,13 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
         return 0
     }
 
-    private fun scrollTo(idx: Int) {
+    fun scrollTo(x: Double, y: Double) {
+        props.scrollParent?.scrollTo(x, y) ?: run {
+            window.scrollTo(x, y)
+        }
+    }
+
+    fun scrollTo(idx: Int) {
         val scrollTo = if (idx == 0) { 0.0 } else {
             val top = filteredChildren()?.get(idx)?.getBoundingClientRect()?.top ?: 0.0
             val offset = props.scrollParent?.scrollTop ?: window.pageYOffset
@@ -236,17 +113,142 @@ open class InfiniteScroll<T> : RComponent<InfiniteScrollProps<T>, InfiniteScroll
         scrollTo(0.0, scrollTo)
     }
 
-    override fun RBuilder.render() {
-        val emptyPage = List<T?>(props.itemsPerPage) { null }
+    fun innerHeight() = props.scrollParent?.clientHeight ?: window.innerHeight
 
-        for (pIdx in 0..lastPage()) {
-            (state.pages?.get(pIdx) ?: emptyPage).forEachIndexed userLoop@{ localIdx, it ->
-                val idx = (pIdx * props.itemsPerPage) + localIdx
-                with(props.renderElement) {
-                    when (this) {
-                        is InfiniteScrollElementRenderer -> this@render.invoke(it)
-                        is IndexedInfiniteScrollElementRenderer -> this@render.invoke(idx, it)
-                    }
+    fun updateState(newItem: Int = currentItem()): Int {
+        val totalVisiblePages = ceil(innerHeight() / pageHeight()).toInt()
+        val newPage = max(1, newItem - (itemsPerRow.current ?: 1)) / (itemsPerPage.current ?: 20)
+
+        visItem.current = newItem
+        visPage.current = newPage
+        visiblePages.current = newPage.rangeTo(newPage + totalVisiblePages)
+
+        return newPage
+    }
+
+    val onResize = { _: Event ->
+        val newItemsPerRow = props.itemsPerRow?.current?.invoke() ?: 1
+        if (itemsPerRow.current != newItemsPerRow) {
+            visItem.current?.let { scrollTo(it) }
+            itemsPerRow.current = newItemsPerRow
+        }
+    }
+
+    val onScroll: (Event?) -> Unit = { _: Event? ->
+        val item = currentItem()
+        if (item != visItem.current) {
+            updateState(item)
+            props.updateScrollIndex?.current?.invoke(item + 1)
+        }
+
+        loadNextPage.current?.invoke()
+    }
+
+    val onHashChange = { _: Event? ->
+        val hashPos = window.location.hash.substring(1).toIntOrNull()
+
+        val newItem = (hashPos ?: 1) - 1
+        val newPage = updateState(newItem)
+
+        scroll.current = hashPos != null
+
+        if (newItem == 0) {
+            scrollTo(0.0, 0.0)
+        } else if (pagesRef.current?.containsKey(newPage) == true) {
+            scrollTo(newItem)
+        }
+    }
+
+    fun setPagesAndRef(newPages: Map<Int, List<T>>?) {
+        setPages(newPages ?: emptyMap())
+        pagesRef.current = newPages
+    }
+
+    loadNextPage.current = fun() {
+        if (loading.current == true) return
+
+        // Find first visible page that isn't loaded or beyond the final page
+        val toLoad = visiblePages.current?.firstOrNull { finalPage.current?.let { f -> it < f } != false && pagesRef.current?.containsKey(it) != true } ?: return
+
+        val newToken = token.current ?: Axios.CancelToken.source()
+        token.current = newToken
+        loading.current = true
+
+        val shouldScroll = if (scroll.current != false) visItem.current else null
+        props.loadPage?.current!!.invoke(toLoad, newToken).then { page ->
+            val lastPage = page?.info?.pages?.let { (toLoad + 1) >= it } ?: // Loaded page (ie 0) is beyond the number of pages that exist (ie 1)
+                (page?.docs?.size?.let { it < (itemsPerPage.current ?: 20) } == true) // Or there aren't the expected number of results which should only happen on the last page
+
+            if (lastPage && toLoad < (finalPage.current ?: Int.MAX_VALUE)) {
+                finalPage.current = toLoad
+            }
+
+            setPagesAndRef(
+                page?.docs?.let { docs ->
+                    (pagesRef.current ?: emptyMap()).plus(toLoad to docs)
+                } ?: pagesRef.current
+            )
+
+            loading.current = false
+            scroll.current = false
+
+            shouldScroll?.let { scrollTo(it) }
+            window.setTimeout(onScroll, 1)
+        }.catch {
+            loading.current = false
+        }
+    }
+
+    useEffectOnce {
+        token.current = Axios.CancelToken.source()
+        onHashChange(null)
+        loadNextPage.current?.invoke()
+        cleanup {
+            token.current?.cancel("Unmounted")
+        }
+    }
+
+    useEffect {
+        window.addEventListener("resize", onResize)
+        window.addEventListener("hashchange", onHashChange)
+
+        cleanup {
+            window.removeEventListener("resize", onResize)
+            window.removeEventListener("hashchange", onHashChange)
+        }
+    }
+
+    useEffect(props.scrollParent) {
+        val target = props.scrollParent ?: window
+        target.addEventListener("scroll", onScroll)
+        cleanup {
+            target.removeEventListener("scroll", onScroll)
+        }
+    }
+
+    props.resetRef.current = {
+        token.current?.cancel("Another request started")
+
+        updateState(0)
+        scroll.current = false
+        loading.current = false
+        setPagesAndRef(emptyMap())
+        token.current = Axios.CancelToken.source()
+        finalPage.current = null
+
+        window.setTimeout({
+            scrollTo(0.0, 0.0)
+            loadNextPage.current?.invoke()
+        }, 0)
+    }
+
+    for (pIdx in 0..lastPage()) {
+        (pages[pIdx] ?: emptyPage).forEachIndexed userLoop@{ localIdx, it ->
+            val idx = (pIdx * props.itemsPerPage) + localIdx
+            with(props.renderElement) {
+                when (this) {
+                    is InfiniteScrollElementRenderer -> this@fc.invoke(it)
+                    is IndexedInfiniteScrollElementRenderer -> this@fc.invoke(idx, it)
                 }
             }
         }

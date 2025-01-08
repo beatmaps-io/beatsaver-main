@@ -6,6 +6,7 @@ import external.generateConfig
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
+import io.beatmaps.api.GenericSearchResponse
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.SearchResponse
 import io.beatmaps.api.UserDetail
@@ -15,8 +16,8 @@ import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.RankedFilter
 import io.beatmaps.common.toQuery
 import io.beatmaps.configContext
-import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
+import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.shared.search.CommonParams
 import io.beatmaps.util.encodeURIComponent
 import io.beatmaps.util.hashRegex
@@ -25,6 +26,7 @@ import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
 import react.Props
+import react.RefObject
 import react.dom.div
 import react.dom.h4
 import react.dom.img
@@ -33,15 +35,17 @@ import react.fc
 import react.router.useNavigate
 import react.useContext
 import react.useEffect
+import react.useMemo
 import react.useRef
 import react.useState
+import kotlin.js.Promise
 
 external interface BeatmapTableProps : Props {
     var search: SearchParams?
     var user: Int?
     var curated: Boolean?
     var wip: Boolean?
-    var updateScrollIndex: ((Int) -> Unit)?
+    var updateScrollIndex: RefObject<(Int) -> Unit>?
     var visible: Boolean?
     var fallbackOrder: SearchOrder?
 }
@@ -69,17 +73,19 @@ data class SearchParams(
 
 val beatmapTable = fc<BeatmapTableProps>("beatmapTable") { props ->
     val (user, setUser) = useState<UserDetail?>(null)
-    val (resultsKey, setResultsKey) = useState(Any())
+    val resetRef = useRef<() -> Unit>()
+    val itemsPerRow = useRef { if (window.innerWidth < 992) 1 else 2 }
+    val loadPageRef = useRef<(Int, CancelTokenSource) -> Promise<GenericSearchResponse<MapDetail>?>>()
 
     val resultsTable = useRef<HTMLElement>()
-    val audio = useAudio()
+    val audioRef = useAudio()
 
     val history = History(useNavigate())
     val config = useContext(configContext)
 
     useDidUpdateEffect(props.user, props.wip, props.curated, props.search, props.fallbackOrder) {
         setUser(null)
-        setResultsKey(Any())
+        resetRef.current?.invoke()
     }
 
     useEffect(props.search) {
@@ -146,7 +152,7 @@ val beatmapTable = fc<BeatmapTableProps>("beatmapTable") { props ->
         }
     }
 
-    val loadPage = { toLoad: Int, token: CancelTokenSource ->
+    loadPageRef.current = { toLoad: Int, token: CancelTokenSource ->
         if (toLoad == 0) loadUserSuggestion(token)
 
         Axios.get<SearchResponse>(
@@ -158,7 +164,17 @@ val beatmapTable = fc<BeatmapTableProps>("beatmapTable") { props ->
                 return@then null
             }
 
-            return@then it.data.docs
+            return@then it.data
+        }
+    }
+
+    val renderer = useMemo(props.wip) {
+        InfiniteScrollElementRenderer<MapDetail> { it ->
+            beatmapInfo {
+                attrs.obj = it
+                attrs.version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
+                attrs.audio = audioRef
+            }
         }
     }
 
@@ -183,24 +199,18 @@ val beatmapTable = fc<BeatmapTableProps>("beatmapTable") { props ->
             ref = resultsTable
             key = "resultsTable"
 
-            child(MapDetailInfiniteScroll::class) {
-                attrs.resultsKey = resultsKey
+            mapDetailInfiniteScroll {
+                attrs.resetRef = resetRef
                 attrs.rowHeight = 155.0
-                attrs.itemsPerRow = { if (window.innerWidth < 992) 1 else 2 }
+                attrs.itemsPerRow = itemsPerRow
                 attrs.itemsPerPage = 20
                 attrs.container = resultsTable
-                attrs.renderElement = InfiniteScrollElementRenderer { it ->
-                    beatmapInfo {
-                        attrs.obj = it
-                        attrs.version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
-                        attrs.audio = audio
-                    }
-                }
+                attrs.renderElement = renderer
                 attrs.updateScrollIndex = props.updateScrollIndex
-                attrs.loadPage = loadPage
+                attrs.loadPage = loadPageRef
             }
         }
     }
 }
 
-class MapDetailInfiniteScroll : InfiniteScroll<MapDetail>()
+val mapDetailInfiniteScroll = generateInfiniteScrollComponent(MapDetail::class)

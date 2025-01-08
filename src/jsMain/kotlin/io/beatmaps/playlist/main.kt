@@ -19,6 +19,7 @@ import react.router.useLocation
 import react.router.useNavigate
 import react.useEffect
 import react.useEffectOnce
+import react.useRef
 import react.useState
 
 val playlistFilters = listOf<FilterInfo<PlaylistSearchParams, *>>(
@@ -48,6 +49,7 @@ val playlistFeed = fc<Props>("playlistFeed") {
     }
 
     val (searchParams, setSearchParams) = useState(fromURL())
+    val usiRef = useRef<(Int) -> Unit>()
 
     useEffect(location) {
         val newParams = fromURL()
@@ -71,7 +73,11 @@ val playlistFeed = fc<Props>("playlistFeed") {
         setSearchParams(searchParamsLocal)
     }
 
-    search<PlaylistSearchParams> {
+    usiRef.current = { idx ->
+        updateSearchParams(searchParams, if (idx < 2) null else idx)
+    }
+
+    search {
         typedState = searchParams
         sortOrderTarget = SortOrderTarget.Playlist
         maxNps = 16
@@ -93,8 +99,6 @@ val playlistFeed = fc<Props>("playlistFeed") {
     }
     playlistTable {
         attrs.search = searchParams
-        attrs.updateScrollIndex = {
-            updateSearchParams(searchParams, if (it < 2) null else it)
-        }
+        attrs.updateScrollIndex = usiRef
     }
 }

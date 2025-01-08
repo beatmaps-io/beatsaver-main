@@ -1,9 +1,9 @@
 package io.beatmaps.shared.review
 
-import external.Axios
 import external.CancelTokenSource
-import external.generateConfig
+import external.axiosGet
 import io.beatmaps.Config
+import io.beatmaps.api.GenericSearchResponse
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewsResponse
@@ -11,15 +11,17 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.captcha.captcha
 import io.beatmaps.globalContext
-import io.beatmaps.shared.InfiniteScroll
 import io.beatmaps.shared.InfiniteScrollElementRenderer
+import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.util.useDidUpdateEffect
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
 import react.fc
+import react.useMemo
 import react.useRef
 import react.useState
+import kotlin.js.Promise
 
 external interface ReviewTableProps : Props {
     var map: MapDetail?
@@ -30,7 +32,8 @@ external interface ReviewTableProps : Props {
 }
 
 val reviewTable = fc<ReviewTableProps>("reviewTable") { props ->
-    val (resultsKey, setResultsKey) = useState(Any())
+    val resetRef = useRef<() -> Unit>()
+    val loadPageRef = useRef<(Int, CancelTokenSource) -> Promise<GenericSearchResponse<ReviewDetail>?>>()
     val (existingReview, setExistingReview) = useState(false)
 
     val resultsTable = useRef<HTMLElement>()
@@ -38,7 +41,7 @@ val reviewTable = fc<ReviewTableProps>("reviewTable") { props ->
     val captchaRef = useRef<ICaptchaHandler>()
 
     useDidUpdateEffect(props.map) {
-        setResultsKey(Any())
+        resetRef.current?.invoke()
     }
 
     fun getUrl(page: Int) = if (props.map != null) {
@@ -47,12 +50,23 @@ val reviewTable = fc<ReviewTableProps>("reviewTable") { props ->
         props.userDetail?.id?.let { "${Config.apibase}/review/user/$it/$page" } ?: throw IllegalStateException()
     }
 
-    val loadPage = { toLoad: Int, token: CancelTokenSource ->
-        Axios.get<ReviewsResponse>(
-            getUrl(toLoad),
-            generateConfig<String, ReviewsResponse>(token.token)
-        ).then {
-            return@then it.data.docs
+    loadPageRef.current = { toLoad: Int, token: CancelTokenSource ->
+        axiosGet<ReviewsResponse>(getUrl(toLoad), token.token).then {
+            return@then GenericSearchResponse.from(it.data.docs)
+        }
+    }
+
+    val renderer = useMemo(props.map, props.userDetail) {
+        InfiniteScrollElementRenderer<ReviewDetail> { rv ->
+            reviewItem {
+                attrs.obj = rv?.copy(creator = props.userDetail ?: rv.creator)
+                attrs.userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
+                attrs.map = props.map ?: rv?.map
+                attrs.captcha = captchaRef
+                attrs.setExistingReview = { nv ->
+                    setExistingReview(nv)
+                }
+            }
         }
     }
 
@@ -81,33 +95,23 @@ val reviewTable = fc<ReviewTableProps>("reviewTable") { props ->
                                 setExistingReview(nv)
                             }
                             attrs.reloadList = {
-                                setResultsKey(Any())
+                                resetRef.current?.invoke()
                             }
                         }
                     }
                 }
             }
 
-            child(CommentsInfiniteScroll::class) {
-                attrs.resultsKey = resultsKey
+            commentsInfiniteScroll {
+                attrs.resetRef = resetRef
                 attrs.rowHeight = 116.0
                 attrs.itemsPerPage = 20
                 attrs.container = resultsTable
-                attrs.renderElement = InfiniteScrollElementRenderer { rv ->
-                    reviewItem {
-                        attrs.obj = rv?.copy(creator = props.userDetail ?: rv.creator)
-                        attrs.userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
-                        attrs.map = props.map ?: rv?.map
-                        attrs.captcha = captchaRef
-                        attrs.setExistingReview = { nv ->
-                            setExistingReview(nv)
-                        }
-                    }
-                }
-                attrs.loadPage = loadPage
+                attrs.renderElement = renderer
+                attrs.loadPage = loadPageRef
             }
         }
     }
 }
 
-class CommentsInfiniteScroll : InfiniteScroll<ReviewDetail>()
+val commentsInfiniteScroll = generateInfiniteScrollComponent(ReviewDetail::class)

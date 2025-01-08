@@ -77,6 +77,7 @@ val homePage = fc<Props>("homePage") {
     val (tags, setTags) = useState<MapTagSet?>(null)
     val (environments, setEnvironments) = useState<EnvironmentSet?>(null)
     val (searchParams, setSearchParams) = useState(fromURL())
+    val usiRef = useRef<(Int) -> Unit>()
 
     val modalRef = useRef<ModalCallbacks>()
     val history = History(useNavigate())
@@ -141,6 +142,10 @@ val homePage = fc<Props>("homePage") {
         if (newParams != searchParams) setSearchParams(newParams)
     }
 
+    usiRef.current = { idx ->
+        updateSearchParams(searchParams, if (idx < 2) null else idx)
+    }
+
     modal {
         attrs.callbacks = modalRef
     }
@@ -202,9 +207,7 @@ val homePage = fc<Props>("homePage") {
 
         beatmapTable {
             attrs.search = searchParams
-            attrs.updateScrollIndex = {
-                updateSearchParams(searchParams, if (it < 2) null else it)
-            }
+            attrs.updateScrollIndex = usiRef
         }
 
         if (userData != null) {
