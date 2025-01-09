@@ -66,6 +66,7 @@ private fun <T> internalGenerateInfiniteScrollComponent(name: String) = fc<Infin
     val visiblePages = useRef<IntRange>()
     val scroll = useRef<Boolean>()
     val token = useRef<CancelTokenSource>()
+    val location = useRef<String>(window.location.search)
 
     val itemsPerPage = useRef(props.itemsPerPage)
     val loadNextPage = useRef<() -> Unit>()
@@ -136,11 +137,12 @@ private fun <T> internalGenerateInfiniteScrollComponent(name: String) = fc<Infin
 
     val onScroll: (Event?) -> Unit = { _: Event? ->
         val item = currentItem()
-        if (item != visItem.current) {
+        if (item != visItem.current && location.current == window.location.search) {
             updateState(item)
             props.updateScrollIndex?.current?.invoke(item + 1)
         }
 
+        location.current = window.location.search
         loadNextPage.current?.invoke()
     }
 
@@ -206,11 +208,11 @@ private fun <T> internalGenerateInfiniteScrollComponent(name: String) = fc<Infin
     // Run as part of first render, useEffect happens after the render
     if (token.current == null) {
         onHashChange(null)
+        token.current = Axios.CancelToken.source()
+        loadNextPage.current?.invoke()
     }
 
     useEffectOnce {
-        token.current = Axios.CancelToken.source()
-        loadNextPage.current?.invoke()
         cleanup {
             token.current?.cancel("Unmounted")
         }
@@ -245,13 +247,8 @@ private fun <T> internalGenerateInfiniteScrollComponent(name: String) = fc<Infin
         scroll.current = false
         loading.current = false
         setPagesAndRef(emptyMap())
-        token.current = Axios.CancelToken.source()
+        token.current = null
         finalPage.current = null
-
-        window.setTimeout({
-            scrollTo(0.0, 0.0)
-            loadNextPage.current?.invoke()
-        }, 0)
     }
 
     for (pIdx in 0..lastPage()) {
