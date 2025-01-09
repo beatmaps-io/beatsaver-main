@@ -144,9 +144,15 @@ private fun <T> internalGenerateInfiniteScrollComponent(name: String) = fc<Infin
         loadNextPage.current?.invoke()
     }
 
+    fun setPagesAndRef(newPages: Map<Int, List<T>>?) {
+        setPages(newPages ?: emptyMap())
+        pagesRef.current = newPages
+    }
+
     val onHashChange = { _: Event? ->
         val hashPos = window.location.hash.substring(1).toIntOrNull()
 
+        val oldItem = visItem.current
         val newItem = (hashPos ?: 1) - 1
         val newPage = updateState(newItem)
 
@@ -156,12 +162,10 @@ private fun <T> internalGenerateInfiniteScrollComponent(name: String) = fc<Infin
             scrollTo(0.0, 0.0)
         } else if (pagesRef.current?.containsKey(newPage) == true) {
             scrollTo(newItem)
+        } else if (oldItem != newItem) {
+            // Trigger re-render
+            setPagesAndRef(pagesRef.current?.toMap())
         }
-    }
-
-    fun setPagesAndRef(newPages: Map<Int, List<T>>?) {
-        setPages(newPages ?: emptyMap())
-        pagesRef.current = newPages
     }
 
     loadNextPage.current = fun() {
@@ -199,9 +203,13 @@ private fun <T> internalGenerateInfiniteScrollComponent(name: String) = fc<Infin
         }
     }
 
+    // Run as part of first render, useEffect happens after the render
+    if (token.current == null) {
+        onHashChange(null)
+    }
+
     useEffectOnce {
         token.current = Axios.CancelToken.source()
-        onHashChange(null)
         loadNextPage.current?.invoke()
         cleanup {
             token.current?.cancel("Unmounted")
@@ -224,6 +232,10 @@ private fun <T> internalGenerateInfiniteScrollComponent(name: String) = fc<Infin
         cleanup {
             target.removeEventListener("scroll", onScroll)
         }
+    }
+
+    useEffect(visItem.current) {
+        loadNextPage.current?.invoke()
     }
 
     props.resetRef.current = {
