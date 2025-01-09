@@ -35,7 +35,7 @@ class TurnstileHandler(private val ext: MutableRefObject<ITurnstile>, private va
     override fun reset() = ext.current?.reset()
 }
 
-val turnstile = fc<CaptchaProps> { props ->
+val turnstile = fc<CaptchaProps>("TurnstileWrapper") { props ->
     val ref = useRef<ITurnstile>()
     val pRef = useRef<() -> Unit>()
     val (popover, setPopover) = useState(false)

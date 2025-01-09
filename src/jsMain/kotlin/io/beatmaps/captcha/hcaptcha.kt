@@ -17,7 +17,7 @@ class HCaptchaHandler(val ext: MutableRefObject<IHCaptcha>) : ICaptchaHandler {
     override fun reset() = ext.current?.resetCaptcha()
 }
 
-val hcaptcha = fc<CaptchaProps> { props ->
+val hcaptcha = fc<CaptchaProps>("HCaptchaWrapper") { props ->
     val ref = useRef<IHCaptcha>()
     HCaptcha.default {
         if (props.enabled) {

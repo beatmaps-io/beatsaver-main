@@ -66,7 +66,7 @@ private fun <T> internalGenerateInfiniteScrollComponent(name: String) = fc<Infin
     val visiblePages = useRef<IntRange>()
     val scroll = useRef<Boolean>()
     val token = useRef<CancelTokenSource>()
-    val location = useRef<String>(window.location.search)
+    val location = useRef(window.location.search)
 
     val itemsPerPage = useRef(props.itemsPerPage)
     val loadNextPage = useRef<() -> Unit>()
@@ -146,8 +146,8 @@ private fun <T> internalGenerateInfiniteScrollComponent(name: String) = fc<Infin
         loadNextPage.current?.invoke()
     }
 
-    fun setPagesAndRef(newPages: Map<Int, List<T>>?) {
-        setPages(newPages ?: emptyMap())
+    fun setPagesAndRef(newPages: Map<Int, List<T>>? = null) {
+        setPages(newPages ?: LinkedHashMap())
         pagesRef.current = newPages
     }
 
@@ -246,7 +246,7 @@ private fun <T> internalGenerateInfiniteScrollComponent(name: String) = fc<Infin
         updateState(0)
         scroll.current = false
         loading.current = false
-        setPagesAndRef(emptyMap())
+        setPagesAndRef()
         token.current = null
         finalPage.current = null
     }
