@@ -24,6 +24,7 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.shared.review.commentsInfiniteScroll
+import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.dom.hasClass
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
@@ -84,6 +85,9 @@ val modReview = fc<ModReviewProps>("modReview") { props ->
 
     useEffect(location) {
         userRef.current?.value = userLocal
+    }
+
+    useDidUpdateEffect(location) {
         resetRef.current?.invoke()
     }
 

@@ -11,7 +11,7 @@ class ReCAPTCHAHandler(val ext: MutableRefObject<IReCAPTCHA>) : ICaptchaHandler 
     override fun reset() = ext.current?.reset()
 }
 
-val recaptcha = fc<CaptchaProps>("ReCAPTCHA") { props ->
+val recaptcha = fc<CaptchaProps>("ReCaptchaWrapper") { props ->
     val ref = useRef<IReCAPTCHA>()
     ReCAPTCHA.default {
         attrs.sitekey = "6LdMpxUaAAAAAA6a3Fb2BOLQk9KO8wCSZ-a_YIaH"
