@@ -241,7 +241,7 @@ val issueList = fc<Props>("issueList") {
                 issuesInfiniteScroll {
                     attrs.resetRef = resetRef
                     attrs.rowHeight = 47.5
-                    attrs.itemsPerPage = 20
+                    attrs.itemsPerPage = 30
                     attrs.container = resultsTable
                     attrs.loadPage = loadPageRef
                     attrs.renderElement = renderer
