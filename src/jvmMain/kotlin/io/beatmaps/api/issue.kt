@@ -413,7 +413,7 @@ fun Route.issueRoute(client: HttpClient) {
                             .notNull(req.open) { o -> Issue.closedAt.run { if (o) isNull() else isNotNull() } }
                     }
                     .orderBy(Issue.updatedAt, SortOrder.DESC)
-                    .limit(req.page)
+                    .limit(req.page, 30)
                     .handleUser()
                     .preHydrate(admin)
                     .map {
