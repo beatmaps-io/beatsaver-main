@@ -93,7 +93,8 @@ val modReview = fc<ModReviewProps>("modReview") { props ->
 
     fun urlExtension(): String {
         val params = listOfNotNull(
-            userRef.current?.value?.let { if (it.isNotBlank()) "user=$it" else null }
+            // Fallback to allow this to be called before first render
+            (userRef.current?.value ?: userLocal).let { if (it.isNotBlank()) "user=$it" else null }
         )
 
         return if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""

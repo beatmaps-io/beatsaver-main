@@ -89,7 +89,8 @@ val issueList = fc<Props>("issueList") {
 
     fun urlExtension(): String {
         val params = listOfNotNull(
-            openRef.current?.checked?.let { if (it) "open=$it" else null },
+            // Fallback to isOpen to allow this to be called before first render
+            (openRef.current?.checked ?: isOpen).let { if (it) "open=$it" else null },
             newType?.let { "type=$it" }
         )
 
