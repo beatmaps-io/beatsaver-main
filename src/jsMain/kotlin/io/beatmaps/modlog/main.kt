@@ -90,8 +90,9 @@ val modlog = fc<Props>("modlog") {
 
     fun urlExtension(): String {
         val params = listOfNotNull(
-            modRef.current?.value?.let { if (it.isNotBlank()) "mod=$it" else null },
-            userRef.current?.value?.let { if (it.isNotBlank()) "user=$it" else null },
+            // Fallback to allow this to be called before first render
+            (modRef.current?.value ?: modLocal).let { if (it.isNotBlank()) "mod=$it" else null },
+            (userRef.current?.value ?: userLocal).let { if (it.isNotBlank()) "user=$it" else null },
             newType?.let { "type=$it" }
         )
 
