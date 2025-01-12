@@ -8,6 +8,7 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinCollaborators
+import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.emptyPage
 import io.beatmaps.genericPage
@@ -124,23 +125,39 @@ fun Route.mapController() {
     }
 
     get<MapController.Detail> { req ->
+        val sess = call.sessions.get<Session>()
+        val isAdmin = sess?.isAdmin() == true
+
         val mapData = try {
             transaction {
                 Beatmap
+                    .joinUploader()
                     .joinCollaborators()
-                    .joinVersions()
+                    .joinVersions(state = null)
                     .selectAll()
                     .where {
-                        Beatmap.id eq req.key.toInt(16) and Beatmap.deletedAt.isNull()
-                    }.limit(1).complexToBeatmap().map { MapDetail.from(it, cdnPrefix()) }.firstOrNull()
+                        (Beatmap.id eq req.key.toInt(16)).let {
+                            if (isAdmin) {
+                                it
+                            } else {
+                                it and Beatmap.deletedAt.isNull()
+                            }
+                        }
+                    }
+                    .limit(1)
+                    .complexToBeatmap()
+                    .firstOrNull()
+                    ?.let { MapDetail.from(it, cdnPrefix()) }
             }
         } catch (_: NumberFormatException) {
             // key isn't an int
             null
         }
 
-        genericPage(if (mapData != null) HttpStatusCode.OK else HttpStatusCode.NotFound) {
-            mapData?.let {
+        val validMap = mapData != null && (mapData.publishedVersion() != null || mapData.uploader.id == sess?.userId || sess?.testplay == true || isAdmin)
+
+        genericPage(if (validMap) HttpStatusCode.OK else HttpStatusCode.NotFound) {
+            (if (validMap) mapData else null)?.let {
                 meta("og:type", "website")
                 meta("og:site_name", "BeatSaver")
                 meta("og:title", it.name)
