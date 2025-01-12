@@ -3,7 +3,6 @@ package io.beatmaps.controllers
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.from
 import io.beatmaps.common.Config
-import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session
@@ -17,7 +16,6 @@ import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import kotlinx.html.link
 import kotlinx.html.meta
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
