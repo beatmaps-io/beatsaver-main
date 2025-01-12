@@ -14,6 +14,7 @@ import io.beatmaps.genericPage
 import io.beatmaps.login.Session
 import io.beatmaps.previewBaseUrl
 import io.beatmaps.util.cdnPrefix
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
@@ -123,45 +124,46 @@ fun Route.mapController() {
     }
 
     get<MapController.Detail> { req ->
-        genericPage(
-            headerTemplate = {
-                try {
-                    transaction {
-                        Beatmap
-                            .joinCollaborators()
-                            .joinVersions()
-                            .selectAll()
-                            .where {
-                                Beatmap.id eq req.key.toInt(16) and Beatmap.deletedAt.isNull()
-                            }.limit(1).complexToBeatmap().map { MapDetail.from(it, cdnPrefix()) }.firstOrNull()
-                    }?.let {
-                        meta("og:type", "website")
-                        meta("og:site_name", "BeatSaver")
-                        meta("og:title", it.name)
-                        meta("og:url", it.link(true))
-                        link(it.link(true), "canonical")
-                        meta("og:image", it.publishedVersion()?.coverURL)
-                        meta("og:description", it.description.take(400))
+        val mapData = try {
+            transaction {
+                Beatmap
+                    .joinCollaborators()
+                    .joinVersions()
+                    .selectAll()
+                    .where {
+                        Beatmap.id eq req.key.toInt(16) and Beatmap.deletedAt.isNull()
+                    }.limit(1).complexToBeatmap().map { MapDetail.from(it, cdnPrefix()) }.firstOrNull()
+            }
+        } catch (_: NumberFormatException) {
+            // key isn't an int
+            null
+        }
 
-                        // Joining mappers together for the og:author field so that:
-                        // 1. Uploader will be first
-                        // 2. All non-last collaborators will be joined with ", "
-                        // 3. The last collaborator will be joined with " and "
-                        val authors = (listOf(it.uploader) + it.collaborators.orEmpty()).map { u -> u.name }
-                        val authorString = authors.reduceIndexed { index, acc, s -> "$acc${if (index == authors.lastIndex) " and" else ","} $s" }
-                        meta("og:author", authorString)
+        genericPage(if (mapData != null) HttpStatusCode.OK else HttpStatusCode.NotFound) {
+            mapData?.let {
+                meta("og:type", "website")
+                meta("og:site_name", "BeatSaver")
+                meta("og:title", it.name)
+                meta("og:url", it.link(true))
+                link(it.link(true), "canonical")
+                meta("og:image", it.publishedVersion()?.coverURL)
+                meta("og:description", it.description.take(400))
 
-                        // There can only be one URL so we only add it when there is no collaborator
-                        // Otherwise, it may be confusing
-                        if (it.collaborators.isNullOrEmpty()) {
-                            meta("og:author:url", "${Config.siteBase()}/profile/${it.uploader.id}")
-                        }
-                    }
-                } catch (_: NumberFormatException) {
-                    // key isn't an int
+                // Joining mappers together for the og:author field so that:
+                // 1. Uploader will be first
+                // 2. All non-last collaborators will be joined with ", "
+                // 3. The last collaborator will be joined with " and "
+                val authors = (listOf(it.uploader) + it.collaborators.orEmpty()).map { u -> u.name }
+                val authorString = authors.reduceIndexed { index, acc, s -> "$acc${if (index == authors.lastIndex) " and" else ","} $s" }
+                meta("og:author", authorString)
+
+                // There can only be one URL so we only add it when there is no collaborator
+                // Otherwise, it may be confusing
+                if (it.collaborators.isNullOrEmpty()) {
+                    meta("og:author:url", "${Config.siteBase()}/profile/${it.uploader.id}")
                 }
             }
-        )
+        }
     }
 
     get<MapController.Embed> {

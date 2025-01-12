@@ -7,6 +7,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location
 import io.ktor.server.locations.get
@@ -71,25 +72,25 @@ fun Route.userController() {
         if (req.id == null && call.sessions.get<Session>() == null) {
             call.respondRedirect("/login")
         } else {
-            genericPage(
-                headerTemplate = {
-                    if (req.id != null) {
-                        transaction {
-                            User.selectAll().where {
-                                User.id eq req.id and User.active
-                            }.limit(1).map { u -> UserDetail.from(u) }.firstOrNull()
-                        }?.let { detail ->
-                            meta("og:type", "profile:${detail.name}")
-                            meta("og:site_name", "BeatSaver")
-                            meta("og:title", detail.name)
-                            meta("og:url", detail.profileLink(absolute = true))
-                            link(detail.profileLink(absolute = true), "canonical")
-                            meta("og:image", detail.avatar)
-                            meta("og:description", "${detail.name}'s BeatSaver profile")
-                        }
-                    }
+            val userData = req.id?.let {
+                transaction {
+                    User.selectAll().where {
+                        User.id eq req.id and User.active
+                    }.limit(1).map { u -> UserDetail.from(u) }.firstOrNull()
                 }
-            )
+            }
+
+            genericPage(if (req.id == null || userData != null) HttpStatusCode.OK else HttpStatusCode.NotFound) {
+                userData?.let { detail ->
+                    meta("og:type", "profile:${detail.name}")
+                    meta("og:site_name", "BeatSaver")
+                    meta("og:title", detail.name)
+                    meta("og:url", detail.profileLink(absolute = true))
+                    link(detail.profileLink(absolute = true), "canonical")
+                    meta("og:image", detail.avatar)
+                    meta("og:description", "${detail.name}'s BeatSaver profile")
+                }
+            }
         }
     }
 
