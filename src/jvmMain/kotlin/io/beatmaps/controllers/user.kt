@@ -74,9 +74,14 @@ fun Route.userController() {
         } else {
             val userData = req.id?.let {
                 transaction {
-                    User.selectAll().where {
-                        User.id eq req.id and User.active
-                    }.limit(1).map { u -> UserDetail.from(u) }.firstOrNull()
+                    User
+                        .selectAll()
+                        .where {
+                            User.id eq req.id and User.active
+                        }
+                        .limit(1)
+                        .firstOrNull()
+                        ?.let { u -> UserDetail.from(u) }
                 }
             }
 
