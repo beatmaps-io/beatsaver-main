@@ -158,11 +158,11 @@ fun PatreonDao?.toTier() = if (this != null) {
     null
 }
 
-actual object LinkHelper {
+/*actual object io.beatmaps.api.LinkHelper {
     actual fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean) = Config.siteBase(absolute) + "/profile/${userDetail.id}" + (tab?.let { "#$it" } ?: "")
     actual fun mapLink(mapDetail: MapDetail, absolute: Boolean) = Config.siteBase(absolute) + "/maps/${mapDetail.id}"
     actual fun playlistLink(playlist: PlaylistFull, absolute: Boolean) = Config.siteBase(absolute) + "/playlists/${playlist.playlistId}"
-}
+}*/
 
 @Location("/api/users")
 class UsersApi {
@@ -637,10 +637,11 @@ fun Route.userRoute(client: HttpClient) {
             val req = call.receive<SessionRevokeRequest>()
             val userId = req.userId ?: sess.userId
             val id = UserCrypto.decrypt(byId.id)
+            val site = req.site
 
             val response = if (userId != sess.userId && !sess.isAdmin()) {
                 ActionResponse.error("Not an admin")
-            } else if (req.site == null) {
+            } else if (site == null) {
                 ActionResponse.error("site property is required when deleting by id")
             } else {
                 transaction {
@@ -653,7 +654,7 @@ fun Route.userRoute(client: HttpClient) {
                         )
                     }
 
-                    if (!req.site) {
+                    if (!site) {
                         DBTokenStore.revokeRefreshToken(id)
                         ActionResponse.success()
                     } else if (!MongoClient.connected) {
@@ -890,23 +891,25 @@ fun Route.userRoute(client: HttpClient) {
     post<UsersApi.Me> {
         requireAuthorization { _, sess ->
             val req = call.receive<AccountRequest>()
+            val newPassword = req.password
+            val currentPassword = req.currentPassword
 
-            val response = if (req.password == null || req.currentPassword == null) {
+            val response = if (newPassword == null || currentPassword == null) {
                 // Not a password reset request
                 ActionResponse.success()
-            } else if (req.password != req.password2) {
+            } else if (newPassword != req.password2) {
                 ActionResponse.error("Passwords don't match")
-            } else if (req.password.length < 8) {
+            } else if (newPassword.length < 8) {
                 ActionResponse.error("Password too short")
             } else {
                 try {
-                    val bcrypt = String(Bcrypt.hash(req.password, 12))
+                    val bcrypt = String(Bcrypt.hash(newPassword, 12))
 
                     transaction {
                         User.selectAll().where {
                             User.id eq sess.userId
                         }.firstOrNull()?.let { r ->
-                            if (r[User.password]?.let { curPw -> Bcrypt.verify(req.currentPassword, curPw.toByteArray()) } == true) {
+                            if (r[User.password]?.let { curPw -> Bcrypt.verify(currentPassword, curPw.toByteArray()) } == true) {
                                 User.update({
                                     User.id eq sess.userId
                                 }) {

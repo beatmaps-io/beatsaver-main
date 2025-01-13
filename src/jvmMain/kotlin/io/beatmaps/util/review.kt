@@ -158,6 +158,7 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
             contentType(ContentType.Application.Json)
             userAgent("BeatSaver")
 
+            val data = issue.data
             setBody(
                 DiscordWebhookBody(
                     username = "BeatSaver",
@@ -167,26 +168,26 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                             title = "New ${issue.type.human()} created",
                             description = comment.text,
                             url = "${Config.siteBase()}/issues/${issue.id}",
-                            thumbnail = when (issue.data) {
-                                is HydratedMapReportData -> issue.data.map.mainVersion()?.let {
+                            thumbnail = when (data) {
+                                is HydratedMapReportData -> data.map.mainVersion()?.let {
                                     "${Config.cdnBase("", true)}/${it.hash}.jpg"
                                 }
-                                is HydratedUserReportData -> issue.data.user.avatar
-                                is HydratedPlaylistReportData -> issue.data.playlist.playlistImage
-                                is HydratedReviewReportData -> issue.data.review.map?.mainVersion()?.let {
+                                is HydratedUserReportData -> data.user.avatar
+                                is HydratedPlaylistReportData -> data.playlist.playlistImage
+                                is HydratedReviewReportData -> data.review.map?.mainVersion()?.let {
                                     "${Config.cdnBase("", true)}/${it.hash}.jpg"
                                 }
                                 null -> "https://avatars.githubusercontent.com/u/83342266"
                             }?.let {
                                 DiscordEmbed.HasUrl(it)
                             },
-                            fields = when (issue.data) {
+                            fields = when (data) {
                                 is HydratedMapReportData -> listOf(
                                     DiscordEmbed.Field(
                                         "Map",
-                                        issue.data.map.let { "[${it.name}](${Config.siteBase()}/maps/${it.id})" }
+                                        data.map.let { "[${it.name}](${Config.siteBase()}/maps/${it.id})" }
                                     ),
-                                    issue.data.map.uploader.let { u ->
+                                    data.map.uploader.let { u ->
                                         DiscordEmbed.Field(
                                             "Uploader",
                                             "[${u.name}](${u.profileLink(absolute = true)})"
@@ -196,27 +197,27 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                                 is HydratedUserReportData -> listOf(
                                     DiscordEmbed.Field(
                                         "User",
-                                        "[${issue.data.user.name}](${issue.data.user.profileLink(absolute = true)})"
+                                        "[${data.user.name}](${data.user.profileLink(absolute = true)})"
                                     )
                                 )
                                 is HydratedPlaylistReportData -> listOf(
                                     DiscordEmbed.Field(
                                         "Playlist",
-                                        "[${issue.data.playlist.name}](${issue.data.playlist.link(true)})"
+                                        "[${data.playlist.name}](${data.playlist.link(true)})"
                                     ),
                                     DiscordEmbed.Field(
                                         "Uploader",
-                                        "[${issue.data.playlist.owner.name}](${issue.data.playlist.owner.profileLink(absolute = true)})"
+                                        "[${data.playlist.owner.name}](${data.playlist.owner.profileLink(absolute = true)})"
                                     )
                                 )
                                 is HydratedReviewReportData -> listOfNotNull(
-                                    issue.data.review.map?.let { m ->
+                                    data.review.map?.let { m ->
                                         DiscordEmbed.Field(
                                             "Map",
                                             "[${m.name}](${m.link(true)})"
                                         )
                                     },
-                                    issue.data.review.creator?.let { u ->
+                                    data.review.creator?.let { u ->
                                         DiscordEmbed.Field(
                                             "Reviewer",
                                             "[${u.name}](${u.profileLink(absolute = true)})"

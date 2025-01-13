@@ -1,5 +1,7 @@
 import io.miret.etienne.gradle.sass.CompileSass
+import org.jetbrains.kotlin.backend.common.push
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
+import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
@@ -17,9 +19,11 @@ val myndocsOauthVersion: String by project
 group = "io.beatmaps"
 version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-    maven { url = uri("https://artifactory.kirkstall.top-cat.me") }
+allprojects {
+    repositories {
+        mavenCentral()
+        maven { url = uri("https://artifactory.kirkstall.top-cat.me") }
+    }
 }
 
 kotlin {
@@ -72,6 +76,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
                 implementation("io.beatmaps:BeatMaps-CommonMP:1.0.+")
+                implementation(project(":shared"))
             }
         }
         val commonTest by getting {
@@ -179,6 +184,10 @@ kotlin {
                 optIn("kotlin.io.encoding.ExperimentalEncodingApi")
             }
             dependencies {
+                implementation(project(":admin"))
+                implementation(project(":testplay"))
+                implementation(project(":shared"))
+
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-extensions:1.0.1-pre.736")
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-react-legacy:18.3.1-pre.736")
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom-legacy:18.3.1-pre.736")
@@ -195,6 +204,7 @@ kotlin {
                 implementation(npm("bootswatch", "5.1.3"))
                 implementation(npm("bootstrap", "5.1.3"))
                 implementation(devNpm("webpack-bundle-analyzer", "4.6.1"))
+                implementation(devNpm("magic-comments-loader", "2.1.4"))
             }
         }
         val jsTest by getting {
@@ -232,9 +242,11 @@ tasks.getByName<CompileSass>("compileSass") {
 }
 
 tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
-    mainOutputFileName.set("output.js")
+    // mainOutputFileName.set("output.js")
     sourceMaps = true
     outputDirectory.set(layout.buildDirectory.file("processedResources/jvm/main/assets").get().asFile)
+    // args.push("--json=compilation-stats.json")
+    // mode = KotlinWebpackConfig.Mode.DEVELOPMENT
 }
 
 tasks.withType<AbstractCopyTask> {

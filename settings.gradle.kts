@@ -7,3 +7,16 @@ if (File("../beatsaver-common-mp").exists()) {
         }
     }
 }
+
+file("modules")
+    .listFiles()!!
+    .filter(File::isDirectory)
+    .forEach { directory ->
+        val name = directory.name
+
+        include(name)
+
+        project(":$name").apply {
+            this.projectDir = directory
+        }
+    }

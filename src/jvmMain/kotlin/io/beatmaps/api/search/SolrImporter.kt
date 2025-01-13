@@ -200,6 +200,10 @@ object SolrImporter {
             if (user == null || stats == null) {
                 UserSolr.delete(updateUserId.toString())
             } else {
+                val last = stats.lastUpload
+                val first = stats.firstUpload
+                val mapAgeValue = if (last != null && first != null) (last - first).inWholeDays.toInt() else null
+
                 UserSolr.insert {
                     it[id] = user.id
                     it[sId] = user.id.toString()
@@ -219,7 +223,7 @@ object SolrImporter {
                     it[rankedMaps] = stats.rankedMaps
                     it[firstUpload] = stats.firstUpload
                     it[lastUpload] = stats.lastUpload
-                    it[mapAge] = if (stats.lastUpload != null && stats.firstUpload != null) (stats.lastUpload - stats.firstUpload).inWholeDays.toInt() else null
+                    it[mapAge] = mapAgeValue
                 }
             }
         }
