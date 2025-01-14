@@ -116,13 +116,17 @@ val timeline = fc<TimelineProps>("timeline") { props ->
                         }
                     }
                 }
+
+                captcha {
+                    attrs.captchaRef = captchaRef
+                    attrs.page = "timeline"
+                }
             }
         } else if (!givenFeedback && latestVersion != null) {
             // In testplay module
-            /*newFeedback {
+            testplayModule.newFeedback {
                 attrs.hash = latestVersion.hash
-                attrs.captcha = captchaRef
-            }*/
+            }
         }
 
         var first = true
@@ -178,11 +182,6 @@ val timeline = fc<TimelineProps>("timeline") { props ->
                     }
                 }
             }
-        }
-
-        captcha {
-            attrs.captchaRef = captchaRef
-            attrs.page = "timeline"
         }
     }
 }

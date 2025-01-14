@@ -37,7 +37,7 @@ import react.fc
 import react.router.dom.RouterProvider
 import react.router.dom.createBrowserRouter
 import react.useEffectOnce
-import testplayModule
+import io.beatmaps.maps.testplay.testplayModule
 import web.dom.document
 
 fun setPageTitle(page: String) {

@@ -68,7 +68,7 @@ fun bsroute(
 ) = jso<RouteObject> {
     this.path = path
     element = createElement(
-        fc {
+        fc("pageWrapper") {
             initWithHistory(History(useNavigate()), replaceHomelink)
             Suspense {
                 attrs.fallback = createElement(loading)

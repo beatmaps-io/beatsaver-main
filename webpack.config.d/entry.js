@@ -14,29 +14,24 @@
                     reuseExistingChunk: true
                 },
                 modules: {
-                    test: /kotlinx|node_modules[\\/](react-dom|react[\\/]cjs|react-router|@remix|kotlin-stdlib|@js-joda|moment|axios)/,
+                    test: /node_modules[\\/]/,
                     name: "modules",
                     priority: 30,
-                    filename: "modules.js"
+                    chunks: "initial"
+                },
+                kotlin: {
+                    test: /kotlinx|kotlin-stdlib/,
+                    name: "kotlin",
+                    priority: 40,
+                    chunks: "initial"
+                },
+                time: {
+                    test: /@js-joda|moment/,
+                    name: "time",
+                    priority: 50,
+                    chunks: "initial"
                 }
             }
-            /*name: "modules",
-            filename: "[name].[hash:8].js",
-            cacheGroups: {
-               ,
-                kotlin: {
-                    test: /kotlin/,
-                    name: "kotlin",
-                    priority: 20,
-                    filename: "kotlin.js"
-                },
-                dates: {
-                    test: /react-with-styles|react-dates/,
-                    priority: 50,
-                    name: "dates",
-                    filename: "dates.js"
-                }
-            }*/
         }
     };
     config.plugins.push(new ContextReplacementPlugin(/moment[\/\\]locale$/, /en\-gb/));

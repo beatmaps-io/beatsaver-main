@@ -1,6 +1,5 @@
 package io.beatmaps.captcha
 
-import hcaptcha
 import io.beatmaps.configContext
 import react.MutableRefObject
 import react.Props
@@ -33,11 +32,6 @@ val captcha = fc<CaptchaProps>("CaptchaWrapper") { props ->
                 attrs.page = props.page
             }
             "Turnstile" -> turnstile {
-                attrs.captchaRef = props.captchaRef
-                attrs.enabled = configData.showCaptcha
-                attrs.page = props.page
-            }
-            "HCaptcha" -> hcaptcha {
                 attrs.captchaRef = props.captchaRef
                 attrs.enabled = configData.showCaptcha
                 attrs.page = props.page

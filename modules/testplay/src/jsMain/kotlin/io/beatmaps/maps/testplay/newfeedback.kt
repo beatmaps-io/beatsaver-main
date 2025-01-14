@@ -6,22 +6,18 @@ import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.captcha.ICaptchaHandler
+import io.beatmaps.captcha.captcha
 import io.beatmaps.issues.newIssueComment
 import kotlinx.datetime.internal.JSJoda.Instant
-import react.Props
-import react.RefObject
 import react.fc
+import react.useRef
 import react.useState
-
-external interface NewFeedbackProps : Props {
-    var hash: String
-    var captcha: RefObject<ICaptchaHandler>
-}
 
 val newFeedback = fc<NewFeedbackProps>("newFeedback") { props ->
     val (done, setDone) = useState(false)
     val (text, setText) = useState<String?>(null)
     val (time, setTime) = useState<String?>(null)
+    val captchaRef = useRef<ICaptchaHandler>()
 
     if (done) {
         feedback {
@@ -35,7 +31,7 @@ val newFeedback = fc<NewFeedbackProps>("newFeedback") { props ->
         newIssueComment {
             attrs.buttonText = "Leave feedback"
             attrs.saveCallback = { newText ->
-                props.captcha.current?.execute()?.then {
+                captchaRef.current?.execute()?.then {
                     Axios.post<ActionResponse>("${Config.apibase}/testplay/feedback", FeedbackUpdate(props.hash, newText, it), generateConfig<FeedbackUpdate, ActionResponse>()).then { res ->
                         setDone(true)
                         setTime(Instant.now().toString())
@@ -44,6 +40,11 @@ val newFeedback = fc<NewFeedbackProps>("newFeedback") { props ->
                         res
                     }
                 }?.then { it }
+            }
+
+            captcha {
+                attrs.captchaRef = captchaRef
+                attrs.page = "timeline"
             }
         }
     }

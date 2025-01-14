@@ -32,5 +32,7 @@ class GenericPageTemplate(private val s: Session?, private val provider: Captcha
 
 fun BODY.jsTags() {
     script(src = "/static/modules.js") {}
+    script(src = "/static/kotlin.js") {}
+    script(src = "/static/time.js") {}
     script(src = "/static/main.js") {}
 }
