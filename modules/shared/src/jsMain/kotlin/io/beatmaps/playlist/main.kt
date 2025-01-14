@@ -24,15 +24,13 @@ data class PlaylistsExotics(
     val table: ExoticComponent<PlaylistTableProps>
 )
 
-val playlists by lazy {
-    import<PlaylistsModule>("./BeatMaps-playlists").let { promise ->
-        PlaylistsExotics(
-            promise.component { it.edit },
-            promise.component { it.multiAdd },
-            promise.component { it.feed },
-            promise.component { it.page },
-            promise.component { it.addTo },
-            promise.component { it.table }
-        )
-    }
+val playlists = import<PlaylistsModule>("./BeatMaps-playlists").let { promise ->
+    PlaylistsExotics(
+        promise.component { it.edit },
+        promise.component { it.multiAdd },
+        promise.component { it.feed },
+        promise.component { it.page },
+        promise.component { it.addTo },
+        promise.component { it.table }
+    )
 }

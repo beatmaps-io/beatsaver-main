@@ -20,12 +20,10 @@ data class TestPlayExotics(
     val newFeedback: ExoticComponent<NewFeedbackProps>
 )
 
-val testplayModule by lazy {
-    import<TestplayModule>("./BeatMaps-testplay").let { promise ->
-        promise.then { console.log(it) }
-        TestPlayExotics(
-            promise.component { it.recentTestplays },
-            promise.component { it.newFeedback }
-        )
-    }
+val testplayModule = import<TestplayModule>("./BeatMaps-testplay").let { promise ->
+    promise.then { console.log(it) }
+    TestPlayExotics(
+        promise.component { it.recentTestplays },
+        promise.component { it.newFeedback }
+    )
 }

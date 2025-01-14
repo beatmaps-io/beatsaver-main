@@ -10,18 +10,11 @@ import io.beatmaps.maps.mapPage
 import io.beatmaps.maps.testplay.testplayModule
 import io.beatmaps.nav.viewportMinWidthPolyfill
 import io.beatmaps.playlist.playlists
-import io.beatmaps.quest.quest
 import io.beatmaps.upload.uploadPage
 import io.beatmaps.user.alerts.alertsPage
-import io.beatmaps.user.changeEmailPage
-import io.beatmaps.user.forgotPage
 import io.beatmaps.user.list.userList
-import io.beatmaps.user.loginPage
-import io.beatmaps.user.oauth.authorizePage
-import io.beatmaps.user.pickUsernamePage
 import io.beatmaps.user.profilePage
-import io.beatmaps.user.resetPage
-import io.beatmaps.user.signupPage
+import io.beatmaps.user.user
 import js.objects.jso
 import kotlinx.browser.window
 import react.Props
@@ -125,28 +118,28 @@ val appRouter = createBrowserRouter(
             userList { }
         },
         bsroute("/login") {
-            loginPage { }
+            user.login { }
         },
         bsroute("/oauth2/authorize") {
-            authorizePage { }
+            user.authorize { }
         },
         bsroute("/register") {
-            signupPage { }
+            user.register { }
         },
         bsroute("/forgot") {
-            forgotPage { }
+            user.forgot { }
         },
         bsroute("/reset/:jwt") {
-            resetPage { }
+            user.reset { }
         },
         bsroute("/change-email/:jwt") {
-            changeEmailPage { }
+            user.changeEmail { }
         },
         bsroute("/username") {
-            pickUsernamePage { }
+            user.username { }
         },
         bsroute("/quest") {
-            quest { }
+            user.quest { }
         },
         bsroute("/issues") {
             admin.issueList { }

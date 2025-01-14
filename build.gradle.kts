@@ -194,6 +194,7 @@ kotlin {
                 implementation(project(":admin"))
                 implementation(project(":testplay"))
                 implementation(project(":playlists"))
+                implementation(project(":user"))
 
                 implementation(devNpm("webpack-bundle-analyzer", "4.6.1"))
                 implementation(devNpm("magic-comments-loader", "2.1.4"))
@@ -236,7 +237,7 @@ tasks.getByName<CompileSass>("compileSass") {
 tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
     sourceMaps = true
     outputDirectory.set(layout.buildDirectory.file("processedResources/jvm/main/assets").get().asFile)
-    // mode = KotlinWebpackConfig.Mode.DEVELOPMENT
+    // mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
 }
 
 tasks.withType<AbstractCopyTask> {

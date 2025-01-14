@@ -58,9 +58,9 @@
                     }
                 },
                 webpackMode: (modulePath, importPath) => {
-                    if (/playlists/.test(importPath)) {
+                    /*if (/playlists/.test(importPath)) {
                         return "eager"
-                    }
+                    }*/
                     return "lazy-once"
                 }
             }

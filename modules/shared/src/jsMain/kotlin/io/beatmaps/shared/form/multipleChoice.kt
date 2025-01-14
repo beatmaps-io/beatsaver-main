@@ -28,7 +28,6 @@ val multipleChoice = fc<MultipleChoiceProps<Any?>>("multipleChoice") { props ->
                 key = id
                 attrs.id = id
                 attrs.name = props.name
-                attrs.checked
                 // If you use the checked option react gets upset that the controlled state changes
                 betterChecked(value == props.selectedValue)
                 attrs.onChangeFunction = {

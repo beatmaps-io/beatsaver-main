@@ -20,13 +20,11 @@ data class AdminExotics(
     val adminAccount: ExoticComponent<AdminAccountComponentProps>
 )
 
-val admin by lazy {
-    import<AdminModule>("./BeatMaps-admin").let { promise ->
-        AdminExotics(
-            promise.component { it.modLog },
-            promise.component { it.modReview },
-            promise.component { it.issueList },
-            promise.component { it.adminAccount }
-        )
-    }
+val admin = import<AdminModule>("./BeatMaps-admin").let { promise ->
+    AdminExotics(
+        promise.component { it.modLog },
+        promise.component { it.modReview },
+        promise.component { it.issueList },
+        promise.component { it.adminAccount }
+    )
 }

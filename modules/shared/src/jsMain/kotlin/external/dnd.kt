@@ -167,12 +167,10 @@ data class DragAndDropExotics(
     val draggable: ExoticComponent<DraggableProps>
 )
 
-val dndExotics by lazy {
-    import<DragAndDrop>("react-beautiful-dnd").let { mainPromise ->
-        DragAndDropExotics(
-            mainPromise.component { it.DragDropContext },
-            mainPromise.component { it.Droppable },
-            mainPromise.component { it.Draggable }
-        )
-    }
+val dndExotics = import<DragAndDrop>("react-beautiful-dnd").let { mainPromise ->
+    DragAndDropExotics(
+        mainPromise.component { it.DragDropContext },
+        mainPromise.component { it.Droppable },
+        mainPromise.component { it.Draggable }
+    )
 }

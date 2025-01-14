@@ -50,21 +50,19 @@ external interface ReactWithStylesCSS
 
 data class ReactDatesExotics(val dateRangePicker: ExoticComponent<DateRangePickeProps>)
 
-val dates by lazy {
-    ReactDatesExotics(
-        react.lazy {
-            // Init first then pull in component
-            Promise.all(
-                arrayOf(
-                    import<ReactDatesInit>("react-dates/initialize"),
-                    import<ReactDatesDefaultTheme>("react-dates/lib/theme/DefaultTheme"),
-                    import<WithStylesContext>("react-with-styles/lib/WithStylesContext"),
-                    import<ThemedStyleSheet>("react-with-styles/lib/ThemedStyleSheet"),
-                    import<ReactWithStylesCSS>("react-with-styles-interface-css")
-                )
-            ).flatThen {
-                import("react-dates/lib/components/DateRangePicker")
-            }
+val dates = ReactDatesExotics(
+    react.lazy {
+        // Init first then pull in component
+        Promise.all(
+            arrayOf(
+                import<ReactDatesInit>("react-dates/initialize"),
+                import<ReactDatesDefaultTheme>("react-dates/lib/theme/DefaultTheme"),
+                import<WithStylesContext>("react-with-styles/lib/WithStylesContext"),
+                import<ThemedStyleSheet>("react-with-styles/lib/ThemedStyleSheet"),
+                import<ReactWithStylesCSS>("react-with-styles-interface-css")
+            )
+        ).flatThen {
+            import("react-dates/lib/components/DateRangePicker")
         }
-    )
-}
+    }
+)
