@@ -127,7 +127,6 @@ val beatmapInfo = fc<BeatmapInfoProps>("beatmapInfo") { props ->
                         }
                     }
                     Suspense {
-                        attrs.fallback = loadingElem
                         globalContext.Consumer { userData ->
                             if (userData != null) {
                                 div {
