@@ -33,6 +33,7 @@ import react.dom.img
 import react.dom.p
 import react.dom.span
 import react.fc
+import react.useContext
 import react.useEffect
 import react.useState
 
@@ -44,6 +45,7 @@ external interface BeatmapInfoProps : AutoSizeComponentProps<MapDetail> {
 val beatmapInfo = fc<BeatmapInfoProps>("beatmapInfo") { props ->
     val autoSize = useAutoSize(props, 30)
     val (bookmarked, setBookmarked) = useState<Boolean?>(null)
+    val userData = useContext(globalContext)
 
     useEffect(props.version) {
         setBookmarked(null)
@@ -126,21 +128,19 @@ val beatmapInfo = fc<BeatmapInfoProps>("beatmapInfo") { props ->
                             attrs.height = "12"
                         }
                     }
-                    Suspense {
-                        globalContext.Consumer { userData ->
-                            if (userData != null) {
-                                div {
-                                    bookmarkButton {
-                                        attrs.bookmarked = bookmarked ?: (map.bookmarked == true)
-                                        attrs.onClick = { e, bm ->
-                                            e.preventDefault()
-                                            setBookmarked(!bm)
-                                            bookmark(!bm)
-                                        }
+                    if (userData != null) {
+                        Suspense {
+                            div {
+                                bookmarkButton {
+                                    attrs.bookmarked = bookmarked ?: (map.bookmarked == true)
+                                    attrs.onClick = { e, bm ->
+                                        e.preventDefault()
+                                        setBookmarked(!bm)
+                                        bookmark(!bm)
                                     }
-                                    playlists.addTo {
-                                        attrs.map = map
-                                    }
+                                }
+                                playlists.addTo {
+                                    attrs.map = map
                                 }
                             }
                         }

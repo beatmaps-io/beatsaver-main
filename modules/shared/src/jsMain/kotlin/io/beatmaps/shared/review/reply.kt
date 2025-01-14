@@ -29,6 +29,7 @@ import react.dom.p
 import react.dom.span
 import react.dom.textarea
 import react.fc
+import react.useContext
 import react.useRef
 import react.useState
 
@@ -45,6 +46,7 @@ val reply = fc<ReplyProps>("reply") { props ->
     val (errors, setErrors) = useState(emptyList<String>())
 
     val reasonRef = useRef<HTMLTextAreaElement>()
+    val userData = useContext(globalContext)
 
     fun delete() =
         (reasonRef.current?.value ?: "").let { reason ->
@@ -63,49 +65,47 @@ val reply = fc<ReplyProps>("reply") { props ->
                 attrs.time = props.reply.createdAt
             }
             if (!deleted) {
-                globalContext.Consumer { userData ->
-                    // Show tools if commenter or curator
-                    if (userData != null && !userData.suspended && (props.reply.creator.id == userData.userId || userData.curator)) {
-                        div("options") {
-                            a("#") {
-                                attrs.title = "Edit"
-                                attrs.attributes["aria-label"] = "Edit"
-                                attrs.onClickFunction = {
-                                    it.preventDefault()
-                                    setEditing(!editing)
-                                }
-                                i("fas fa-pen text-warning") { }
+                // Show tools if commenter or curator
+                if (userData != null && !userData.suspended && (props.reply.creator.id == userData.userId || userData.curator)) {
+                    div("options") {
+                        a("#") {
+                            attrs.title = "Edit"
+                            attrs.attributes["aria-label"] = "Edit"
+                            attrs.onClickFunction = {
+                                it.preventDefault()
+                                setEditing(!editing)
                             }
-                            a("#") {
-                                attrs.title = "Delete"
-                                attrs.attributes["aria-label"] = "Delete"
-                                attrs.onClickFunction = {
-                                    it.preventDefault()
-                                    props.modal?.current?.showDialog?.invoke(
-                                        ModalData(
-                                            "Delete review",
-                                            bodyCallback = {
+                            i("fas fa-pen text-warning") { }
+                        }
+                        a("#") {
+                            attrs.title = "Delete"
+                            attrs.attributes["aria-label"] = "Delete"
+                            attrs.onClickFunction = {
+                                it.preventDefault()
+                                props.modal?.current?.showDialog?.invoke(
+                                    ModalData(
+                                        "Delete review",
+                                        bodyCallback = {
+                                            p {
+                                                +"Are you sure? This action cannot be reversed."
+                                            }
+                                            if (props.reply.creator.id != userData.userId) {
                                                 p {
-                                                    +"Are you sure? This action cannot be reversed."
+                                                    +"Reason for action:"
                                                 }
-                                                if (props.reply.creator.id != userData.userId) {
-                                                    p {
-                                                        +"Reason for action:"
-                                                    }
-                                                    textarea(classes = "form-control") {
-                                                        ref = reasonRef
-                                                    }
+                                                textarea(classes = "form-control") {
+                                                    ref = reasonRef
                                                 }
-                                            },
-                                            buttons = listOf(
-                                                ModalButton("YES, DELETE", "danger") { delete() },
-                                                ModalButton("Cancel")
-                                            )
+                                            }
+                                        },
+                                        buttons = listOf(
+                                            ModalButton("YES, DELETE", "danger") { delete() },
+                                            ModalButton("Cancel")
                                         )
                                     )
-                                }
-                                i("fas fa-trash text-danger-light") { }
+                                )
                             }
+                            i("fas fa-trash text-danger-light") { }
                         }
                     }
                 }
