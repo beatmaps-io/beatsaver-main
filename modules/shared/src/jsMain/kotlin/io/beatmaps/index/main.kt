@@ -22,8 +22,7 @@ import io.beatmaps.shared.search.FilterInfo
 import io.beatmaps.shared.search.MultipleChoiceFilterInfo
 import io.beatmaps.shared.search.SearchParamGenerator
 import io.beatmaps.shared.search.environments
-import io.beatmaps.shared.search.getByKeyOrNull
-import io.beatmaps.shared.search.search
+import io.beatmaps.shared.search.generateSearchComponent
 import io.beatmaps.shared.search.tags
 import io.beatmaps.stateNavOptions
 import io.beatmaps.util.buildURL
@@ -156,23 +155,23 @@ val homePage = fc<Props>("homePage") {
     modalContext.Provider {
         attrs.value = modalRef
 
-        search<SearchParams> {
-            typedState = searchParams
-            sortOrderTarget = SortOrderTarget.Map
-            filters = mapFilters
-            maxNps = 16
-            paramsFromPage = SearchParamGenerator {
+        beatmapSearch {
+            attrs.typedState = searchParams
+            attrs.sortOrderTarget = SortOrderTarget.Map
+            attrs.filters = mapFilters
+            attrs.maxNps = 16
+            attrs.paramsFromPage = SearchParamGenerator {
                 SearchParams(
-                    inputRef.current?.value?.trim() ?: "",
-                    state.filterMap?.getByKeyOrNull("bot") as? Boolean?,
-                    if (state.minNps?.let { it > 0 } == true) state.minNps else null,
-                    if (state.maxNps?.let { it < props.maxNps } == true) state.maxNps else null,
+                    searchText(),
+                    filterOrNull("bot") as? Boolean?,
+                    if (minNps > 0) minNps else null,
+                    if (maxNps < 16) maxNps else null,
                     if (isFiltered("chroma")) true else null,
-                    state.order ?: SearchOrder.Relevance,
-                    state.startDate?.format(dateFormat),
-                    state.endDate?.format(dateFormat),
+                    order,
+                    startDate?.format(dateFormat),
+                    endDate?.format(dateFormat),
                     if (isFiltered("noodle")) true else null,
-                    if (isFiltered("ranked")) state.filterMap?.getByKeyOrNull("ranked") as? RankedFilter else null,
+                    if (isFiltered("ranked")) filterOrNull("ranked") as? RankedFilter else null,
                     if (isFiltered("curated")) true else null,
                     if (isFiltered("verified")) true else null,
                     if (userData != null && isFiltered("followed")) true else null,
@@ -183,7 +182,7 @@ val homePage = fc<Props>("homePage") {
                     environments ?: emptySet()
                 )
             }
-            extraFilters = ExtraContentRenderer {
+            attrs.extraFilters = ExtraContentRenderer {
                 tags {
                     attrs.default = tags
                     attrs.callback = {
@@ -197,15 +196,15 @@ val homePage = fc<Props>("homePage") {
                     }
                 }
             }
-            updateUI = { params ->
+            attrs.updateUI = { params ->
                 setTags(params?.tags)
                 setEnvironments(params?.environments)
             }
-            filterTexts = {
+            attrs.filterTexts = {
                 (tags?.flatMap { y -> y.value.map { z -> (if (y.key) "" else "!") + z.slug } } ?: listOf()) +
                     (environments?.map { e -> e.human() } ?: listOf())
             }
-            updateSearchParams = ::updateSearchParams
+            attrs.updateSearchParams = ::updateSearchParams
         }
 
         beatmapTable {
@@ -237,3 +236,5 @@ val homePage = fc<Props>("homePage") {
         }
     }
 }
+
+val beatmapSearch = generateSearchComponent<SearchParams>("beatmap")

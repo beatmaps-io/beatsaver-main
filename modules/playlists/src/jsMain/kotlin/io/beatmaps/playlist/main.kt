@@ -9,7 +9,7 @@ import io.beatmaps.shared.search.BooleanFilterInfo
 import io.beatmaps.shared.search.FilterCategory
 import io.beatmaps.shared.search.FilterInfo
 import io.beatmaps.shared.search.SearchParamGenerator
-import io.beatmaps.shared.search.search
+import io.beatmaps.shared.search.generateSearchComponent
 import io.beatmaps.util.buildURL
 import io.beatmaps.util.includeIfNotNull
 import org.w3c.dom.url.URLSearchParams
@@ -77,28 +77,30 @@ val playlistFeed = fc<Props>("playlistFeed") {
         updateSearchParams(searchParams, if (idx < 2) null else idx)
     }
 
-    search {
-        typedState = searchParams
-        sortOrderTarget = SortOrderTarget.Playlist
-        maxNps = 16
-        filters = playlistFilters
-        paramsFromPage = SearchParamGenerator {
+    playlistSearch {
+        attrs.typedState = searchParams
+        attrs.sortOrderTarget = SortOrderTarget.Playlist
+        attrs.maxNps = 16
+        attrs.filters = playlistFilters
+        attrs.paramsFromPage = SearchParamGenerator {
             PlaylistSearchParams(
-                inputRef.current?.value?.trim() ?: "",
-                if (state.minNps?.let { it > 0 } == true) state.minNps else null,
-                if (state.maxNps?.let { it < props.maxNps } == true) state.maxNps else null,
-                state.startDate?.format(dateFormat),
-                state.endDate?.format(dateFormat),
+                searchText(),
+                if (minNps > 0) minNps else null,
+                if (maxNps < 16) maxNps else null,
+                startDate?.format(dateFormat),
+                endDate?.format(dateFormat),
                 null,
                 if (isFiltered("curated")) true else null,
                 if (isFiltered("verified")) true else null,
-                state.order ?: SearchOrder.Relevance
+                order
             )
         }
-        updateSearchParams = ::updateSearchParams
+        attrs.updateSearchParams = ::updateSearchParams
     }
     playlistTable {
         attrs.search = searchParams
         attrs.updateScrollIndex = usiRef
     }
 }
+
+val playlistSearch = generateSearchComponent<PlaylistSearchParams>("playlist")

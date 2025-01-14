@@ -50,9 +50,9 @@ external interface InfiniteScrollProps<T> : Props {
     var headerSize: Double?
 }
 
-fun <T : Any> generateInfiniteScrollComponent(clazz: KClass<T>) = memo(internalGenerateInfiniteScrollComponent<T>(clazz.simpleName ?: "Unknown"))
+fun <T : Any> generateInfiniteScrollComponent(clazz: KClass<T>) = memo(generateInfiniteScrollComponentInternal<T>(clazz.simpleName ?: "Unknown"))
 
-private fun <T> internalGenerateInfiniteScrollComponent(name: String) = fc<InfiniteScrollProps<T>>("${name}InfiniteScroll") { props ->
+private fun <T> generateInfiniteScrollComponentInternal(name: String) = fc<InfiniteScrollProps<T>>("${name}InfiniteScroll") { props ->
     val (pages, setPages) = useState(emptyMap<Int, List<T>>())
 
     val loading = useRef(false)

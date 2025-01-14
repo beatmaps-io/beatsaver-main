@@ -70,10 +70,10 @@ val recentTestplays = fc<Props> {
             tbody {
                 testplays.forEach { rt ->
                     recentTestplayRow {
-                        map = rt.mapDetail
-                        version = rt.version
-                        feedback = rt.testplay.feedback
-                        time = rt.testplay.feedbackAt.toString()
+                        attrs.map = rt.mapDetail
+                        attrs.version = rt.version
+                        attrs.feedback = rt.testplay.feedback
+                        attrs.time = rt.testplay.feedbackAt.toString()
                     }
                 }
             }
