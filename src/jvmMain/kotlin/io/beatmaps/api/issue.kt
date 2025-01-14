@@ -375,8 +375,8 @@ fun Route.issueRoute(client: HttpClient) {
                                 if (userPrivileged) q else q.and(IssueComment.userId eq sess.userId)
                             }
                         }) {
-                            if (comment.text != null) it[text] = comment.text.take(IssueConstants.MAX_COMMENT_LENGTH)
-                            if (userPrivileged && comment.public != null) it[public] = comment.public
+                            comment.text?.let { txt -> it[text] = txt.take(IssueConstants.MAX_COMMENT_LENGTH) }
+                            if (userPrivileged) comment.public?.let { p -> it[public] = p }
                         } > 0
 
                     if (success) ActionResponse.success() else ActionResponse.error()

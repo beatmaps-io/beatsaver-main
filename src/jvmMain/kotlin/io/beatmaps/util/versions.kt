@@ -101,7 +101,7 @@ fun publishVersion(mapId: Int, hash: String, alert: Boolean?, rb: RabbitMQInstan
 
             // Only override None and SageScore
             if (map?.declaredAi?.override == true) {
-                it[declaredAi] = if (originalState.sageScore != null && originalState.sageScore < 0) {
+                it[declaredAi] = if (originalState.sageScore?.let { s -> s < 0 } == true) {
                     AiDeclarationType.SageScore
                 } else {
                     AiDeclarationType.None

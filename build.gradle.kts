@@ -17,9 +17,20 @@ val myndocsOauthVersion: String by project
 group = "io.beatmaps"
 version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-    maven { url = uri("https://artifactory.kirkstall.top-cat.me") }
+allprojects {
+    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+
+    repositories {
+        mavenCentral()
+        maven { url = uri("https://artifactory.kirkstall.top-cat.me") }
+    }
+
+    ktlint {
+        version.set("0.50.0")
+        reporters {
+            reporter(ReporterType.CHECKSTYLE)
+        }
+    }
 }
 
 kotlin {
@@ -72,6 +83,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
                 implementation("io.beatmaps:BeatMaps-CommonMP:1.0.+")
+                implementation(project(":shared"))
             }
         }
         val commonTest by getting {
@@ -179,22 +191,13 @@ kotlin {
                 optIn("kotlin.io.encoding.ExperimentalEncodingApi")
             }
             dependencies {
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-extensions:1.0.1-pre.736")
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-legacy:18.3.1-pre.736")
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom-legacy:18.3.1-pre.736")
-                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:6.23.0-pre.736")
-                implementation(npm("react-timeago", "5.2.0"))
-                implementation(npm("react-dropzone", "11.2.4"))
-                implementation(npm("react-beautiful-dnd", "13.1.0"))
-                implementation(npm("react-dates", "21.8.0"))
-                implementation(npm("react-google-recaptcha", "2.1.0"))
-                implementation(npm("@marsidev/react-turnstile", "1.0.2"))
-                implementation(npm("@hcaptcha/react-hcaptcha", "1.11.0"))
-                implementation(npm("axios", "0.21.1"))
-                implementation(npm("react-slider", "1.1.2"))
-                implementation(npm("bootswatch", "5.1.3"))
-                implementation(npm("bootstrap", "5.1.3"))
+                implementation(project(":admin"))
+                implementation(project(":testplay"))
+                implementation(project(":playlists"))
+                implementation(project(":user"))
+
                 implementation(devNpm("webpack-bundle-analyzer", "4.6.1"))
+                implementation(devNpm("magic-comments-loader", "2.1.4"))
             }
         }
         val jsTest by getting {
@@ -232,9 +235,9 @@ tasks.getByName<CompileSass>("compileSass") {
 }
 
 tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
-    mainOutputFileName.set("output.js")
     sourceMaps = true
     outputDirectory.set(layout.buildDirectory.file("processedResources/jvm/main/assets").get().asFile)
+    // mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
 }
 
 tasks.withType<AbstractCopyTask> {
@@ -264,13 +267,6 @@ tasks.create<JavaExec>("installPlaywrightBrowsers") {
 tasks.getByName<Test>("jvmTest") {
     dependsOn(tasks.getByName("jsBrowserProductionWebpack"), tasks.getByName("compileSass"), tasks.getByName("installPlaywrightBrowsers"))
     environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
-}
-
-ktlint {
-    version.set("0.50.0")
-    reporters {
-        reporter(ReporterType.CHECKSTYLE)
-    }
 }
 
 tasks.getByName<JavaExec>("run") {

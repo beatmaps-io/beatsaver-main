@@ -14,7 +14,6 @@ import kotlinx.html.id
 import kotlinx.html.li
 import kotlinx.html.main
 import kotlinx.html.p
-import kotlinx.html.script
 import kotlinx.html.span
 import kotlinx.html.ul
 
@@ -421,7 +420,6 @@ class PrivacyPageTemplate : Template<BODY> {
         div {
             id = "root"
         }
-        script(src = "/static/modules.js") {}
-        script(src = "/static/output.js") {}
+        jsTags()
     }
 }

@@ -1,0 +1,96 @@
+package io.beatmaps.maps.collab
+
+import external.Axios
+import external.generateConfig
+import io.beatmaps.Config
+import io.beatmaps.api.UserDetail
+import io.beatmaps.api.UserSearchResponse
+import kotlinx.html.ButtonType
+import kotlinx.html.InputType
+import kotlinx.html.id
+import kotlinx.html.js.onClickFunction
+import org.w3c.dom.HTMLInputElement
+import react.Props
+import react.dom.a
+import react.dom.button
+import react.dom.div
+import react.dom.form
+import react.dom.img
+import react.dom.input
+import react.dom.span
+import react.fc
+import react.useRef
+import react.useState
+import kotlin.js.Promise
+
+external interface UserSearchProps : Props {
+    var callback: ((UserDetail) -> Unit)?
+    var excludeUsers: List<Int>?
+    var disabled: Boolean?
+    var addText: String?
+}
+
+val userSearch = fc<UserSearchProps>("userSearch") { props ->
+    val (foundUsers, setFoundUsers) = useState<List<UserDetail>?>(null)
+    val (loading, setLoading) = useState(false)
+    val inputRef = useRef<HTMLInputElement>()
+
+    form("", classes = "search") {
+        input(InputType.search, classes = "form-control") {
+            attrs.id = "collaborators"
+            attrs.placeholder = "Add users"
+            attrs.disabled = props.disabled == true
+            ref = inputRef
+        }
+
+        button(type = ButtonType.submit, classes = "btn btn-primary") {
+            attrs.disabled = loading
+            attrs.onClickFunction = {
+                it.preventDefault()
+                setLoading(true)
+                val q = inputRef.current?.value
+
+                if (q.isNullOrBlank()) {
+                    setFoundUsers(listOf())
+                    Promise.resolve(null)
+                } else {
+                    Axios.get<UserSearchResponse>(
+                        "${Config.apibase}/users/search/0?q=$q",
+                        generateConfig<String, UserSearchResponse>()
+                    ).then { res -> setFoundUsers(res.data.docs) }
+                }.finally {
+                    setLoading(false)
+                }
+            }
+            +"Search"
+        }
+    }
+
+    foundUsers?.filter {
+        props.excludeUsers?.contains(it.id) != true
+    }?.take(10)?.let { users ->
+        div("search-results") {
+            if (users.isNotEmpty()) {
+                users.forEach { user ->
+                    div("list-group-item user") {
+                        span {
+                            img(user.name, user.avatar) { }
+                            +user.name
+                        }
+
+                        a(classes = "btn btn-success btn-sm") {
+                            attrs.onClickFunction = {
+                                props.callback?.invoke(user)
+                            }
+                            +(props.addText ?: "Invite")
+                        }
+                    }
+                }
+            } else {
+                div("list-group-item text-center") {
+                    +"No results"
+                }
+            }
+        }
+    }
+}

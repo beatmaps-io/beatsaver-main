@@ -28,12 +28,6 @@ enum class CaptchaProvider(val url: String = "", val userAgent: String = "", pri
         "TURNSTILE",
         { it.startsWith("0x") }
     ),
-    HCaptcha(
-        "https://api.hcaptcha.com/siteverify",
-        "Mozilla/5.0",
-        "HCAPTCHA",
-        { !it.startsWith("0x") }
-    ),
     Fake(defaultWeight = 0);
 
     fun configEnv() = "${envPrefix}_SECRET"

@@ -26,7 +26,13 @@ class GenericPageTemplate(private val s: Session?, private val provider: Captcha
             id = "config-data"
             +"""{"showCaptcha": ${CaptchaVerifier.enabled(provider)}, "captchaProvider": "${provider.name}", "v2Search": ${SolrHelper.enabled}}"""
         }
-        script(src = "/static/modules.js") {}
-        script(src = "/static/output.js") {}
+        jsTags()
     }
+}
+
+fun BODY.jsTags() {
+    script(src = "/static/modules.js") {}
+    script(src = "/static/kotlin.js") {}
+    script(src = "/static/time.js") {}
+    script(src = "/static/main.js") {}
 }

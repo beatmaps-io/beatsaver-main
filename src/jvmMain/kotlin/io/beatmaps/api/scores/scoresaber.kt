@@ -93,7 +93,7 @@ data class SSLeaderboardInfo(
 ) {
     fun toLeaderboardData(scores: List<SSLeaderboardScore>) = LeaderboardData(
         ranked, id.toString(),
-        scores.map(SSLeaderboardScore::toLeaderboardScore).filter { it.playerId != null && it.playerId > 9000 },
+        scores.map(SSLeaderboardScore::toLeaderboardScore).filter { it.playerId?.let { pId -> pId > 9000 } == true },
         positiveModifiers, true
     )
 }

@@ -10,7 +10,6 @@ import kotlinx.html.id
 import kotlinx.html.li
 import kotlinx.html.main
 import kotlinx.html.p
-import kotlinx.html.script
 import kotlinx.html.ul
 
 class TOSPageTemplate : Template<BODY> {
@@ -232,7 +231,6 @@ class TOSPageTemplate : Template<BODY> {
         div {
             id = "root"
         }
-        script(src = "/static/modules.js") {}
-        script(src = "/static/output.js") {}
+        jsTags()
     }
 }

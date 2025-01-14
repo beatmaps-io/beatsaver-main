@@ -1,0 +1,45 @@
+plugins {
+    kotlin("multiplatform")
+    kotlin("plugin.serialization")
+}
+
+repositories {
+    mavenCentral()
+}
+
+kotlin {
+    targets.all {
+        compilations.all {
+            compilerOptions.configure {
+                freeCompilerArgs.add("-Xexpect-actual-classes")
+            }
+        }
+    }
+    js(IR).browser()
+
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation(project(":shared"))
+                implementation("io.beatmaps:BeatMaps-CommonMP:1.0.+")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
+            }
+        }
+        val jsMain by getting {
+            with(languageSettings) {
+                optIn("kotlin.js.ExperimentalJsExport")
+                optIn("kotlin.time.ExperimentalTime")
+                optIn("kotlinx.serialization.ExperimentalSerializationApi")
+                optIn("kotlin.io.encoding.ExperimentalEncodingApi")
+            }
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
+
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-extensions:1.0.1-pre.736")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-legacy:18.3.1-pre.736")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom-legacy:18.3.1-pre.736")
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:6.23.0-pre.736")
+            }
+        }
+    }
+}

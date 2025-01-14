@@ -224,11 +224,12 @@ fun Route.testplayRoute(client: HttpClient) {
                     sess.isAdmin() || currentWipCount < maxWips || throw UserApiException(PatreonTier.maxWipsMessage)
 
                     (updateState() > 0).also { rTemp ->
-                        if (rTemp && sess.isAdmin() && newState.reason?.isEmpty() == false) {
+                        val reason = newState.reason
+                        if (rTemp && sess.isAdmin() && reason?.isEmpty() == false) {
                             ModLog.insert(
                                 sess.userId,
                                 newState.mapId,
-                                UnpublishData(newState.reason),
+                                UnpublishData(reason),
                                 wrapAsExpressionNotNull(
                                     Beatmap.select(Beatmap.uploader).where { Beatmap.id eq newState.mapId }.limit(1)
                                 )
