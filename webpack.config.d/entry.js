@@ -6,6 +6,7 @@
     config.entry = path.resolve(__dirname, "kotlin/BeatMaps-shared.js");
     config.optimization = {
         usedExports: true,
+        chunkIds: "named",
         splitChunks: {
             chunks: "all",
             filename: "[name].js",
@@ -55,6 +56,11 @@
                         return "dates"
                     } else if (/react-beautiful-dnd/.test(importPath)) {
                         return "dnd"
+                    }
+
+                    let matches = importPath.match(/BeatMaps-([a-z]+)/);
+                    if (matches != null) {
+                        return matches[1];
                     }
                 },
                 webpackMode: (modulePath, importPath) => {
