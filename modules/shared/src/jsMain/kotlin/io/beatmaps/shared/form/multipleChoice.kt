@@ -1,12 +1,11 @@
 package io.beatmaps.shared.form
 
 import external.reactFor
-import kotlinx.html.INPUT
+import io.beatmaps.util.betterChecked
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import react.Props
-import react.dom.RDOMBuilder
 import react.dom.div
 import react.dom.input
 import react.dom.label
@@ -20,10 +19,6 @@ external interface MultipleChoiceProps<T> : Props {
     var className: String?
 }
 
-fun RDOMBuilder<INPUT>.betterChecked(b: Boolean) {
-    attrs.attributes["checked"] = if (b) "checked" else ""
-}
-
 val multipleChoice = fc<MultipleChoiceProps<Any?>>("multipleChoice") { props ->
     div("multiple-choice ${props.className ?: ""}") {
         props.choices.forEach { (text, value) ->
@@ -33,6 +28,7 @@ val multipleChoice = fc<MultipleChoiceProps<Any?>>("multipleChoice") { props ->
                 key = id
                 attrs.id = id
                 attrs.name = props.name
+                attrs.checked
                 // If you use the checked option react gets upset that the controlled state changes
                 betterChecked(value == props.selectedValue)
                 attrs.onChangeFunction = {

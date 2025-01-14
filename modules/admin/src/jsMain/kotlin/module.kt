@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalJsExport::class)
-
 import io.beatmaps.admin.modlog.modlog
 
 @JsExport

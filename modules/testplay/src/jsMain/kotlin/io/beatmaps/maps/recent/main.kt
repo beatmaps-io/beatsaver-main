@@ -5,10 +5,10 @@ import io.beatmaps.Config
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapTestplay
 import io.beatmaps.api.MapVersion
-import io.beatmaps.index.ModalCallbacks
-import io.beatmaps.index.modal
-import io.beatmaps.index.modalContext
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.ModalCallbacks
+import io.beatmaps.shared.modal
+import io.beatmaps.shared.modalContext
 import react.Props
 import react.dom.table
 import react.dom.tbody

@@ -11,10 +11,10 @@ import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.globalContext
-import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalCallbacks
-import io.beatmaps.index.ModalData
-import io.beatmaps.modreview.editableText
+import io.beatmaps.shared.ModalButton
+import io.beatmaps.shared.ModalCallbacks
+import io.beatmaps.shared.ModalData
+import io.beatmaps.shared.editableText
 import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.reviewer
 import kotlinx.html.js.onClickFunction

@@ -7,6 +7,7 @@ import external.generateConfig
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
+import io.beatmaps.admin.ModReviewProps
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.DeleteReview
 import io.beatmaps.api.GenericSearchResponse
@@ -17,13 +18,12 @@ import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.api.ReviewsResponse
 import io.beatmaps.globalContext
-import io.beatmaps.index.ModalCallbacks
-import io.beatmaps.index.modal
-import io.beatmaps.index.modalContext
-import io.beatmaps.modreview.ModReviewProps
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScrollElementRenderer
+import io.beatmaps.shared.ModalCallbacks
 import io.beatmaps.shared.generateInfiniteScrollComponent
+import io.beatmaps.shared.modal
+import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.review.commentsInfiniteScroll
 import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.dom.hasClass
@@ -33,7 +33,6 @@ import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.url.URLSearchParams
-import react.Props
 import react.dom.button
 import react.dom.form
 import react.dom.input

@@ -60,7 +60,8 @@ val tagPicker = fc<TagPickerProps>("tagPicker") { props ->
 
         tags?.sortedBy { it.type.ordinal }?.forEach(::renderTag)
 
-        MapTag.sorted.minus(tags ?: setOf()).fold(MapTagType.None) { prev, it ->
+        val set = tags ?: setOf()
+        MapTag.sorted.minus(set).fold(MapTagType.None) { prev, it ->
             if (it.type != prev) div("break") {}
 
             if (byType.getValue(it.type) < MapTag.maxPerType.getValue(it.type)) {

@@ -12,6 +12,9 @@ import io.beatmaps.common.toQuery
 import io.beatmaps.common.toTagSet
 import io.beatmaps.globalContext
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.ModalCallbacks
+import io.beatmaps.shared.modal
+import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.search.BooleanFilterInfo
 import io.beatmaps.shared.search.ExtraContentRenderer
 import io.beatmaps.shared.search.FilterCategory

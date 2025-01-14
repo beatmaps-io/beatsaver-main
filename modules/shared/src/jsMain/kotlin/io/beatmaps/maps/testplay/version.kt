@@ -10,9 +10,9 @@ import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.StateUpdate
 import io.beatmaps.common.api.EMapState
-import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalData
-import io.beatmaps.index.modalContext
+import io.beatmaps.shared.ModalButton
+import io.beatmaps.shared.ModalData
+import io.beatmaps.shared.modalContext
 import io.beatmaps.util.textToContent
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant

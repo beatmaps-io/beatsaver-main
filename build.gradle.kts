@@ -18,9 +18,18 @@ group = "io.beatmaps"
 version = "1.0-SNAPSHOT"
 
 allprojects {
+    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+
     repositories {
         mavenCentral()
         maven { url = uri("https://artifactory.kirkstall.top-cat.me") }
+    }
+
+    ktlint {
+        version.set("0.50.0")
+        reporters {
+            reporter(ReporterType.CHECKSTYLE)
+        }
     }
 }
 
@@ -184,7 +193,7 @@ kotlin {
             dependencies {
                 implementation(project(":admin"))
                 implementation(project(":testplay"))
-                implementation(project(":shared"))
+                implementation(project(":playlists"))
 
                 implementation(devNpm("webpack-bundle-analyzer", "4.6.1"))
                 implementation(devNpm("magic-comments-loader", "2.1.4"))
@@ -257,13 +266,6 @@ tasks.create<JavaExec>("installPlaywrightBrowsers") {
 tasks.getByName<Test>("jvmTest") {
     dependsOn(tasks.getByName("jsBrowserProductionWebpack"), tasks.getByName("compileSass"), tasks.getByName("installPlaywrightBrowsers"))
     environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
-}
-
-ktlint {
-    version.set("0.50.0")
-    reporters {
-        reporter(ReporterType.CHECKSTYLE)
-    }
 }
 
 tasks.getByName<JavaExec>("run") {

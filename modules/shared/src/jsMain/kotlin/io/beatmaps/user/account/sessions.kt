@@ -2,9 +2,9 @@ package io.beatmaps.user.account
 
 import io.beatmaps.api.SessionInfo
 import io.beatmaps.api.SessionsData
-import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalData
-import io.beatmaps.index.modalContext
+import io.beatmaps.shared.ModalButton
+import io.beatmaps.shared.ModalData
+import io.beatmaps.shared.modalContext
 import kotlinx.html.ButtonType
 import kotlinx.html.js.onClickFunction
 import react.Props

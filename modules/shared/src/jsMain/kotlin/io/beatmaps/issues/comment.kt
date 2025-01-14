@@ -12,7 +12,7 @@ import io.beatmaps.api.IssueConstants
 import io.beatmaps.globalContext
 import io.beatmaps.maps.testplay.TimelineEntrySectionRenderer
 import io.beatmaps.maps.testplay.timelineEntry
-import io.beatmaps.modreview.editableText
+import io.beatmaps.shared.editableText
 import io.beatmaps.shared.form.errors
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title

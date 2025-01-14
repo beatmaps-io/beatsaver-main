@@ -6,12 +6,13 @@ import io.beatmaps.History
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
-import io.beatmaps.index.ModalCallbacks
-import io.beatmaps.index.modal
-import io.beatmaps.index.modalContext
 import io.beatmaps.maps.testplay.testplay
-import io.beatmaps.playlist.playlistTable
+import io.beatmaps.playlist.playlists
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.ModalCallbacks
+import io.beatmaps.shared.loadingElem
+import io.beatmaps.shared.modal
+import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.review.reviewTable
 import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.browser.localStorage
@@ -19,6 +20,7 @@ import kotlinx.browser.window
 import org.w3c.dom.get
 import org.w3c.dom.set
 import react.Props
+import react.Suspense
 import react.dom.div
 import react.fc
 import react.router.useNavigate
@@ -152,10 +154,13 @@ val mapPage = fc<MapPageProps>("mapPage") { props ->
                             }
                         }
 
-                        playlistTable {
-                            attrs.mapId = it.id
-                            attrs.visible = tab == MapTabs.Playlists
-                            attrs.small = true
+                        Suspense {
+                            attrs.fallback = loadingElem
+                            playlists.table {
+                                attrs.mapId = it.id
+                                attrs.visible = tab == MapTabs.Playlists
+                                attrs.small = true
+                            }
                         }
 
                         reviewTable {

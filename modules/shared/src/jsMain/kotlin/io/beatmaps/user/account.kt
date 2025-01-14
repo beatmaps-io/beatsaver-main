@@ -16,7 +16,7 @@ import io.beatmaps.api.UserConstants
 import io.beatmaps.api.UserDetail
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.captcha.captcha
-import io.beatmaps.modreview.editableText
+import io.beatmaps.shared.editableText
 import io.beatmaps.shared.form.errors
 import io.beatmaps.upload.UploadRequestConfig
 import io.beatmaps.user.account.accountEmail

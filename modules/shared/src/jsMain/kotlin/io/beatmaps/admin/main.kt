@@ -1,8 +1,6 @@
 package io.beatmaps.admin
 
 import external.component
-import io.beatmaps.modreview.ModReviewProps
-import io.beatmaps.user.AdminAccountComponentProps
 import js.import.import
 import react.ComponentClass
 import react.ExoticComponent

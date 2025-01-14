@@ -2,11 +2,11 @@ package io.beatmaps.maps.testplay
 
 import io.beatmaps.History
 import io.beatmaps.api.MapDetail
-import io.beatmaps.index.ModalCallbacks
-import io.beatmaps.index.modal
-import io.beatmaps.index.modalContext
 import io.beatmaps.maps.infoTable
 import io.beatmaps.maps.mapInfo
+import io.beatmaps.shared.ModalCallbacks
+import io.beatmaps.shared.modal
+import io.beatmaps.shared.modalContext
 import react.Props
 import react.fc
 import react.useRef

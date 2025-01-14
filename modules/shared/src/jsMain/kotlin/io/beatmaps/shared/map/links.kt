@@ -3,9 +3,8 @@ package io.beatmaps.shared.map
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
 import io.beatmaps.common.api.EMapState
-import io.beatmaps.index.modalContext
-import io.beatmaps.index.oneclick
 import io.beatmaps.previewBaseUrl
+import io.beatmaps.shared.modalContext
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import react.Props

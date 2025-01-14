@@ -1,4 +1,4 @@
-package io.beatmaps.index
+package io.beatmaps.shared.map
 import kotlinx.html.title
 import react.Props
 import react.dom.a

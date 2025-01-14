@@ -25,6 +25,12 @@ kotlin {
             }
         }
         val jsMain by getting {
+            with(languageSettings) {
+                optIn("kotlin.js.ExperimentalJsExport")
+                optIn("kotlin.time.ExperimentalTime")
+                optIn("kotlinx.serialization.ExperimentalSerializationApi")
+                optIn("kotlin.io.encoding.ExperimentalEncodingApi")
+            }
             dependencies {
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-extensions:1.0.1-pre.736")
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-react-legacy:18.3.1-pre.736")

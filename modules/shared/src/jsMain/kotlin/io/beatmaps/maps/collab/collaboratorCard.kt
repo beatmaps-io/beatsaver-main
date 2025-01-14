@@ -1,4 +1,4 @@
-package io.beatmaps.maps
+package io.beatmaps.maps.collab
 
 import io.beatmaps.api.UserDetail
 import kotlinx.html.js.onClickFunction

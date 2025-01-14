@@ -1,13 +1,13 @@
-package io.beatmaps.maps
+package io.beatmaps.maps.collab
 
 import external.Axios
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.CollaborationRemoveData
 import io.beatmaps.api.MapDetail
-import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalCallbacks
-import io.beatmaps.index.ModalData
+import io.beatmaps.shared.ModalButton
+import io.beatmaps.shared.ModalCallbacks
+import io.beatmaps.shared.ModalData
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import react.Props

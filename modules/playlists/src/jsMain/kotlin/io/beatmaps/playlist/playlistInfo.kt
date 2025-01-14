@@ -3,6 +3,7 @@ package io.beatmaps.playlist
 import external.routeLink
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.common.SearchPlaylistConfig
+import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.api.MapAttr
 import io.beatmaps.common.api.RankedFilter
 import io.beatmaps.common.asQuery
@@ -64,7 +65,7 @@ val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
             coloredCard {
                 attrs.color = plAttrs.joinToString(" ") { it.color }
                 attrs.title = plAttrs.joinToString(" + ") { it.name }
-                attrs.classes = if (pl.type == io.beatmaps.common.api.EPlaylistType.System) "border-warning" else ""
+                attrs.classes = if (pl.type == EPlaylistType.System) "border-warning" else ""
 
                 div("info") {
                     img(src = pl.playlistImage, alt = "Cover Image", classes = "cover") { }
@@ -82,15 +83,17 @@ val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
                     }
                 }
                 div("additional") {
-                    if (pl.type == io.beatmaps.common.api.EPlaylistType.Search) {
+                    val plStats = pl.stats
+                    if (pl.type == EPlaylistType.Search) {
                         div("rating") {
                             i("fas fa-search me-1") { }
                         }
                         div("stats") {
-                            if (pl.config is SearchPlaylistConfig) {
-                                stats.filter { it.filter(pl.config) }.take(5).forEach {
+                            val config = pl.config
+                            if (config is SearchPlaylistConfig) {
+                                stats.filter { it.filter(config) }.take(5).forEach {
                                     div {
-                                        val txt = it.text(pl.config)
+                                        val txt = it.text(config)
                                         if (it.icon.startsWith("/")) {
                                             img(txt, it.icon) {
                                                 attrs.title = txt
@@ -104,7 +107,7 @@ val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
                                                 attrs.attributes["aria-label"] = txt
                                             }
                                         }
-                                        it.value(pl.config)?.let { v ->
+                                        it.value(config)?.let { v ->
                                             span("ms-1") {
                                                 +v
                                             }
@@ -113,12 +116,12 @@ val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
                                 }
                             }
                         }
-                    } else if (pl.stats != null) {
+                    } else if (plStats != null) {
                         div("rating") {
                             io.beatmaps.shared.map.rating {
-                                attrs.up = pl.stats.upVotes
-                                attrs.down = pl.stats.downVotes
-                                attrs.rating = pl.stats.scoreOneDP
+                                attrs.up = plStats.upVotes
+                                attrs.down = plStats.downVotes
+                                attrs.rating = plStats.scoreOneDP
                             }
                         }
                         div("stats") {
@@ -128,7 +131,7 @@ val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
                                     attrs.attributes["aria-label"] = "Total amount of maps"
                                 }
                                 span {
-                                    +pl.stats.totalMaps.toString()
+                                    +plStats.totalMaps.toString()
                                 }
                             }
                             div {
@@ -137,7 +140,7 @@ val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
                                     attrs.attributes["aria-label"] = "Total amount of mappers"
                                 }
                                 span {
-                                    +pl.stats.mapperCount.toString()
+                                    +plStats.mapperCount.toString()
                                 }
                             }
                             div {
@@ -146,7 +149,7 @@ val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
                                     attrs.attributes["aria-label"] = "Total runtime of all maps combined"
                                 }
                                 span {
-                                    +pl.stats.totalDuration.formatTime()
+                                    +plStats.totalDuration.formatTime()
                                 }
                             }
                             div {
@@ -157,7 +160,7 @@ val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
                                     attrs.height = "12"
                                 }
                                 span {
-                                    +"${pl.stats.minNpsTwoDP} - ${pl.stats.maxNpsTwoDP}"
+                                    +"${plStats.minNpsTwoDP} - ${plStats.maxNpsTwoDP}"
                                 }
                             }
                         }

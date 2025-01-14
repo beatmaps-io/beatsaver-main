@@ -1,4 +1,4 @@
-package io.beatmaps.maps
+package io.beatmaps.maps.collab
 
 import external.Axios
 import external.generateConfig

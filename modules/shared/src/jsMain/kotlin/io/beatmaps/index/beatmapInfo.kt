@@ -10,10 +10,11 @@ import io.beatmaps.common.api.MapAttr
 import io.beatmaps.common.fixed
 import io.beatmaps.common.formatTime
 import io.beatmaps.globalContext
-import io.beatmaps.playlist.addToPlaylist
+import io.beatmaps.playlist.playlists
 import io.beatmaps.shared.AudioPreviewSize
 import io.beatmaps.shared.audioPreview
 import io.beatmaps.shared.coloredCard
+import io.beatmaps.shared.loadingElem
 import io.beatmaps.shared.map.bookmarkButton
 import io.beatmaps.shared.map.diffIcons
 import io.beatmaps.shared.map.links
@@ -25,6 +26,7 @@ import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.useAutoSize
 import org.w3c.dom.Audio
 import react.RefObject
+import react.Suspense
 import react.dom.div
 import react.dom.i
 import react.dom.img
@@ -124,19 +126,22 @@ val beatmapInfo = fc<BeatmapInfoProps>("beatmapInfo") { props ->
                             attrs.height = "12"
                         }
                     }
-                    globalContext.Consumer { userData ->
-                        if (userData != null) {
-                            div {
-                                bookmarkButton {
-                                    attrs.bookmarked = bookmarked ?: (map.bookmarked == true)
-                                    attrs.onClick = { e, bm ->
-                                        e.preventDefault()
-                                        setBookmarked(!bm)
-                                        bookmark(!bm)
+                    Suspense {
+                        attrs.fallback = loadingElem
+                        globalContext.Consumer { userData ->
+                            if (userData != null) {
+                                div {
+                                    bookmarkButton {
+                                        attrs.bookmarked = bookmarked ?: (map.bookmarked == true)
+                                        attrs.onClick = { e, bm ->
+                                            e.preventDefault()
+                                            setBookmarked(!bm)
+                                            bookmark(!bm)
+                                        }
                                     }
-                                }
-                                addToPlaylist {
-                                    attrs.map = map
+                                    playlists.addTo {
+                                        attrs.map = map
+                                    }
                                 }
                             }
                         }

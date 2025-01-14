@@ -20,14 +20,15 @@ import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.api.PlaylistReportData
 import io.beatmaps.globalContext
-import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalCallbacks
-import io.beatmaps.index.ModalData
 import io.beatmaps.index.beatmapInfo
-import io.beatmaps.index.modal
-import io.beatmaps.index.modalContext
 import io.beatmaps.issues.reportModal
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.ModalButton
+import io.beatmaps.shared.ModalCallbacks
+import io.beatmaps.shared.ModalData
+import io.beatmaps.shared.loadingElem
+import io.beatmaps.shared.modal
+import io.beatmaps.shared.modalContext
 import io.beatmaps.upload.UploadRequestConfig
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
@@ -41,7 +42,6 @@ import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.xhr.FormData
 import react.Props
 import react.Suspense
-import react.createElement
 import react.dom.a
 import react.dom.button
 import react.dom.div
@@ -367,7 +367,7 @@ val playlistPage = fc<Props>("playlistPage") {
             }
             div("col-lg-8") {
                 Suspense {
-                    attrs.fallback = createElement(loading)
+                    attrs.fallback = loadingElem
                     if (playlist?.owner?.id == userData?.userId && playlist?.type?.orderable == true) {
                         dndExotics.dragDropContext {
                             attrs.onDragEnd = {
@@ -406,14 +406,6 @@ val playlistPage = fc<Props>("playlistPage") {
                     }
                 }
             }
-        }
-    }
-}
-
-val loading = fc<Props> {
-    p {
-        i {
-            +"Loading..."
         }
     }
 }

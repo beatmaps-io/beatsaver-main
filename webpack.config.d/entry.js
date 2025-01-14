@@ -55,11 +55,13 @@
                         return "dates"
                     } else if (/react-beautiful-dnd/.test(importPath)) {
                         return "dnd"
-                    } else if (/admin/.test(importPath)) {
-                        return "admin"
-                    } else if (/testplay/.test(importPath)) {
-                        return "testplay"
                     }
+                },
+                webpackMode: (modulePath, importPath) => {
+                    if (/playlists/.test(importPath)) {
+                        return "eager"
+                    }
+                    return "lazy-once"
                 }
             }
         }

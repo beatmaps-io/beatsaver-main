@@ -2,7 +2,7 @@ package io.beatmaps
 
 import io.beatmaps.common.json
 import io.beatmaps.nav.manageNav
-import io.beatmaps.playlist.loading
+import io.beatmaps.shared.loadingElem
 import js.objects.jso
 import kotlinx.browser.document
 import kotlinx.browser.localStorage
@@ -71,7 +71,7 @@ fun bsroute(
         fc("pageWrapper") {
             initWithHistory(History(useNavigate()), replaceHomelink)
             Suspense {
-                attrs.fallback = createElement(loading)
+                attrs.fallback = loadingElem
                 render()
             }
         }

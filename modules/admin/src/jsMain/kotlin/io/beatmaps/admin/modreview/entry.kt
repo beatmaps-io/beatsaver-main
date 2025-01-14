@@ -8,11 +8,11 @@ import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.common.api.ReviewSentiment
-import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalData
-import io.beatmaps.index.modalContext
-import io.beatmaps.modreview.editableText
+import io.beatmaps.shared.ModalButton
+import io.beatmaps.shared.ModalData
+import io.beatmaps.shared.editableText
 import io.beatmaps.shared.map.mapTitle
+import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.review.sentimentIcon
 import io.beatmaps.shared.review.sentimentPicker
 import io.beatmaps.user.userLink

@@ -1,4 +1,4 @@
-package io.beatmaps.util
+package io.beatmaps.user
 
 import io.beatmaps.api.UserDetail
 

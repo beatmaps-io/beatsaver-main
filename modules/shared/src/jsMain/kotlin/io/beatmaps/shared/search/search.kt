@@ -4,10 +4,10 @@ import external.Moment
 import external.dates
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
-import io.beatmaps.playlist.loading
 import io.beatmaps.shared.form.multipleChoice
 import io.beatmaps.shared.form.slider
 import io.beatmaps.shared.form.toggle
+import io.beatmaps.shared.loadingElem
 import kotlinx.browser.document
 import kotlinx.html.ButtonType
 import kotlinx.html.DIV
@@ -274,7 +274,7 @@ open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchPr
                 }
                 div("mb-3 col-sm-3") {
                     Suspense {
-                        attrs.fallback = createElement(loading)
+                        attrs.fallback = loadingElem
                         dates.dateRangePicker {
                             attrs.startDate = state.startDate
                             attrs.endDate = state.endDate

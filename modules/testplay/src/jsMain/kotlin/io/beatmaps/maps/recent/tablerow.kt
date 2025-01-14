@@ -1,4 +1,4 @@
-package io.beatmaps.index
+package io.beatmaps.maps.recent
 
 import external.routeLink
 import io.beatmaps.api.MapDetail

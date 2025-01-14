@@ -1,18 +1,15 @@
 package io.beatmaps
 
+import io.beatmaps.admin.admin
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewReplyDetail
-import io.beatmaps.common.json
 import io.beatmaps.index.homePage
 import io.beatmaps.issues.issuesPage
 import io.beatmaps.maps.mapEmbed
 import io.beatmaps.maps.mapPage
-import io.beatmaps.admin.admin
+import io.beatmaps.maps.testplay.testplayModule
 import io.beatmaps.nav.viewportMinWidthPolyfill
-import io.beatmaps.playlist.editPlaylist
-import io.beatmaps.playlist.multiAddPlaylist
-import io.beatmaps.playlist.playlistFeed
-import io.beatmaps.playlist.playlistPage
+import io.beatmaps.playlist.playlists
 import io.beatmaps.quest.quest
 import io.beatmaps.upload.uploadPage
 import io.beatmaps.user.alerts.alertsPage
@@ -27,9 +24,7 @@ import io.beatmaps.user.resetPage
 import io.beatmaps.user.signupPage
 import js.objects.jso
 import kotlinx.browser.window
-import kotlinx.serialization.Serializable
 import react.Props
-import react.createContext
 import react.createElement
 import react.dom.client.createRoot
 import react.dom.div
@@ -37,35 +32,10 @@ import react.fc
 import react.router.dom.RouterProvider
 import react.router.dom.createBrowserRouter
 import react.useEffectOnce
-import io.beatmaps.maps.testplay.testplayModule
 import web.dom.document
 
 fun setPageTitle(page: String) {
     document.title = "BeatSaver - $page"
-}
-
-@Serializable
-data class UserData(
-    val userId: Int = 0,
-    val admin: Boolean = false,
-    val curator: Boolean = false,
-    val suspended: Boolean = false
-)
-
-@Serializable
-data class ConfigData(
-    // Safe because if captchas are bypassed the backend will still reject requests
-    val showCaptcha: Boolean = true,
-    val v2Search: Boolean = false,
-    val captchaProvider: String = "Fake"
-)
-
-val globalContext = createContext<UserData?>(null)
-val configContext = createContext<ConfigData?>(null)
-
-object Config {
-    const val apibase = "/api"
-    const val dateFormat = "YYYY-MM-DD"
 }
 
 @EagerInitialization
@@ -112,19 +82,19 @@ val appRouter = createBrowserRouter(
             alertsPage { }
         },
         bsroute("/playlists") {
-            playlistFeed { }
+            playlists.feed { }
         },
         bsroute("/playlists/new") {
-            editPlaylist { }
+            playlists.edit { }
         },
         bsroute("/playlists/:id") {
-            playlistPage { }
+            playlists.page { }
         },
         bsroute("/playlists/:id/edit") {
-            editPlaylist { }
+            playlists.edit { }
         },
         bsroute("/playlists/:id/add") {
-            multiAddPlaylist { }
+            playlists.multiAdd { }
         },
         bsroute("/test") {
             testplayModule.recentTestplays { }
@@ -195,16 +165,8 @@ val app = fc<Props>("BeatSaver Root") {
         viewportMinWidthPolyfill()
     }
 
-    configContext.Provider {
-        attrs.value = document.getElementById("config-data")?.let {
-            json.decodeFromString<ConfigData>(it.textContent ?: "{}")
-        }
-
-        globalContext.Provider {
-            attrs.value = document.getElementById("user-data")?.let {
-                json.decodeFromString<UserData>(it.textContent ?: "{}")
-            }
-
+    provide(configContext, "config-data") {
+        provide(globalContext, "user-data") {
             RouterProvider {
                 attrs.router = appRouter
                 attrs.future = jso {

@@ -20,17 +20,19 @@ import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.MapAttr
 import io.beatmaps.common.api.MapReportData
 import io.beatmaps.globalContext
-import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalData
-import io.beatmaps.index.modalContext
 import io.beatmaps.issues.reportModal
-import io.beatmaps.playlist.addToPlaylist
+import io.beatmaps.maps.collab.collaboratorLeave
+import io.beatmaps.maps.collab.collaboratorPicker
+import io.beatmaps.playlist.playlists
 import io.beatmaps.shared.AudioPreviewSize
+import io.beatmaps.shared.ModalButton
+import io.beatmaps.shared.ModalData
 import io.beatmaps.shared.audioPreview
 import io.beatmaps.shared.coloredCard
 import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.map.bookmarkButton
 import io.beatmaps.shared.map.links
+import io.beatmaps.shared.modalContext
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.useAudio
@@ -46,6 +48,7 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.Event
 import react.Props
+import react.Suspense
 import react.dom.a
 import react.dom.button
 import react.dom.div
@@ -252,8 +255,10 @@ val mapInfo = fc<MapInfoProps>("mapInfo") { props ->
                                     }
                                 }
                                 if (userData != null) {
-                                    addToPlaylist {
-                                        attrs.map = props.mapInfo
+                                    Suspense {
+                                        playlists.addTo {
+                                            attrs.map = props.mapInfo
+                                        }
                                     }
                                     bookmarkButton {
                                         attrs.bookmarked = props.mapInfo.bookmarked == true

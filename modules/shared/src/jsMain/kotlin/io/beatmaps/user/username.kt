@@ -14,7 +14,6 @@ import io.beatmaps.shared.form.errors
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
-import kotlinx.serialization.decodeFromString
 import org.w3c.dom.HTMLInputElement
 import react.Props
 import react.dom.button

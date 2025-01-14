@@ -21,11 +21,11 @@ import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.api.ReviewReportData
 import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.globalContext
-import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalData
-import io.beatmaps.index.modalContext
 import io.beatmaps.issues.reportModal
-import io.beatmaps.modreview.editableText
+import io.beatmaps.shared.ModalButton
+import io.beatmaps.shared.ModalData
+import io.beatmaps.shared.editableText
+import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.reviewer
 import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.orCatch

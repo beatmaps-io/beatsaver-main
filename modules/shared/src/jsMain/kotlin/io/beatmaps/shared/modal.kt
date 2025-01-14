@@ -1,4 +1,4 @@
-package io.beatmaps.index
+package io.beatmaps.shared
 
 import io.beatmaps.previewBaseUrl
 import io.beatmaps.util.textToContent

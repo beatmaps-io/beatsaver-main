@@ -18,20 +18,19 @@ import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.common.api.UserReportData
 import io.beatmaps.common.json
 import io.beatmaps.globalContext
-import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalCallbacks
-import io.beatmaps.index.ModalData
 import io.beatmaps.index.beatmapTable
-import io.beatmaps.index.modal
-import io.beatmaps.index.modalContext
 import io.beatmaps.issues.reportModal
-import io.beatmaps.playlist.playlistTable
+import io.beatmaps.playlist.playlists
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.ModalButton
+import io.beatmaps.shared.ModalCallbacks
+import io.beatmaps.shared.ModalData
+import io.beatmaps.shared.modal
+import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.review.reviewTable
 import io.beatmaps.shared.search.sort
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
-import io.beatmaps.util.userTitles
 import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
@@ -47,6 +46,7 @@ import org.w3c.dom.events.Event
 import org.w3c.dom.get
 import org.w3c.dom.set
 import react.Props
+import react.Suspense
 import react.dom.a
 import react.dom.b
 import react.dom.br
@@ -580,9 +580,11 @@ val profilePage = fc<Props>("profilePage") { _ ->
             }
         }
         if (userDetail != null) {
-            playlistTable {
-                attrs.userId = userDetail.id
-                attrs.visible = tabState == ProfileTab.PLAYLISTS
+            Suspense {
+                playlists.table {
+                    attrs.userId = userDetail.id
+                    attrs.visible = tabState == ProfileTab.PLAYLISTS
+                }
             }
             if (startup) {
                 beatmapTable {

@@ -6,7 +6,6 @@ import io.beatmaps.Config
 import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
-import io.beatmaps.index.beatmapTableRow
 import io.beatmaps.util.textToContent
 import kotlinx.datetime.internal.JSJoda.Instant
 import kotlinx.html.js.onClickFunction

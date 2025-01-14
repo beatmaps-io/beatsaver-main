@@ -5,7 +5,7 @@ import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.IssueConstants
 import io.beatmaps.maps.testplay.TimelineEntrySectionRenderer
 import io.beatmaps.maps.testplay.timelineEntry
-import io.beatmaps.modreview.editableText
+import io.beatmaps.shared.editableText
 import io.beatmaps.shared.form.errors
 import io.beatmaps.util.useDidUpdateEffect
 import react.PropsWithChildren

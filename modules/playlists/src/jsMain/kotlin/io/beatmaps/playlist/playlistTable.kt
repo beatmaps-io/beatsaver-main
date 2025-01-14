@@ -7,43 +7,18 @@ import io.beatmaps.Config
 import io.beatmaps.api.GenericSearchResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistSearchResponse
-import io.beatmaps.common.SearchOrder
 import io.beatmaps.configContext
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.generateInfiniteScrollComponent
-import io.beatmaps.shared.search.CommonParams
 import io.beatmaps.util.encodeURIComponent
 import io.beatmaps.util.useDidUpdateEffect
 import org.w3c.dom.HTMLElement
-import react.Props
-import react.RefObject
 import react.dom.div
 import react.fc
 import react.useContext
 import react.useMemo
 import react.useRef
 import kotlin.js.Promise
-
-data class PlaylistSearchParams(
-    override val search: String,
-    override val minNps: Float?,
-    override val maxNps: Float?,
-    override val from: String? = null,
-    override val to: String? = null,
-    val includeEmpty: Boolean? = null,
-    val curated: Boolean? = null,
-    val verified: Boolean? = null,
-    override val sortOrder: SearchOrder
-) : CommonParams()
-
-external interface PlaylistTableProps : Props {
-    var search: PlaylistSearchParams?
-    var userId: Int?
-    var mapId: String?
-    var small: Boolean?
-    var visible: Boolean?
-    var updateScrollIndex: RefObject<(Int) -> Unit>
-}
 
 val playlistTable = fc<PlaylistTableProps>("playlistTable") { props ->
     val resetRef = useRef<() -> Unit>()

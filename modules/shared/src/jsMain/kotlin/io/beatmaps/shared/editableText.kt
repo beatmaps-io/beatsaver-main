@@ -1,4 +1,4 @@
-package io.beatmaps.modreview
+package io.beatmaps.shared
 
 import external.AxiosResponse
 import io.beatmaps.api.ActionResponse

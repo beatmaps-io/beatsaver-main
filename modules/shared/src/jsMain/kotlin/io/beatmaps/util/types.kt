@@ -9,9 +9,11 @@ import io.beatmaps.common.json
 import io.beatmaps.index.SearchParams
 import kotlinx.datetime.Instant
 import kotlinx.html.CommonAttributeGroupFacade
+import kotlinx.html.INPUT
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import org.w3c.dom.events.Event
+import react.dom.RDOMBuilder
 import kotlin.io.encoding.Base64
 
 fun String.toInstant() = Instant.parse(Moment(this).toISOString())
@@ -30,6 +32,10 @@ var CommonAttributeGroupFacade.onTransitionEndFunction: (Event) -> Unit
     set(newValue) {
         consumer.onTagEvent(this, "ontransitionend", newValue)
     }
+
+fun RDOMBuilder<INPUT>.betterChecked(b: Boolean) {
+    attrs.attributes["checked"] = if (b) "checked" else ""
+}
 
 val hashRegex = Regex("^[A-F0-9]{40}$", RegexOption.IGNORE_CASE)
 

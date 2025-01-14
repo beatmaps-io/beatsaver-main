@@ -33,7 +33,8 @@ kotlin {
             dependencies {
                 implementation("io.beatmaps:BeatMaps-CommonMP:1.0.+")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")            }
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
+            }
         }
         val jsMain by getting {
             with(languageSettings) {

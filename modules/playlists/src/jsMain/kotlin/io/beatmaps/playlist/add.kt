@@ -5,16 +5,14 @@ import external.axiosGet
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.InPlaylist
-import io.beatmaps.api.MapDetail
 import io.beatmaps.api.PlaylistMapRequest
-import io.beatmaps.index.ModalButton
-import io.beatmaps.index.ModalData
-import io.beatmaps.index.modalContext
+import io.beatmaps.shared.ModalButton
+import io.beatmaps.shared.ModalData
+import io.beatmaps.shared.modalContext
 import io.beatmaps.util.await
 import io.beatmaps.util.launch
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
-import react.Props
 import react.dom.a
 import react.dom.i
 import react.dom.span
@@ -22,10 +20,6 @@ import react.fc
 import react.useContext
 import react.useState
 import kotlin.js.Promise
-
-external interface AddToPlaylistProps : Props {
-    var map: MapDetail
-}
 
 val addToPlaylist = fc<AddToPlaylistProps>("addToPlaylist") { props ->
     val (loading, setLoading) = useState(false)

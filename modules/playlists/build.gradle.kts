@@ -36,6 +36,7 @@ kotlin {
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-react-legacy:18.3.1-pre.736")
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom-legacy:18.3.1-pre.736")
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:6.23.0-pre.736")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
             }
         }
     }

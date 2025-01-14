@@ -11,11 +11,12 @@ import io.beatmaps.common.SearchParamsPlaylist
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.common.api.RankedFilter
-import io.beatmaps.maps.collaboratorCard
-import io.beatmaps.maps.userSearch
+import io.beatmaps.maps.collab.collaboratorCard
+import io.beatmaps.maps.collab.userSearch
 import io.beatmaps.shared.form.multipleChoice
 import io.beatmaps.shared.form.slider
 import io.beatmaps.shared.form.toggle
+import io.beatmaps.shared.loadingElem
 import io.beatmaps.shared.search.environments
 import io.beatmaps.shared.search.presets
 import io.beatmaps.shared.search.sort
@@ -180,7 +181,7 @@ val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
             }
             div("mb-3") {
                 Suspense {
-                    attrs.fallback = createElement(loading)
+                    attrs.fallback = loadingElem
                     label("form-label") {
                         +"Date range"
                     }

@@ -3,7 +3,7 @@ package io.beatmaps.shared.review
 import external.AxiosResponse
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ReviewConstants
-import io.beatmaps.modreview.editableText
+import io.beatmaps.shared.editableText
 import io.beatmaps.shared.form.errors
 import react.Props
 import react.dom.div
