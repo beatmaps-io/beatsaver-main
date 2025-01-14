@@ -63,12 +63,10 @@
                         return matches[1];
                     }
                 },
-                webpackMode: (modulePath, importPath) => {
-                    /*if (/playlists/.test(importPath)) {
-                        return "eager"
-                    }*/
-                    return "lazy-once"
-                }
+                webpackMode: (modulePath, importPath) => "lazy-once",
+                    // /playlists/.test(importPath) ? "eager" : "lazy-once"
+                webpackPrefetch: (modulePath, importPath) =>
+                    /dates|playlists|user/.test(importPath)
             }
         }
     });
