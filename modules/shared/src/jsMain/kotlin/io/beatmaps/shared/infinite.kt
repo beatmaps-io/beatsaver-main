@@ -4,6 +4,7 @@ import external.Axios
 import external.CancelTokenSource
 import external.invoke
 import io.beatmaps.api.GenericSearchResponse
+import io.beatmaps.util.fcmemo
 import kotlinx.browser.window
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
@@ -13,8 +14,6 @@ import react.MutableRefObject
 import react.Props
 import react.RBuilder
 import react.RefObject
-import react.fc
-import react.memo
 import react.useEffect
 import react.useEffectOnce
 import react.useRef
@@ -50,9 +49,9 @@ external interface InfiniteScrollProps<T> : Props {
     var headerSize: Double?
 }
 
-fun <T : Any> generateInfiniteScrollComponent(clazz: KClass<T>) = memo(generateInfiniteScrollComponentInternal<T>(clazz.simpleName ?: "Unknown"))
+fun <T : Any> generateInfiniteScrollComponent(clazz: KClass<T>) = generateInfiniteScrollComponentInternal<T>(clazz.simpleName ?: "Unknown")
 
-private fun <T> generateInfiniteScrollComponentInternal(name: String) = fc<InfiniteScrollProps<T>>("${name}InfiniteScroll") { props ->
+private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<InfiniteScrollProps<T>>("${name}InfiniteScroll") { props ->
     val (pages, setPages) = useState(emptyMap<Int, List<T>>())
 
     val loading = useRef(false)
@@ -256,8 +255,8 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fc<Infin
             val idx = (pIdx * props.itemsPerPage) + localIdx
             with(props.renderElement) {
                 when (this) {
-                    is InfiniteScrollElementRenderer -> this@fc.invoke(it)
-                    is IndexedInfiniteScrollElementRenderer -> this@fc.invoke(idx, it)
+                    is InfiniteScrollElementRenderer -> this@fcmemo.invoke(it)
+                    is IndexedInfiniteScrollElementRenderer -> this@fcmemo.invoke(idx, it)
                 }
             }
         }

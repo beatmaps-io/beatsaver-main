@@ -1,16 +1,16 @@
 package io.beatmaps.shared.map
 
 import io.beatmaps.api.MapDetail
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.img
 import react.dom.span
-import react.fc
 
 external interface RankedStatusProps : Props {
     var map: MapDetail
 }
 
-val rankedStatus = fc<RankedStatusProps>("rankedStatus") { props ->
+val rankedStatus = fcmemo<RankedStatusProps>("rankedStatus") { props ->
     val criteria = with(props.map) {
         listOf(
             // Name, ranked, qualified

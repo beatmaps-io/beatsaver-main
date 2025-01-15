@@ -11,16 +11,16 @@ import io.beatmaps.configContext
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.util.encodeURIComponent
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
 import org.w3c.dom.HTMLElement
 import react.dom.div
-import react.fc
 import react.useContext
 import react.useMemo
 import react.useRef
 import kotlin.js.Promise
 
-val playlistTable = fc<PlaylistTableProps>("playlistTable") { props ->
+val playlistTable = fcmemo<PlaylistTableProps>("playlistTable") { props ->
     val resetRef = useRef<() -> Unit>()
     val loadPageRef = useRef<(Int, CancelTokenSource) -> Promise<GenericSearchResponse<PlaylistFull>?>>()
     val config = useContext(configContext)

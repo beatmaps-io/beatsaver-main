@@ -17,8 +17,10 @@ import react.Props
 import react.fc
 import react.router.useLocation
 import react.router.useNavigate
+import react.useCallback
 import react.useEffect
 import react.useEffectOnce
+import react.useMemo
 import react.useRef
 import react.useState
 
@@ -56,8 +58,8 @@ val playlistFeed = fc<Props>("playlistFeed") {
         if (newParams != searchParams) setSearchParams(newParams)
     }
 
-    fun updateSearchParams(searchParamsLocal: PlaylistSearchParams?, row: Int?) {
-        if (searchParamsLocal == null) return
+    val updateSearchParams = useCallback(searchParams) { searchParamsLocal: PlaylistSearchParams?, row: Int? ->
+        if (searchParamsLocal == null) return@useCallback
 
         with(searchParamsLocal) {
             buildURL(
@@ -77,12 +79,8 @@ val playlistFeed = fc<Props>("playlistFeed") {
         updateSearchParams(searchParams, if (idx < 2) null else idx)
     }
 
-    playlistSearch {
-        attrs.typedState = searchParams
-        attrs.sortOrderTarget = SortOrderTarget.Playlist
-        attrs.maxNps = 16
-        attrs.filters = playlistFilters
-        attrs.paramsFromPage = SearchParamGenerator {
+    val paramGenerator = useMemo {
+        SearchParamGenerator {
             PlaylistSearchParams(
                 searchText(),
                 if (minNps > 0) minNps else null,
@@ -95,7 +93,15 @@ val playlistFeed = fc<Props>("playlistFeed") {
                 order
             )
         }
-        attrs.updateSearchParams = ::updateSearchParams
+    }
+
+    playlistSearch {
+        attrs.typedState = searchParams
+        attrs.sortOrderTarget = SortOrderTarget.Playlist
+        attrs.maxNps = 16
+        attrs.filters = playlistFilters
+        attrs.paramsFromPage = paramGenerator
+        attrs.updateSearchParams = updateSearchParams
     }
     playlistTable {
         attrs.search = searchParams

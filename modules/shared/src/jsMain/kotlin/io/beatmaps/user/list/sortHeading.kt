@@ -2,13 +2,13 @@ package io.beatmaps.user.list
 
 import io.beatmaps.common.api.ApiOrder
 import io.beatmaps.configContext
+import io.beatmaps.util.fcmemo
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import react.Props
 import react.dom.i
 import react.dom.jsStyle
 import react.dom.th
-import react.fc
 import react.useContext
 
 external interface SortThProps : Props {
@@ -18,7 +18,7 @@ external interface SortThProps : Props {
     var order: ApiOrder
 }
 
-val sortTh = fc<SortThProps>("sortTh") { props ->
+val sortTh = fcmemo<SortThProps>("sortTh") { props ->
     val config = useContext(configContext)
     th {
         if (config?.v2Search == true && props.column.sortEnum != null) {

@@ -1,11 +1,11 @@
 package io.beatmaps.user.alerts
 
+import io.beatmaps.util.fcmemo
 import kotlinx.html.js.onClickFunction
 import react.Props
 import react.dom.a
 import react.dom.i
 import react.dom.span
-import react.fc
 
 external interface AlertListItemProps : Props {
     var active: Boolean?
@@ -15,7 +15,7 @@ external interface AlertListItemProps : Props {
     var action: (() -> Unit)?
 }
 
-val alertsListItem = fc<AlertListItemProps>("alertsListItem") {
+val alertsListItem = fcmemo<AlertListItemProps>("alertsListItem") {
     a("#", classes = "list-group-item list-group-item-action d-flex justify-content-between align-items-center" + if (it.active == true) " active" else "") {
         attrs.onClickFunction = { ev ->
             ev.preventDefault()

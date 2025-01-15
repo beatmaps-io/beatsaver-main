@@ -40,6 +40,7 @@ import react.dom.span
 import react.fc
 import react.router.useLocation
 import react.router.useNavigate
+import react.useCallback
 import react.useEffect
 import react.useEffectOnce
 import react.useMemo
@@ -146,18 +147,18 @@ val alertsPage = fc<Props>("alertsPage") {
         }
     }
 
+    val markAlert = useCallback(hiddenAlerts) { hash: Int, stats: UserAlertStats ->
+        setAlertStats(stats)
+        setHiddenAlerts(hiddenAlerts + hash)
+    }
+
     val renderer = useMemo(read, forceHide, hiddenAlerts) {
         InfiniteScrollElementRenderer<UserAlert> {
             alert {
                 attrs.alert = it
                 attrs.read = read
                 attrs.hidden = (forceHide && it?.type != EAlertType.Collaboration) || hiddenAlerts.contains(it?.hashCode())
-                attrs.markAlert = { stats ->
-                    setAlertStats(stats)
-                    it?.hashCode()?.let { hc ->
-                        setHiddenAlerts(hiddenAlerts + hc)
-                    }
-                }
+                attrs.markAlert = markAlert
             }
         }
     }

@@ -40,9 +40,11 @@ import react.dom.jsStyle
 import react.fc
 import react.router.useLocation
 import react.router.useNavigate
+import react.useCallback
 import react.useContext
 import react.useEffect
 import react.useEffectOnce
+import react.useMemo
 import react.useRef
 import react.useState
 
@@ -86,32 +88,34 @@ val homePage = fc<Props>("homePage") {
 
     val userData = useContext(globalContext)
 
-    val mapFilters = listOfNotNull<FilterInfo<SearchParams, *>>(
-        MultipleChoiceFilterInfo(
-            "bot",
-            "AI",
-            FilterCategory.GENERAL,
-            mapOf(
-                "All" to true,
-                "Human" to null,
-                "AI" to false
-            ),
-            null
-        ) { it.automapper },
-        MultipleChoiceFilterInfo("ranked", "Ranked", FilterCategory.GENERAL, RankedFilter.entries.associateBy { it.name }, RankedFilter.All) { it.ranked },
-        BooleanFilterInfo("curated", "Curated", FilterCategory.GENERAL) { it.curated == true },
-        BooleanFilterInfo("verified", "Verified Mapper", FilterCategory.GENERAL) { it.verified == true },
-        if (userData != null) BooleanFilterInfo("followed", "From Mappers You Follow ", FilterCategory.GENERAL) { it.followed == true } else null,
-        BooleanFilterInfo("fs", "Full Spread", FilterCategory.GENERAL) { it.fullSpread == true },
+    val mapFilters = useMemo(userData) {
+        listOfNotNull<FilterInfo<SearchParams, *>>(
+            MultipleChoiceFilterInfo(
+                "bot",
+                "AI",
+                FilterCategory.GENERAL,
+                mapOf(
+                    "All" to true,
+                    "Human" to null,
+                    "AI" to false
+                ),
+                null
+            ) { it.automapper },
+            MultipleChoiceFilterInfo("ranked", "Ranked", FilterCategory.GENERAL, RankedFilter.entries.associateBy { it.name }, RankedFilter.All) { it.ranked },
+            BooleanFilterInfo("curated", "Curated", FilterCategory.GENERAL) { it.curated == true },
+            BooleanFilterInfo("verified", "Verified Mapper", FilterCategory.GENERAL) { it.verified == true },
+            if (userData != null) BooleanFilterInfo("followed", "From Mappers You Follow ", FilterCategory.GENERAL) { it.followed == true } else null,
+            BooleanFilterInfo("fs", "Full Spread", FilterCategory.GENERAL) { it.fullSpread == true },
 
-        BooleanFilterInfo("chroma", "Chroma", FilterCategory.REQUIREMENTS) { it.chroma == true },
-        BooleanFilterInfo("noodle", "Noodle Extensions", FilterCategory.REQUIREMENTS) { it.noodle == true },
-        BooleanFilterInfo("me", "Mapping Extensions", FilterCategory.REQUIREMENTS) { it.me == true },
-        BooleanFilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true }
-    )
+            BooleanFilterInfo("chroma", "Chroma", FilterCategory.REQUIREMENTS) { it.chroma == true },
+            BooleanFilterInfo("noodle", "Noodle Extensions", FilterCategory.REQUIREMENTS) { it.noodle == true },
+            BooleanFilterInfo("me", "Mapping Extensions", FilterCategory.REQUIREMENTS) { it.me == true },
+            BooleanFilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true }
+        )
+    }
 
-    fun updateSearchParams(searchParamsLocal: SearchParams?, row: Int?) {
-        if (searchParamsLocal == null) return
+    val updateSearchParams = useCallback(searchParams) { searchParamsLocal: SearchParams?, row: Int? ->
+        if (searchParamsLocal == null) return@useCallback
 
         val tagStr = searchParamsLocal.tags.toQuery()
 
@@ -152,6 +156,53 @@ val homePage = fc<Props>("homePage") {
         attrs.callbacks = modalRef
     }
 
+    val paramGenerator = useMemo(tags, environments) {
+        SearchParamGenerator {
+            SearchParams(
+                searchText(),
+                filterOrNull("bot") as? Boolean?,
+                if (minNps > 0) minNps else null,
+                if (maxNps < 16) maxNps else null,
+                if (isFiltered("chroma")) true else null,
+                order,
+                startDate?.format(dateFormat),
+                endDate?.format(dateFormat),
+                if (isFiltered("noodle")) true else null,
+                if (isFiltered("ranked")) filterOrNull("ranked") as? RankedFilter else null,
+                if (isFiltered("curated")) true else null,
+                if (isFiltered("verified")) true else null,
+                if (userData != null && isFiltered("followed")) true else null,
+                if (isFiltered("fs")) true else null,
+                if (isFiltered("me")) true else null,
+                if (isFiltered("cinema")) true else null,
+                tags ?: mapOf(),
+                environments ?: emptySet()
+            )
+        }
+    }
+
+    val extraFilters = useMemo(tags, environments) {
+        ExtraContentRenderer {
+            tags {
+                attrs.default = tags
+                attrs.callback = {
+                    setTags(it)
+                }
+            }
+            environments {
+                attrs.default = environments
+                attrs.callback = {
+                    setEnvironments(it)
+                }
+            }
+        }
+    }
+
+    val filterTextCallback = useCallback(tags, environments) {
+        (tags?.flatMap { y -> y.value.map { z -> (if (y.key) "" else "!") + z.slug } } ?: listOf()) +
+            (environments?.map { e -> e.human() } ?: listOf())
+    }
+
     modalContext.Provider {
         attrs.value = modalRef
 
@@ -160,51 +211,14 @@ val homePage = fc<Props>("homePage") {
             attrs.sortOrderTarget = SortOrderTarget.Map
             attrs.filters = mapFilters
             attrs.maxNps = 16
-            attrs.paramsFromPage = SearchParamGenerator {
-                SearchParams(
-                    searchText(),
-                    filterOrNull("bot") as? Boolean?,
-                    if (minNps > 0) minNps else null,
-                    if (maxNps < 16) maxNps else null,
-                    if (isFiltered("chroma")) true else null,
-                    order,
-                    startDate?.format(dateFormat),
-                    endDate?.format(dateFormat),
-                    if (isFiltered("noodle")) true else null,
-                    if (isFiltered("ranked")) filterOrNull("ranked") as? RankedFilter else null,
-                    if (isFiltered("curated")) true else null,
-                    if (isFiltered("verified")) true else null,
-                    if (userData != null && isFiltered("followed")) true else null,
-                    if (isFiltered("fs")) true else null,
-                    if (isFiltered("me")) true else null,
-                    if (isFiltered("cinema")) true else null,
-                    tags ?: mapOf(),
-                    environments ?: emptySet()
-                )
-            }
-            attrs.extraFilters = ExtraContentRenderer {
-                tags {
-                    attrs.default = tags
-                    attrs.callback = {
-                        setTags(it)
-                    }
-                }
-                environments {
-                    attrs.default = environments
-                    attrs.callback = {
-                        setEnvironments(it)
-                    }
-                }
-            }
-            attrs.updateUI = { params ->
+            attrs.paramsFromPage = paramGenerator
+            attrs.extraFilters = extraFilters
+            attrs.updateUI = useCallback { params: SearchParams? ->
                 setTags(params?.tags)
                 setEnvironments(params?.environments)
             }
-            attrs.filterTexts = {
-                (tags?.flatMap { y -> y.value.map { z -> (if (y.key) "" else "!") + z.slug } } ?: listOf()) +
-                    (environments?.map { e -> e.human() } ?: listOf())
-            }
-            attrs.updateSearchParams = ::updateSearchParams
+            attrs.filterTexts = filterTextCallback
+            attrs.updateSearchParams = updateSearchParams
         }
 
         beatmapTable {

@@ -2,6 +2,7 @@ package io.beatmaps.shared
 
 import io.beatmaps.api.MapVersion
 import io.beatmaps.common.fixed
+import io.beatmaps.util.fcmemo
 import kotlinx.browser.window
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.Audio
@@ -11,7 +12,6 @@ import react.RefObject
 import react.dom.div
 import react.dom.i
 import react.dom.img
-import react.fc
 import react.useEffect
 import react.useEffectOnce
 import react.useRef
@@ -29,7 +29,7 @@ external interface AudioPreviewProps : Props {
     var audio: RefObject<Audio>
 }
 
-val audioPreview = fc<AudioPreviewProps>("audioPreview") { props ->
+val audioPreview = fcmemo<AudioPreviewProps>("audioPreview") { props ->
     val audioContainerRef = useRef<HTMLElement>()
     val outerProgressRef = useRef<HTMLElement>()
     val leftProgressRef = useRef<HTMLElement>()

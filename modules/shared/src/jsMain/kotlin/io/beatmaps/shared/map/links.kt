@@ -5,13 +5,13 @@ import io.beatmaps.api.MapVersion
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.previewBaseUrl
 import io.beatmaps.shared.modalContext
+import io.beatmaps.util.fcmemo
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import react.Props
 import react.dom.a
 import react.dom.i
 import react.dom.span
-import react.fc
 import react.useContext
 
 external interface LinksProps : Props {
@@ -20,7 +20,7 @@ external interface LinksProps : Props {
     var limited: Boolean?
 }
 
-val links = fc<LinksProps>("links") { props ->
+val links = fcmemo<LinksProps>("links") { props ->
     val modal = useContext(modalContext)
 
     copyBsr {

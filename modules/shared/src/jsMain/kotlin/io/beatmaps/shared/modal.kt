@@ -1,6 +1,7 @@
 package io.beatmaps.shared
 
 import io.beatmaps.previewBaseUrl
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.textToContent
 import kotlinx.browser.window
 import kotlinx.dom.addClass
@@ -19,7 +20,6 @@ import react.dom.button
 import react.dom.div
 import react.dom.h5
 import react.dom.iframe
-import react.fc
 import react.useRef
 import react.useState
 import kotlin.js.Promise
@@ -39,7 +39,7 @@ external interface ModalProps : Props {
     var callbacks: MutableRefObject<ModalCallbacks>?
 }
 
-val modal = fc<ModalProps>("Modal") { props ->
+val modal = fcmemo<ModalProps>("Modal") { props ->
     val backdrop = useRef<HTMLDivElement>()
     val modalRef = useRef<HTMLDivElement>()
     val iframe = useRef<HTMLIFrameElement>()

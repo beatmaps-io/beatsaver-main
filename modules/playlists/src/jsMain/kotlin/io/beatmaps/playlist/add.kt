@@ -10,18 +10,18 @@ import io.beatmaps.shared.ModalButton
 import io.beatmaps.shared.ModalData
 import io.beatmaps.shared.modalContext
 import io.beatmaps.util.await
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.launch
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import react.dom.a
 import react.dom.i
 import react.dom.span
-import react.fc
 import react.useContext
 import react.useState
 import kotlin.js.Promise
 
-val addToPlaylist = fc<AddToPlaylistProps>("addToPlaylist") { props ->
+val addToPlaylist = fcmemo<AddToPlaylistProps>("addToPlaylist") { props ->
     val (loading, setLoading) = useState(false)
 
     val modal = useContext(modalContext)

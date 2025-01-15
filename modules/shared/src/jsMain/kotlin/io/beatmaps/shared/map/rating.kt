@@ -1,11 +1,11 @@
 package io.beatmaps.shared.map
 
+import io.beatmaps.util.fcmemo
 import kotlinx.html.title
 import react.Props
 import react.dom.div
 import react.dom.jsStyle
 import react.dom.small
-import react.fc
 import kotlin.math.log
 import kotlin.math.pow
 
@@ -15,7 +15,7 @@ external interface RatingProps : Props {
     var rating: Float
 }
 
-val rating = fc<RatingProps>("rating") {
+val rating = fcmemo<RatingProps>("rating") {
     val totalVotes = (it.up + it.down).toDouble()
     var uncertainty = 2.0.pow(-log(totalVotes / 2 + 1, 3.0))
     val weightedRange = 25.0

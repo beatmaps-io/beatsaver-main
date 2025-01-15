@@ -1,6 +1,7 @@
 package io.beatmaps.shared.map
 
 import io.beatmaps.api.MapDetail
+import io.beatmaps.util.fcmemo
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.html.js.onClickFunction
@@ -9,13 +10,12 @@ import react.Props
 import react.dom.a
 import react.dom.i
 import react.dom.span
-import react.fc
 
 external interface CopyBSProps : Props {
     var map: MapDetail
 }
 
-val copyBsr = fc<CopyBSProps>("copyBsr") { props ->
+val copyBsr = fcmemo<CopyBSProps>("copyBsr") { props ->
     a("#") {
         val text = "Copy BSR"
         attrs.title = text
@@ -31,7 +31,7 @@ val copyBsr = fc<CopyBSProps>("copyBsr") { props ->
     }
 }
 
-val copyEmbed = fc<CopyBSProps>("copyEmbed") { props ->
+val copyEmbed = fcmemo<CopyBSProps>("copyEmbed") { props ->
     a("#") {
         //language=html
         val iframe = """

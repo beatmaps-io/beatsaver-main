@@ -6,6 +6,7 @@ import io.beatmaps.Config
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.PlaylistMapRequest
 import io.beatmaps.index.beatmapInfo
+import io.beatmaps.util.fcmemo
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.Audio
@@ -14,7 +15,6 @@ import react.Props
 import react.dom.a
 import react.dom.div
 import react.dom.i
-import react.fc
 
 external interface PlaylistMapEditableProps : Props {
     var obj: MapDetail
@@ -23,7 +23,7 @@ external interface PlaylistMapEditableProps : Props {
     var removeMap: (() -> Unit)?
 }
 
-var playlistMapEditable = fc<PlaylistMapEditableProps>("playlistMapEditable") { props ->
+var playlistMapEditable = fcmemo<PlaylistMapEditableProps>("playlistMapEditable") { props ->
     fun remove() {
         Axios.post<String>(
             "${Config.apibase}/playlists/id/${props.playlistKey}/add",

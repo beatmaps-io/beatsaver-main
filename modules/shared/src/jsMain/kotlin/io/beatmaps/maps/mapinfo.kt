@@ -59,6 +59,7 @@ import react.dom.span
 import react.dom.textarea
 import react.fc
 import react.router.useNavigate
+import react.useCallback
 import react.useContext
 import react.useEffect
 import react.useRef
@@ -261,7 +262,7 @@ val mapInfo = fc<MapInfoProps>("mapInfo") { props ->
                                         }
                                         bookmarkButton {
                                             attrs.bookmarked = props.mapInfo.bookmarked == true
-                                            attrs.onClick = { e, bm ->
+                                            attrs.onClick = useCallback(loading) { e, bm ->
                                                 e.preventDefault()
                                                 if (!loading) bookmark(!bm)
                                             }

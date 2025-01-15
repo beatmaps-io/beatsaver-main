@@ -10,6 +10,7 @@ import io.beatmaps.api.UserAlert
 import io.beatmaps.api.UserAlertStats
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.shared.coloredCard
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.updateAlertDisplay
 import kotlinx.html.js.onClickFunction
@@ -23,7 +24,6 @@ import react.dom.i
 import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
-import react.fc
 import react.useEffect
 import react.useRef
 import react.useState
@@ -32,10 +32,10 @@ external interface AlertProps : Props {
     var alert: UserAlert?
     var read: Boolean?
     var hidden: Boolean
-    var markAlert: ((UserAlertStats) -> Unit)?
+    var markAlert: ((Int, UserAlertStats) -> Unit)?
 }
 
-private fun markAlert(alert: UserAlert, read: Boolean, cb: (UserAlertStats) -> Unit) =
+private fun markAlert(alert: UserAlert, read: Boolean, cb: (Int, UserAlertStats) -> Unit) =
     Axios.post<UserAlertStats>(
         "${Config.apibase}/alerts/mark",
         AlertUpdate(alert.id ?: throw IllegalArgumentException(), read),
@@ -43,12 +43,12 @@ private fun markAlert(alert: UserAlert, read: Boolean, cb: (UserAlertStats) -> U
     ).then {
         updateAlertDisplay(it.data)
 
-        cb(it.data)
+        cb(alert.hashCode(), it.data)
     }.catch {
         // Bad request -> failed to mark
     }
 
-val alert = fc<AlertProps>("alert") { props ->
+val alert = fcmemo<AlertProps>("alert") { props ->
     val (height, setHeight) = useState<String?>(null)
     val (opacity, setOpacity) = useState<String?>(null)
     val (margin, setMargin) = useState<String?>(null)
@@ -84,7 +84,7 @@ val alert = fc<AlertProps>("alert") { props ->
             ).then {
                 updateAlertDisplay(it.data)
 
-                props.markAlert?.invoke(it.data)
+                props.markAlert?.invoke(alert.hashCode(), it.data)
             }
         }
     }
