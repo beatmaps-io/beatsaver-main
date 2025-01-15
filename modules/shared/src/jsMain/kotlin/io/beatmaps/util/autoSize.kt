@@ -2,6 +2,7 @@ package io.beatmaps.util
 
 import kotlinx.browser.window
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HTMLElement
 import react.Props
 import react.RefObject
 import react.dom.RDOMBuilder
@@ -9,7 +10,6 @@ import react.dom.jsStyle
 import react.useEffect
 import react.useEffectOnce
 import react.useRef
-import react.useState
 
 external interface AutoSizeComponentProps<T> : Props {
     var obj: T?
@@ -22,9 +22,10 @@ data class AutoSizeHelper(
 )
 
 fun <T> useAutoSize(props: AutoSizeComponentProps<T>, padding: Int): AutoSizeHelper {
-    val (loaded, setLoaded) = useState(false)
-    val (height, setHeight) = useState("")
-    val (margin, setMargin) = useState<String?>(null)
+    val loaded = useRef(false)
+    val styleRef = useRef<HTMLElement>()
+    val height = useRef("")
+    val margin = useRef<String>()
     val autoSizeHandle = useRef<Int>()
 
     val divRef = useRef<HTMLDivElement>()
@@ -36,19 +37,27 @@ fun <T> useAutoSize(props: AutoSizeComponentProps<T>, padding: Int): AutoSizeHel
     }
 
     fun autoSize() = divRef.current?.scrollHeight?.let { it + padding } ?: 0
+    fun setHeight(newHeight: String) {
+        height.current = newHeight
+        styleRef.current?.style?.height = newHeight
+    }
+    fun setMargin(newMargin: String?) {
+        margin.current = newMargin
+        styleRef.current?.style?.margin = newMargin ?: ""
+    }
 
     useEffect(props.obj) {
-        if (!loaded && props.obj != null) {
+        if (loaded.current != true && props.obj != null) {
             val handleLocal = window.setTimeout({
                 setHeight("auto")
             }, 200)
 
-            setLoaded(true)
+            loaded.current = true
             setHeight("${autoSize()}px")
             autoSizeHandle.current = handleLocal
-        } else if (loaded && props.obj == null) {
+        } else if (loaded.current == true && props.obj == null) {
             setHeight("")
-            setLoaded(false)
+            loaded.current = false
             setMargin(null)
         }
     }
@@ -56,9 +65,10 @@ fun <T> useAutoSize(props: AutoSizeComponentProps<T>, padding: Int): AutoSizeHel
     return AutoSizeHelper(
         divRef,
         { builder: RDOMBuilder<*> ->
+            builder.ref = styleRef
             builder.attrs.jsStyle {
-                this.height = height
-                margin?.let {
+                this.height = height.current
+                margin.current?.let {
                     this.margin = it
                 }
             }
