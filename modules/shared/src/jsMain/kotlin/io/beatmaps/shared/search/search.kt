@@ -10,7 +10,6 @@ import io.beatmaps.shared.form.toggle
 import io.beatmaps.shared.loadingElem
 import kotlinx.browser.document
 import kotlinx.html.ButtonType
-import kotlinx.html.DIV
 import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLButtonElement
@@ -21,7 +20,6 @@ import react.Props
 import react.RBuilder
 import react.Suspense
 import react.createElement
-import react.dom.RDOMBuilder
 import react.dom.button
 import react.dom.div
 import react.dom.form
@@ -30,10 +28,10 @@ import react.dom.i
 import react.dom.input
 import react.dom.span
 import react.fc
+import react.memo
 import react.useEffect
 import react.useRef
 import react.useState
-import react.memo
 
 enum class FilterCategory {
     NONE, GENERAL, REQUIREMENTS
