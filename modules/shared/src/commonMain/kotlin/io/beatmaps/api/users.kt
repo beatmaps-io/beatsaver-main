@@ -48,7 +48,7 @@ data class UserDetail(
     val suspendedAt: Instant? = null,
     val playlistUrl: String? = null,
     val patreon: PatreonTier? = null,
-    val blurnsfw: Boolean? = null,
+    val blurnsfw: Boolean? = null
 ) {
     fun profileLink(tab: String? = null, absolute: Boolean = false) = LinkHelper.profileLink(this, tab, absolute)
     companion object

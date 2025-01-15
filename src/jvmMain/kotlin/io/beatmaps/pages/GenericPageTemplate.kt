@@ -4,7 +4,6 @@ import io.beatmaps.ConfigData
 import io.beatmaps.UserData
 import io.beatmaps.cloudflare.CaptchaProvider
 import io.beatmaps.cloudflare.CaptchaVerifier
-import io.beatmaps.common.json
 import io.beatmaps.common.solr.SolrHelper
 import io.beatmaps.login.Session
 import io.ktor.server.html.Template
