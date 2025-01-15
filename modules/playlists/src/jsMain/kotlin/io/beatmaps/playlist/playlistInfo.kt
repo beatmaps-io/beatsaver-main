@@ -11,6 +11,8 @@ import io.beatmaps.common.fixed
 import io.beatmaps.common.formatTime
 import io.beatmaps.common.human
 import io.beatmaps.shared.coloredCard
+import io.beatmaps.shared.map.rating
+import io.beatmaps.shared.playlistOwner
 import kotlinx.html.title
 import react.Props
 import react.dom.a
@@ -76,7 +78,7 @@ val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
                                 "<NO NAME>"
                             }
                         }
-                        io.beatmaps.shared.playlistOwner {
+                        playlistOwner {
                             attrs.owner = pl.owner
                             attrs.time = pl.createdAt
                         }
@@ -118,7 +120,7 @@ val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
                         }
                     } else if (plStats != null) {
                         div("rating") {
-                            io.beatmaps.shared.map.rating {
+                            rating {
                                 attrs.up = plStats.upVotes
                                 attrs.down = plStats.downVotes
                                 attrs.rating = plStats.scoreOneDP

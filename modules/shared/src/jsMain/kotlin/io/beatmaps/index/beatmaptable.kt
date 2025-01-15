@@ -20,6 +20,7 @@ import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.shared.search.CommonParams
 import io.beatmaps.util.encodeURIComponent
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.hashRegex
 import io.beatmaps.util.useAudio
 import io.beatmaps.util.useDidUpdateEffect
@@ -31,7 +32,6 @@ import react.dom.div
 import react.dom.h4
 import react.dom.img
 import react.dom.p
-import react.fc
 import react.router.useNavigate
 import react.useContext
 import react.useEffect
@@ -71,7 +71,7 @@ data class SearchParams(
     val environments: EnvironmentSet
 ) : CommonParams()
 
-val beatmapTable = fc<BeatmapTableProps>("beatmapTable") { props ->
+val beatmapTable = fcmemo<BeatmapTableProps>("beatmapTable") { props ->
     val (user, setUser) = useState<UserDetail?>(null)
     val resetRef = useRef<() -> Unit>()
     val itemsPerRow = useRef { if (window.innerWidth < 992) 1 else 2 }

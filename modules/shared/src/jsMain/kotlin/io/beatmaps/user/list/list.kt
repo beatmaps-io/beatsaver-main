@@ -36,6 +36,7 @@ import react.dom.tr
 import react.fc
 import react.router.useLocation
 import react.router.useNavigate
+import react.useCallback
 import react.useContext
 import react.useEffect
 import react.useEffectOnce
@@ -183,7 +184,7 @@ val userList = fc<Props>("userList") {
                         attrs.column = col
                         attrs.sort = sort
                         attrs.order = order
-                        attrs.updateSort = { s, d ->
+                        attrs.updateSort = useCallback(sort, order) { s, d ->
                             toURL(s.sortEnum, d)
                             setSort(s)
                             setOrder(d)

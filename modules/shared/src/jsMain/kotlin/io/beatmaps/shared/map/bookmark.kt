@@ -1,5 +1,6 @@
 package io.beatmaps.shared.map
 
+import io.beatmaps.util.fcmemo
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.events.Event
@@ -7,14 +8,13 @@ import react.Props
 import react.dom.a
 import react.dom.i
 import react.dom.span
-import react.fc
 
 external interface BookmarkButtonProps : Props {
     var bookmarked: Boolean
     var onClick: (Event, Boolean) -> Unit
 }
 
-var bookmarkButton = fc<BookmarkButtonProps>("bookmarkButton") { props ->
+var bookmarkButton = fcmemo<BookmarkButtonProps>("bookmarkButton") { props ->
     a("#", classes = "me-1") {
         val title = if (props.bookmarked) "Remove Bookmark" else "Add Bookmark"
         attrs.title = title

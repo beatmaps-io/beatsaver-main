@@ -8,6 +8,8 @@ import io.beatmaps.shared.form.multipleChoice
 import io.beatmaps.shared.form.slider
 import io.beatmaps.shared.form.toggle
 import io.beatmaps.shared.loadingElem
+import io.beatmaps.util.fcmemo
+import js.objects.jso
 import kotlinx.browser.document
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
@@ -27,8 +29,7 @@ import react.dom.h4
 import react.dom.i
 import react.dom.input
 import react.dom.span
-import react.fc
-import react.memo
+import react.useCallback
 import react.useEffect
 import react.useRef
 import react.useState
@@ -104,9 +105,7 @@ external interface SearchProps<T : CommonParams> : Props {
     var extraFilters: ExtraContentRenderer?
 }
 
-fun <T : CommonParams> generateSearchComponent(name: String) = memo(generateSearchComponentInternal<T>(name))
-
-private fun <T : CommonParams> generateSearchComponentInternal(name: String) = fc<SearchProps<T>>("${name}Search") { props ->
+fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProps<T>>("${name}Search") { props ->
     val filterRefs = props.filters.associateWith { useRef<HTMLInputElement>() }
 
     val inputRef = useRef<HTMLInputElement>()
@@ -287,10 +286,10 @@ private fun <T : CommonParams> generateSearchComponentInternal(name: String) = f
                         attrs.endDate = endDate
                         attrs.startDateId = "startobj"
                         attrs.endDateId = "endobj"
-                        attrs.onFocusChange = {
+                        attrs.onFocusChange = useCallback {
                             setFocusedInput(it)
                         }
-                        attrs.onDatesChange = {
+                        attrs.onDatesChange = useCallback {
                             setStartDate(it.startDate)
                             setEndDate(it.endDate)
                         }
@@ -299,15 +298,16 @@ private fun <T : CommonParams> generateSearchComponentInternal(name: String) = f
                         attrs.displayFormat = "DD/MM/YYYY"
                         attrs.small = true
                         attrs.numberOfMonths = 1
-                        attrs.renderCalendarInfo = {
-                            createElement<Props> {
-                                presets {
-                                    attrs.callback = { sd, ed ->
+                        attrs.renderCalendarInfo = useCallback {
+                            createElement(
+                                presets,
+                                jso {
+                                    callback = { sd, ed ->
                                         setStartDate(sd)
                                         setEndDate(ed)
                                     }
                                 }
-                            }
+                            )
                         }
                     }
                 }

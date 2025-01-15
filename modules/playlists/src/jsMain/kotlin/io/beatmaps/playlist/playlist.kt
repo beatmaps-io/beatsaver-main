@@ -30,6 +30,7 @@ import io.beatmaps.shared.loadingElem
 import io.beatmaps.shared.modal
 import io.beatmaps.shared.modalContext
 import io.beatmaps.upload.UploadRequestConfig
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.useAudio
@@ -50,7 +51,6 @@ import react.dom.img
 import react.dom.p
 import react.dom.span
 import react.dom.textarea
-import react.fc
 import react.router.useNavigate
 import react.router.useParams
 import react.useContext
@@ -61,7 +61,7 @@ import react.useState
 import kotlin.js.Promise
 import kotlin.math.ceil
 
-val playlistPage = fc<Props>("playlistPage") {
+val playlistPage = fcmemo<Props>("playlistPage") {
     val (playlist, setPlaylist) = useState<PlaylistFull?>(null)
     val (maps, setMaps) = useState(listOf<MapDetailWithOrder>())
     val tokenRef = useRef(Axios.CancelToken.source())

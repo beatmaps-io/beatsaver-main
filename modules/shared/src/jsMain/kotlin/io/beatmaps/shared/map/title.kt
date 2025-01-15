@@ -1,9 +1,9 @@
 package io.beatmaps.shared.map
 
 import external.routeLink
+import io.beatmaps.util.fcmemo
 import kotlinx.browser.window
 import react.Props
-import react.fc
 import web.window.WindowTarget
 
 external interface MapTitleProps : Props {
@@ -11,7 +11,7 @@ external interface MapTitleProps : Props {
     var mapKey: String
 }
 
-val mapTitle = fc<MapTitleProps>("mapTitle") {
+val mapTitle = fcmemo<MapTitleProps>("mapTitle") {
     val target = if (window.top === window.self) null else WindowTarget._top
     routeLink("/maps/${it.mapKey}", target = target) {
         +it.title.ifBlank {

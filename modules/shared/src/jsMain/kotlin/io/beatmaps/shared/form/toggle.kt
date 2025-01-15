@@ -1,6 +1,7 @@
 package io.beatmaps.shared.form
 
 import external.reactFor
+import io.beatmaps.util.fcmemo
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
@@ -10,7 +11,6 @@ import react.Ref
 import react.dom.div
 import react.dom.input
 import react.dom.label
-import react.fc
 
 external interface ToggleProps : Props {
     var id: String
@@ -22,7 +22,7 @@ external interface ToggleProps : Props {
     var toggleRef: Ref<HTMLInputElement>?
 }
 
-val toggle = fc<ToggleProps>("toggle") { props ->
+val toggle = fcmemo<ToggleProps>("toggle") { props ->
     div("form-check form-switch ${props.className ?: ""}") {
         input(InputType.checkBox, classes = "form-check-input") {
             attrs.id = props.id

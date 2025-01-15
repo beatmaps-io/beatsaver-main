@@ -5,9 +5,9 @@ import external.routeLink
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.util.fcmemo
 import kotlinx.browser.window
 import react.Props
-import react.fc
 import web.window.WindowTarget
 
 external interface UploaderProps : Props {
@@ -15,7 +15,7 @@ external interface UploaderProps : Props {
     var version: MapVersion?
 }
 
-val uploader = fc<UploaderProps>("uploader") { props ->
+val uploader = fcmemo<UploaderProps>("uploader") { props ->
     (listOf(props.map.uploader) + (props.map.collaborators ?: listOf())).let {
         val target = if (window.top === window.self) null else WindowTarget._top
         it.forEachIndexed { idx, u ->
@@ -27,7 +27,7 @@ val uploader = fc<UploaderProps>("uploader") { props ->
     }
 }
 
-val uploaderWithInfo = fc<UploaderProps>("uploaderWithInfo") { props ->
+val uploaderWithInfo = fcmemo<UploaderProps>("uploaderWithInfo") { props ->
     uploader {
         attrs.map = props.map
     }

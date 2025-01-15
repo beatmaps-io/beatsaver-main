@@ -22,8 +22,10 @@ import io.beatmaps.shared.map.rankedStatus
 import io.beatmaps.shared.map.rating
 import io.beatmaps.shared.map.uploaderWithInfo
 import io.beatmaps.util.AutoSizeComponentProps
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useAutoSize
 import org.w3c.dom.Audio
+import org.w3c.dom.events.Event
 import react.RefObject
 import react.Suspense
 import react.dom.div
@@ -31,7 +33,7 @@ import react.dom.i
 import react.dom.img
 import react.dom.p
 import react.dom.span
-import react.fc
+import react.useCallback
 import react.useContext
 import react.useEffect
 import react.useState
@@ -41,7 +43,7 @@ external interface BeatmapInfoProps : AutoSizeComponentProps<MapDetail> {
     var audio: RefObject<Audio>
 }
 
-val beatmapInfo = fc<BeatmapInfoProps>("beatmapInfo") { props ->
+val beatmapInfo = fcmemo<BeatmapInfoProps>("beatmapInfo") { props ->
     val autoSize = useAutoSize(props, 30)
     val (bookmarked, setBookmarked) = useState<Boolean?>(null)
     val userData = useContext(globalContext)
@@ -50,8 +52,12 @@ val beatmapInfo = fc<BeatmapInfoProps>("beatmapInfo") { props ->
         setBookmarked(null)
     }
 
-    fun bookmark(bookmarked: Boolean) =
-        Axios.post<String>("${Config.apibase}/bookmark", BookmarkRequest(props.obj?.id, bookmarked = bookmarked), generateConfig<BookmarkRequest, String>())
+    val bookmarkCb: (Event, Boolean) -> Unit = useCallback(props.obj) { e: Event, bm: Boolean ->
+        e.preventDefault()
+        setBookmarked(!bm)
+
+        Axios.post<String>("${Config.apibase}/bookmark", BookmarkRequest(props.obj?.id, bookmarked = !bm), generateConfig<BookmarkRequest, String>())
+    }
 
     props.obj?.let { map ->
         val mapAttrs = listOfNotNull(
@@ -132,11 +138,7 @@ val beatmapInfo = fc<BeatmapInfoProps>("beatmapInfo") { props ->
                             div {
                                 bookmarkButton {
                                     attrs.bookmarked = bookmarked ?: (map.bookmarked == true)
-                                    attrs.onClick = { e, bm ->
-                                        e.preventDefault()
-                                        setBookmarked(!bm)
-                                        bookmark(!bm)
-                                    }
+                                    attrs.onClick = bookmarkCb
                                 }
                                 playlists.addTo {
                                     attrs.map = map

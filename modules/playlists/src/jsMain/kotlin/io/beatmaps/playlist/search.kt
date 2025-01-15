@@ -21,6 +21,7 @@ import io.beatmaps.shared.search.environments
 import io.beatmaps.shared.search.presets
 import io.beatmaps.shared.search.sort
 import io.beatmaps.shared.search.tags
+import js.objects.jso
 import kotlinx.datetime.Instant
 import kotlinx.html.InputType
 import kotlinx.html.id
@@ -41,6 +42,7 @@ import react.dom.label
 import react.dom.option
 import react.dom.select
 import react.fc
+import react.useCallback
 import react.useEffect
 import react.useRef
 import react.useState
@@ -191,10 +193,10 @@ val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
                             attrs.endDate = endDate
                             attrs.startDateId = "startobj"
                             attrs.endDateId = "endobj"
-                            attrs.onFocusChange = {
+                            attrs.onFocusChange = useCallback {
                                 setDateFocused(it)
                             }
-                            attrs.onDatesChange = {
+                            attrs.onDatesChange = useCallback {
                                 setStartDate(it.startDate)
                                 setEndDate(it.endDate)
                             }
@@ -203,15 +205,16 @@ val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
                             attrs.displayFormat = "DD/MM/YYYY"
                             attrs.small = true
                             attrs.numberOfMonths = 1
-                            attrs.renderCalendarInfo = {
-                                createElement<Props> {
-                                    presets {
-                                        attrs.callback = { sd, ed ->
+                            attrs.renderCalendarInfo = useCallback {
+                                createElement(
+                                    presets,
+                                    jso {
+                                        callback = { sd, ed ->
                                             setStartDate(sd)
                                             setEndDate(ed)
                                         }
                                     }
-                                }
+                                )
                             }
                         }
                     }
