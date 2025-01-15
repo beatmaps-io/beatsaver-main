@@ -28,6 +28,7 @@ import io.beatmaps.shared.editableText
 import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.reviewer
 import io.beatmaps.util.AutoSizeComponentProps
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.useAutoSize
 import kotlinx.html.InputType
@@ -46,7 +47,6 @@ import react.dom.label
 import react.dom.p
 import react.dom.span
 import react.dom.textarea
-import react.fc
 import react.router.useNavigate
 import react.useContext
 import react.useEffect
@@ -61,7 +61,7 @@ external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
     var setExistingReview: ((Boolean) -> Unit)?
 }
 
-val reviewItem = fc<ReviewItemProps>("reviewItem") { props ->
+val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
     val autoSize = useAutoSize(props, 2)
 
     val (featured, setFeatured) = useState<Boolean?>(null)

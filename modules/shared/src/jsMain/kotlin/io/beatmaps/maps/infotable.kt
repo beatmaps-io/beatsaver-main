@@ -7,6 +7,7 @@ import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.fixedStr
 import io.beatmaps.common.formatTime
 import io.beatmaps.shared.map.uploader
+import io.beatmaps.util.fcmemo
 import kotlinx.html.DIV
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.role
@@ -19,7 +20,6 @@ import react.dom.div
 import react.dom.i
 import react.dom.img
 import react.dom.span
-import react.fc
 
 external interface InfoTableProps : Props {
     var map: MapDetail
@@ -28,7 +28,7 @@ external interface InfoTableProps : Props {
     var changeSelectedDiff: ((MapDifficulty) -> Unit)?
 }
 
-val infoTable = fc<InfoTableProps>("infoTable") { props ->
+val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
     val itemClasses by lazy { "list-group-item d-flex justify-content-between" + if (props.horizontal == true) " col-lg" else "" }
 
     fun formatStat(value: Int) = when {

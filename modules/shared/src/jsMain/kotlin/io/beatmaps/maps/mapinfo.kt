@@ -33,6 +33,7 @@ import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.map.bookmarkButton
 import io.beatmaps.shared.map.links
 import io.beatmaps.shared.modalContext
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.useAudio
@@ -57,7 +58,6 @@ import react.dom.input
 import react.dom.p
 import react.dom.span
 import react.dom.textarea
-import react.fc
 import react.router.useNavigate
 import react.useCallback
 import react.useContext
@@ -70,11 +70,11 @@ import kotlin.js.Promise
 external interface MapInfoProps : Props {
     var mapInfo: MapDetail
     var reloadMap: () -> Unit
-    var deleteMap: (Boolean) -> Unit
+    var deleteMap: ((Boolean) -> Unit)?
     var updateMapinfo: (MapDetail) -> Unit
 }
 
-val mapInfo = fc<MapInfoProps>("mapInfo") { props ->
+val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
     val inputRef = useRef<HTMLInputElement>()
     val textareaRef = useRef<HTMLTextAreaElement>()
     val reasonRef = useRef<HTMLTextAreaElement>()
@@ -129,7 +129,10 @@ val mapInfo = fc<MapInfoProps>("mapInfo") { props ->
         setLoading(true)
 
         return Axios.post<String>("${Config.apibase}/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.value?.trim()), generateConfig<MapInfoUpdate, String>()).then({
-            props.deleteMap(isOwnerLocal)
+            props.deleteMap?.invoke(isOwnerLocal) ?: run {
+                // Fallback
+                history.push("/profile" + if (!isOwnerLocal) "/${props.mapInfo.uploader.id}" else "")
+            }
             true
         }) {
             setLoading(false)
