@@ -132,7 +132,6 @@ import org.litote.kmongo.descending
 import org.litote.kmongo.div
 import org.litote.kmongo.eq
 import org.litote.kmongo.ne
-import org.litote.kmongo.setValue
 import java.lang.Integer.toHexString
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -157,12 +156,6 @@ fun PatreonDao?.toTier() = if (this != null) {
 } else {
     null
 }
-
-/*actual object io.beatmaps.api.LinkHelper {
-    actual fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean) = Config.siteBase(absolute) + "/profile/${userDetail.id}" + (tab?.let { "#$it" } ?: "")
-    actual fun mapLink(mapDetail: MapDetail, absolute: Boolean) = Config.siteBase(absolute) + "/maps/${mapDetail.id}"
-    actual fun playlistLink(playlist: PlaylistFull, absolute: Boolean) = Config.siteBase(absolute) + "/playlists/${playlist.playlistId}"
-}*/
 
 @Location("/api/users")
 class UsersApi {
@@ -336,7 +329,7 @@ fun Route.userRoute(client: HttpClient) {
         requireAuthorization { _, sess ->
             val req = call.receive<BlurReq>()
 
-            val success = transaction {
+            transaction {
                 try {
                     User.update({ User.id eq sess.userId }) { u ->
                         u[blurnsfw] = req.blur
@@ -347,6 +340,7 @@ fun Route.userRoute(client: HttpClient) {
                 }
             } || throw ServerApiException("Something went wrong")
 
+            MongoClient.updateSessions(sess.userId, Session::blurnsfw, req.blur)
             call.respond(ActionResponse.success())
         }
     }
@@ -383,12 +377,7 @@ fun Route.userRoute(client: HttpClient) {
                         }
                     }.let { success ->
                         if (success) {
-                            if (MongoClient.connected) {
-                                MongoClient.sessions.updateMany(
-                                    MongoSession::session / Session::userId eq req.userId,
-                                    setValue(MongoSession::session / Session::curator, req.curator)
-                                )
-                            }
+                            MongoClient.updateSessions(req.userId, Session::curator, req.curator)
 
                             call.pub("beatmaps", "user.${req.userId}.updated.admin", null, req.userId)
                             ActionResponse.success()
@@ -444,12 +433,7 @@ fun Route.userRoute(client: HttpClient) {
                     }
                 }.let { success ->
                     if (success) {
-                        if (MongoClient.connected) {
-                            MongoClient.sessions.updateMany(
-                                MongoSession::session / Session::userId eq req.userId,
-                                setValue(MongoSession::session / Session::suspended, req.suspended)
-                            )
-                        }
+                        MongoClient.updateSessions(req.userId, Session::suspended, req.suspended)
 
                         ActionResponse.success()
                     } else {

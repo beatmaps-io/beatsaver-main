@@ -5,7 +5,6 @@ import io.beatmaps.common.consumeAck
 import io.beatmaps.common.rabbitOptional
 import io.beatmaps.common.rb
 import io.beatmaps.login.MongoClient
-import io.beatmaps.login.MongoSession
 import io.beatmaps.login.Session
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
@@ -14,9 +13,6 @@ import io.ktor.util.pipeline.PipelineContext
 import kotlinx.serialization.builtins.serializer
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.litote.kmongo.div
-import org.litote.kmongo.eq
-import org.litote.kmongo.setValue
 import pl.jutupe.ktor_rabbitmq.RabbitMQInstance
 import pl.jutupe.ktor_rabbitmq.publish
 
@@ -38,9 +34,7 @@ fun Application.alertsThread() {
                 alertCount(userId)
             }
 
-            if (MongoClient.connected) {
-                MongoClient.sessions.updateMany(MongoSession::session / Session::userId eq userId, setValue(MongoSession::session / Session::alerts, alertCount))
-            }
+            MongoClient.updateSessions(userId, Session::alerts, alertCount)
         }
     }
 }
