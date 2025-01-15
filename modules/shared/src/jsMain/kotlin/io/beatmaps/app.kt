@@ -163,7 +163,7 @@ val app = fc<Props>("BeatSaver Root") {
             RouterProvider {
                 attrs.router = appRouter
                 attrs.future = jso {
-                    v7_startTransition = true
+                    v7_startTransition = false
                     v7_relativeSplatPath = false
                 }
             }
