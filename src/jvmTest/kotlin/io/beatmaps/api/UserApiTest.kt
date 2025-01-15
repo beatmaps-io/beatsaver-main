@@ -37,7 +37,8 @@ class UserApiTest : ApiTestBase() {
                 admin = false,
                 curator = false,
                 seniorCurator = false,
-                playlistUrl = "${Config.apiBase(true)}/users/id/$userId/playlist"
+                playlistUrl = "${Config.apiBase(true)}/users/id/$userId/playlist",
+                blurnsfw = true
             ),
             userDetail
         )
