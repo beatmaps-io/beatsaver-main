@@ -26,7 +26,9 @@ import org.litote.kmongo.div
 import org.litote.kmongo.eq
 import org.litote.kmongo.findOne
 import org.litote.kmongo.getCollection
+import org.litote.kmongo.setValue
 import java.util.logging.Logger
+import kotlin.reflect.KProperty1
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -72,6 +74,15 @@ object MongoClient {
         } catch (e: Exception) {
             false
         }
+
+    fun <T> updateSessions(userId: Int, property: KProperty1<Session, T>, value: T) {
+        if (connected) {
+            sessions.updateMany(
+                MongoSession::session / Session::userId eq userId,
+                setValue(MongoSession::session / property, value)
+            )
+        }
+    }
 }
 
 val BMSessionProvidersKey = AttributeKey<SessionProvider<*>>("BMSessionProvidersKey")

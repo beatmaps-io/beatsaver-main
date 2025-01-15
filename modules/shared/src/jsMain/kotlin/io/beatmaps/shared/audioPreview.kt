@@ -2,6 +2,7 @@ package io.beatmaps.shared
 
 import io.beatmaps.api.MapVersion
 import io.beatmaps.common.fixed
+import io.beatmaps.globalContext
 import io.beatmaps.util.fcmemo
 import kotlinx.browser.window
 import kotlinx.html.js.onClickFunction
@@ -12,6 +13,7 @@ import react.RefObject
 import react.dom.div
 import react.dom.i
 import react.dom.img
+import react.useContext
 import react.useEffect
 import react.useEffectOnce
 import react.useRef
@@ -34,7 +36,10 @@ val audioPreview = fcmemo<AudioPreviewProps>("audioPreview") { props ->
     val outerProgressRef = useRef<HTMLElement>()
     val leftProgressRef = useRef<HTMLElement>()
     val rightProgressRef = useRef<HTMLElement>()
-    val (blur, setBlur) = useState(false)
+    val userData = useContext(globalContext)
+
+    val shouldBlur = props.nsfw == true && userData?.blurnsfw != false
+    val (blur, setBlur) = useState(shouldBlur)
 
     val handle = useRef<Int>()
 
@@ -44,8 +49,8 @@ val audioPreview = fcmemo<AudioPreviewProps>("audioPreview") { props ->
         }
     }
 
-    useEffect(props.nsfw) {
-        setBlur(props.nsfw == true)
+    useEffect(shouldBlur) {
+        setBlur(shouldBlur)
     }
 
     fun updateView(p: Double = 0.0) {

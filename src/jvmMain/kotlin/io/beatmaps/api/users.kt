@@ -132,7 +132,6 @@ import org.litote.kmongo.descending
 import org.litote.kmongo.div
 import org.litote.kmongo.eq
 import org.litote.kmongo.ne
-import org.litote.kmongo.setValue
 import java.lang.Integer.toHexString
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -158,12 +157,6 @@ fun PatreonDao?.toTier() = if (this != null) {
     null
 }
 
-/*actual object io.beatmaps.api.LinkHelper {
-    actual fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean) = Config.siteBase(absolute) + "/profile/${userDetail.id}" + (tab?.let { "#$it" } ?: "")
-    actual fun mapLink(mapDetail: MapDetail, absolute: Boolean) = Config.siteBase(absolute) + "/maps/${mapDetail.id}"
-    actual fun playlistLink(playlist: PlaylistFull, absolute: Boolean) = Config.siteBase(absolute) + "/playlists/${playlist.playlistId}"
-}*/
-
 @Location("/api/users")
 class UsersApi {
     @Location("/me")
@@ -174,6 +167,9 @@ class UsersApi {
 
     @Location("/description")
     data class DescriptionApi(val api: UsersApi)
+
+    @Location("/blur")
+    data class BlurApi(val api: UsersApi)
 
     @Location("/admin")
     data class Admin(val api: UsersApi)
@@ -329,6 +325,26 @@ fun Route.userRoute(client: HttpClient) {
         }
     }
 
+    post<UsersApi.BlurApi> {
+        requireAuthorization { _, sess ->
+            val req = call.receive<BlurReq>()
+
+            transaction {
+                try {
+                    User.update({ User.id eq sess.userId }) { u ->
+                        u[blurnsfw] = req.blur
+                        u[updatedAt] = NowExpression(updatedAt)
+                    } > 0
+                } catch (_: ExposedSQLException) {
+                    false
+                }
+            } || throw ServerApiException("Something went wrong")
+
+            MongoClient.updateSessions(sess.userId, Session::blurnsfw, req.blur)
+            call.respond(ActionResponse.success())
+        }
+    }
+
     post<UsersApi.Admin> {
         requireAuthorization { _, sess ->
             if (!sess.isAdmin()) {
@@ -361,12 +377,7 @@ fun Route.userRoute(client: HttpClient) {
                         }
                     }.let { success ->
                         if (success) {
-                            if (MongoClient.connected) {
-                                MongoClient.sessions.updateMany(
-                                    MongoSession::session / Session::userId eq req.userId,
-                                    setValue(MongoSession::session / Session::curator, req.curator)
-                                )
-                            }
+                            MongoClient.updateSessions(req.userId, Session::curator, req.curator)
 
                             call.pub("beatmaps", "user.${req.userId}.updated.admin", null, req.userId)
                             ActionResponse.success()
@@ -422,12 +433,7 @@ fun Route.userRoute(client: HttpClient) {
                     }
                 }.let { success ->
                     if (success) {
-                        if (MongoClient.connected) {
-                            MongoClient.sessions.updateMany(
-                                MongoSession::session / Session::userId eq req.userId,
-                                setValue(MongoSession::session / Session::suspended, req.suspended)
-                            )
-                        }
+                        MongoClient.updateSessions(req.userId, Session::suspended, req.suspended)
 
                         ActionResponse.success()
                     } else {
@@ -1173,10 +1179,11 @@ fun Route.userRoute(client: HttpClient) {
                 val followData = followData(sess.userId, sess.userId)
 
                 UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let { usr ->
+                    val tmp = usr.copy(email = user.email, blurnsfw = user.blurnsfw)
                     if (dualAccount) {
-                        usr.copy(type = AccountType.DUAL, email = user.email)
+                        tmp.copy(type = AccountType.DUAL)
                     } else {
-                        usr.copy(email = user.email)
+                        tmp
                     }
                 }
             }
