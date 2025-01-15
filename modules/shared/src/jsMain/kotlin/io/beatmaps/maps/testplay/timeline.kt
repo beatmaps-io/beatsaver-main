@@ -15,6 +15,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.w3c.dom.HTMLElement
 import react.Props
+import react.Suspense
 import react.dom.article
 import react.dom.br
 import react.dom.div
@@ -123,9 +124,10 @@ val timeline = fc<TimelineProps>("timeline") { props ->
                 }
             }
         } else if (!givenFeedback && latestVersion != null) {
-            // In testplay module
-            testplayModule.newFeedback {
-                attrs.hash = latestVersion.hash
+            Suspense {
+                testplayModule.newFeedback {
+                    attrs.hash = latestVersion.hash
+                }
             }
         }
 

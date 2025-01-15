@@ -18,6 +18,7 @@ import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
 import react.fc
+import react.useContext
 import react.useMemo
 import react.useRef
 import react.useState
@@ -37,6 +38,7 @@ val reviewTable = fc<ReviewTableProps>("reviewTable") { props ->
     val (existingReview, setExistingReview) = useState(false)
 
     val resultsTable = useRef<HTMLElement>()
+    val userData = useContext(globalContext)
 
     val captchaRef = useRef<ICaptchaHandler>()
 
@@ -80,23 +82,21 @@ val reviewTable = fc<ReviewTableProps>("reviewTable") { props ->
             ref = resultsTable
             key = "resultsTable"
 
-            globalContext.Consumer { userData ->
-                props.map?.let { map ->
-                    val userIsCollaborator = props.collaborators?.any { singleCollaborator ->
-                        singleCollaborator.id == userData?.userId
-                    } ?: false
-                    if (userData != null && !userData.suspended && userData.userId != props.mapUploaderId && !userIsCollaborator) {
-                        newReview {
-                            attrs.mapId = map.id
-                            attrs.userId = userData.userId
-                            attrs.existingReview = existingReview
-                            attrs.captcha = captchaRef
-                            attrs.setExistingReview = { nv ->
-                                setExistingReview(nv)
-                            }
-                            attrs.reloadList = {
-                                resetRef.current?.invoke()
-                            }
+            props.map?.let { map ->
+                val userIsCollaborator = props.collaborators?.any { singleCollaborator ->
+                    singleCollaborator.id == userData?.userId
+                } ?: false
+                if (userData != null && !userData.suspended && userData.userId != props.mapUploaderId && !userIsCollaborator) {
+                    newReview {
+                        attrs.mapId = map.id
+                        attrs.userId = userData.userId
+                        attrs.existingReview = existingReview
+                        attrs.captcha = captchaRef
+                        attrs.setExistingReview = { nv ->
+                            setExistingReview(nv)
+                        }
+                        attrs.reloadList = {
+                            resetRef.current?.invoke()
                         }
                     }
                 }

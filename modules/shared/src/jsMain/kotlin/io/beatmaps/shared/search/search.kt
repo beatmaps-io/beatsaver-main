@@ -10,7 +10,6 @@ import io.beatmaps.shared.form.toggle
 import io.beatmaps.shared.loadingElem
 import kotlinx.browser.document
 import kotlinx.html.ButtonType
-import kotlinx.html.DIV
 import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLButtonElement
@@ -19,12 +18,8 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
 import react.Props
 import react.RBuilder
-import react.RComponent
-import react.State
 import react.Suspense
 import react.createElement
-import react.createRef
-import react.dom.RDOMBuilder
 import react.dom.button
 import react.dom.div
 import react.dom.form
@@ -32,36 +27,50 @@ import react.dom.h4
 import react.dom.i
 import react.dom.input
 import react.dom.span
-import react.setState
+import react.fc
+import react.memo
+import react.useEffect
+import react.useRef
+import react.useState
 
 enum class FilterCategory {
     NONE, GENERAL, REQUIREMENTS
 }
-interface FilterInfo<T, V> {
-    val key: String
-    val name: String
-    val cat: FilterCategory
-    val fromParams: (T) -> V
-    val isFiltered: (Any?) -> Boolean
+abstract class FilterInfo<T, V>(val key: String) {
+    abstract val name: String
+    abstract val cat: FilterCategory
+    abstract val fromParams: (T) -> V
+    abstract val isFiltered: (Any?) -> Boolean
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class.js != other::class.js) return false
+
+        other as FilterInfo<*, *>
+
+        return key == other.key
+    }
+
+    override fun hashCode() = key.hashCode()
 }
 
-class BooleanFilterInfo<T>(override val key: String, override val name: String, override val cat: FilterCategory, override val fromParams: (T) -> Boolean) : FilterInfo<T, Boolean> {
+class BooleanFilterInfo<T>(key: String, override val name: String, override val cat: FilterCategory, override val fromParams: (T) -> Boolean) : FilterInfo<T, Boolean>(key) {
     override val isFiltered = { it: Any? -> it as? Boolean ?: false }
 }
 
-class MultipleChoiceFilterInfo<T, V>(override val key: String, override val name: String, override val cat: FilterCategory, val choices: Map<String, V>, val default: V, override val fromParams: (T) -> V) : FilterInfo<T, V> {
+class MultipleChoiceFilterInfo<T, V>(key: String, override val name: String, override val cat: FilterCategory, val choices: Map<String, V>, val default: V, override val fromParams: (T) -> V) : FilterInfo<T, V>(key) {
     override val isFiltered = { it: Any? -> it != null && it != default }
 }
 
 fun interface SearchParamGenerator<T : CommonParams> {
-    fun Search<T>.get(): T
+    fun ISearch.get(): T
 }
 
 fun interface ExtraContentRenderer {
     fun RBuilder.invoke()
 }
 
-fun RDOMBuilder<DIV>.invokeECR(renderer: ExtraContentRenderer?) {
+fun RBuilder.invokeECR(renderer: ExtraContentRenderer?) {
     renderer?.let { exr ->
         with(exr) {
             this@invokeECR.invoke()
@@ -71,6 +80,17 @@ fun RDOMBuilder<DIV>.invokeECR(renderer: ExtraContentRenderer?) {
 
 fun <T : FilterInfo<*, *>, V> Map<T, V>.getByKeyOrNull(key: String): V? =
     entries.firstOrNull { it.key.key == key }?.value
+
+interface ISearch {
+    val minNps: Float
+    val maxNps: Float
+    val startDate: Moment?
+    val endDate: Moment?
+    val order: SearchOrder
+    fun searchText(): String
+    fun isFiltered(key: String): Boolean
+    fun filterOrNull(key: String): Any?
+}
 
 external interface SearchProps<T : CommonParams> : Props {
     var typedState: T?
@@ -84,252 +104,223 @@ external interface SearchProps<T : CommonParams> : Props {
     var extraFilters: ExtraContentRenderer?
 }
 
-external interface SearchState<T> : State {
-    var minNps: Float?
-    var maxNps: Float?
-    var filterMap: MutableMap<FilterInfo<T, *>, Any?>?
-    var order: SearchOrder?
-    var focusedInput: String?
-    var startDate: Moment?
-    var endDate: Moment?
-    var filtersOpen: Boolean?
-}
+fun <T : CommonParams> generateSearchComponent(name: String) = memo(generateSearchComponentInternal<T>(name))
 
-open class Search<T : CommonParams>(props: SearchProps<T>) : RComponent<SearchProps<T>, SearchState<T>>(props) {
-    private val filterRefs = props.filters.associateWith { createRef<HTMLInputElement>() }
+private fun <T : CommonParams> generateSearchComponentInternal(name: String) = fc<SearchProps<T>>("${name}Search") { props ->
+    val filterRefs = props.filters.associateWith { useRef<HTMLInputElement>() }
 
-    val inputRef = createRef<HTMLInputElement>()
-    private val dropdownRef = createRef<HTMLButtonElement>()
-    private val dropdownDivRef = createRef<HTMLDivElement>()
+    val inputRef = useRef<HTMLInputElement>()
+    val dropdownRef = useRef<HTMLButtonElement>()
+    val dropdownDivRef = useRef<HTMLDivElement>()
 
-    override fun componentWillMount() {
-        setState {
-            maxNps = props.maxNps.toFloat()
-            filterMap = mutableMapOf()
-        }
+    val (minNps, setMinNps) = useState(0f)
+    val (maxNps, setMaxNps) = useState(props.maxNps.toFloat())
+    val (filterMap, setFilterMap) = useState(mapOf<FilterInfo<T, *>, Any?>())
+    val (order, setOrder) = useState(SearchOrder.Relevance)
+    val (focusedInput, setFocusedInput) = useState<String>()
+    val (startDate, setStartDate) = useState<Moment>()
+    val (endDate, setEndDate) = useState<Moment>()
+    val (filtersOpen, setFiltersOpen) = useState(false)
+
+    val stopProp = { it: Event ->
+        it.stopPropagation()
     }
 
-    override fun componentDidMount() {
-        updateUI()
-        dropdownRef.current?.addEventListener("mouseup", stopProp)
-        dropdownDivRef.current?.addEventListener("mouseup", stopProp)
-        document.addEventListener("mouseup", hideFilters)
+    val hideFilters = { _: Event ->
+        if (filtersOpen) setFiltersOpen(false)
     }
 
-    override fun componentDidUpdate(prevProps: SearchProps<T>, prevState: SearchState<T>, snapshot: Any) {
-        if (prevProps.typedState != props.typedState) {
-            updateUI()
-        }
-    }
-
-    private fun updateUI() {
+    fun updateUI() {
         val fromParams = props.typedState
         inputRef.current?.value = fromParams?.search ?: ""
+        val newFilterMap = filterMap.toMutableMap()
 
-        setState {
-            filterRefs.forEach { (filter, filterRef) ->
-                if (filter is BooleanFilterInfo) {
-                    val newState = fromParams?.let { params -> filter.fromParams(params) } ?: false
-                    filterRef.current?.checked = newState
-                    filterMap?.put(filter, newState)
-                } else if (filter is MultipleChoiceFilterInfo) {
-                    val newState = fromParams?.let { params -> filter.fromParams(params) }
-                    filterMap?.put(filter, newState)
-                }
+        filterRefs.forEach { (filter, filterRef) ->
+            if (filter is BooleanFilterInfo) {
+                val newState = fromParams?.let { params -> filter.fromParams(params) } ?: false
+                filterRef.current?.checked = newState
+                newFilterMap[filter] = newState
+            } else if (filter is MultipleChoiceFilterInfo) {
+                val newState = fromParams?.let { params -> filter.fromParams(params) }
+                newFilterMap[filter] = newState
             }
-
-            minNps = fromParams?.minNps ?: 0f
-            maxNps = fromParams?.maxNps ?: props.maxNps.toFloat()
-            order = fromParams?.sortOrder
-            startDate = fromParams?.from?.let { Moment(it) }
-            endDate = fromParams?.to?.let { Moment(it) }
         }
+
+        setFilterMap(newFilterMap)
+        setMinNps(fromParams?.minNps ?: 0f)
+        setMaxNps(fromParams?.maxNps ?: props.maxNps.toFloat())
+        setOrder(fromParams?.sortOrder ?: order)
+        setStartDate(fromParams?.from?.let { Moment(it) })
+        setEndDate(fromParams?.to?.let { Moment(it) })
 
         props.updateUI?.invoke(fromParams)
     }
 
-    private val stopProp = { it: Event ->
-        it.stopPropagation()
+    useEffect(props.typedState) {
+        updateUI()
     }
 
-    private val hideFilters = { _: Event ->
-        if (state.filtersOpen == true) {
-            setState {
-                filtersOpen = false
-            }
+    useEffect {
+        dropdownRef.current?.addEventListener("mouseup", stopProp)
+        dropdownDivRef.current?.addEventListener("mouseup", stopProp)
+        document.addEventListener("mouseup", hideFilters)
+
+        cleanup {
+            document.removeEventListener("mouseup", hideFilters)
+            dropdownDivRef.current?.addEventListener("mouseup", stopProp)
+            dropdownRef.current?.removeEventListener("mouseup", stopProp)
         }
     }
 
-    override fun componentWillUnmount() {
-        document.removeEventListener("mouseup", hideFilters)
-        dropdownDivRef.current?.addEventListener("mouseup", stopProp)
-        dropdownRef.current?.removeEventListener("mouseup", stopProp)
+    val searchHelper = object : ISearch {
+        override val minNps = minNps
+        override val maxNps = maxNps
+        override val startDate = startDate
+        override val endDate = endDate
+        override val order = order
+        override fun searchText() = inputRef.current?.value?.trim() ?: ""
+        override fun isFiltered(key: String): Boolean {
+            return filterMap.entries.firstOrNull { it.key.key == key }?.let { (filter, value) -> filter.isFiltered(value) } ?: false
+        }
+        override fun filterOrNull(key: String) = filterMap.getByKeyOrNull(key)
     }
 
-    fun isFiltered(s: String) =
-        state.filterMap?.entries?.firstOrNull { it.key.key == s }?.let { (filter, value) -> filter.isFiltered(value) } ?: false
-
-    override fun RBuilder.render() {
-        form("") {
-            div("row") {
-                div("mb-3 col-lg-9") {
-                    input(InputType.search, classes = "form-control") {
-                        attrs.placeholder = "Search"
-                        attrs.attributes["aria-label"] = "Search"
-                        ref = inputRef
-                    }
+    form("") {
+        div("row") {
+            div("mb-3 col-lg-9") {
+                input(InputType.search, classes = "form-control") {
+                    attrs.placeholder = "Search"
+                    attrs.attributes["aria-label"] = "Search"
+                    ref = inputRef
                 }
-                div("mb-3 col-lg-3 btn-group") {
-                    button(type = ButtonType.submit, classes = "btn btn-primary") {
-                        attrs.onClickFunction = {
-                            it.preventDefault()
-                            val newState = with(props.paramsFromPage) {
-                                this@Search.get()
-                            }
-
-                            props.updateSearchParams(newState, null)
+            }
+            div("mb-3 col-lg-3 btn-group") {
+                button(type = ButtonType.submit, classes = "btn btn-primary") {
+                    attrs.onClickFunction = {
+                        it.preventDefault()
+                        val newState = with(props.paramsFromPage) {
+                            searchHelper.get()
                         }
-                        +"Search"
+
+                        props.updateSearchParams(newState, null)
+                    }
+                    +"Search"
+                }
+            }
+        }
+        div("row") {
+            div("filter-container col-sm-3") {
+                button(classes = "filter-dropdown") {
+                    attrs.onClickFunction = {
+                        it.preventDefault()
+                        setFiltersOpen(!filtersOpen)
+                    }
+                    ref = dropdownRef
+                    span {
+                        val filters = filterMap.entries.filter { (filter, value) -> filter.isFiltered(value) }.map { it.key.name } +
+                            (props.filterTexts?.invoke() ?: listOf())
+
+                        if (filters.isEmpty()) {
+                            +"Filters"
+                        } else {
+                            +filters.joinToString(", ")
+                        }
+                    }
+                    i("fas fa-angle-" + if (filtersOpen) "up" else "down") {}
+                }
+                div("dropdown-menu" + if (filtersOpen) " show" else "") {
+                    ref = dropdownDivRef
+
+                    div("d-flex") {
+                        div {
+                            filterRefs.entries.fold(FilterCategory.NONE) { cat, (filter, filterRef) ->
+                                if (cat != filter.cat) {
+                                    h4(if (cat == FilterCategory.NONE) "" else "mt-4") {
+                                        +filter.cat.toString()
+                                    }
+                                }
+
+                                if (filter is BooleanFilterInfo) {
+                                    toggle {
+                                        attrs.id = filter.key
+                                        attrs.text = filter.name
+                                        attrs.toggleRef = filterRef
+                                        attrs.block = {
+                                            setFilterMap(filterMap.plus(filter to it))
+                                        }
+                                    }
+                                } else if (filter is MultipleChoiceFilterInfo) {
+                                    multipleChoice {
+                                        attrs.choices = filter.choices
+                                        attrs.name = filter.key
+                                        attrs.selectedValue = filterMap.getByKeyOrNull(filter.key) ?: filter.default
+                                        attrs.block = {
+                                            setFilterMap(filterMap.plus(filter to it))
+                                        }
+                                    }
+                                }
+
+                                filter.cat
+                            }
+                        }
+
+                        invokeECR(props.extraFilters)
                     }
                 }
             }
-            div("row") {
-                div("filter-container col-sm-3") {
-                    button(classes = "filter-dropdown") {
-                        attrs.onClickFunction = {
-                            it.preventDefault()
-                            setState {
-                                filtersOpen = state.filtersOpen != true
-                            }
-                        }
-                        ref = dropdownRef
-                        span {
-                            val filters = state.filterMap.orEmpty().entries.filter { (filter, value) -> filter.isFiltered(value) }.map { it.key.name } +
-                                (props.filterTexts?.invoke() ?: listOf())
-
-                            if (filters.isEmpty()) {
-                                +"Filters"
-                            } else {
-                                +filters.joinToString(", ")
-                            }
-                        }
-                        i("fas fa-angle-" + if (state.filtersOpen == true) "up" else "down") {}
-                    }
-                    div("dropdown-menu" + if (state.filtersOpen == true) " show" else "") {
-                        ref = dropdownDivRef
-
-                        div("d-flex") {
-                            div {
-                                filterRefs.entries.fold(FilterCategory.NONE) { cat, (filter, filterRef) ->
-                                    if (cat != filter.cat) {
-                                        h4(if (cat == FilterCategory.NONE) "" else "mt-4") {
-                                            +filter.cat.toString()
-                                        }
-                                    }
-
-                                    if (filter is BooleanFilterInfo) {
-                                        toggle {
-                                            attrs.id = filter.key
-                                            attrs.text = filter.name
-                                            attrs.toggleRef = filterRef
-                                            attrs.block = {
-                                                setState {
-                                                    filterMap?.put(filter, it)
-                                                }
-                                            }
-                                        }
-                                    } else if (filter is MultipleChoiceFilterInfo) {
-                                        multipleChoice {
-                                            attrs.choices = filter.choices
-                                            attrs.name = filter.key
-                                            attrs.selectedValue = state.filterMap?.getByKeyOrNull(filter.key) ?: filter.default
-                                            attrs.block = {
-                                                setState {
-                                                    filterMap?.put(filter, it)
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    filter.cat
-                                }
-                            }
-
-                            invokeECR(props.extraFilters)
-                        }
-                    }
+            slider {
+                attrs.text = "NPS"
+                attrs.currentMin = minNps
+                attrs.currentMax = maxNps
+                attrs.max = props.maxNps
+                attrs.block = {
+                    setMinNps(it[0] / 10f)
+                    setMaxNps(it[1] / 10f)
                 }
-                slider {
-                    attrs.text = "NPS"
-                    attrs.currentMin = state.minNps ?: 0f
-                    attrs.currentMax = state.maxNps ?: props.maxNps.toFloat()
-                    attrs.max = props.maxNps
-                    attrs.block = {
-                        setState {
-                            minNps = it[0] / 10f
-                            maxNps = it[1] / 10f
+                attrs.className = "mb-3 col-sm-3"
+            }
+            div("mb-3 col-sm-3") {
+                Suspense {
+                    attrs.fallback = loadingElem
+                    dates.dateRangePicker {
+                        attrs.startDate = startDate
+                        attrs.endDate = endDate
+                        attrs.startDateId = "startobj"
+                        attrs.endDateId = "endobj"
+                        attrs.onFocusChange = {
+                            setFocusedInput(it)
                         }
-                    }
-                    attrs.className = "mb-3 col-sm-3"
-                }
-                div("mb-3 col-sm-3") {
-                    Suspense {
-                        attrs.fallback = loadingElem
-                        dates.dateRangePicker {
-                            attrs.startDate = state.startDate
-                            attrs.endDate = state.endDate
-                            attrs.startDateId = "startobj"
-                            attrs.endDateId = "endobj"
-                            attrs.onFocusChange = {
-                                setState {
-                                    focusedInput = it
-                                }
-                            }
-                            attrs.onDatesChange = {
-                                setState {
-                                    startDate = it.startDate
-                                    endDate = it.endDate
-                                }
-                            }
-                            attrs.isOutsideRange = { false }
-                            attrs.focusedInput = state.focusedInput
-                            attrs.displayFormat = "DD/MM/YYYY"
-                            attrs.small = true
-                            attrs.numberOfMonths = 1
-                            attrs.renderCalendarInfo = {
-                                createElement<Props> {
-                                    presets {
-                                        attrs.callback = { sd, ed ->
-                                            setState {
-                                                startDate = sd
-                                                endDate = ed
-                                            }
-                                        }
+                        attrs.onDatesChange = {
+                            setStartDate(it.startDate)
+                            setEndDate(it.endDate)
+                        }
+                        attrs.isOutsideRange = { false }
+                        attrs.focusedInput = focusedInput
+                        attrs.displayFormat = "DD/MM/YYYY"
+                        attrs.small = true
+                        attrs.numberOfMonths = 1
+                        attrs.renderCalendarInfo = {
+                            createElement<Props> {
+                                presets {
+                                    attrs.callback = { sd, ed ->
+                                        setStartDate(sd)
+                                        setEndDate(ed)
                                     }
                                 }
                             }
                         }
                     }
                 }
-                div("mb-3 col-sm-3") {
-                    sort {
-                        attrs.target = props.sortOrderTarget
-                        attrs.cb = {
-                            setState {
-                                order = it
-                            }
-                        }
-                        attrs.default = state.order
+            }
+            div("mb-3 col-sm-3") {
+                sort {
+                    attrs.target = props.sortOrderTarget
+                    attrs.cb = {
+                        setOrder(it)
                     }
+                    attrs.default = order
                 }
             }
         }
     }
 }
-
-inline fun <T : CommonParams, reified S : Search<T>> RBuilder.searchTyped(noinline handler: SearchProps<T>.() -> Unit) =
-    child(S::class) {
-        this.attrs(handler)
-    }
-
-fun <T : CommonParams> RBuilder.search(handler: SearchProps<T>.() -> Unit) = searchTyped(handler)

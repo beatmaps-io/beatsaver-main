@@ -72,6 +72,7 @@ val reviewItem = fc<ReviewItemProps>("reviewItem") { props ->
     val (replies, setReplies) = useState<List<ReviewReplyDetail>>(emptyList())
     val (editing, setEditing) = useState(false)
 
+    val userData = useContext(globalContext)
     val modal = useContext(modalContext)
     val history = History(useNavigate())
 
@@ -145,94 +146,91 @@ val reviewItem = fc<ReviewItemProps>("reviewItem") { props ->
                         }
 
                         if (featLocal) span("badge badge-success") { +"Featured" }
-
-                        globalContext.Consumer { userData ->
-                            if (userData != null) {
-                                div("options") {
-                                    // Curator/Admin gets to feature and delete
-                                    if (userData.curator) {
-                                        div("form-check form-switch d-inline-block") {
-                                            input(InputType.checkBox, classes = "form-check-input") {
-                                                attrs.checked = featLocal
-                                                attrs.id = "featured-${rv.id}"
-                                                attrs.onChangeFunction = {
-                                                    val current = (it.currentTarget as HTMLInputElement).checked
-                                                    curate(rv.id, current)
-                                                }
-                                            }
-                                            label("form-check-label") {
-                                                attrs.reactFor = "featured-${rv.id}"
-                                                +"Featured"
+                        if (userData != null) {
+                            div("options") {
+                                // Curator/Admin gets to feature and delete
+                                if (userData.curator) {
+                                    div("form-check form-switch d-inline-block") {
+                                        input(InputType.checkBox, classes = "form-check-input") {
+                                            attrs.checked = featLocal
+                                            attrs.id = "featured-${rv.id}"
+                                            attrs.onChangeFunction = {
+                                                val current = (it.currentTarget as HTMLInputElement).checked
+                                                curate(rv.id, current)
                                             }
                                         }
+                                        label("form-check-label") {
+                                            attrs.reactFor = "featured-${rv.id}"
+                                            +"Featured"
+                                        }
                                     }
-                                    if (!userData.suspended && !userData.curator && props.userId != userData.userId) {
-                                        a("#") {
-                                            attrs.title = "Report"
-                                            attrs.attributes["aria-label"] = "Report"
-                                            attrs.onClickFunction = {
-                                                it.preventDefault()
-                                                modal?.current?.showDialog?.invoke(
-                                                    ModalData(
-                                                        "Report review",
-                                                        bodyCallback = {
-                                                            reportModal {
-                                                                attrs.subject = "review"
-                                                                attrs.reasonRef = reasonRef
-                                                                attrs.captchaRef = captchaRef
-                                                                attrs.errorsRef = errorRef
-                                                            }
-                                                        },
-                                                        buttons = listOf(
-                                                            ModalButton("Report", "danger") { report(rv.id) },
-                                                            ModalButton("Cancel")
-                                                        )
+                                }
+                                if (!userData.suspended && !userData.curator && props.userId != userData.userId) {
+                                    a("#") {
+                                        attrs.title = "Report"
+                                        attrs.attributes["aria-label"] = "Report"
+                                        attrs.onClickFunction = {
+                                            it.preventDefault()
+                                            modal?.current?.showDialog?.invoke(
+                                                ModalData(
+                                                    "Report review",
+                                                    bodyCallback = {
+                                                        reportModal {
+                                                            attrs.subject = "review"
+                                                            attrs.reasonRef = reasonRef
+                                                            attrs.captchaRef = captchaRef
+                                                            attrs.errorsRef = errorRef
+                                                        }
+                                                    },
+                                                    buttons = listOf(
+                                                        ModalButton("Report", "danger") { report(rv.id) },
+                                                        ModalButton("Cancel")
                                                     )
                                                 )
-                                            }
-                                            i("fas fa-flag text-danger") { }
+                                            )
                                         }
+                                        i("fas fa-flag text-danger") { }
                                     }
-                                    if (!userData.suspended && (props.userId == userData.userId || userData.curator)) {
-                                        a("#") {
-                                            attrs.title = "Edit"
-                                            attrs.attributes["aria-label"] = "Edit"
-                                            attrs.onClickFunction = {
-                                                it.preventDefault()
-                                                setEditing(!editing)
-                                            }
-                                            i("fas fa-pen text-warning") { }
+                                }
+                                if (!userData.suspended && (props.userId == userData.userId || userData.curator)) {
+                                    a("#") {
+                                        attrs.title = "Edit"
+                                        attrs.attributes["aria-label"] = "Edit"
+                                        attrs.onClickFunction = {
+                                            it.preventDefault()
+                                            setEditing(!editing)
                                         }
-                                        a("#") {
-                                            attrs.title = "Delete"
-                                            attrs.attributes["aria-label"] = "Delete"
-                                            attrs.onClickFunction = {
-                                                it.preventDefault()
-                                                modal?.current?.showDialog?.invoke(
-                                                    ModalData(
-                                                        "Delete review",
-                                                        bodyCallback = {
+                                        i("fas fa-pen text-warning") { }
+                                    }
+                                    a("#") {
+                                        attrs.title = "Delete"
+                                        attrs.attributes["aria-label"] = "Delete"
+                                        attrs.onClickFunction = {
+                                            it.preventDefault()
+                                            modal?.current?.showDialog?.invoke(
+                                                ModalData(
+                                                    "Delete review",
+                                                    bodyCallback = {
+                                                        p {
+                                                            +"Are you sure? This action cannot be reversed."
+                                                        }
+                                                        if (props.userId != userData.userId) {
                                                             p {
-                                                                +"Are you sure? This action cannot be reversed."
+                                                                +"Reason for action:"
                                                             }
-                                                            if (props.userId != userData.userId) {
-                                                                p {
-                                                                    +"Reason for action:"
-                                                                }
-                                                                textarea(classes = "form-control") {
-                                                                    ref = reasonRef
-                                                                }
+                                                            textarea(classes = "form-control") {
+                                                                ref = reasonRef
                                                             }
-                                                        },
-                                                        buttons = listOf(
-                                                            ModalButton("YES, DELETE", "danger") { delete(userData.userId == props.userId) },
-                                                            ModalButton("Cancel")
-                                                        )
+                                                        }
+                                                    },
+                                                    buttons = listOf(
+                                                        ModalButton("YES, DELETE", "danger") { delete(userData.userId == props.userId) },
+                                                        ModalButton("Cancel")
                                                     )
                                                 )
-                                            }
-                                            i("fas fa-trash text-danger-light") { }
+                                            )
                                         }
+                                        i("fas fa-trash text-danger-light") { }
                                     }
                                 }
                             }
@@ -285,23 +283,21 @@ val reviewItem = fc<ReviewItemProps>("reviewItem") { props ->
                             }
                         }
 
-                        globalContext.Consumer { userData ->
-                            if (!editing && userData != null && (userData.userId == rv.creator?.id || userData.userId == props.map?.uploader?.id || props.map?.collaborators?.any { it.id == userData.userId } == true)) {
-                                replyInput {
-                                    attrs.onSave = { reply ->
-                                        props.captcha?.current?.execute()?.then {
-                                            props.captcha?.current?.reset()
-                                            Axios.post<ActionResponse>(
-                                                "${Config.apibase}/reply/create/${rv.id}",
-                                                ReplyRequest(reply, it),
-                                                generateConfig<ReplyRequest, ActionResponse>(validStatus = arrayOf(200, 400))
-                                            )
-                                        }?.then { it }
-                                    }
-                                    attrs.onSuccess = {
-                                        axiosGet<ReviewDetail>("${Config.apibase}/review/single/${props.map?.id}/${props.userId}").then {
-                                            setReplies(it.data.replies)
-                                        }
+                        if (!editing && userData != null && (userData.userId == rv.creator?.id || userData.userId == props.map?.uploader?.id || props.map?.collaborators?.any { it.id == userData.userId } == true)) {
+                            replyInput {
+                                attrs.onSave = { reply ->
+                                    props.captcha?.current?.execute()?.then {
+                                        props.captcha?.current?.reset()
+                                        Axios.post<ActionResponse>(
+                                            "${Config.apibase}/reply/create/${rv.id}",
+                                            ReplyRequest(reply, it),
+                                            generateConfig<ReplyRequest, ActionResponse>(validStatus = arrayOf(200, 400))
+                                        )
+                                    }?.then { it }
+                                }
+                                attrs.onSuccess = {
+                                    axiosGet<ReviewDetail>("${Config.apibase}/review/single/${props.map?.id}/${props.userId}").then {
+                                        setReplies(it.data.replies)
                                     }
                                 }
                             }

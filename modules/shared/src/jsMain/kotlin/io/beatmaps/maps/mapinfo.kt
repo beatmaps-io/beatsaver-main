@@ -259,16 +259,16 @@ val mapInfo = fc<MapInfoProps>("mapInfo") { props ->
                                         playlists.addTo {
                                             attrs.map = props.mapInfo
                                         }
-                                    }
-                                    bookmarkButton {
-                                        attrs.bookmarked = props.mapInfo.bookmarked == true
-                                        attrs.onClick = { e, bm ->
-                                            e.preventDefault()
-                                            if (!loading) bookmark(!bm)
+                                        bookmarkButton {
+                                            attrs.bookmarked = props.mapInfo.bookmarked == true
+                                            attrs.onClick = { e, bm ->
+                                                e.preventDefault()
+                                                if (!loading) bookmark(!bm)
+                                            }
                                         }
-                                    }
 
-                                    div("dropdown-divider") {}
+                                        div("dropdown-divider") {}
+                                    }
                                 }
 
                                 links {

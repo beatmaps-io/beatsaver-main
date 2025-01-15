@@ -207,7 +207,7 @@ object SolrImporter {
                 UserSolr.insert {
                     it[id] = user.id
                     it[sId] = user.id.toString()
-                    it[name] = user.name
+                    it[name] = user.uniqueName ?: user.name
                     it[description] = user.description
                     it[created] = user.createdAt
                     it[admin] = user.admin

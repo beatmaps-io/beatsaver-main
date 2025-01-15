@@ -21,7 +21,6 @@ data class TestPlayExotics(
 )
 
 val testplayModule = import<TestplayModule>("./BeatMaps-testplay").let { promise ->
-    promise.then { console.log(it) }
     TestPlayExotics(
         promise.component { it.recentTestplays },
         promise.component { it.newFeedback }

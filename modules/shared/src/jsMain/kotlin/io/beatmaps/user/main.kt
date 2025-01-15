@@ -25,6 +25,7 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.shared.ModalButton
 import io.beatmaps.shared.ModalCallbacks
 import io.beatmaps.shared.ModalData
+import io.beatmaps.shared.loadingElem
 import io.beatmaps.shared.modal
 import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.review.reviewTable
@@ -614,9 +615,12 @@ val profilePage = fc<Props>("profilePage") { _ ->
                     attrs.onUpdate = { loadState() }
                 }
             } else {
-                admin.adminAccount {
-                    attrs.userDetail = userDetail
-                    attrs.onUpdate = { loadState() }
+                Suspense {
+                    attrs.fallback = loadingElem
+                    admin.adminAccount {
+                        attrs.userDetail = userDetail
+                        attrs.onUpdate = { loadState() }
+                    }
                 }
             }
         }

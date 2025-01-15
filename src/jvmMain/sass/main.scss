@@ -148,6 +148,15 @@ table.search-results {
     }
   }
 
+  .s-pick {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    button {
+      white-space: nowrap;
+    }
+  }
+
   .review-card {
     width: 100%;
     height: 106px;
