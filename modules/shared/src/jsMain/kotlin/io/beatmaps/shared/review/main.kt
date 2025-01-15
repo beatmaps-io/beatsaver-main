@@ -13,11 +13,11 @@ import io.beatmaps.captcha.captcha
 import io.beatmaps.globalContext
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.generateInfiniteScrollComponent
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
-import react.fc
 import react.useContext
 import react.useMemo
 import react.useRef
@@ -32,7 +32,7 @@ external interface ReviewTableProps : Props {
     var visible: Boolean?
 }
 
-val reviewTable = fc<ReviewTableProps>("reviewTable") { props ->
+val reviewTable = fcmemo<ReviewTableProps>("reviewTable") { props ->
     val resetRef = useRef<() -> Unit>()
     val loadPageRef = useRef<(Int, CancelTokenSource) -> Promise<GenericSearchResponse<ReviewDetail>?>>()
     val (existingReview, setExistingReview) = useState(false)

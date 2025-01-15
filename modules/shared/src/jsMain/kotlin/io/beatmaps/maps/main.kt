@@ -25,6 +25,7 @@ import react.dom.div
 import react.fc
 import react.router.useNavigate
 import react.router.useParams
+import react.useCallback
 import react.useEffect
 import react.useEffectOnce
 import react.useRef
@@ -71,13 +72,12 @@ val mapPage = fc<MapPageProps>("mapPage") { props ->
         localStorage["maps.selectedTab"] = tab.name
     }
 
-    fun loadMap() {
+    val loadMap: () -> Unit = useCallback(params, props.beatsaver) {
         val mapKey = params["mapKey"]
         val subPath = if (props.beatsaver) "beatsaver" else "id"
 
         setMap(null)
         setSelectedDiff(null)
-        setTab(localStorageTab)
 
         axiosGet<MapDetail>(
             "${Config.apibase}/maps/$subPath/$mapKey"
@@ -99,20 +99,28 @@ val mapPage = fc<MapPageProps>("mapPage") { props ->
         loadMap()
     }
 
+    val changeDiff = useCallback { diff: MapDifficulty ->
+        setSelectedDiff(diff)
+    }
+
+    val setMapCb = useCallback { mapLocal: MapDetail ->
+        setMap(mapLocal)
+    }
+
+    val reloadPage = useCallback {
+        loadMap()
+        window.scrollTo(0.0, 0.0)
+    }
+
     map?.let {
         val version = it.publishedVersion()
 
         if (version == null && it.deletedAt == null) {
             testplay {
                 attrs.mapInfo = it
-                attrs.refreshPage = {
-                    loadMap()
-                    window.scrollTo(0.0, 0.0)
-                }
+                attrs.refreshPage = reloadPage
                 attrs.history = history
-                attrs.updateMapinfo = { map ->
-                    setMap(map)
-                }
+                attrs.updateMapinfo = setMapCb
             }
         } else {
             modal {
@@ -125,13 +133,8 @@ val mapPage = fc<MapPageProps>("mapPage") { props ->
                 mapInfo {
                     attrs {
                         mapInfo = it
-                        reloadMap = ::loadMap
-                        deleteMap = { self ->
-                            history.push("/profile" + if (!self) "/${it.uploader.id}" else "")
-                        }
-                        updateMapinfo = { map ->
-                            setMap(map)
-                        }
+                        reloadMap = loadMap
+                        updateMapinfo = setMapCb
                     }
                 }
                 div("row mt-3") {
@@ -139,9 +142,7 @@ val mapPage = fc<MapPageProps>("mapPage") { props ->
                         infoTable {
                             attrs.map = it
                             attrs.selected = selectedDiff
-                            attrs.changeSelectedDiff = { diff ->
-                                setSelectedDiff(diff)
-                            }
+                            attrs.changeSelectedDiff = changeDiff
                         }
                     }
 
