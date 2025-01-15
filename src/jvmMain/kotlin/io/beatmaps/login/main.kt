@@ -59,7 +59,8 @@ data class Session(
     val suspended: Boolean = false,
     val ip: String? = null,
     val userAgent: String? = null,
-    val countryCode: String? = null
+    val countryCode: String? = null,
+    val blurnsfw: Boolean = true
 ) {
     fun isAdmin() = admin
     fun isCurator() = isAdmin() || curator
@@ -68,7 +69,7 @@ data class Session(
         fun fromUser(user: UserDao, alertCount: Int? = null, oauth2ClientId: String? = null, call: ApplicationCall? = null) = Session(
             user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, alertCount,
             user.curator, oauth2ClientId, user.suspendedAt != null, call?.request?.origin?.remoteHost, call?.request?.userAgent(),
-            call?.getCountry()?.let { if (it.success) it.countryCode else null }
+            call?.getCountry()?.let { if (it.success) it.countryCode else null }, user.blurnsfw
         )
     }
 }

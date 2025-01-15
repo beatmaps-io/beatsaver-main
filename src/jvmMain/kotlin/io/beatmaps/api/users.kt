@@ -175,6 +175,9 @@ class UsersApi {
     @Location("/description")
     data class DescriptionApi(val api: UsersApi)
 
+    @Location("/blur")
+    data class BlurApi(val api: UsersApi)
+
     @Location("/admin")
     data class Admin(val api: UsersApi)
 
@@ -325,6 +328,25 @@ fun Route.userRoute(client: HttpClient) {
 
             success || throw ServerApiException("Something went wrong")
             call.pub("beatmaps", "user.${sess.userId}.updated.info", null, sess.userId)
+            call.respond(ActionResponse.success())
+        }
+    }
+
+    post<UsersApi.BlurApi> {
+        requireAuthorization { _, sess ->
+            val req = call.receive<BlurReq>()
+
+            val success = transaction {
+                try {
+                    User.update({ User.id eq sess.userId }) { u ->
+                        u[blurnsfw] = req.blur
+                        u[updatedAt] = NowExpression(updatedAt)
+                    } > 0
+                } catch (_: ExposedSQLException) {
+                    false
+                }
+            } || throw ServerApiException("Something went wrong")
+
             call.respond(ActionResponse.success())
         }
     }
@@ -1173,10 +1195,11 @@ fun Route.userRoute(client: HttpClient) {
                 val followData = followData(sess.userId, sess.userId)
 
                 UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let { usr ->
+                    val tmp = usr.copy(email = user.email, blurnsfw = user.blurnsfw)
                     if (dualAccount) {
-                        usr.copy(type = AccountType.DUAL, email = user.email)
+                        tmp.copy(type = AccountType.DUAL)
                     } else {
-                        usr.copy(email = user.email)
+                        tmp
                     }
                 }
             }

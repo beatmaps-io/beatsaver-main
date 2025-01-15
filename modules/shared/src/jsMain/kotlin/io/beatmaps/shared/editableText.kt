@@ -31,7 +31,7 @@ external interface EditableTextProps : PropsWithChildren {
     var maxLength: Int?
     var rows: Int?
     var btnClass: String?
-    var justify: String?
+    var flex: String?
     var placeholder: String?
     var textClass: String?
 }
@@ -73,7 +73,7 @@ val editableText = fc<EditableTextProps>("editableText") { props ->
                 attrs.attributes["data-loading"] = "$loading"
 
                 attrs.jsStyle {
-                    justifySelf = props.justify ?: "end"
+                    flex = props.flex ?: "none"
                 }
                 attrs.onClickFunction = {
                     val newReview = textareaRef.current?.value ?: ""

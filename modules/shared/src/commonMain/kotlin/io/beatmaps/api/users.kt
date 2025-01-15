@@ -47,7 +47,8 @@ data class UserDetail(
     val verifiedMapper: Boolean = false,
     val suspendedAt: Instant? = null,
     val playlistUrl: String? = null,
-    val patreon: PatreonTier? = null
+    val patreon: PatreonTier? = null,
+    val blurnsfw: Boolean? = null,
 ) {
     fun profileLink(tab: String? = null, absolute: Boolean = false) = LinkHelper.profileLink(this, tab, absolute)
     companion object
@@ -89,6 +90,9 @@ data class UserDiffStats(val total: Int, val easy: Int, val normal: Int, val har
 
 @Serializable
 data class AccountDetailReq(val textContent: String)
+
+@Serializable
+data class BlurReq(val blur: Boolean)
 
 @Serializable
 data class RegisterRequest(val captcha: String, val username: String, val email: String, val password: String, val password2: String)

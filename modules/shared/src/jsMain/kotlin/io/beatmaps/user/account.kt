@@ -9,6 +9,7 @@ import io.beatmaps.Config
 import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.AccountType
 import io.beatmaps.api.ActionResponse
+import io.beatmaps.api.BlurReq
 import io.beatmaps.api.SessionInfo
 import io.beatmaps.api.SessionRevokeRequest
 import io.beatmaps.api.SessionsData
@@ -18,6 +19,7 @@ import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.captcha.captcha
 import io.beatmaps.shared.editableText
 import io.beatmaps.shared.form.errors
+import io.beatmaps.shared.form.toggle
 import io.beatmaps.upload.UploadRequestConfig
 import io.beatmaps.user.account.accountEmail
 import io.beatmaps.user.account.changePassword
@@ -29,6 +31,7 @@ import kotlinx.html.hidden
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
+import kotlinx.html.js.onSubmitFunction
 import kotlinx.html.role
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
@@ -44,6 +47,7 @@ import react.dom.hr
 import react.dom.input
 import react.dom.label
 import react.fc
+import react.useCallback
 import react.useEffect
 import react.useRef
 import react.useState
@@ -58,6 +62,8 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
     val (username, setUsername) = useState(props.userDetail.name)
     val (usernameErrors, setUsernameErrors) = useState(emptyList<String>())
     val (userLoading, setUserLoading) = useState(false)
+    val (blurLoading, setBlurLoading) = useState(false)
+    val (blur, setBlur) = useState(props.userDetail.blurnsfw ?: true)
 
     val (descriptionErrors, setDescriptionErrors) = useState(emptyList<String>())
 
@@ -140,13 +146,10 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
                             ).then {
                                 if (it.data.success) {
                                     props.onUpdate()
-                                    setUserLoading(false)
                                 } else {
                                     setUsernameErrors(it.data.errors)
-                                    setUserLoading(false)
                                 }
-                            }.catch {
-                                // Cancelled request
+                            }.finally {
                                 setUserLoading(false)
                             }
                         }
@@ -168,7 +171,7 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
                 attrs.editing = true
                 attrs.rows = 5
                 attrs.btnClass = "btn-success"
-                attrs.justify = "stretch"
+                attrs.flex = "auto"
                 attrs.text = props.userDetail.description ?: ""
                 attrs.buttonText = "Change description"
                 attrs.maxLength = UserConstants.MAX_DESCRIPTION_LENGTH
@@ -223,17 +226,16 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
                                         val v = ((progress.loaded * 100f) / progress.total).toInt()
                                         progressBarInnerRef.current?.style?.width = "$v%"
                                     }
-                                ).then { r ->
+                                ).then({ r ->
                                     if (r.status == 200) {
                                         props.onUpdate()
-                                        setUploading(false)
                                     } else {
-                                        setUploading(false)
                                         avatarRef.current?.value = ""
                                     }
-                                }.catch {
-                                    setUploading(false)
+                                }) {
                                     avatarRef.current?.value = ""
+                                }.finally {
+                                    setUploading(false)
                                 }
                             }
                         }
@@ -260,6 +262,44 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
             attrs.revokeAllCallback = ::revokeAll
             attrs.removeSessionCallback = ::removeSessionCallback
             attrs.sessions = s
+        }
+    }
+    form(classes = "user-form", action = "/profile", method = FormMethod.post) {
+        attrs.onSubmitFunction = { ev ->
+            ev.preventDefault()
+            setBlurLoading(true)
+            Axios.post<ActionResponse>(
+                "${Config.apibase}/users/blur",
+                BlurReq(blur),
+                generateConfig<BlurReq, ActionResponse>()
+            ).then {
+                // Do nothing :)
+            }.finally {
+                setBlurLoading(false)
+            }
+        }
+        h5("mt-5") {
+            +"NSFW Content"
+        }
+        hr("mt-2") {}
+        div("mb-3 d-grid") {
+            val cb = useCallback { it: Boolean ->
+                setBlur(it)
+            }
+            toggle {
+                key = "nsfw"
+                attrs.id = "nsfw"
+                attrs.disabled = blurLoading
+                attrs.block = cb
+                attrs.text = "Hide content"
+                attrs.default = props.userDetail.blurnsfw
+            }
+        }
+        div("d-grid") {
+            button(classes = "btn btn-success", type = ButtonType.submit) {
+                attrs.disabled = blurLoading == true
+                +"Save"
+            }
         }
     }
     if (props.userDetail.type != AccountType.DISCORD) {
