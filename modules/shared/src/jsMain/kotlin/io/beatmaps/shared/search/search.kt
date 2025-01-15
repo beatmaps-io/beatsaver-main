@@ -72,7 +72,7 @@ fun interface ExtraContentRenderer {
     fun RBuilder.invoke()
 }
 
-fun RDOMBuilder<DIV>.invokeECR(renderer: ExtraContentRenderer?) {
+fun RBuilder.invokeECR(renderer: ExtraContentRenderer?) {
     renderer?.let { exr ->
         with(exr) {
             this@invokeECR.invoke()
