@@ -10,7 +10,6 @@ import react.dom.jsStyle
 import react.useEffect
 import react.useEffectOnce
 import react.useRef
-import react.useState
 
 external interface AutoSizeComponentProps<T> : Props {
     var obj: T?
