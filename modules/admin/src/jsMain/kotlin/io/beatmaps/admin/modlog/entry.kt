@@ -21,6 +21,7 @@ import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.maps.mapTag
 import io.beatmaps.shared.map.mapTitle
 import io.beatmaps.user.userLink
+import io.beatmaps.util.fcmemo
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLDivElement
 import react.Props
@@ -30,7 +31,6 @@ import react.dom.p
 import react.dom.span
 import react.dom.td
 import react.dom.tr
-import react.fc
 import react.useRef
 
 external interface ModLogEntryProps : Props {
@@ -38,7 +38,7 @@ external interface ModLogEntryProps : Props {
     var setUser: (String, String) -> Unit
 }
 
-val modLogEntryRenderer = fc<ModLogEntryProps>("modLogEntryRenderer") {
+val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
     fun userCallback(mod: Boolean, userDetail: UserDetail): () -> Unit = {
         it.setUser(
             if (mod) userDetail.name else "",

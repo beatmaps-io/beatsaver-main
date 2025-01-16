@@ -16,6 +16,7 @@ import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.review.sentimentIcon
 import io.beatmaps.shared.review.sentimentPicker
 import io.beatmaps.user.userLink
+import io.beatmaps.util.fcmemo
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.HTMLTextAreaElement
@@ -27,7 +28,6 @@ import react.dom.p
 import react.dom.td
 import react.dom.textarea
 import react.dom.tr
-import react.fc
 import react.useContext
 import react.useRef
 import react.useState
@@ -36,11 +36,11 @@ import kotlin.js.Promise
 external interface ModReviewEntryProps : Props {
     var entry: CommentDetail?
     var setUser: (String) -> Unit
-    var onDelete: (String) -> Promise<*>
-    var onSave: (ReviewSentiment?, String) -> Promise<AxiosResponse<ActionResponse>>?
+    var onDelete: (CommentDetail?, String) -> Promise<*>
+    var onSave: (CommentDetail?, ReviewSentiment?, String) -> Promise<AxiosResponse<ActionResponse>>?
 }
 
-val modReviewEntry = fc<ModReviewEntryProps>("modReviewEntry") { props ->
+val modReviewEntry = fcmemo<ModReviewEntryProps>("modReviewEntry") { props ->
     val modal = useContext(modalContext)
     val reasonRef = useRef<HTMLTextAreaElement>()
     val (hidden, setHidden) = useState(false)
@@ -53,7 +53,7 @@ val modReviewEntry = fc<ModReviewEntryProps>("modReviewEntry") { props ->
         val reason = reasonRef.current?.value ?: ""
         reasonRef.current?.value = ""
 
-        return props.onDelete(reason).then({
+        return props.onDelete(props.entry, reason).then({
             setHidden(true)
             true
         }) { false }
@@ -174,7 +174,7 @@ val modReviewEntry = fc<ModReviewEntryProps>("modReviewEntry") { props ->
                                         null
                                     }
 
-                                    props.onSave(newSentimentLocal, newReview)?.then { r ->
+                                    props.onSave(props.entry, newSentimentLocal, newReview)?.then { r ->
                                         if (r.data.success) setSentiment(newSentimentLocal)
 
                                         r

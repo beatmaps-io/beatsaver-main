@@ -29,3 +29,9 @@ val quest = io.beatmaps.quest.quest
 
 @JsExport
 val authorize = authorizePage
+
+@JsExport
+val followList = io.beatmaps.user.followList
+
+@JsExport
+val userList = io.beatmaps.user.list.userList

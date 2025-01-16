@@ -12,7 +12,6 @@ import io.beatmaps.nav.viewportMinWidthPolyfill
 import io.beatmaps.playlist.playlists
 import io.beatmaps.upload.uploadPage
 import io.beatmaps.user.alerts.alertsPage
-import io.beatmaps.user.list.userList
 import io.beatmaps.user.profilePage
 import io.beatmaps.user.user
 import js.objects.jso
@@ -115,7 +114,7 @@ val appRouter = createBrowserRouter(
             div {}
         },
         bsroute("/mappers") {
-            userList { }
+            user.userList { }
         },
         bsroute("/login") {
             user.login { }

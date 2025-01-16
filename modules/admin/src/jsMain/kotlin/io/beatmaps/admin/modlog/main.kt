@@ -116,14 +116,16 @@ val modlog = fc<Props>("modlog") {
     }
 
     val renderer = useMemo {
+        val setUserCb = { modStr: String, userStr: String ->
+            modRef.current?.value = modStr
+            userRef.current?.value = userStr
+            updateHistory()
+        }
+
         InfiniteScrollElementRenderer<ModLogEntry> {
             modLogEntryRenderer {
                 attrs.entry = it
-                attrs.setUser = { modStr, userStr ->
-                    modRef.current?.value = modStr
-                    userRef.current?.value = userStr
-                    updateHistory()
-                }
+                attrs.setUser = setUserCb
             }
         }
     }

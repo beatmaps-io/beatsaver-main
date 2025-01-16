@@ -1,10 +1,10 @@
 package io.beatmaps.admin.modlog
 
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.i
 import react.dom.p
 import react.dom.span
-import react.fc
 
 external interface DiffTextProps : Props {
     var description: String
@@ -12,7 +12,7 @@ external interface DiffTextProps : Props {
     var new: String
 }
 
-val diffText = fc<DiffTextProps>("diffText") { props ->
+val diffText = fcmemo<DiffTextProps>("diffText") { props ->
     if (props.new != props.old) {
         p("card-text") {
             if (props.new.isNotEmpty()) {
