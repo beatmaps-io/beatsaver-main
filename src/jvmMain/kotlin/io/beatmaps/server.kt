@@ -256,7 +256,7 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
     }
 
     install(DataConversion) {
-        convert {
+        convert<Instant> {
             decode { values ->
                 values.singleOrNull()?.let {
                     try {

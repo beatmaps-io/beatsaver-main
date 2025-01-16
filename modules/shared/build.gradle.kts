@@ -18,7 +18,6 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("io.beatmaps:BeatMaps-CommonMP:1.0.+")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
             }
         }

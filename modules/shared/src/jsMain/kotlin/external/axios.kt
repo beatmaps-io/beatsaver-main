@@ -7,10 +7,10 @@ import kotlinx.serialization.encodeToString
 import kotlin.js.Promise
 
 external interface AxiosTransformer
-inline operator fun AxiosTransformer.invoke(data: Any, headers: Any? = null) = asDynamic()(data, headers).unsafeCast<Any>()
+operator fun AxiosTransformer.invoke(data: Any, headers: Any? = null) = asDynamic()(data, headers).unsafeCast<Any>()
 
 external interface AxiosAdapter
-inline operator fun AxiosAdapter.invoke(config: AxiosRequestConfig) = asDynamic()(config).unsafeCast<AxiosPromise<Any>>()
+operator fun AxiosAdapter.invoke(config: AxiosRequestConfig) = asDynamic()(config).unsafeCast<AxiosPromise<Any>>()
 
 external interface AxiosBasicCredentials {
     var username: String
@@ -81,7 +81,7 @@ external interface Cancel {
     var message: String
 }
 external interface Canceler
-inline operator fun Canceler.invoke(message: String?) = asDynamic()(message).unsafeCast<Unit>()
+operator fun Canceler.invoke(message: String?) = asDynamic()(message).unsafeCast<Unit>()
 
 external interface CancelTokenStatic {
     fun source(): CancelTokenSource
@@ -116,8 +116,8 @@ external interface AxiosInstance {
     fun <T> put(url: String, data: Any? = definedExternally /* null */, config: AxiosRequestConfig? = definedExternally /* null */): AxiosPromise<T>
     fun <T> patch(url: String, data: Any? = definedExternally /* null */, config: AxiosRequestConfig? = definedExternally /* null */): AxiosPromise<T>
 }
-inline operator fun AxiosInstance.invoke(config: AxiosRequestConfig) = asDynamic()(config).unsafeCast<AxiosPromise<Any>>()
-inline operator fun AxiosInstance.invoke(url: String, config: AxiosRequestConfig?) = asDynamic()(url, config).unsafeCast<AxiosPromise<Any>>()
+operator fun AxiosInstance.invoke(config: AxiosRequestConfig) = asDynamic()(config).unsafeCast<AxiosPromise<Any>>()
+operator fun AxiosInstance.invoke(url: String, config: AxiosRequestConfig?) = asDynamic()(url, config).unsafeCast<AxiosPromise<Any>>()
 
 external interface AxiosStatic : AxiosInstance {
     fun create(config: AxiosRequestConfig? = definedExternally /* null */): AxiosInstance
