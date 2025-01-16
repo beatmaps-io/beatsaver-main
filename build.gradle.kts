@@ -1,10 +1,11 @@
 import io.miret.etienne.gradle.sass.CompileSass
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
-    kotlin("multiplatform") version "2.0.20"
-    kotlin("plugin.serialization") version "2.0.20"
+    kotlin("multiplatform") version "2.1.0"
+    kotlin("plugin.serialization") version "2.1.0"
     id("io.miret.etienne.sass") version "1.1.2"
     id("org.flywaydb.flyway") version "9.2.2"
     id("org.jlleitschuh.gradle.ktlint") version "11.5.1"
@@ -51,9 +52,9 @@ subprojects {
                     optIn("kotlin.io.encoding.ExperimentalEncodingApi")
                 }
                 dependencies {
-                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-legacy:18.3.1-pre.839")
-                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom-legacy:18.3.1-pre.839")
-                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:6.28.0-pre.839")
+                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-legacy:18.3.1-pre.844")
+                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom-legacy:18.3.1-pre.844")
+                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:6.28.0-pre.844")
                 }
             }
             val commonMain by getting {
@@ -74,9 +75,7 @@ kotlin {
         languageVersion.set(JavaLanguageVersion.of(16))
     }
     jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "16"
-        }
+        compilerOptions.jvmTarget = JvmTarget.JVM_16
         testRuns["test"].executionTask.configure {
             useJUnit()
         }
@@ -256,9 +255,9 @@ flyway {
 tasks.getByName<CompileSass>("compileSass") {
     dependsOn(tasks.getByName("kotlinNpmInstall"))
 
-    outputDir = file("$buildDir/processedResources/jvm/main/assets")
+    outputDir = layout.buildDirectory.file("processedResources/jvm/main/assets").get().asFile
     setSourceDir(file("$projectDir/src/jvmMain/sass"))
-    loadPath(file("$buildDir/js/node_modules"))
+    loadPath(layout.buildDirectory.file("js/node_modules").get().asFile)
 
     style = compressed
 }
@@ -289,7 +288,7 @@ tasks.getByName<Jar>("jvmJar") {
     }
 }
 
-tasks.create<JavaExec>("installPlaywrightBrowsers") {
+tasks.register<JavaExec>("installPlaywrightBrowsers") {
     mainClass.set("com.microsoft.playwright.CLI")
     classpath(sourceSets.test.get().runtimeClasspath)
     args = listOf("install", "chromium")
@@ -308,7 +307,7 @@ tasks.getByName<JavaExec>("run") {
 distributions {
     main {
         contents {
-            from("$buildDir/libs") {
+            from(layout.buildDirectory.file("libs").get().asFile) {
                 rename("${rootProject.name}-jvm", rootProject.name)
                 into("lib")
             }
