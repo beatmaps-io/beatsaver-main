@@ -237,7 +237,9 @@ tasks.getByName<CompileSass>("compileSass") {
 tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
     sourceMaps = true
     outputDirectory.set(layout.buildDirectory.file("processedResources/jvm/main/assets").get().asFile)
-    // mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
+    if (System.getenv("BUILD_NUMBER") == null) {
+        mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
+    }
 }
 
 tasks.withType<AbstractCopyTask> {
