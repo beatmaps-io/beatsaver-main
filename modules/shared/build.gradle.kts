@@ -1,15 +1,15 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     kotlin("plugin.serialization")
 }
 
 kotlin {
     jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(16))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
     jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "16"
-        }
+        compilerOptions.jvmTarget = JvmTarget.JVM_21
         testRuns["test"].executionTask.configure {
             useJUnit()
         }
