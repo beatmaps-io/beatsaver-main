@@ -19,13 +19,14 @@ interface CommentDetail {
     val createdAt: Instant
     val updatedAt: Instant
     val deletedAt: Instant?
+    val map: MapDetail?
 }
 
 @Serializable
 data class ReviewDetail(
     override val id: Int,
     override val creator: UserDetail? = null,
-    val map: MapDetail? = null,
+    override val map: MapDetail? = null,
     override val text: String,
     val sentiment: ReviewSentiment,
     override val createdAt: Instant,
@@ -46,7 +47,9 @@ data class ReviewReplyDetail(
     override val updatedAt: Instant,
     override val deletedAt: Instant? = null,
     var review: ReviewDetail? = null
-) : CommentDetail
+) : CommentDetail {
+    override val map = review?.map
+}
 
 @Serializable data class ReviewsResponse(val docs: List<ReviewDetail>)
 

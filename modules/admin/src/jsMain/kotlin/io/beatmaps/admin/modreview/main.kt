@@ -9,6 +9,7 @@ import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.admin.ModReviewProps
 import io.beatmaps.api.ActionResponse
+import io.beatmaps.api.CommentDetail
 import io.beatmaps.api.DeleteReview
 import io.beatmaps.api.GenericSearchResponse
 import io.beatmaps.api.PutReview
@@ -17,6 +18,7 @@ import io.beatmaps.api.ReplyRequest
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.api.ReviewsResponse
+import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.globalContext
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScrollElementRenderer
@@ -96,51 +98,59 @@ val modReview = fc<ModReviewProps>("modReview") { props ->
     }
 
     val reviewRenderer = useMemo {
+        val setUserCb = { userStr: String ->
+            userRef.current?.value = userStr
+            history.push(pathName.current + urlExtension())
+        }
+        val deleteCb = { it: CommentDetail?, reason: String ->
+            axiosDelete<DeleteReview, String>(
+                "${Config.apibase}/review/single/${it?.map?.id}/${it?.creator?.id}",
+                DeleteReview(reason)
+            )
+        }
+        val saveCb = onSave@{ it: CommentDetail?, sentiment: ReviewSentiment?, text: String ->
+            Axios.put<ActionResponse>(
+                "${Config.apibase}/review/single/${it?.map?.id}/${it?.creator?.id}",
+                PutReview(text, sentiment ?: return@onSave null),
+                generateConfig<PutReview, ActionResponse>()
+            )
+        }
+
         InfiniteScrollElementRenderer<ReviewDetail> {
             modReviewEntry {
                 attrs.entry = it
-                attrs.setUser = { userStr ->
-                    userRef.current?.value = userStr
-                    history.push(pathName.current + urlExtension())
-                }
-                attrs.onDelete = { reason ->
-                    axiosDelete<DeleteReview, String>(
-                        "${Config.apibase}/review/single/${it?.map?.id}/${it?.creator?.id}",
-                        DeleteReview(reason)
-                    )
-                }
-                attrs.onSave = onSave@{ sentiment, text ->
-                    Axios.put(
-                        "${Config.apibase}/review/single/${it?.map?.id}/${it?.creator?.id}",
-                        PutReview(text, sentiment ?: return@onSave null),
-                        generateConfig<PutReview, ActionResponse>()
-                    )
-                }
+                attrs.setUser = setUserCb
+                attrs.onDelete = deleteCb
+                attrs.onSave = saveCb
             }
         }
     }
 
     val replyRenderer = useMemo {
+        val setUserCb = { userStr: String ->
+            userRef.current?.value = userStr
+            history.push(pathName.current + urlExtension())
+        }
+        val deleteCb = { it: CommentDetail?, reason: String ->
+            axiosDelete<DeleteReview, String>(
+                "${Config.apibase}/reply/single/${it?.id}",
+                DeleteReview(reason)
+            )
+        }
+        val saveCb = { it: CommentDetail?, _: ReviewSentiment?, text: String ->
+            Axios.put<ActionResponse>(
+                "${Config.apibase}/reply/single/${it?.id}",
+                ReplyRequest(text),
+                generateConfig<ReplyRequest, ActionResponse>()
+            )
+        }
+
         InfiniteScrollElementRenderer<ReviewReplyDetail> {
             modReviewEntry {
                 attrs.entry = it
-                attrs.setUser = { userStr ->
-                    userRef.current?.value = userStr
-                    history.push(pathName.current + urlExtension())
-                }
-                attrs.onDelete = { reason ->
-                    axiosDelete<DeleteReview, String>(
-                        "${Config.apibase}/reply/single/${it?.id}",
-                        DeleteReview(reason)
-                    )
-                }
-                attrs.onSave = { _, text ->
-                    Axios.put(
-                        "${Config.apibase}/reply/single/${it?.id}",
-                        ReplyRequest(text),
-                        generateConfig<ReplyRequest, ActionResponse>()
-                    )
-                }
+                attrs.setUser = setUserCb
+                attrs.onDelete = deleteCb
+                attrs.onSave = saveCb
             }
         }
     }

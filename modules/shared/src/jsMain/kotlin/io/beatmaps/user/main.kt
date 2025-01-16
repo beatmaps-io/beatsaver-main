@@ -158,10 +158,12 @@ val profilePage = fc<Props>("profilePage") { _ ->
             ModalData(
                 title,
                 bodyCallback = {
-                    followList {
-                        attrs.scrollParent = it
-                        attrs.following = following
-                        attrs.followedBy = followedBy
+                    Suspense {
+                        user.followList {
+                            attrs.scrollParent = it
+                            attrs.following = following
+                            attrs.followedBy = followedBy
+                        }
                     }
                 },
                 buttons = listOf(

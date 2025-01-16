@@ -18,6 +18,7 @@ import io.beatmaps.util.useDidUpdateEffect
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.div
+import react.useCallback
 import react.useContext
 import react.useMemo
 import react.useRef
@@ -54,20 +55,26 @@ val reviewTable = fcmemo<ReviewTableProps>("reviewTable") { props ->
 
     loadPageRef.current = { toLoad: Int, token: CancelTokenSource ->
         axiosGet<ReviewsResponse>(getUrl(toLoad), token.token).then {
-            return@then GenericSearchResponse.from(it.data.docs)
+            return@then GenericSearchResponse.from(
+                it.data.docs.map { rv ->
+                    rv.copy(creator = props.userDetail ?: rv.creator)
+                }
+            )
         }
+    }
+
+    val updateReview = useCallback { nv: Boolean ->
+        setExistingReview(nv)
     }
 
     val renderer = useMemo(props.map, props.userDetail) {
         InfiniteScrollElementRenderer<ReviewDetail> { rv ->
             reviewItem {
-                attrs.obj = rv?.copy(creator = props.userDetail ?: rv.creator)
+                attrs.obj = rv
                 attrs.userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
                 attrs.map = props.map ?: rv?.map
                 attrs.captcha = captchaRef
-                attrs.setExistingReview = { nv ->
-                    setExistingReview(nv)
-                }
+                attrs.setExistingReview = updateReview
             }
         }
     }

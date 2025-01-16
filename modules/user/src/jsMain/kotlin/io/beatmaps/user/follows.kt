@@ -10,20 +10,12 @@ import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.userCard
 import io.beatmaps.user.list.userInfiniteScroll
 import io.beatmaps.util.useDidUpdateEffect
-import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
-import react.Props
 import react.dom.div
 import react.fc
 import react.useMemo
 import react.useRef
 import kotlin.js.Promise
-
-external interface FollowListProps : Props {
-    var scrollParent: HTMLDivElement?
-    var following: Int?
-    var followedBy: Int?
-}
 
 val followList = fc<FollowListProps>("followList") { props ->
     val resetRef = useRef<() -> Unit>()
@@ -57,10 +49,7 @@ val followList = fc<FollowListProps>("followList") { props ->
         InfiniteScrollElementRenderer<UserDetail> { u ->
             if (u != null) {
                 userCard {
-                    attrs.id = u.id
-                    attrs.avatar = u.avatar
-                    attrs.username = u.name
-                    attrs.titles = userTitles(u)
+                    attrs.user = u
                 }
             }
         }

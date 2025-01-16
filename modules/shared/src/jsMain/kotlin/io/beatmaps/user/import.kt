@@ -15,6 +15,8 @@ external interface UserModule {
     val reset: ComponentClass<Props>
     val quest: ComponentClass<Props>
     val authorize: ComponentClass<Props>
+    val userList: ComponentClass<Props>
+    val followList: ComponentClass<FollowListProps>
 }
 
 data class UserExotics(
@@ -25,7 +27,9 @@ data class UserExotics(
     val username: ExoticComponent<Props>,
     val reset: ExoticComponent<Props>,
     val quest: ExoticComponent<Props>,
-    val authorize: ExoticComponent<Props>
+    val authorize: ExoticComponent<Props>,
+    val userList: ExoticComponent<Props>,
+    val followList: ExoticComponent<FollowListProps>
 )
 
 val user = import<UserModule>("./BeatMaps-user").let { promise ->
@@ -37,6 +41,8 @@ val user = import<UserModule>("./BeatMaps-user").let { promise ->
         promise.component { it.username },
         promise.component { it.reset },
         promise.component { it.quest },
-        promise.component { it.authorize }
+        promise.component { it.authorize },
+        promise.component { it.userList },
+        promise.component { it.followList }
     )
 }

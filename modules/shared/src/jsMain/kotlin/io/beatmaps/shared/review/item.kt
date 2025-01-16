@@ -16,7 +16,6 @@ import io.beatmaps.api.PutReview
 import io.beatmaps.api.ReplyRequest
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
-import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.api.ReviewReportData
 import io.beatmaps.common.api.ReviewSentiment
@@ -69,7 +68,10 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
     val (newSentiment, setNewSentiment) = useState<ReviewSentiment?>(null)
     val (text, setText) = useState<String?>(null)
 
-    val (replies, setReplies) = useState<List<ReviewReplyDetail>>(emptyList())
+    val propReplies = props.obj?.replies.let { replies ->
+        if (replies?.isNotEmpty() == true) replies else emptyList()
+    }
+    val (replies, setReplies) = useState(propReplies)
     val (editing, setEditing) = useState(false)
 
     val userData = useContext(globalContext)
@@ -80,8 +82,8 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
     val captchaRef = useRef<ICaptchaHandler>()
     val errorRef = useRef<List<String>>()
 
-    useEffect(props.obj) {
-        setReplies(props.obj?.replies ?: emptyList())
+    useEffect(propReplies) {
+        setReplies(propReplies)
     }
 
     fun curate(id: Int, curated: Boolean = true) {

@@ -2,35 +2,25 @@ package io.beatmaps.user.list
 
 import external.Axios
 import external.CancelTokenSource
-import external.Moment
 import external.generateConfig
-import external.routeLink
 import io.beatmaps.Config
-import io.beatmaps.Config.dateFormat
 import io.beatmaps.History
 import io.beatmaps.api.GenericSearchResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserSearchResponse
 import io.beatmaps.common.api.ApiOrder
 import io.beatmaps.common.api.UserSearchSort
-import io.beatmaps.common.fixed
-import io.beatmaps.common.formatTime
 import io.beatmaps.configContext
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.IndexedInfiniteScrollElementRenderer
 import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.util.buildURL
 import io.beatmaps.util.useDidUpdateEffect
-import kotlinx.datetime.Clock
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.url.URLSearchParams
 import react.Props
-import react.dom.a
-import react.dom.i
-import react.dom.img
 import react.dom.table
 import react.dom.tbody
-import react.dom.td
 import react.dom.thead
 import react.dom.tr
 import react.fc
@@ -105,73 +95,9 @@ val userList = fc<Props>("userList") {
 
     val renderer = useMemo {
         IndexedInfiniteScrollElementRenderer<UserDetail> { idx, u ->
-            tr {
-                td {
-                    +"${idx+1}"
-                }
-                if (u != null) {
-                    td {
-                        img("${u.name} avatar", u.avatar, classes = "rounded-circle") {
-                            attrs.width = "40"
-                            attrs.height = "40"
-                        }
-                    }
-                    td {
-                        routeLink(u.profileLink()) {
-                            +u.name
-                        }
-                    }
-                    if (u.stats != null) {
-                        td {
-                            +"${u.stats.avgBpm}"
-                        }
-                        td {
-                            +u.stats.avgDuration.formatTime()
-                        }
-                        td {
-                            +u.stats.totalUpvotes.toLocaleString()
-                        }
-                        td {
-                            +u.stats.totalDownvotes.toLocaleString()
-                        }
-                        td {
-                            val total = ((u.stats.totalUpvotes + u.stats.totalDownvotes + 0.001f) * 0.01f)
-                            +"${(u.stats.totalUpvotes / total).fixed(2)}%"
-                        }
-                        td {
-                            +u.stats.totalMaps.toLocaleString()
-                        }
-                        td {
-                            +u.stats.rankedMaps.toLocaleString()
-                        }
-                        td {
-                            +Moment(u.stats.firstUpload.toString()).format(dateFormat)
-                        }
-                        td {
-                            +Moment(u.stats.lastUpload.toString()).format(dateFormat)
-                        }
-                        td {
-                            u.stats.lastUpload?.let {
-                                +(Clock.System.now() - it).inWholeDays.toInt().toLocaleString()
-                            }
-                        }
-                        td {
-                            if (u.stats.lastUpload != null && u.stats.firstUpload != null) {
-                                +(u.stats.lastUpload - u.stats.firstUpload).inWholeDays.toInt().toLocaleString()
-                            }
-                        }
-                    } else {
-                        repeat(11) { td { } }
-                    }
-                    td {
-                        a("${Config.apibase}/users/id/${u.id}/playlist", "_blank", "btn btn-secondary") {
-                            attrs.attributes["download"] = ""
-                            i("fas fa-list") { }
-                        }
-                    }
-                } else {
-                    repeat(14) { td { } }
-                }
+            userListRow {
+                attrs.idx = idx + 1
+                attrs.user = u
             }
         }
     }
