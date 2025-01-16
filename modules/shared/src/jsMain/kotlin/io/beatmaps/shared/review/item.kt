@@ -16,7 +16,6 @@ import io.beatmaps.api.PutReview
 import io.beatmaps.api.ReplyRequest
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
-import io.beatmaps.api.ReviewReplyDetail
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.api.ReviewReportData
 import io.beatmaps.common.api.ReviewSentiment

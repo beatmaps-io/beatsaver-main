@@ -55,9 +55,11 @@ val reviewTable = fcmemo<ReviewTableProps>("reviewTable") { props ->
 
     loadPageRef.current = { toLoad: Int, token: CancelTokenSource ->
         axiosGet<ReviewsResponse>(getUrl(toLoad), token.token).then {
-            return@then GenericSearchResponse.from(it.data.docs.map { rv ->
-                rv.copy(creator = props.userDetail ?: rv.creator)
-            })
+            return@then GenericSearchResponse.from(
+                it.data.docs.map { rv ->
+                    rv.copy(creator = props.userDetail ?: rv.creator)
+                }
+            )
         }
     }
 
