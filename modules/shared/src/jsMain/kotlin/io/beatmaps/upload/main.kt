@@ -5,7 +5,6 @@ import external.AxiosRequestConfig
 import external.Dropzone
 import external.reactFor
 import io.beatmaps.History
-import io.beatmaps.WithRouterProps
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.captcha.captcha
@@ -21,6 +20,7 @@ import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
+import react.Props
 import react.dom.a
 import react.dom.br
 import react.dom.div
@@ -48,9 +48,7 @@ class UploadRequestConfig(block: (AxiosProgress) -> Unit) : AxiosRequestConfig {
     }
 }
 
-external interface UploadPageProps : WithRouterProps
-
-val uploadPage = fc<UploadPageProps>("uploadPage") {
+val uploadPage = fc<Props>("uploadPage") {
     val (errors, setErrors) = useState(listOf<UploadValidationInfo>())
     val (loading, setLoading) = useState(false)
     val (beatsage, setBeatsage) = useState<Boolean>()
