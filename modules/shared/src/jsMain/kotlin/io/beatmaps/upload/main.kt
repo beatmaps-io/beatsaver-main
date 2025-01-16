@@ -5,7 +5,6 @@ import external.AxiosRequestConfig
 import external.Dropzone
 import external.reactFor
 import io.beatmaps.History
-import io.beatmaps.WithRouterProps
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.captcha.captcha
@@ -21,6 +20,7 @@ import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
+import react.Props
 import react.dom.a
 import react.dom.br
 import react.dom.div
@@ -37,7 +37,9 @@ import react.dom.textarea
 import react.dom.ul
 import react.fc
 import react.router.useNavigate
+import react.useCallback
 import react.useEffectOnce
+import react.useMemo
 import react.useRef
 import react.useState
 
@@ -48,9 +50,7 @@ class UploadRequestConfig(block: (AxiosProgress) -> Unit) : AxiosRequestConfig {
     }
 }
 
-external interface UploadPageProps : WithRouterProps
-
-val uploadPage = fc<UploadPageProps>("uploadPage") {
+val uploadPage = fc<Props>("uploadPage") {
     val (errors, setErrors) = useState(listOf<UploadValidationInfo>())
     val (loading, setLoading) = useState(false)
     val (beatsage, setBeatsage) = useState<Boolean>()
@@ -118,13 +118,15 @@ val uploadPage = fc<UploadPageProps>("uploadPage") {
                     tagPicker {
                         attrs.classes = "ul-tags mb-3"
                         attrs.tags = tags
-                        attrs.tagUpdateCallback = {
+                        attrs.tagUpdateCallback = useCallback { it: Set<MapTag> ->
                             setTags(it)
                         }
-                        attrs.renderHeading = TagPickerHeadingRenderer { byType ->
-                            label("form-label") {
-                                val allocationInfo = MapTag.maxPerType.map { "${byType.getValue(it.key)}/${it.value} ${it.key.name}" }.joinToString(", ")
-                                +"Tags ($allocationInfo):"
+                        attrs.renderHeading = useMemo {
+                            TagPickerHeadingRenderer { byType ->
+                                label("form-label") {
+                                    val allocationInfo = MapTag.maxPerType.map { "${byType.getValue(it.key)}/${it.value} ${it.key.name}" }.joinToString(", ")
+                                    +"Tags ($allocationInfo):"
+                                }
                             }
                         }
                     }
@@ -188,6 +190,7 @@ val uploadPage = fc<UploadPageProps>("uploadPage") {
                     }
 
                     captcha {
+                        key = "captcha"
                         attrs.captchaRef = captchaRef
                         attrs.page = "upload"
                     }

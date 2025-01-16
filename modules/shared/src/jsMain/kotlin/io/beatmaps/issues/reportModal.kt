@@ -30,6 +30,7 @@ val reportModal = fc<ReportModalProps>("reportModal") { props ->
         attrs.errors = props.errorsRef?.current
     }
     captcha {
+        key = "captcha"
         attrs.captchaRef = props.captchaRef
         attrs.page = "report"
     }

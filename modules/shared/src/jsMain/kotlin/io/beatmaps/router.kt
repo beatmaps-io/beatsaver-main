@@ -3,6 +3,7 @@ package io.beatmaps
 import io.beatmaps.common.json
 import io.beatmaps.nav.manageNav
 import io.beatmaps.shared.loadingElem
+import io.beatmaps.util.fcmemo
 import js.objects.jso
 import kotlinx.browser.document
 import kotlinx.browser.localStorage
@@ -12,28 +13,20 @@ import kotlinx.serialization.encodeToString
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLLinkElement
 import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.asList
 import org.w3c.dom.get
 import org.w3c.dom.set
-import react.Props
 import react.RBuilder
 import react.Suspense
 import react.createElement
-import react.fc
 import react.router.NavigateFunction
 import react.router.NavigateOptions
 import react.router.RouteObject
 import react.router.useNavigate
 import remix.run.router.Location
-import remix.run.router.Params
 import web.timers.setTimeout
-
-external interface WithRouterProps : Props {
-    var history: History
-    var location: Location<*>
-    var params: Params
-}
 
 inline fun <reified T> stateNavOptions(obj: T, r: Boolean? = null) = jso<NavigateOptions> {
     replace = r
@@ -68,7 +61,7 @@ fun bsroute(
 ) = jso<RouteObject> {
     this.path = path
     element = createElement(
-        fc("pageWrapper") {
+        fcmemo("pageWrapper") {
             initWithHistory(History(useNavigate()), replaceHomelink)
             Suspense {
                 attrs.fallback = loadingElem
@@ -99,6 +92,10 @@ private fun initWithHistory(history: History, replaceHomelink: Boolean = true) {
     val navMenu = document.getElementById("navbar") as? HTMLDivElement
     val hideMenu: () -> Unit = {
         navMenu?.removeClass("collapsing", "show")
+    }
+
+    document.getElementsByTagName("link").asList().filterIsInstance<HTMLLinkElement>().forEach {
+        if (!it.attributes["data-lazy"]?.value.isNullOrEmpty()) it.media = "all"
     }
 
     (document.getElementById("root") as? HTMLElement)?.addEventListener("click", { e ->

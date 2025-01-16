@@ -43,6 +43,7 @@ val newFeedback = fc<NewFeedbackProps>("newFeedback") { props ->
             }
 
             captcha {
+                key = "captcha"
                 attrs.captchaRef = captchaRef
                 attrs.page = "timeline"
             }

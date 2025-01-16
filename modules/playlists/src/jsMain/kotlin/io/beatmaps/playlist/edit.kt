@@ -249,6 +249,7 @@ val editPlaylist = fc<Props>("editPlaylist") {
                     if (id == null) {
                         // Middle element otherwise the button corners don't round properly
                         captcha {
+                            key = "captcha"
                             attrs.captchaRef = captchaRef
                             attrs.page = "playlist"
                         }

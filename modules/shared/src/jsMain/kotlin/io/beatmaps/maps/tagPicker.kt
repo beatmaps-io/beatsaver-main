@@ -2,11 +2,11 @@ package io.beatmaps.maps
 
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.MapTagType
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.RBuilder
 import react.dom.div
 import react.dom.h4
-import react.fc
 
 fun interface TagPickerHeadingRenderer {
     fun RBuilder.invoke(info: Map<MapTagType, Int>)
@@ -19,7 +19,7 @@ external interface TagPickerProps : Props {
     var renderHeading: TagPickerHeadingRenderer?
 }
 
-val tagPicker = fc<TagPickerProps>("tagPicker") { props ->
+val tagPicker = fcmemo<TagPickerProps>("tagPicker") { props ->
     val tags = props.tags
 
     div("tags " + (props.classes ?: "")) {

@@ -1,9 +1,9 @@
 package io.beatmaps.captcha
 
 import io.beatmaps.configContext
+import io.beatmaps.util.fcmemo
 import react.MutableRefObject
 import react.Props
-import react.fc
 import react.useContext
 import kotlin.js.Promise
 
@@ -24,7 +24,7 @@ object FakeCaptchaHandler : ICaptchaHandler {
     override fun reset() = Unit
 }
 
-val captcha = fc<CaptchaProps>("CaptchaWrapper") { props ->
+val captcha = fcmemo<CaptchaProps>("CaptchaWrapper") { props ->
     val configData = useContext(configContext)
 
     when (configData?.captchaProvider) {
