@@ -63,9 +63,10 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<I
     val visItem = useRef<Int>()
     val visPage = useRef<Int>()
     val visiblePages = useRef<IntRange>()
-    val scroll = useRef<Boolean>()
+    val scroll = useRef<Int>()
     val token = useRef<CancelTokenSource>()
     val location = useRef(window.location.search)
+    val pathname = window.location.pathname
 
     val itemsPerPage = useRef(props.itemsPerPage)
     val loadNextPage = useRef<() -> Unit>()
@@ -104,13 +105,15 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<I
         }
     }
 
-    fun scrollTo(idx: Int) {
-        val scrollTo = if (idx == 0) { 0.0 } else {
-            val top = filteredChildren()?.get(idx)?.getBoundingClientRect()?.top ?: 0.0
+    fun scrollTo(idx: Int): Boolean {
+        val (scrollTo: Double, found: Boolean) = if (idx == 0) { 0.0 to true } else {
+            val rect = filteredChildren()?.get(idx)?.getBoundingClientRect()
+            val top = rect?.top ?: 0.0
             val offset = props.scrollParent?.scrollTop ?: window.pageYOffset
-            top + offset - beforeContent()
+            top + offset - beforeContent() to (rect != null)
         }
         scrollTo(0.0, scrollTo)
+        return found
     }
 
     fun innerHeight() = props.scrollParent?.clientHeight ?: window.innerHeight
@@ -135,14 +138,17 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<I
     }
 
     val onScroll: (Event?) -> Unit = { _: Event? ->
-        val item = currentItem()
-        if (item != visItem.current && location.current == window.location.search) {
-            updateState(item)
-            props.updateScrollIndex?.current?.invoke(item + 1)
-        }
+        // Don't run while transitioning to another page
+        if (pathname == window.location.pathname) {
+            val item = currentItem()
 
-        location.current = window.location.search
-        loadNextPage.current?.invoke()
+            if (item != visItem.current && location.current == window.location.search && scroll.current == null) {
+                updateState(item)
+                props.updateScrollIndex?.current?.invoke(item + 1)
+            }
+
+            loadNextPage.current?.invoke()
+        }
     }
 
     fun setPagesAndRef(newPages: Map<Int, List<T>>? = null) {
@@ -150,14 +156,14 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<I
         pagesRef.current = newPages
     }
 
-    val onHashChange = { _: Event? ->
+    val onHashChange: (Event?) -> Unit = { _: Event? ->
         val hashPos = window.location.hash.substring(1).toIntOrNull()
 
         val oldItem = visItem.current
         val newItem = (hashPos ?: 1) - 1
         val newPage = updateState(newItem)
 
-        scroll.current = hashPos != null
+        scroll.current = if (hashPos != null) newItem else null
 
         if (newItem == 0) {
             scrollTo(0.0, 0.0)
@@ -179,7 +185,6 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<I
         token.current = newToken
         loading.current = true
 
-        val shouldScroll = if (scroll.current != false) visItem.current else null
         props.loadPage?.current!!.invoke(toLoad, newToken).then { page ->
             val lastPage = page?.info?.pages?.let { (toLoad + 1) >= it } ?: // Loaded page (ie 0) is beyond the number of pages that exist (ie 1)
                 (page?.docs?.size?.let { it < (itemsPerPage.current ?: 20) } == true) // Or there aren't the expected number of results which should only happen on the last page
@@ -195,10 +200,9 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<I
             )
 
             loading.current = false
-            scroll.current = false
-
-            shouldScroll?.let { scrollTo(it) }
-            window.setTimeout(onScroll, 1)
+            window.setTimeout({
+                loadNextPage.current?.invoke()
+            }, 1)
         }.catch {
             loading.current = false
         }
@@ -218,6 +222,11 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<I
     }
 
     useEffect {
+        if (scroll.current?.let { scrollTo(it) } == true) {
+            scroll.current = null
+        }
+        location.current = window.location.search
+
         window.addEventListener("resize", onResize)
         window.addEventListener("hashchange", onHashChange)
 
@@ -243,7 +252,7 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<I
         token.current?.cancel("Another request started")
 
         updateState(0)
-        scroll.current = false
+        scroll.current = null
         loading.current = false
         setPagesAndRef()
         token.current = null
