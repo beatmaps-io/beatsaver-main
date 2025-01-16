@@ -37,7 +37,9 @@ import react.dom.textarea
 import react.dom.ul
 import react.fc
 import react.router.useNavigate
+import react.useCallback
 import react.useEffectOnce
+import react.useMemo
 import react.useRef
 import react.useState
 
@@ -116,13 +118,15 @@ val uploadPage = fc<Props>("uploadPage") {
                     tagPicker {
                         attrs.classes = "ul-tags mb-3"
                         attrs.tags = tags
-                        attrs.tagUpdateCallback = {
+                        attrs.tagUpdateCallback = useCallback { it: Set<MapTag> ->
                             setTags(it)
                         }
-                        attrs.renderHeading = TagPickerHeadingRenderer { byType ->
-                            label("form-label") {
-                                val allocationInfo = MapTag.maxPerType.map { "${byType.getValue(it.key)}/${it.value} ${it.key.name}" }.joinToString(", ")
-                                +"Tags ($allocationInfo):"
+                        attrs.renderHeading = useMemo {
+                            TagPickerHeadingRenderer { byType ->
+                                label("form-label") {
+                                    val allocationInfo = MapTag.maxPerType.map { "${byType.getValue(it.key)}/${it.value} ${it.key.name}" }.joinToString(", ")
+                                    +"Tags ($allocationInfo):"
+                                }
                             }
                         }
                     }
@@ -186,6 +190,7 @@ val uploadPage = fc<Props>("uploadPage") {
                     }
 
                     captcha {
+                        key = "captcha"
                         attrs.captchaRef = captchaRef
                         attrs.page = "upload"
                     }

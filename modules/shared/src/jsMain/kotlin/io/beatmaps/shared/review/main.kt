@@ -80,6 +80,7 @@ val reviewTable = fcmemo<ReviewTableProps>("reviewTable") { props ->
     }
 
     captcha {
+        key = "captcha"
         attrs.captchaRef = captchaRef
         attrs.page = "review"
     }

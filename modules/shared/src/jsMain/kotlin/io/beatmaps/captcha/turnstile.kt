@@ -3,11 +3,14 @@ package io.beatmaps.captcha
 import external.ITurnstile
 import external.TurnStileRenderOptions
 import external.Turnstile
+import io.beatmaps.util.fcmemo
 import react.MutableRefObject
 import react.dom.div
 import react.dom.jsStyle
 import react.fc
+import react.useCallback
 import react.useEffectOnce
+import react.useMemo
 import react.useRef
 import react.useState
 import web.timers.setTimeout
@@ -35,7 +38,7 @@ class TurnstileHandler(private val ext: MutableRefObject<ITurnstile>, private va
     override fun reset() = ext.current?.reset()
 }
 
-val turnstile = fc<CaptchaProps>("TurnstileWrapper") { props ->
+val turnstile = fcmemo<CaptchaProps>("TurnstileWrapper") { props ->
     val ref = useRef<ITurnstile>()
     val pRef = useRef<() -> Unit>()
     val (popover, setPopover) = useState(false)
@@ -71,18 +74,20 @@ val turnstile = fc<CaptchaProps>("TurnstileWrapper") { props ->
                 attrs.siteKey = "3x00000000000000000000FF" // Forced interactive
             }
             this.ref = ref
-            attrs.options = TurnStileRenderOptions(
-                appearance = "interaction-only",
-                execution = "execute",
-                action = props.page
-            )
-            attrs.onError = {
+            attrs.options = useMemo(props.page) {
+                TurnStileRenderOptions(
+                    appearance = "interaction-only",
+                    execution = "execute",
+                    action = props.page
+                )
+            }
+            attrs.onError = useCallback {
                 pRef.current?.invoke()
             }
-            attrs.onBeforeInteractive = {
+            attrs.onBeforeInteractive = useCallback {
                 setPopover(true)
             }
-            attrs.onAfterInteractive = {
+            attrs.onAfterInteractive = useCallback {
                 setTimeout(1.seconds) {
                     setPopover(false)
                 }

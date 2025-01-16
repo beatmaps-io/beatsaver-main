@@ -15,6 +15,7 @@ import io.beatmaps.api.MarkNsfw
 import io.beatmaps.api.SimpleMapInfoUpdate
 import io.beatmaps.api.StateUpdate
 import io.beatmaps.captcha.ICaptchaHandler
+import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.MapAttr
@@ -458,6 +459,9 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                 attrs.audio = audio
             }
             div("card-text clearfix") {
+                val tagCb = useCallback { it: Set<MapTag> ->
+                    setTags(it)
+                }
                 if (editing) {
                     // If you're not an admin or the owner I hope you're a curator
                     val isCurating = !(userData?.admin == true || isOwnerLocal)
@@ -476,9 +480,7 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                     tagPicker {
                         attrs.classes = "m-2"
                         attrs.tags = tags
-                        attrs.tagUpdateCallback = {
-                            setTags(it)
-                        }
+                        attrs.tagUpdateCallback = tagCb
                     }
 
                     if (userData?.suspended == false) {

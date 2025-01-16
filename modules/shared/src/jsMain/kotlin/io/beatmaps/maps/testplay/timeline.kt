@@ -119,6 +119,7 @@ val timeline = fc<TimelineProps>("timeline") { props ->
                 }
 
                 captcha {
+                    key = "captcha"
                     attrs.captchaRef = captchaRef
                     attrs.page = "timeline"
                 }
