@@ -9,17 +9,17 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.shared.ModalCallbacks
 import io.beatmaps.shared.modal
 import io.beatmaps.shared.modalContext
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.table
 import react.dom.tbody
-import react.fc
 import react.useEffectOnce
 import react.useRef
 import react.useState
 
 data class RecentTestplay(val mapDetail: MapDetail, val version: MapVersion, val testplay: MapTestplay)
 
-val recentTestplays = fc<Props> {
+val recentTestplays = fcmemo<Props>("RecentTestplays") { props ->
     val loading = useRef(false)
     val (testplays, setTestplays) = useState(emptyList<RecentTestplay>())
     val page = useRef(0)

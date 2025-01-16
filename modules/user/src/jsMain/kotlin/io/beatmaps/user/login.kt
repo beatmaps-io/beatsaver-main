@@ -3,6 +3,7 @@ package io.beatmaps.user
 import external.routeLink
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
+import io.beatmaps.util.fcmemo
 import kotlinx.browser.window
 import kotlinx.html.FormMethod
 import org.w3c.dom.url.URLSearchParams
@@ -11,10 +12,9 @@ import react.dom.div
 import react.dom.form
 import react.dom.hr
 import react.dom.i
-import react.fc
 import react.useEffectOnce
 
-val loginPage = fc<Props>("loginPage") {
+val loginPage = fcmemo<Props>("loginPage") {
     useEffectOnce {
         setPageTitle("Login")
     }

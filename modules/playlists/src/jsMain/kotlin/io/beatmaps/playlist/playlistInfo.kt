@@ -12,7 +12,8 @@ import io.beatmaps.common.formatTime
 import io.beatmaps.common.human
 import io.beatmaps.shared.coloredCard
 import io.beatmaps.shared.map.rating
-import io.beatmaps.shared.playlistOwner
+import io.beatmaps.shared.itemUserInfo
+import io.beatmaps.user.ProfileTab
 import kotlinx.html.title
 import react.Props
 import react.dom.a
@@ -78,8 +79,9 @@ val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
                                 "<NO NAME>"
                             }
                         }
-                        playlistOwner {
-                            attrs.owner = pl.owner
+                        itemUserInfo {
+                            attrs.users = listOf(pl.owner)
+                            attrs.tab = ProfileTab.PLAYLISTS
                             attrs.time = pl.createdAt
                         }
                     }

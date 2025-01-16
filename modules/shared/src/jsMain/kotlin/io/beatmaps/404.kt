@@ -1,12 +1,12 @@
 package io.beatmaps
 
+import io.beatmaps.util.fcmemo
 import kotlinx.html.id
 import react.Props
 import react.dom.div
-import react.fc
 import react.useEffectOnce
 
-val notFound = fc<Props>("notFound") {
+val notFound = fcmemo<Props>("notFound") {
     useEffectOnce {
         setPageTitle("Page Not Found")
     }

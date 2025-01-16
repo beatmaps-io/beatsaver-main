@@ -1,12 +1,12 @@
 package io.beatmaps.maps
 
 import io.beatmaps.common.fixedStr
+import io.beatmaps.util.fcmemo
 import kotlinx.html.ThScope
 import react.Props
 import react.dom.td
 import react.dom.th
 import react.dom.tr
-import react.fc
 
 external interface ScoreProps : Props {
     var position: Int
@@ -19,7 +19,7 @@ external interface ScoreProps : Props {
     var mods: List<String>
 }
 
-val score = fc<ScoreProps>("score") { props ->
+val score = fcmemo<ScoreProps>("score") { props ->
     tr {
         th(scope = ThScope.row) {
             +"${props.position}"

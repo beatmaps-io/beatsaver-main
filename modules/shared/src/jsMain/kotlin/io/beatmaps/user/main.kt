@@ -30,6 +30,7 @@ import io.beatmaps.shared.modal
 import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.review.reviewTable
 import io.beatmaps.shared.search.sort
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
 import kotlinx.browser.document
@@ -69,7 +70,6 @@ import react.dom.th
 import react.dom.thead
 import react.dom.tr
 import react.dom.ul
-import react.fc
 import react.router.useLocation
 import react.router.useNavigate
 import react.router.useParams
@@ -91,7 +91,7 @@ enum class ProfileTab(val tabText: String, val condition: (UserData?, TabContext
     ACCOUNT("Account", condition = { it, c, _ -> (it?.admin == true || c.userId == null) })
 }
 
-val profilePage = fc<Props>("profilePage") { _ ->
+val profilePage = fcmemo<Props>("profilePage") { _ ->
     val captchaRef = useRef<ICaptchaHandler>()
     val reasonRef = useRef<HTMLTextAreaElement>()
     val modalRef = useRef<ModalCallbacks>()

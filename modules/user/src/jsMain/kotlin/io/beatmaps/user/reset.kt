@@ -8,6 +8,7 @@ import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ResetRequest
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
+import io.beatmaps.util.fcmemo
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
@@ -17,14 +18,13 @@ import react.dom.button
 import react.dom.div
 import react.dom.form
 import react.dom.input
-import react.fc
 import react.router.useNavigate
 import react.router.useParams
 import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val resetPage = fc<Props>("resetPage") {
+val resetPage = fcmemo<Props>("resetPage") {
     val (errors, setErrors) = useState(emptyList<String>())
     val (loading, setLoading) = useState(false)
 

@@ -6,7 +6,9 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.fixedStr
 import io.beatmaps.common.formatTime
-import io.beatmaps.shared.map.uploader
+import io.beatmaps.shared.map.uploaderWithInfo
+import io.beatmaps.shared.profileLink
+import io.beatmaps.user.ProfileTab
 import io.beatmaps.util.fcmemo
 import kotlinx.html.DIV
 import kotlinx.html.js.onClickFunction
@@ -122,8 +124,9 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
         div(itemClasses) {
             +(if (props.map.collaborators?.size != 0) "Mappers" else "Mapper")
             span("ms-4 text-wrap text-end") {
-                uploader {
+                uploaderWithInfo {
                     attrs.map = props.map
+                    attrs.info = false
                 }
                 +" (${props.map.metadata.levelAuthorName})"
             }
@@ -144,7 +147,7 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
         }
 
         props.map.curator?.let { curator ->
-            infoItem("Curated by", curator.name, curator.profileLink("curations"))
+            infoItem("Curated by", curator.name, curator.profileLink(ProfileTab.CURATED))
         }
 
         if (props.map.tags.isNotEmpty()) {
@@ -156,7 +159,6 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
                             attrs.selected = true
                             attrs.margins = "ms-2"
                             attrs.tag = it
-                            attrs.onClick = { }
                         }
                     }
                 }

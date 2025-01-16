@@ -14,13 +14,13 @@ import io.beatmaps.upload.uploadPage
 import io.beatmaps.user.alerts.alertsPage
 import io.beatmaps.user.profilePage
 import io.beatmaps.user.user
+import io.beatmaps.util.fcmemo
 import js.objects.jso
 import kotlinx.browser.window
 import react.Props
 import react.createElement
 import react.dom.client.createRoot
 import react.dom.div
-import react.fc
 import react.router.dom.RouterProvider
 import react.router.dom.createBrowserRouter
 import react.useEffectOnce
@@ -152,7 +152,7 @@ val appRouter = createBrowserRouter(
     )
 )
 
-val app = fc<Props>("BeatSaver Root") {
+val app = fcmemo<Props>("BeatSaver Root") {
     useEffectOnce {
         viewportMinWidthPolyfill()
     }

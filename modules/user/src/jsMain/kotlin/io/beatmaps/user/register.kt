@@ -10,6 +10,7 @@ import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.captcha.captcha
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
+import io.beatmaps.util.fcmemo
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
@@ -25,12 +26,11 @@ import react.dom.i
 import react.dom.input
 import react.dom.p
 import react.dom.small
-import react.fc
 import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val signupPage = fc<Props>("signupPage") {
+val signupPage = fcmemo<Props>("signupPage") {
     val (errors, setErrors) = useState(emptyList<String>())
     val (loading, setLoading) = useState(false)
     val (complete, setComplete) = useState(false)

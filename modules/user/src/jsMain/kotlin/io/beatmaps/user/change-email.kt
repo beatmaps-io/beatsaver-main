@@ -8,6 +8,7 @@ import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ChangeEmailRequest
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.parseJwt
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
@@ -21,14 +22,13 @@ import react.dom.div
 import react.dom.form
 import react.dom.input
 import react.dom.label
-import react.fc
 import react.router.useNavigate
 import react.router.useParams
 import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val changeEmailPage = fc<Props>("changeEmailPage") {
+val changeEmailPage = fcmemo<Props>("changeEmailPage") {
     val (loading, setLoading) = useState(false)
     val (errors, setErrors) = useState(emptyList<String>())
     val passwordRef = useRef<HTMLInputElement>()

@@ -13,6 +13,7 @@ import io.beatmaps.maps.TagPickerHeadingRenderer
 import io.beatmaps.maps.tagPicker
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
+import io.beatmaps.util.fcmemo
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onBlurFunction
@@ -35,7 +36,6 @@ import react.dom.p
 import react.dom.strong
 import react.dom.textarea
 import react.dom.ul
-import react.fc
 import react.router.useNavigate
 import react.useCallback
 import react.useEffectOnce
@@ -50,7 +50,7 @@ class UploadRequestConfig(block: (AxiosProgress) -> Unit) : AxiosRequestConfig {
     }
 }
 
-val uploadPage = fc<Props>("uploadPage") {
+val uploadPage = fcmemo<Props>("uploadPage") {
     val (errors, setErrors) = useState(listOf<UploadValidationInfo>())
     val (loading, setLoading) = useState(false)
     val (beatsage, setBeatsage) = useState<Boolean>()

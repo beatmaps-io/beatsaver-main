@@ -4,15 +4,15 @@ import external.axiosGet
 import io.beatmaps.Config
 import io.beatmaps.api.MapDetail
 import io.beatmaps.index.beatmapInfo
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useAudio
 import react.Props
 import react.dom.div
-import react.fc
 import react.router.useParams
 import react.useEffect
 import react.useState
 
-val mapEmbed = fc<Props>("mapEmbed") {
+val mapEmbed = fcmemo<Props>("mapEmbed") {
     val (map, setMap) = useState<MapDetail?>(null)
     val (missing, setMissing) = useState(false)
 

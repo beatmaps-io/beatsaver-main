@@ -29,7 +29,9 @@ import io.beatmaps.shared.ModalData
 import io.beatmaps.shared.loadingElem
 import io.beatmaps.shared.modal
 import io.beatmaps.shared.modalContext
+import io.beatmaps.shared.profileLink
 import io.beatmaps.upload.UploadRequestConfig
+import io.beatmaps.user.ProfileTab
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
@@ -152,7 +154,7 @@ val playlistPage = fcmemo<Props>("playlistPage") {
             UploadRequestConfig { }
         ).then { r ->
             if (r.status == 200) {
-                history.push(playlist?.owner?.profileLink("playlists") ?: "/")
+                history.push(playlist?.owner?.profileLink(ProfileTab.PLAYLISTS) ?: "/")
             }
             true
         }.catch {
@@ -275,7 +277,7 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                                 +pl.name
                             }
                         }
-                        routeLink(pl.owner.profileLink("playlists"), className = "list-group-item d-flex justify-content-between") {
+                        routeLink(pl.owner.profileLink(ProfileTab.PLAYLISTS), className = "list-group-item d-flex justify-content-between") {
                             +"Created by"
                             span("text-truncate ms-4") {
                                 attrs.title = pl.owner.name
@@ -283,7 +285,7 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                             }
                         }
                         pl.curator?.let { curator ->
-                            routeLink(curator.profileLink("curations"), className = "list-group-item d-flex justify-content-between") {
+                            routeLink(curator.profileLink(ProfileTab.CURATED), className = "list-group-item d-flex justify-content-between") {
                                 +"Curated by"
                                 span("text-truncate ms-4") {
                                     +curator.name

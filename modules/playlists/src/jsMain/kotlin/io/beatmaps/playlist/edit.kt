@@ -22,6 +22,7 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.form.toggle
 import io.beatmaps.upload.UploadRequestConfig
+import io.beatmaps.util.fcmemo
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.hidden
@@ -44,7 +45,6 @@ import react.dom.hr
 import react.dom.input
 import react.dom.label
 import react.dom.textarea
-import react.fc
 import react.router.useLocation
 import react.router.useNavigate
 import react.router.useParams
@@ -54,7 +54,7 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val editPlaylist = fc<Props>("editPlaylist") {
+val editPlaylist = fcmemo<Props>("editPlaylist") {
     val captchaRef = useRef<ICaptchaHandler>()
     val coverRef = useRef<HTMLInputElement>()
 

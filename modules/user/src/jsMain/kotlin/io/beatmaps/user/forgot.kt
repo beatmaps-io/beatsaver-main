@@ -10,6 +10,7 @@ import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.captcha.captcha
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
+import io.beatmaps.util.fcmemo
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
@@ -20,12 +21,11 @@ import react.dom.div
 import react.dom.form
 import react.dom.input
 import react.dom.p
-import react.fc
 import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val forgotPage = fc<Props>("forgotPage") {
+val forgotPage = fcmemo<Props>("forgotPage") {
     val (complete, setComplete) = useState(false)
     val (loading, setLoading) = useState(false)
     val (errors, setErrors) = useState(emptyList<String>())
