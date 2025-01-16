@@ -6,10 +6,10 @@ plugins {
 
 kotlin {
     jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(16))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
     jvm {
-        compilerOptions.jvmTarget = JvmTarget.JVM_16
+        compilerOptions.jvmTarget = JvmTarget.JVM_21
         testRuns["test"].executionTask.configure {
             useJUnit()
         }
