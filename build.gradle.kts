@@ -3,8 +3,8 @@ import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
-    kotlin("multiplatform") version "1.9.20"
-    kotlin("plugin.serialization") version "1.9.20"
+    kotlin("multiplatform") version "2.0.20"
+    kotlin("plugin.serialization") version "2.0.20"
     id("io.miret.etienne.sass") version "1.1.2"
     id("org.flywaydb.flyway") version "9.2.2"
     id("org.jlleitschuh.gradle.ktlint") version "11.5.1"
@@ -33,13 +33,42 @@ allprojects {
     }
 }
 
-kotlin {
-    targets.all {
-        compilations.all {
-            compilerOptions.configure {
-                freeCompilerArgs.add("-Xexpect-actual-classes")
+subprojects {
+    apply(plugin = "org.jetbrains.kotlin.multiplatform")
+
+    kotlin {
+        compilerOptions {
+            freeCompilerArgs.add("-Xexpect-actual-classes")
+        }
+        js(IR).browser()
+
+        sourceSets {
+            val jsMain by getting {
+                with(languageSettings) {
+                    optIn("kotlin.js.ExperimentalJsExport")
+                    optIn("kotlin.time.ExperimentalTime")
+                    optIn("kotlinx.serialization.ExperimentalSerializationApi")
+                    optIn("kotlin.io.encoding.ExperimentalEncodingApi")
+                }
+                dependencies {
+                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-legacy:18.3.1-pre.839")
+                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom-legacy:18.3.1-pre.839")
+                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:6.28.0-pre.839")
+                }
+            }
+            val commonMain by getting {
+                dependencies {
+                    implementation("io.beatmaps:BeatMaps-CommonMP:1.0.+")
+                    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
+                }
             }
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
     }
     jvmToolchain {
         languageVersion.set(JavaLanguageVersion.of(16))

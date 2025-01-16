@@ -1,7 +1,7 @@
 package io.beatmaps.admin
 
 import external.component
-import js.import.import
+import js.import.importAsync
 import react.ComponentClass
 import react.ExoticComponent
 import react.Props
@@ -20,7 +20,7 @@ data class AdminExotics(
     val adminAccount: ExoticComponent<AdminAccountComponentProps>
 )
 
-val admin = import<AdminModule>("./BeatMaps-admin").let { promise ->
+val admin = importAsync<AdminModule>("./BeatMaps-admin").let { promise ->
     AdminExotics(
         promise.component { it.modLog },
         promise.component { it.modReview },

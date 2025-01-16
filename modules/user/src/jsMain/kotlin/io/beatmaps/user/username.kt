@@ -11,6 +11,7 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
+import io.beatmaps.util.fcmemo
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
@@ -24,13 +25,12 @@ import react.dom.input
 import react.dom.jsStyle
 import react.dom.p
 import react.dom.span
-import react.fc
 import react.router.useNavigate
 import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val pickUsernamePage = fc<Props>("pickUsernamePage") {
+val pickUsernamePage = fcmemo<Props>("pickUsernamePage") {
     val (submitted, setSubmitted) = useState(false)
     val (loading, setLoading) = useState(false)
     val (errors, setErrors) = useState(emptyList<String>())

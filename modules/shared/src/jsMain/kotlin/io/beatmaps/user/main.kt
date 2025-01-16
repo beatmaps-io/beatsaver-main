@@ -30,6 +30,7 @@ import io.beatmaps.shared.modal
 import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.review.reviewTable
 import io.beatmaps.shared.search.sort
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
 import kotlinx.browser.document
@@ -69,13 +70,12 @@ import react.dom.th
 import react.dom.thead
 import react.dom.tr
 import react.dom.ul
-import react.fc
 import react.router.useLocation
 import react.router.useNavigate
 import react.router.useParams
 import react.useContext
-import react.useEffect
-import react.useEffectOnce
+import react.useEffectOnceWithCleanup
+import react.useEffectWithCleanup
 import react.useRef
 import react.useState
 import kotlin.js.Promise
@@ -91,7 +91,7 @@ enum class ProfileTab(val tabText: String, val condition: (UserData?, TabContext
     ACCOUNT("Account", condition = { it, c, _ -> (it?.admin == true || c.userId == null) })
 }
 
-val profilePage = fc<Props>("profilePage") { _ ->
+val profilePage = fcmemo<Props>("profilePage") { _ ->
     val captchaRef = useRef<ICaptchaHandler>()
     val reasonRef = useRef<HTMLTextAreaElement>()
     val modalRef = useRef<ModalCallbacks>()
@@ -218,19 +218,19 @@ val profilePage = fc<Props>("profilePage") { _ ->
             }
         } ?: Promise.resolve(false)
 
-    useEffectOnce {
+    useEffectOnceWithCleanup {
         val hideDropdown = { _: Event ->
             setFollowsDropdown(false)
         }
 
         setPageTitle("Profile")
         document.addEventListener("click", hideDropdown)
-        cleanup {
+        onCleanup {
             document.removeEventListener("click", hideDropdown)
         }
     }
 
-    useEffect(location.pathname, params["userId"]) {
+    useEffectWithCleanup(location.pathname, params["userId"]) {
         val onHashChange = { _: Event ->
             val hash = window.location.hash.substring(1)
             val tabContext = TabContext(params["userId"]?.toIntOrNull())
@@ -241,7 +241,7 @@ val profilePage = fc<Props>("profilePage") { _ ->
         window.addEventListener("hashchange", onHashChange)
         loadState()
 
-        cleanup {
+        onCleanup {
             window.removeEventListener("hashchange", onHashChange)
         }
     }

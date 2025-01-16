@@ -11,10 +11,10 @@ import io.beatmaps.shared.search.FilterInfo
 import io.beatmaps.shared.search.SearchParamGenerator
 import io.beatmaps.shared.search.generateSearchComponent
 import io.beatmaps.util.buildURL
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.includeIfNotNull
 import org.w3c.dom.url.URLSearchParams
 import react.Props
-import react.fc
 import react.router.useLocation
 import react.router.useNavigate
 import react.useCallback
@@ -29,7 +29,7 @@ val playlistFilters = listOf<FilterInfo<PlaylistSearchParams, *>>(
     BooleanFilterInfo("verified", "Verified Mapper", FilterCategory.GENERAL) { it.verified == true }
 )
 
-val playlistFeed = fc<Props>("playlistFeed") {
+val playlistFeed = fcmemo<Props>("playlistFeed") {
     useEffectOnce {
         setPageTitle("Playlists")
     }

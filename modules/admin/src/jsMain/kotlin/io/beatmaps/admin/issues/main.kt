@@ -18,6 +18,7 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.form.toggle
 import io.beatmaps.shared.generateInfiniteScrollComponent
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.html.ButtonType
 import kotlinx.html.js.onChangeFunction
@@ -37,7 +38,6 @@ import react.dom.td
 import react.dom.th
 import react.dom.thead
 import react.dom.tr
-import react.fc
 import react.router.useLocation
 import react.router.useNavigate
 import react.useContext
@@ -48,7 +48,7 @@ import react.useRef
 import react.useState
 import kotlin.js.Promise
 
-val issueList = fc<Props>("issueList") {
+val issueList = fcmemo<Props>("issueList") {
     val resultsTable = useRef<HTMLElement>()
 
     val openRef = useRef<HTMLInputElement>()

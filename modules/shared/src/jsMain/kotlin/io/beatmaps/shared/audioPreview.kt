@@ -15,7 +15,7 @@ import react.dom.i
 import react.dom.img
 import react.useContext
 import react.useEffect
-import react.useEffectOnce
+import react.useEffectOnceWithCleanup
 import react.useRef
 import react.useState
 
@@ -43,8 +43,8 @@ val audioPreview = fcmemo<AudioPreviewProps>("audioPreview") { props ->
 
     val handle = useRef<Int>()
 
-    useEffectOnce {
-        cleanup {
+    useEffectOnceWithCleanup {
+        onCleanup {
             handle.current?.let { window.clearInterval(it) }
         }
     }

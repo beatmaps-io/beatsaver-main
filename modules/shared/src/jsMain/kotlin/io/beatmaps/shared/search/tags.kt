@@ -14,7 +14,7 @@ import react.dom.div
 import react.dom.h4
 import react.fc
 import react.useEffect
-import react.useEffectOnce
+import react.useEffectOnceWithCleanup
 import react.useState
 
 external interface TagsProps : Props {
@@ -40,10 +40,10 @@ val tags = fc<TagsProps>("tags") { props ->
         props.default?.let { setSelected(it) }
     }
 
-    useEffectOnce {
+    useEffectOnceWithCleanup {
         document.addEventListener("keyup", handleShift)
         document.addEventListener("keydown", handleShift)
-        cleanup {
+        onCleanup {
             document.removeEventListener("keyup", handleShift)
             document.removeEventListener("keydown", handleShift)
         }

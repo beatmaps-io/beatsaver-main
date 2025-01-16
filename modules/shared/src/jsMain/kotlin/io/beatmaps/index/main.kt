@@ -26,6 +26,7 @@ import io.beatmaps.shared.search.generateSearchComponent
 import io.beatmaps.shared.search.tags
 import io.beatmaps.stateNavOptions
 import io.beatmaps.util.buildURL
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.includeIfNotNull
 import io.beatmaps.util.toPlaylistConfig
 import kotlinx.html.ButtonType
@@ -37,7 +38,6 @@ import react.dom.button
 import react.dom.div
 import react.dom.i
 import react.dom.jsStyle
-import react.fc
 import react.router.useLocation
 import react.router.useNavigate
 import react.useCallback
@@ -48,7 +48,7 @@ import react.useMemo
 import react.useRef
 import react.useState
 
-val homePage = fc<Props>("homePage") {
+val homePage = fcmemo<Props>("homePage") {
     val location = useLocation()
 
     fun fromURL() = URLSearchParams(location.search).let { params ->

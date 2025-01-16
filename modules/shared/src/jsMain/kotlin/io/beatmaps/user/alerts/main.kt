@@ -16,6 +16,7 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.util.buildURL
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.includeIfNotNull
 import io.beatmaps.util.updateAlertDisplay
 import io.beatmaps.util.useDidUpdateEffect
@@ -37,7 +38,6 @@ import react.dom.i
 import react.dom.input
 import react.dom.label
 import react.dom.span
-import react.fc
 import react.router.useLocation
 import react.router.useNavigate
 import react.useCallback
@@ -48,7 +48,7 @@ import react.useRef
 import react.useState
 import kotlin.js.Promise
 
-val alertsPage = fc<Props>("alertsPage") {
+val alertsPage = fcmemo<Props>("alertsPage") {
     val location = useLocation()
     val params = URLSearchParams(location.search)
 

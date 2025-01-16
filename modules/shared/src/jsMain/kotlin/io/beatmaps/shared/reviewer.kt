@@ -4,6 +4,7 @@ import external.TimeAgo
 import external.routeLink
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.UserDetail
+import io.beatmaps.user.ProfileTab
 import kotlinx.datetime.Instant
 import react.Props
 import react.dom.div
@@ -20,7 +21,7 @@ val reviewer = fc<ReviewerProps>("reviewer") { props ->
     div("owner") {
         props.reviewer?.let { owner ->
             img(src = owner.avatar) { }
-            routeLink(owner.profileLink("reviews")) {
+            routeLink(owner.profileLink(ProfileTab.REVIEWS)) {
                 +owner.name
             }
         }

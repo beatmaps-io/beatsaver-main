@@ -8,7 +8,7 @@ import react.MutableRefObject
 import react.dom.div
 import react.dom.jsStyle
 import react.useCallback
-import react.useEffectOnce
+import react.useEffectOnceWithCleanup
 import react.useMemo
 import react.useRef
 import react.useState
@@ -42,8 +42,8 @@ val turnstile = fcmemo<CaptchaProps>("TurnstileWrapper") { props ->
     val pRef = useRef<() -> Unit>()
     val (popover, setPopover) = useState(false)
 
-    useEffectOnce {
-        cleanup {
+    useEffectOnceWithCleanup {
+        onCleanup {
             // Pretend there was an error when unmounting
             pRef.current?.invoke()
         }

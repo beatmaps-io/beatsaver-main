@@ -1,6 +1,6 @@
 package external
 
-import js.import.import
+import js.import.importAsync
 import js.promise.Promise
 import react.Context
 import react.ExoticComponent
@@ -55,14 +55,14 @@ val dates = ReactDatesExotics(
         // Init first then pull in component
         Promise.all(
             arrayOf(
-                import<ReactDatesInit>("react-dates/initialize"),
-                import<ReactDatesDefaultTheme>("react-dates/lib/theme/DefaultTheme"),
-                import<WithStylesContext>("react-with-styles/lib/WithStylesContext"),
-                import<ThemedStyleSheet>("react-with-styles/lib/ThemedStyleSheet"),
-                import<ReactWithStylesCSS>("react-with-styles-interface-css")
+                importAsync<ReactDatesInit>("react-dates/initialize"),
+                importAsync<ReactDatesDefaultTheme>("react-dates/lib/theme/DefaultTheme"),
+                importAsync<WithStylesContext>("react-with-styles/lib/WithStylesContext"),
+                importAsync<ThemedStyleSheet>("react-with-styles/lib/ThemedStyleSheet"),
+                importAsync<ReactWithStylesCSS>("react-with-styles-interface-css")
             )
         ).flatThen {
-            import("react-dates/lib/components/DateRangePicker")
+            importAsync("react-dates/lib/components/DateRangePicker")
         }
     }
 )

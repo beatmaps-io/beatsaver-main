@@ -10,6 +10,7 @@ import io.beatmaps.shared.form.errors
 import io.beatmaps.user.loginForm
 import io.beatmaps.user.oauth.oauthHeader
 import io.beatmaps.user.oauth.oauthScopes
+import io.beatmaps.util.fcmemo
 import kotlinx.html.FormMethod
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.url.URLSearchParams
@@ -20,12 +21,11 @@ import react.dom.div
 import react.dom.form
 import react.dom.i
 import react.dom.span
-import react.fc
 import react.router.useLocation
 import react.useEffectOnce
 import react.useState
 
-val quest = fc<Props>("quest") {
+val quest = fcmemo<Props>("quest") {
     useEffectOnce {
         setPageTitle("Link device")
     }

@@ -1,7 +1,7 @@
 package io.beatmaps.playlist
 
 import external.component
-import js.import.import
+import js.import.importAsync
 import react.ComponentClass
 import react.ExoticComponent
 import react.Props
@@ -24,7 +24,7 @@ data class PlaylistsExotics(
     val table: ExoticComponent<PlaylistTableProps>
 )
 
-val playlists = import<PlaylistsModule>("./BeatMaps-playlists").let { promise ->
+val playlists = importAsync<PlaylistsModule>("./BeatMaps-playlists").let { promise ->
     PlaylistsExotics(
         promise.component { it.edit },
         promise.component { it.multiAdd },

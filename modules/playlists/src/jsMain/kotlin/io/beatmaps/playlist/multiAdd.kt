@@ -11,6 +11,7 @@ import io.beatmaps.api.Playlist
 import io.beatmaps.api.PlaylistBatchRequest
 import io.beatmaps.common.jsonIgnoreUnknown
 import io.beatmaps.setPageTitle
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.hashRegex
 import kotlinx.browser.window
 import kotlinx.html.InputType
@@ -32,14 +33,13 @@ import react.dom.jsStyle
 import react.dom.label
 import react.dom.p
 import react.dom.textarea
-import react.fc
 import react.router.useNavigate
 import react.router.useParams
 import react.useEffectOnce
 import react.useRef
 import react.useState
 
-val multiAddPlaylist = fc<Props>("multiAddPlaylist") {
+val multiAddPlaylist = fcmemo<Props>("multiAddPlaylist") {
     val (progress, setProgress) = useState<Pair<Int, Int>?>(null)
 
     val hashRef = useRef<HTMLTextAreaElement>()

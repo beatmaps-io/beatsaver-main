@@ -12,6 +12,7 @@ import io.beatmaps.globalContext
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.generateInfiniteScrollComponent
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.dom.hasClass
 import kotlinx.html.ButtonType
@@ -34,7 +35,6 @@ import react.dom.td
 import react.dom.th
 import react.dom.thead
 import react.dom.tr
-import react.fc
 import react.router.useLocation
 import react.router.useNavigate
 import react.useContext
@@ -45,7 +45,7 @@ import react.useRef
 import react.useState
 import kotlin.js.Promise
 
-val modlog = fc<Props>("modlog") {
+val modlog = fcmemo<Props>("modlog") {
     val resultsTable = useRef<HTMLElement>()
 
     val modRef = useRef<HTMLInputElement>()

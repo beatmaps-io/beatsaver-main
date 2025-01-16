@@ -15,6 +15,7 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.shared.IndexedInfiniteScrollElementRenderer
 import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.util.buildURL
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.url.URLSearchParams
@@ -23,7 +24,6 @@ import react.dom.table
 import react.dom.tbody
 import react.dom.thead
 import react.dom.tr
-import react.fc
 import react.router.useLocation
 import react.router.useNavigate
 import react.useCallback
@@ -37,7 +37,7 @@ import kotlin.js.Promise
 
 fun Int.toLocaleString(locale: String? = undefined): String = asDynamic().toLocaleString(locale) as String
 
-val userList = fc<Props>("userList") {
+val userList = fcmemo<Props>("userList") {
     val location = useLocation()
 
     val (urlSearch, urlOrder) = URLSearchParams(location.search).let { params ->

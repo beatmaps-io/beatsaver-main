@@ -1,9 +1,8 @@
 package external
 
 import io.beatmaps.util.onTransitionEndFunction
-import js.import.import
-import kotlinext.js.asJsObject
-import kotlinext.js.getOwnPropertyNames
+import js.import.importAsync
+import js.objects.Object
 import kotlinx.html.DIV
 import kotlinx.html.js.onDragStartFunction
 import org.w3c.dom.events.Event
@@ -75,9 +74,8 @@ fun RBuilder.droppable(id: String, cb: RDOMBuilder<DIV>.() -> Unit) {
 
 @Suppress("USELESS_CAST")
 fun RDOMBuilder<*>.copyProps(obj: Any) {
-    val jsObj = obj.asJsObject()
-    jsObj.getOwnPropertyNames().forEach { key ->
-        when (val it = jsObj.asDynamic()[key]) {
+    Object.getOwnPropertyNames(obj).forEach { key ->
+        when (val it = obj.asDynamic()[key]) {
             is String -> attrs.attributes[key] = it as String
             is Int -> attrs.attributes[key] = (it as Int).toString()
             is Boolean -> attrs.attributes[key] = (it as Boolean).toString()
@@ -167,7 +165,7 @@ data class DragAndDropExotics(
     val draggable: ExoticComponent<DraggableProps>
 )
 
-val dndExotics = import<DragAndDrop>("react-beautiful-dnd").let { mainPromise ->
+val dndExotics = importAsync<DragAndDrop>("react-beautiful-dnd").let { mainPromise ->
     DragAndDropExotics(
         mainPromise.component { it.DragDropContext },
         mainPromise.component { it.Droppable },

@@ -3,6 +3,7 @@ package io.beatmaps.user.oauth
 import io.beatmaps.common.json
 import io.beatmaps.shared.form.errors
 import io.beatmaps.user.loginForm
+import io.beatmaps.util.fcmemo
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.html.FormMethod
@@ -15,13 +16,12 @@ import react.dom.div
 import react.dom.form
 import react.dom.i
 import react.dom.span
-import react.fc
 import react.useState
 
 @Serializable
 data class OauthData(val id: String, val name: String, val icon: String)
 
-val authorizePage = fc<Props>("authorizePage") {
+val authorizePage = fcmemo<Props>("authorizePage") {
     val (loggedIn, setLoggedIn) = useState<Boolean>()
     val params = URLSearchParams(window.location.search)
     val oauth = (document.querySelector("meta[name=\"oauth-data\"]") as? HTMLMetaElement)?.let {

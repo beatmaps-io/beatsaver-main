@@ -1,7 +1,7 @@
 package io.beatmaps.user
 
 import external.component
-import js.import.import
+import js.import.importAsync
 import react.ComponentClass
 import react.ExoticComponent
 import react.Props
@@ -32,7 +32,7 @@ data class UserExotics(
     val followList: ExoticComponent<FollowListProps>
 )
 
-val user = import<UserModule>("./BeatMaps-user").let { promise ->
+val user = importAsync<UserModule>("./BeatMaps-user").let { promise ->
     UserExotics(
         promise.component { it.changeEmail },
         promise.component { it.forgot },

@@ -29,7 +29,9 @@ import io.beatmaps.shared.ModalData
 import io.beatmaps.shared.loadingElem
 import io.beatmaps.shared.modal
 import io.beatmaps.shared.modalContext
+import io.beatmaps.shared.profileLink
 import io.beatmaps.upload.UploadRequestConfig
+import io.beatmaps.user.ProfileTab
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
@@ -56,6 +58,7 @@ import react.router.useParams
 import react.useContext
 import react.useEffect
 import react.useEffectOnce
+import react.useEffectWithCleanup
 import react.useRef
 import react.useState
 import kotlin.js.Promise
@@ -152,7 +155,7 @@ val playlistPage = fcmemo<Props>("playlistPage") {
             UploadRequestConfig { }
         ).then { r ->
             if (r.status == 200) {
-                history.push(playlist?.owner?.profileLink("playlists") ?: "/")
+                history.push(playlist?.owner?.profileLink(ProfileTab.PLAYLISTS) ?: "/")
             }
             true
         }.catch {
@@ -188,11 +191,11 @@ val playlistPage = fcmemo<Props>("playlistPage") {
         setPageTitle("Playlist")
     }
 
-    useEffect(params) {
+    useEffectWithCleanup(params) {
         tokenRef.current = Axios.CancelToken.source()
         setPlaylist(null)
         setMaps(listOf())
-        cleanup {
+        onCleanup {
             tokenRef.current?.cancel("Another request started")
         }
     }
@@ -275,7 +278,7 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                                 +pl.name
                             }
                         }
-                        routeLink(pl.owner.profileLink("playlists"), className = "list-group-item d-flex justify-content-between") {
+                        routeLink(pl.owner.profileLink(ProfileTab.PLAYLISTS), className = "list-group-item d-flex justify-content-between") {
                             +"Created by"
                             span("text-truncate ms-4") {
                                 attrs.title = pl.owner.name
@@ -283,7 +286,7 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                             }
                         }
                         pl.curator?.let { curator ->
-                            routeLink(curator.profileLink("curations"), className = "list-group-item d-flex justify-content-between") {
+                            routeLink(curator.profileLink(ProfileTab.CURATED), className = "list-group-item d-flex justify-content-between") {
                                 +"Curated by"
                                 span("text-truncate ms-4") {
                                     +curator.name

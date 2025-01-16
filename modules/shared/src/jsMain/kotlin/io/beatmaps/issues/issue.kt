@@ -24,6 +24,7 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.toggle
 import io.beatmaps.shared.map.mapTitle
 import io.beatmaps.shared.map.uploaderWithInfo
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.textToContent
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
@@ -35,7 +36,6 @@ import react.dom.div
 import react.dom.i
 import react.dom.p
 import react.dom.span
-import react.fc
 import react.router.useNavigate
 import react.router.useParams
 import react.useContext
@@ -43,7 +43,7 @@ import react.useEffect
 import react.useRef
 import react.useState
 
-val issuesPage = fc<Props>("issuesPage") {
+val issuesPage = fcmemo<Props>("issuesPage") {
     val (loading, setLoading) = useState(false)
     val (issue, setIssue) = useState<IssueDetail?>(null)
     val captchaRef = useRef<ICaptchaHandler>()
