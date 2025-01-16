@@ -7,7 +7,6 @@ import io.beatmaps.util.fcmemo
 import react.MutableRefObject
 import react.dom.div
 import react.dom.jsStyle
-import react.fc
 import react.useCallback
 import react.useEffectOnce
 import react.useMemo

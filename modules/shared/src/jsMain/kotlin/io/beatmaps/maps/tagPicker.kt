@@ -7,7 +7,6 @@ import react.Props
 import react.RBuilder
 import react.dom.div
 import react.dom.h4
-import react.fc
 
 fun interface TagPickerHeadingRenderer {
     fun RBuilder.invoke(info: Map<MapTagType, Int>)

@@ -14,7 +14,6 @@ import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLLinkElement
-import org.w3c.dom.HTMLStyleElement
 import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.asList
 import org.w3c.dom.get
