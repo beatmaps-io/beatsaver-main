@@ -37,12 +37,8 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.multiplatform")
 
     kotlin {
-        targets.all {
-            compilations.all {
-                compilerOptions.configure {
-                    freeCompilerArgs.add("-Xexpect-actual-classes")
-                }
-            }
+        compilerOptions {
+            freeCompilerArgs.add("-Xexpect-actual-classes")
         }
         js(IR).browser()
 
@@ -71,12 +67,8 @@ subprojects {
 }
 
 kotlin {
-    targets.all {
-        compilations.all {
-            compilerOptions.configure {
-                freeCompilerArgs.add("-Xexpect-actual-classes")
-            }
-        }
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
     }
     jvmToolchain {
         languageVersion.set(JavaLanguageVersion.of(16))
