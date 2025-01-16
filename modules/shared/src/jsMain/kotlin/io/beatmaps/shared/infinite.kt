@@ -15,7 +15,8 @@ import react.Props
 import react.RBuilder
 import react.RefObject
 import react.useEffect
-import react.useEffectOnce
+import react.useEffectOnceWithCleanup
+import react.useEffectWithCleanup
 import react.useRef
 import react.useState
 import kotlin.js.Promise
@@ -215,13 +216,13 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<I
         loadNextPage.current?.invoke()
     }
 
-    useEffectOnce {
-        cleanup {
+    useEffectOnceWithCleanup {
+        onCleanup {
             token.current?.cancel("Unmounted")
         }
     }
 
-    useEffect {
+    useEffectWithCleanup {
         if (scroll.current?.let { scrollTo(it) } == true) {
             scroll.current = null
         }
@@ -230,16 +231,16 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<I
         window.addEventListener("resize", onResize)
         window.addEventListener("hashchange", onHashChange)
 
-        cleanup {
+        onCleanup {
             window.removeEventListener("resize", onResize)
             window.removeEventListener("hashchange", onHashChange)
         }
     }
 
-    useEffect(props.scrollParent) {
+    useEffectWithCleanup(props.scrollParent) {
         val target = props.scrollParent ?: window
         target.addEventListener("scroll", onScroll)
-        cleanup {
+        onCleanup {
             target.removeEventListener("scroll", onScroll)
         }
     }

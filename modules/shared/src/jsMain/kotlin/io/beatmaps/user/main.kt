@@ -74,8 +74,8 @@ import react.router.useLocation
 import react.router.useNavigate
 import react.router.useParams
 import react.useContext
-import react.useEffect
-import react.useEffectOnce
+import react.useEffectOnceWithCleanup
+import react.useEffectWithCleanup
 import react.useRef
 import react.useState
 import kotlin.js.Promise
@@ -218,19 +218,19 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
             }
         } ?: Promise.resolve(false)
 
-    useEffectOnce {
+    useEffectOnceWithCleanup {
         val hideDropdown = { _: Event ->
             setFollowsDropdown(false)
         }
 
         setPageTitle("Profile")
         document.addEventListener("click", hideDropdown)
-        cleanup {
+        onCleanup {
             document.removeEventListener("click", hideDropdown)
         }
     }
 
-    useEffect(location.pathname, params["userId"]) {
+    useEffectWithCleanup(location.pathname, params["userId"]) {
         val onHashChange = { _: Event ->
             val hash = window.location.hash.substring(1)
             val tabContext = TabContext(params["userId"]?.toIntOrNull())
@@ -241,7 +241,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
         window.addEventListener("hashchange", onHashChange)
         loadState()
 
-        cleanup {
+        onCleanup {
             window.removeEventListener("hashchange", onHashChange)
         }
     }

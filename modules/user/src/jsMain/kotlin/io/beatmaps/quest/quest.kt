@@ -21,7 +21,6 @@ import react.dom.div
 import react.dom.form
 import react.dom.i
 import react.dom.span
-import react.fc
 import react.router.useLocation
 import react.useEffectOnce
 import react.useState

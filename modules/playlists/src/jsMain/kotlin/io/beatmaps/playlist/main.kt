@@ -15,7 +15,6 @@ import io.beatmaps.util.fcmemo
 import io.beatmaps.util.includeIfNotNull
 import org.w3c.dom.url.URLSearchParams
 import react.Props
-import react.fc
 import react.router.useLocation
 import react.router.useNavigate
 import react.useCallback

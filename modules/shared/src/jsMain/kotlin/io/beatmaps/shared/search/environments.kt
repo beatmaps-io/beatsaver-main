@@ -21,7 +21,7 @@ import react.dom.label
 import react.dom.span
 import react.fc
 import react.useEffect
-import react.useEffectOnce
+import react.useEffectOnceWithCleanup
 import react.useState
 import web.html.HTMLInputElement
 
@@ -51,10 +51,10 @@ val environments = fc<EnvironmentsProps>("environments") { props ->
         props.callback?.invoke(newSelected)
     }
 
-    useEffectOnce {
+    useEffectOnceWithCleanup {
         document.addEventListener("keyup", handleShift)
         document.addEventListener("keydown", handleShift)
-        cleanup {
+        onCleanup {
             document.removeEventListener("keyup", handleShift)
             document.removeEventListener("keydown", handleShift)
         }

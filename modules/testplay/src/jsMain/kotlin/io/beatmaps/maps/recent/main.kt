@@ -19,7 +19,7 @@ import react.useState
 
 data class RecentTestplay(val mapDetail: MapDetail, val version: MapVersion, val testplay: MapTestplay)
 
-val recentTestplays = fcmemo<Props>("RecentTestplays") { props ->
+val recentTestplays = fcmemo<Props>("RecentTestplays") { _ ->
     val loading = useRef(false)
     val (testplays, setTestplays) = useState(emptyList<RecentTestplay>())
     val page = useRef(0)

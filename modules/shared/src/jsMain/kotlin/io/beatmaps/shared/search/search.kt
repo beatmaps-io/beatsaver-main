@@ -31,6 +31,7 @@ import react.dom.input
 import react.dom.span
 import react.useCallback
 import react.useEffect
+import react.useEffectWithCleanup
 import react.useRef
 import react.useState
 
@@ -159,12 +160,12 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
         updateUI()
     }
 
-    useEffect {
+    useEffectWithCleanup {
         dropdownRef.current?.addEventListener("mouseup", stopProp)
         dropdownDivRef.current?.addEventListener("mouseup", stopProp)
         document.addEventListener("mouseup", hideFilters)
 
-        cleanup {
+        onCleanup {
             document.removeEventListener("mouseup", hideFilters)
             dropdownDivRef.current?.addEventListener("mouseup", stopProp)
             dropdownRef.current?.removeEventListener("mouseup", stopProp)

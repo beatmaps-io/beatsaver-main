@@ -27,8 +27,8 @@ import react.dom.th
 import react.dom.thead
 import react.dom.tr
 import react.fc
-import react.useEffect
-import react.useEffectOnce
+import react.useEffectOnceWithCleanup
+import react.useEffectWithCleanup
 import react.useRef
 import react.useState
 
@@ -123,14 +123,14 @@ val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
         }
     }
 
-    useEffectOnce {
+    useEffectOnceWithCleanup {
         window.addEventListener("scroll", handleScroll)
-        cleanup {
+        onCleanup {
             window.removeEventListener("scroll", handleScroll)
         }
     }
 
-    useEffect(props.selected, props.type) {
+    useEffectWithCleanup(props.selected, props.type) {
         state.update {
             token = Axios.CancelToken.source()
             loading = false
@@ -144,7 +144,7 @@ val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
 
         loadNextPage()
 
-        cleanup {
+        onCleanup {
             state.current?.token?.cancel("Another request started")
         }
     }

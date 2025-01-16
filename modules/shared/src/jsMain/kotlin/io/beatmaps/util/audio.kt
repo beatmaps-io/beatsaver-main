@@ -1,7 +1,7 @@
 package io.beatmaps.util
 
 import org.w3c.dom.Audio
-import react.useEffectOnce
+import react.useEffectOnceWithCleanup
 import react.useRef
 
 fun useAudio() = useRef(
@@ -9,8 +9,8 @@ fun useAudio() = useRef(
         it.volume = 0.4
     }
 ).also { audio ->
-    useEffectOnce {
-        cleanup {
+    useEffectOnceWithCleanup {
+        onCleanup {
             audio.current?.pause()
         }
     }

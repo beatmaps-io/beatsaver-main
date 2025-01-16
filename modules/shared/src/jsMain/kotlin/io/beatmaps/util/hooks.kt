@@ -1,18 +1,18 @@
 package io.beatmaps.util
 
-import react.EffectBuilder
-import react.useEffect
+import react.CleanupBuilder
 import react.useEffectOnce
+import react.useEffectWithCleanup
 import react.useRef
 
-fun useDidUpdateEffect(vararg dependencies: dynamic, effect: EffectBuilder.() -> Unit) {
+fun useDidUpdateEffect(vararg dependencies: dynamic, effect: CleanupBuilder.() -> Unit) {
     val isMountingRef = useRef(false)
 
     useEffectOnce {
         isMountingRef.current = true
     }
 
-    useEffect(*dependencies) {
+    useEffectWithCleanup(*dependencies) {
         if (isMountingRef.current != true) {
             effect()
         } else {

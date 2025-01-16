@@ -58,6 +58,7 @@ import react.router.useParams
 import react.useContext
 import react.useEffect
 import react.useEffectOnce
+import react.useEffectWithCleanup
 import react.useRef
 import react.useState
 import kotlin.js.Promise
@@ -190,11 +191,11 @@ val playlistPage = fcmemo<Props>("playlistPage") {
         setPageTitle("Playlist")
     }
 
-    useEffect(params) {
+    useEffectWithCleanup(params) {
         tokenRef.current = Axios.CancelToken.source()
         setPlaylist(null)
         setMaps(listOf())
-        cleanup {
+        onCleanup {
             tokenRef.current?.cancel("Another request started")
         }
     }

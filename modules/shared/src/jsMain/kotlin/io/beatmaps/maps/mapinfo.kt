@@ -62,7 +62,7 @@ import react.dom.textarea
 import react.router.useNavigate
 import react.useCallback
 import react.useContext
-import react.useEffect
+import react.useEffectWithCleanup
 import react.useRef
 import react.useState
 import kotlin.collections.set
@@ -89,12 +89,12 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
     val (editing, setEditing) = useState(false)
     val (dropdown, setDropdown) = useState(false)
 
-    useEffect {
+    useEffectWithCleanup {
         val hideDropdown = { _: Event ->
             setDropdown(false)
         }
         document.addEventListener("mouseup", hideDropdown)
-        cleanup {
+        onCleanup {
             document.removeEventListener("mouseup", hideDropdown)
         }
     }

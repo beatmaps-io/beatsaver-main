@@ -8,7 +8,7 @@ import react.RefObject
 import react.dom.RDOMBuilder
 import react.dom.jsStyle
 import react.useEffect
-import react.useEffectOnce
+import react.useEffectOnceWithCleanup
 import react.useRef
 
 external interface AutoSizeComponentProps<T> : Props {
@@ -30,8 +30,8 @@ fun <T> useAutoSize(props: AutoSizeComponentProps<T>, padding: Int): AutoSizeHel
 
     val divRef = useRef<HTMLDivElement>()
 
-    useEffectOnce {
-        cleanup {
+    useEffectOnceWithCleanup {
+        onCleanup {
             autoSizeHandle.current?.let { window.clearTimeout(it) }
         }
     }
