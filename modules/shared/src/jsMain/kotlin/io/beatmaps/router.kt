@@ -13,6 +13,8 @@ import kotlinx.serialization.encodeToString
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLLinkElement
+import org.w3c.dom.HTMLStyleElement
 import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.asList
 import org.w3c.dom.get
@@ -91,6 +93,10 @@ private fun initWithHistory(history: History, replaceHomelink: Boolean = true) {
     val navMenu = document.getElementById("navbar") as? HTMLDivElement
     val hideMenu: () -> Unit = {
         navMenu?.removeClass("collapsing", "show")
+    }
+
+    document.getElementsByTagName("link").asList().filterIsInstance<HTMLLinkElement>().forEach {
+        if (!it.attributes["data-lazy"]?.value.isNullOrEmpty()) it.media = "all"
     }
 
     (document.getElementById("root") as? HTMLElement)?.addEventListener("click", { e ->
