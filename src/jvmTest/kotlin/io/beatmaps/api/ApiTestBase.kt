@@ -1,10 +1,12 @@
 package io.beatmaps.api
 
+import io.beatmaps.DbMigrationType
 import io.beatmaps.beatmapsio
 import io.beatmaps.browser.util.FixtureHelpers
 import io.beatmaps.common.db.setupDB
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.login.Session
+import io.beatmaps.migrateDB
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -25,7 +27,7 @@ import kotlin.test.assertEquals
 
 open class ApiTestBase : FixtureHelpers() {
     protected suspend fun ApplicationTestBuilder.setup(): HttpClient {
-        setupDB(app = "BeatSaver Tests")
+        testDbSetup()
 
         val client = createClient {
             install(ContentNegotiation) {
@@ -68,5 +70,15 @@ open class ApiTestBase : FixtureHelpers() {
         }
 
         assertEquals(count, alertsResponse.size, message)
+    }
+
+    companion object {
+        private var dbSetup = false
+        fun testDbSetup() {
+            if (dbSetup) return
+            val ds = setupDB(app = "BeatSaver Tests")
+            migrateDB(ds, DbMigrationType.Test)
+            dbSetup = true
+        }
     }
 }
