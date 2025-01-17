@@ -10,15 +10,15 @@ import io.beatmaps.util.fcmemo
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.title
 import org.w3c.dom.Audio
-import react.MutableRefObject
 import react.Props
+import react.RefObject
 import react.dom.a
 import react.dom.div
 import react.dom.i
 
 external interface PlaylistMapEditableProps : Props {
     var obj: MapDetail
-    var audio: MutableRefObject<Audio>
+    var audio: RefObject<Audio>
     var playlistKey: Int
     var removeMap: (() -> Unit)?
 }

@@ -55,14 +55,14 @@ val dates = ReactDatesExotics(
         // Init first then pull in component
         Promise.all(
             arrayOf(
-                importAsync<ReactDatesInit>("react-dates/initialize"),
-                importAsync<ReactDatesDefaultTheme>("react-dates/lib/theme/DefaultTheme"),
+                importAsync<ReactDatesInit>("@aerialist7/react-dates/initialize"),
+                importAsync<ReactDatesDefaultTheme>("@aerialist7/react-dates/lib/theme/DefaultTheme"),
                 importAsync<WithStylesContext>("react-with-styles/lib/WithStylesContext"),
                 importAsync<ThemedStyleSheet>("react-with-styles/lib/ThemedStyleSheet"),
                 importAsync<ReactWithStylesCSS>("react-with-styles-interface-css")
             )
         ).flatThen {
-            importAsync("react-dates/lib/components/DateRangePicker")
+            importAsync("@aerialist7/react-dates/lib/components/DateRangePicker")
         }
     }
 )

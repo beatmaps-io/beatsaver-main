@@ -10,8 +10,8 @@ import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
-import react.MutableRefObject
 import react.Props
+import react.RefObject
 import react.dom.a
 import react.dom.br
 import react.dom.defaultValue
@@ -24,7 +24,7 @@ import react.useState
 
 external interface PublishModalProps : Props {
     var callbackScheduleAt: (Instant?) -> Unit
-    var notifyFollowersRef: MutableRefObject<Boolean>
+    var notifyFollowersRef: RefObject<Boolean>
 }
 
 val publishModal = fc<PublishModalProps>("publishModal") { props ->

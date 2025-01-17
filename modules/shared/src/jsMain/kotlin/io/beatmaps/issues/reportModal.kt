@@ -4,7 +4,6 @@ import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.captcha.captcha
 import io.beatmaps.shared.form.errors
 import org.w3c.dom.HTMLTextAreaElement
-import react.MutableRefObject
 import react.Props
 import react.RefObject
 import react.dom.p
@@ -15,7 +14,7 @@ external interface ReportModalProps : Props {
     var subject: String?
     var content: Boolean?
     var reasonRef: RefObject<HTMLTextAreaElement>?
-    var captchaRef: MutableRefObject<ICaptchaHandler>
+    var captchaRef: RefObject<ICaptchaHandler>
     var errorsRef: RefObject<List<String>>?
 }
 

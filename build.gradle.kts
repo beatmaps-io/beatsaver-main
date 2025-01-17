@@ -52,9 +52,9 @@ subprojects {
                     optIn("kotlin.io.encoding.ExperimentalEncodingApi")
                 }
                 dependencies {
-                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-legacy:18.3.1-pre.844")
-                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom-legacy:18.3.1-pre.844")
-                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:6.28.0-pre.844")
+                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-legacy:19.0.0-pre.860")
+                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom-legacy:19.0.0-pre.860")
+                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:6.28.0-pre.860")
                 }
             }
             val commonMain by getting {

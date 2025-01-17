@@ -11,7 +11,6 @@ import kotlinx.html.hidden
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLIFrameElement
-import react.MutableRefObject
 import react.Props
 import react.RBuilder
 import react.RefObject
@@ -36,7 +35,7 @@ data class ModalCallbacks(
 )
 
 external interface ModalProps : Props {
-    var callbacks: MutableRefObject<ModalCallbacks>?
+    var callbacks: RefObject<ModalCallbacks>?
 }
 
 val modal = fcmemo<ModalProps>("Modal") { props ->

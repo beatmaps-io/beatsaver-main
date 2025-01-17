@@ -2,11 +2,11 @@ package io.beatmaps.captcha
 
 import external.IReCAPTCHA
 import external.ReCAPTCHA
-import react.MutableRefObject
+import react.RefObject
 import react.fc
 import react.useRef
 
-class ReCAPTCHAHandler(val ext: MutableRefObject<IReCAPTCHA>) : ICaptchaHandler {
+class ReCAPTCHAHandler(val ext: RefObject<IReCAPTCHA>) : ICaptchaHandler {
     override fun execute() = ext.current?.executeAsync()
     override fun reset() = ext.current?.reset()
 }

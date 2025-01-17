@@ -10,7 +10,6 @@ import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.asList
 import org.w3c.dom.events.Event
-import react.MutableRefObject
 import react.Props
 import react.RBuilder
 import react.RefObject
@@ -36,7 +35,7 @@ fun interface IndexedInfiniteScrollElementRenderer<T> : ElementRenderer<T> {
 }
 
 external interface InfiniteScrollProps<T> : Props {
-    var resetRef: MutableRefObject<() -> Unit>
+    var resetRef: RefObject<() -> Unit>
     var rowHeight: Double
     var itemsPerRow: RefObject<() -> Int>?
     var itemsPerPage: Int

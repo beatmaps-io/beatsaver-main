@@ -2,13 +2,13 @@ package io.beatmaps.captcha
 
 import io.beatmaps.configContext
 import io.beatmaps.util.fcmemo
-import react.MutableRefObject
 import react.Props
+import react.RefObject
 import react.useContext
 import kotlin.js.Promise
 
 external interface CaptchaProps : Props {
-    var captchaRef: MutableRefObject<ICaptchaHandler>
+    var captchaRef: RefObject<ICaptchaHandler>
     var enabled: Boolean
     var page: String
 }

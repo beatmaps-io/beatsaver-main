@@ -4,7 +4,7 @@ import external.ITurnstile
 import external.TurnStileRenderOptions
 import external.Turnstile
 import io.beatmaps.util.fcmemo
-import react.MutableRefObject
+import react.RefObject
 import react.dom.div
 import react.dom.jsStyle
 import react.useCallback
@@ -16,7 +16,7 @@ import web.timers.setTimeout
 import kotlin.js.Promise
 import kotlin.time.Duration.Companion.seconds
 
-class TurnstileHandler(private val ext: MutableRefObject<ITurnstile>, private val pRef: MutableRefObject<() -> Unit>) : ICaptchaHandler {
+class TurnstileHandler(private val ext: RefObject<ITurnstile>, private val pRef: RefObject<() -> Unit>) : ICaptchaHandler {
     override fun execute() =
         ext.current?.let { ext ->
             Promise { resolve, reject ->
