@@ -21,7 +21,7 @@ import org.w3c.dom.get
 import org.w3c.dom.set
 import react.Props
 import react.Suspense
-import react.dom.div
+import react.dom.html.ReactHTML.div
 import react.fc
 import react.router.useNavigate
 import react.router.useParams
@@ -30,6 +30,7 @@ import react.useEffect
 import react.useEffectOnce
 import react.useRef
 import react.useState
+import web.cssom.ClassName
 
 enum class MapTabs(val id: String, val enabled: Boolean = true) {
     ScoreSaber("ss"), BeatLeader("bl"), Reviews("rv"), Playlists("pl", enabled = false);
@@ -137,8 +138,10 @@ val mapPage = fc<MapPageProps>("mapPage") { props ->
                         updateMapinfo = setMapCb
                     }
                 }
-                div("row mt-3") {
-                    div("col-lg-4 text-nowrap") {
+                div {
+                    attrs.className = ClassName("row mt-3")
+                    div {
+                        attrs.className = ClassName("col-lg-4 text-nowrap")
                         infoTable {
                             attrs.map = it
                             attrs.selected = selectedDiff
@@ -146,7 +149,8 @@ val mapPage = fc<MapPageProps>("mapPage") { props ->
                         }
                     }
 
-                    div("col-lg-8") {
+                    div {
+                        attrs.className = ClassName("col-lg-8")
                         mapPageNav {
                             attrs.map = it
                             attrs.tab = tab

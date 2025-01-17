@@ -7,17 +7,17 @@ import io.beatmaps.Config
 import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.util.textToContent
 import kotlinx.datetime.Clock
-import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.h3
-import react.dom.small
-import react.dom.textarea
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h3
+import react.dom.html.ReactHTML.small
+import react.dom.html.ReactHTML.textarea
 import react.fc
 import react.useRef
 import react.useState
+import web.cssom.ClassName
 
 external interface FeedbackProps : Props {
     var hash: String
@@ -40,10 +40,12 @@ val feedback = fc<FeedbackProps>("feedback") { props ->
         attrs.color = "primary"
         attrs.headerCallback = TimelineEntrySectionRenderer {
             if (props.isOwner) {
-                div("float-end") {
+                div {
+                    attrs.className = ClassName("float-end")
                     if (editing) {
-                        button(classes = "btn btn-success m-1") {
-                            attrs.onClickFunction = {
+                        button {
+                            attrs.className = ClassName("btn btn-success m-1")
+                            attrs.onClick = {
                                 val newText = textareaRef.current?.value ?: ""
 
                                 setLoading(true)
@@ -61,8 +63,9 @@ val feedback = fc<FeedbackProps>("feedback") { props ->
                             +"Save"
                         }
                     }
-                    button(classes = "btn btn-info m-1") {
-                        attrs.onClickFunction = {
+                    button {
+                        attrs.className = ClassName("btn btn-info m-1")
+                        attrs.onClick = {
                             setEditing(!editing)
                         }
                         attrs.disabled = loading
@@ -83,8 +86,10 @@ val feedback = fc<FeedbackProps>("feedback") { props ->
         }
         attrs.bodyCallback = TimelineEntrySectionRenderer {
             if (editing) {
-                textarea("10", classes = "form-control") {
+                textarea {
                     ref = textareaRef
+                    attrs.rows = 10
+                    attrs.className = ClassName("form-control")
                     attrs.disabled = loading
                     +text
                 }

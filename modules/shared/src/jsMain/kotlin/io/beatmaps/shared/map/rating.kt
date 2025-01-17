@@ -1,11 +1,12 @@
 package io.beatmaps.shared.map
 
 import io.beatmaps.util.fcmemo
-import kotlinx.html.title
+import js.objects.jso
 import react.Props
-import react.dom.div
-import react.dom.jsStyle
-import react.dom.small
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.small
+import web.cssom.ClassName
+import web.cssom.pct
 import kotlin.math.log
 import kotlin.math.pow
 
@@ -25,24 +26,29 @@ val rating = fcmemo<RatingProps>("rating") {
     }
 
     div {
-        small("text-center vote") {
-            div("u") {
-                attrs.jsStyle {
-                    flex = it.up
+        small {
+            attrs.className = ClassName("text-center vote")
+            div {
+                attrs.className = ClassName("u")
+                attrs.style = jso {
+                    flex = it.up.pct
                 }
             }
-            div("o") {
-                attrs.jsStyle {
-                    flex = if (totalVotes < 1) 1 else (uncertainty * totalVotes / (1 - uncertainty))
+            div {
+                attrs.className = ClassName("o")
+                attrs.style = jso {
+                    flex = (if (totalVotes < 1) 1 else (uncertainty * totalVotes / (1 - uncertainty))).pct
                 }
             }
-            div("d") {
-                attrs.jsStyle {
-                    flex = it.down
+            div {
+                attrs.className = ClassName("d")
+                attrs.style = jso {
+                    flex = it.down.pct
                 }
             }
         }
-        div("percentage") {
+        div {
+            attrs.className = ClassName("percentage")
             attrs.title = "${it.up}/${it.down}"
             +"${it.rating}%"
         }

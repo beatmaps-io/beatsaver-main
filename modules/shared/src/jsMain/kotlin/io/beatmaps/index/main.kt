@@ -29,15 +29,12 @@ import io.beatmaps.util.buildURL
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.includeIfNotNull
 import io.beatmaps.util.toPlaylistConfig
-import kotlinx.html.ButtonType
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
+import js.objects.jso
 import org.w3c.dom.url.URLSearchParams
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.i
-import react.dom.jsStyle
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
 import react.router.useLocation
 import react.router.useNavigate
 import react.useCallback
@@ -47,6 +44,10 @@ import react.useEffectOnce
 import react.useMemo
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.cssom.Position
+import web.cssom.px
+import web.html.ButtonType
 
 val homePage = fcmemo<Props>("homePage") {
     val location = useLocation()
@@ -227,16 +228,19 @@ val homePage = fcmemo<Props>("homePage") {
         }
 
         if (userData != null) {
-            div("position-fixed btn-group") {
-                attrs.jsStyle {
-                    position = "absolute"
-                    right = "10px"
-                    bottom = "10px"
+            div {
+                attrs.className = ClassName("position-fixed btn-group")
+                attrs.style = jso {
+                    position = Position.absolute
+                    right = 10.px
+                    bottom = 10.px
                 }
 
-                button(type = ButtonType.button, classes = "btn btn-sm btn-primary") {
+                button {
+                    attrs.type = ButtonType.button
+                    attrs.className = ClassName("btn btn-sm btn-primary")
                     attrs.title = "Create playlist from search"
-                    attrs.onClickFunction = {
+                    attrs.onClick = {
                         it.preventDefault()
 
                         history.go(
@@ -244,7 +248,9 @@ val homePage = fcmemo<Props>("homePage") {
                             stateNavOptions(searchParams.toPlaylistConfig(), false)
                         )
                     }
-                    i("fas fa-list-ul") { }
+                    i {
+                        attrs.className = ClassName("fas fa-list-ul")
+                    }
                 }
             }
         }

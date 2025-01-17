@@ -4,14 +4,20 @@ import external.ITurnstile
 import external.TurnStileRenderOptions
 import external.Turnstile
 import io.beatmaps.util.fcmemo
+import js.objects.jso
 import react.RefObject
-import react.dom.div
-import react.dom.jsStyle
+import react.dom.html.ReactHTML.div
 import react.useCallback
 import react.useEffectOnceWithCleanup
 import react.useMemo
 import react.useRef
 import react.useState
+import web.cssom.Display
+import web.cssom.None
+import web.cssom.Position
+import web.cssom.integer
+import web.cssom.px
+import web.cssom.rgb
 import web.timers.setTimeout
 import kotlin.js.Promise
 import kotlin.time.Duration.Companion.seconds
@@ -50,18 +56,18 @@ val turnstile = fcmemo<CaptchaProps>("TurnstileWrapper") { props ->
     }
 
     div {
-        attrs.jsStyle {
+        attrs.style = jso {
             if (popover) {
-                background = "rgba(0,0,0,0.5)"
-                position = "absolute"
-                top = "0"
-                bottom = "0"
-                left = "0"
-                right = "0"
-                display = "flex"
-                zIndex = "10000"
+                background = rgb(0, 0, 0, 0.5)
+                position = Position.absolute
+                top = 0.px
+                bottom = 0.px
+                left = 0.px
+                right = 0.px
+                display = Display.flex
+                zIndex = integer(10000)
             } else {
-                display = "none"
+                display = None.none
             }
         }
         Turnstile.Turnstile {

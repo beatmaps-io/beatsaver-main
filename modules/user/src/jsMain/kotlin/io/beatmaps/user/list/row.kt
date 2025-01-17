@@ -10,11 +10,13 @@ import io.beatmaps.common.formatTime
 import io.beatmaps.util.fcmemo
 import kotlinx.datetime.Clock
 import react.Props
-import react.dom.a
-import react.dom.i
-import react.dom.img
-import react.dom.td
-import react.dom.tr
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.tr
+import web.cssom.ClassName
+import web.window.WindowTarget
 
 external interface UserListRowProps : Props {
     var idx: Int?
@@ -28,9 +30,12 @@ val userListRow = fcmemo<UserListRowProps>("UserListRow") { props ->
         }
         props.user?.let { u ->
             td {
-                img("${u.name} avatar", u.avatar, classes = "rounded-circle") {
-                    attrs.width = "40"
-                    attrs.height = "40"
+                img {
+                    attrs.alt = "${u.name} avatar"
+                    attrs.src = u.avatar
+                    attrs.className = ClassName("rounded-circle")
+                    attrs.width = 40.0
+                    attrs.height = 40.0
                 }
             }
             td {
@@ -83,9 +88,14 @@ val userListRow = fcmemo<UserListRowProps>("UserListRow") { props ->
                 repeat(11) { td { } }
             }
             td {
-                a("${Config.apibase}/users/id/${u.id}/playlist", "_blank", "btn btn-secondary") {
-                    attrs.attributes["download"] = ""
-                    i("fas fa-list") { }
+                a {
+                    attrs.href = "${Config.apibase}/users/id/${u.id}/playlist"
+                    attrs.target = WindowTarget._blank
+                    attrs.className = ClassName("btn btn-secondary")
+                    attrs.download = ""
+                    i {
+                        attrs.className = ClassName("fas fa-list")
+                    }
                 }
             }
         } ?: run {

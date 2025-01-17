@@ -14,10 +14,11 @@ import io.beatmaps.util.encodeURIComponent
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
 import org.w3c.dom.HTMLElement
-import react.dom.div
+import react.dom.html.ReactHTML.div
 import react.useContext
 import react.useMemo
 import react.useRef
+import web.cssom.ClassName
 import kotlin.js.Promise
 
 val playlistTable = fcmemo<PlaylistTableProps>("playlistTable") { props ->
@@ -69,7 +70,8 @@ val playlistTable = fcmemo<PlaylistTableProps>("playlistTable") { props ->
     }
 
     if (props.visible != false) {
-        div("search-results") {
+        div {
+            attrs.className = ClassName("search-results")
             ref = resultsTable
             key = "resultsTable"
 

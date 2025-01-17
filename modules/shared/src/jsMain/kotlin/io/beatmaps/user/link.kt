@@ -2,11 +2,11 @@ package io.beatmaps.user
 
 import external.routeLink
 import io.beatmaps.api.UserDetail
-import kotlinx.html.js.onClickFunction
 import react.Props
-import react.dom.a
-import react.dom.i
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.i
 import react.fc
+import web.cssom.ClassName
 
 external interface UserLinkProps : Props {
     var user: UserDetail
@@ -14,14 +14,18 @@ external interface UserLinkProps : Props {
 }
 
 val userLink = fc<UserLinkProps>("userLink") { props ->
-    a("#", classes = "me-1") {
-        attrs.onClickFunction = { ev ->
+    a {
+        attrs.href = "#"
+        attrs.className = ClassName("me-1")
+        attrs.onClick = { ev ->
             ev.preventDefault()
             props.callback?.invoke()
         }
         +props.user.name
     }
     routeLink(props.user.profileLink()) {
-        i("fas fa-external-link-alt") {}
+        i {
+            attrs.className = ClassName("fas fa-external-link-alt")
+        }
     }
 }

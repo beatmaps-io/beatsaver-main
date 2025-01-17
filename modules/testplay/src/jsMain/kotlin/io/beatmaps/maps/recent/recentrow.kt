@@ -8,17 +8,17 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
 import io.beatmaps.util.textToContent
 import kotlinx.datetime.internal.JSJoda.Instant
-import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.td
-import react.dom.textarea
-import react.dom.tr
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.textarea
+import react.dom.html.ReactHTML.tr
 import react.fc
 import react.useRef
 import react.useState
+import web.cssom.ClassName
 
 external interface RecentTestplayRowProps : Props {
     var map: MapDetail
@@ -42,11 +42,13 @@ val recentTestplayRow = fc<RecentTestplayRowProps>("RecentTestplayRow") { props 
 
     tr {
         td {
-            attrs.colSpan = "4"
+            attrs.colSpan = 4
             div {
                 if (editing) {
-                    textarea("10", classes = "form-control") {
+                    textarea {
                         ref = textareaRef
+                        attrs.rows = 10
+                        attrs.className = ClassName("form-control")
                         attrs.disabled = loading == true
                         +text
                     }
@@ -54,10 +56,12 @@ val recentTestplayRow = fc<RecentTestplayRowProps>("RecentTestplayRow") { props 
                     textToContent(text)
                 }
             }
-            div("text-end mt-3") {
+            div {
+                attrs.className = ClassName("text-end mt-3")
                 if (editing) {
-                    button(classes = "btn btn-success m-1") {
-                        attrs.onClickFunction = {
+                    button {
+                        attrs.className = ClassName("btn btn-success m-1")
+                        attrs.onClick = {
                             val newText = textareaRef.current?.value ?: ""
 
                             setLoading(true)
@@ -74,8 +78,9 @@ val recentTestplayRow = fc<RecentTestplayRowProps>("RecentTestplayRow") { props 
                         +"Save"
                     }
                 }
-                button(classes = "btn btn-info m-1") {
-                    attrs.onClickFunction = {
+                button {
+                    attrs.className = ClassName("btn btn-info m-1")
+                    attrs.onClick = {
                         setEditing(!editing)
                     }
                     attrs.disabled = loading

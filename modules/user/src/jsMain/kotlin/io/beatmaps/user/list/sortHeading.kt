@@ -3,13 +3,14 @@ package io.beatmaps.user.list
 import io.beatmaps.common.api.ApiOrder
 import io.beatmaps.configContext
 import io.beatmaps.util.fcmemo
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
+import js.objects.jso
 import react.Props
-import react.dom.i
-import react.dom.jsStyle
-import react.dom.th
+import react.dom.aria.AriaSort
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.th
 import react.useContext
+import web.cssom.ClassName
+import web.cssom.px
 
 external interface SortThProps : Props {
     var column: MapperColumn
@@ -18,15 +19,20 @@ external interface SortThProps : Props {
     var order: ApiOrder
 }
 
+fun ApiOrder.toAriaSort() = when (this) {
+    ApiOrder.DESC -> AriaSort.descending
+    ApiOrder.ASC -> AriaSort.ascending
+}
+
 val sortTh = fcmemo<SortThProps>("sortTh") { props ->
     val config = useContext(configContext)
     th {
         if (config?.v2Search == true && props.column.sortEnum != null) {
-            attrs.attributes["aria-sort"] = when (props.sort) {
-                props.column -> props.order.aria
-                else -> "none"
+            attrs.ariaSort = when (props.sort) {
+                props.column -> props.order.toAriaSort()
+                else -> AriaSort.none
             }
-            attrs.onClickFunction = {
+            attrs.onClick = {
                 props.updateSort(
                     props.column,
                     if (props.column == props.sort) {
@@ -38,12 +44,15 @@ val sortTh = fcmemo<SortThProps>("sortTh") { props ->
             }
         }
         props.column.width?.let { w ->
-            attrs.jsStyle {
-                width = "${w}px"
+            attrs.style = jso {
+                width = w.px
             }
         }
         props.column.icon?.let { icon ->
-            i("fas $icon") { attrs.title = props.column.text }
+            i {
+                attrs.className = ClassName("fas $icon")
+                attrs.title = props.column.text
+            }
         } ?: run {
             +props.column.text
         }

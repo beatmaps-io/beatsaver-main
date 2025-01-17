@@ -25,18 +25,18 @@ import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useAutoSize
 import org.w3c.dom.Audio
-import org.w3c.dom.events.Event
 import react.RefObject
 import react.Suspense
-import react.dom.div
-import react.dom.i
-import react.dom.img
-import react.dom.p
-import react.dom.span
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
 import react.useCallback
 import react.useContext
 import react.useEffect
 import react.useState
+import web.cssom.ClassName
 
 external interface BeatmapInfoProps : AutoSizeComponentProps<MapDetail> {
     var version: MapVersion?
@@ -52,8 +52,7 @@ val beatmapInfo = fcmemo<BeatmapInfoProps>("beatmapInfo") { props ->
         setBookmarked(null)
     }
 
-    val bookmarkCb: (Event, Boolean) -> Unit = useCallback(props.obj) { e: Event, bm: Boolean ->
-        e.preventDefault()
+    val bookmarkCb: (Boolean) -> Unit = useCallback(props.obj) { bm: Boolean ->
         setBookmarked(!bm)
 
         Axios.post<String>("${Config.apibase}/bookmark", BookmarkRequest(props.obj?.id, bookmarked = !bm), generateConfig<BookmarkRequest, String>())
@@ -69,7 +68,8 @@ val beatmapInfo = fcmemo<BeatmapInfoProps>("beatmapInfo") { props ->
             )
         }
 
-        div("beatmap") {
+        div {
+            attrs.className = ClassName("beatmap")
             autoSize.style(this)
 
             coloredCard {
@@ -89,7 +89,8 @@ val beatmapInfo = fcmemo<BeatmapInfoProps>("beatmapInfo") { props ->
                         attrs.rating = map.stats.scoreOneDP
                     }
                 }
-                div("info") {
+                div {
+                    attrs.className = ClassName("info")
                     ref = autoSize.divRef
 
                     mapTitle {
@@ -102,35 +103,42 @@ val beatmapInfo = fcmemo<BeatmapInfoProps>("beatmapInfo") { props ->
                             attrs.version = props.version
                         }
                     }
-                    div("diffs") {
+                    div {
+                        attrs.className = ClassName("diffs")
                         diffIcons {
                             attrs.diffs = props.version?.diffs
                         }
                     }
-                    div("ranked-statuses") {
+                    div {
+                        attrs.className = ClassName("ranked-statuses")
                         rankedStatus {
                             attrs.map = map
                         }
                     }
                 }
-                div("additional") {
+                div {
+                    attrs.className = ClassName("additional")
                     span {
                         +map.id
-                        i("fas fa-key") {
-                            attrs.attributes["aria-hidden"] = "true"
+                        i {
+                            attrs.className = ClassName("fas fa-key")
+                            attrs.ariaHidden = true
                         }
                     }
                     span {
                         +map.metadata.duration.formatTime()
-                        i("fas fa-clock") {
-                            attrs.attributes["aria-hidden"] = "true"
+                        i {
+                            attrs.className = ClassName("fas fa-clock")
+                            attrs.ariaHidden = true
                         }
                     }
                     span {
                         +map.metadata.bpm.fixed(2).toString()
-                        img("Metronome", "/static/icons/metronome.svg") {
-                            attrs.width = "12"
-                            attrs.height = "12"
+                        img {
+                            attrs.alt = "Metronome"
+                            attrs.src = "/static/icons/metronome.svg"
+                            attrs.width = 12.0
+                            attrs.height = 12.0
                         }
                     }
                     if (userData != null) {
@@ -147,7 +155,8 @@ val beatmapInfo = fcmemo<BeatmapInfoProps>("beatmapInfo") { props ->
                         }
                     }
                 }
-                div("links") {
+                div {
+                    attrs.className = ClassName("links")
                     links {
                         attrs.map = map
                         attrs.version = props.version
@@ -157,6 +166,8 @@ val beatmapInfo = fcmemo<BeatmapInfoProps>("beatmapInfo") { props ->
             }
         }
     } ?: run {
-        div("beatmap loading") { }
+        div {
+            attrs.className = ClassName("beatmap loading")
+        }
     }
 }

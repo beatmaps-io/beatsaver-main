@@ -12,13 +12,12 @@ import io.beatmaps.shared.modalContext
 import io.beatmaps.util.await
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.launch
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
-import react.dom.a
-import react.dom.i
-import react.dom.span
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.span
 import react.useContext
 import react.useState
+import web.cssom.ClassName
 import kotlin.js.Promise
 
 val addToPlaylist = fcmemo<AddToPlaylistProps>("addToPlaylist") { props ->
@@ -68,18 +67,24 @@ val addToPlaylist = fcmemo<AddToPlaylistProps>("addToPlaylist") { props ->
         }
     }
 
-    a("#") {
-        attrs.onClickFunction = {
+    a {
+        attrs.href = "#"
+
+        attrs.onClick = {
             it.preventDefault()
             openDialog()
         }
 
         val text = "Add to playlist"
         attrs.title = text
-        attrs.attributes["aria-label"] = text
-        span("dd-text") { +text }
-        i("fas fa-plus text-success") {
-            attrs.attributes["aria-hidden"] = "true"
+        attrs.ariaLabel = text
+        span {
+            attrs.className = ClassName("dd-text")
+            +text
+        }
+        i {
+            attrs.className = ClassName("fas fa-plus text-success")
+            attrs.ariaHidden = true
         }
     }
 }

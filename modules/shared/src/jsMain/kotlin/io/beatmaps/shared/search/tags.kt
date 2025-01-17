@@ -10,12 +10,13 @@ import kotlinx.browser.window
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 import react.Props
-import react.dom.div
-import react.dom.h4
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h4
 import react.fc
 import react.useEffect
 import react.useEffectOnceWithCleanup
 import react.useState
+import web.cssom.ClassName
 
 external interface TagsProps : Props {
     var default: MapTagSet?
@@ -49,14 +50,19 @@ val tags = fc<TagsProps>("tags") { props ->
         }
     }
 
-    div("tags") {
+    div {
+        attrs.className = ClassName("tags")
         h4 {
             +"Tags"
         }
 
         val highlightAll = props.highlightOnEmpty == true && selected.all { it.value.isEmpty() }
         MapTag.sorted.fold(MapTagType.None) { prev, it ->
-            if (it.type != prev) div("break") {}
+            if (it.type != prev) {
+                div {
+                    attrs.className = ClassName("break")
+                }
+            }
 
             if (it.type != MapTagType.None) {
                 mapTag {

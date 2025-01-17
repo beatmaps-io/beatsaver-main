@@ -5,10 +5,11 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.user.userTitles
 import io.beatmaps.util.fcmemo
 import react.Props
-import react.dom.div
-import react.dom.h4
-import react.dom.img
-import react.dom.p
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h4
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.p
+import web.cssom.ClassName
 
 external interface UserCardProps : Props {
     var user: UserDetail
@@ -20,18 +21,25 @@ var userCard = fcmemo<UserCardProps>("userCard") { props ->
     val username = props.user.name
     val titles = userTitles(props.user)
 
-    div("d-flex align-items-center my-2") {
-        img("Profile Image", avatar, classes = "rounded-circle me-3") {
-            attrs.width = "50"
-            attrs.height = "50"
+    div {
+        attrs.className = ClassName("d-flex align-items-center my-2")
+        img {
+            attrs.alt = "Profile Image"
+            attrs.src = avatar
+            attrs.className = ClassName("rounded-circle me-3")
+            attrs.width = 50.0
+            attrs.height = 50.0
         }
-        div("d-inline") {
+        div {
+            attrs.className = ClassName("d-inline")
             routeLink("/profile/$id") {
-                h4("mb-1") {
+                h4 {
+                    attrs.className = ClassName("mb-1")
                     +username
                 }
             }
-            p("text-muted mb-1") {
+            p {
+                attrs.className = ClassName("text-muted mb-1")
                 +titles.joinToString(", ")
             }
         }

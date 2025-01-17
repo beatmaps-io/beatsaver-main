@@ -2,9 +2,10 @@ package io.beatmaps.admin.modlog
 
 import io.beatmaps.util.fcmemo
 import react.Props
-import react.dom.i
-import react.dom.p
-import react.dom.span
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
+import web.cssom.ClassName
 
 external interface DiffTextProps : Props {
     var description: String
@@ -14,15 +15,22 @@ external interface DiffTextProps : Props {
 
 val diffText = fcmemo<DiffTextProps>("diffText") { props ->
     if (props.new != props.old) {
-        p("card-text") {
+        p {
+            attrs.className = ClassName("card-text")
             if (props.new.isNotEmpty()) {
                 +"Updated ${props.description}"
-                span("text-danger d-block") {
-                    i("fas fa-minus") {}
+                span {
+                    attrs.className = ClassName("text-danger d-block")
+                    i {
+                        attrs.className = ClassName("fas fa-minus")
+                    }
                     +" ${props.old}"
                 }
-                span("text-success d-block") {
-                    i("fas fa-plus") {}
+                span {
+                    attrs.className = ClassName("text-success d-block")
+                    i {
+                        attrs.className = ClassName("fas fa-plus")
+                    }
                     +" ${props.new}"
                 }
             } else {

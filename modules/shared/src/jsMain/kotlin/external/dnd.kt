@@ -1,11 +1,7 @@
 package external
 
-import io.beatmaps.util.onTransitionEndFunction
 import js.import.importAsync
 import js.objects.Object
-import kotlinx.html.DIV
-import kotlinx.html.js.onDragStartFunction
-import org.w3c.dom.events.Event
 import react.ComponentClass
 import react.ExoticComponent
 import react.Props
@@ -15,9 +11,11 @@ import react.RElementBuilder
 import react.ReactElement
 import react.RefObject
 import react.createElement
-import react.dom.RDOMBuilder
-import react.dom.div
-import react.dom.jsStyle
+import react.dom.events.DragEventHandler
+import react.dom.events.TransitionEventHandler
+import react.dom.html.HTMLAttributes
+import react.dom.html.ReactHTML.div
+import web.html.HTMLDivElement
 
 external interface DroppableProvided {
     var droppableProps: Any
@@ -27,16 +25,22 @@ external interface DroppableProvided {
 
 external interface DroppableProps : Props {
     var droppableId: String
+    var direction: String
+    var isCombineEnabled: Boolean
+    var isDropDisabled: Boolean
+    var ignoreContainerClipping: Boolean
+    var mode: String
+    var type: String
     var children: (DroppableProvided) -> ReactElement<*>?
 }
 
 external interface DraggableProvidedProps {
     var style: dynamic
-    var onTransitionEnd: (Event) -> Unit
+    var onTransitionEnd: TransitionEventHandler<*>
 }
 
 external interface DragHandleProps {
-    var onDragStart: (Event) -> Unit
+    var onDragStart: DragEventHandler<*>
 }
 
 external interface DraggableProvided {
@@ -51,70 +55,63 @@ external interface DraggableProps : Props {
     var children: (DraggableProvided) -> ReactElement<*>?
 }
 
-fun RBuilder.draggable(id: String, idx: Int, cb: RDOMBuilder<DIV>.() -> Unit) {
+fun RBuilder.draggable(id: String, idx: Int, cb: RElementBuilder<HTMLAttributes<HTMLDivElement>>.() -> Unit) {
     dndExotics.draggable {
         key = id
         attrs.draggableId = id
         attrs.index = idx
-        draggableContainer {
-            key = id
-            cb()
+        attrs.children = { dragProvided ->
+            createElement<Props> {
+                div {
+                    ref = dragProvided.innerRef
+                    key = id
+
+                    attrs.onDragStart = dragProvided.dragHandleProps.onDragStart
+                    attrs.onTransitionEnd = dragProvided.draggableProps.onTransitionEnd
+
+                    attrs.style = dragProvided.draggableProps.style
+
+                    copyProps(dragProvided.draggableProps)
+                    copyProps(dragProvided.dragHandleProps)
+
+                    cb()
+                }
+            }
         }
     }
 }
 
-fun RBuilder.droppable(id: String, cb: RDOMBuilder<DIV>.() -> Unit) {
+fun RBuilder.droppable(id: String, cb: RElementBuilder<HTMLAttributes<HTMLDivElement>>.() -> Unit) {
     dndExotics.droppable {
         attrs.droppableId = id
-        droppableContainer {
-            cb()
+        attrs.isDropDisabled = false
+        attrs.isCombineEnabled = false
+        attrs.ignoreContainerClipping = false
+        attrs.direction = "vertical"
+        attrs.children = { provided ->
+            createElement<Props> {
+                div {
+                    ref = provided.innerRef
+
+                    copyProps(provided.droppableProps)
+
+                    cb()
+
+                    child(provided.placeholder)
+                }
+            }
         }
     }
 }
 
 @Suppress("USELESS_CAST")
-fun RDOMBuilder<*>.copyProps(obj: Any) {
+fun RElementBuilder<HTMLAttributes<*>>.copyProps(obj: Any) {
+    val dynAttrs = attrs.asDynamic()
     Object.getOwnPropertyNames(obj).forEach { key ->
         when (val it = obj.asDynamic()[key]) {
-            is String -> attrs.attributes[key] = it as String
-            is Int -> attrs.attributes[key] = (it as Int).toString()
-            is Boolean -> attrs.attributes[key] = (it as Boolean).toString()
-        }
-    }
-}
-
-fun RElementBuilder<DraggableProps>.draggableContainer(cb: RDOMBuilder<DIV>.() -> Unit) {
-    attrs.children = { dragProvided ->
-        createElement<Props> {
-            div {
-                ref = dragProvided.innerRef
-
-                attrs.onDragStartFunction = dragProvided.dragHandleProps.onDragStart
-                attrs.onTransitionEndFunction = dragProvided.draggableProps.onTransitionEnd
-
-                attrs.jsStyle = dragProvided.draggableProps.style
-
-                copyProps(dragProvided.draggableProps)
-                copyProps(dragProvided.dragHandleProps)
-
-                cb()
-            }
-        }
-    }
-}
-
-fun RElementBuilder<DroppableProps>.droppableContainer(cb: RDOMBuilder<DIV>.() -> Unit) {
-    attrs.children = { provided ->
-        createElement<Props> {
-            div {
-                ref = provided.innerRef
-
-                copyProps(provided.droppableProps)
-
-                cb()
-
-                child(provided.placeholder)
-            }
+            is String -> dynAttrs[key] = it as String
+            is Int -> dynAttrs[key] = (it as Int).toString()
+            is Boolean -> dynAttrs[key] = (it as Boolean).toString()
         }
     }
 }

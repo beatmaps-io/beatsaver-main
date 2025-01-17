@@ -17,12 +17,13 @@ import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
 import org.w3c.dom.HTMLElement
 import react.Props
-import react.dom.div
+import react.dom.html.ReactHTML.div
 import react.useCallback
 import react.useContext
 import react.useMemo
 import react.useRef
 import react.useState
+import web.cssom.ClassName
 import kotlin.js.Promise
 
 external interface ReviewTableProps : Props {
@@ -86,7 +87,8 @@ val reviewTable = fcmemo<ReviewTableProps>("reviewTable") { props ->
     }
 
     if (props.visible != false) {
-        div("reviews") {
+        div {
+            attrs.className = ClassName("reviews")
             ref = resultsTable
             key = "resultsTable"
 

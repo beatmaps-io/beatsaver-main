@@ -6,16 +6,16 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
 import kotlinx.browser.window
-import kotlinx.html.title
 import react.Props
-import react.dom.a
-import react.dom.b
-import react.dom.br
-import react.dom.div
-import react.dom.img
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.b
+import react.dom.html.ReactHTML.br
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.img
 import react.fc
 import react.useEffectOnce
 import react.useState
+import web.cssom.ClassName
 
 external interface OauthHeaderProps : Props {
     var clientName: String
@@ -47,9 +47,13 @@ val oauthHeader = fc<OauthHeaderProps>("oauthHeader") { props ->
         }
     }
 
-    div("card-header") {
+    div {
+        attrs.className = ClassName("card-header")
         props.clientIcon?.let {
-            img("Icon", it, "oauthicon") {
+            img {
+                attrs.alt = "Icon"
+                attrs.src = it
+                attrs.className = ClassName("oauthicon")
                 attrs.title = props.clientName
             }
         }
@@ -65,10 +69,14 @@ val oauthHeader = fc<OauthHeaderProps>("oauthHeader") { props ->
                 +it
             }
             +" "
-            img(src = avatar, classes = "authorize-avatar") {}
+            img {
+                attrs.src = avatar
+                attrs.className = ClassName("authorize-avatar")
+            }
             br {}
 
-            a(href = props.logoutLink ?: ("/oauth2/authorize/not-me" + window.location.search)) {
+            a {
+                attrs.href = props.logoutLink ?: ("/oauth2/authorize/not-me" + window.location.search)
                 +"Not you?"
             }
         }

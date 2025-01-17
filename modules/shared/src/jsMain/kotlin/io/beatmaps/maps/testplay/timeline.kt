@@ -16,16 +16,17 @@ import kotlinx.datetime.Instant
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.Suspense
-import react.dom.article
-import react.dom.br
-import react.dom.div
-import react.dom.i
-import react.dom.small
-import react.dom.strong
+import react.dom.html.ReactHTML.article
+import react.dom.html.ReactHTML.br
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.small
+import react.dom.html.ReactHTML.strong
 import react.fc
 import react.useContext
 import react.useRef
 import react.useState
+import web.cssom.ClassName
 
 enum class EventType {
     Feedback, Play, Version
@@ -63,18 +64,26 @@ val timeline = fc<TimelineProps>("timeline") { props ->
         )
     }.filterNotNull().sortedWith(compareByDescending<Event> { versionTimes[it.hash] }.thenByDescending { it.time })
 
-    div("timeline") {
+    div {
+        attrs.className = ClassName("timeline")
         // Watch out, this must be at the top
-        div("line text-muted") {}
+        div {
+            attrs.className = ClassName("line text-muted")
+        }
 
         val latestVersion = props.mapInfo.latestVersion()
         val givenFeedback = latestVersion?.testplays?.any { it.user.id == loggedInId && it.feedbackAt != null } == true || loggedInId == null
         if (isOwnerLocal) {
-            article("card") {
-                div("card-header icon bg-success") {
-                    i("fas fa-plus") {}
+            article {
+                attrs.className = ClassName("card")
+                div {
+                    attrs.className = ClassName("card-header icon bg-success")
+                    i {
+                        attrs.className = ClassName("fas fa-plus")
+                    }
                 }
-                div("card-body") {
+                div {
+                    attrs.className = ClassName("card-body")
                     val now = Clock.System.now()
                     val recentVersions = props.mapInfo.versions.map { now.minus(it.createdAt).inWholeHours }.filter { it < 12 }
 
@@ -94,7 +103,7 @@ val timeline = fc<TimelineProps>("timeline") { props ->
 
                     Dropzone.default {
                         simple(
-                            props.history, loading, errors.isNotEmpty(), progressBarInnerRef,
+                            props.history, loading, progressBarInnerRef,
                             "Drag and drop some files here, or click to upload a new version", captchaRef,
                             {
                                 setLoading(true)
@@ -165,11 +174,16 @@ val timeline = fc<TimelineProps>("timeline") { props ->
                     }*/
                     Unit
                 EventType.Play -> {
-                    article("card card-outline") {
-                        div("card-header icon bg-warning") {
-                            i("fas fa-vial") {}
+                    article {
+                        attrs.className = ClassName("card card-outline")
+                        div {
+                            attrs.className = ClassName("card-header icon bg-warning")
+                            i {
+                                attrs.className = ClassName("fas fa-vial")
+                            }
                         }
-                        div("card-body") {
+                        div {
+                            attrs.className = ClassName("card-body")
                             strong {
                                 +it.title
                             }

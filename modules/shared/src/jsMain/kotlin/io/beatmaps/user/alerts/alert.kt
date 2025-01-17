@@ -1,6 +1,7 @@
 package io.beatmaps.user.alerts
 
 import external.Axios
+import external.ClassName
 import external.TimeAgo
 import external.generateConfig
 import io.beatmaps.Config
@@ -13,20 +14,24 @@ import io.beatmaps.shared.coloredCard
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.updateAlertDisplay
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
+import js.objects.jso
 import org.w3c.dom.HTMLDivElement
 import react.Props
-import react.dom.a
-import react.dom.b
-import react.dom.div
-import react.dom.i
-import react.dom.jsStyle
-import react.dom.p
-import react.dom.span
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.b
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
 import react.useEffect
 import react.useRef
 import react.useState
+import web.cssom.Auto.Companion.auto
+import web.cssom.Height
+import web.cssom.Margin
+import web.cssom.Opacity
+import web.cssom.number
+import web.cssom.px
 
 external interface AlertProps : Props {
     var alert: UserAlert?
@@ -49,25 +54,25 @@ private fun markAlert(alert: UserAlert, read: Boolean, cb: (Int, UserAlertStats)
     }
 
 val alert = fcmemo<AlertProps>("alert") { props ->
-    val (height, setHeight) = useState<String?>(null)
-    val (opacity, setOpacity) = useState<String?>(null)
-    val (margin, setMargin) = useState<String?>(null)
+    val (height, setHeight) = useState<Height?>(null)
+    val (opacity, setOpacity) = useState<Opacity?>(null)
+    val (margin, setMargin) = useState<Margin?>(null)
 
     val bodyRef = useRef<HTMLDivElement>()
 
     useEffect(props.alert, props.hidden) {
         if (props.alert == null) {
-            setHeight("auto")
-            setMargin("5px")
+            setHeight(auto)
+            setMargin(5.px)
         } else if (props.hidden) {
-            setHeight("0px")
-            setOpacity("0")
-            setMargin("-1px 5px") // -1 pixel to account for the border
+            setHeight(0.px)
+            setOpacity(number(0.0))
+            setMargin(Margin((-1).px, 5.px)) // -1 pixel to account for the border
         } else if (bodyRef.current != null) {
             val innerSize = bodyRef.current?.scrollHeight?.let { it + 49.5 } ?: 0
 
-            setHeight("${innerSize}px")
-            setOpacity("1")
+            setHeight(innerSize.px)
+            setOpacity(number(1.0))
             setMargin(null)
         }
     }
@@ -95,14 +100,15 @@ val alert = fcmemo<AlertProps>("alert") { props ->
             attrs.icon = alert.type.icon
 
             attrs.extra = { d ->
-                d.jsStyle {
+                d.style = jso {
                     this.height = height
                     this.opacity = opacity
                     this.margin = margin
                 }
             }
 
-            div("card-header d-flex") {
+            div {
+                attrs.className = ClassName("card-header d-flex")
                 span {
                     b {
                         +alert.head
@@ -114,35 +120,43 @@ val alert = fcmemo<AlertProps>("alert") { props ->
                 }
                 if (props.alert?.id != null) {
                     props.markAlert?.let { ma ->
-                        div("link-buttons") {
-                            a("#") {
+                        div {
+                            attrs.className = ClassName("link-buttons")
+                            a {
+                                attrs.href = "#"
                                 attrs.title = if (props.read != true) "Mark as read" else "Mark as unread"
-                                attrs.onClickFunction = { ev ->
+                                attrs.onClick = { ev ->
                                     ev.preventDefault()
                                     markAlert(alert, props.read != true, ma)
                                 }
 
-                                i("fas text-info fa-eye" + if (props.read != true) "-slash" else "") { }
+                                i {
+                                    attrs.className = ClassName("fas text-info fa-eye" + if (props.read != true) "-slash" else "")
+                                }
                             }
                         }
                     }
                 }
             }
-            div("card-body") {
+            div {
                 ref = bodyRef
+                attrs.className = ClassName("card-body")
                 p {
                     textToContent(alert.body)
                 }
 
                 if (alert.type == EAlertType.Collaboration) {
-                    div("alert-buttons") {
-                        a(classes = "btn btn-success") {
+                    div {
+                        attrs.className = ClassName("alert-buttons")
+                        a {
                             +"Accept"
-                            attrs.onClickFunction = { respondCollaboration(true) }
+                            attrs.className = ClassName("btn btn-success")
+                            attrs.onClick = { respondCollaboration(true) }
                         }
-                        a(classes = "btn btn-danger") {
+                        a {
                             +"Reject"
-                            attrs.onClickFunction = { respondCollaboration(false) }
+                            attrs.className = ClassName("btn btn-danger")
+                            attrs.onClick = { respondCollaboration(false) }
                         }
                     }
                 }
@@ -150,8 +164,8 @@ val alert = fcmemo<AlertProps>("alert") { props ->
         }
     } ?: run {
         div {
-            attrs.jsStyle {
-                this.height = "144px"
+            attrs.style = jso {
+                this.height = 144.px
             }
         }
     }

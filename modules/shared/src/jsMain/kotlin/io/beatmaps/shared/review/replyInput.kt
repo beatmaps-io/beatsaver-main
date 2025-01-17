@@ -6,9 +6,10 @@ import io.beatmaps.api.ReviewConstants
 import io.beatmaps.shared.editableText
 import io.beatmaps.shared.form.errors
 import react.Props
-import react.dom.div
+import react.dom.html.ReactHTML.div
 import react.fc
 import react.useState
+import web.cssom.ClassName
 import kotlin.js.Promise
 
 external interface ReplyInputProps : Props {
@@ -18,14 +19,14 @@ external interface ReplyInputProps : Props {
 
 val replyInput = fc<ReplyInputProps>("replyInput") { props ->
     val (errors, setErrors) = useState(emptyList<String>())
-    div("reply-input") {
+    div {
+        attrs.className = ClassName("reply-input")
         errors {
             attrs.errors = errors
         }
         editableText {
             attrs.placeholder = "Reply..."
             attrs.buttonText = "Reply"
-            attrs.textClass = ""
             attrs.editing = true
             attrs.rows = 1
             attrs.maxLength = ReviewConstants.MAX_REPLY_LENGTH

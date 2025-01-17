@@ -17,21 +17,20 @@ import io.beatmaps.shared.ModalData
 import io.beatmaps.shared.editableText
 import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.reviewer
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
 import react.RefObject
-import react.dom.a
-import react.dom.div
-import react.dom.i
-import react.dom.p
-import react.dom.span
-import react.dom.textarea
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
+import react.dom.html.ReactHTML.textarea
 import react.fc
 import react.useContext
 import react.useRef
 import react.useState
+import web.cssom.ClassName
 
 external interface ReplyProps : Props {
     var reply: ReviewReplyDetail
@@ -58,8 +57,10 @@ val reply = fc<ReplyProps>("reply") { props ->
             }) { false }
         }
 
-    div("reply") {
-        div("reply-header") {
+    div {
+        attrs.className = ClassName("reply")
+        div {
+            attrs.className = ClassName("reply-header")
             reviewer {
                 attrs.reviewer = props.reply.creator
                 attrs.time = props.reply.createdAt
@@ -67,20 +68,27 @@ val reply = fc<ReplyProps>("reply") { props ->
             if (!deleted) {
                 // Show tools if commenter or curator
                 if (userData != null && !userData.suspended && (props.reply.creator.id == userData.userId || userData.curator)) {
-                    div("options") {
-                        a("#") {
+                    div {
+                        attrs.className = ClassName("options")
+                        a {
+                            attrs.href = "#"
+
                             attrs.title = "Edit"
-                            attrs.attributes["aria-label"] = "Edit"
-                            attrs.onClickFunction = {
+                            attrs.ariaLabel = "Edit"
+                            attrs.onClick = {
                                 it.preventDefault()
                                 setEditing(!editing)
                             }
-                            i("fas fa-pen text-warning") { }
+                            i {
+                                attrs.className = ClassName("fas fa-pen text-warning")
+                            }
                         }
-                        a("#") {
+                        a {
+                            attrs.href = "#"
+
                             attrs.title = "Delete"
-                            attrs.attributes["aria-label"] = "Delete"
-                            attrs.onClickFunction = {
+                            attrs.ariaLabel = "Delete"
+                            attrs.onClick = {
                                 it.preventDefault()
                                 props.modal?.current?.showDialog?.invoke(
                                     ModalData(
@@ -93,8 +101,9 @@ val reply = fc<ReplyProps>("reply") { props ->
                                                 p {
                                                     +"Reason for action:"
                                                 }
-                                                textarea(classes = "form-control") {
+                                                textarea {
                                                     ref = reasonRef
+                                                    attrs.className = ClassName("form-control")
                                                 }
                                             }
                                         },
@@ -105,20 +114,23 @@ val reply = fc<ReplyProps>("reply") { props ->
                                     )
                                 )
                             }
-                            i("fas fa-trash text-danger-light") { }
+                            i {
+                                attrs.className = ClassName("fas fa-trash text-danger-light")
+                            }
                         }
                     }
                 }
             }
         }
 
-        div("content") {
+        div {
+            attrs.className = ClassName("content")
             if (!deleted) {
                 editableText {
                     attrs.text = text
                     attrs.editing = editing
                     attrs.renderText = true
-                    attrs.textClass = "mt-2"
+                    attrs.textClass = ClassName("mt-2")
                     attrs.maxLength = ReviewConstants.MAX_REPLY_LENGTH
                     attrs.onError = {
                         setErrors(it)
@@ -140,7 +152,10 @@ val reply = fc<ReplyProps>("reply") { props ->
                     }
                 }
             } else {
-                span("deleted") { +"This reply has been deleted." }
+                span {
+                    attrs.className = ClassName("deleted")
+                    +"This reply has been deleted."
+                }
             }
         }
     }

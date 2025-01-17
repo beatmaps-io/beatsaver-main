@@ -1,31 +1,33 @@
 package io.beatmaps.maps
 
 import io.beatmaps.common.MapTag
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
-import org.w3c.dom.events.Event
+import js.objects.jso
 import react.Props
-import react.dom.jsStyle
-import react.dom.span
+import react.dom.events.MouseEventHandler
+import react.dom.html.ReactHTML.span
 import react.fc
+import web.cssom.ClassName
+import web.cssom.number
+import web.html.HTMLElement
 
 external interface MapTagProps : Props {
     var selected: Boolean
     var excluded: Boolean
     var margins: String?
     var tag: MapTag
-    var onClick: (Event) -> Unit
+    var onClick: MouseEventHandler<HTMLElement>
 }
 
 val mapTag = fc<MapTagProps>("mapTag") { props ->
     val dark = !props.selected && !props.excluded
     val margins = props.margins ?: "me-2 mb-2"
-    span("badge badge-${if (props.excluded) "danger" else props.tag.type.color} $margins") {
-        attrs.jsStyle {
-            opacity = if (dark) 0.4 else 1
+    span {
+        attrs.className = ClassName("badge badge-${if (props.excluded) "danger" else props.tag.type.color} $margins")
+        attrs.style = jso {
+            opacity = number(if (dark) 0.4 else 1.0)
         }
         attrs.title = props.tag.human
-        attrs.onClickFunction = props.onClick
+        attrs.onClick = props.onClick
         +props.tag.human
     }
 }

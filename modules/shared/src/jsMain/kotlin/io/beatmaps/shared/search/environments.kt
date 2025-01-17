@@ -1,29 +1,27 @@
 package io.beatmaps.shared.search
 
-import external.reactFor
 import io.beatmaps.common.EnvironmentSet
 import io.beatmaps.common.api.EBeatsaberEnvironment
 import io.beatmaps.util.applyIf
+import js.objects.jso
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onClickFunction
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 import react.Props
-import react.dom.div
-import react.dom.h4
-import react.dom.h5
-import react.dom.input
-import react.dom.jsStyle
-import react.dom.label
-import react.dom.span
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h4
+import react.dom.html.ReactHTML.h5
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
+import react.dom.html.ReactHTML.span
 import react.fc
 import react.useEffect
 import react.useEffectOnceWithCleanup
 import react.useState
-import web.html.HTMLInputElement
+import web.cssom.ClassName
+import web.cssom.number
+import web.html.InputType
 
 external interface EnvironmentsProps : Props {
     var default: EnvironmentSet?
@@ -60,7 +58,8 @@ val environments = fc<EnvironmentsProps>("environments") { props ->
         }
     }
 
-    div("environments") {
+    div {
+        attrs.className = ClassName("environments")
         h4 {
             +"Environments"
         }
@@ -76,14 +75,15 @@ val environments = fc<EnvironmentsProps>("environments") { props ->
             if (it.v3 != prev) {
                 h5 {
                     val id = "env-cat-${it.category().lowercase()}"
-                    input(InputType.checkBox) {
+                    input {
+                        attrs.type = InputType.checkbox
                         attrs.id = id
                         val envs = EBeatsaberEnvironment.entries.filter { e -> e.v3 == it.v3 }.toSet()
 
                         attrs.checked = selected.containsAll(envs)
 
-                        attrs.onClickFunction = { ev: Event ->
-                            if ((ev.target as? HTMLInputElement?)?.checked == true) {
+                        attrs.onClick = { ev ->
+                            if (ev.currentTarget.checked) {
                                 updateSelected(selected + envs)
                             } else {
                                 updateSelected(selected - envs)
@@ -91,18 +91,19 @@ val environments = fc<EnvironmentsProps>("environments") { props ->
                         }
                     }
                     label {
-                        attrs.reactFor = id
+                        attrs.htmlFor = id
                         +it.category()
                     }
                 }
             }
 
-            div("badge badge-${it.color()} me-2 mb-2") {
-                attrs.jsStyle {
-                    opacity = if (!highlightAll && !selected.contains(it)) 0.4 else 1
+            div {
+                attrs.className = ClassName("badge badge-${it.color()} me-2 mb-2")
+                attrs.style = jso {
+                    opacity = number(if (!highlightAll && !selected.contains(it)) 0.4 else 1.0)
                 }
 
-                attrs.onClickFunction = { _ ->
+                attrs.onClick = { _ ->
                     val shouldAdd = !selected.contains(it)
 
                     val newSelected = (if (shiftHeld) selected else emptySet())

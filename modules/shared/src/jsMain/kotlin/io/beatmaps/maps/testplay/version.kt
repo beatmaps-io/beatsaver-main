@@ -16,20 +16,20 @@ import io.beatmaps.shared.modalContext
 import io.beatmaps.util.textToContent
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.h3
-import react.dom.i
-import react.dom.p
-import react.dom.small
-import react.dom.strong
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h3
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.small
+import react.dom.html.ReactHTML.strong
 import react.fc
 import react.useContext
 import react.useRef
 import react.useState
+import web.cssom.ClassName
 
 external interface VersionProps : Props {
     var mapId: Int
@@ -94,10 +94,12 @@ val version = fc<VersionProps>("version") { props ->
         attrs.color = "danger"
         attrs.headerCallback = TimelineEntrySectionRenderer {
             if (props.isOwner) {
-                div("float-end") {
+                div {
+                    attrs.className = ClassName("float-end")
                     if (props.firstVersion && textareaRef.current != null) {
-                        button(classes = "btn btn-success m-1") {
-                            attrs.onClickFunction = {
+                        button {
+                            attrs.className = ClassName("btn btn-success m-1")
+                            attrs.onClick = {
                                 val newText = textareaRef.current?.value ?: ""
                                 setLoading(true)
 
@@ -116,8 +118,9 @@ val version = fc<VersionProps>("version") { props ->
 
                     if (state == EMapState.Uploaded || state == EMapState.Feedback) {
                         if (props.allowPublish == true) {
-                            button(classes = "btn btn-danger m-1") {
-                                attrs.onClickFunction = {
+                            button {
+                                attrs.className = ClassName("btn btn-danger m-1")
+                                attrs.onClick = {
                                     alert.current = props.alreadyPublished != true
                                     modal?.current?.showDialog?.invoke(
                                         ModalData(
@@ -139,14 +142,16 @@ val version = fc<VersionProps>("version") { props ->
                                 +"Publish"
                             }
                         } else {
-                            button(classes = "btn btn-danger m-1") {
+                            button {
+                                attrs.className = ClassName("btn btn-danger m-1")
                                 attrs.disabled = true
                                 +"Set a name to publish"
                             }
                         }
                         if (testplayEnabled && props.firstVersion) {
-                            button(classes = "btn btn-info m-1") {
-                                attrs.onClickFunction = {
+                            button {
+                                attrs.className = ClassName("btn btn-info m-1")
+                                attrs.onClick = {
                                     mapState(EMapState.Testplay)
                                 }
                                 attrs.disabled = shouldDisable
@@ -154,21 +159,24 @@ val version = fc<VersionProps>("version") { props ->
                             }
                         }
                     } else if (state == EMapState.Testplay) {
-                        button(classes = "btn btn-danger m-1") {
-                            attrs.onClickFunction = {
+                        button {
+                            attrs.className = ClassName("btn btn-danger m-1")
+                            attrs.onClick = {
                                 mapState(EMapState.Uploaded)
                             }
                             attrs.disabled = shouldDisable
                             +"Remove from testplay queue"
                         }
                     } else if (state == EMapState.Scheduled) {
-                        button(classes = "btn btn-info m-1") {
+                        button {
+                            attrs.className = ClassName("btn btn-info m-1")
                             attrs.disabled = true
                             val formatted = Moment(scheduledAt.toString()).format("YYYY-MM-DD HH:mm")
                             +"Scheduled for $formatted"
                         }
-                        button(classes = "btn btn-danger m-1") {
-                            attrs.onClickFunction = {
+                        button {
+                            attrs.className = ClassName("btn btn-danger m-1")
+                            attrs.onClick = {
                                 mapState(EMapState.Uploaded)
                             }
                             attrs.disabled = shouldDisable
@@ -191,9 +199,13 @@ val version = fc<VersionProps>("version") { props ->
                 } ?: false
 
                 if (anyErrors) {
-                    div("alert alert-danger") {
-                        i("fas fa-exclamation-circle float-start mt-1 fa-2x") {}
-                        p("ms-5") {
+                    div {
+                        attrs.className = ClassName("alert alert-danger")
+                        i {
+                            attrs.className = ClassName("fas fa-exclamation-circle float-start mt-1 fa-2x")
+                        }
+                        p {
+                            attrs.className = ClassName("ms-5")
                             textToContent(
                                 "Some of your difficulties have a high percentage of parity errors\n\n" +
                                     "You can read more about parity on the BSMG wiki:\nhttps://bsmg.wiki/mapping/basic-mapping.html#do-mapping-with-flow\n\n" +
@@ -221,15 +233,20 @@ val version = fc<VersionProps>("version") { props ->
              */
 
             props.diffs?.chunked(4) { chunk ->
-                div("row") {
+                div {
+                    attrs.className = ClassName("row")
                     chunk.forEach {
-                        div("col-lg-3") {
+                        div {
+                            attrs.className = ClassName("col-lg-3")
                             val error = (it.paritySummary.errors / it.notes.toFloat()) > 0.1
 
-                            div("alert alert-" + if (error) "danger" else "info") {
+                            div {
+                                attrs.className = ClassName("alert alert-" + if (error) "danger" else "info")
                                 strong {
                                     if (error) {
-                                        i("fas fa-exclamation-circle me-1") {}
+                                        i {
+                                            attrs.className = ClassName("fas fa-exclamation-circle me-1")
+                                        }
                                     }
                                     +"${it.characteristic.human()} - ${it.difficulty.human()}"
                                 }

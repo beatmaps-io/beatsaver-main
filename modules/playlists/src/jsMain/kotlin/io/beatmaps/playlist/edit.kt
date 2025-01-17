@@ -2,7 +2,6 @@ package io.beatmaps.playlist
 
 import external.Axios
 import external.generateConfig
-import external.reactFor
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
@@ -23,11 +22,6 @@ import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.form.toggle
 import io.beatmaps.upload.UploadRequestConfig
 import io.beatmaps.util.fcmemo
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.hidden
-import kotlinx.html.id
-import kotlinx.html.js.onSubmitFunction
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromDynamic
@@ -37,14 +31,13 @@ import org.w3c.dom.url.URLSearchParams
 import org.w3c.files.get
 import org.w3c.xhr.FormData
 import react.Props
-import react.dom.button
-import react.dom.defaultValue
-import react.dom.div
-import react.dom.form
-import react.dom.hr
-import react.dom.input
-import react.dom.label
-import react.dom.textarea
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.hr
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
+import react.dom.html.ReactHTML.textarea
 import react.router.useLocation
 import react.router.useNavigate
 import react.router.useParams
@@ -53,6 +46,9 @@ import react.useEffect
 import react.useEffectOnce
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.InputType
 
 val editPlaylist = fcmemo<Props>("editPlaylist") {
     val captchaRef = useRef<ICaptchaHandler>()
@@ -118,12 +114,15 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
     }
 
     if (init) {
-        div("card border-dark") {
-            div("card-header") {
+        div {
+            attrs.className = ClassName("card border-dark")
+            div {
+                attrs.className = ClassName("card-header")
                 +((if (id == null) "Create" else "Edit") + " playlist")
             }
-            form(classes = "card-body") {
-                attrs.onSubmitFunction = { ev ->
+            form {
+                attrs.className = ClassName("card-body")
+                attrs.onSubmit = { ev ->
                     ev.preventDefault()
                     setLoading(true)
 
@@ -177,12 +176,16 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
                         sendForm(data)
                     }
                 }
-                div("mb-3") {
-                    label("form-label") {
-                        attrs.reactFor = "name"
+                div {
+                    attrs.className = ClassName("mb-3")
+                    label {
+                        attrs.className = ClassName("form-label")
+                        attrs.htmlFor = "name"
                         +"Name"
                     }
-                    input(type = InputType.text, classes = "form-control") {
+                    input {
+                        attrs.type = InputType.text
+                        attrs.className = ClassName("form-control")
                         key = "name"
                         ref = nameRef
                         attrs.defaultValue = playlist?.name ?: ""
@@ -193,12 +196,16 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
                         attrs.autoFocus = true
                     }
                 }
-                div("mb-3") {
-                    label("form-label") {
-                        attrs.reactFor = "description"
+                div {
+                    attrs.className = ClassName("mb-3")
+                    label {
+                        attrs.className = ClassName("form-label")
+                        attrs.htmlFor = "description"
                         +"Description"
                     }
-                    textarea("10", classes = "form-control") {
+                    textarea {
+                        attrs.rows = 10
+                        attrs.className = ClassName("form-control")
                         attrs.id = "description"
                         attrs.disabled = loading
                         attrs.defaultValue = playlist?.description ?: ""
@@ -215,14 +222,19 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
                         attrs.className = "mb-3"
                     }
                 }
-                div("mb-3 w-25") {
-                    label("form-label") {
-                        attrs.reactFor = "cover"
-                        div("text-truncate") {
+                div {
+                    attrs.className = ClassName("mb-3 w-25")
+                    label {
+                        attrs.className = ClassName("form-label")
+                        attrs.htmlFor = "cover"
+                        div {
+                            attrs.className = ClassName("text-truncate")
                             +"Cover image"
                         }
                     }
-                    input(InputType.file, classes = "form-control") {
+                    input {
+                        attrs.type = InputType.file
+                        attrs.className = ClassName("form-control")
                         key = "cover"
                         attrs.id = "cover"
                         ref = coverRef
@@ -242,7 +254,8 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
                 errors {
                     attrs.validationErrors = errors
                 }
-                div("btn-group w-100 mt-3") {
+                div {
+                    attrs.className = ClassName("btn-group w-100 mt-3")
                     routeLink(id?.let { "/playlists/$it" } ?: "/", className = "btn btn-secondary w-50") {
                         +"Cancel"
                     }
@@ -254,7 +267,9 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
                             attrs.page = "playlist"
                         }
                     }
-                    button(classes = "btn btn-success w-50", type = ButtonType.submit) {
+                    button {
+                        attrs.className = ClassName("btn btn-success w-50")
+                        attrs.type = ButtonType.submit
                         attrs.disabled = loading
                         +(if (id == null) "Create" else "Save")
                     }

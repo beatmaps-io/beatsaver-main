@@ -1,15 +1,12 @@
 package io.beatmaps.shared.form
 
-import external.reactFor
-import io.beatmaps.util.betterChecked
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
 import react.Props
-import react.dom.div
-import react.dom.input
-import react.dom.label
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
 import react.fc
+import web.cssom.ClassName
+import web.html.InputType
 
 external interface MultipleChoiceProps<T> : Props {
     var name: String
@@ -20,22 +17,25 @@ external interface MultipleChoiceProps<T> : Props {
 }
 
 val multipleChoice = fc<MultipleChoiceProps<Any?>>("multipleChoice") { props ->
-    div("multiple-choice ${props.className ?: ""}") {
+    div {
+        attrs.className = ClassName("multiple-choice ${props.className ?: ""}")
         props.choices.forEach { (text, value) ->
             val id = "${props.name}:${text.lowercase()}"
 
-            input(InputType.radio, classes = "form-check-input") {
+            input {
                 key = id
+                attrs.type = InputType.radio
+                attrs.className = ClassName("form-check-input")
                 attrs.id = id
                 attrs.name = props.name
-                // If you use the checked option react gets upset that the controlled state changes
-                betterChecked(value == props.selectedValue)
-                attrs.onChangeFunction = {
+                attrs.checked = value == props.selectedValue
+                attrs.onChange = {
                     props.block?.invoke(value)
                 }
             }
-            label("form-check-label") {
-                attrs.reactFor = id
+            label {
+                attrs.className = ClassName("form-check-label")
+                attrs.htmlFor = id
                 +text
             }
         }

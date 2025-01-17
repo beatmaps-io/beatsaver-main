@@ -6,21 +6,20 @@ import io.beatmaps.util.textToContent
 import kotlinx.browser.window
 import kotlinx.dom.addClass
 import kotlinx.dom.removeClass
-import kotlinx.html.ButtonType
-import kotlinx.html.hidden
-import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLIFrameElement
 import react.Props
 import react.RBuilder
 import react.RefObject
 import react.createContext
-import react.dom.button
-import react.dom.div
-import react.dom.h5
-import react.dom.iframe
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h5
+import react.dom.html.ReactHTML.iframe
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.ButtonType
 import kotlin.js.Promise
 
 val modalContext = createContext<RefObject<ModalCallbacks>?>(null)
@@ -102,46 +101,60 @@ val modal = fcmemo<ModalProps>("Modal") { props ->
         }
     )
 
-    div("modal-backdrop fade") {
+    div {
+        attrs.className = ClassName("modal-backdrop fade")
         ref = backdrop
         attrs.hidden = true
     }
-    div("modal") {
+    div {
+        attrs.className = ClassName("modal")
         ref = modalRef
         attrs.hidden = true
-        attrs.onClickFunction = { hide() }
-        div("modal-dialog modal-dialog-centered rabbit-dialog") {
+        attrs.onClick = { hide() }
+        div {
+            attrs.className = ClassName("modal-dialog modal-dialog-centered rabbit-dialog")
             attrs.hidden = modalData != null
-            iframe(classes = "modal-content") {
+            iframe {
                 ref = iframe
+                attrs.className = ClassName("modal-content")
                 attrs.src = "about:blank"
-                attrs["allow"] = "fullscreen"
+                attrs.allow = "fullscreen"
             }
         }
-        div("modal-dialog" + if (modalData?.large == true) " modal-lg" else "") {
+        div {
+            attrs.className = ClassName("modal-dialog" + if (modalData?.large == true) " modal-lg" else "")
             attrs.hidden = modalData == null
-            attrs.onClickFunction = {
+            attrs.onClick = {
                 it.stopPropagation()
             }
-            div("modal-content") {
-                div("modal-header") {
-                    h5("modal-title") {
+            div {
+                attrs.className = ClassName("modal-content")
+                div {
+                    attrs.className = ClassName("modal-header")
+                    h5 {
+                        attrs.className = ClassName("modal-title")
                         +(modalData?.titleText ?: "")
                     }
-                    button(type = ButtonType.button, classes = "btn-close") {
-                        attrs.onClickFunction = { hide() }
+                    button {
+                        attrs.type = ButtonType.button
+                        attrs.className = ClassName("btn-close")
+                        attrs.onClick = { hide() }
                     }
                 }
-                div("modal-body") {
+                div {
+                    attrs.className = ClassName("modal-body")
                     modalData?.let { m ->
                         m.bodyCallback?.invoke(this, modalRef.current) ?: textToContent(m.bodyText)
                     }
                 }
-                div("modal-footer") {
+                div {
+                    attrs.className = ClassName("modal-footer")
                     modalData?.buttons?.forEach { b ->
-                        button(type = ButtonType.button, classes = "btn btn-${b.color}") {
+                        button {
+                            attrs.type = ButtonType.button
+                            attrs.className = ClassName("btn btn-${b.color}")
                             attrs.disabled = loading
-                            attrs.onClickFunction = {
+                            attrs.onClick = {
                                 setLoading(true)
                                 b.callback().then({
                                     if (it) hide()

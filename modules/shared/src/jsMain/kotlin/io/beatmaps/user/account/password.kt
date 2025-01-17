@@ -2,30 +2,28 @@ package io.beatmaps.user.account
 
 import external.Axios
 import external.generateConfig
-import external.reactFor
 import io.beatmaps.Config
 import io.beatmaps.api.AccountRequest
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.UserDetail
 import io.beatmaps.shared.form.errors
-import kotlinx.html.ButtonType
-import kotlinx.html.FormMethod
-import kotlinx.html.InputType
-import kotlinx.html.hidden
-import kotlinx.html.id
-import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.form
-import react.dom.h5
-import react.dom.hr
-import react.dom.input
-import react.dom.label
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.h5
+import react.dom.html.ReactHTML.hr
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
 import react.fc
 import react.useRef
 import react.useState
+import web.autofill.AutoFillNormalField
+import web.cssom.ClassName
+import web.form.FormMethod
+import web.html.ButtonType
+import web.html.InputType
 
 external interface ChangePasswordProps : Props {
     var userDetail: UserDetail
@@ -40,8 +38,10 @@ val changePassword = fc<ChangePasswordProps>("changePassword") { props ->
     val (valid, setValid) = useState(false)
     val (loading, setLoading) = useState<Boolean>()
 
-    form(classes = "user-form", action = "/profile", method = FormMethod.post) {
-        attrs.onSubmitFunction = { ev ->
+    form {
+        attrs.className = ClassName("user-form")
+        attrs.method = FormMethod.post
+        attrs.onSubmit = { ev ->
             ev.preventDefault()
 
             Axios.post<ActionResponse>(
@@ -70,58 +70,75 @@ val changePassword = fc<ChangePasswordProps>("changePassword") { props ->
                 setLoading(false)
             }
         }
-        h5("mt-5") {
+        h5 {
+            attrs.className = ClassName("mt-5")
             +"Password"
         }
-        hr("mt-2") {}
-        input(InputType.text) {
-            attrs.hidden = true
+        hr {
+            attrs.className = ClassName("mt-2")
+        }
+        input {
             key = "hiddenname"
+            attrs.type = InputType.text
+            attrs.hidden = true
             attrs.name = "username"
             attrs.value = props.userDetail.name
-            attrs.attributes["autocomplete"] = "username"
+            attrs.autoComplete = AutoFillNormalField.username
         }
         errors {
             attrs.errors = errors.take(1)
             attrs.valid = valid
         }
-        div("mb-3") {
-            label("form-label") {
-                attrs.reactFor = "current-password"
+        div {
+            attrs.className = ClassName("mb-3")
+            label {
+                attrs.className = ClassName("form-label")
+                attrs.htmlFor = "current-password"
                 +"Current Password"
             }
-            input(InputType.password, classes = "form-control") {
+            input {
                 key = "curpass"
                 ref = currpassRef
+                attrs.className = ClassName("form-control")
+                attrs.type = InputType.password
                 attrs.id = "current-password"
                 attrs.required = true
                 attrs.placeholder = "Current Password"
-                attrs.attributes["autocomplete"] = "current-password"
+                attrs.autoComplete = AutoFillNormalField.currentPassword
             }
         }
-        div("mb-3") {
-            label("form-label") {
-                attrs.reactFor = "new-password"
+        div {
+            attrs.className = ClassName("mb-3")
+            label {
+                attrs.className = ClassName("form-label")
+                attrs.htmlFor = "new-password"
                 +"New Password"
             }
-            input(InputType.password, classes = "form-control") {
+            input {
                 key = "password"
                 ref = passwordRef
+                attrs.className = ClassName("form-control")
+                attrs.type = InputType.password
                 attrs.id = "new-password"
                 attrs.required = true
                 attrs.placeholder = "New Password"
-                attrs.attributes["autocomplete"] = "new-password"
+                attrs.autoComplete = AutoFillNormalField.newPassword
             }
-            input(InputType.password, classes = "form-control") {
+            input {
                 key = "password2"
                 ref = password2Ref
+                attrs.className = ClassName("form-control")
+                attrs.type = InputType.password
                 attrs.id = "new-password2"
                 attrs.required = true
                 attrs.placeholder = "Repeat Password"
-                attrs.attributes["autocomplete"] = "new-password"
+                attrs.autoComplete = AutoFillNormalField.newPassword
             }
-            div("d-grid") {
-                button(classes = "btn btn-success", type = ButtonType.submit) {
+            div {
+                attrs.className = ClassName("d-grid")
+                button {
+                    attrs.className = ClassName("btn btn-success")
+                    attrs.type = ButtonType.submit
                     attrs.disabled = loading == true
                     +"Change password"
                 }

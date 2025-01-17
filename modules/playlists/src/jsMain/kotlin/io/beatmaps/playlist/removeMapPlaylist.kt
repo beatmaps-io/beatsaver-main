@@ -7,14 +7,13 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.PlaylistMapRequest
 import io.beatmaps.index.beatmapInfo
 import io.beatmaps.util.fcmemo
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
 import org.w3c.dom.Audio
 import react.Props
 import react.RefObject
-import react.dom.a
-import react.dom.div
-import react.dom.i
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import web.cssom.ClassName
 
 external interface PlaylistMapEditableProps : Props {
     var obj: MapDetail
@@ -33,23 +32,31 @@ var playlistMapEditable = fcmemo<PlaylistMapEditableProps>("playlistMapEditable"
         props.removeMap?.invoke()
     }
 
-    div("playlist-map") {
-        i("fas fa-grip-lines-vertical") { }
+    div {
+        attrs.className = ClassName("playlist-map")
+        i {
+            attrs.className = ClassName("fas fa-grip-lines-vertical")
+        }
         beatmapInfo {
             attrs.obj = props.obj
             attrs.version = props.obj.publishedVersion()
             attrs.audio = props.audio
         }
-        div("delete") {
-            a("#", classes = "btn btn-danger") {
-                attrs.onClickFunction = {
+        div {
+            attrs.className = ClassName("delete")
+            a {
+                attrs.href = "#"
+                attrs.className = ClassName("btn btn-danger")
+                attrs.onClick = {
                     it.preventDefault()
                     remove()
                 }
                 val title = "Remove from playlist"
                 attrs.title = title
-                attrs.attributes["aria-label"] = title
-                i("fa fa-times") { }
+                attrs.ariaLabel = title
+                i {
+                    attrs.className = ClassName("fa fa-times")
+                }
             }
         }
     }

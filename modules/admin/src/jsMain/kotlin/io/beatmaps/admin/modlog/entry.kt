@@ -22,16 +22,16 @@ import io.beatmaps.maps.mapTag
 import io.beatmaps.shared.map.mapTitle
 import io.beatmaps.user.userLink
 import io.beatmaps.util.fcmemo
-import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLDivElement
 import react.Props
-import react.dom.br
-import react.dom.div
-import react.dom.p
-import react.dom.span
-import react.dom.td
-import react.dom.tr
+import react.dom.html.ReactHTML.br
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.tr
 import react.useRef
+import web.cssom.ClassName
 
 external interface ModLogEntryProps : Props {
     var entry: ModLogEntry?
@@ -49,7 +49,7 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
     val localRef = useRef<HTMLDivElement>()
     tr {
         it.entry?.let {
-            attrs.onClickFunction = {
+            attrs.onClick = {
                 localRef.current?.let { localRow ->
                     if (localRow.classList.contains("expand")) {
                         localRow.classList.remove("expand")
@@ -86,19 +86,20 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
             }
         } ?: run {
             td {
-                attrs.colSpan = "5"
+                attrs.colSpan = 5
             }
         }
     }
-    tr("hiddenRow") {
+    tr {
+        attrs.className = ClassName("hiddenRow")
         td {
-            attrs.colSpan = "5"
+            attrs.colSpan = 5
             it.entry?.let {
-                div("text-wrap text-break") {
+                div {
                     ref = localRef
+                    attrs.className = ClassName("text-wrap text-break")
 
-                    val action = it.action
-                    when (action) {
+                    when (val action = it.action) {
                         is InfoEditData -> {
                             val curatorEdit = action.newTitle.isEmpty() && action.newDescription.isEmpty()
 
@@ -118,16 +119,19 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                             val newTags = action.newTags ?: listOf()
                             val oldTags = action.oldTags ?: listOf()
                             if (newTags != oldTags) {
-                                p("card-text") {
+                                p {
+                                    attrs.className = ClassName("card-text")
                                     +"Updated tags"
-                                    span("d-block") {
+                                    span {
+                                        attrs.className = ClassName("d-block")
                                         oldTags.forEach {
                                             mapTag {
                                                 attrs.tag = it
                                             }
                                         }
                                     }
-                                    span("d-block") {
+                                    span {
+                                        attrs.className = ClassName("d-block")
                                         newTags.forEach {
                                             mapTag {
                                                 attrs.selected = true
@@ -149,7 +153,8 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                                 }
                             )
                             if (info.any()) {
-                                p("card-text") {
+                                p {
+                                    attrs.className = ClassName("card-text")
                                     info.forEachIndexed { idx, txt ->
                                         if (idx > 0) br {}
                                         +txt
@@ -163,19 +168,22 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                         }
 
                         is DeletedPlaylistData -> {
-                            p("card-text") {
+                            p {
+                                attrs.className = ClassName("card-text")
                                 +"Playlist: "
                                 routeLink("/playlist/${action.playlistId}") {
                                     +"${action.playlistId}"
                                 }
                             }
-                            p("card-text") {
+                            p {
+                                attrs.className = ClassName("card-text")
                                 +"Reason: ${action.reason}"
                             }
                         }
 
                         is EditPlaylistData -> {
-                            p("card-text") {
+                            p {
+                                attrs.className = ClassName("card-text")
                                 +"Playlist: "
                                 routeLink("/playlist/${action.playlistId}") {
                                     +"${action.playlistId}"
@@ -199,13 +207,15 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                         }
 
                         is UnpublishData -> {
-                            p("card-text") {
+                            p {
+                                attrs.className = ClassName("card-text")
                                 +"Reason: ${action.reason}"
                             }
                         }
 
                         is UploadLimitData -> {
-                            p("card-text") {
+                            p {
+                                attrs.className = ClassName("card-text")
                                 +"Upload Limit: ${action.newValue}"
                                 br {}
                                 +"Curator: ${action.newCurator}"
@@ -221,7 +231,8 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                         }
 
                         is SuspendData -> {
-                            p("card-text") {
+                            p {
+                                attrs.className = ClassName("card-text")
                                 +"Suspended: ${action.suspended}"
                                 action.reason?.let { reason ->
                                     br {}
@@ -231,10 +242,12 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                         }
 
                         is ReviewDeleteData -> {
-                            p("card-text") {
+                            p {
+                                attrs.className = ClassName("card-text")
                                 +"Deleted review"
                             }
-                            p("card-text") {
+                            p {
+                                attrs.className = ClassName("card-text")
                                 +"Reason: ${action.reason}"
                                 action.text?.let { t ->
                                     br {}
@@ -261,10 +274,12 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                         }
 
                         is ReplyDeleteData -> {
-                            p("card-text") {
+                            p {
+                                attrs.className = ClassName("card-text")
                                 +"Deleted reply"
                             }
-                            p("card-text") {
+                            p {
+                                attrs.className = ClassName("card-text")
                                 +"Reason: ${action.reason}"
                                 action.text?.let { t ->
                                     br {}
@@ -282,7 +297,8 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                         }
 
                         is RevokeSessionsData -> {
-                            p("card-text") {
+                            p {
+                                attrs.className = ClassName("card-text")
                                 +"Revoked ${if (action.all) "all " else ""}sessions"
                                 action.reason?.let { reason ->
                                     br {}

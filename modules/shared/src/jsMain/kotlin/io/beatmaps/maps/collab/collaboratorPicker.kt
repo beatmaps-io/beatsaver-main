@@ -8,11 +8,12 @@ import io.beatmaps.api.CollaborationRemoveData
 import io.beatmaps.api.CollaborationRequestData
 import io.beatmaps.api.MapDetail
 import react.Props
-import react.dom.div
-import react.dom.h4
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h4
 import react.fc
 import react.useEffect
 import react.useState
+import web.cssom.ClassName
 
 external interface CollaboratorPickerProps : Props {
     var classes: String?
@@ -36,13 +37,15 @@ val collaboratorPicker = fc<CollaboratorPickerProps>("collaboratorPicker") { pro
         updateCollaborators()
     }
 
-    div("collaborators " + (props.classes ?: "")) {
+    div {
+        attrs.className = ClassName("collaborators " + (props.classes ?: ""))
         h4 {
             +"Collaborators"
         }
 
         if (collaborators.isNotEmpty()) {
-            div("collaborator-cards") {
+            div {
+                attrs.className = ClassName("collaborator-cards")
                 collaborators.forEach { c ->
                     if (c.collaborator == null) return@forEach
 

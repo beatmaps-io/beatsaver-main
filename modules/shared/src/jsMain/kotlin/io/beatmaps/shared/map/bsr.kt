@@ -4,35 +4,42 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.util.fcmemo
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
 import react.Props
-import react.dom.a
-import react.dom.i
-import react.dom.span
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.span
+import web.cssom.ClassName
 
 external interface CopyBSProps : Props {
     var map: MapDetail
 }
 
 val copyBsr = fcmemo<CopyBSProps>("copyBsr") { props ->
-    a("#") {
+    a {
+        attrs.href = "#"
+
         val text = "Copy BSR"
         attrs.title = text
-        attrs.attributes["aria-label"] = text
-        attrs.onClickFunction = {
+        attrs.ariaLabel = text
+        attrs.onClick = {
             it.preventDefault()
             setClipboard("!bsr ${props.map.id}")
         }
-        span("dd-text") { +text }
-        i("fab fa-twitch text-info") {
-            attrs.attributes["aria-hidden"] = "true"
+        span {
+            attrs.className = ClassName("dd-text")
+            +text
+        }
+        i {
+            attrs.className = ClassName("fab fa-twitch text-info")
+            attrs.ariaHidden = true
         }
     }
 }
 
 val copyEmbed = fcmemo<CopyBSProps>("copyEmbed") { props ->
-    a("#") {
+    a {
+        attrs.href = "#"
+
         //language=html
         val iframe = """
             <iframe 
@@ -44,14 +51,18 @@ val copyEmbed = fcmemo<CopyBSProps>("copyEmbed") { props ->
 
         val text = "Copy Embed Code"
         attrs.title = text
-        attrs.attributes["aria-label"] = text
-        attrs.onClickFunction = {
+        attrs.ariaLabel = text
+        attrs.onClick = {
             it.preventDefault()
             setClipboard(iframe)
         }
-        span("dd-text") { +text }
-        i("fas fa-code text-info") {
-            attrs.attributes["aria-hidden"] = "true"
+        span {
+            attrs.className = ClassName("dd-text")
+            +text
+        }
+        i {
+            attrs.className = ClassName("fas fa-code text-info")
+            attrs.ariaHidden = true
         }
     }
 }

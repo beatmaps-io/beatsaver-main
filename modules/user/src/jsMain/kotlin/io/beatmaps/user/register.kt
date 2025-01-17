@@ -11,24 +11,24 @@ import io.beatmaps.captcha.captcha
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import io.beatmaps.util.fcmemo
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.Props
-import react.dom.a
-import react.dom.button
-import react.dom.div
-import react.dom.form
-import react.dom.hr
-import react.dom.i
-import react.dom.input
-import react.dom.p
-import react.dom.small
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.hr
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.small
 import react.useEffectOnce
 import react.useRef
 import react.useState
+import web.autofill.AutoFillNormalField
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.InputType
 
 val signupPage = fcmemo<Props>("signupPage") {
     val (errors, setErrors) = useState(emptyList<String>())
@@ -46,11 +46,15 @@ val signupPage = fcmemo<Props>("signupPage") {
         setPageTitle("Register")
     }
 
-    div("login-form card border-dark") {
-        div("card-header") {
+    div {
+        attrs.className = ClassName("login-form card border-dark")
+        div {
+            attrs.className = ClassName("card-header")
             +"Register"
         }
-        form(classes = "card-body") {
+        form {
+            attrs.className = ClassName("card-body")
+
             if (complete) {
                 p {
                     +"Registration successful."
@@ -59,7 +63,7 @@ val signupPage = fcmemo<Props>("signupPage") {
                     +"Please check your email to finish setting up your account."
                 }
             } else {
-                attrs.onSubmitFunction = { ev ->
+                attrs.onSubmit = { ev ->
                     ev.preventDefault()
                     setLoading(true)
 
@@ -90,7 +94,9 @@ val signupPage = fcmemo<Props>("signupPage") {
                 errors {
                     attrs.errors = errors
                 }
-                input(type = InputType.text, classes = "form-control") {
+                input {
+                    attrs.type = InputType.text
+                    attrs.className = ClassName("form-control")
                     key = "username"
                     ref = usernameRef
                     attrs.id = "username"
@@ -98,10 +104,13 @@ val signupPage = fcmemo<Props>("signupPage") {
                     attrs.required = true
                     attrs.autoFocus = true
                 }
-                small("d-block form-text text-muted mb-3 text-start") {
+                small {
+                    attrs.className = ClassName("d-block form-text text-muted mb-3 text-start")
                     +"Can only contain letters, numbers and ' . ', ' _ ', ' - ', no spaces"
                 }
-                input(type = InputType.email, classes = "form-control mb-3") {
+                input {
+                    attrs.type = InputType.email
+                    attrs.className = ClassName("form-control mb-3")
                     key = "email"
                     ref = emailRef
                     attrs.id = "email"
@@ -109,33 +118,44 @@ val signupPage = fcmemo<Props>("signupPage") {
                     attrs.placeholder = "Email"
                     attrs.required = true
                 }
-                input(type = InputType.password, classes = "form-control") {
+                input {
+                    attrs.type = InputType.password
+                    attrs.className = ClassName("form-control")
                     key = "password"
                     ref = passwordRef
                     attrs.id = "password"
                     attrs.placeholder = "Password"
                     attrs.required = true
-                    attrs.attributes["autocomplete"] = "new-password"
+                    attrs.autoComplete = AutoFillNormalField.newPassword
                 }
-                input(type = InputType.password, classes = "form-control") {
+                input {
+                    attrs.type = InputType.password
+                    attrs.className = ClassName("form-control")
                     key = "password2"
                     ref = password2Ref
                     attrs.id = "password2"
                     attrs.placeholder = "Repeat Password"
                     attrs.required = true
-                    attrs.attributes["autocomplete"] = "new-password"
+                    attrs.autoComplete = AutoFillNormalField.newPassword
                 }
-                div("d-grid") {
-                    button(classes = "btn btn-success", type = ButtonType.submit) {
+                div {
+                    attrs.className = ClassName("d-grid")
+                    button {
+                        attrs.className = ClassName("btn btn-success")
+                        attrs.type = ButtonType.submit
+
                         attrs.disabled = loading
-                        i("fas fa-user-plus") {}
+                        i {
+                            attrs.className = ClassName("fas fa-user-plus")
+                        }
                         +" Register"
                     }
                 }
                 hr {}
                 small {
                     +"By clicking Register, you agree to our "
-                    a("/policy/tos") {
+                    a {
+                        attrs.href = "/policy/tos"
                         +"Terms of Service"
                     }
                     +"."

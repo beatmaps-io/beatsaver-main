@@ -20,24 +20,20 @@ import io.beatmaps.shared.form.toggle
 import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
-import kotlinx.html.ButtonType
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.url.URLSearchParams
 import react.Props
-import react.dom.button
-import react.dom.form
-import react.dom.option
-import react.dom.select
-import react.dom.table
-import react.dom.tbody
-import react.dom.td
-import react.dom.th
-import react.dom.thead
-import react.dom.tr
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.option
+import react.dom.html.ReactHTML.select
+import react.dom.html.ReactHTML.table
+import react.dom.html.ReactHTML.tbody
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.th
+import react.dom.html.ReactHTML.thead
+import react.dom.html.ReactHTML.tr
 import react.router.useLocation
 import react.router.useNavigate
 import react.useContext
@@ -46,6 +42,8 @@ import react.useEffectOnce
 import react.useMemo
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.ButtonType
 import kotlin.js.Promise
 
 val issueList = fcmemo<Props>("issueList") {
@@ -173,7 +171,7 @@ val issueList = fcmemo<Props>("issueList") {
                     }
                 } ?: run {
                     td {
-                        attrs.colSpan = "5"
+                        attrs.colSpan = 5
                     }
                 }
             }
@@ -181,7 +179,8 @@ val issueList = fcmemo<Props>("issueList") {
     }
 
     form {
-        table("table table-dark table-striped modlog") {
+        table {
+            attrs.className = ClassName("table table-dark table-striped modlog")
             thead {
                 tr {
                     th { +"Creator" }
@@ -193,12 +192,12 @@ val issueList = fcmemo<Props>("issueList") {
                 tr {
                     td { }
                     td {
-                        select("form-select") {
-                            attrs.attributes["aria-label"] = "Type"
+                        select {
+                            attrs.className = ClassName("form-select")
+                            attrs.ariaLabel = "Type"
                             attrs.value = newType?.name ?: ""
-                            attrs.onChangeFunction = {
-                                val elem = it.currentTarget as HTMLSelectElement
-                                setNewType(EIssueType.fromName(elem.value))
+                            attrs.onChange = {
+                                setNewType(EIssueType.fromName(it.currentTarget.value))
                             }
 
                             EIssueType.entries.filter { userData?.admin == true || it.curatorAllowed }.forEach {
@@ -224,8 +223,10 @@ val issueList = fcmemo<Props>("issueList") {
                         }
                     }
                     td {
-                        button(type = ButtonType.submit, classes = "btn btn-primary") {
-                            attrs.onClickFunction = {
+                        button {
+                            attrs.className = ClassName("btn btn-primary")
+                            attrs.type = ButtonType.submit
+                            attrs.onClick = {
                                 it.preventDefault()
                                 updateHistory()
                             }

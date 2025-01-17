@@ -1,36 +1,41 @@
 package io.beatmaps.shared
 
-import kotlinx.html.DIV
-import kotlinx.html.title
+import external.ClassName
 import react.PropsWithChildren
-import react.dom.div
-import react.dom.i
+import react.dom.html.HTMLAttributes
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
 import react.fc
+import web.html.HTMLDivElement
 
 external interface ColoredCardProps : PropsWithChildren {
     var color: String
     var icon: String?
     var title: String?
-    var extra: ((DIV) -> Unit)?
+    var extra: ((HTMLAttributes<HTMLDivElement>) -> Unit)?
     var classes: String?
 }
 
 val coloredCard = fc<ColoredCardProps>("coloredCard") {
-    div("card colored " + (it.classes ?: "")) {
+    div {
+        attrs.className = ClassName("card colored " + (it.classes ?: ""))
         it.extra?.invoke(attrs)
 
-        div("color ${it.color}") {
+        div {
+            attrs.className = ClassName("color ${it.color}")
             if (it.title != null) {
                 attrs.title = it.title ?: ""
             }
 
             if (it.icon != null) {
-                i("fas ${it.icon} icon") {
-                    attrs.attributes["aria-hidden"] = "true"
+                i {
+                    attrs.className = ClassName("fas ${it.icon} icon")
+                    attrs.ariaHidden = true
                 }
             }
         }
-        div("content") {
+        div {
+            attrs.className = ClassName("content")
             it.children()
         }
     }

@@ -6,13 +6,13 @@ import io.beatmaps.common.api.EMapState
 import io.beatmaps.previewBaseUrl
 import io.beatmaps.shared.modalContext
 import io.beatmaps.util.fcmemo
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
 import react.Props
-import react.dom.a
-import react.dom.i
-import react.dom.span
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.span
 import react.useContext
+import web.cssom.ClassName
+import web.window.WindowTarget
 
 external interface LinksProps : Props {
     var map: MapDetail
@@ -39,12 +39,13 @@ val links = fcmemo<LinksProps>("links") { props ->
     } else {
         "#"
     }
-    a(altLink) {
+    a {
+        attrs.href = altLink
         val text = "Preview"
         attrs.title = text
-        attrs.attributes["aria-label"] = text
-        attrs.target = "_top"
-        attrs.onClickFunction = {
+        attrs.ariaLabel = text
+        attrs.target = WindowTarget._top
+        attrs.onClick = {
             if (modal?.current != null) it.preventDefault()
 
             if (props.version?.state == EMapState.Published) {
@@ -55,9 +56,13 @@ val links = fcmemo<LinksProps>("links") { props ->
                 }
             }
         }
-        span("dd-text") { +text }
-        i("fas fa-play text-info") {
-            attrs.attributes["aria-hidden"] = "true"
+        span {
+            attrs.className = ClassName("dd-text")
+            +text
+        }
+        i {
+            attrs.className = ClassName("fas fa-play text-info")
+            attrs.ariaHidden = true
         }
     }
     oneclick {

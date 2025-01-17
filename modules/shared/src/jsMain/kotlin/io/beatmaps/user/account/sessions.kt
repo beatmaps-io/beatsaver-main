@@ -5,18 +5,18 @@ import io.beatmaps.api.SessionsData
 import io.beatmaps.shared.ModalButton
 import io.beatmaps.shared.ModalData
 import io.beatmaps.shared.modalContext
-import kotlinx.html.ButtonType
-import kotlinx.html.js.onClickFunction
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.h5
-import react.dom.hr
-import react.dom.table
-import react.dom.tbody
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h5
+import react.dom.html.ReactHTML.hr
+import react.dom.html.ReactHTML.table
+import react.dom.html.ReactHTML.tbody
 import react.fc
 import react.useContext
 import react.useState
+import web.cssom.ClassName
+import web.html.ButtonType
 import kotlin.js.Promise
 
 external interface ManageSessionsProps : Props {
@@ -30,13 +30,16 @@ val manageSessions = fc<ManageSessionsProps>("manageSessions") { props ->
 
     val modal = useContext(modalContext)
 
-    div(classes = "user-form") {
-        h5("mt-5") {
+    div {
+        attrs.className = ClassName("user-form")
+        h5 {
+            attrs.className = ClassName("mt-5")
             +"Authorised sessions"
         }
         hr {}
         if (full == true) {
-            table("table table-dark table-striped mappers text-nowrap") {
+            table {
+                attrs.className = ClassName("table table-dark table-striped mappers text-nowrap")
                 tbody {
                     props.sessions.oauth.forEach {
                         oauthRow {
@@ -56,21 +59,28 @@ val manageSessions = fc<ManageSessionsProps>("manageSessions") { props ->
                 }
             }
         }
-        div("mb-3 row") {
-            div("col pt-1") {
+        div {
+            attrs.className = ClassName("mb-3 row")
+            div {
+                attrs.className = ClassName("col pt-1")
                 +"Oauth apps: ${props.sessions.oauth.size}, Site logins: ${props.sessions.site.size}"
             }
-            div("col col-sm-5 text-end") {
-                button(classes = "d-inline-block btn btn-info m-0", type = ButtonType.submit) {
-                    attrs.onClickFunction = {
+            div {
+                attrs.className = ClassName("col col-sm-5 text-end")
+                button {
+                    attrs.className = ClassName("d-inline-block btn btn-info m-0")
+                    attrs.type = ButtonType.submit
+                    attrs.onClick = {
                         it.preventDefault()
                         setFull(full != true)
                     }
                     +(if (full == true) "Show less" else "Show more")
                 }
                 if (props.sessions.oauth.isNotEmpty() || props.sessions.site.any { c -> !c.current }) {
-                    button(classes = "d-inline-block btn btn-danger ms-2 m-0", type = ButtonType.submit) {
-                        attrs.onClickFunction = {
+                    button {
+                        attrs.className = ClassName("d-inline-block btn btn-danger ms-2 m-0")
+                        attrs.type = ButtonType.submit
+                        attrs.onClick = {
                             it.preventDefault()
                             modal?.current?.showDialog?.invoke(
                                 ModalData(

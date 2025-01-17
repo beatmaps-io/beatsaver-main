@@ -10,24 +10,22 @@ import io.beatmaps.api.ReviewConstants
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.shared.form.errors
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
 import react.RefObject
-import react.dom.a
-import react.dom.br
-import react.dom.button
-import react.dom.div
-import react.dom.key
-import react.dom.p
-import react.dom.span
-import react.dom.textarea
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.br
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
+import react.dom.html.ReactHTML.textarea
 import react.fc
 import react.useEffectOnce
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.window.WindowTarget
 
 external interface NewReviewProps : Props {
     var mapId: String
@@ -58,8 +56,10 @@ val newReview = fc<NewReviewProps>("newReview") { props ->
     }
 
     if (props.existingReview == false) {
-        div("card mb-2") {
-            div("card-body") {
+        div {
+            attrs.className = ClassName("card mb-2")
+            div {
+                attrs.className = ClassName("card-body")
                 sentimentPicker {
                     attrs.sentiment = sentiment
                     attrs.updateSentiment = {
@@ -67,49 +67,63 @@ val newReview = fc<NewReviewProps>("newReview") { props ->
                     }
                 }
                 sentiment?.let { currentSentiment ->
-                    p("my-2") {
+                    p {
+                        attrs.className = ClassName("my-2")
                         +"Comment (required)"
-                        button(classes = "ms-1 fas fa-info-circle fa-button") {
-                            attrs.onClickFunction = {
+                        button {
+                            attrs.className = ClassName("ms-1 fas fa-info-circle fa-button")
+                            attrs.onClick = {
                                 setFocusIcon(!focusIcon)
                             }
                         }
-                        div("tooltip fade" + if (focusIcon) " show" else " d-none") {
-                            div("tooltip-arrow") {}
-                            div("tooltip-inner") {
+                        div {
+                            attrs.className = ClassName("tooltip fade" + if (focusIcon) " show" else " d-none")
+                            div {
+                                attrs.className = ClassName("tooltip-arrow")
+                            }
+                            div {
+                                attrs.className = ClassName("tooltip-inner")
                                 +"Learn how to provide constructive map feedback "
-                                a("https://bsaber.com/how-to-write-constructive-map-reviews/", target = "_blank") {
+                                a {
+                                    attrs.href = "https://bsaber.com/how-to-write-constructive-map-reviews/"
+                                    attrs.target = WindowTarget._blank
                                     +"here"
                                 }
                                 +"."
                                 br {}
                                 +"Reviews are subject to the "
-                                a("/policy/tos", target = "_blank") {
+                                a {
+                                    attrs.href = "/policy/tos"
+                                    attrs.target = WindowTarget._blank
                                     +"TOS"
                                 }
                                 +"."
                             }
                         }
                     }
-                    textarea(classes = "form-control") {
-                        attrs.key = "description"
+                    textarea {
+                        attrs.className = ClassName("form-control")
+                        key = "description"
                         ref = textareaRef
                         attrs.id = "description"
-                        attrs.rows = "5"
-                        attrs.maxLength = "${ReviewConstants.MAX_LENGTH}"
+                        attrs.rows = 5
+                        attrs.maxLength = ReviewConstants.MAX_LENGTH
                         attrs.disabled = loading == true
-                        attrs.onChangeFunction = {
-                            setReviewLength((it.target as HTMLTextAreaElement).value.length)
+                        attrs.onChange = {
+                            setReviewLength(it.target.value.length)
                         }
                     }
-                    span("badge badge-" + if (reviewLength > ReviewConstants.MAX_LENGTH - 20) "danger" else "dark") {
+                    span {
+                        attrs.className = ClassName("badge badge-" + if (reviewLength > ReviewConstants.MAX_LENGTH - 20) "danger" else "dark")
                         attrs.id = "count_message"
                         +"$reviewLength / ${ReviewConstants.MAX_LENGTH}"
                     }
-                    div("d-flex flex-row-reverse mt-1") {
-                        button(classes = "btn btn-info") {
+                    div {
+                        attrs.className = ClassName("d-flex flex-row-reverse mt-1")
+                        button {
+                            attrs.className = ClassName("btn btn-info")
                             attrs.disabled = reviewLength < 1 || loading
-                            attrs.onClickFunction = {
+                            attrs.onClick = {
                                 val newReview = textareaRef.current?.value ?: ""
 
                                 setLoading(true)

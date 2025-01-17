@@ -11,19 +11,19 @@ import io.beatmaps.user.loginForm
 import io.beatmaps.user.oauth.oauthHeader
 import io.beatmaps.user.oauth.oauthScopes
 import io.beatmaps.util.fcmemo
-import kotlinx.html.FormMethod
-import kotlinx.html.js.onClickFunction
+import io.beatmaps.util.form
 import org.w3c.dom.url.URLSearchParams
 import react.Props
-import react.dom.br
-import react.dom.button
-import react.dom.div
-import react.dom.form
-import react.dom.i
-import react.dom.span
+import react.dom.html.ReactHTML.br
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.span
 import react.router.useLocation
 import react.useEffectOnce
 import react.useState
+import web.cssom.ClassName
+import web.form.FormMethod
 
 val quest = fcmemo<Props>("quest") {
     useEffectOnce {
@@ -40,12 +40,17 @@ val quest = fcmemo<Props>("quest") {
     val (loggedIn, setLoggedIn) = useState<Boolean>()
 
     if (complete) {
-        div("login-form card border-dark") {
-            div("card-header") {
+        div {
+            attrs.className = ClassName("login-form card border-dark")
+            div {
+                attrs.className = ClassName("card-header")
                 +"Authorization complete"
             }
-            div("card-body") {
-                i("fas fa-check-circle code-complete") {}
+            div {
+                attrs.className = ClassName("card-body")
+                i {
+                    attrs.className = ClassName("fas fa-check-circle code-complete")
+                }
                 span {
                     +"You're good to go!"
                     br {}
@@ -55,7 +60,8 @@ val quest = fcmemo<Props>("quest") {
         }
     } else if (codeResponse != null) {
         val clientName = codeResponse.clientName ?: "An unknown application"
-        div("login-form card border-dark") {
+        div {
+            attrs.className = ClassName("login-form card border-dark")
             oauthHeader {
                 attrs.clientName = clientName
                 attrs.clientIcon = codeResponse.clientIcon
@@ -70,13 +76,16 @@ val quest = fcmemo<Props>("quest") {
             }
 
             if (loggedIn == null) {
-                div("card-body") {
+                div {
+                    attrs.className = ClassName("card-body")
                     span { +"Loading..." }
                 }
             } else if (loggedIn) {
-                div("card-body d-grid") {
-                    button(classes = "btn btn-success") {
-                        attrs.onClickFunction = {
+                div {
+                    attrs.className = ClassName("card-body d-grid")
+                    button {
+                        attrs.className = ClassName("btn btn-success")
+                        attrs.onClick = {
                             Axios.post<String>(
                                 "${Config.apibase}/quest/complete",
                                 QuestComplete(codeResponse.deviceCode),
@@ -89,12 +98,14 @@ val quest = fcmemo<Props>("quest") {
                             }
                         }
 
-                        i("fas fa-sign-in-alt") {}
+                        i {
+                            attrs.className = ClassName("fas fa-sign-in-alt")
+                        }
                         +" Authorize"
                     }
                 }
             } else {
-                form(classes = "card-body", method = FormMethod.post, action = "/quest?code=$code") {
+                form("card-body", FormMethod.post, "/quest?code=$code") {
                     loginForm {
                         if (params.has("failed")) {
                             errors {

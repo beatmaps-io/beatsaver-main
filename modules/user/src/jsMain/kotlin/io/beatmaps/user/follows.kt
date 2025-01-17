@@ -11,7 +11,7 @@ import io.beatmaps.shared.userCard
 import io.beatmaps.user.list.userInfiniteScroll
 import io.beatmaps.util.useDidUpdateEffect
 import org.w3c.dom.HTMLElement
-import react.dom.div
+import react.dom.html.ReactHTML.div
 import react.fc
 import react.useMemo
 import react.useRef

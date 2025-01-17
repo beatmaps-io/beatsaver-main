@@ -7,9 +7,10 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.user.ProfileTab
 import kotlinx.datetime.Instant
 import react.Props
-import react.dom.div
-import react.dom.img
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.img
 import react.fc
+import web.cssom.ClassName
 
 external interface ReviewerProps : Props {
     var reviewer: UserDetail?
@@ -18,9 +19,13 @@ external interface ReviewerProps : Props {
 }
 
 val reviewer = fc<ReviewerProps>("reviewer") { props ->
-    div("owner") {
+    div {
+        attrs.className = ClassName("owner")
         props.reviewer?.let { owner ->
-            img(src = owner.avatar) { }
+            img {
+                attrs.alt = owner.name
+                attrs.src = owner.avatar
+            }
             routeLink(owner.profileLink(ProfileTab.REVIEWS)) {
                 +owner.name
             }

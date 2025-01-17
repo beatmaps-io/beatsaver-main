@@ -1,10 +1,8 @@
 package io.beatmaps.upload
 
 import io.beatmaps.api.UploadValidationInfo
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
 import react.Props
-import react.dom.a
+import react.dom.html.ReactHTML.a
 import react.fc
 
 external interface UploadErrorProps : Props {
@@ -18,8 +16,10 @@ val uploadError = fc<UploadErrorProps>("uploadError") { props ->
         }
 
         it.descriptor?.also { d ->
-            a("#") {
-                attrs.onClickFunction = { e ->
+            a {
+                attrs.href = "#"
+
+                attrs.onClick = { e ->
                     e.preventDefault()
                 }
                 attrs.title = it.name

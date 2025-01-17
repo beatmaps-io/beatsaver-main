@@ -20,7 +20,7 @@ import kotlinx.browser.window
 import react.Props
 import react.createElement
 import react.dom.client.createRoot
-import react.dom.div
+import react.dom.html.ReactHTML.div
 import react.router.dom.RouterProvider
 import react.router.dom.createBrowserRouter
 import react.useEffectOnce

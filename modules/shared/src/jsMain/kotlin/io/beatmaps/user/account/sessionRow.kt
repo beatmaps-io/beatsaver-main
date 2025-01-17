@@ -7,18 +7,19 @@ import io.beatmaps.api.OauthSession
 import io.beatmaps.api.SessionInfo
 import io.beatmaps.api.SessionRevokeRequest
 import io.beatmaps.api.SiteSession
-import kotlinx.html.ButtonType
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
+import js.objects.jso
 import react.Props
-import react.dom.button
-import react.dom.i
-import react.dom.img
-import react.dom.jsStyle
-import react.dom.td
-import react.dom.tr
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.tr
 import react.fc
 import react.useState
+import web.cssom.ClassName
+import web.cssom.Margin
+import web.cssom.px
+import web.html.ButtonType
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -31,17 +32,21 @@ val siteRow = fc<SiteRowProps>("siteRow") { props ->
     tr {
         td {
             props.session.countryCode?.let { cc ->
-                img(cc, "https://flagcdn.com/24x18/${cc.lowercase()}.png") {
-                    attrs.width = "24"
-                    attrs.jsStyle { margin = "0 8px" }
+                img {
+                    attrs.alt = cc
+                    attrs.src = "https://flagcdn.com/24x18/${cc.lowercase()}.png"
+                    attrs.width = 24.0
+                    attrs.style = jso { margin = Margin(0.px, 8.px) }
                     attrs.title = cc
                 }
-            } ?: i("fas fa-question-circle") {
-                attrs.jsStyle { width = "40px" }
+            } ?: i {
+                attrs.className = ClassName("fas fa-question-circle")
+                attrs.style = jso { width = 40.px }
                 attrs.title = "Unknown"
             }
         }
-        td("w-100") {
+        td {
+            attrs.className = ClassName("w-100")
             +(if (props.session.current) "This session" else "Site login")
         }
         sessionRowCommon {
@@ -60,23 +65,28 @@ external interface OauthRowProps : Props {
 val oauthRow = fc<OauthRowProps>("oauthRow") { props ->
     tr {
         td {
-            attrs.jsStyle {
-                width = "40px"
+            attrs.style = jso {
+                width = 40.px
             }
             props.session.clientIcon?.let { ci ->
-                img("Icon", ci) {
+                img {
+                    attrs.alt = "Icon"
+                    attrs.src = ci
                     attrs.title = props.session.clientName
-                    attrs.jsStyle { margin = "0 8px" }
-                    attrs.width = "24"
+                    attrs.style = jso { margin = Margin(0.px, 8.px) }
+                    attrs.width = 24.0
                 }
-            } ?: i("fas fa-question-circle") {
-                attrs.jsStyle { width = "40px" }
+            } ?: i {
+                attrs.className = ClassName("fas fa-question-circle")
+                attrs.style = jso { width = 40.px }
                 attrs.title = props.session.clientName
             }
         }
-        td("w-100") {
+        td {
+            attrs.className = ClassName("w-100")
             +props.session.clientName
-            i("fas fa-info-circle ms-1") {
+            i {
+                attrs.className = ClassName("fas fa-info-circle ms-1")
                 attrs.title = props.session.scopes.joinToString("\n") { scope -> scope.description }
             }
         }
@@ -98,7 +108,8 @@ val sessionRowCommon = fc<SessionRowProps>("sessionRowCommon") { props ->
     val session = props.session
     val (loading, setLoading) = useState<Boolean>()
 
-    td("text-end col-sm-2") {
+    td {
+        attrs.className = ClassName("text-end col-sm-2")
         TimeAgo.default {
             attrs.minPeriod = 60
             attrs.date = session.expiry.minus(props.days.toDuration(DurationUnit.DAYS)).toString()
@@ -106,9 +117,11 @@ val sessionRowCommon = fc<SessionRowProps>("sessionRowCommon") { props ->
     }
     td {
         if (!(session is SiteSession && session.current)) {
-            button(classes = "btn btn-danger m-0", type = ButtonType.submit) {
+            button {
+                attrs.className = ClassName("btn btn-danger m-0")
+                attrs.type = ButtonType.submit
                 attrs.disabled = loading == true
-                attrs.onClickFunction = {
+                attrs.onClick = {
                     it.preventDefault()
                     setLoading(true)
                     axiosDelete<SessionRevokeRequest, String>("${Config.apibase}/users/sessions/${session.id}", SessionRevokeRequest(site = session is SiteSession)).then {
@@ -117,7 +130,9 @@ val sessionRowCommon = fc<SessionRowProps>("sessionRowCommon") { props ->
                         setLoading(false)
                     }
                 }
-                i("fas fa-trash") {}
+                i {
+                    attrs.className = ClassName("fas fa-trash")
+                }
             }
         }
     }

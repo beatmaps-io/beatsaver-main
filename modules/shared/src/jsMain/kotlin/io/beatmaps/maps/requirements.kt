@@ -2,11 +2,11 @@ package io.beatmaps.maps
 
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.MapVersion
-import kotlinx.html.title
 import react.Props
-import react.dom.div
-import react.dom.span
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.span
 import react.fc
+import web.cssom.ClassName
 
 external interface MapRequirementsProps : Props {
     var margins: String?
@@ -28,7 +28,8 @@ val mapRequirements = fc<MapRequirementsProps>("mapRequirements") { props ->
     }
 
     requirements.forEach { requirement ->
-        div("badge badge-warning $margins") {
+        div {
+            attrs.className = ClassName("badge badge-warning $margins")
             span {
                 attrs.title = requirement
                 +requirement

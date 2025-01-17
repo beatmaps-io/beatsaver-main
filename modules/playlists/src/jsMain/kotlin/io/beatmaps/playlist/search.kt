@@ -4,7 +4,6 @@ import external.Axios
 import external.Moment
 import external.dates
 import external.generateConfig
-import external.reactFor
 import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.SearchParamsPlaylist
@@ -23,29 +22,25 @@ import io.beatmaps.shared.search.sort
 import io.beatmaps.shared.search.tags
 import js.objects.jso
 import kotlinx.datetime.Instant
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLSelectElement
 import react.Props
 import react.StateSetter
 import react.Suspense
 import react.createElement
-import react.dom.attrs
-import react.dom.defaultValue
-import react.dom.div
-import react.dom.h4
-import react.dom.hr
-import react.dom.input
-import react.dom.label
-import react.dom.option
-import react.dom.select
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h4
+import react.dom.html.ReactHTML.hr
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
+import react.dom.html.ReactHTML.option
+import react.dom.html.ReactHTML.select
 import react.fc
 import react.useCallback
 import react.useEffect
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.InputType
 
 external interface PSEProps : Props {
     var config: SearchPlaylistConfig
@@ -162,29 +157,37 @@ val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
         }
     }
 
-    div("row") {
-        div("col-4") {
-            div("mb-3") {
-                label("form-label") {
-                    attrs.reactFor = "search"
+    div {
+        attrs.className = ClassName("row")
+        div {
+            attrs.className = ClassName("col-4")
+            div {
+                attrs.className = ClassName("mb-3")
+                label {
+                    attrs.className = ClassName("form-label")
+                    attrs.htmlFor = "search"
                     +"Search"
                 }
-                input(type = InputType.text, classes = "form-control") {
+                input {
+                    attrs.type = InputType.text
+                    attrs.className = ClassName("form-control")
                     key = "search"
                     ref = searchRef
                     attrs.defaultValue = props.config.searchParams.search
                     attrs.id = "search"
                     attrs.placeholder = "Search Terms"
                     attrs.disabled = props.loading
-                    attrs.onChangeFunction = {
+                    attrs.onChange = {
                         doCallback()
                     }
                 }
             }
-            div("mb-3") {
+            div {
+                attrs.className = ClassName("mb-3")
                 Suspense {
                     attrs.fallback = loadingElem
-                    label("form-label") {
+                    label {
+                        attrs.className = ClassName("form-label")
                         +"Date range"
                     }
                     div {
@@ -228,11 +231,13 @@ val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
                     setMinNps(it[0] / 10f)
                     setMaxNps(it[1] / 10f)
                 }
-                attrs.className = "mb-3"
+                attrs.className = ClassName("mb-3")
             }
-            div("mb-3") {
-                label("form-label") {
-                    attrs.reactFor = "sort-by"
+            div {
+                attrs.className = ClassName("mb-3")
+                label {
+                    attrs.className = ClassName("form-label")
+                    attrs.htmlFor = "sort-by"
                     +"Sort by"
                 }
                 sort {
@@ -244,17 +249,20 @@ val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
                     attrs.id = "sort-by"
                 }
             }
-            div("mb-3") {
-                label("form-label") {
-                    attrs.reactFor = "map-count"
+            div {
+                attrs.className = ClassName("mb-3")
+                label {
+                    attrs.className = ClassName("form-label")
+                    attrs.htmlFor = "map-count"
                     +"Map Count"
                 }
-                select("form-select") {
+                select {
+                    attrs.className = ClassName("form-select")
                     attrs {
                         id = "map-count"
                         disabled = props.loading
-                        onChangeFunction = { ev ->
-                            setMapCount((ev.target as HTMLSelectElement).value.toIntOrNull() ?: 100)
+                        onChange = { ev ->
+                            setMapCount(ev.target.value.toIntOrNull() ?: 100)
                         }
                         value = mapCount.toString()
                     }
@@ -267,9 +275,11 @@ val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
                 }
             }
         }
-        div("col-4 mb-3 ps-filter") {
+        div {
+            attrs.className = ClassName("col-4 mb-3 ps-filter")
             filters.forEachIndexed { idx, s ->
-                h4(if (idx > 0) "mt-4" else "") {
+                h4 {
+                    attrs.className = if (idx > 0) ClassName("mt-4") else null
                     +s.first
                 }
 
@@ -298,7 +308,8 @@ val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
                 }
             }
         }
-        div("col-4 mb-3") {
+        div {
+            attrs.className = ClassName("col-4 mb-3")
             tags {
                 attrs.default = props.config.searchParams.tags
                 attrs.callback = {
@@ -314,13 +325,16 @@ val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
         }
     }
     hr {}
-    div("row playlist-mappers") {
-        label("form-label") {
-            attrs.reactFor = "mappers"
+    div {
+        attrs.className = ClassName("row playlist-mappers")
+        label {
+            attrs.className = ClassName("form-label")
+            attrs.htmlFor = "mappers"
             +"Mappers"
         }
 
-        div("collaborator-cards") {
+        div {
+            attrs.className = ClassName("collaborator-cards")
             currentMappers.forEach { user ->
                 collaboratorCard {
                     key = user.id.toString()

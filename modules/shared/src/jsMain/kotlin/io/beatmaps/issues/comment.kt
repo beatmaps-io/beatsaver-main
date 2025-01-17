@@ -14,17 +14,16 @@ import io.beatmaps.maps.testplay.TimelineEntrySectionRenderer
 import io.beatmaps.maps.testplay.timelineEntry
 import io.beatmaps.shared.editableText
 import io.beatmaps.shared.form.errors
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
 import react.Props
-import react.RBuilder
-import react.dom.a
-import react.dom.div
-import react.dom.i
-import react.dom.span
+import react.RElementBuilder
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.span
 import react.fc
 import react.useContext
 import react.useState
+import web.cssom.ClassName
 import kotlin.js.Promise
 
 external interface IssueCommentProps : Props {
@@ -57,25 +56,30 @@ val issueComment = fc<IssueCommentProps>("issueComment") { props ->
                 }
             }
 
-            div("link-buttons") {
+            div {
+                attrs.className = ClassName("link-buttons")
                 if (props.issueOpen && userData?.userId == props.comment.user.id) {
-                    a("#") {
+                    a {
+                        attrs.href = "#"
                         attrs.title = "Edit"
-                        attrs.onClickFunction = { ev ->
+                        attrs.onClick = { ev ->
                             ev.preventDefault()
                             setEditing(!editing)
                         }
 
-                        i("fas fa-pen text-warning") { }
+                        i {
+                            attrs.className = ClassName("fas fa-pen text-warning")
+                        }
                     }
                 }
 
-                fun RBuilder.icon() = i("fas text-${if (public) "info fa-un" else "danger-light fa-"}lock") { }
+                fun RElementBuilder<*>.icon() = i { attrs.className = ClassName("fas text-${if (public) "info fa-un" else "danger-light fa-"}lock") }
 
                 if (userData?.curator == true && props.issueOpen && !loading) {
-                    a("#") {
+                    a {
+                        attrs.href = "#"
                         attrs.title = if (public) "Lock" else "Unlock"
-                        attrs.onClickFunction = { ev ->
+                        attrs.onClick = { ev ->
                             ev.preventDefault()
                             setLoading(true)
                             val newPublic = !public

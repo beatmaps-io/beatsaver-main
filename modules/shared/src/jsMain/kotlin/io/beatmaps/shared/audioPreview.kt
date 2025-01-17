@@ -5,23 +5,23 @@ import io.beatmaps.common.fixed
 import io.beatmaps.globalContext
 import io.beatmaps.util.fcmemo
 import kotlinx.browser.window
-import kotlinx.html.js.onClickFunction
 import org.w3c.dom.Audio
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.RefObject
-import react.dom.div
-import react.dom.i
-import react.dom.img
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.img
 import react.useContext
 import react.useEffect
 import react.useEffectOnceWithCleanup
 import react.useRef
 import react.useState
+import web.cssom.ClassName
 
-enum class AudioPreviewSize(val size: String) {
-    Small("100"),
-    Large("200")
+enum class AudioPreviewSize(val size: Double) {
+    Small(100.0),
+    Large(200.0)
 }
 
 external interface AudioPreviewProps : Props {
@@ -102,25 +102,34 @@ val audioPreview = fcmemo<AudioPreviewProps>("audioPreview") { props ->
     }
 
     if (!blur) {
-        div("audio-progress" + if (props.size == AudioPreviewSize.Large) " large" else "") {
-            attrs.onClickFunction = toggleAudio
+        div {
+            attrs.className = ClassName("audio-progress" + if (props.size == AudioPreviewSize.Large) " large" else "")
+            attrs.onClick = toggleAudio
             ref = audioContainerRef
-            i("fas fa-play") { }
-            div("pie") {
+            i {
+                attrs.className = ClassName("fas fa-play")
+            }
+            div {
+                attrs.className = ClassName("pie")
                 ref = outerProgressRef
-                div("left-size half-circle") {
+                div {
+                    attrs.className = ClassName("left-size half-circle")
                     ref = leftProgressRef
                 }
-                div("right-size half-circle") {
+                div {
+                    attrs.className = ClassName("right-size half-circle")
                     ref = rightProgressRef
                 }
             }
         }
     }
-    img(src = props.version?.coverURL, alt = "Cover Image", classes = "cover${if (blur) " nsfw" else ""}") {
+    img {
+        attrs.src = props.version?.coverURL
+        attrs.alt = "Cover Image"
+        attrs.className = ClassName("cover${if (blur) " nsfw" else ""}")
         attrs.width = props.size.size
         attrs.height = props.size.size
-        attrs.onClickFunction = {
+        attrs.onClick = {
             setBlur(false)
         }
     }

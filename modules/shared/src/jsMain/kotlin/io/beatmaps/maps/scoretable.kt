@@ -12,25 +12,25 @@ import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.fixedStr
 import js.objects.jso
 import kotlinx.browser.window
-import kotlinx.html.ThScope
-import kotlinx.html.js.onScrollFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 import react.Props
 import react.RefObject
-import react.dom.a
-import react.dom.div
-import react.dom.img
-import react.dom.table
-import react.dom.tbody
-import react.dom.th
-import react.dom.thead
-import react.dom.tr
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.table
+import react.dom.html.ReactHTML.tbody
+import react.dom.html.ReactHTML.th
+import react.dom.html.ReactHTML.thead
+import react.dom.html.ReactHTML.tr
 import react.fc
 import react.useEffectOnceWithCleanup
 import react.useEffectWithCleanup
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.window.WindowTarget
 
 external interface ScoreTableProps : Props {
     var mapKey: String
@@ -106,7 +106,7 @@ val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
             }
         }
 
-    val handleScroll = { _: Event ->
+    val handleScroll = { _: Event? ->
         val trigger = 100
         if (myRef.current != null) {
             val clientHeight = myRef.current?.clientHeight ?: 0
@@ -149,20 +149,46 @@ val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
         }
     }
 
-    div("scores") {
-        table("table table-striped table-dark") {
+    div {
+        attrs.className = ClassName("scores")
+        table {
+            attrs.className = ClassName("table table-striped table-dark")
             thead {
                 tr {
-                    th(scope = ThScope.col) { +"#" }
-                    th(scope = ThScope.col) { +"Player" }
-                    th(scope = ThScope.col) { +"Score" }
-                    th(scope = ThScope.col) { +"Mods" }
-                    th(scope = ThScope.col) { +"%" }
-                    th(scope = ThScope.col) { +"PP" }
-                    th(scope = ThScope.col) {
+                    th {
+                        attrs.scope = "col"
+                        +"#"
+                    }
+                    th {
+                        attrs.scope = "col"
+                        +"Player"
+                    }
+                    th {
+                        attrs.scope = "col"
+                        +"Score"
+                    }
+                    th {
+                        attrs.scope = "col"
+                        +"Mods"
+                    }
+                    th {
+                        attrs.scope = "col"
+                        +"%"
+                    }
+                    th {
+                        attrs.scope = "col"
+                        +"PP"
+                    }
+                    th {
+                        attrs.scope = "col"
                         uid?.let { uid1 ->
-                            a("${props.type.url}$uid1", "_blank") {
-                                img(props.type.name, src = "/static/${props.type.name.lowercase()}.svg") { }
+                            a {
+                                attrs.href = "${props.type.url}$uid1"
+                                attrs.target = WindowTarget._blank
+                                img {
+                                    attrs.alt = props.type.name
+                                    attrs.src = "/static/${props.type.name.lowercase()}.svg"
+                                }
                             }
                         }
                     }
@@ -170,7 +196,9 @@ val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
             }
             tbody {
                 ref = myRef
-                attrs.onScrollFunction = handleScroll
+                attrs.onScroll = {
+                    handleScroll(null)
+                }
                 scores.forEachIndexed { idx, it ->
                     val maxScore = props.selected?.maxScore ?: 0
                     val accuracy = it.accuracy ?: (it.score / maxScore.toFloat())

@@ -6,21 +6,20 @@ import io.beatmaps.Config
 import io.beatmaps.api.QuestCode
 import io.beatmaps.api.QuestCodeResponse
 import io.beatmaps.shared.form.errors
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.url.URLSearchParams
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.form
-import react.dom.input
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.input
 import react.fc
 import react.router.useLocation
 import react.useEffect
 import react.useRef
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.InputType
 
 external interface QuestCodeProps : Props {
     var deviceCodeCallback: (String, QuestCodeResponse) -> Unit
@@ -54,17 +53,21 @@ val questCode = fc<QuestCodeProps>("questCode") { props ->
         onSubmit()
     }
 
-    div("login-form card border-dark") {
-        div("card-header") {
+    div {
+        attrs.className = ClassName("login-form card border-dark")
+        div {
+            attrs.className = ClassName("card-header")
             +"Enter code"
         }
-        form(classes = "card-body") {
-            attrs.onSubmitFunction = { ev ->
+        form {
+            attrs.className = ClassName("card-body")
+            attrs.onSubmit = { ev ->
                 ev.preventDefault()
                 onSubmit()
             }
 
-            div("quest-errors") {
+            div {
+                attrs.className = ClassName("quest-errors")
                 if (props.error) {
                     errors {
                         attrs.errors = listOf("Code not recognised. Try again.")
@@ -72,18 +75,23 @@ val questCode = fc<QuestCodeProps>("questCode") { props ->
                 }
             }
 
-            input(InputType.text, classes = "form-control quest-code") {
+            input {
                 key = "code"
-                attrs.maxLength = "8"
+                attrs.type = InputType.text
+                attrs.className = ClassName("form-control quest-code")
+                attrs.maxLength = 8
                 attrs.placeholder = "Enter code"
-                attrs.onChangeFunction = {
+                attrs.onChange = {
                     props.setError(false)
                 }
                 ref = inputRef
             }
 
-            div("d-grid") {
-                button(classes = "btn btn-success mb-2 mt-4", type = ButtonType.submit) {
+            div {
+                attrs.className = ClassName("d-grid")
+                button {
+                    attrs.className = ClassName("btn btn-success mb-2 mt-4")
+                    attrs.type = ButtonType.submit
                     +"Continue"
                 }
             }

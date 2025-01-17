@@ -5,22 +5,23 @@ import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserSearchResponse
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
+import react.ActionOrString
 import react.Props
-import react.dom.a
-import react.dom.button
-import react.dom.div
-import react.dom.form
-import react.dom.img
-import react.dom.input
-import react.dom.span
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.span
 import react.fc
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.form.FormData
+import web.html.ButtonType
+import web.html.InputType
 import kotlin.js.Promise
 
 external interface UserSearchProps : Props {
@@ -35,17 +36,22 @@ val userSearch = fc<UserSearchProps>("userSearch") { props ->
     val (loading, setLoading) = useState(false)
     val inputRef = useRef<HTMLInputElement>()
 
-    form("", classes = "search") {
-        input(InputType.search, classes = "form-control") {
+    form {
+        attrs.className = ClassName("search")
+        input {
+            attrs.type = InputType.search
+            attrs.className = ClassName("form-control")
             attrs.id = "collaborators"
             attrs.placeholder = "Add users"
             attrs.disabled = props.disabled == true
             ref = inputRef
         }
 
-        button(type = ButtonType.submit, classes = "btn btn-primary") {
+        button {
+            attrs.type = ButtonType.submit
+            attrs.className = ClassName("btn btn-primary")
             attrs.disabled = loading
-            attrs.onClickFunction = {
+            attrs.onClick = {
                 it.preventDefault()
                 setLoading(true)
                 val q = inputRef.current?.value
@@ -69,17 +75,23 @@ val userSearch = fc<UserSearchProps>("userSearch") { props ->
     foundUsers?.filter {
         props.excludeUsers?.contains(it.id) != true
     }?.take(10)?.let { users ->
-        div("search-results") {
+        div {
+            attrs.className = ClassName("search-results")
             if (users.isNotEmpty()) {
                 users.forEach { user ->
-                    div("list-group-item user") {
+                    div {
+                        attrs.className = ClassName("list-group-item user")
                         span {
-                            img(user.name, user.avatar) { }
+                            img {
+                                attrs.alt = user.name
+                                attrs.src = user.avatar
+                            }
                             +user.name
                         }
 
-                        a(classes = "btn btn-success btn-sm") {
-                            attrs.onClickFunction = {
+                        a {
+                            attrs.className = ClassName("btn btn-success btn-sm")
+                            attrs.onClick = {
                                 props.callback?.invoke(user)
                             }
                             +(props.addText ?: "Invite")
@@ -87,7 +99,8 @@ val userSearch = fc<UserSearchProps>("userSearch") { props ->
                     }
                 }
             } else {
-                div("list-group-item text-center") {
+                div {
+                    attrs.className = ClassName("list-group-item text-center")
                     +"No results"
                 }
             }

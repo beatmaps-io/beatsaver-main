@@ -15,26 +15,21 @@ import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.dom.hasClass
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.url.URLSearchParams
 import react.Props
-import react.dom.button
-import react.dom.form
-import react.dom.input
-import react.dom.option
-import react.dom.select
-import react.dom.table
-import react.dom.tbody
-import react.dom.td
-import react.dom.th
-import react.dom.thead
-import react.dom.tr
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.option
+import react.dom.html.ReactHTML.select
+import react.dom.html.ReactHTML.table
+import react.dom.html.ReactHTML.tbody
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.th
+import react.dom.html.ReactHTML.thead
+import react.dom.html.ReactHTML.tr
 import react.router.useLocation
 import react.router.useNavigate
 import react.useContext
@@ -43,6 +38,9 @@ import react.useEffectOnce
 import react.useMemo
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.InputType
 import kotlin.js.Promise
 
 val modlog = fcmemo<Props>("modlog") {
@@ -131,7 +129,8 @@ val modlog = fcmemo<Props>("modlog") {
     }
 
     form {
-        table("table table-dark table-striped-3 modlog") {
+        table {
+            attrs.className = ClassName("table table-dark table-striped-3 modlog")
             thead {
                 tr {
                     th { +"Moderator" }
@@ -142,27 +141,31 @@ val modlog = fcmemo<Props>("modlog") {
                 }
                 tr {
                     td {
-                        input(InputType.text, classes = "form-control") {
+                        input {
+                            attrs.type = InputType.text
+                            attrs.className = ClassName("form-control")
                             attrs.placeholder = "Moderator"
-                            attrs.attributes["aria-label"] = "Moderator"
+                            attrs.ariaLabel = "Moderator"
                             ref = modRef
                         }
                     }
                     td {
-                        input(InputType.text, classes = "form-control") {
+                        input {
+                            attrs.type = InputType.text
+                            attrs.className = ClassName("form-control")
                             attrs.placeholder = "User"
-                            attrs.attributes["aria-label"] = "User"
+                            attrs.ariaLabel = "User"
                             ref = userRef
                         }
                     }
                     td { }
                     td {
-                        select("form-select") {
-                            attrs.attributes["aria-label"] = "Type"
+                        select {
+                            attrs.className = ClassName("form-select")
+                            attrs.ariaLabel = "Type"
                             attrs.value = newType?.name ?: ""
-                            attrs.onChangeFunction = {
-                                val elem = it.currentTarget as HTMLSelectElement
-                                setNewType(ModLogOpType.fromName(elem.value))
+                            attrs.onChange = {
+                                setNewType(ModLogOpType.fromName(it.currentTarget.value))
                             }
 
                             ModLogOpType.entries.forEach {
@@ -178,8 +181,10 @@ val modlog = fcmemo<Props>("modlog") {
                         }
                     }
                     td {
-                        button(type = ButtonType.submit, classes = "btn btn-primary") {
-                            attrs.onClickFunction = {
+                        button {
+                            attrs.type = ButtonType.submit
+                            attrs.className = ClassName("btn btn-primary")
+                            attrs.onClick = {
                                 it.preventDefault()
                                 updateHistory()
                             }

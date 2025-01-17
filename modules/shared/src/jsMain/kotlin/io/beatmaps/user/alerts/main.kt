@@ -21,23 +21,18 @@ import io.beatmaps.util.includeIfNotNull
 import io.beatmaps.util.updateAlertDisplay
 import io.beatmaps.util.useDidUpdateEffect
 import io.beatmaps.util.useObjectMemoize
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.role
 import org.w3c.dom.HTMLElement
-import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.url.URLSearchParams
 import react.Props
-import react.dom.a
-import react.dom.div
-import react.dom.h1
-import react.dom.h6
-import react.dom.i
-import react.dom.input
-import react.dom.label
-import react.dom.span
+import react.dom.aria.AriaRole
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h1
+import react.dom.html.ReactHTML.h6
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
+import react.dom.html.ReactHTML.span
 import react.router.useLocation
 import react.router.useNavigate
 import react.useCallback
@@ -46,6 +41,8 @@ import react.useEffectOnce
 import react.useMemo
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.InputType
 import kotlin.js.Promise
 
 val alertsPage = fcmemo<Props>("alertsPage") {
@@ -163,14 +160,19 @@ val alertsPage = fcmemo<Props>("alertsPage") {
         }
     }
 
-    div("row") {
-        h1("col-lg-8") {
+    div {
+        attrs.className = ClassName("row")
+        h1 {
+            attrs.className = ClassName("col-lg-8")
             +"Alerts & Notifications"
         }
-        div("col-lg-4 d-flex") {
+        div {
+            attrs.className = ClassName("col-lg-4 d-flex")
             if (!read && alertStats?.let { it.unread > 0 } == true) {
-                a("#", classes = "mark-read") {
-                    attrs.onClickFunction = { e ->
+                a {
+                    attrs.href = "#"
+                    attrs.className = ClassName("mark-read")
+                    attrs.onClick = { e ->
                         e.preventDefault()
                         markAll()
                     }
@@ -179,9 +181,12 @@ val alertsPage = fcmemo<Props>("alertsPage") {
             }
         }
     }
-    div("row") {
-        div("col-lg-4 alert-nav") {
-            div("list-group") {
+    div {
+        attrs.className = ClassName("row")
+        div {
+            attrs.className = ClassName("col-lg-4 alert-nav")
+            div {
+                attrs.className = ClassName("list-group")
                 alertsListItem {
                     attrs.active = !read
                     attrs.count = alertStats?.unread
@@ -201,10 +206,12 @@ val alertsPage = fcmemo<Props>("alertsPage") {
                     }
                 }
             }
-            h6("mt-3") {
+            h6 {
+                attrs.className = ClassName("mt-3")
                 +"Filters"
             }
-            div("list-group") {
+            div {
+                attrs.className = ClassName("list-group")
                 alertStats?.byType?.forEach { (type, count) ->
                     alertsListItem {
                         attrs.active = filters.contains(type)
@@ -223,26 +230,34 @@ val alertsPage = fcmemo<Props>("alertsPage") {
                     }
                 }
             }
-            h6("mt-3") {
+            h6 {
+                attrs.className = ClassName("mt-3")
                 +"Preferences"
             }
             if (alertStats != null) {
-                div("list-group") {
-                    label("list-group-item list-group-item-action d-flex justify-content-between align-items-center") {
+                div {
+                    attrs.className = ClassName("list-group")
+                    label {
+                        attrs.className = ClassName("list-group-item list-group-item-action d-flex justify-content-between align-items-center")
                         attrs.htmlFor = "pref-map-curation"
-                        attrs.role = "button"
+                        attrs.role = AriaRole.button
                         span {
-                            i("fas ${EAlertType.Curation.icon} me-2") {}
+                            i {
+                                attrs.className = ClassName("fas ${EAlertType.Curation.icon} me-2")
+                            }
                             +"Map Curation"
                         }
-                        span("form-switch") {
-                            input(InputType.checkBox, classes = "form-check-input") {
+                        span {
+                            attrs.className = ClassName("form-switch")
+                            input {
+                                attrs.type = InputType.checkbox
+                                attrs.className = ClassName("form-check-input")
                                 attrs.id = "pref-map-curation"
                                 attrs.disabled = loading
                                 attrs.defaultChecked = alertStats.curationAlerts
-                                attrs.onChangeFunction = { ev ->
+                                attrs.onChange = { ev ->
                                     setOptions(
-                                        (ev.target as HTMLInputElement).checked,
+                                        ev.target.checked,
                                         alertStats.reviewAlerts,
                                         alertStats.followAlerts
                                     )
@@ -250,45 +265,57 @@ val alertsPage = fcmemo<Props>("alertsPage") {
                             }
                         }
                     }
-                    label("list-group-item list-group-item-action d-flex justify-content-between align-items-center") {
+                    label {
+                        attrs.className = ClassName("list-group-item list-group-item-action d-flex justify-content-between align-items-center")
                         attrs.htmlFor = "pref-map-review"
-                        attrs.role = "button"
+                        attrs.role = AriaRole.button
                         span {
-                            i("fas ${EAlertType.Review.icon} me-2") {}
+                            i {
+                                attrs.className = ClassName("fas ${EAlertType.Review.icon} me-2")
+                            }
                             +"Map Review"
                         }
-                        span("form-switch") {
-                            input(InputType.checkBox, classes = "form-check-input") {
+                        span {
+                            attrs.className = ClassName("form-switch")
+                            input {
+                                attrs.type = InputType.checkbox
+                                attrs.className = ClassName("form-check-input")
                                 attrs.id = "pref-map-review"
                                 attrs.disabled = loading
                                 attrs.defaultChecked = alertStats.reviewAlerts
-                                attrs.onChangeFunction = { ev ->
+                                attrs.onChange = { ev ->
                                     setOptions(
                                         alertStats.curationAlerts,
-                                        (ev.target as HTMLInputElement).checked,
+                                        ev.target.checked,
                                         alertStats.followAlerts
                                     )
                                 }
                             }
                         }
                     }
-                    label("list-group-item list-group-item-action d-flex justify-content-between align-items-center") {
+                    label {
+                        attrs.className = ClassName("list-group-item list-group-item-action d-flex justify-content-between align-items-center")
                         attrs.htmlFor = "pref-follow"
-                        attrs.role = "button"
+                        attrs.role = AriaRole.button
                         span {
-                            i("fas ${EAlertType.Follow.icon} me-2") {}
+                            i {
+                                attrs.className = ClassName("fas ${EAlertType.Follow.icon} me-2")
+                            }
                             +"Follows"
                         }
-                        span("form-switch") {
-                            input(InputType.checkBox, classes = "form-check-input") {
+                        span {
+                            attrs.className = ClassName("form-switch")
+                            input {
+                                attrs.type = InputType.checkbox
+                                attrs.className = ClassName("form-check-input")
                                 attrs.id = "pref-follow"
                                 attrs.disabled = loading
                                 attrs.defaultChecked = alertStats.followAlerts
-                                attrs.onChangeFunction = { ev ->
+                                attrs.onChange = { ev ->
                                     setOptions(
                                         alertStats.curationAlerts,
                                         alertStats.reviewAlerts,
-                                        (ev.target as HTMLInputElement).checked
+                                        ev.target.checked
                                     )
                                 }
                             }
@@ -297,7 +324,8 @@ val alertsPage = fcmemo<Props>("alertsPage") {
                 }
             }
         }
-        div("col-lg-8 vstack alerts") {
+        div {
+            attrs.className = ClassName("col-lg-8 vstack alerts")
             ref = resultsColumn
             key = "resultsColumn"
 

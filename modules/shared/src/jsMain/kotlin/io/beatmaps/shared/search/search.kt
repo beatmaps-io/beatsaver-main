@@ -11,9 +11,6 @@ import io.beatmaps.shared.loadingElem
 import io.beatmaps.util.fcmemo
 import js.objects.jso
 import kotlinx.browser.document
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
@@ -22,18 +19,21 @@ import react.Props
 import react.RBuilder
 import react.Suspense
 import react.createElement
-import react.dom.button
-import react.dom.div
-import react.dom.form
-import react.dom.h4
-import react.dom.i
-import react.dom.input
-import react.dom.span
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.h4
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.span
 import react.useCallback
 import react.useEffect
 import react.useEffectWithCleanup
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.InputType
 
 enum class FilterCategory {
     NONE, GENERAL, REQUIREMENTS
@@ -185,18 +185,25 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
         override fun filterOrNull(key: String) = filterMap.getByKeyOrNull(key)
     }
 
-    form("") {
-        div("row") {
-            div("mb-3 col-lg-9") {
-                input(InputType.search, classes = "form-control") {
+    form {
+        div {
+            attrs.className = ClassName("row")
+            div {
+                attrs.className = ClassName("mb-3 col-lg-9")
+                input {
+                    attrs.type = InputType.search
+                    attrs.className = ClassName("form-control")
                     attrs.placeholder = "Search"
-                    attrs.attributes["aria-label"] = "Search"
+                    attrs.ariaLabel = "Search"
                     ref = inputRef
                 }
             }
-            div("mb-3 col-lg-3 btn-group") {
-                button(type = ButtonType.submit, classes = "btn btn-primary") {
-                    attrs.onClickFunction = {
+            div {
+                attrs.className = ClassName("mb-3 col-lg-3 btn-group")
+                button {
+                    attrs.type = ButtonType.submit
+                    attrs.className = ClassName("btn btn-primary")
+                    attrs.onClick = {
                         it.preventDefault()
                         val newState = with(props.paramsFromPage) {
                             searchHelper.get()
@@ -208,10 +215,13 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
                 }
             }
         }
-        div("row") {
-            div("filter-container col-sm-3") {
-                button(classes = "filter-dropdown") {
-                    attrs.onClickFunction = {
+        div {
+            attrs.className = ClassName("row")
+            div {
+                attrs.className = ClassName("filter-container col-sm-3")
+                button {
+                    attrs.className = ClassName("filter-dropdown")
+                    attrs.onClick = {
                         it.preventDefault()
                         setFiltersOpen(!filtersOpen)
                     }
@@ -226,16 +236,21 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
                             +filters.joinToString(", ")
                         }
                     }
-                    i("fas fa-angle-" + if (filtersOpen) "up" else "down") {}
+                    i {
+                        attrs.className = ClassName("fas fa-angle-" + if (filtersOpen) "up" else "down")
+                    }
                 }
-                div("dropdown-menu" + if (filtersOpen) " show" else "") {
+                div {
                     ref = dropdownDivRef
+                    attrs.className = ClassName("dropdown-menu" + if (filtersOpen) " show" else "")
 
-                    div("d-flex") {
+                    div {
+                        attrs.className = ClassName("d-flex")
                         div {
                             filterRefs.entries.fold(FilterCategory.NONE) { cat, (filter, filterRef) ->
                                 if (cat != filter.cat) {
-                                    h4(if (cat == FilterCategory.NONE) "" else "mt-4") {
+                                    h4 {
+                                        attrs.className = ClassName(if (cat == FilterCategory.NONE) "" else "mt-4")
                                         +filter.cat.toString()
                                     }
                                 }
@@ -277,9 +292,10 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
                     setMinNps(it[0] / 10f)
                     setMaxNps(it[1] / 10f)
                 }
-                attrs.className = "mb-3 col-sm-3"
+                attrs.className = ClassName("mb-3 col-sm-3")
             }
-            div("mb-3 col-sm-3") {
+            div {
+                attrs.className = ClassName("mb-3 col-sm-3")
                 Suspense {
                     attrs.fallback = loadingElem
                     dates.dateRangePicker {
@@ -313,7 +329,8 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
                     }
                 }
             }
-            div("mb-3 col-sm-3") {
+            div {
+                attrs.className = ClassName("mb-3 col-sm-3")
                 sort {
                     attrs.target = props.sortOrderTarget
                     attrs.cb = {

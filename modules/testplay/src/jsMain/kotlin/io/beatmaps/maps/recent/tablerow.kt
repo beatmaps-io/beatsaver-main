@@ -7,12 +7,13 @@ import io.beatmaps.shared.map.diffIcons
 import io.beatmaps.shared.map.links
 import io.beatmaps.shared.map.uploaderWithInfo
 import react.Props
-import react.dom.img
-import react.dom.p
-import react.dom.small
-import react.dom.td
-import react.dom.tr
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.small
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.tr
 import react.fc
+import web.cssom.ClassName
 
 external interface TableRowProps : Props {
     var map: MapDetail
@@ -22,9 +23,12 @@ external interface TableRowProps : Props {
 val beatmapTableRow = fc<TableRowProps>("beatmapTableRow") { props ->
     tr {
         td {
-            img(src = props.version?.coverURL, alt = "Cover Image", classes = "cover") {
-                attrs.width = "100"
-                attrs.height = "100"
+            img {
+                attrs.alt = "Cover Image"
+                attrs.src = props.version?.coverURL
+                attrs.className = ClassName("cover")
+                attrs.width = 100.0
+                attrs.height = 100.0
             }
         }
         td {
@@ -41,12 +45,14 @@ val beatmapTableRow = fc<TableRowProps>("beatmapTableRow") { props ->
                 }
             }
         }
-        td("diffs") {
+        td {
+            attrs.className = ClassName("diffs")
             diffIcons.invoke {
                 attrs.diffs = props.version?.diffs
             }
         }
-        td("links") {
+        td {
+            attrs.className = ClassName("links")
             links {
                 attrs.map = props.map
                 attrs.version = props.version

@@ -1,29 +1,35 @@
 package io.beatmaps.shared.map
 
 import io.beatmaps.util.fcmemo
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
-import org.w3c.dom.events.Event
 import react.Props
-import react.dom.a
-import react.dom.i
-import react.dom.span
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.span
+import web.cssom.ClassName
 
 external interface BookmarkButtonProps : Props {
     var bookmarked: Boolean
-    var onClick: (Event, Boolean) -> Unit
+    var onClick: (Boolean) -> Unit
 }
 
 var bookmarkButton = fcmemo<BookmarkButtonProps>("bookmarkButton") { props ->
-    a("#", classes = "me-1") {
+    a {
+        attrs.href = "#"
+        attrs.className = ClassName("me-1")
+
         val title = if (props.bookmarked) "Remove Bookmark" else "Add Bookmark"
         attrs.title = title
-        attrs.attributes["aria-label"] = title
-        attrs.onClickFunction = {
+        attrs.ariaLabel = title
+        attrs.onClick = {
             it.preventDefault()
-            props.onClick(it, props.bookmarked)
+            props.onClick(props.bookmarked)
         }
-        span("dd-text") { +title }
-        i((if (props.bookmarked) "fas" else "far") + " fa-bookmark text-warning") { }
+        span {
+            attrs.className = ClassName("dd-text")
+            +title
+        }
+        i {
+            attrs.className = ClassName((if (props.bookmarked) "fas" else "far") + " fa-bookmark text-warning")
+        }
     }
 }

@@ -7,10 +7,11 @@ import io.beatmaps.index.beatmapInfo
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useAudio
 import react.Props
-import react.dom.div
+import react.dom.html.ReactHTML.div
 import react.router.useParams
 import react.useEffect
 import react.useState
+import web.cssom.ClassName
 
 val mapEmbed = fcmemo<Props>("mapEmbed") {
     val (map, setMap) = useState<MapDetail?>(null)
@@ -36,7 +37,8 @@ val mapEmbed = fcmemo<Props>("mapEmbed") {
         loadMap()
     }
 
-    div("embed") {
+    div {
+        attrs.className = ClassName("embed")
         if (map != null) {
             beatmapInfo {
                 attrs.obj = map
@@ -44,7 +46,8 @@ val mapEmbed = fcmemo<Props>("mapEmbed") {
                 attrs.audio = audio
             }
         } else {
-            div("card missing") {
+            div {
+                attrs.className = ClassName("card missing")
                 if (missing) {
                     +"Missing beatmap"
                 } else {

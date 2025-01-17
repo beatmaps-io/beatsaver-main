@@ -2,16 +2,13 @@ package io.beatmaps.shared.search
 
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLSelectElement
 import react.Props
-import react.dom.attrs
-import react.dom.option
-import react.dom.select
+import react.dom.html.ReactHTML.option
+import react.dom.html.ReactHTML.select
 import react.fc
 import react.useEffect
 import react.useState
+import web.cssom.ClassName
 
 external interface SortProps : Props {
     var cb: ((SearchOrder) -> Unit)?
@@ -29,18 +26,20 @@ val sort = fc<SortProps>("sort") { props ->
         setSortOrder(default)
     }
 
-    val classes = listOfNotNull(
-        "form-select",
-        if (props.dark == true) "dark" else null
-    ).joinToString(" ")
+    val classes = ClassName(
+        listOfNotNull(
+            "form-select",
+            if (props.dark == true) "dark" else null
+        ).joinToString(" ")
+    )
 
-    select(classes) {
+    select {
         attrs {
+            className = classes
             id = props.id ?: ""
-            attributes["aria-label"] = "Sort by"
-            onChangeFunction = {
-                val elem = it.currentTarget as HTMLSelectElement
-                (SearchOrder.fromString(elem.value) ?: SearchOrder.Relevance).let { newOrder ->
+            ariaLabel = "Sort by"
+            onChange = {
+                (SearchOrder.fromString(it.currentTarget.value) ?: SearchOrder.Relevance).let { newOrder ->
                     setSortOrder(newOrder)
                     props.cb?.invoke(newOrder)
                 }

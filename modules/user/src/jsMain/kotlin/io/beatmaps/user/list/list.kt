@@ -20,10 +20,10 @@ import io.beatmaps.util.useDidUpdateEffect
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.url.URLSearchParams
 import react.Props
-import react.dom.table
-import react.dom.tbody
-import react.dom.thead
-import react.dom.tr
+import react.dom.html.ReactHTML.table
+import react.dom.html.ReactHTML.tbody
+import react.dom.html.ReactHTML.thead
+import react.dom.html.ReactHTML.tr
 import react.router.useLocation
 import react.router.useNavigate
 import react.useCallback
@@ -33,6 +33,7 @@ import react.useEffectOnce
 import react.useMemo
 import react.useRef
 import react.useState
+import web.cssom.ClassName
 import kotlin.js.Promise
 
 fun Int.toLocaleString(locale: String? = undefined): String = asDynamic().toLocaleString(locale) as String
@@ -102,7 +103,8 @@ val userList = fcmemo<Props>("userList") {
         }
     }
 
-    table("table table-dark table-striped mappers") {
+    table {
+        attrs.className = ClassName("table table-dark table-striped mappers")
         thead {
             tr {
                 MapperColumn.entries.forEach { col ->

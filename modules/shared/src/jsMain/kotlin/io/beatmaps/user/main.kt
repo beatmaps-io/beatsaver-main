@@ -33,43 +33,36 @@ import io.beatmaps.shared.search.sort
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
+import js.objects.jso
 import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.role
-import kotlinx.html.title
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.get
 import org.w3c.dom.set
 import react.Props
 import react.Suspense
-import react.dom.a
-import react.dom.b
-import react.dom.br
-import react.dom.button
-import react.dom.div
-import react.dom.h4
-import react.dom.i
-import react.dom.img
-import react.dom.input
-import react.dom.jsStyle
-import react.dom.label
-import react.dom.li
-import react.dom.p
-import react.dom.span
-import react.dom.table
-import react.dom.tbody
-import react.dom.td
-import react.dom.th
-import react.dom.thead
-import react.dom.tr
-import react.dom.ul
+import react.dom.aria.AriaRole
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.b
+import react.dom.html.ReactHTML.br
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.label
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h4
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.li
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
+import react.dom.html.ReactHTML.table
+import react.dom.html.ReactHTML.tbody
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.th
+import react.dom.html.ReactHTML.thead
+import react.dom.html.ReactHTML.tr
+import react.dom.html.ReactHTML.ul
 import react.router.useLocation
 import react.router.useNavigate
 import react.router.useParams
@@ -78,6 +71,11 @@ import react.useEffectOnceWithCleanup
 import react.useEffectWithCleanup
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.cssom.pct
+import web.html.HTMLTextAreaElement
+import web.html.InputType
+import web.window.WindowTarget
 import kotlin.js.Promise
 
 data class TabContext(val userId: Int?)
@@ -254,29 +252,42 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
     modalContext.Provider {
         attrs.value = modalRef
 
-        div("row") {
-            div("col-md-4 mb-3") {
-                div("card user-info" + if (userDetail?.patreon?.supporting == true) " border border-3 border-patreon" else "") {
-                    div("card-body") {
-                        div("d-flex align-items-center mb-2") {
-                            img("Profile Image", userDetail?.avatar, classes = "rounded-circle me-3") {
-                                attrs.width = "50"
-                                attrs.height = "50"
+        div {
+            attrs.className = ClassName("row")
+            div {
+                attrs.className = ClassName("col-md-4 mb-3")
+                div {
+                    attrs.className = ClassName("card user-info" + if (userDetail?.patreon?.supporting == true) " border border-3 border-patreon" else "")
+                    div {
+                        attrs.className = ClassName("card-body")
+                        div {
+                            attrs.className = ClassName("d-flex align-items-center mb-2")
+                            img {
+                                attrs.alt = "Profile Image"
+                                attrs.src = userDetail?.avatar
+                                attrs.className = ClassName("rounded-circle me-3")
+                                attrs.width = 50.0
+                                attrs.height = 50.0
                             }
-                            div("d-inline") {
-                                h4("mb-1") {
+                            div {
+                                attrs.className = ClassName("d-inline")
+                                h4 {
+                                    attrs.className = ClassName("mb-1")
                                     +(userDetail?.name ?: "")
                                 }
-                                p("text-muted mb-1") {
+                                p {
+                                    attrs.className = ClassName("text-muted mb-1")
                                     +userTitles(userDetail).joinToString(", ")
                                 }
                             }
                         }
-                        div("mb-3") {
+                        div {
+                            attrs.className = ClassName("mb-3")
                             followData?.followers?.let {
                                 span {
-                                    a(if (it > 0) "#" else null) {
-                                        attrs.onClickFunction = { e ->
+                                    a {
+                                        attrs.href = if (it > 0) "#" else null
+                                        attrs.onClick = { e ->
                                             e.preventDefault()
                                             if (it > 0) {
                                                 showFollows("Followers", following = userDetail?.id)
@@ -284,7 +295,10 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                                         }
 
                                         +"Followed by "
-                                        b("text-warning") { +"$it" }
+                                        b {
+                                            attrs.className = ClassName("text-warning")
+                                            +"$it"
+                                        }
                                         +(" user" + if (it != 1) "s" else "")
                                     }
                                 }
@@ -292,8 +306,9 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                             followData?.follows?.let {
                                 br { }
                                 span {
-                                    a(if (it > 0) "#" else null) {
-                                        attrs.onClickFunction = { e ->
+                                    a {
+                                        attrs.href = if (it > 0) "#" else null
+                                        attrs.onClick = { e ->
                                             e.preventDefault()
                                             if (it > 0) {
                                                 showFollows("Follows", followedBy = userDetail?.id)
@@ -301,109 +316,138 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                                         }
 
                                         +"Following "
-                                        b("text-warning") { +"$it" }
+                                        b {
+                                            attrs.className = ClassName("text-warning")
+                                            +"$it"
+                                        }
                                         +(" user" + if (it != 1) "s" else "")
                                     }
                                 }
                             }
                         }
-                        div("button-wrap") {
+                        div {
+                            attrs.className = ClassName("button-wrap")
                             userDetail?.playlistUrl?.let { url ->
-                                div("btn-group") {
-                                    a(url, "_blank", "btn btn-secondary") {
+                                div {
+                                    attrs.className = ClassName("btn-group")
+                                    a {
+                                        attrs.href = url
+                                        attrs.target = WindowTarget._blank
+                                        attrs.className = ClassName("btn btn-secondary")
                                         attrs.id = "dl-playlist"
-                                        attrs.attributes["download"] = ""
-                                        i("fas fa-download") { }
+                                        attrs.download = ""
+                                        i {
+                                            attrs.className = ClassName("fas fa-download")
+                                        }
                                         +"Playlist"
                                     }
-                                    a(
-                                        "bsplaylist://playlist/$url/beatsaver-user-${userDetail.id}.bplist",
-                                        classes = "btn btn-primary"
-                                    ) {
+                                    a {
+                                        attrs.href = "bsplaylist://playlist/$url/beatsaver-user-${userDetail.id}.bplist"
+                                        attrs.className = ClassName("btn btn-primary")
                                         attrs.id = "oc-playlist"
-                                        attrs.attributes["aria-label"] = "One-Click"
-                                        i("fas fa-cloud-download-alt m-0") { }
+                                        attrs.ariaLabel = "One-Click"
+                                        i {
+                                            attrs.className = ClassName("fas fa-cloud-download-alt m-0")
+                                        }
                                     }
                                 }
                             }
                             if (loggedInLocal != null && loggedInLocal != userDetail?.id) {
                                 followData?.let { fd ->
-                                    div("btn-group") {
-                                        val btnClasses = "btn btn-" + if (fd.following) "secondary" else "primary"
-                                        button(classes = btnClasses) {
+                                    div {
+                                        attrs.className = ClassName("btn-group")
+                                        val btnClasses = ClassName("btn btn-" + if (fd.following) "secondary" else "primary")
+                                        button {
+                                            attrs.className = btnClasses
                                             attrs.id = "follow"
                                             attrs.disabled = loading
-                                            attrs.onClickFunction = { e ->
+                                            attrs.onClick = { e ->
                                                 e.preventDefault()
                                                 setFollowStatus(!fd.following, !fd.following, !fd.following, !fd.following)
                                             }
 
                                             if (fd.following) {
-                                                i("fas fa-user-minus") { }
+                                                i {
+                                                    attrs.className = ClassName("fas fa-user-minus")
+                                                }
                                                 +"Unfollow"
                                             } else {
-                                                i("fas fa-user-plus") { }
+                                                i {
+                                                    attrs.className = ClassName("fas fa-user-plus")
+                                                }
                                                 +"Follow"
                                             }
                                         }
-                                        div("btn-group m-0") {
-                                            button(classes = "dropdown-toggle $btnClasses") {
+                                        div {
+                                            attrs.className = ClassName("btn-group m-0")
+                                            button {
+                                                attrs.className = ClassName("dropdown-toggle $btnClasses")
                                                 attrs.id = "follow-dd"
-                                                attrs.onClickFunction = {
+                                                attrs.onClick = {
                                                     it.stopPropagation()
                                                     setFollowsDropdown(!followsDropdown)
                                                 }
                                             }
-                                            div("dropdown-menu mt-4" + if (followsDropdown) " show" else "") {
-                                                label("dropdown-item") {
+                                            div {
+                                                attrs.className = ClassName("dropdown-menu mt-4" + if (followsDropdown) " show" else "")
+                                                label {
+                                                    attrs.className = ClassName("dropdown-item")
                                                     attrs.htmlFor = "follow-uploads"
-                                                    attrs.role = "button"
-                                                    attrs.onClickFunction = {
+                                                    attrs.role = AriaRole.button
+                                                    attrs.onClick = {
                                                         it.stopPropagation()
                                                     }
-                                                    input(InputType.checkBox, classes = "form-check-input me-2") {
+                                                    input {
                                                         key = "follow-uploads-${fd.upload}"
+                                                        attrs.type = InputType.checkbox
+                                                        attrs.className = ClassName("form-check-input me-2")
                                                         attrs.id = "follow-uploads"
                                                         attrs.disabled = loading
                                                         attrs.checked = fd.upload
-                                                        attrs.onChangeFunction = { ev ->
-                                                            val newUpload = (ev.target as HTMLInputElement).checked
+                                                        attrs.onChange = { ev ->
+                                                            val newUpload = ev.target.checked
                                                             setFollowStatus(fd.following || newUpload || fd.curation || fd.collab, newUpload, fd.curation, fd.collab)
                                                         }
                                                     }
                                                     +"Uploads"
                                                 }
-                                                label("dropdown-item") {
+                                                label {
+                                                    attrs.className = ClassName("dropdown-item")
                                                     attrs.htmlFor = "follow-curations"
-                                                    attrs.role = "button"
-                                                    attrs.onClickFunction = {
+                                                    attrs.role = AriaRole.button
+                                                    attrs.onClick = {
                                                         it.stopPropagation()
                                                     }
-                                                    input(InputType.checkBox, classes = "form-check-input me-2") {
+                                                    input {
                                                         key = "follow-curations-${fd.curation}"
+                                                        attrs.type = InputType.checkbox
+                                                        attrs.className = ClassName("form-check-input me-2")
                                                         attrs.id = "follow-curations"
                                                         attrs.disabled = loading
                                                         attrs.checked = fd.curation
-                                                        attrs.onChangeFunction = { ev ->
-                                                            val newCuration = (ev.target as HTMLInputElement).checked
+                                                        attrs.onChange = { ev ->
+                                                            val newCuration = ev.target.checked
                                                             setFollowStatus(fd.following || fd.upload || newCuration || fd.collab, fd.upload, newCuration, fd.collab)
                                                         }
                                                     }
                                                     +"Curations"
                                                 }
-                                                label("dropdown-item") {
+                                                label {
+                                                    attrs.className = ClassName("dropdown-item")
                                                     attrs.htmlFor = "follow-collabs"
-                                                    attrs.role = "button"
-                                                    attrs.onClickFunction = {
+                                                    attrs.role = AriaRole.button
+                                                    attrs.onClick = {
                                                         it.stopPropagation()
                                                     }
-                                                    input(InputType.checkBox, classes = "form-check-input me-2") {
+                                                    input {
                                                         key = "follow-collabs-${fd.collab}"
+                                                        attrs.type = InputType.checkbox
+                                                        attrs.className = ClassName("form-check-input me-2")
                                                         attrs.id = "follow-collabs"
                                                         attrs.disabled = loading
                                                         attrs.checked = fd.collab
-                                                        attrs.onChangeFunction = { ev ->
-                                                            val newCollab = (ev.target as HTMLInputElement).checked
+                                                        attrs.onChange = { ev ->
+                                                            val newCollab = ev.target.checked
                                                             setFollowStatus(fd.following || fd.upload || fd.curation || newCollab, fd.upload, fd.curation, newCollab)
                                                         }
                                                     }
@@ -415,12 +459,14 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                                 }
 
                                 if (!userData.suspended && !userData.admin && loggedInLocal != userDetail?.id && userDetail?.id != null) {
-                                    div("btn-group") {
-                                        button(classes = "btn btn-danger") {
+                                    div {
+                                        attrs.className = ClassName("btn-group")
+                                        button {
+                                            attrs.className = ClassName("btn btn-danger")
                                             attrs.id = "report"
                                             attrs.disabled = loading
-                                            attrs.attributes["aria-label"] = "Report"
-                                            attrs.onClickFunction = { e ->
+                                            attrs.ariaLabel = "Report"
+                                            attrs.onClick = { e ->
                                                 e.preventDefault()
                                                 modalRef.current?.showDialog?.invoke(
                                                     ModalData(
@@ -442,21 +488,28 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                                                 )
                                             }
 
-                                            i("fas fa-flag m-0") { }
+                                            i {
+                                                attrs.className = ClassName("fas fa-flag m-0")
+                                            }
                                         }
                                     }
                                 }
                             }
                             if (userData?.admin == true || userData?.curator == true) {
-                                div("btn-group") {
+                                div {
+                                    attrs.className = ClassName("btn-group")
                                     if (userData.admin) {
                                         routeLink("/modlog?user=${userDetail?.name}", className = "btn btn-secondary") {
-                                            i("fas fa-scroll") { }
+                                            i {
+                                                attrs.className = ClassName("fas fa-scroll")
+                                            }
                                             +"Mod Log"
                                         }
                                     }
                                     routeLink("/modreview?user=${userDetail?.name}", className = "btn btn-secondary") {
-                                        i("fas fa-heartbeat") { }
+                                        i {
+                                            attrs.className = ClassName("fas fa-heartbeat")
+                                        }
                                         +"Review Log"
                                     }
                                 }
@@ -465,11 +518,15 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                     }
                 }
             }
-            div("col-md-8 mb-3 position-relative") {
-                div("card user-info") {
-                    div("card-body") {
+            div {
+                attrs.className = ClassName("col-md-8 mb-3 position-relative")
+                div {
+                    attrs.className = ClassName("card user-info")
+                    div {
+                        attrs.className = ClassName("card-body")
                         if (userDetail?.suspendedAt != null) {
-                            span("text-danger") {
+                            span {
+                                attrs.className = ClassName("text-danger")
                                 +"This user has been suspended."
                             }
                         } else {
@@ -479,7 +536,8 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                         }
                         userDetail?.stats?.let {
                             if (it.totalMaps != 0) {
-                                table("table table-dark") {
+                                table {
+                                    attrs.className = ClassName("table table-dark")
                                     thead {
                                         tr {
                                             th { +"Maps" }
@@ -493,44 +551,66 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                                             td { +"${it.avgScore}% (${it.totalUpvotes} / ${it.totalDownvotes})" }
                                             it.diffStats?.let { ds ->
                                                 td {
-                                                    div("difficulty-spread mb-1") {
-                                                        div("badge-green") {
-                                                            attrs.jsStyle {
-                                                                flex = ds.easy
+                                                    div {
+                                                        attrs.className = ClassName("difficulty-spread mb-1")
+                                                        div {
+                                                            attrs.className = ClassName("badge-green")
+                                                            attrs.style = jso {
+                                                                flex = ds.easy.pct
                                                             }
                                                             attrs.title = "${ds.easy}"
                                                         }
-                                                        div("badge-blue") {
-                                                            attrs.jsStyle {
-                                                                flex = ds.normal
+                                                        div {
+                                                            attrs.className = ClassName("badge-blue")
+                                                            attrs.style = jso {
+                                                                flex = ds.normal.pct
                                                             }
                                                             attrs.title = "${ds.normal}"
                                                         }
-                                                        div("badge-hard") {
-                                                            attrs.jsStyle {
-                                                                flex = ds.hard
+                                                        div {
+                                                            attrs.className = ClassName("badge-hard")
+                                                            attrs.style = jso {
+                                                                flex = ds.hard.pct
                                                             }
                                                             attrs.title = "${ds.hard}"
                                                         }
-                                                        div("badge-expert") {
-                                                            attrs.jsStyle {
-                                                                flex = ds.expert
+                                                        div {
+                                                            attrs.className = ClassName("badge-expert")
+                                                            attrs.style = jso {
+                                                                flex = ds.expert.pct
                                                             }
                                                             attrs.title = "${ds.expert}"
                                                         }
-                                                        div("badge-purple") {
-                                                            attrs.jsStyle {
-                                                                flex = ds.expertPlus
+                                                        div {
+                                                            attrs.className = ClassName("badge-purple")
+                                                            attrs.style = jso {
+                                                                flex = ds.expertPlus.pct
                                                             }
                                                             attrs.title = "${ds.expertPlus}"
                                                         }
                                                     }
-                                                    div("legend") {
-                                                        span("legend-green") { +"Easy" }
-                                                        span("legend-blue") { +"Normal" }
-                                                        span("legend-hard") { +"Hard" }
-                                                        span("legend-expert") { +"Expert" }
-                                                        span("legend-purple") { +"Expert+" }
+                                                    div {
+                                                        attrs.className = ClassName("legend")
+                                                        span {
+                                                            attrs.className = ClassName("legend-green")
+                                                            +"Easy"
+                                                        }
+                                                        span {
+                                                            attrs.className = ClassName("legend-blue")
+                                                            +"Normal"
+                                                        }
+                                                        span {
+                                                            attrs.className = ClassName("legend-hard")
+                                                            +"Hard"
+                                                        }
+                                                        span {
+                                                            attrs.className = ClassName("legend-expert")
+                                                            +"Expert"
+                                                        }
+                                                        span {
+                                                            attrs.className = ClassName("legend-purple")
+                                                            +"Expert+"
+                                                        }
                                                     }
                                                 }
                                             }
@@ -544,15 +624,19 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
             }
         }
         val userId = params["userId"]?.toIntOrNull()
-        ul("nav nav-minimal mb-3") {
+        ul {
+            attrs.className = ClassName("nav nav-minimal mb-3")
             val tabContext = TabContext(userId)
             ProfileTab.entries.forEach { tab ->
                 if (!tab.condition(userData, tabContext, userDetail)) return@forEach
 
-                li("nav-item") {
-                    a("#", classes = "nav-link" + if (tabState == tab) " active" else "") {
+                li {
+                    attrs.className = ClassName("nav-item")
+                    a {
                         key = tab.tabText
-                        attrs.onClickFunction = {
+                        attrs.href = "#"
+                        attrs.className = ClassName("nav-link" + if (tabState == tab) " active" else "")
+                        attrs.onClick = {
                             it.preventDefault()
 
                             val userPart = if (userId != null) "/$userId" else ""
@@ -570,7 +654,8 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
             }
 
             if (setOf(ProfileTab.PUBLISHED, ProfileTab.CURATED).contains(tabState)) {
-                li("nav-item right") {
+                li {
+                    attrs.className = ClassName("nav-item right")
                     sort {
                         attrs.target = SortOrderTarget.UserMap
                         attrs.cb = {

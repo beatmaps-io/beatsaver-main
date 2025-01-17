@@ -53,7 +53,7 @@ subprojects {
                 }
                 dependencies {
                     implementation("org.jetbrains.kotlin-wrappers:kotlin-react-legacy:19.0.0-pre.860")
-                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom-legacy:19.0.0-pre.860")
+                    implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom:19.0.0-pre.860")
                     implementation("org.jetbrains.kotlin-wrappers:kotlin-react-router-dom:6.28.0-pre.860")
                 }
             }

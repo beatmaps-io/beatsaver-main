@@ -29,21 +29,18 @@ import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.review.commentsInfiniteScroll
 import io.beatmaps.util.useDidUpdateEffect
 import kotlinx.dom.hasClass
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.url.URLSearchParams
-import react.dom.button
-import react.dom.form
-import react.dom.input
-import react.dom.table
-import react.dom.tbody
-import react.dom.td
-import react.dom.th
-import react.dom.thead
-import react.dom.tr
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.table
+import react.dom.html.ReactHTML.tbody
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.th
+import react.dom.html.ReactHTML.thead
+import react.dom.html.ReactHTML.tr
 import react.fc
 import react.router.useLocation
 import react.router.useNavigate
@@ -52,6 +49,9 @@ import react.useEffect
 import react.useEffectOnce
 import react.useMemo
 import react.useRef
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.InputType
 import kotlin.js.Promise
 
 val modReview = fc<ModReviewProps>("modReview") { props ->
@@ -163,7 +163,8 @@ val modReview = fc<ModReviewProps>("modReview") { props ->
         attrs.value = modalRef
 
         form {
-            table("table table-dark table-striped-3 modreview") {
+            table {
+                attrs.className = ClassName("table table-dark table-striped-3 modreview")
                 thead {
                     tr {
                         th { +"User" }
@@ -174,16 +175,20 @@ val modReview = fc<ModReviewProps>("modReview") { props ->
                     }
                     tr {
                         td {
-                            input(InputType.text, classes = "form-control") {
+                            input {
+                                attrs.type = InputType.text
+                                attrs.className = ClassName("form-control")
                                 attrs.placeholder = "User"
-                                attrs.attributes["aria-label"] = "User"
+                                attrs.ariaLabel = "User"
                                 ref = userRef
                             }
                         }
                         td {
-                            attrs.colSpan = "3"
-                            button(type = ButtonType.submit, classes = "btn btn-primary") {
-                                attrs.onClickFunction = {
+                            attrs.colSpan = 3
+                            button {
+                                attrs.type = ButtonType.submit
+                                attrs.className = ClassName("btn btn-primary")
+                                attrs.onClick = {
                                     it.preventDefault()
 
                                     history.push(location.pathname + urlExtension())

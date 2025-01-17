@@ -28,16 +28,17 @@ import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
 import react.Props
 import react.RefObject
-import react.dom.div
-import react.dom.h4
-import react.dom.img
-import react.dom.p
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h4
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.p
 import react.router.useNavigate
 import react.useContext
 import react.useEffect
 import react.useMemo
 import react.useRef
 import react.useState
+import web.cssom.ClassName
 import kotlin.js.Promise
 
 external interface BeatmapTableProps : Props {
@@ -181,21 +182,28 @@ val beatmapTable = fcmemo<BeatmapTableProps>("beatmapTable") { props ->
     if (props.visible != false) {
         user?.let {
             routeLink(it.profileLink(), className = "card border-dark user-suggestion-card") {
-                div("card-body") {
-                    h4("card-title") {
+                div {
+                    attrs.className = ClassName("card-body")
+                    h4 {
+                        attrs.className = ClassName("card-title")
                         +"Were you looking for:"
                     }
-                    p("card-text") {
-                        img("${it.name} avatar", it.avatar, classes = "rounded-circle") {
-                            attrs.width = "40"
-                            attrs.height = "40"
+                    p {
+                        attrs.className = ClassName("card-text")
+                        img {
+                            attrs.alt = "${it.name} avatar"
+                            attrs.src = it.avatar
+                            attrs.className = ClassName("rounded-circle")
+                            attrs.width = 40.0
+                            attrs.height = 40.0
                         }
                         +it.name
                     }
                 }
             }
         }
-        div("search-results") {
+        div {
+            attrs.className = ClassName("search-results")
             ref = resultsTable
             key = "resultsTable"
 

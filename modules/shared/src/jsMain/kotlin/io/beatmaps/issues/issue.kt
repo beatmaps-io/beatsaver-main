@@ -26,22 +26,21 @@ import io.beatmaps.shared.map.mapTitle
 import io.beatmaps.shared.map.uploaderWithInfo
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.textToContent
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
 import org.w3c.dom.HTMLInputElement
 import react.Props
-import react.dom.a
-import react.dom.b
-import react.dom.div
-import react.dom.i
-import react.dom.p
-import react.dom.span
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.b
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
 import react.router.useNavigate
 import react.router.useParams
 import react.useContext
 import react.useEffect
 import react.useRef
 import react.useState
+import web.cssom.ClassName
 
 val issuesPage = fcmemo<Props>("issuesPage") {
     val (loading, setLoading) = useState(false)
@@ -67,9 +66,12 @@ val issuesPage = fcmemo<Props>("issuesPage") {
         loadIssue()
     }
 
-    div("timeline") {
+    div {
+        attrs.className = ClassName("timeline")
         // Watch out, this must be at the top
-        div("line text-muted") {}
+        div {
+            attrs.className = ClassName("line text-muted")
+        }
 
         issue?.let { i ->
             val open = i.closedAt == null
@@ -82,7 +84,8 @@ val issuesPage = fcmemo<Props>("issuesPage") {
                 attrs.headerCallback = TimelineEntrySectionRenderer {
                     span {
                         if (!open) {
-                            b("text-danger-light me-2") {
+                            b {
+                                attrs.className = ClassName("text-danger-light me-2")
                                 +"[CLOSED]"
                             }
                         }
@@ -95,10 +98,13 @@ val issuesPage = fcmemo<Props>("issuesPage") {
                         }
                     }
                     if (userData?.curator == true) {
-                        div("link-buttons") {
-                            a("#") {
+                        div {
+                            attrs.className = ClassName("link-buttons")
+                            a {
+                                attrs.href = "#"
+
                                 attrs.title = if (open) "Archive" else "Reopen"
-                                attrs.onClickFunction = { ev ->
+                                attrs.onClick = { ev ->
                                     ev.preventDefault()
                                     Axios.post<ActionResponse>(
                                         "${Config.apibase}/issues/${i.id}",
@@ -109,7 +115,9 @@ val issuesPage = fcmemo<Props>("issuesPage") {
                                     }
                                 }
 
-                                i("fas text-info fa-${if (open) "archive" else "folder-open"}") { }
+                                i {
+                                    attrs.className = ClassName("fas text-info fa-${if (open) "archive" else "folder-open"}")
+                                }
                             }
                         }
                     }

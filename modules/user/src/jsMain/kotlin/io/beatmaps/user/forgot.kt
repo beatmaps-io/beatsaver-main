@@ -11,19 +11,19 @@ import io.beatmaps.captcha.captcha
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import io.beatmaps.util.fcmemo
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.form
-import react.dom.input
-import react.dom.p
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.p
 import react.useEffectOnce
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.InputType
 
 val forgotPage = fcmemo<Props>("forgotPage") {
     val (complete, setComplete) = useState(false)
@@ -37,17 +37,21 @@ val forgotPage = fcmemo<Props>("forgotPage") {
         setPageTitle("Forgot password")
     }
 
-    div("login-form card border-dark") {
-        div("card-header") {
+    div {
+        attrs.className = ClassName("login-form card border-dark")
+        div {
+            attrs.className = ClassName("card-header")
             +"Reset password"
         }
-        form(classes = "card-body") {
+        form {
+            attrs.className = ClassName("card-body")
+
             if (complete) {
                 p {
                     +"We've sent you an email with a password reset link."
                 }
             } else {
-                attrs.onSubmitFunction = { ev ->
+                attrs.onSubmit = { ev ->
                     ev.preventDefault()
                     setLoading(true)
 
@@ -77,15 +81,21 @@ val forgotPage = fcmemo<Props>("forgotPage") {
                 errors {
                     attrs.errors = errors
                 }
-                input(type = InputType.email, classes = "form-control") {
+                input {
+                    attrs.type = InputType.email
+                    attrs.className = ClassName("form-control")
                     key = "email"
                     ref = emailRef
                     attrs.placeholder = "Email"
                     attrs.required = true
                     attrs.autoFocus = true
                 }
-                div("d-grid") {
-                    button(classes = "btn btn-success", type = ButtonType.submit) {
+                div {
+                    attrs.className = ClassName("d-grid")
+                    button {
+                        attrs.className = ClassName("btn btn-success")
+                        attrs.type = ButtonType.submit
+
                         attrs.disabled = loading
                         +"Reset password"
                     }

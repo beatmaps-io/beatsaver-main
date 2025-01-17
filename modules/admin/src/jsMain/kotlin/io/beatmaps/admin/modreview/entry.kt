@@ -17,20 +17,19 @@ import io.beatmaps.shared.review.sentimentIcon
 import io.beatmaps.shared.review.sentimentPicker
 import io.beatmaps.user.userLink
 import io.beatmaps.util.fcmemo
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
 import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.dom.a
-import react.dom.div
-import react.dom.i
-import react.dom.p
-import react.dom.td
-import react.dom.textarea
-import react.dom.tr
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.textarea
+import react.dom.html.ReactHTML.tr
 import react.useContext
 import react.useRef
 import react.useState
+import web.cssom.ClassName
 import kotlin.js.Promise
 
 external interface ModReviewEntryProps : Props {
@@ -99,21 +98,29 @@ val modReviewEntry = fcmemo<ModReviewEntryProps>("modReviewEntry") { props ->
                         attrs.date = review.createdAt.toString()
                     }
                 }
-                td("action-cell") {
-                    div("d-flex link-buttons") {
-                        a("#") {
+                td {
+                    attrs.className = ClassName("action-cell")
+                    div {
+                        attrs.className = ClassName("d-flex link-buttons")
+                        a {
+                            attrs.href = "#"
+
                             attrs.title = "Edit"
-                            attrs.attributes["aria-label"] = "Edit"
-                            attrs.onClickFunction = { e ->
+                            attrs.ariaLabel = "Edit"
+                            attrs.onClick = { e ->
                                 e.preventDefault()
                                 setEditing(!editing)
                             }
-                            i("fas fa-pen text-warning") { }
+                            i {
+                                attrs.className = ClassName("fas fa-pen text-warning")
+                            }
                         }
-                        a("#") {
+                        a {
+                            attrs.href = "#"
+
                             attrs.title = "Delete"
-                            attrs.attributes["aria-label"] = "Delete"
-                            attrs.onClickFunction = { e ->
+                            attrs.ariaLabel = "Delete"
+                            attrs.onClick = { e ->
                                 e.preventDefault()
                                 modal?.current?.showDialog?.invoke(
                                     ModalData(
@@ -125,7 +132,8 @@ val modReviewEntry = fcmemo<ModReviewEntryProps>("modReviewEntry") { props ->
                                             p {
                                                 +"Reason for action:"
                                             }
-                                            textarea(classes = "form-control") {
+                                            textarea {
+                                                attrs.className = ClassName("form-control")
                                                 ref = reasonRef
                                             }
                                         },
@@ -133,22 +141,27 @@ val modReviewEntry = fcmemo<ModReviewEntryProps>("modReviewEntry") { props ->
                                     )
                                 )
                             }
-                            i("fas fa-trash text-danger-light") { }
+                            i {
+                                attrs.className = ClassName("fas fa-trash text-danger-light")
+                            }
                         }
                     }
                 }
             } ?: run {
                 td {
-                    attrs.colSpan = "5"
+                    attrs.colSpan = 5
                 }
             }
         }
-        tr("hiddenRow") {
+        tr {
+            attrs.className = ClassName("hiddenRow")
             td {
-                attrs.colSpan = "5"
+                attrs.colSpan = 5
                 props.entry?.let { review ->
-                    div("text-wrap text-break expand") {
-                        p("card-text") {
+                    div {
+                        attrs.className = ClassName("text-wrap text-break expand")
+                        p {
+                            attrs.className = ClassName("card-text")
                             val textClass = if (editing && review is ReviewDetail) {
                                 sentimentPicker {
                                     attrs.sentiment = newSentiment ?: sentiment ?: review.sentiment
@@ -157,7 +170,7 @@ val modReviewEntry = fcmemo<ModReviewEntryProps>("modReviewEntry") { props ->
                                     }
                                 }
 
-                                "mt-2"
+                                ClassName("mt-2")
                             } else {
                                 null
                             }

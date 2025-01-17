@@ -1,13 +1,13 @@
 package io.beatmaps.maps.collab
 
 import io.beatmaps.api.UserDetail
-import kotlinx.html.js.onClickFunction
 import react.Props
-import react.dom.a
-import react.dom.div
-import react.dom.img
-import react.dom.span
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.span
 import react.fc
+import web.cssom.ClassName
 
 external interface CollaboratorCardProps : Props {
     var user: UserDetail
@@ -16,18 +16,24 @@ external interface CollaboratorCardProps : Props {
 }
 
 val collaboratorCard = fc<CollaboratorCardProps>("collaboratorCard") { props ->
-    div("collaborator" + if (props.accepted != false) " accepted" else "") {
-        img(props.user.name, props.user.avatar) { }
+    div {
+        attrs.className = ClassName("collaborator" + if (props.accepted != false) " accepted" else "")
+        img {
+            attrs.alt = props.user.name
+            attrs.src = props.user.avatar
+        }
         span {
             +props.user.name
             props.accepted?.let { status ->
-                span("status") {
+                span {
+                    attrs.className = ClassName("status")
                     +(if (status) "Accepted" else "Pending")
                 }
             }
         }
-        a(classes = "btn-close") {
-            attrs.onClickFunction = {
+        a {
+            attrs.className = ClassName("btn-close")
+            attrs.onClick = {
                 props.callback?.invoke()
             }
         }

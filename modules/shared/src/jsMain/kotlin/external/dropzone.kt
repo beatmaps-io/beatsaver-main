@@ -1,12 +1,18 @@
 package external
 
-import org.w3c.dom.events.Event
 import org.w3c.files.File
 import react.ComponentClass
 import react.ComponentModule
 import react.Props
 import react.ReactElement
 import react.Ref
+import react.dom.events.ChangeEventHandler
+import react.dom.events.DragEventHandler
+import react.dom.events.FocusEventHandler
+import react.dom.events.KeyboardEventHandler
+import react.dom.events.MouseEventHandler
+import web.autofill.AutoFill
+import web.html.InputType
 
 external interface DropzoneProps : Props {
     var onDrop: (Array<File>) -> Unit
@@ -21,25 +27,25 @@ external interface DropInfo : Props {
 
 external interface DropRootProps : Props {
     var ref: Ref<*>
-    var onKeyDown: (Event) -> Unit
-    var onFocus: (Event) -> Unit
-    var onBlur: (Event) -> Unit
-    var onClick: (Event) -> Unit
-    var onDragEnter: (Event) -> Unit
-    var onDragOver: (Event) -> Unit
-    var onDragLeave: (Event) -> Unit
-    var onDrop: (Event) -> Unit
+    var onKeyDown: KeyboardEventHandler<*>
+    var onFocus: FocusEventHandler<*>
+    var onBlur: FocusEventHandler<*>
+    var onClick: MouseEventHandler<*>
+    var onDragEnter: DragEventHandler<*>
+    var onDragOver: DragEventHandler<*>
+    var onDragLeave: DragEventHandler<*>
+    var onDrop: DragEventHandler<*>
     var tabIndex: Int?
 }
 
 external interface DropInputProps : Props {
     var ref: Ref<*>
     var accept: String?
-    var type: String
+    var type: InputType
     var multiple: Boolean
-    var onChange: (Event) -> Unit
-    var onClick: (Event) -> Unit
-    var autoComplete: String?
+    var onChange: ChangeEventHandler<*>
+    var onClick: MouseEventHandler<*>
+    var autoComplete: AutoFill
     var tabIndex: Int
 }
 
