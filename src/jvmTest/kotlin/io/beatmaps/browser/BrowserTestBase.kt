@@ -44,7 +44,7 @@ abstract class BrowserTestBase {
         val context = browser.newContext(
             Browser.NewContextOptions()
                 .setViewportSize(1920, 919)
-                .setPermissions(listOf("clipboard-read"))
+                .setPermissions(listOf("clipboard-read", "clipboard-write"))
         )
         val page = context.newPage()
         page.route("$testHost/**", routeViaClient(client))
