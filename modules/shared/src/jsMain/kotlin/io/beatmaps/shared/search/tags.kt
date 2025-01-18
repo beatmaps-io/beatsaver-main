@@ -11,6 +11,7 @@ import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.h4
 import react.useEffect
 import react.useEffectOnceWithCleanup
+import react.useRef
 import react.useState
 import web.cssom.ClassName
 import web.dom.document
@@ -27,13 +28,13 @@ external interface TagsProps : Props {
 
 val tags = fcmemo<TagsProps>("tags") { props ->
     val (selected, setSelected) = useState<MapTagSet>(emptyMap())
-    val (altHeld, setAltHeld) = useState(false)
-    val (shiftHeld, setShiftHeld) = useState(false)
+    val altHeld = useRef(false)
+    val shiftHeld = useRef(false)
 
     val handleShift = { ke: KeyboardEvent ->
         if (!ke.repeat) {
-            setShiftHeld(ke.shiftKey)
-            setAltHeld(ke.altKey)
+            shiftHeld.current = ke.shiftKey
+            altHeld.current = ke.altKey
         }
     }
 
@@ -71,21 +72,21 @@ val tags = fcmemo<TagsProps>("tags") { props ->
                     tag = it
 
                     onClick = { _ ->
-                        val t = selected[!altHeld] ?: setOf()
+                        val t = selected[altHeld.current != true] ?: setOf()
 
                         val shouldAdd = !t.contains(it)
 
-                        val newTags = t.applyIf(!shiftHeld) {
+                        val newTags = t.applyIf(shiftHeld.current != true) {
                             filterTo(hashSetOf()) { o -> o.type != it.type }
                         }.applyIf(shouldAdd) {
                             plus(it)
-                        }.applyIf(shiftHeld && !shouldAdd) {
+                        }.applyIf(shiftHeld.current == true && !shouldAdd) {
                             minus(it)
                         }
 
                         val newSelected = mapOf(
-                            !altHeld to newTags,
-                            altHeld to (selected[altHeld]?.let { x -> x - it } ?: setOf())
+                            (altHeld.current != true) to newTags,
+                            (altHeld.current == true) to (selected[altHeld.current]?.let { x -> x - it } ?: setOf())
                         )
 
                         setSelected(newSelected)

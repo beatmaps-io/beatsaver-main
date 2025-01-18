@@ -6,6 +6,8 @@ import external.dates
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
+import io.beatmaps.common.EnvironmentSet
+import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchParamsPlaylist
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.SortOrderTarget
@@ -311,13 +313,13 @@ val playlistSearchEditor = fcmemo<PSEProps>("playlistSearchEditor") { props ->
             className = ClassName("col-4 mb-3")
             tags {
                 default = props.config.searchParams.tags
-                callback = {
+                callback = useCallback { it: MapTagSet ->
                     setTags(it)
                 }
             }
             environments {
                 default = props.config.searchParams.environments
-                callback = {
+                callback = useCallback { it: EnvironmentSet ->
                     setEnvironments(it)
                 }
             }
@@ -348,6 +350,7 @@ val playlistSearchEditor = fcmemo<PSEProps>("playlistSearchEditor") { props ->
         if (currentMappers.size < maxMappersInFilter) {
             userSearch {
                 disabled = props.loading
+                noForm = true
                 excludeUsers = currentMappers.map { it.id }
                 callback = { newUser ->
                     setCurrentMappers(currentMappers.plus(newUser))

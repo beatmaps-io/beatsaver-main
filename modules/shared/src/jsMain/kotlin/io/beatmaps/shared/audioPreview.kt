@@ -58,7 +58,7 @@ val audioPreview = fcmemo<AudioPreviewProps>("audioPreview") { props ->
     fun updateView(p: Double = 0.0) {
         val firstHalf = p <= 0.5 || p.isNaN()
         leftProgressRef.current?.style?.transform = "rotate(${(p * 360).fixed(2)}deg)"
-        outerProgressRef.current?.style?.clipPath = if (firstHalf) "" else "rect(auto, auto, auto, auto)"
+        outerProgressRef.current?.style?.clipPath = if (firstHalf) "" else "rect(0px 50px 100% 0%)"
         rightProgressRef.current?.style?.display = if (firstHalf) "none" else "block"
         rightProgressRef.current?.style?.transform = if (firstHalf) "" else "rotate(180deg)"
     }

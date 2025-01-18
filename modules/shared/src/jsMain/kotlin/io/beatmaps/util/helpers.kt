@@ -22,7 +22,7 @@ inline fun <T> T.applyIf(condition: Boolean, block: T.() -> T): T = if (conditio
 
 fun <T : Props> fcmemo(name: String, block: ChildrenBuilder.(props: T) -> Unit) = memo(FC(name, block))
 
-fun ChildrenBuilder.form(classes: String, method: FormMethod, action: String, block: () -> Unit) {
+fun ChildrenBuilder.form(classes: String, method: FormMethod, action: String, block: ChildrenBuilder.() -> Unit) {
     form {
         className = ClassName(classes)
         this.method = method

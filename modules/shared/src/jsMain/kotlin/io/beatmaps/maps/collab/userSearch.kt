@@ -6,6 +6,7 @@ import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserSearchResponse
 import io.beatmaps.util.fcmemo
+import react.ChildrenBuilder
 import react.Props
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.button
@@ -26,6 +27,7 @@ external interface UserSearchProps : Props {
     var callback: ((UserDetail) -> Unit)?
     var excludeUsers: List<Int>?
     var disabled: Boolean?
+    var noForm: Boolean?
     var addText: String?
 }
 
@@ -34,8 +36,7 @@ val userSearch = fcmemo<UserSearchProps>("userSearch") { props ->
     val (loading, setLoading) = useState(false)
     val inputRef = useRef<HTMLInputElement>()
 
-    form {
-        className = ClassName("search")
+    fun ChildrenBuilder.formContent() {
         input {
             type = InputType.search
             className = ClassName("form-control")
@@ -67,6 +68,18 @@ val userSearch = fcmemo<UserSearchProps>("userSearch") { props ->
                 }
             }
             +"Search"
+        }
+    }
+
+    if (props.noForm == true) {
+        div {
+            className = ClassName("search")
+            formContent()
+        }
+    } else {
+        form {
+            className = ClassName("search")
+            formContent()
         }
     }
 

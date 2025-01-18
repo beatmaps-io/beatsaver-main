@@ -39,7 +39,8 @@ import web.html.InputType
 import web.timers.setTimeout
 
 val multiAddPlaylist = fcmemo<Props>("multiAddPlaylist") {
-    val (progress, setProgress) = useState<Pair<Int, Int>?>(null)
+    val (progress, setProgressInt) = useState<Pair<Int, Int>?>(null)
+    val progressRef = useRef(progress)
 
     val hashRef = useRef<HTMLTextAreaElement>()
     val bplistUploadRef = useRef<HTMLInputElement>()
@@ -47,13 +48,18 @@ val multiAddPlaylist = fcmemo<Props>("multiAddPlaylist") {
     val history = History(useNavigate())
     val params = useParams()
 
+    fun setProgress(newProgress: Pair<Int, Int>?) {
+        progressRef.current = newProgress
+        setProgressInt(newProgress)
+    }
+
     useEffectOnce {
         setPageTitle("Playlist - Multi-Add")
     }
 
     fun doAdd(queue: List<List<String>>) {
         if (queue.isEmpty()) {
-            if (progress?.first == progress?.second) {
+            if (progressRef.current?.first == progressRef.current?.second) {
                 history.push("/playlists/${params["id"]}")
             }
 
@@ -68,15 +74,16 @@ val multiAddPlaylist = fcmemo<Props>("multiAddPlaylist") {
             PlaylistBatchRequest(hashList, keyList, inPlaylist = true, ignoreUnknown = true),
             generateConfig<PlaylistBatchRequest, ActionResponse>()
         ).then {
-            setProgress(progress?.let { p -> p.first + hashes.size to p.second })
+            val newQueue = queue.minus(setOf(hashes))
+            setProgress(progressRef.current?.let { p -> p.first + hashes.size to p.second })
             setTimeout(
                 {
-                    doAdd(queue.minus(setOf(hashes)))
+                    doAdd(newQueue)
                 },
-                500
+                if (newQueue.isEmpty()) 0 else 500
             )
         }.catch {
-            setProgress(progress?.let { p -> -1 to p.second })
+            setProgress(progressRef.current?.let { p -> -1 to p.second })
         }
     }
 

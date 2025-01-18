@@ -37,8 +37,10 @@ import react.router.useLocation
 import react.router.useNavigate
 import react.router.useParams
 import react.use
+import react.useCallback
 import react.useEffect
 import react.useEffectOnce
+import react.useMemo
 import react.useRef
 import react.useState
 import web.cssom.ClassName
@@ -49,7 +51,7 @@ import web.html.HTMLTextAreaElement
 import web.html.InputType
 import web.url.URLSearchParams
 
-val editPlaylist = fcmemo<Props>("editPlaylist") {
+val editPlaylist = fcmemo<Props>("editPlaylist") { props ->
     val captchaRef = useRef<ICaptchaHandler>()
     val coverRef = useRef<HTMLInputElement>()
 
@@ -58,7 +60,7 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
     val publicRef = useRef<HTMLInputElement>()
 
     val location = useLocation()
-    val fromState = location.readState<SearchParamsPlaylist>()?.let { SearchPlaylistConfig(it, 100) }
+    val fromState = useMemo(location) { location.readState<SearchParamsPlaylist>()?.let { SearchPlaylistConfig(it, 100) } }
 
     val params = useParams()
     val history = History(useNavigate())
@@ -79,7 +81,7 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
     val (init, setInit) = useState(false)
     val (playlist, setPlaylist) = useState<PlaylistFull?>(null)
     val (errors, setErrors) = useState(listOf<UploadValidationInfo>())
-    val (config, setConfig) = useState(playlist?.config as? SearchPlaylistConfig ?: fromState)
+    val config = useRef(playlist?.config as? SearchPlaylistConfig ?: fromState)
     val isSearch = playlist?.type == EPlaylistType.Search || (playlist == null && (fromState != null || hasSearchQuery))
 
     fun loadData() {
@@ -112,6 +114,10 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
         }
     }
 
+    val configCallback = useCallback { it: SearchPlaylistConfig ->
+        config.current = it
+    }
+
     if (init) {
         div {
             className = ClassName("card border-dark")
@@ -133,7 +139,7 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
                             data.append("type", EPlaylistType.Search.name)
                             data.append(
                                 "config",
-                                json.encodeToString(config)
+                                json.encodeToString(config.current)
                             )
                         } else {
                             data.append(
@@ -245,9 +251,7 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
                     playlistSearchEditor {
                         this.loading = loading
                         this.config = (playlist?.config as? SearchPlaylistConfig) ?: fromState ?: SearchPlaylistConfig.DEFAULT
-                        callback = {
-                            setConfig(it)
-                        }
+                        callback = configCallback
                     }
                 }
                 errors {

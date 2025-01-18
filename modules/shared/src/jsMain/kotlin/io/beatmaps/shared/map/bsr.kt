@@ -7,7 +7,7 @@ import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.i
 import react.dom.html.ReactHTML.span
 import web.cssom.ClassName
-import web.dom.document
+import web.navigator.navigator
 import web.window.window
 
 external interface CopyBSProps : Props {
@@ -67,17 +67,5 @@ val copyEmbed = fcmemo<CopyBSProps>("copyEmbed") { props ->
     }
 }
 
-private fun setClipboard(str: String) {
-    val tempElement = document.createElement("span")
-    tempElement.textContent = str
-    document.body.appendChild(tempElement)
-
-    val selection = window.getSelection()
-    val range = document.createRange()
-    selection?.removeAllRanges()
-    range.selectNode(tempElement)
-    selection?.addRange(range)
-    document.asDynamic().execCommand("copy")
-    selection?.removeAllRanges()
-    document.body.removeChild(tempElement)
-}
+private fun setClipboard(str: String) =
+    navigator.clipboard.writeTextAsync(str)

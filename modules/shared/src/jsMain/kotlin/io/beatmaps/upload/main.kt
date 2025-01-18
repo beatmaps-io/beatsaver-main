@@ -85,6 +85,7 @@ val uploadPage = fcmemo<Props>("uploadPage") {
             }
             form {
                 fieldset {
+                    className = ClassName("position-relative")
                     div {
                         className = ClassName("mb-3")
                         label {
@@ -151,7 +152,7 @@ val uploadPage = fcmemo<Props>("uploadPage") {
                             className = ClassName("btn-check")
                             id = "beatsage-no"
                             autoComplete = AutoFillBase.off
-                            checked = false
+                            defaultChecked = false
                             onChange = {
                                 setBeatsage(false)
                                 updateHasTitle()
@@ -172,7 +173,7 @@ val uploadPage = fcmemo<Props>("uploadPage") {
                             id = "beatsage-yes"
                             ref = beatsageRef
                             autoComplete = AutoFillBase.off
-                            checked = false
+                            defaultChecked = false
                             onChange = {
                                 setBeatsage(true)
                                 updateHasTitle()

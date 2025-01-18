@@ -14,6 +14,7 @@ import react.dom.html.ReactHTML.label
 import react.dom.html.ReactHTML.span
 import react.useEffect
 import react.useEffectOnceWithCleanup
+import react.useRef
 import react.useState
 import web.cssom.ClassName
 import web.cssom.number
@@ -32,10 +33,10 @@ external interface EnvironmentsProps : Props {
 
 val environments = fcmemo<EnvironmentsProps>("environments") { props ->
     val (selected, setSelected) = useState<EnvironmentSet>(emptySet())
-    val (shiftHeld, setShiftHeld) = useState(false)
+    val shiftHeld = useRef(false)
 
     val handleShift = { ke: KeyboardEvent ->
-        if (!ke.repeat) setShiftHeld(ke.shiftKey)
+        if (!ke.repeat) shiftHeld.current = ke.shiftKey
     }
 
     useEffect(props.default) {
@@ -81,6 +82,7 @@ val environments = fcmemo<EnvironmentsProps>("environments") { props ->
                         checked = selected.containsAll(envs)
 
                         onChange = { ev ->
+                            console.log("onChange", ev.currentTarget.checked)
                             if (ev.currentTarget.checked) {
                                 updateSelected(selected + envs)
                             } else {
@@ -104,7 +106,7 @@ val environments = fcmemo<EnvironmentsProps>("environments") { props ->
                 onClick = { _ ->
                     val shouldAdd = !selected.contains(it)
 
-                    val newSelected = (if (shiftHeld) selected else emptySet())
+                    val newSelected = (if (shiftHeld.current == true) selected else emptySet())
                         .applyIf(shouldAdd) {
                             plus(it)
                         }.applyIf(!shouldAdd) {
