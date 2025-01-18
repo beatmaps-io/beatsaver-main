@@ -10,8 +10,8 @@ import io.beatmaps.shared.map.uploaderWithInfo
 import io.beatmaps.shared.profileLink
 import io.beatmaps.user.ProfileTab
 import io.beatmaps.util.fcmemo
+import react.ChildrenBuilder
 import react.Props
-import react.RElementBuilder
 import react.dom.aria.AriaRole
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.abbr
@@ -39,49 +39,49 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
         else -> value.toString()
     }
 
-    fun RElementBuilder<*>.mapItem(icon: String, info: String, value: String) =
+    fun ChildrenBuilder.mapItem(icon: String, info: String, value: String) =
         span {
             img {
-                attrs.alt = info
-                attrs.src = "/static/icons/$icon.png"
-                attrs.className = ClassName("mode")
-                attrs.title = info
-                attrs.width = 16.0
-                attrs.height = 16.0
+                alt = info
+                src = "/static/icons/$icon.png"
+                className = ClassName("mode")
+                title = info
+                width = 16.0
+                height = 16.0
             }
             +value
         }
 
-    fun RElementBuilder<*>.mapItem(icon: String, info: String, value: Int) = mapItem(icon, info, formatStat(value))
+    fun ChildrenBuilder.mapItem(icon: String, info: String, value: Int) = mapItem(icon, info, formatStat(value))
 
-    fun RElementBuilder<*>.mapItem(diff: MapDifficulty) =
+    fun ChildrenBuilder.mapItem(diff: MapDifficulty) =
         a {
-            attrs.href = "#"
-            attrs.className = ClassName("list-group-item d-flex stat-${diff.difficulty.color}" + (if (props.selected == diff) " active" else ""))
-            attrs.role = AriaRole.button
-            attrs.onClick = {
+            href = "#"
+            className = ClassName("list-group-item d-flex stat-${diff.difficulty.color}" + (if (props.selected == diff) " active" else ""))
+            role = AriaRole.button
+            onClick = {
                 it.preventDefault()
                 props.changeSelectedDiff?.invoke(diff)
             }
 
             diffImg {
-                attrs.diff = diff
+                this.diff = diff
             }
 
             +diff.difficulty.human()
 
             div {
-                attrs.className = ClassName("stats")
+                className = ClassName("stats")
                 diff.stars?.let {
                     span {
-                        attrs.className = ClassName("diff-stars" + if (diff.blStars == null) " rowspan-2" else "")
+                        className = ClassName("diff-stars" + if (diff.blStars == null) " rowspan-2" else "")
                         abbr {
-                            attrs.title = "ScoreSaber"
+                            title = "ScoreSaber"
                             +"SS"
                         }
                         +it.fixedStr(2)
                         i {
-                            attrs.className = ClassName("fas fa-star")
+                            className = ClassName("fas fa-star")
                         }
                     }
                 } ?: diff.blStars ?: mapItem("error", "Parity errors", diff.paritySummary.errors)
@@ -92,14 +92,14 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
 
                 diff.blStars?.let {
                     span {
-                        attrs.className = ClassName("diff-stars" + if (diff.stars == null) " rowspan-2" else "")
+                        className = ClassName("diff-stars" + if (diff.stars == null) " rowspan-2" else "")
                         abbr {
-                            attrs.title = "BeatLeader"
+                            title = "BeatLeader"
                             +"BL"
                         }
                         +it.fixedStr(2)
                         i {
-                            attrs.className = ClassName("fas fa-star")
+                            className = ClassName("fas fa-star")
                         }
                     }
                 } ?: diff.stars ?: mapItem("warn", "Parity warnings", diff.paritySummary.warns)
@@ -110,22 +110,22 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
             }
         }
 
-    fun RElementBuilder<*>.infoItem(label: String, info: String, href: String? = null) =
+    fun ChildrenBuilder.infoItem(label: String, info: String, href: String? = null) =
         if (info.isNotBlank()) {
             href?.let {
                 routeLink(href, className = itemClasses) {
                     +label
                     span {
-                        attrs.className = ClassName("text-truncate ms-4")
-                        attrs.title = info
+                        className = ClassName("text-truncate ms-4")
+                        title = info
                         +info
                     }
                 }
             } ?: div {
-                attrs.className = itemClasses
+                className = itemClasses
                 +label
                 span {
-                    attrs.className = ClassName("text-truncate ms-4")
+                    className = ClassName("text-truncate ms-4")
                     +info
                 }
             }
@@ -134,15 +134,15 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
     val publishedVersion = if (props.map.deletedAt == null) props.map.publishedVersion() else null
 
     div {
-        attrs.className = ClassName("list-group" + if (props.horizontal == true) " list-group-horizontal row m-4" else "")
+        className = ClassName("list-group" + if (props.horizontal == true) " list-group-horizontal row m-4" else "")
         div {
-            attrs.className = itemClasses
+            className = itemClasses
             +(if (props.map.collaborators?.size != 0) "Mappers" else "Mapper")
             span {
-                attrs.className = ClassName("ms-4 text-wrap text-end")
+                className = ClassName("ms-4 text-wrap text-end")
                 uploaderWithInfo {
-                    attrs.map = props.map
-                    attrs.info = false
+                    map = props.map
+                    info = false
                 }
                 +" (${props.map.metadata.levelAuthorName})"
             }
@@ -152,14 +152,14 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
         }
 
         div {
-            attrs.className = itemClasses
+            className = itemClasses
             +"Uploaded"
             props.map.uploaded?.let { uploadedAt ->
                 TimeAgo.default {
-                    attrs.date = uploadedAt.toString()
+                    date = uploadedAt.toString()
                 }
             } ?: span {
-     attrs.className = ClassName("text-truncate ms-4")
+                className = ClassName("text-truncate ms-4")
                 +"Never published"
             }
         }
@@ -170,15 +170,15 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
 
         if (props.map.tags.isNotEmpty()) {
             div {
-                attrs.className = itemClasses
+                className = itemClasses
                 +"Tags"
                 span {
-                    attrs.className = ClassName("text-truncate ms-4")
+                    className = ClassName("text-truncate ms-4")
                     props.map.tags.forEach {
                         mapTag {
-                            attrs.selected = true
-                            attrs.margins = "ms-2"
-                            attrs.tag = it
+                            selected = true
+                            margins = "ms-2"
+                            tag = it
                         }
                     }
                 }
@@ -189,15 +189,15 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
             val envs = publishedVersion.diffs.groupBy { it.environment }.minus(null)
             if (envs.any()) {
                 div {
-                    attrs.className = itemClasses
+                    className = itemClasses
                     +"Environment"
                     span {
-                        attrs.className = ClassName("text-truncate ms-4")
+                        className = ClassName("text-truncate ms-4")
                         envs.forEach { (env, diffs) ->
                             div {
-                                attrs.className = ClassName("badge badge-${env?.color()} ms-2")
+                                className = ClassName("badge badge-${env?.color()} ms-2")
                                 span {
-                                    attrs.title = diffs.joinToString { "${it.difficulty.human()} ${it.characteristic.human()}" }
+                                    title = diffs.joinToString { "${it.difficulty.human()} ${it.characteristic.human()}" }
                                     +(env?.human() ?: "")
                                 }
                             }
@@ -208,13 +208,13 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
 
             if (publishedVersion.diffs.any { it.me || it.ne || it.chroma || it.cinema }) {
                 div {
-                    attrs.className = itemClasses
+                    className = itemClasses
                     +"Mods"
                     span {
-                        attrs.className = ClassName("text-truncate ms-4")
+                        className = ClassName("text-truncate ms-4")
                         mapRequirements {
-                            attrs.margins = "ms-2"
-                            attrs.version = publishedVersion
+                            margins = "ms-2"
+                            version = publishedVersion
                         }
                     }
                 }
@@ -230,12 +230,12 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
             infoItem("Rating", "${stats.upvotes} / ${stats.downvotes} (${stats.scoreOneDP}%)")
 
             div {
-                attrs.className = itemClasses
+                className = itemClasses
                 +"Reviews"
                 span {
-                    attrs.className = ClassName("text-truncate ms-4")
+                    className = ClassName("text-truncate ms-4")
                     span {
-                        attrs.className = ClassName("text-" + stats.sentiment.color)
+                        className = ClassName("text-" + stats.sentiment.color)
                         +stats.sentiment.human
                     }
                     +" (${stats.reviews} ${if (stats.reviews == 1) "review" else "reviews"})"
@@ -245,7 +245,7 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
     }
 
     div {
-        attrs.className = ClassName("list-group mapstats")
+        className = ClassName("list-group mapstats")
         publishedVersion?.diffs?.groupBy { it.characteristic }?.forEach { char ->
             char.value.sortedByDescending { it.difficulty }.forEach { diff ->
                 mapItem(diff)

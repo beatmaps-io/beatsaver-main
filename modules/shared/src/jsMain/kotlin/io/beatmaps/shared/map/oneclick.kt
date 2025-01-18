@@ -12,16 +12,16 @@ external interface OneClickProps : Props {
 
 val oneclick = fcmemo<OneClickProps>("oneClick") { props ->
     a {
-        attrs.href = "beatsaver://${props.mapId}"
+        href = "beatsaver://${props.mapId}"
         val text = "One-Click"
-        attrs.title = text
-        attrs.ariaLabel = text
+        title = text
+        ariaLabel = text
         span {
-            attrs.className = ClassName("dd-text")
+            className = ClassName("dd-text")
             +text
         }
         i {
-            attrs.className = ClassName("fas fa-cloud-download-alt text-info")
+            className = ClassName("fas fa-cloud-download-alt text-info")
         }
     }
 }

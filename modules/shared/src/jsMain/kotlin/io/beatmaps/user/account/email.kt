@@ -8,18 +8,18 @@ import io.beatmaps.api.EmailRequest
 import io.beatmaps.api.UserDetail
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.shared.form.errors
-import org.w3c.dom.HTMLInputElement
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.RefObject
 import react.dom.html.ReactHTML.button
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.input
 import react.dom.html.ReactHTML.label
-import react.fc
 import react.useRef
 import react.useState
 import web.cssom.ClassName
 import web.html.ButtonType
+import web.html.HTMLInputElement
 import web.html.InputType
 
 external interface AccountEmailProps : Props {
@@ -27,7 +27,7 @@ external interface AccountEmailProps : Props {
     var captchaRef: RefObject<ICaptchaHandler>
 }
 
-val accountEmail = fc<AccountEmailProps>("accountEmail") { props ->
+val accountEmail = fcmemo<AccountEmailProps>("accountEmail") { props ->
     val (email, setEmail) = useState(props.userDetail.email ?: "")
     val (errors, setErrors) = useState(emptyList<String>())
     val (valid, setValid) = useState(false)
@@ -35,33 +35,33 @@ val accountEmail = fc<AccountEmailProps>("accountEmail") { props ->
     val emailRef = useRef<HTMLInputElement>()
 
     errors {
-        attrs.errors = errors.take(1)
-        attrs.valid = valid
+        this.errors = errors.take(1)
+        this.valid = valid
     }
     div {
-        attrs.className = ClassName("mb-3")
+        className = ClassName("mb-3")
         label {
-            attrs.className = ClassName("col-sm-2 col-form-label")
-            attrs.htmlFor = "email"
+            className = ClassName("col-sm-2 col-form-label")
+            htmlFor = "email"
             +"Email"
         }
         input {
             key = "email"
-            attrs.type = InputType.text
-            attrs.className = ClassName("form-control")
-            attrs.id = "email"
-            attrs.value = email
-            attrs.onChange = {
+            type = InputType.text
+            className = ClassName("form-control")
+            id = "email"
+            value = email
+            onChange = {
                 setEmail(emailRef.current?.value ?: "")
             }
             ref = emailRef
         }
         div {
-            attrs.className = ClassName("d-grid")
+            className = ClassName("d-grid")
             button {
-                attrs.className = ClassName("btn btn-success")
-                attrs.type = ButtonType.submit
-                attrs.onClick = { ev ->
+                className = ClassName("btn btn-success")
+                type = ButtonType.submit
+                onClick = { ev ->
                     ev.preventDefault()
 
                     if (props.userDetail.email == email) {
@@ -91,7 +91,7 @@ val accountEmail = fc<AccountEmailProps>("accountEmail") { props ->
                         }
                     }
                 }
-                attrs.disabled = loading
+                disabled = loading
                 +"Change email"
             }
         }

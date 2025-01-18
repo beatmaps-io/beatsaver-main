@@ -27,11 +27,8 @@ import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.shared.modal
 import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.review.commentsInfiniteScroll
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
-import kotlinx.dom.hasClass
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.url.URLSearchParams
 import react.dom.html.ReactHTML.button
 import react.dom.html.ReactHTML.form
 import react.dom.html.ReactHTML.input
@@ -41,21 +38,23 @@ import react.dom.html.ReactHTML.td
 import react.dom.html.ReactHTML.th
 import react.dom.html.ReactHTML.thead
 import react.dom.html.ReactHTML.tr
-import react.fc
 import react.router.useLocation
 import react.router.useNavigate
-import react.useContext
+import react.use
 import react.useEffect
 import react.useEffectOnce
 import react.useMemo
 import react.useRef
 import web.cssom.ClassName
 import web.html.ButtonType
+import web.html.HTMLElement
+import web.html.HTMLInputElement
 import web.html.InputType
+import web.url.URLSearchParams
 import kotlin.js.Promise
 
-val modReview = fc<ModReviewProps>("modReview") { props ->
-    val userData = useContext(globalContext)
+val modReview = fcmemo<ModReviewProps>("modReview") { props ->
+    val userData = use(globalContext)
     val history = History(useNavigate())
     val location = useLocation()
     val pathName = useRef(location.pathname)
@@ -69,7 +68,7 @@ val modReview = fc<ModReviewProps>("modReview") { props ->
     val loadReplyPageRef = useRef<(Int, CancelTokenSource) -> Promise<GenericSearchResponse<ReviewReplyDetail>?>>()
 
     val userLocal = URLSearchParams(location.search).let { u ->
-        u.get("user") ?: ""
+        u["user"] ?: ""
     }
 
     useEffectOnce {
@@ -118,10 +117,10 @@ val modReview = fc<ModReviewProps>("modReview") { props ->
 
         InfiniteScrollElementRenderer<ReviewDetail> {
             modReviewEntry {
-                attrs.entry = it
-                attrs.setUser = setUserCb
-                attrs.onDelete = deleteCb
-                attrs.onSave = saveCb
+                entry = it
+                setUser = setUserCb
+                onDelete = deleteCb
+                onSave = saveCb
             }
         }
     }
@@ -147,24 +146,24 @@ val modReview = fc<ModReviewProps>("modReview") { props ->
 
         InfiniteScrollElementRenderer<ReviewReplyDetail> {
             modReviewEntry {
-                attrs.entry = it
-                attrs.setUser = setUserCb
-                attrs.onDelete = deleteCb
-                attrs.onSave = saveCb
+                entry = it
+                setUser = setUserCb
+                onDelete = deleteCb
+                onSave = saveCb
             }
         }
     }
 
     modal {
-        attrs.callbacks = modalRef
+        callbacks = modalRef
     }
 
     modalContext.Provider {
-        attrs.value = modalRef
+        value = modalRef
 
         form {
             table {
-                attrs.className = ClassName("table table-dark table-striped-3 modreview")
+                className = ClassName("table table-dark table-striped-3 modreview")
                 thead {
                     tr {
                         th { +"User" }
@@ -176,19 +175,19 @@ val modReview = fc<ModReviewProps>("modReview") { props ->
                     tr {
                         td {
                             input {
-                                attrs.type = InputType.text
-                                attrs.className = ClassName("form-control")
-                                attrs.placeholder = "User"
-                                attrs.ariaLabel = "User"
+                                type = InputType.text
+                                className = ClassName("form-control")
+                                placeholder = "User"
+                                ariaLabel = "User"
                                 ref = userRef
                             }
                         }
                         td {
-                            attrs.colSpan = 3
+                            colSpan = 3
                             button {
-                                attrs.type = ButtonType.submit
-                                attrs.className = ClassName("btn btn-primary")
-                                attrs.onClick = {
+                                type = ButtonType.submit
+                                className = ClassName("btn btn-primary")
+                                onClick = {
                                     it.preventDefault()
 
                                     history.push(location.pathname + urlExtension())
@@ -229,15 +228,15 @@ val modReview = fc<ModReviewProps>("modReview") { props ->
                             }
 
                             commentsInfiniteScroll {
-                                attrs.resetRef = resetRef
-                                attrs.rowHeight = 95.5
-                                attrs.itemsPerPage = 20
-                                attrs.container = resultsTable
-                                attrs.loadPage = loadReviewPageRef
-                                attrs.childFilter = {
-                                    !it.hasClass("hiddenRow")
+                                this.resetRef = resetRef
+                                rowHeight = 95.5
+                                itemsPerPage = 20
+                                container = resultsTable
+                                loadPage = loadReviewPageRef
+                                childFilter = {
+                                    !it.classList.contains("hiddenRow")
                                 }
-                                attrs.renderElement = reviewRenderer
+                                renderElement = reviewRenderer
                             }
                         }
                         ReviewReplyDetail::class -> {
@@ -251,15 +250,15 @@ val modReview = fc<ModReviewProps>("modReview") { props ->
                             }
 
                             repliesInfiniteScroll {
-                                attrs.resetRef = resetRef
-                                attrs.rowHeight = 95.5
-                                attrs.itemsPerPage = 20
-                                attrs.container = resultsTable
-                                attrs.loadPage = loadReplyPageRef
-                                attrs.childFilter = {
-                                    !it.hasClass("hiddenRow")
+                                this.resetRef = resetRef
+                                rowHeight = 95.5
+                                itemsPerPage = 20
+                                container = resultsTable
+                                loadPage = loadReplyPageRef
+                                childFilter = {
+                                    !it.classList.contains("hiddenRow")
                                 }
-                                attrs.renderElement = replyRenderer
+                                renderElement = replyRenderer
                             }
                         }
                     }

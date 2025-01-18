@@ -1,15 +1,18 @@
 package external
 
+import io.beatmaps.shared.search.ExtraContentRenderer
+import io.beatmaps.shared.search.invokeECR
+import io.beatmaps.util.fcmemo
 import js.import.importAsync
 import js.objects.Object
-import react.ComponentClass
+import js.objects.jso
+import react.ChildrenBuilder
+import react.ComponentType
 import react.ExoticComponent
 import react.Props
 import react.PropsWithChildren
-import react.RBuilder
-import react.RElementBuilder
 import react.ReactElement
-import react.RefObject
+import react.Ref
 import react.createElement
 import react.dom.events.DragEventHandler
 import react.dom.events.TransitionEventHandler
@@ -19,7 +22,7 @@ import web.html.HTMLDivElement
 
 external interface DroppableProvided {
     var droppableProps: Any
-    var innerRef: RefObject<*>
+    var innerRef: Ref<HTMLDivElement>
     var placeholder: ReactElement<*>
 }
 
@@ -44,7 +47,7 @@ external interface DragHandleProps {
 }
 
 external interface DraggableProvided {
-    var innerRef: RefObject<*>
+    var innerRef: Ref<HTMLDivElement>
     var draggableProps: DraggableProvidedProps
     var dragHandleProps: DragHandleProps
 }
@@ -55,58 +58,84 @@ external interface DraggableProps : Props {
     var children: (DraggableProvided) -> ReactElement<*>?
 }
 
-fun RBuilder.draggable(id: String, idx: Int, cb: RElementBuilder<HTMLAttributes<HTMLDivElement>>.() -> Unit) {
+fun ChildrenBuilder.draggable(id: String, idx: Int, cb: ExtraContentRenderer) {
     dndExotics.draggable {
         key = id
-        attrs.draggableId = id
-        attrs.index = idx
-        attrs.children = { dragProvided ->
-            createElement<Props> {
-                div {
-                    ref = dragProvided.innerRef
-                    key = id
-
-                    attrs.onDragStart = dragProvided.dragHandleProps.onDragStart
-                    attrs.onTransitionEnd = dragProvided.draggableProps.onTransitionEnd
-
-                    attrs.style = dragProvided.draggableProps.style
-
-                    copyProps(dragProvided.draggableProps)
-                    copyProps(dragProvided.dragHandleProps)
-
-                    cb()
+        draggableId = id
+        index = idx
+        children = { dragProvided ->
+            createElement(
+                dragChild,
+                jso {
+                    this.dragProvided = dragProvided
+                    callback = cb
                 }
-            }
+            )
         }
     }
 }
 
-fun RBuilder.droppable(id: String, cb: RElementBuilder<HTMLAttributes<HTMLDivElement>>.() -> Unit) {
+external interface DragChildProps : Props {
+    var dragProvided: DraggableProvided
+    var callback: ExtraContentRenderer
+}
+
+val dragChild = fcmemo<DragChildProps>("DragChild") { props ->
+    div {
+        ref = props.dragProvided.innerRef
+        key = id
+
+        onDragStart = props.dragProvided.dragHandleProps.onDragStart
+        onTransitionEnd = props.dragProvided.draggableProps.onTransitionEnd
+
+        style = props.dragProvided.draggableProps.style
+
+        copyProps(props.dragProvided.draggableProps)
+        copyProps(props.dragProvided.dragHandleProps)
+
+        invokeECR(props.callback)
+    }
+}
+
+fun ChildrenBuilder.droppable(id: String, cb: ExtraContentRenderer) {
     dndExotics.droppable {
-        attrs.droppableId = id
-        attrs.isDropDisabled = false
-        attrs.isCombineEnabled = false
-        attrs.ignoreContainerClipping = false
-        attrs.direction = "vertical"
-        attrs.children = { provided ->
-            createElement<Props> {
-                div {
-                    ref = provided.innerRef
-
-                    copyProps(provided.droppableProps)
-
-                    cb()
-
-                    child(provided.placeholder)
+        droppableId = id
+        isDropDisabled = false
+        isCombineEnabled = false
+        ignoreContainerClipping = false
+        direction = "vertical"
+        children = { provided ->
+            createElement(
+                dropChild,
+                jso {
+                    this.provided = provided
+                    callback = cb
                 }
-            }
+            )
         }
+    }
+}
+
+external interface DropChildProps : Props {
+    var provided: DroppableProvided
+    var callback: ExtraContentRenderer
+}
+
+val dropChild = fcmemo<DropChildProps>("DropChild") { props ->
+    div {
+        ref = props.provided.innerRef
+
+        copyProps(props.provided.droppableProps)
+
+        invokeECR(props.callback)
+
+        +props.provided.placeholder
     }
 }
 
 @Suppress("USELESS_CAST")
-fun RElementBuilder<HTMLAttributes<*>>.copyProps(obj: Any) {
-    val dynAttrs = attrs.asDynamic()
+fun HTMLAttributes<*>.copyProps(obj: Any) {
+    val dynAttrs = asDynamic()
     Object.getOwnPropertyNames(obj).forEach { key ->
         when (val it = obj.asDynamic()[key]) {
             is String -> dynAttrs[key] = it as String
@@ -151,9 +180,9 @@ external interface DragDropContextProps : PropsWithChildren {
 }
 
 external interface DragAndDrop {
-    val DragDropContext: ComponentClass<DragDropContextProps>
-    val Droppable: ComponentClass<DroppableProps>
-    val Draggable: ComponentClass<DraggableProps>
+    val DragDropContext: ComponentType<DragDropContextProps>
+    val Droppable: ComponentType<DroppableProps>
+    val Draggable: ComponentType<DraggableProps>
 }
 
 data class DragAndDropExotics(

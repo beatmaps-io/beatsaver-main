@@ -14,22 +14,22 @@ external interface BookmarkButtonProps : Props {
 
 var bookmarkButton = fcmemo<BookmarkButtonProps>("bookmarkButton") { props ->
     a {
-        attrs.href = "#"
-        attrs.className = ClassName("me-1")
+        href = "#"
+        className = ClassName("me-1")
 
         val title = if (props.bookmarked) "Remove Bookmark" else "Add Bookmark"
-        attrs.title = title
-        attrs.ariaLabel = title
-        attrs.onClick = {
+        this.title = title
+        ariaLabel = title
+        onClick = {
             it.preventDefault()
             props.onClick(props.bookmarked)
         }
         span {
-            attrs.className = ClassName("dd-text")
+            className = ClassName("dd-text")
             +title
         }
         i {
-            attrs.className = ClassName((if (props.bookmarked) "fas" else "far") + " fa-bookmark text-warning")
+            className = ClassName((if (props.bookmarked) "fas" else "far") + " fa-bookmark text-warning")
         }
     }
 }

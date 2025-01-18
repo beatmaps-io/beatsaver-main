@@ -26,7 +26,6 @@ import io.beatmaps.shared.map.mapTitle
 import io.beatmaps.shared.map.uploaderWithInfo
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.textToContent
-import org.w3c.dom.HTMLInputElement
 import react.Props
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.b
@@ -36,11 +35,12 @@ import react.dom.html.ReactHTML.p
 import react.dom.html.ReactHTML.span
 import react.router.useNavigate
 import react.router.useParams
-import react.useContext
+import react.use
 import react.useEffect
 import react.useRef
 import react.useState
 import web.cssom.ClassName
+import web.html.HTMLInputElement
 
 val issuesPage = fcmemo<Props>("issuesPage") {
     val (loading, setLoading) = useState(false)
@@ -48,7 +48,7 @@ val issuesPage = fcmemo<Props>("issuesPage") {
     val captchaRef = useRef<ICaptchaHandler>()
     val publicRef = useRef<HTMLInputElement>()
 
-    val userData = useContext(globalContext)
+    val userData = use(globalContext)
     val history = History(useNavigate())
     val params = useParams()
     val id = params["id"]
@@ -67,25 +67,25 @@ val issuesPage = fcmemo<Props>("issuesPage") {
     }
 
     div {
-        attrs.className = ClassName("timeline")
+        className = ClassName("timeline")
         // Watch out, this must be at the top
         div {
-            attrs.className = ClassName("line text-muted")
+            className = ClassName("line text-muted")
         }
 
         issue?.let { i ->
             val open = i.closedAt == null
 
             timelineEntry {
-                attrs.id = "issue-info"
-                attrs.icon = "fa-plus"
-                attrs.color = "success"
-                attrs.headerClass = "d-flex"
-                attrs.headerCallback = TimelineEntrySectionRenderer {
+                this.id = "issue-info"
+                icon = "fa-plus"
+                color = "success"
+                headerClass = "d-flex"
+                headerCallback = TimelineEntrySectionRenderer {
                     span {
                         if (!open) {
                             b {
-                                attrs.className = ClassName("text-danger-light me-2")
+                                className = ClassName("text-danger-light me-2")
                                 +"[CLOSED]"
                             }
                         }
@@ -94,17 +94,17 @@ val issuesPage = fcmemo<Props>("issuesPage") {
                         }
                         +" - "
                         TimeAgo.default {
-                            attrs.date = i.createdAt.toString()
+                            date = i.createdAt.toString()
                         }
                     }
                     if (userData?.curator == true) {
                         div {
-                            attrs.className = ClassName("link-buttons")
+                            className = ClassName("link-buttons")
                             a {
-                                attrs.href = "#"
+                                href = "#"
 
-                                attrs.title = if (open) "Archive" else "Reopen"
-                                attrs.onClick = { ev ->
+                                title = if (open) "Archive" else "Reopen"
+                                onClick = { ev ->
                                     ev.preventDefault()
                                     Axios.post<ActionResponse>(
                                         "${Config.apibase}/issues/${i.id}",
@@ -116,13 +116,13 @@ val issuesPage = fcmemo<Props>("issuesPage") {
                                 }
 
                                 i {
-                                    attrs.className = ClassName("fas text-info fa-${if (open) "archive" else "folder-open"}")
+                                    className = ClassName("fas text-info fa-${if (open) "archive" else "folder-open"}")
                                 }
                             }
                         }
                     }
                 }
-                attrs.bodyCallback = TimelineEntrySectionRenderer {
+                bodyCallback = TimelineEntrySectionRenderer {
                     p {
                         routeLink(i.creator.profileLink()) {
                             +i.creator.name
@@ -133,13 +133,13 @@ val issuesPage = fcmemo<Props>("issuesPage") {
                         is HydratedMapReportData -> {
                             i.data.map.let { map ->
                                 mapTitle {
-                                    attrs.title = map.name
-                                    attrs.mapKey = map.id
+                                    title = map.name
+                                    mapKey = map.id
                                 }
                                 p {
                                     uploaderWithInfo {
-                                        attrs.map = map
-                                        attrs.version = map.mainVersion()
+                                        this.map = map
+                                        version = map.mainVersion()
                                     }
                                 }
                             }
@@ -158,8 +158,8 @@ val issuesPage = fcmemo<Props>("issuesPage") {
                             i.data.review.map?.let { map ->
                                 p {
                                     mapTitle {
-                                        attrs.title = map.name
-                                        attrs.mapKey = map.id
+                                        title = map.name
+                                        mapKey = map.id
                                     }
                                 }
                             }
@@ -181,19 +181,19 @@ val issuesPage = fcmemo<Props>("issuesPage") {
 
             issue.comments?.forEach { comment ->
                 issueComment {
-                    attrs.issueOpen = open
-                    attrs.issueId = issue.id
-                    attrs.comment = comment
+                    issueOpen = open
+                    issueId = issue.id
+                    this.comment = comment
                 }
             }
 
             if (open) {
                 newIssueComment {
-                    attrs.buttonText = "Add comment"
-                    attrs.loadingCallback = {
+                    buttonText = "Add comment"
+                    loadingCallback = {
                         setLoading(it)
                     }
-                    attrs.saveCallback = { text ->
+                    saveCallback = { text ->
                         captchaRef.current?.execute()?.then {
                             Axios.put<ActionResponse>(
                                 "${Config.apibase}/issues/comments/${issue.id}",
@@ -202,25 +202,25 @@ val issuesPage = fcmemo<Props>("issuesPage") {
                             )
                         }?.then { it }
                     }
-                    attrs.successCallback = {
+                    successCallback = {
                         loadIssue()
                     }
 
                     if (userData?.curator == true) {
                         toggle {
-                            attrs.toggleRef = publicRef
-                            attrs.className = "me-4 mb-2 mt-auto"
-                            attrs.id = "new-public"
-                            attrs.disabled = loading
-                            attrs.text = "Public"
-                            attrs.default = true
+                            toggleRef = publicRef
+                            className = "me-4 mb-2 mt-auto"
+                            this.id = "new-public"
+                            disabled = loading
+                            text = "Public"
+                            default = true
                         }
                     }
 
                     captcha {
                         key = "captcha"
-                        attrs.captchaRef = captchaRef
-                        attrs.page = "issues"
+                        this.captchaRef = captchaRef
+                        page = "issues"
                     }
                 }
             }

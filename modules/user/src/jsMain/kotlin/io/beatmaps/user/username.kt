@@ -13,7 +13,6 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import io.beatmaps.util.fcmemo
 import js.objects.jso
-import org.w3c.dom.HTMLInputElement
 import react.CSSProperties
 import react.Props
 import react.dom.html.ReactHTML.button
@@ -30,6 +29,7 @@ import react.useState
 import web.cssom.ClassName
 import web.cssom.rem
 import web.html.ButtonType
+import web.html.HTMLInputElement
 import web.html.InputType
 
 val pickUsernamePage = fcmemo<Props>("pickUsernamePage") {
@@ -66,15 +66,15 @@ val pickUsernamePage = fcmemo<Props>("pickUsernamePage") {
     }
 
     div {
-        attrs.className = ClassName("login-form card border-dark")
+        className = ClassName("login-form card border-dark")
         div {
-            attrs.className = ClassName("card-header")
+            className = ClassName("card-header")
             +"Pick a username"
         }
         form {
-            attrs.className = ClassName("card-body")
+            className = ClassName("card-body")
 
-            attrs.onSubmit = { ev ->
+            onSubmit = { ev ->
                 ev.preventDefault()
                 setSubmitted(true)
 
@@ -98,43 +98,43 @@ val pickUsernamePage = fcmemo<Props>("pickUsernamePage") {
                 fontSize = 0.8.rem
             }
             p {
-                attrs.className = ClassName("text-start")
-                attrs.style = smallTextStyle
+                className = ClassName("text-start")
+                style = smallTextStyle
                 +"Please pick a beatsaver username for your account. You will not be able to change this later."
             }
             p {
-                attrs.className = ClassName("text-start")
-                attrs.style = smallTextStyle
+                className = ClassName("text-start")
+                style = smallTextStyle
                 +"Usernames must be made up of letters, numbers and any of "
                 span {
-                    attrs.className = ClassName("badge badge-secondary")
-                    attrs.style = smallTextStyle
+                    className = ClassName("badge badge-secondary")
+                    style = smallTextStyle
                     +". _ -"
                 }
             }
             errors {
-                attrs.errors = errors
+                this.errors = errors
             }
             input {
-                attrs.type = InputType.text
-                attrs.className = ClassName("form-control")
+                type = InputType.text
+                className = ClassName("form-control")
                 ref = inputRef
                 key = "username"
-                attrs.name = "username"
-                attrs.placeholder = "Username"
-                attrs.disabled = loading
-                attrs.required = true
-                attrs.autoFocus = true
+                name = "username"
+                placeholder = "Username"
+                disabled = loading
+                required = true
+                autoFocus = true
             }
             div {
-                attrs.className = ClassName("d-grid")
+                className = ClassName("d-grid")
                 button {
-                    attrs.className = ClassName("btn btn-success")
-                    attrs.type = ButtonType.submit
+                    className = ClassName("btn btn-success")
+                    type = ButtonType.submit
 
-                    attrs.disabled = submitted
+                    disabled = submitted
                     i {
-                        attrs.className = ClassName("fas fa-check")
+                        className = ClassName("fas fa-check")
                     }
                     +" Continue"
                 }

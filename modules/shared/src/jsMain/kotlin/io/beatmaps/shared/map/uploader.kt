@@ -15,8 +15,8 @@ external interface UploaderProps : Props {
 
 val uploaderWithInfo = fcmemo<UploaderProps>("uploaderWithInfo") { props ->
     itemUserInfo {
-        attrs.users = listOf(props.map.uploader) + (props.map.collaborators ?: emptyList())
-        attrs.time = if (props.version?.state == EMapState.Published) props.map.uploaded else null
+        users = listOf(props.map.uploader) + (props.map.collaborators ?: emptyList())
+        time = if (props.version?.state == EMapState.Published) props.map.uploaded else null
 
         if (props.info != false && props.map.declaredAi.markAsBot) botInfo { }
     }

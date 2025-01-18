@@ -56,7 +56,7 @@ val turnstile = fcmemo<CaptchaProps>("TurnstileWrapper") { props ->
     }
 
     div {
-        attrs.style = jso {
+        style = jso {
             if (popover) {
                 background = rgb(0, 0, 0, 0.5)
                 position = Position.absolute
@@ -72,27 +72,27 @@ val turnstile = fcmemo<CaptchaProps>("TurnstileWrapper") { props ->
         }
         Turnstile.Turnstile {
             if (props.enabled) {
-                attrs.siteKey = "0x4AAAAAAAk0Ed-ky7FsJ7Ur"
+                siteKey = "0x4AAAAAAAk0Ed-ky7FsJ7Ur"
             } else {
-                // attrs.siteKey = "1x00000000000000000000AA" // Always passes
-                // attrs.siteKey = "2x00000000000000000000AB" // Always blocks
-                attrs.siteKey = "3x00000000000000000000FF" // Forced interactive
+                // siteKey = "1x00000000000000000000AA" // Always passes
+                // siteKey = "2x00000000000000000000AB" // Always blocks
+                siteKey = "3x00000000000000000000FF" // Forced interactive
             }
             this.ref = ref
-            attrs.options = useMemo(props.page) {
+            options = useMemo(props.page) {
                 TurnStileRenderOptions(
                     appearance = "interaction-only",
                     execution = "execute",
                     action = props.page
                 )
             }
-            attrs.onError = useCallback {
+            onError = useCallback {
                 pRef.current?.invoke()
             }
-            attrs.onBeforeInteractive = useCallback {
+            onBeforeInteractive = useCallback {
                 setPopover(true)
             }
-            attrs.onAfterInteractive = useCallback {
+            onAfterInteractive = useCallback {
                 setTimeout(1.seconds) {
                     setPopover(false)
                 }

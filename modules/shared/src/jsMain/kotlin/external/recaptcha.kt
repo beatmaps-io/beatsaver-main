@@ -1,11 +1,11 @@
 package external
 
-import react.ComponentClass
 import react.ComponentModule
-import react.Props
+import react.ComponentType
+import react.PropsWithRef
 import kotlin.js.Promise
 
-external interface IGoogleReCaptchaProps : Props {
+external interface IGoogleReCaptchaProps : PropsWithRef<ReCAPTCHA> {
     var sitekey: String
     var onChange: (Any) -> Unit
     var theme: String?
@@ -22,7 +22,7 @@ external interface IGoogleReCaptchaProps : Props {
 @JsModule("react-google-recaptcha")
 @JsNonModule
 external object ReCAPTCHA : IReCAPTCHA {
-    override val default: ComponentClass<IGoogleReCaptchaProps>
+    override val default: ComponentType<IGoogleReCaptchaProps>
 
     fun execute(): String
     override fun executeAsync(): Promise<String>

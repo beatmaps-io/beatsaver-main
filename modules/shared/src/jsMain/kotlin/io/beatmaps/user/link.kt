@@ -2,10 +2,10 @@ package io.beatmaps.user
 
 import external.routeLink
 import io.beatmaps.api.UserDetail
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.i
-import react.fc
 import web.cssom.ClassName
 
 external interface UserLinkProps : Props {
@@ -13,11 +13,11 @@ external interface UserLinkProps : Props {
     var callback: (() -> Unit)?
 }
 
-val userLink = fc<UserLinkProps>("userLink") { props ->
+val userLink = fcmemo<UserLinkProps>("userLink") { props ->
     a {
-        attrs.href = "#"
-        attrs.className = ClassName("me-1")
-        attrs.onClick = { ev ->
+        href = "#"
+        className = ClassName("me-1")
+        onClick = { ev ->
             ev.preventDefault()
             props.callback?.invoke()
         }
@@ -25,7 +25,7 @@ val userLink = fc<UserLinkProps>("userLink") { props ->
     }
     routeLink(props.user.profileLink()) {
         i {
-            attrs.className = ClassName("fas fa-external-link-alt")
+            className = ClassName("fas fa-external-link-alt")
         }
     }
 }

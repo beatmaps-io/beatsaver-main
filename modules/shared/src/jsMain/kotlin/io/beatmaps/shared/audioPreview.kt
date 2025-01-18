@@ -4,20 +4,22 @@ import io.beatmaps.api.MapVersion
 import io.beatmaps.common.fixed
 import io.beatmaps.globalContext
 import io.beatmaps.util.fcmemo
-import kotlinx.browser.window
-import org.w3c.dom.Audio
-import org.w3c.dom.HTMLElement
 import react.Props
 import react.RefObject
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.i
 import react.dom.html.ReactHTML.img
-import react.useContext
+import react.use
 import react.useEffect
 import react.useEffectOnceWithCleanup
 import react.useRef
 import react.useState
 import web.cssom.ClassName
+import web.html.Audio
+import web.html.HTMLElement
+import web.timers.Interval
+import web.timers.clearInterval
+import web.timers.setInterval
 
 enum class AudioPreviewSize(val size: Double) {
     Small(100.0),
@@ -36,16 +38,16 @@ val audioPreview = fcmemo<AudioPreviewProps>("audioPreview") { props ->
     val outerProgressRef = useRef<HTMLElement>()
     val leftProgressRef = useRef<HTMLElement>()
     val rightProgressRef = useRef<HTMLElement>()
-    val userData = useContext(globalContext)
+    val userData = use(globalContext)
 
     val shouldBlur = props.nsfw == true && userData?.blurnsfw != false
     val (blur, setBlur) = useState(shouldBlur)
 
-    val handle = useRef<Int>()
+    val handle = useRef<Interval>()
 
     useEffectOnceWithCleanup {
         onCleanup {
-            handle.current?.let { window.clearInterval(it) }
+            handle.current?.let { clearInterval(it) }
         }
     }
 
@@ -56,19 +58,19 @@ val audioPreview = fcmemo<AudioPreviewProps>("audioPreview") { props ->
     fun updateView(p: Double = 0.0) {
         val firstHalf = p <= 0.5 || p.isNaN()
         leftProgressRef.current?.style?.transform = "rotate(${(p * 360).fixed(2)}deg)"
-        outerProgressRef.current?.style?.clip = if (firstHalf) "" else "rect(auto, auto, auto, auto)"
+        outerProgressRef.current?.style?.clipPath = if (firstHalf) "" else "rect(auto, auto, auto, auto)"
         rightProgressRef.current?.style?.display = if (firstHalf) "none" else "block"
         rightProgressRef.current?.style?.transform = if (firstHalf) "" else "rotate(180deg)"
     }
 
-    val timeUpdate = { _: Any ->
+    val timeUpdate: () -> Unit = {
         props.version?.previewURL.let { ourSrc ->
             props.audio.current?.let {
                 if (it.getAttribute("src") == ourSrc && !it.paused) {
                     updateView(it.currentTime / it.duration)
                 } else {
                     handle.current?.let { h ->
-                        window.clearInterval(h)
+                        clearInterval(h)
                         handle.current = null
                     }
                     audioContainerRef.current?.classList?.remove("playing")
@@ -79,8 +81,8 @@ val audioPreview = fcmemo<AudioPreviewProps>("audioPreview") { props ->
     }
 
     fun play(audio: Audio) {
-        audio.play()
-        handle.current = window.setInterval(timeUpdate, 20)
+        audio.playAsync()
+        handle.current = setInterval(timeUpdate, 20)
         audioContainerRef.current?.classList?.add("playing")
     }
 
@@ -103,33 +105,33 @@ val audioPreview = fcmemo<AudioPreviewProps>("audioPreview") { props ->
 
     if (!blur) {
         div {
-            attrs.className = ClassName("audio-progress" + if (props.size == AudioPreviewSize.Large) " large" else "")
-            attrs.onClick = toggleAudio
+            className = ClassName("audio-progress" + if (props.size == AudioPreviewSize.Large) " large" else "")
+            onClick = toggleAudio
             ref = audioContainerRef
             i {
-                attrs.className = ClassName("fas fa-play")
+                className = ClassName("fas fa-play")
             }
             div {
-                attrs.className = ClassName("pie")
+                className = ClassName("pie")
                 ref = outerProgressRef
                 div {
-                    attrs.className = ClassName("left-size half-circle")
+                    className = ClassName("left-size half-circle")
                     ref = leftProgressRef
                 }
                 div {
-                    attrs.className = ClassName("right-size half-circle")
+                    className = ClassName("right-size half-circle")
                     ref = rightProgressRef
                 }
             }
         }
     }
     img {
-        attrs.src = props.version?.coverURL
-        attrs.alt = "Cover Image"
-        attrs.className = ClassName("cover${if (blur) " nsfw" else ""}")
-        attrs.width = props.size.size
-        attrs.height = props.size.size
-        attrs.onClick = {
+        src = props.version?.coverURL
+        alt = "Cover Image"
+        className = ClassName("cover${if (blur) " nsfw" else ""}")
+        width = props.size.size
+        height = props.size.size
+        onClick = {
             setBlur(false)
         }
     }

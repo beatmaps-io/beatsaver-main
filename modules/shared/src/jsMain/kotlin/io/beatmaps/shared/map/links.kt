@@ -10,7 +10,7 @@ import react.Props
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.i
 import react.dom.html.ReactHTML.span
-import react.useContext
+import react.use
 import web.cssom.ClassName
 import web.window.WindowTarget
 
@@ -21,14 +21,14 @@ external interface LinksProps : Props {
 }
 
 val links = fcmemo<LinksProps>("links") { props ->
-    val modal = useContext(modalContext)
+    val modal = use(modalContext)
 
     copyBsr {
-        attrs.map = props.map
+        map = props.map
     }
     if (props.limited != true) {
         copyEmbed {
-            attrs.map = props.map
+            map = props.map
         }
     }
     val version = props.version
@@ -40,12 +40,12 @@ val links = fcmemo<LinksProps>("links") { props ->
         "#"
     }
     a {
-        attrs.href = altLink
+        href = altLink
         val text = "Preview"
-        attrs.title = text
-        attrs.ariaLabel = text
-        attrs.target = WindowTarget._top
-        attrs.onClick = {
+        title = text
+        ariaLabel = text
+        target = WindowTarget._top
+        onClick = {
             if (modal?.current != null) it.preventDefault()
 
             if (props.version?.state == EMapState.Published) {
@@ -57,21 +57,21 @@ val links = fcmemo<LinksProps>("links") { props ->
             }
         }
         span {
-            attrs.className = ClassName("dd-text")
+            className = ClassName("dd-text")
             +text
         }
         i {
-            attrs.className = ClassName("fas fa-play text-info")
-            attrs.ariaHidden = true
+            className = ClassName("fas fa-play text-info")
+            ariaHidden = true
         }
     }
     oneclick {
-        attrs.mapId = props.map.id
+        mapId = props.map.id
     }
     props.version?.let { v ->
         downloadZip {
-            attrs.map = props.map
-            attrs.version = v
+            map = props.map
+            this.version = v
         }
     }
 }

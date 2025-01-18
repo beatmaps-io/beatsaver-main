@@ -11,7 +11,7 @@ val notFound = fcmemo<Props>("notFound") {
     }
 
     div {
-        attrs.id = "notfound"
+        id = "notfound"
         +"Not found"
     }
 }

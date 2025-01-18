@@ -1,15 +1,15 @@
 package io.beatmaps.upload
 
 import io.beatmaps.api.UploadValidationInfo
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.html.ReactHTML.a
-import react.fc
 
 external interface UploadErrorProps : Props {
     var info: UploadValidationInfo
 }
 
-val uploadError = fc<UploadErrorProps>("uploadError") { props ->
+val uploadError = fcmemo<UploadErrorProps>("uploadError") { props ->
     props.info.property.forEachIndexed { idx, it ->
         if (idx > 0) {
             +"."
@@ -17,12 +17,12 @@ val uploadError = fc<UploadErrorProps>("uploadError") { props ->
 
         it.descriptor?.also { d ->
             a {
-                attrs.href = "#"
+                href = "#"
 
-                attrs.onClick = { e ->
+                onClick = { e ->
                     e.preventDefault()
                 }
-                attrs.title = it.name
+                title = it.name
                 +d
             }
         } ?: run {

@@ -1,8 +1,8 @@
 package io.beatmaps.util
 
-import org.w3c.dom.Audio
 import react.useEffectOnceWithCleanup
 import react.useRef
+import web.html.Audio
 
 fun useAudio() = useRef(
     Audio().also {

@@ -10,10 +10,8 @@ import io.beatmaps.api.LeaderboardScore
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.fixedStr
+import io.beatmaps.util.fcmemo
 import js.objects.jso
-import kotlinx.browser.window
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.events.Event
 import react.Props
 import react.RefObject
 import react.dom.html.ReactHTML.a
@@ -24,13 +22,17 @@ import react.dom.html.ReactHTML.tbody
 import react.dom.html.ReactHTML.th
 import react.dom.html.ReactHTML.thead
 import react.dom.html.ReactHTML.tr
-import react.fc
 import react.useEffectOnceWithCleanup
 import react.useEffectWithCleanup
 import react.useRef
 import react.useState
 import web.cssom.ClassName
+import web.events.Event
+import web.events.addEventListener
+import web.events.removeEventListener
+import web.html.HTMLElement
 import web.window.WindowTarget
+import web.window.window
 
 external interface ScoreTableProps : Props {
     var mapKey: String
@@ -49,7 +51,7 @@ fun RefObject<ScoreTableRef>.update(block: ScoreTableRef.() -> Unit) = current?.
     block(it)
 }
 
-val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
+val scoreTable = fcmemo<ScoreTableProps>("scoreTable") { props ->
     val (uid, setUid) = useState<String?>(null)
     val state = useRef<ScoreTableRef>(jso())
     val (scores, setScores) = useState(listOf<LeaderboardScore>())
@@ -124,9 +126,9 @@ val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
     }
 
     useEffectOnceWithCleanup {
-        window.addEventListener("scroll", handleScroll)
+        window.addEventListener(Event.SCROLL, handleScroll)
         onCleanup {
-            window.removeEventListener("scroll", handleScroll)
+            window.removeEventListener(Event.SCROLL, handleScroll)
         }
     }
 
@@ -150,44 +152,44 @@ val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
     }
 
     div {
-        attrs.className = ClassName("scores")
+        className = ClassName("scores")
         table {
-            attrs.className = ClassName("table table-striped table-dark")
+            className = ClassName("table table-striped table-dark")
             thead {
                 tr {
                     th {
-                        attrs.scope = "col"
+                        scope = "col"
                         +"#"
                     }
                     th {
-                        attrs.scope = "col"
+                        scope = "col"
                         +"Player"
                     }
                     th {
-                        attrs.scope = "col"
+                        scope = "col"
                         +"Score"
                     }
                     th {
-                        attrs.scope = "col"
+                        scope = "col"
                         +"Mods"
                     }
                     th {
-                        attrs.scope = "col"
+                        scope = "col"
                         +"%"
                     }
                     th {
-                        attrs.scope = "col"
+                        scope = "col"
                         +"PP"
                     }
                     th {
-                        attrs.scope = "col"
+                        scope = "col"
                         uid?.let { uid1 ->
                             a {
-                                attrs.href = "${props.type.url}$uid1"
-                                attrs.target = WindowTarget._blank
+                                href = "${props.type.url}$uid1"
+                                target = WindowTarget._blank
                                 img {
-                                    attrs.alt = props.type.name
-                                    attrs.src = "/static/${props.type.name.lowercase()}.svg"
+                                    alt = props.type.name
+                                    src = "/static/${props.type.name.lowercase()}.svg"
                                 }
                             }
                         }
@@ -196,22 +198,22 @@ val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
             }
             tbody {
                 ref = myRef
-                attrs.onScroll = {
+                onScroll = {
                     handleScroll(null)
                 }
                 scores.forEachIndexed { idx, it ->
                     val maxScore = props.selected?.maxScore ?: 0
                     val accuracy = it.accuracy ?: (it.score / maxScore.toFloat())
                     score {
-                        attrs.key = idx.toString()
-                        attrs.position = idx + 1
-                        attrs.playerId = it.playerId
-                        attrs.name = it.name
-                        attrs.pp = it.pp
-                        attrs.score = it.score
-                        attrs.scoreColor = scoreColor(accuracy)
-                        attrs.mods = it.mods
-                        attrs.percentage = (accuracy * 100f).fixedStr(2) + "%"
+                        key = idx.toString()
+                        position = idx + 1
+                        playerId = it.playerId
+                        name = it.name
+                        pp = it.pp
+                        score = it.score
+                        scoreColor = scoreColor(accuracy)
+                        mods = it.mods
+                        percentage = (accuracy * 100f).fixedStr(2) + "%"
                     }
                 }
             }

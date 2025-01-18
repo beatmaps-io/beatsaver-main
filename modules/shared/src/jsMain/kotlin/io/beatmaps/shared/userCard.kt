@@ -22,24 +22,24 @@ var userCard = fcmemo<UserCardProps>("userCard") { props ->
     val titles = userTitles(props.user)
 
     div {
-        attrs.className = ClassName("d-flex align-items-center my-2")
+        className = ClassName("d-flex align-items-center my-2")
         img {
-            attrs.alt = "Profile Image"
-            attrs.src = avatar
-            attrs.className = ClassName("rounded-circle me-3")
-            attrs.width = 50.0
-            attrs.height = 50.0
+            alt = "Profile Image"
+            src = avatar
+            className = ClassName("rounded-circle me-3")
+            width = 50.0
+            height = 50.0
         }
         div {
-            attrs.className = ClassName("d-inline")
+            className = ClassName("d-inline")
             routeLink("/profile/$id") {
                 h4 {
-                    attrs.className = ClassName("mb-1")
+                    className = ClassName("mb-1")
                     +username
                 }
             }
             p {
-                attrs.className = ClassName("text-muted mb-1")
+                className = ClassName("text-muted mb-1")
                 +titles.joinToString(", ")
             }
         }

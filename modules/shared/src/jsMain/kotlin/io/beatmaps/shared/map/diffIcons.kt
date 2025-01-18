@@ -14,9 +14,9 @@ external interface DiffIconsProps : Props {
 val diffIcons = fcmemo<DiffIconsProps>("diffIcons") { props ->
     props.diffs?.forEach { d ->
         span {
-            attrs.className = ClassName("badge rounded-pill badge-${d.difficulty.color}")
+            className = ClassName("badge rounded-pill badge-${d.difficulty.color}")
             diffImg {
-                attrs.diff = d
+                diff = d
             }
             +d.difficulty.human()
         }

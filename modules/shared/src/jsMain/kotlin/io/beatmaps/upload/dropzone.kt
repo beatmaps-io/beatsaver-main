@@ -2,17 +2,18 @@ package io.beatmaps.upload
 
 import external.Axios
 import external.AxiosResponse
+import external.DropInfo
 import external.DropzoneProps
 import io.beatmaps.History
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.captcha.ICaptchaHandler
+import io.beatmaps.util.fcmemo
+import js.objects.jso
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromDynamic
-import org.w3c.dom.HTMLElement
-import org.w3c.xhr.FormData
 import react.Props
-import react.RElementBuilder
+import react.Ref
 import react.RefObject
 import react.createElement
 import react.dom.aria.AriaRole
@@ -22,8 +23,10 @@ import react.dom.html.ReactHTML.input
 import react.dom.html.ReactHTML.p
 import react.dom.html.ReactHTML.small
 import web.cssom.ClassName
+import web.form.FormData
+import web.html.HTMLElement
 
-fun RElementBuilder<DropzoneProps>.simple(
+fun DropzoneProps.simple(
     history: History,
     loading: Boolean,
     progressBarInnerRef: RefObject<HTMLElement>,
@@ -34,11 +37,11 @@ fun RElementBuilder<DropzoneProps>.simple(
     extraInfo: List<String> = emptyList(),
     successBlock: ((AxiosResponse<dynamic>) -> Unit)? = null
 ) {
-    attrs.onDrop = { file ->
+    onDrop = { file ->
         captchaRef.current?.execute()?.then({
             val data = FormData().also(block)
             data.append("recaptcha", it)
-            data.asDynamic().append("file", file[0]) // Kotlin doesn't have an equivalent method to this js
+            data.append("file", file[0])
 
             Axios.post<dynamic>(
                 "/upload", data,
@@ -69,65 +72,81 @@ fun RElementBuilder<DropzoneProps>.simple(
             errorsBlock(listOf(UploadValidationInfo(it.message ?: "Unknown error")))
         }
     }
-    attrs.children = { info ->
-        createElement<Props> {
+    children = { info ->
+        createElement(
+            dropzoneDiv,
+            jso {
+                dropInfo = info
+                this.loading = loading
+                this.progressBarInnerRef = progressBarInnerRef
+                this.dropText = dropText
+                this.extraInfo = extraInfo
+            }
+        )
+    }
+}
+
+external interface DropzoneDivProps : Props {
+    var dropInfo: DropInfo
+    var loading: Boolean
+    var progressBarInnerRef: Ref<HTMLElement>
+    var dropText: String
+    var extraInfo: List<String>
+}
+
+val dropzoneDiv = fcmemo<DropzoneDivProps>("DropzoneDiv") { props ->
+    div {
+        className = ClassName("dropzone")
+        val rootProps = props.dropInfo.getRootProps()
+        val inputProps = props.dropInfo.getInputProps()
+
+        onKeyDown = rootProps.onKeyDown
+        onFocus = rootProps.onFocus
+        onBlur = rootProps.onBlur
+        onClick = rootProps.onClick
+        onDragEnter = rootProps.onDragEnter
+        onDragOver = rootProps.onDragOver
+        onDragLeave = rootProps.onDragLeave
+        onDrop = rootProps.onDrop
+        tabIndex = rootProps.tabIndex ?: 0
+        ref = rootProps.ref
+
+        input {
+            type = inputProps.type
+            className = ClassName("d-none")
+            accept = inputProps.accept ?: ""
+            multiple = inputProps.multiple
+            onChange = inputProps.onChange
+            onClick = inputProps.onClick
+            autoComplete = inputProps.autoComplete
+            tabIndex = inputProps.tabIndex
+            ref = inputProps.ref
+        }
+
+        div {
+            className = ClassName("progress")
+            hidden = !props.loading
             div {
-                attrs.className = ClassName("dropzone")
-                val rootProps = info.getRootProps()
-                val props = info.getInputProps()
-                attrs {
-                    onKeyDown = rootProps.onKeyDown
-                    onFocus = rootProps.onFocus
-                    onBlur = rootProps.onBlur
-                    onClick = rootProps.onClick
-                    onDragEnter = rootProps.onDragEnter
-                    onDragOver = rootProps.onDragOver
-                    onDragLeave = rootProps.onDragLeave
-                    onDrop = rootProps.onDrop
-                    tabIndex = rootProps.tabIndex ?: 0
-                }
-                ref = rootProps.ref
+                className = ClassName("progress-bar progress-bar-striped progress-bar-animated bg-info")
+                role = AriaRole.progressbar
+                ref = props.progressBarInnerRef
+            }
+        }
 
-                input {
-                    attrs {
-                        type = props.type
-                        className = ClassName("d-none")
-                        accept = props.accept ?: ""
-                        multiple = props.multiple
-                        onChange = props.onChange
-                        onClick = props.onClick
-                        autoComplete = props.autoComplete
-                        tabIndex = props.tabIndex
-                    }
-                    ref = props.ref
-                }
-
-                div {
-                    attrs.className = ClassName("progress")
-                    attrs.hidden = !loading
-                    div {
-                        attrs.className = ClassName("progress-bar progress-bar-striped progress-bar-animated bg-info")
-                        attrs.role = AriaRole.progressbar
-                        ref = progressBarInnerRef
-                    }
-                }
-
-                div {
-                    attrs.hidden = loading
-                    i {
-                        attrs.className = ClassName("fas fa-upload")
-                    }
-                    p {
-                        +dropText
-                    }
-                    small {
-                        +"Max file size: 15MiB"
-                    }
-                    extraInfo.forEach {
-                        small {
-                            +it
-                        }
-                    }
+        div {
+            hidden = props.loading
+            i {
+                className = ClassName("fas fa-upload")
+            }
+            p {
+                +props.dropText
+            }
+            small {
+                +"Max file size: 15MiB"
+            }
+            props.extraInfo.forEach {
+                small {
+                    +it
                 }
             }
         }

@@ -14,15 +14,13 @@ import io.beatmaps.shared.loadingElem
 import io.beatmaps.shared.modal
 import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.review.reviewTable
+import io.beatmaps.util.fcmemo
+import io.beatmaps.util.get
+import io.beatmaps.util.set
 import io.beatmaps.util.useDidUpdateEffect
-import kotlinx.browser.localStorage
-import kotlinx.browser.window
-import org.w3c.dom.get
-import org.w3c.dom.set
 import react.Props
 import react.Suspense
 import react.dom.html.ReactHTML.div
-import react.fc
 import react.router.useNavigate
 import react.router.useParams
 import react.useCallback
@@ -31,6 +29,8 @@ import react.useEffectOnce
 import react.useRef
 import react.useState
 import web.cssom.ClassName
+import web.storage.localStorage
+import web.window.window
 
 enum class MapTabs(val id: String, val enabled: Boolean = true) {
     ScoreSaber("ss"), BeatLeader("bl"), Reviews("rv"), Playlists("pl", enabled = false);
@@ -45,7 +45,7 @@ external interface MapPageProps : Props {
     var beatsaver: Boolean
 }
 
-val mapPage = fc<MapPageProps>("mapPage") { props ->
+val mapPage = fcmemo<MapPageProps>("mapPage") { props ->
     val (map, setMap) = useState<MapDetail?>(null)
     val (selectedDiff, setSelectedDiff) = useState<MapDifficulty?>(null)
 
@@ -118,68 +118,66 @@ val mapPage = fc<MapPageProps>("mapPage") { props ->
 
         if (version == null && it.deletedAt == null) {
             testplay {
-                attrs.mapInfo = it
-                attrs.refreshPage = reloadPage
-                attrs.history = history
-                attrs.updateMapinfo = setMapCb
+                mapInfo = it
+                refreshPage = reloadPage
+                this.history = history
+                updateMapinfo = setMapCb
             }
         } else {
             modal {
-                attrs.callbacks = modalRef
+                callbacks = modalRef
             }
 
             modalContext.Provider {
-                attrs.value = modalRef
+                value = modalRef
 
                 mapInfo {
-                    attrs {
-                        mapInfo = it
-                        reloadMap = loadMap
-                        updateMapinfo = setMapCb
-                    }
+                    mapInfo = it
+                    reloadMap = loadMap
+                    updateMapinfo = setMapCb
                 }
                 div {
-                    attrs.className = ClassName("row mt-3")
+                    className = ClassName("row mt-3")
                     div {
-                        attrs.className = ClassName("col-lg-4 text-nowrap")
+                        className = ClassName("col-lg-4 text-nowrap")
                         infoTable {
-                            attrs.map = it
-                            attrs.selected = selectedDiff
-                            attrs.changeSelectedDiff = changeDiff
+                            this.map = it
+                            selected = selectedDiff
+                            changeSelectedDiff = changeDiff
                         }
                     }
 
                     div {
-                        attrs.className = ClassName("col-lg-8")
+                        className = ClassName("col-lg-8")
                         mapPageNav {
-                            attrs.map = it
-                            attrs.tab = tab
-                            attrs.setTab = {
-                                setTab(it)
+                            this.map = it
+                            this.tab = tab
+                            this.setTab = { newTab ->
+                                setTab(newTab)
                             }
                         }
 
                         Suspense {
-                            attrs.fallback = loadingElem
+                            fallback = loadingElem
                             playlists.table {
-                                attrs.mapId = it.id
-                                attrs.visible = tab == MapTabs.Playlists
-                                attrs.small = true
+                                mapId = it.id
+                                visible = tab == MapTabs.Playlists
+                                small = true
                             }
                         }
 
                         reviewTable {
-                            attrs.map = it
-                            attrs.mapUploaderId = it.uploader.id
-                            attrs.collaborators = it.collaborators
-                            attrs.visible = tab == MapTabs.Reviews
+                            this.map = it
+                            mapUploaderId = it.uploader.id
+                            collaborators = it.collaborators
+                            visible = tab == MapTabs.Reviews
                         }
 
                         if ((tab == MapTabs.ScoreSaber || tab == MapTabs.BeatLeader) && version != null && it.deletedAt == null) {
                             scoreTable {
-                                attrs.mapKey = version.hash
-                                attrs.selected = selectedDiff
-                                attrs.type = if (tab == MapTabs.BeatLeader) LeaderboardType.BeatLeader else LeaderboardType.ScoreSaber
+                                mapKey = version.hash
+                                selected = selectedDiff
+                                type = if (tab == MapTabs.BeatLeader) LeaderboardType.BeatLeader else LeaderboardType.ScoreSaber
                             }
                         }
                     }

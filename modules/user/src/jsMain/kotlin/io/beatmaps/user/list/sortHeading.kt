@@ -8,7 +8,7 @@ import react.Props
 import react.dom.aria.AriaSort
 import react.dom.html.ReactHTML.i
 import react.dom.html.ReactHTML.th
-import react.useContext
+import react.use
 import web.cssom.ClassName
 import web.cssom.px
 
@@ -25,14 +25,14 @@ fun ApiOrder.toAriaSort() = when (this) {
 }
 
 val sortTh = fcmemo<SortThProps>("sortTh") { props ->
-    val config = useContext(configContext)
+    val config = use(configContext)
     th {
         if (config?.v2Search == true && props.column.sortEnum != null) {
-            attrs.ariaSort = when (props.sort) {
+            ariaSort = when (props.sort) {
                 props.column -> props.order.toAriaSort()
                 else -> AriaSort.none
             }
-            attrs.onClick = {
+            onClick = {
                 props.updateSort(
                     props.column,
                     if (props.column == props.sort) {
@@ -44,14 +44,14 @@ val sortTh = fcmemo<SortThProps>("sortTh") { props ->
             }
         }
         props.column.width?.let { w ->
-            attrs.style = jso {
+            style = jso {
                 width = w.px
             }
         }
         props.column.icon?.let { icon ->
             i {
-                attrs.className = ClassName("fas $icon")
-                attrs.title = props.column.text
+                className = ClassName("fas $icon")
+                title = props.column.text
             }
         } ?: run {
             +props.column.text

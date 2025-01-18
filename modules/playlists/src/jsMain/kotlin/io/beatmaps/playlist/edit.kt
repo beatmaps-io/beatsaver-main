@@ -25,11 +25,6 @@ import io.beatmaps.util.fcmemo
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromDynamic
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLTextAreaElement
-import org.w3c.dom.url.URLSearchParams
-import org.w3c.files.get
-import org.w3c.xhr.FormData
 import react.Props
 import react.dom.html.ReactHTML.button
 import react.dom.html.ReactHTML.div
@@ -41,14 +36,18 @@ import react.dom.html.ReactHTML.textarea
 import react.router.useLocation
 import react.router.useNavigate
 import react.router.useParams
-import react.useContext
+import react.use
 import react.useEffect
 import react.useEffectOnce
 import react.useRef
 import react.useState
 import web.cssom.ClassName
+import web.form.FormData
 import web.html.ButtonType
+import web.html.HTMLInputElement
+import web.html.HTMLTextAreaElement
 import web.html.InputType
+import web.url.URLSearchParams
 
 val editPlaylist = fcmemo<Props>("editPlaylist") {
     val captchaRef = useRef<ICaptchaHandler>()
@@ -68,7 +67,7 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
     val query = URLSearchParams(location.search)
     val hasSearchQuery = query.has("search")
 
-    val userData = useContext(globalContext)
+    val userData = use(globalContext)
 
     useEffectOnce {
         if (userData == null) {
@@ -115,14 +114,14 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
 
     if (init) {
         div {
-            attrs.className = ClassName("card border-dark")
+            className = ClassName("card border-dark")
             div {
-                attrs.className = ClassName("card-header")
+                className = ClassName("card-header")
                 +((if (id == null) "Create" else "Edit") + " playlist")
             }
             form {
-                attrs.className = ClassName("card-body")
-                attrs.onSubmit = { ev ->
+                className = ClassName("card-body")
+                onSubmit = { ev ->
                     ev.preventDefault()
                     setLoading(true)
 
@@ -177,85 +176,85 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
                     }
                 }
                 div {
-                    attrs.className = ClassName("mb-3")
+                    className = ClassName("mb-3")
                     label {
-                        attrs.className = ClassName("form-label")
-                        attrs.htmlFor = "name"
+                        className = ClassName("form-label")
+                        htmlFor = "name"
                         +"Name"
                     }
                     input {
-                        attrs.type = InputType.text
-                        attrs.className = ClassName("form-control")
+                        type = InputType.text
+                        className = ClassName("form-control")
                         key = "name"
                         ref = nameRef
-                        attrs.defaultValue = playlist?.name ?: ""
-                        attrs.id = "name"
-                        attrs.placeholder = "Name"
-                        attrs.disabled = loading
-                        attrs.required = true
-                        attrs.autoFocus = true
+                        defaultValue = playlist?.name ?: ""
+                        this.id = "name"
+                        placeholder = "Name"
+                        disabled = loading
+                        required = true
+                        autoFocus = true
                     }
                 }
                 div {
-                    attrs.className = ClassName("mb-3")
+                    className = ClassName("mb-3")
                     label {
-                        attrs.className = ClassName("form-label")
-                        attrs.htmlFor = "description"
+                        className = ClassName("form-label")
+                        htmlFor = "description"
                         +"Description"
                     }
                     textarea {
-                        attrs.rows = 10
-                        attrs.className = ClassName("form-control")
-                        attrs.id = "description"
-                        attrs.disabled = loading
-                        attrs.defaultValue = playlist?.description ?: ""
+                        rows = 10
+                        className = ClassName("form-control")
+                        this.id = "description"
+                        disabled = loading
+                        defaultValue = playlist?.description ?: ""
                         ref = descriptionRef
                     }
                 }
                 if (userData?.suspended == false && !isSearch) {
                     toggle {
-                        attrs.id = "public"
-                        attrs.disabled = loading
-                        attrs.default = playlist?.type?.anonymousAllowed != false
-                        attrs.toggleRef = publicRef
-                        attrs.text = "Public"
-                        attrs.className = "mb-3"
+                        this.id = "public"
+                        disabled = loading
+                        default = playlist?.type?.anonymousAllowed != false
+                        toggleRef = publicRef
+                        text = "Public"
+                        className = "mb-3"
                     }
                 }
                 div {
-                    attrs.className = ClassName("mb-3 w-25")
+                    className = ClassName("mb-3 w-25")
                     label {
-                        attrs.className = ClassName("form-label")
-                        attrs.htmlFor = "cover"
+                        className = ClassName("form-label")
+                        htmlFor = "cover"
                         div {
-                            attrs.className = ClassName("text-truncate")
+                            className = ClassName("text-truncate")
                             +"Cover image"
                         }
                     }
                     input {
-                        attrs.type = InputType.file
-                        attrs.className = ClassName("form-control")
+                        type = InputType.file
+                        className = ClassName("form-control")
                         key = "cover"
-                        attrs.id = "cover"
+                        this.id = "cover"
                         ref = coverRef
-                        attrs.hidden = loading
+                        hidden = loading
                     }
                 }
                 if (isSearch) {
                     hr {}
                     playlistSearchEditor {
-                        attrs.loading = loading
-                        attrs.config = (playlist?.config as? SearchPlaylistConfig) ?: fromState ?: SearchPlaylistConfig.DEFAULT
-                        attrs.callback = {
+                        this.loading = loading
+                        this.config = (playlist?.config as? SearchPlaylistConfig) ?: fromState ?: SearchPlaylistConfig.DEFAULT
+                        callback = {
                             setConfig(it)
                         }
                     }
                 }
                 errors {
-                    attrs.validationErrors = errors
+                    validationErrors = errors
                 }
                 div {
-                    attrs.className = ClassName("btn-group w-100 mt-3")
+                    className = ClassName("btn-group w-100 mt-3")
                     routeLink(id?.let { "/playlists/$it" } ?: "/", className = "btn btn-secondary w-50") {
                         +"Cancel"
                     }
@@ -263,14 +262,14 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
                         // Middle element otherwise the button corners don't round properly
                         captcha {
                             key = "captcha"
-                            attrs.captchaRef = captchaRef
-                            attrs.page = "playlist"
+                            this.captchaRef = captchaRef
+                            page = "playlist"
                         }
                     }
                     button {
-                        attrs.className = ClassName("btn btn-success w-50")
-                        attrs.type = ButtonType.submit
-                        attrs.disabled = loading
+                        className = ClassName("btn btn-success w-50")
+                        type = ButtonType.submit
+                        disabled = loading
                         +(if (id == null) "Create" else "Save")
                     }
                 }

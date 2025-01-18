@@ -13,8 +13,8 @@ val botInfo = fcmemo<BotInfoProps>("botInfo") { props ->
     val margin = if (props.marginLeft != false) "ms-2" else "me-2"
 
     span {
-        attrs.className = ClassName("badge rounded-pill badge-danger $margin")
-        attrs.title = "Made using an AI"
+        className = ClassName("badge rounded-pill badge-danger $margin")
+        title = "Made using an AI"
         +"Bot"
     }
 }

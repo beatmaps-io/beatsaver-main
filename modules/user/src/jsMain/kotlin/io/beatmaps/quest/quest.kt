@@ -12,7 +12,6 @@ import io.beatmaps.user.oauth.oauthHeader
 import io.beatmaps.user.oauth.oauthScopes
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.form
-import org.w3c.dom.url.URLSearchParams
 import react.Props
 import react.dom.html.ReactHTML.br
 import react.dom.html.ReactHTML.button
@@ -24,6 +23,7 @@ import react.useEffectOnce
 import react.useState
 import web.cssom.ClassName
 import web.form.FormMethod
+import web.url.URLSearchParams
 
 val quest = fcmemo<Props>("quest") {
     useEffectOnce {
@@ -41,15 +41,15 @@ val quest = fcmemo<Props>("quest") {
 
     if (complete) {
         div {
-            attrs.className = ClassName("login-form card border-dark")
+            className = ClassName("login-form card border-dark")
             div {
-                attrs.className = ClassName("card-header")
+                className = ClassName("card-header")
                 +"Authorization complete"
             }
             div {
-                attrs.className = ClassName("card-body")
+                className = ClassName("card-body")
                 i {
-                    attrs.className = ClassName("fas fa-check-circle code-complete")
+                    className = ClassName("fas fa-check-circle code-complete")
                 }
                 span {
                     +"You're good to go!"
@@ -61,31 +61,31 @@ val quest = fcmemo<Props>("quest") {
     } else if (codeResponse != null) {
         val clientName = codeResponse.clientName ?: "An unknown application"
         div {
-            attrs.className = ClassName("login-form card border-dark")
+            className = ClassName("login-form card border-dark")
             oauthHeader {
-                attrs.clientName = clientName
-                attrs.clientIcon = codeResponse.clientIcon
-                attrs.callback = {
+                this.clientName = clientName
+                clientIcon = codeResponse.clientIcon
+                callback = {
                     setLoggedIn(it)
                 }
-                attrs.logoutLink = "/quest/not-me?code=$code"
+                logoutLink = "/quest/not-me?code=$code"
             }
             oauthScopes {
-                attrs.clientName = clientName
-                attrs.scopes = codeResponse.scopes
+                this.clientName = clientName
+                scopes = codeResponse.scopes
             }
 
             if (loggedIn == null) {
                 div {
-                    attrs.className = ClassName("card-body")
+                    className = ClassName("card-body")
                     span { +"Loading..." }
                 }
             } else if (loggedIn) {
                 div {
-                    attrs.className = ClassName("card-body d-grid")
+                    className = ClassName("card-body d-grid")
                     button {
-                        attrs.className = ClassName("btn btn-success")
-                        attrs.onClick = {
+                        className = ClassName("btn btn-success")
+                        onClick = {
                             Axios.post<String>(
                                 "${Config.apibase}/quest/complete",
                                 QuestComplete(codeResponse.deviceCode),
@@ -99,7 +99,7 @@ val quest = fcmemo<Props>("quest") {
                         }
 
                         i {
-                            attrs.className = ClassName("fas fa-sign-in-alt")
+                            className = ClassName("fas fa-sign-in-alt")
                         }
                         +" Authorize"
                     }
@@ -109,7 +109,7 @@ val quest = fcmemo<Props>("quest") {
                     loginForm {
                         if (params.has("failed")) {
                             errors {
-                                attrs.errors = listOf("Username or password not valid")
+                                errors = listOf("Username or password not valid")
                             }
                         }
 
@@ -117,19 +117,19 @@ val quest = fcmemo<Props>("quest") {
                             (0xFF and it.toInt()).toString(16).padStart(2, '0')
                         }
 
-                        attrs.discordLink = "/discord?state=$serialized"
-                        attrs.buttonText = "Login"
+                        discordLink = "/discord?state=$serialized"
+                        buttonText = "Login"
                     }
                 }
             }
         }
     } else {
         questCode {
-            attrs.error = error
-            attrs.setError = {
+            this.error = error
+            this.setError = {
                 setError(it)
             }
-            attrs.deviceCodeCallback = { code, response ->
+            deviceCodeCallback = { code, response ->
                 setCode(code)
                 setCodeResponse(response)
             }

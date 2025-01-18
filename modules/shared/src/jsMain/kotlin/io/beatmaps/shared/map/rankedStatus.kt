@@ -23,12 +23,12 @@ val rankedStatus = fcmemo<RankedStatusProps>("rankedStatus") { props ->
     criteria.forEach {
         if (it.second || it.third) {
             span {
-                attrs.className = ClassName("ranked-status ${it.first.lowercase()}")
+                className = ClassName("ranked-status ${it.first.lowercase()}")
                 img {
-                    attrs.alt = it.first
-                    attrs.src = "/static/${it.first.lowercase()}.svg"
-                    attrs.width = 16.0
-                    attrs.height = 16.0
+                    alt = it.first
+                    src = "/static/${it.first.lowercase()}.svg"
+                    width = 16.0
+                    height = 16.0
                 }
                 +(if (it.second) "Ranked" else "Qualified")
             }

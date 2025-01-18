@@ -14,14 +14,14 @@ import io.beatmaps.maps.testplay.TimelineEntrySectionRenderer
 import io.beatmaps.maps.testplay.timelineEntry
 import io.beatmaps.shared.editableText
 import io.beatmaps.shared.form.errors
+import io.beatmaps.util.fcmemo
+import react.ChildrenBuilder
 import react.Props
-import react.RElementBuilder
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.i
 import react.dom.html.ReactHTML.span
-import react.fc
-import react.useContext
+import react.use
 import react.useState
 import web.cssom.ClassName
 import kotlin.js.Promise
@@ -32,54 +32,54 @@ external interface IssueCommentProps : Props {
     var comment: IssueCommentDetail
 }
 
-val issueComment = fc<IssueCommentProps>("issueComment") { props ->
+val issueComment = fcmemo<IssueCommentProps>("issueComment") { props ->
     val (editing, setEditing) = useState(false)
     val (loading, setLoading) = useState(false)
     val (errors, setErrors) = useState(emptyList<String>())
     val (public, setPublic) = useState(props.comment.public)
     val (text, setText) = useState(props.comment.text)
-    val userData = useContext(globalContext)
+    val userData = use(globalContext)
 
     timelineEntry {
-        attrs.className = "comment"
-        attrs.icon = "fa-comments"
-        attrs.color = "primary"
-        attrs.headerClass = "d-flex"
-        attrs.headerCallback = TimelineEntrySectionRenderer {
+        className = "comment"
+        icon = "fa-comments"
+        color = "primary"
+        headerClass = "d-flex"
+        headerCallback = TimelineEntrySectionRenderer {
             span {
                 routeLink(props.comment.user.profileLink()) {
                     +props.comment.user.name
                 }
                 +" - "
                 TimeAgo.default {
-                    attrs.date = props.comment.createdAt.toString()
+                    date = props.comment.createdAt.toString()
                 }
             }
 
             div {
-                attrs.className = ClassName("link-buttons")
+                className = ClassName("link-buttons")
                 if (props.issueOpen && userData?.userId == props.comment.user.id) {
                     a {
-                        attrs.href = "#"
-                        attrs.title = "Edit"
-                        attrs.onClick = { ev ->
+                        href = "#"
+                        title = "Edit"
+                        onClick = { ev ->
                             ev.preventDefault()
                             setEditing(!editing)
                         }
 
                         i {
-                            attrs.className = ClassName("fas fa-pen text-warning")
+                            className = ClassName("fas fa-pen text-warning")
                         }
                     }
                 }
 
-                fun RElementBuilder<*>.icon() = i { attrs.className = ClassName("fas text-${if (public) "info fa-un" else "danger-light fa-"}lock") }
+                fun ChildrenBuilder.icon() = i { className = ClassName("fas text-${if (public) "info fa-un" else "danger-light fa-"}lock") }
 
                 if (userData?.curator == true && props.issueOpen && !loading) {
                     a {
-                        attrs.href = "#"
-                        attrs.title = if (public) "Lock" else "Unlock"
-                        attrs.onClick = { ev ->
+                        href = "#"
+                        title = if (public) "Lock" else "Unlock"
+                        onClick = { ev ->
                             ev.preventDefault()
                             setLoading(true)
                             val newPublic = !public
@@ -101,18 +101,18 @@ val issueComment = fc<IssueCommentProps>("issueComment") { props ->
                 }
             }
         }
-        attrs.bodyCallback = TimelineEntrySectionRenderer {
+        bodyCallback = TimelineEntrySectionRenderer {
             editableText {
-                attrs.editing = editing
-                attrs.btnClass = "btn-success mt-1"
-                attrs.text = text
-                attrs.renderText = true
-                attrs.buttonText = "Edit comment"
-                attrs.maxLength = IssueConstants.MAX_COMMENT_LENGTH
-                attrs.onError = {
+                this.editing = editing
+                btnClass = "btn-success mt-1"
+                this.text = text
+                renderText = true
+                buttonText = "Edit comment"
+                maxLength = IssueConstants.MAX_COMMENT_LENGTH
+                onError = {
                     setErrors(it)
                 }
-                attrs.saveText = { newText ->
+                saveText = { newText ->
                     if (text != newText) {
                         Axios.put(
                             "${Config.apibase}/issues/comments/${props.issueId}/${props.comment.id}",
@@ -123,14 +123,14 @@ val issueComment = fc<IssueCommentProps>("issueComment") { props ->
                         Promise.reject(IllegalStateException("Comment unchanged"))
                     }
                 }
-                attrs.stopEditing = { newText ->
+                stopEditing = { newText ->
                     setText(newText)
                     setEditing(false)
                     setErrors(emptyList())
                 }
 
                 errors {
-                    attrs.errors = errors
+                    this.errors = errors
                 }
             }
         }

@@ -1,10 +1,10 @@
 package io.beatmaps.shared.form
 
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.input
 import react.dom.html.ReactHTML.label
-import react.fc
 import web.cssom.ClassName
 import web.html.InputType
 
@@ -16,26 +16,26 @@ external interface MultipleChoiceProps<T> : Props {
     var className: String?
 }
 
-val multipleChoice = fc<MultipleChoiceProps<Any?>>("multipleChoice") { props ->
+val multipleChoice = fcmemo<MultipleChoiceProps<Any?>>("multipleChoice") { props ->
     div {
-        attrs.className = ClassName("multiple-choice ${props.className ?: ""}")
+        className = ClassName("multiple-choice ${props.className ?: ""}")
         props.choices.forEach { (text, value) ->
             val id = "${props.name}:${text.lowercase()}"
 
             input {
                 key = id
-                attrs.type = InputType.radio
-                attrs.className = ClassName("form-check-input")
-                attrs.id = id
-                attrs.name = props.name
-                attrs.checked = value == props.selectedValue
-                attrs.onChange = {
+                type = InputType.radio
+                className = ClassName("form-check-input")
+                this.id = id
+                name = props.name
+                checked = value == props.selectedValue
+                onChange = {
                     props.block?.invoke(value)
                 }
             }
             label {
-                attrs.className = ClassName("form-check-label")
-                attrs.htmlFor = id
+                className = ClassName("form-check-label")
+                htmlFor = id
                 +text
             }
         }

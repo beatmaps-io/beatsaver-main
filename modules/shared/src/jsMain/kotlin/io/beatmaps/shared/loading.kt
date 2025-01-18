@@ -9,12 +9,12 @@ import web.cssom.ClassName
 val loadingElem = createElement(
     fcmemo("Loading") {
         p {
-            attrs.className = ClassName("text-center")
+            className = ClassName("text-center")
             img {
-                attrs.alt = "Loading"
-                attrs.src = "/static/loading.svg"
-                attrs.width = 24.0
-                attrs.height = 24.0
+                alt = "Loading"
+                src = "/static/loading.svg"
+                width = 24.0
+                height = 24.0
             }
         }
     }

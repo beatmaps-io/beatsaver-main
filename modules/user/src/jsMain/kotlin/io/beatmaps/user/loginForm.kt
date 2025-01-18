@@ -1,5 +1,6 @@
 package io.beatmaps.user
 
+import io.beatmaps.util.fcmemo
 import react.PropsWithChildren
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.button
@@ -8,7 +9,6 @@ import react.dom.html.ReactHTML.i
 import react.dom.html.ReactHTML.input
 import react.dom.html.ReactHTML.p
 import react.dom.html.ReactHTML.span
-import react.fc
 import web.autofill.AutoFillNormalField
 import web.cssom.ClassName
 import web.html.ButtonType
@@ -19,13 +19,13 @@ external interface LoginFormProps : PropsWithChildren {
     var discordLink: String?
 }
 
-val loginForm = fc<LoginFormProps>("loginForm") { props ->
+val loginForm = fcmemo<LoginFormProps>("loginForm") { props ->
     a {
-        attrs.href = props.discordLink ?: "/discord"
-        attrs.className = ClassName("btn discord-btn")
+        href = props.discordLink ?: "/discord"
+        className = ClassName("btn discord-btn")
         span {
             i {
-                attrs.className = ClassName("fab fa-discord")
+                className = ClassName("fab fa-discord")
             }
             +" Sign in with discord"
         }
@@ -33,34 +33,34 @@ val loginForm = fc<LoginFormProps>("loginForm") { props ->
     p {
         +"OR"
     }
-    props.children()
+    +props.children
     input {
-        attrs.type = InputType.text
-        attrs.className = ClassName("form-control")
+        type = InputType.text
+        className = ClassName("form-control")
         key = "username"
-        attrs.name = "username"
-        attrs.placeholder = "Username"
-        attrs.required = true
-        attrs.autoFocus = true
-        attrs.autoComplete = AutoFillNormalField.username
+        name = "username"
+        placeholder = "Username"
+        required = true
+        autoFocus = true
+        autoComplete = AutoFillNormalField.username
     }
     input {
-        attrs.type = InputType.password
-        attrs.className = ClassName("form-control")
+        type = InputType.password
+        className = ClassName("form-control")
         key = "password"
-        attrs.name = "password"
-        attrs.placeholder = "Password"
-        attrs.required = true
-        attrs.autoComplete = AutoFillNormalField.currentPassword
+        name = "password"
+        placeholder = "Password"
+        required = true
+        autoComplete = AutoFillNormalField.currentPassword
     }
     div {
-        attrs.className = ClassName("d-grid")
+        className = ClassName("d-grid")
         button {
-            attrs.className = ClassName("btn btn-success")
-            attrs.type = ButtonType.submit
+            className = ClassName("btn btn-success")
+            type = ButtonType.submit
 
             i {
-                attrs.className = ClassName("fas fa-sign-in-alt")
+                className = ClassName("fas fa-sign-in-alt")
             }
             +" ${props.buttonText}"
         }

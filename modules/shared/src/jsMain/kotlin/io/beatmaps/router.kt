@@ -4,21 +4,12 @@ import io.beatmaps.common.json
 import io.beatmaps.nav.manageNav
 import io.beatmaps.shared.loadingElem
 import io.beatmaps.util.fcmemo
+import io.beatmaps.util.get
+import io.beatmaps.util.set
+import js.array.asList
 import js.objects.jso
-import kotlinx.browser.document
-import kotlinx.browser.localStorage
-import kotlinx.browser.window
-import kotlinx.dom.removeClass
 import kotlinx.serialization.encodeToString
-import org.w3c.dom.HTMLAnchorElement
-import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.HTMLLinkElement
-import org.w3c.dom.HashChangeEvent
-import org.w3c.dom.asList
-import org.w3c.dom.get
-import org.w3c.dom.set
-import react.RBuilder
+import react.ChildrenBuilder
 import react.Suspense
 import react.createElement
 import react.router.NavigateFunction
@@ -26,7 +17,19 @@ import react.router.NavigateOptions
 import react.router.RouteObject
 import react.router.useNavigate
 import remix.run.router.Location
+import web.dom.document
+import web.events.Event
+import web.events.EventHandler
+import web.events.addEventListener
+import web.history.HashChangeEvent
+import web.html.HTML
+import web.html.HTMLAnchorElement
+import web.html.HTMLDivElement
+import web.html.HTMLElement
+import web.storage.localStorage
 import web.timers.setTimeout
+import web.uievents.MouseEvent
+import web.window.window
 
 inline fun <reified T> stateNavOptions(obj: T, r: Boolean? = null) = jso<NavigateOptions> {
     replace = r
@@ -57,14 +60,14 @@ class History(private val navigation: NavigateFunction) {
 fun bsroute(
     path: String,
     replaceHomelink: Boolean = true,
-    render: RBuilder.() -> Unit
+    render: ChildrenBuilder.() -> Unit
 ) = jso<RouteObject> {
     this.path = path
     element = createElement(
         fcmemo("pageWrapper") {
             initWithHistory(History(useNavigate()), replaceHomelink)
             Suspense {
-                attrs.fallback = loadingElem
+                fallback = loadingElem
                 render()
             }
         }
@@ -77,10 +80,10 @@ private var historyInitState = false
 private fun fixLink(id: String = "", history: History, element: HTMLAnchorElement? = null, block: (HTMLAnchorElement) -> Unit = {}) {
     (element ?: document.getElementById(id) as? HTMLAnchorElement)?.let { elem ->
         elem.getAttribute("href")?.let { href ->
-            elem.onclick = {
+            elem.onclick = EventHandler { e: MouseEvent ->
                 history.push(href)
                 block(elem)
-                it.preventDefault()
+                e.preventDefault()
             }
         }
     }
@@ -91,14 +94,14 @@ private fun initWithHistory(history: History, replaceHomelink: Boolean = true) {
 
     val navMenu = document.getElementById("navbar") as? HTMLDivElement
     val hideMenu: () -> Unit = {
-        navMenu?.removeClass("collapsing", "show")
+        navMenu?.classList?.remove("collapsing", "show")
     }
 
-    document.getElementsByTagName("link").asList().filterIsInstance<HTMLLinkElement>().forEach {
-        if (!it.attributes["data-lazy"]?.value.isNullOrEmpty()) it.media = "all"
+    document.getElementsByTagName(HTML.link).asList().forEach {
+        if (!it.dataset["lazy"].isNullOrEmpty()) it.media = "all"
     }
 
-    (document.getElementById("root") as? HTMLElement)?.addEventListener("click", { e ->
+    document.getElementById("root")?.addEventListener(Event.CLICK, { e ->
         (e.target as HTMLElement).closest("a")?.let { link ->
             if (link.getAttribute("data-bs") == "local") {
                 e.preventDefault()
@@ -107,13 +110,13 @@ private fun initWithHistory(history: History, replaceHomelink: Boolean = true) {
         }
     })
 
-    (document.getElementById("site-notice") as? HTMLElement)?.let { banner ->
-        val id = banner.attributes["data-id"]?.value ?: ""
+    document.getElementById("site-notice")?.let { banner ->
+        val id = banner.dataset["id"] ?: ""
         if (localStorage["banner"] != id) {
             banner.style.display = "block"
 
             val closeButton = banner.getElementsByTagName("button")[0]
-            closeButton?.addEventListener("click", {
+            closeButton.addEventListener(Event.CLICK, {
                 banner.style.opacity = "0"
                 localStorage["banner"] = id
 
@@ -127,7 +130,7 @@ private fun initWithHistory(history: History, replaceHomelink: Boolean = true) {
     if (replaceHomelink) {
         fixLink("home-link", history) {
             hideMenu()
-            window.dispatchEvent(HashChangeEvent("hashchange"))
+            window.dispatchEvent(HashChangeEvent(HashChangeEvent.HASH_CHANGE))
         }
         document.getElementsByClassName("auto-router")
             .asList()

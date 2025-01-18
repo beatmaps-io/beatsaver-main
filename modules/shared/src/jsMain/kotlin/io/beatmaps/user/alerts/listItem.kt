@@ -17,16 +17,16 @@ external interface AlertListItemProps : Props {
 
 val alertsListItem = fcmemo<AlertListItemProps>("alertsListItem") {
     a {
-        attrs.href = "#"
-        attrs.className = ClassName("list-group-item list-group-item-action d-flex justify-content-between align-items-center" + if (it.active == true) " active" else "")
-        attrs.onClick = { ev ->
+        href = "#"
+        className = ClassName("list-group-item list-group-item-action d-flex justify-content-between align-items-center" + if (it.active == true) " active" else "")
+        onClick = { ev ->
             ev.preventDefault()
             it.action?.invoke()
         }
         span {
             it.icon?.let { i ->
                 i {
-                    attrs.className = ClassName("fas $i me-2")
+                    className = ClassName("fas $i me-2")
                 }
             }
             it.text?.let { t ->
@@ -35,7 +35,7 @@ val alertsListItem = fcmemo<AlertListItemProps>("alertsListItem") {
         }
         it.count?.let { c ->
             span {
-                attrs.className = ClassName("badge rounded-pill " + if (it.active == true) "bg-light" else "bg-primary")
+                className = ClassName("badge rounded-pill " + if (it.active == true) "bg-light" else "bg-primary")
                 +"$c"
             }
         }

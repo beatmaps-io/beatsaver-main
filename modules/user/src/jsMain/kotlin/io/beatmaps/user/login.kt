@@ -5,17 +5,15 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.form
-import kotlinx.browser.window
-import org.w3c.dom.url.URLSearchParams
 import react.Props
-import react.dom.FormAction
 import react.dom.html.ReactHTML.div
-import react.dom.html.ReactHTML.form
 import react.dom.html.ReactHTML.hr
 import react.dom.html.ReactHTML.i
 import react.useEffectOnce
 import web.cssom.ClassName
 import web.form.FormMethod
+import web.url.URLSearchParams
+import web.window.window
 
 val loginPage = fcmemo<Props>("loginPage") {
     useEffectOnce {
@@ -38,21 +36,21 @@ val loginPage = fcmemo<Props>("loginPage") {
         }
 
     div {
-        attrs.className = ClassName("login-form card border-dark")
+        className = ClassName("login-form card border-dark")
         div {
-            attrs.className = ClassName("card-header")
+            className = ClassName("card-header")
             +"Sign in"
         }
         form("card-body", FormMethod.post, "/login") {
             loginForm {
-                attrs.buttonText = "Sign in"
+                buttonText = "Sign in"
 
                 getToast()?.let {
                     div {
-                        attrs.className = ClassName("mb-2")
+                        className = ClassName("mb-2")
                         errors {
-                            attrs.valid = it.second
-                            attrs.errors = listOf(it.first)
+                            valid = it.second
+                            errors = listOf(it.first)
                         }
                     }
                 }
@@ -62,10 +60,10 @@ val loginPage = fcmemo<Props>("loginPage") {
             }
             hr {}
             div {
-                attrs.className = ClassName("d-grid")
+                className = ClassName("d-grid")
                 routeLink("/register", className = "btn btn-primary", id = "register") {
                     i {
-                        attrs.className = ClassName("fas fa-user-plus")
+                        className = ClassName("fas fa-user-plus")
                     }
                     +" Sign up new account"
                 }

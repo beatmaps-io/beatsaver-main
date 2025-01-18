@@ -2,10 +2,10 @@ package io.beatmaps.shared.form
 
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.upload.uploadError
+import io.beatmaps.util.fcmemo
 import js.objects.jso
 import react.Props
 import react.dom.html.ReactHTML.div
-import react.fc
 import web.cssom.ClassName
 import web.cssom.Display
 
@@ -15,11 +15,11 @@ external interface ErrorProps : Props {
     var valid: Boolean?
 }
 
-val errors = fc<ErrorProps>("errors") { props ->
+val errors = fcmemo<ErrorProps>("errors") { props ->
     props.errors?.forEach { error ->
         div {
-            attrs.className = ClassName((if (props.valid == true) "" else "in") + "valid-feedback")
-            attrs.style = jso {
+            className = ClassName((if (props.valid == true) "" else "in") + "valid-feedback")
+            style = jso {
                 display = Display.block
             }
             +error
@@ -27,12 +27,12 @@ val errors = fc<ErrorProps>("errors") { props ->
     }
     props.validationErrors?.forEach {
         div {
-            attrs.className = ClassName("invalid-feedback")
-            attrs.style = jso {
+            className = ClassName("invalid-feedback")
+            style = jso {
                 display = Display.block
             }
             uploadError {
-                attrs.info = it
+                info = it
             }
         }
     }

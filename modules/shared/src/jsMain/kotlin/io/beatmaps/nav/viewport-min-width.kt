@@ -1,8 +1,10 @@
 package io.beatmaps.nav
 
-import kotlinx.browser.document
-import kotlinx.browser.window
-import org.w3c.dom.events.Event
+import web.dom.document
+import web.events.Event
+import web.events.addEventListener
+import web.screen.screen
+import web.window.window
 
 fun viewportMinWidthPolyfill() {
     document.querySelector("meta[name=viewport]")?.let { viewport ->
@@ -11,23 +13,23 @@ fun viewportMinWidthPolyfill() {
         var currentState = false
         minWidthPart?.get(1)?.toInt()?.let { minWidth ->
             val updateViewportSize = { _: Event? ->
-                if (window.screen.width < minWidth != currentState) {
-                    currentState = window.screen.width < minWidth
+                if (screen.width < minWidth != currentState) {
+                    currentState = screen.width < minWidth
                     document.querySelector("meta[name=viewport]")?.let { currentViewport ->
-                        document.head?.removeChild(currentViewport)
+                        document.head.removeChild(currentViewport)
                     }
 
-                    if (window.screen.width < minWidth) {
+                    if (screen.width < minWidth) {
                         val newViewport = document.createElement("meta")
                         newViewport.setAttribute("name", "viewport")
                         newViewport.setAttribute("content", "width=$minWidth")
-                        document.head?.appendChild(newViewport)
+                        document.head.appendChild(newViewport)
                     } else {
-                        document.head?.appendChild(viewport)
+                        document.head.appendChild(viewport)
                     }
                 }
             }
-            window.addEventListener("resize", updateViewportSize)
+            window.addEventListener(Event.RESIZE, updateViewportSize)
             updateViewportSize(null)
         }
     }

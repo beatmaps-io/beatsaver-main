@@ -1,11 +1,11 @@
 package io.beatmaps.shared
 
 import external.ClassName
+import io.beatmaps.util.fcmemo
 import react.PropsWithChildren
 import react.dom.html.HTMLAttributes
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.i
-import react.fc
 import web.html.HTMLDivElement
 
 external interface ColoredCardProps : PropsWithChildren {
@@ -16,27 +16,27 @@ external interface ColoredCardProps : PropsWithChildren {
     var classes: String?
 }
 
-val coloredCard = fc<ColoredCardProps>("coloredCard") {
+val coloredCard = fcmemo<ColoredCardProps>("coloredCard") { props ->
     div {
-        attrs.className = ClassName("card colored " + (it.classes ?: ""))
-        it.extra?.invoke(attrs)
+        className = ClassName("card colored " + (props.classes ?: ""))
+        props.extra?.invoke(this)
 
         div {
-            attrs.className = ClassName("color ${it.color}")
-            if (it.title != null) {
-                attrs.title = it.title ?: ""
+            className = ClassName("color ${props.color}")
+            if (props.title != null) {
+                title = props.title ?: ""
             }
 
-            if (it.icon != null) {
+            if (props.icon != null) {
                 i {
-                    attrs.className = ClassName("fas ${it.icon} icon")
-                    attrs.ariaHidden = true
+                    className = ClassName("fas ${props.icon} icon")
+                    ariaHidden = true
                 }
             }
         }
         div {
-            attrs.className = ClassName("content")
-            it.children()
+            className = ClassName("content")
+            +props.children
         }
     }
 }

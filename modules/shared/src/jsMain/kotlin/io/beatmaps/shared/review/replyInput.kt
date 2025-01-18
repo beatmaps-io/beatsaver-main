@@ -5,9 +5,9 @@ import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.shared.editableText
 import io.beatmaps.shared.form.errors
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.html.ReactHTML.div
-import react.fc
 import react.useState
 import web.cssom.ClassName
 import kotlin.js.Promise
@@ -17,24 +17,24 @@ external interface ReplyInputProps : Props {
     var onSuccess: ((String) -> Unit)?
 }
 
-val replyInput = fc<ReplyInputProps>("replyInput") { props ->
+val replyInput = fcmemo<ReplyInputProps>("replyInput") { props ->
     val (errors, setErrors) = useState(emptyList<String>())
     div {
-        attrs.className = ClassName("reply-input")
+        className = ClassName("reply-input")
         errors {
-            attrs.errors = errors
+            this.errors = errors
         }
         editableText {
-            attrs.placeholder = "Reply..."
-            attrs.buttonText = "Reply"
-            attrs.editing = true
-            attrs.rows = 1
-            attrs.maxLength = ReviewConstants.MAX_REPLY_LENGTH
-            attrs.onError = {
+            placeholder = "Reply..."
+            buttonText = "Reply"
+            editing = true
+            rows = 1
+            maxLength = ReviewConstants.MAX_REPLY_LENGTH
+            onError = {
                 setErrors(it)
             }
-            attrs.saveText = props.onSave
-            attrs.stopEditing = props.onSuccess
+            saveText = props.onSave
+            stopEditing = props.onSuccess
         }
     }
 }

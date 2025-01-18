@@ -2,22 +2,22 @@ package io.beatmaps.shared
 
 import external.AxiosResponse
 import io.beatmaps.api.ActionResponse
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.setData
 import io.beatmaps.util.textToContent
 import js.objects.jso
-import org.w3c.dom.HTMLTextAreaElement
 import react.PropsWithChildren
 import react.dom.html.ReactHTML.button
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.span
 import react.dom.html.ReactHTML.textarea
-import react.fc
 import react.useRef
 import react.useState
 import web.cssom.ClassName
 import web.cssom.Flex
 import web.cssom.None
 import web.html.ButtonType
+import web.html.HTMLTextAreaElement
 import kotlin.js.Promise
 
 external interface EditableTextProps : PropsWithChildren {
@@ -36,7 +36,7 @@ external interface EditableTextProps : PropsWithChildren {
     var textClass: ClassName?
 }
 
-val editableText = fc<EditableTextProps>("editableText") { props ->
+val editableText = fcmemo<EditableTextProps>("editableText") { props ->
     val (loading, setLoading) = useState(false)
     val (textLength, setTextLength) = useState(props.text?.length ?: 0)
 
@@ -46,41 +46,41 @@ val editableText = fc<EditableTextProps>("editableText") { props ->
 
     if (props.editing == true) {
         div {
-            attrs.className = props.textClass
+            className = props.textClass
             textarea {
-                attrs.rows = props.rows ?: 10
-                attrs.className = ClassName("form-control")
-                attrs.id = "review"
-                attrs.disabled = loading == true
-                attrs.placeholder = props.placeholder ?: ""
-                attrs.defaultValue = displayText
+                rows = props.rows ?: 10
+                className = ClassName("form-control")
+                id = "review"
+                disabled = loading == true
+                placeholder = props.placeholder ?: ""
+                defaultValue = displayText
                 ref = textareaRef
-                attrs.maxLength = props.maxLength
-                attrs.onChange = {
+                maxLength = props.maxLength
+                onChange = {
                     setTextLength(it.target.value.length)
                 }
             }
             props.maxLength?.let {
                 span {
-                    attrs.className = ClassName("badge badge-" + if (textLength > it - 20) "danger" else "dark")
-                    attrs.id = "count_message"
+                    className = ClassName("badge badge-" + if (textLength > it - 20) "danger" else "dark")
+                    id = "count_message"
                     +"$textLength / $it"
                 }
             }
         }
 
         div {
-            attrs.className = ClassName("d-flex flex-row-reverse")
+            className = ClassName("d-flex flex-row-reverse")
             button {
-                attrs.className = ClassName("text-nowrap btn " + (props.btnClass ?: "btn-primary mt-1"))
-                attrs.type = ButtonType.submit
-                attrs.disabled = loading || textLength < 1 || props.maxLength?.let { textLength > it } ?: false
-                attrs.setData("loading", loading)
+                className = ClassName("text-nowrap btn " + (props.btnClass ?: "btn-primary mt-1"))
+                type = ButtonType.submit
+                disabled = loading || textLength < 1 || props.maxLength?.let { textLength > it } ?: false
+                setData("loading", loading)
 
-                attrs.style = jso {
+                style = jso {
                     flex = props.flex ?: None.none
                 }
-                attrs.onClick = {
+                onClick = {
                     val newReview = textareaRef.current?.value ?: ""
                     if (!loading) {
                         setLoading(true)
@@ -105,7 +105,7 @@ val editableText = fc<EditableTextProps>("editableText") { props ->
                 +(props.buttonText ?: "Save")
             }
 
-            props.children()
+            +props.children
         }
     } else if (props.renderText == true) {
         div {

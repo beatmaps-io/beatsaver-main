@@ -1,8 +1,7 @@
 package external
 
-import org.w3c.files.File
-import react.ComponentClass
 import react.ComponentModule
+import react.ComponentType
 import react.Props
 import react.ReactElement
 import react.Ref
@@ -12,6 +11,8 @@ import react.dom.events.FocusEventHandler
 import react.dom.events.KeyboardEventHandler
 import react.dom.events.MouseEventHandler
 import web.autofill.AutoFill
+import web.file.File
+import web.html.HTMLElement
 import web.html.InputType
 
 external interface DropzoneProps : Props {
@@ -26,7 +27,7 @@ external interface DropInfo : Props {
 }
 
 external interface DropRootProps : Props {
-    var ref: Ref<*>
+    var ref: Ref<HTMLElement>
     var onKeyDown: KeyboardEventHandler<*>
     var onFocus: FocusEventHandler<*>
     var onBlur: FocusEventHandler<*>
@@ -39,7 +40,7 @@ external interface DropRootProps : Props {
 }
 
 external interface DropInputProps : Props {
-    var ref: Ref<*>
+    var ref: Ref<HTMLElement>
     var accept: String?
     var type: InputType
     var multiple: Boolean
@@ -52,5 +53,5 @@ external interface DropInputProps : Props {
 @JsModule("react-dropzone")
 @JsNonModule
 external object Dropzone : ComponentModule<DropzoneProps> {
-    override val default: ComponentClass<DropzoneProps>
+    override val default: ComponentType<DropzoneProps>
 }

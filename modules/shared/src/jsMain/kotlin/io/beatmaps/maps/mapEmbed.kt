@@ -38,16 +38,16 @@ val mapEmbed = fcmemo<Props>("mapEmbed") {
     }
 
     div {
-        attrs.className = ClassName("embed")
+        className = ClassName("embed")
         if (map != null) {
             beatmapInfo {
-                attrs.obj = map
-                attrs.version = map.mainVersion()
-                attrs.audio = audio
+                obj = map
+                version = map.mainVersion()
+                this.audio = audio
             }
         } else {
             div {
-                attrs.className = ClassName("card missing")
+                className = ClassName("card missing")
                 if (missing) {
                     +"Missing beatmap"
                 } else {

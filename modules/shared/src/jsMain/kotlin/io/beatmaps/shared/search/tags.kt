@@ -5,18 +5,19 @@ import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.MapTagType
 import io.beatmaps.maps.mapTag
 import io.beatmaps.util.applyIf
-import kotlinx.browser.document
-import kotlinx.browser.window
-import org.w3c.dom.events.Event
-import org.w3c.dom.events.KeyboardEvent
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.h4
-import react.fc
 import react.useEffect
 import react.useEffectOnceWithCleanup
 import react.useState
 import web.cssom.ClassName
+import web.dom.document
+import web.events.addEventListener
+import web.events.removeEventListener
+import web.uievents.KeyboardEvent
+import web.window.window
 
 external interface TagsProps : Props {
     var default: MapTagSet?
@@ -24,14 +25,13 @@ external interface TagsProps : Props {
     var highlightOnEmpty: Boolean?
 }
 
-val tags = fc<TagsProps>("tags") { props ->
+val tags = fcmemo<TagsProps>("tags") { props ->
     val (selected, setSelected) = useState<MapTagSet>(emptyMap())
     val (altHeld, setAltHeld) = useState(false)
     val (shiftHeld, setShiftHeld) = useState(false)
 
-    val handleShift = { it: Event ->
-        val ke = (it as? KeyboardEvent)
-        if (ke?.repeat == false) {
+    val handleShift = { ke: KeyboardEvent ->
+        if (!ke.repeat) {
             setShiftHeld(ke.shiftKey)
             setAltHeld(ke.altKey)
         }
@@ -42,16 +42,16 @@ val tags = fc<TagsProps>("tags") { props ->
     }
 
     useEffectOnceWithCleanup {
-        document.addEventListener("keyup", handleShift)
-        document.addEventListener("keydown", handleShift)
+        document.addEventListener(KeyboardEvent.KEY_UP, handleShift)
+        document.addEventListener(KeyboardEvent.KEY_DOWN, handleShift)
         onCleanup {
-            document.removeEventListener("keyup", handleShift)
-            document.removeEventListener("keydown", handleShift)
+            document.removeEventListener(KeyboardEvent.KEY_UP, handleShift)
+            document.removeEventListener(KeyboardEvent.KEY_DOWN, handleShift)
         }
     }
 
     div {
-        attrs.className = ClassName("tags")
+        className = ClassName("tags")
         h4 {
             +"Tags"
         }
@@ -60,17 +60,17 @@ val tags = fc<TagsProps>("tags") { props ->
         MapTag.sorted.fold(MapTagType.None) { prev, it ->
             if (it.type != prev) {
                 div {
-                    attrs.className = ClassName("break")
+                    className = ClassName("break")
                 }
             }
 
             if (it.type != MapTagType.None) {
                 mapTag {
-                    attrs.selected = selected.any { x -> x.value.contains(it) } || highlightAll
-                    attrs.excluded = selected[false]?.contains(it) == true
-                    attrs.tag = it
+                    this.selected = selected.any { x -> x.value.contains(it) } || highlightAll
+                    excluded = selected[false]?.contains(it) == true
+                    tag = it
 
-                    attrs.onClick = { _ ->
+                    onClick = { _ ->
                         val t = selected[!altHeld] ?: setOf()
 
                         val shouldAdd = !t.contains(it)
@@ -90,8 +90,7 @@ val tags = fc<TagsProps>("tags") { props ->
 
                         setSelected(newSelected)
                         props.callback?.invoke(newSelected)
-                        window.asDynamic().getSelection().removeAllRanges()
-                        Unit
+                        window.getSelection()?.removeAllRanges()
                     }
                 }
             }

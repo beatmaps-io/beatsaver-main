@@ -2,7 +2,7 @@ package io.beatmaps.maps.testplay
 
 import external.component
 import js.import.importAsync
-import react.ComponentClass
+import react.ComponentType
 import react.ExoticComponent
 import react.Props
 
@@ -11,8 +11,8 @@ external interface NewFeedbackProps : Props {
 }
 
 external interface TestplayModule {
-    val recentTestplays: ComponentClass<Props>
-    val newFeedback: ComponentClass<NewFeedbackProps>
+    val recentTestplays: ComponentType<Props>
+    val newFeedback: ComponentType<NewFeedbackProps>
 }
 
 data class TestPlayExotics(

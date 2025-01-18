@@ -37,7 +37,6 @@ import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.useAudio
 import kotlinx.serialization.SerializationException
-import org.w3c.xhr.FormData
 import react.Props
 import react.Suspense
 import react.dom.html.ReactHTML.a
@@ -50,17 +49,18 @@ import react.dom.html.ReactHTML.span
 import react.dom.html.ReactHTML.textarea
 import react.router.useNavigate
 import react.router.useParams
-import react.useContext
+import react.use
 import react.useEffect
 import react.useEffectOnce
 import react.useEffectWithCleanup
 import react.useRef
 import react.useState
 import web.cssom.ClassName
+import web.form.FormData
 import web.html.HTMLTextAreaElement
 import kotlin.js.Promise
 
-val playlistPage = fcmemo<Props>("playlistPage") {
+val playlistPage = fcmemo<Props>("playlistPage") { props ->
     val (playlist, setPlaylist) = useState<PlaylistFull?>(null)
     val (maps, setMaps) = useState(listOf<MapDetailWithOrder>())
     val tokenRef = useRef(Axios.CancelToken.source())
@@ -72,7 +72,7 @@ val playlistPage = fcmemo<Props>("playlistPage") {
     val itemsPerPage = PlaylistConstants.PAGE_SIZE
 
     val audio = useAudio()
-    val userData = useContext(globalContext)
+    val userData = use(globalContext)
 
     val history = History(useNavigate())
     val params = useParams()
@@ -174,25 +174,25 @@ val playlistPage = fcmemo<Props>("playlistPage") {
     }
 
     modal {
-        attrs.callbacks = modalRef
+        callbacks = modalRef
     }
 
     modalContext.Provider {
-        attrs.value = modalRef
+        value = modalRef
 
         div {
-            attrs.className = ClassName("row mt-3")
+            className = ClassName("row mt-3")
             div {
-                attrs.className = ClassName("playlist-info col-lg-4")
+                className = ClassName("playlist-info col-lg-4")
                 playlist?.let { pl ->
                     if (pl.deletedAt != null) {
                         div {
-                            attrs.className = ClassName("alert alert-danger text-center")
+                            className = ClassName("alert alert-danger text-center")
                             +"DELETED"
                         }
                     } else if (pl.type != EPlaylistType.System && (pl.owner.id == userData?.userId || userData?.admin == true)) {
                         div {
-                            attrs.className = ClassName("btn-group")
+                            className = ClassName("btn-group")
                             routeLink("${pl.link()}/edit", className = "btn btn-primary") {
                                 +"Edit"
                             }
@@ -202,9 +202,9 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                                 }
                             }
                             a {
-                                attrs.href = "#"
-                                attrs.className = ClassName("btn btn-danger")
-                                attrs.onClick = {
+                                href = "#"
+                                className = ClassName("btn btn-danger")
+                                onClick = {
                                     it.preventDefault()
                                     modalRef.current?.showDialog?.invoke(
                                         ModalData(
@@ -218,7 +218,7 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                                                         +"Reason for action:"
                                                     }
                                                     textarea {
-                                                        attrs.className = ClassName("form-control")
+                                                        className = ClassName("form-control")
                                                         ref = reasonRef
                                                     }
                                                 }
@@ -233,17 +233,17 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                     }
                     if (pl.type != EPlaylistType.System && pl.deletedAt == null && userData?.curator == true) {
                         div {
-                            attrs.className = ClassName("break")
+                            className = ClassName("break")
                         }
                         div {
-                            attrs.className = ClassName("btn-group")
+                            className = ClassName("btn-group")
                             a {
-                                attrs.href = "#"
-                                attrs.className = ClassName("btn " + if (pl.curatedAt == null) "btn-green" else "btn-expert")
+                                href = "#"
+                                className = ClassName("btn " + if (pl.curatedAt == null) "btn-green" else "btn-expert")
                                 val text = ((if (pl.curatedAt == null) "" else "Un-") + "Curate")
-                                attrs.title = text
-                                attrs.ariaLabel = text
-                                attrs.onClick = {
+                                title = text
+                                ariaLabel = text
+                                onClick = {
                                     it.preventDefault()
                                     curate(pl.playlistId, pl.curatedAt == null)
                                 }
@@ -252,24 +252,24 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                         }
                     }
                     div {
-                        attrs.className = ClassName("list-group")
+                        className = ClassName("list-group")
                         img {
-                            attrs.alt = "Cover"
-                            attrs.src = pl.playlistImage512 ?: pl.playlistImage
+                            alt = "Cover"
+                            src = pl.playlistImage512 ?: pl.playlistImage
                         }
                         div {
-                            attrs.className = ClassName("list-group-item d-flex justify-content-between")
+                            className = ClassName("list-group-item d-flex justify-content-between")
                             +"Name"
                             span {
-                                attrs.className = ClassName("text-truncate ms-4")
+                                className = ClassName("text-truncate ms-4")
                                 +pl.name
                             }
                         }
                         routeLink(pl.owner.profileLink(ProfileTab.PLAYLISTS), className = "list-group-item d-flex justify-content-between") {
                             +"Created by"
                             span {
-                                attrs.className = ClassName("text-truncate ms-4")
-                                attrs.title = pl.owner.name
+                                className = ClassName("text-truncate ms-4")
+                                title = pl.owner.name
                                 +pl.owner.name
                             }
                         }
@@ -277,46 +277,46 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                             routeLink(curator.profileLink(ProfileTab.CURATED), className = "list-group-item d-flex justify-content-between") {
                                 +"Curated by"
                                 span {
-                                    attrs.className = ClassName("text-truncate ms-4")
+                                    className = ClassName("text-truncate ms-4")
                                     +curator.name
                                 }
                             }
                         }
                         div {
-                            attrs.className = ClassName("list-group-item d-flex justify-content-between")
+                            className = ClassName("list-group-item d-flex justify-content-between")
                             +"Maps"
                             span {
-                                attrs.className = ClassName("text-truncate ms-4")
+                                className = ClassName("text-truncate ms-4")
                                 +maps.size.toString()
                             }
                         }
                         if (pl.description.isNotBlank()) {
                             div {
-                                attrs.className = ClassName("list-group-item ws-normal text-break")
+                                className = ClassName("list-group-item ws-normal text-break")
                                 textToContent(pl.description)
                             }
                         }
                     }
                     div {
-                        attrs.className = ClassName("btn-group d-flex")
+                        className = ClassName("btn-group d-flex")
                         a {
-                            attrs.href = pl.downloadURL
-                            attrs.className = ClassName("btn btn-success")
+                            href = pl.downloadURL
+                            className = ClassName("btn btn-success")
                             +"Download"
                         }
                         a {
-                            attrs.href = pl.oneClickURL()
-                            attrs.className = ClassName("btn btn-info")
+                            href = pl.oneClickURL()
+                            className = ClassName("btn btn-info")
                             +"One-Click"
                         }
                     }
                     if (maps.isNotEmpty()) {
                         div {
-                            attrs.className = ClassName("list-group")
+                            className = ClassName("list-group")
                             div {
-                                attrs.className = ClassName("list-group-item ws-normal")
+                                className = ClassName("list-group-item ws-normal")
                                 div {
-                                    attrs.className = ClassName("mb-1")
+                                    className = ClassName("mb-1")
                                     +"Mappers"
                                 }
                                 maps
@@ -336,24 +336,24 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                     }
                     if (userData?.suspended == false && !userData.admin && userData.userId != pl.owner.id) {
                         div {
-                            attrs.className = ClassName("btn-group")
+                            className = ClassName("btn-group")
                             button {
-                                attrs.className = ClassName("btn btn-danger")
+                                className = ClassName("btn btn-danger")
                                 val text = "Report"
-                                attrs.id = "report"
-                                attrs.title = text
-                                attrs.ariaLabel = text
-                                attrs.onClick = {
+                                this.id = "report"
+                                title = text
+                                ariaLabel = text
+                                onClick = {
                                     it.preventDefault()
                                     modalRef.current?.showDialog?.invoke(
                                         ModalData(
                                             "Report playlist",
                                             bodyCallback = {
                                                 reportModal {
-                                                    attrs.subject = "playlist"
-                                                    attrs.reasonRef = reasonRef
-                                                    attrs.captchaRef = captchaRef
-                                                    attrs.errorsRef = errorRef
+                                                    subject = "playlist"
+                                                    this.reasonRef = reasonRef
+                                                    this.captchaRef = captchaRef
+                                                    errorsRef = errorRef
                                                 }
                                             },
                                             buttons = listOf(
@@ -364,7 +364,7 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                                     )
                                 }
                                 i {
-                                    attrs.className = ClassName("fas fa-flag me-2")
+                                    className = ClassName("fas fa-flag me-2")
                                 }
                                 +text
                             }
@@ -373,27 +373,27 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                 }
             }
             div {
-                attrs.className = ClassName("col-lg-8")
+                className = ClassName("col-lg-8")
                 Suspense {
-                    attrs.fallback = loadingElem
+                    fallback = loadingElem
                     if (playlist?.owner?.id == userData?.userId && playlist?.type?.orderable == true) {
                         dndExotics.dragDropContext {
-                            attrs.onDragEnd = {
+                            onDragEnd = {
                                 it.destination?.let { dest ->
                                     reorderMaps(it.source.index, dest.index)
                                 }
                             }
                             droppable("playlist") {
-                                attrs.className = ClassName("playlist")
+                                className = ClassName("playlist")
                                 maps.mapIndexed { idx, it ->
                                     draggable(it.map.id, idx) {
-                                        attrs.className = ClassName("drag-beatmap")
+                                        className = ClassName("drag-beatmap")
 
                                         playlistMapEditable {
-                                            attrs.obj = it.map
-                                            attrs.audio = audio
-                                            attrs.playlistKey = playlist.playlistId
-                                            attrs.removeMap = {
+                                            obj = it.map
+                                            this.audio = audio
+                                            playlistKey = playlist.playlistId
+                                            removeMap = {
                                                 setMaps(maps - it)
                                             }
                                         }
@@ -403,12 +403,12 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                         }
                     } else {
                         div {
-                            attrs.className = ClassName("playlist")
+                            className = ClassName("playlist")
                             maps.map {
                                 beatmapInfo {
-                                    attrs.obj = it.map
-                                    attrs.version = it.map.publishedVersion()
-                                    attrs.audio = audio
+                                    obj = it.map
+                                    version = it.map.publishedVersion()
+                                    this.audio = audio
                                 }
                             }
                         }

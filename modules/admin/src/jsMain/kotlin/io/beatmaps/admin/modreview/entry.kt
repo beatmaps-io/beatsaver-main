@@ -17,7 +17,6 @@ import io.beatmaps.shared.review.sentimentIcon
 import io.beatmaps.shared.review.sentimentPicker
 import io.beatmaps.user.userLink
 import io.beatmaps.util.fcmemo
-import org.w3c.dom.HTMLTextAreaElement
 import react.Props
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.div
@@ -26,10 +25,11 @@ import react.dom.html.ReactHTML.p
 import react.dom.html.ReactHTML.td
 import react.dom.html.ReactHTML.textarea
 import react.dom.html.ReactHTML.tr
-import react.useContext
+import react.use
 import react.useRef
 import react.useState
 import web.cssom.ClassName
+import web.html.HTMLTextAreaElement
 import kotlin.js.Promise
 
 external interface ModReviewEntryProps : Props {
@@ -40,7 +40,7 @@ external interface ModReviewEntryProps : Props {
 }
 
 val modReviewEntry = fcmemo<ModReviewEntryProps>("modReviewEntry") { props ->
-    val modal = useContext(modalContext)
+    val modal = use(modalContext)
     val reasonRef = useRef<HTMLTextAreaElement>()
     val (hidden, setHidden) = useState(false)
     val (editing, setEditing) = useState(false)
@@ -64,8 +64,8 @@ val modReviewEntry = fcmemo<ModReviewEntryProps>("modReviewEntry") { props ->
                 td {
                     review.creator?.let { c ->
                         userLink {
-                            attrs.user = c
-                            attrs.callback = {
+                            user = c
+                            callback = {
                                 props.setUser(c.name)
                             }
                         }
@@ -80,47 +80,47 @@ val modReviewEntry = fcmemo<ModReviewEntryProps>("modReviewEntry") { props ->
 
                     if (map != null) {
                         mapTitle {
-                            attrs.title = map.name
-                            attrs.mapKey = map.id
+                            title = map.name
+                            mapKey = map.id
                         }
                     }
                 }
                 td {
                     if (review is ReviewDetail) {
                         sentimentIcon {
-                            attrs.sentiment = sentiment ?: review.sentiment
+                            this.sentiment = sentiment ?: review.sentiment
                         }
                         +(sentiment ?: review.sentiment).name
                     }
                 }
                 td {
                     TimeAgo.default {
-                        attrs.date = review.createdAt.toString()
+                        date = review.createdAt.toString()
                     }
                 }
                 td {
-                    attrs.className = ClassName("action-cell")
+                    className = ClassName("action-cell")
                     div {
-                        attrs.className = ClassName("d-flex link-buttons")
+                        className = ClassName("d-flex link-buttons")
                         a {
-                            attrs.href = "#"
+                            href = "#"
 
-                            attrs.title = "Edit"
-                            attrs.ariaLabel = "Edit"
-                            attrs.onClick = { e ->
+                            title = "Edit"
+                            ariaLabel = "Edit"
+                            onClick = { e ->
                                 e.preventDefault()
                                 setEditing(!editing)
                             }
                             i {
-                                attrs.className = ClassName("fas fa-pen text-warning")
+                                className = ClassName("fas fa-pen text-warning")
                             }
                         }
                         a {
-                            attrs.href = "#"
+                            href = "#"
 
-                            attrs.title = "Delete"
-                            attrs.ariaLabel = "Delete"
-                            attrs.onClick = { e ->
+                            title = "Delete"
+                            ariaLabel = "Delete"
+                            onClick = { e ->
                                 e.preventDefault()
                                 modal?.current?.showDialog?.invoke(
                                     ModalData(
@@ -133,7 +133,7 @@ val modReviewEntry = fcmemo<ModReviewEntryProps>("modReviewEntry") { props ->
                                                 +"Reason for action:"
                                             }
                                             textarea {
-                                                attrs.className = ClassName("form-control")
+                                                className = ClassName("form-control")
                                                 ref = reasonRef
                                             }
                                         },
@@ -142,30 +142,30 @@ val modReviewEntry = fcmemo<ModReviewEntryProps>("modReviewEntry") { props ->
                                 )
                             }
                             i {
-                                attrs.className = ClassName("fas fa-trash text-danger-light")
+                                className = ClassName("fas fa-trash text-danger-light")
                             }
                         }
                     }
                 }
             } ?: run {
                 td {
-                    attrs.colSpan = 5
+                    colSpan = 5
                 }
             }
         }
         tr {
-            attrs.className = ClassName("hiddenRow")
+            className = ClassName("hiddenRow")
             td {
-                attrs.colSpan = 5
+                colSpan = 5
                 props.entry?.let { review ->
                     div {
-                        attrs.className = ClassName("text-wrap text-break expand")
+                        className = ClassName("text-wrap text-break expand")
                         p {
-                            attrs.className = ClassName("card-text")
+                            className = ClassName("card-text")
                             val textClass = if (editing && review is ReviewDetail) {
                                 sentimentPicker {
-                                    attrs.sentiment = newSentiment ?: sentiment ?: review.sentiment
-                                    attrs.updateSentiment = { newSentiment ->
+                                    this.sentiment = newSentiment ?: sentiment ?: review.sentiment
+                                    updateSentiment = { newSentiment ->
                                         setNewSentiment(newSentiment)
                                     }
                                 }
@@ -176,11 +176,11 @@ val modReviewEntry = fcmemo<ModReviewEntryProps>("modReviewEntry") { props ->
                             }
 
                             editableText {
-                                attrs.text = text ?: review.text
-                                attrs.editing = editing
-                                attrs.maxLength = ReviewConstants.MAX_LENGTH
-                                attrs.textClass = textClass
-                                attrs.saveText = { newReview ->
+                                this.text = text ?: review.text
+                                this.editing = editing
+                                maxLength = ReviewConstants.MAX_LENGTH
+                                this.textClass = textClass
+                                saveText = { newReview ->
                                     val newSentimentLocal = if (review is ReviewDetail) {
                                         newSentiment ?: sentiment ?: review.sentiment
                                     } else {
@@ -193,7 +193,7 @@ val modReviewEntry = fcmemo<ModReviewEntryProps>("modReviewEntry") { props ->
                                         r
                                     }
                                 }
-                                attrs.stopEditing = { t ->
+                                stopEditing = { t ->
                                     setText(t)
                                     setEditing(false)
                                 }

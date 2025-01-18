@@ -31,11 +31,11 @@ val userListRow = fcmemo<UserListRowProps>("UserListRow") { props ->
         props.user?.let { u ->
             td {
                 img {
-                    attrs.alt = "${u.name} avatar"
-                    attrs.src = u.avatar
-                    attrs.className = ClassName("rounded-circle")
-                    attrs.width = 40.0
-                    attrs.height = 40.0
+                    alt = "${u.name} avatar"
+                    src = u.avatar
+                    className = ClassName("rounded-circle")
+                    width = 40.0
+                    height = 40.0
                 }
             }
             td {
@@ -89,12 +89,12 @@ val userListRow = fcmemo<UserListRowProps>("UserListRow") { props ->
             }
             td {
                 a {
-                    attrs.href = "${Config.apibase}/users/id/${u.id}/playlist"
-                    attrs.target = WindowTarget._blank
-                    attrs.className = ClassName("btn btn-secondary")
-                    attrs.download = ""
+                    href = "${Config.apibase}/users/id/${u.id}/playlist"
+                    target = WindowTarget._blank
+                    className = ClassName("btn btn-secondary")
+                    download = ""
                     i {
-                        attrs.className = ClassName("fas fa-list")
+                        className = ClassName("fas fa-list")
                     }
                 }
             }

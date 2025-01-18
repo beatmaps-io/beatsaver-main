@@ -1,12 +1,11 @@
 package io.beatmaps
 
 import io.beatmaps.common.json
-import kotlinx.browser.document
+import react.ChildrenBuilder
 import react.Context
 import react.ProviderProps
-import react.RBuilder
-import react.RElementBuilder
 import react.createContext
+import web.dom.document
 
 object Config {
     const val apibase = "/api"
@@ -16,9 +15,9 @@ object Config {
 val globalContext = createContext<UserData?>(null)
 val configContext = createContext<ConfigData?>(null)
 
-inline fun <reified T> RBuilder.provide(context: Context<T?>, id: String, crossinline block: RElementBuilder<ProviderProps<T?>>.() -> Unit) {
+inline fun <reified T> ChildrenBuilder.provide(context: Context<T?>, id: String, crossinline block: ProviderProps<T?>.() -> Unit) {
     context.Provider {
-        attrs.value = document.getElementById(id)?.let {
+        value = document.getElementById(id)?.let {
             json.decodeFromString<T>(it.textContent ?: "{}")
         }
 

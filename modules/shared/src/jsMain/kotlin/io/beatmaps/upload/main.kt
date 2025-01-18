@@ -13,8 +13,6 @@ import io.beatmaps.maps.tagPicker
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import io.beatmaps.util.fcmemo
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.HTMLInputElement
 import react.Props
 import react.dom.events.SyntheticEvent
 import react.dom.html.ReactHTML.a
@@ -39,6 +37,9 @@ import react.useRef
 import react.useState
 import web.autofill.AutoFillBase
 import web.cssom.ClassName
+import web.html.HTMLElement
+import web.html.HTMLInputElement
+import web.html.HTMLTextAreaElement
 import web.html.InputType
 import web.window.WindowTarget
 
@@ -58,7 +59,7 @@ val uploadPage = fcmemo<Props>("uploadPage") {
 
     val captchaRef = useRef<ICaptchaHandler>()
     val titleRef = useRef<HTMLInputElement>()
-    val descrRef = useRef<HTMLInputElement>()
+    val descrRef = useRef<HTMLTextAreaElement>()
     val beatsageRef = useRef<HTMLInputElement>()
     val progressBarInnerRef = useRef<HTMLElement>()
 
@@ -76,65 +77,65 @@ val uploadPage = fcmemo<Props>("uploadPage") {
     }
 
     div {
-        attrs.className = ClassName("row")
+        className = ClassName("row")
         div {
-            attrs.className = ClassName("col-7")
+            className = ClassName("col-7")
             h2 {
                 +"Upload Map"
             }
             form {
                 fieldset {
                     div {
-                        attrs.className = ClassName("mb-3")
+                        className = ClassName("mb-3")
                         label {
-                            attrs.className = ClassName("form-label")
-                            attrs.htmlFor = "name"
+                            className = ClassName("form-label")
+                            htmlFor = "name"
                             +"Title"
                         }
                         input {
-                            attrs.type = InputType.text
-                            attrs.className = ClassName("form-control" + (if (hasTitle == false) " is-invalid" else ""))
-                            attrs.id = "name"
-                            attrs.disabled = loading
+                            type = InputType.text
+                            className = ClassName("form-control" + (if (hasTitle == false) " is-invalid" else ""))
+                            id = "name"
+                            disabled = loading
                             ref = titleRef
                             val checkForValue = { _: SyntheticEvent<*, *> ->
                                 updateHasTitle()
                             }
-                            attrs.onChange = checkForValue
-                            attrs.onBlur = checkForValue
+                            onChange = checkForValue
+                            onBlur = checkForValue
                         }
                         div {
-                            attrs.className = ClassName("invalid-feedback")
+                            className = ClassName("invalid-feedback")
                             +"Enter a title"
                         }
                     }
 
                     div {
-                        attrs.className = ClassName("mb-3")
+                        className = ClassName("mb-3")
                         label {
-                            attrs.className = ClassName("form-label")
-                            attrs.htmlFor = "description"
+                            className = ClassName("form-label")
+                            htmlFor = "description"
                             +"Description"
                         }
                         textarea {
-                            attrs.rows = 10
-                            attrs.className = ClassName("form-control")
-                            attrs.id = "description"
-                            attrs.disabled = loading
+                            rows = 10
+                            className = ClassName("form-control")
+                            id = "description"
+                            disabled = loading
                             ref = descrRef
                         }
                     }
 
                     tagPicker {
-                        attrs.classes = "ul-tags mb-3"
-                        attrs.tags = tags
-                        attrs.tagUpdateCallback = useCallback { it: Set<MapTag> ->
+                        classes = "ul-tags mb-3"
+                        this.tags = tags
+                        tagUpdateCallback = useCallback { it: Set<MapTag> ->
                             setTags(it)
                         }
-                        attrs.renderHeading = useMemo {
+                        renderHeading = useMemo {
                             TagPickerHeadingRenderer { byType ->
                                 label {
-                                    attrs.className = ClassName("form-label")
+                                    className = ClassName("form-label")
                                     val allocationInfo = MapTag.maxPerType.map { "${byType.getValue(it.key)}/${it.value} ${it.key.name}" }.joinToString(", ")
                                     +"Tags ($allocationInfo):"
                                 }
@@ -143,43 +144,43 @@ val uploadPage = fcmemo<Props>("uploadPage") {
                     }
 
                     div {
-                        attrs.className = ClassName("mb-3")
+                        className = ClassName("mb-3")
                         input {
-                            attrs.type = InputType.radio
-                            attrs.name = "beatsage"
-                            attrs.className = ClassName("btn-check")
-                            attrs.id = "beatsage-no"
-                            attrs.autoComplete = AutoFillBase.off
-                            attrs.checked = false
-                            attrs.onChange = {
+                            type = InputType.radio
+                            name = "beatsage"
+                            className = ClassName("btn-check")
+                            id = "beatsage-no"
+                            autoComplete = AutoFillBase.off
+                            checked = false
+                            onChange = {
                                 setBeatsage(false)
                                 updateHasTitle()
                             }
                         }
                         label {
-                            attrs.className = ClassName("btn btn-outline-light")
-                            attrs.htmlFor = "beatsage-no"
+                            className = ClassName("btn btn-outline-light")
+                            htmlFor = "beatsage-no"
                             +"I made this map myself with no"
                             br {}
                             +"AI assistance"
                         }
 
                         input {
-                            attrs.type = InputType.radio
-                            attrs.name = "beatsage"
-                            attrs.className = ClassName("btn-check")
-                            attrs.id = "beatsage-yes"
+                            type = InputType.radio
+                            name = "beatsage"
+                            className = ClassName("btn-check")
+                            id = "beatsage-yes"
                             ref = beatsageRef
-                            attrs.autoComplete = AutoFillBase.off
-                            attrs.checked = false
-                            attrs.onChange = {
+                            autoComplete = AutoFillBase.off
+                            checked = false
+                            onChange = {
                                 setBeatsage(true)
                                 updateHasTitle()
                             }
                         }
                         label {
-                            attrs.className = ClassName("btn btn-outline-light")
-                            attrs.htmlFor = "beatsage-yes"
+                            className = ClassName("btn btn-outline-light")
+                            htmlFor = "beatsage-yes"
                             +"BeatSage or another AI mapping tool was used to create this map"
                         }
                     }
@@ -211,24 +212,24 @@ val uploadPage = fcmemo<Props>("uploadPage") {
 
                     captcha {
                         key = "captcha"
-                        attrs.captchaRef = captchaRef
-                        attrs.page = "upload"
+                        this.captchaRef = captchaRef
+                        page = "upload"
                     }
                 }
             }
         }
         div {
-            attrs.className = ClassName("col-5")
+            className = ClassName("col-5")
             div {
-                attrs.className = ClassName("card bg-danger mb-3")
+                className = ClassName("card bg-danger mb-3")
                 div {
-                    attrs.className = ClassName("card-body")
+                    className = ClassName("card-body")
                     h4 {
-                        attrs.className = ClassName("card-title")
+                        className = ClassName("card-title")
                         +"Map Testing"
                     }
                     p {
-                        attrs.className = ClassName("card-text")
+                        className = ClassName("card-text")
                         +"You do "
                         strong {
                             +"NOT"
@@ -236,43 +237,43 @@ val uploadPage = fcmemo<Props>("uploadPage") {
                         +" need to upload your map to test it in game."
                     }
                     p {
-                        attrs.className = ClassName("card-text")
+                        className = ClassName("card-text")
                         +"On PC you can access WIPs directly if you have SongCore."
                         br {}
                         +"On Quest you can follow "
                         a {
-                            attrs.href = "https://bsmg.wiki/mapping/#testing-on-a-quest"
-                            attrs.target = WindowTarget._blank
-                            attrs.rel = "noopener"
+                            href = "https://bsmg.wiki/mapping/#testing-on-a-quest"
+                            target = WindowTarget._blank
+                            rel = "noopener"
                             +"the guide on the BSMG wiki"
                         }
                         +"."
                         br {}
                         +"If you need help head over to the "
                         a {
-                            attrs.href = "https://discord.com/channels/441805394323439646/443569023951568906"
-                            attrs.target = WindowTarget._blank
-                            attrs.rel = "noopener"
+                            href = "https://discord.com/channels/441805394323439646/443569023951568906"
+                            target = WindowTarget._blank
+                            rel = "noopener"
                             +"BSMG discord"
                         }
                         +"."
                     }
                     p {
-                        attrs.className = ClassName("card-text")
+                        className = ClassName("card-text")
                         +"WIP maps will be removed."
                     }
                 }
             }
             div {
-                attrs.className = ClassName("card bg-blue mb-3")
+                className = ClassName("card bg-blue mb-3")
                 div {
-                    attrs.className = ClassName("card-body")
+                    className = ClassName("card-body")
                     h4 {
-                        attrs.className = ClassName("card-title")
+                        className = ClassName("card-title")
                         +"AI Mapping"
                     }
                     p {
-                        attrs.className = ClassName("card-text")
+                        className = ClassName("card-text")
                         +"Auto-generated (AI) maps are allowed following these guidelines:"
                     }
                     ul {
@@ -294,14 +295,14 @@ val uploadPage = fcmemo<Props>("uploadPage") {
                 }
             }
             div {
-                attrs.className = ClassName("card bg-secondary mb-3")
+                className = ClassName("card bg-secondary mb-3")
                 div {
-                    attrs.className = ClassName("card-body")
+                    className = ClassName("card-body")
                     p {
-                        attrs.className = ClassName("card-text")
+                        className = ClassName("card-text")
                         +"By uploading your map, you acknowledge that you agree to our "
                         a {
-                            attrs.href = "/policy/tos"
+                            href = "/policy/tos"
                             +"Terms of Service"
                         }
                         +"."
@@ -312,10 +313,10 @@ val uploadPage = fcmemo<Props>("uploadPage") {
     }
 
     div {
-        attrs.className = ClassName("row")
+        className = ClassName("row")
         if (!loading) {
             errors {
-                attrs.validationErrors = errors
+                validationErrors = errors
             }
         }
     }

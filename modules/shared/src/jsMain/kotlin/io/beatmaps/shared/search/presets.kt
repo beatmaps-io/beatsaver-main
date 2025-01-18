@@ -1,10 +1,10 @@
 package io.beatmaps.shared.search
 
 import external.Moment
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.html.ReactHTML.button
 import react.dom.html.ReactHTML.div
-import react.fc
 import web.cssom.ClassName
 
 data class PresetDateRange(val startDate: Moment?, val endDate: Moment?)
@@ -21,12 +21,12 @@ external interface PresetProps : Props {
     var callback: (Moment?, Moment?) -> Unit
 }
 
-val presets = fc<PresetProps>("presets") { props ->
+val presets = fcmemo<PresetProps>("presets") { props ->
     div {
-        attrs.className = ClassName("presets")
+        className = ClassName("presets")
         presetsMap.forEach { preset ->
             button {
-                attrs.onClick = {
+                onClick = {
                     it.preventDefault()
                     props.callback(preset.value.startDate, preset.value.endDate)
                 }

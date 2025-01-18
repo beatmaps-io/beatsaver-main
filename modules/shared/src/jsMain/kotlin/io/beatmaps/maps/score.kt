@@ -22,7 +22,7 @@ external interface ScoreProps : Props {
 val score = fcmemo<ScoreProps>("score") { props ->
     tr {
         th {
-            attrs.scope = "row"
+            scope = "row"
             +"${props.position}"
         }
         td {
@@ -39,7 +39,7 @@ val score = fcmemo<ScoreProps>("score") { props ->
             }
         }
         td {
-            attrs.className = ClassName(props.scoreColor)
+            className = ClassName(props.scoreColor)
             +props.percentage
         }
         td {

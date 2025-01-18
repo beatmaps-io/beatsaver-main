@@ -5,11 +5,7 @@ import io.beatmaps.shared.form.errors
 import io.beatmaps.user.loginForm
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.form
-import kotlinx.browser.document
-import kotlinx.browser.window
 import kotlinx.serialization.Serializable
-import org.w3c.dom.HTMLMetaElement
-import org.w3c.dom.url.URLSearchParams
 import react.Props
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.div
@@ -17,7 +13,11 @@ import react.dom.html.ReactHTML.i
 import react.dom.html.ReactHTML.span
 import react.useState
 import web.cssom.ClassName
+import web.dom.document
 import web.form.FormMethod
+import web.html.HTMLMetaElement
+import web.url.URLSearchParams
+import web.window.window
 
 @Serializable
 data class OauthData(val id: String, val name: String, val icon: String)
@@ -31,31 +31,31 @@ val authorizePage = fcmemo<Props>("authorizePage") {
     val clientName = oauth?.name ?: "An unknown application"
 
     div {
-        attrs.className = ClassName("login-form card border-dark")
+        className = ClassName("login-form card border-dark")
         oauthHeader {
-            attrs.clientName = clientName
-            attrs.clientIcon = oauth?.icon?.let { if (it == "null") null else it }
-            attrs.callback = {
+            this.clientName = clientName
+            clientIcon = oauth?.icon?.let { if (it == "null") null else it }
+            callback = {
                 setLoggedIn(it)
             }
         }
         oauthScopes {
-            attrs.clientName = clientName
-            attrs.scopes = params.get("scope") ?: ""
+            this.clientName = clientName
+            scopes = params.get("scope") ?: ""
         }
         if (loggedIn == null) {
             div {
-                attrs.className = ClassName("card-body")
+                className = ClassName("card-body")
                 span { +"Loading..." }
             }
         } else if (loggedIn) {
             div {
-                attrs.className = ClassName("card-body d-grid")
+                className = ClassName("card-body d-grid")
                 a {
-                    attrs.href = "/oauth2/authorize/success" + window.location.search
-                    attrs.className = ClassName("btn btn-success")
+                    href = "/oauth2/authorize/success" + window.location.search
+                    className = ClassName("btn btn-success")
                     i {
-                        attrs.className = ClassName("fas fa-sign-in-alt")
+                        className = ClassName("fas fa-sign-in-alt")
                     }
                     +" Authorize"
                 }
@@ -70,12 +70,12 @@ val authorizePage = fcmemo<Props>("authorizePage") {
                 loginForm {
                     if (params.has("failed")) {
                         errors {
-                            attrs.errors = listOf("Username or password not valid")
+                            errors = listOf("Username or password not valid")
                         }
                     }
 
-                    attrs.discordLink = "/discord?state=$serialized"
-                    attrs.buttonText = "Authorize"
+                    discordLink = "/discord?state=$serialized"
+                    buttonText = "Authorize"
                 }
             }
         }

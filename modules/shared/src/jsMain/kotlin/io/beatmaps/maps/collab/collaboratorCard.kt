@@ -1,12 +1,12 @@
 package io.beatmaps.maps.collab
 
 import io.beatmaps.api.UserDetail
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.img
 import react.dom.html.ReactHTML.span
-import react.fc
 import web.cssom.ClassName
 
 external interface CollaboratorCardProps : Props {
@@ -15,25 +15,25 @@ external interface CollaboratorCardProps : Props {
     var accepted: Boolean?
 }
 
-val collaboratorCard = fc<CollaboratorCardProps>("collaboratorCard") { props ->
+val collaboratorCard = fcmemo<CollaboratorCardProps>("collaboratorCard") { props ->
     div {
-        attrs.className = ClassName("collaborator" + if (props.accepted != false) " accepted" else "")
+        className = ClassName("collaborator" + if (props.accepted != false) " accepted" else "")
         img {
-            attrs.alt = props.user.name
-            attrs.src = props.user.avatar
+            alt = props.user.name
+            src = props.user.avatar
         }
         span {
             +props.user.name
             props.accepted?.let { status ->
                 span {
-                    attrs.className = ClassName("status")
+                    className = ClassName("status")
                     +(if (status) "Accepted" else "Pending")
                 }
             }
         }
         a {
-            attrs.className = ClassName("btn-close")
-            attrs.onClick = {
+            className = ClassName("btn-close")
+            onClick = {
                 props.callback?.invoke()
             }
         }

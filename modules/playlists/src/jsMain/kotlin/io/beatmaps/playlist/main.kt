@@ -13,7 +13,6 @@ import io.beatmaps.shared.search.generateSearchComponent
 import io.beatmaps.util.buildURL
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.includeIfNotNull
-import org.w3c.dom.url.URLSearchParams
 import react.Props
 import react.router.useLocation
 import react.router.useNavigate
@@ -23,6 +22,7 @@ import react.useEffectOnce
 import react.useMemo
 import react.useRef
 import react.useState
+import web.url.URLSearchParams
 
 val playlistFilters = listOf<FilterInfo<PlaylistSearchParams, *>>(
     BooleanFilterInfo("curated", "Curated", FilterCategory.GENERAL) { it.curated == true },
@@ -38,14 +38,14 @@ val playlistFeed = fcmemo<Props>("playlistFeed") {
     val history = History(useNavigate())
     fun fromURL() = URLSearchParams(location.search).let { params ->
         PlaylistSearchParams(
-            params.get("q") ?: "",
-            params.get("minNps")?.toFloatOrNull(),
-            params.get("maxNps")?.toFloatOrNull(),
-            params.get("from"),
-            params.get("to"),
-            params.get("includeEmpty")?.toBoolean(),
-            params.get("curated")?.toBoolean(),
-            params.get("verified")?.toBoolean(),
+            params["q"] ?: "",
+            params["minNps"]?.toFloatOrNull(),
+            params["maxNps"]?.toFloatOrNull(),
+            params["from"],
+            params["to"],
+            params["includeEmpty"]?.toBoolean(),
+            params["curated"]?.toBoolean(),
+            params["verified"]?.toBoolean(),
             SearchOrder.fromString(params.get("order")) ?: SearchOrder.Relevance
         )
     }
@@ -96,16 +96,16 @@ val playlistFeed = fcmemo<Props>("playlistFeed") {
     }
 
     playlistSearch {
-        attrs.typedState = searchParams
-        attrs.sortOrderTarget = SortOrderTarget.Playlist
-        attrs.maxNps = 16
-        attrs.filters = playlistFilters
-        attrs.paramsFromPage = paramGenerator
-        attrs.updateSearchParams = updateSearchParams
+        typedState = searchParams
+        sortOrderTarget = SortOrderTarget.Playlist
+        maxNps = 16
+        filters = playlistFilters
+        paramsFromPage = paramGenerator
+        this.updateSearchParams = updateSearchParams
     }
     playlistTable {
-        attrs.search = searchParams
-        attrs.updateScrollIndex = usiRef
+        search = searchParams
+        updateScrollIndex = usiRef
     }
 }
 

@@ -10,7 +10,7 @@ import io.beatmaps.api.ReviewConstants
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.shared.form.errors
-import org.w3c.dom.HTMLTextAreaElement
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.RefObject
 import react.dom.html.ReactHTML.a
@@ -20,11 +20,11 @@ import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.p
 import react.dom.html.ReactHTML.span
 import react.dom.html.ReactHTML.textarea
-import react.fc
 import react.useEffectOnce
 import react.useRef
 import react.useState
 import web.cssom.ClassName
+import web.html.HTMLTextAreaElement
 import web.window.WindowTarget
 
 external interface NewReviewProps : Props {
@@ -36,7 +36,7 @@ external interface NewReviewProps : Props {
     var reloadList: (() -> Unit)?
 }
 
-val newReview = fc<NewReviewProps>("newReview") { props ->
+val newReview = fcmemo<NewReviewProps>("newReview") { props ->
     val (loading, setLoading) = useState(false)
     val (errors, setErrors) = useState(emptyList<String>())
     val (sentiment, setSentiment) = useState<ReviewSentiment?>(null)
@@ -57,44 +57,44 @@ val newReview = fc<NewReviewProps>("newReview") { props ->
 
     if (props.existingReview == false) {
         div {
-            attrs.className = ClassName("card mb-2")
+            className = ClassName("card mb-2")
             div {
-                attrs.className = ClassName("card-body")
+                className = ClassName("card-body")
                 sentimentPicker {
-                    attrs.sentiment = sentiment
-                    attrs.updateSentiment = {
+                    this.sentiment = sentiment
+                    updateSentiment = {
                         setSentiment(it)
                     }
                 }
                 sentiment?.let { currentSentiment ->
                     p {
-                        attrs.className = ClassName("my-2")
+                        className = ClassName("my-2")
                         +"Comment (required)"
                         button {
-                            attrs.className = ClassName("ms-1 fas fa-info-circle fa-button")
-                            attrs.onClick = {
+                            className = ClassName("ms-1 fas fa-info-circle fa-button")
+                            onClick = {
                                 setFocusIcon(!focusIcon)
                             }
                         }
                         div {
-                            attrs.className = ClassName("tooltip fade" + if (focusIcon) " show" else " d-none")
+                            className = ClassName("tooltip fade" + if (focusIcon) " show" else " d-none")
                             div {
-                                attrs.className = ClassName("tooltip-arrow")
+                                className = ClassName("tooltip-arrow")
                             }
                             div {
-                                attrs.className = ClassName("tooltip-inner")
+                                className = ClassName("tooltip-inner")
                                 +"Learn how to provide constructive map feedback "
                                 a {
-                                    attrs.href = "https://bsaber.com/how-to-write-constructive-map-reviews/"
-                                    attrs.target = WindowTarget._blank
+                                    href = "https://bsaber.com/how-to-write-constructive-map-reviews/"
+                                    target = WindowTarget._blank
                                     +"here"
                                 }
                                 +"."
                                 br {}
                                 +"Reviews are subject to the "
                                 a {
-                                    attrs.href = "/policy/tos"
-                                    attrs.target = WindowTarget._blank
+                                    href = "/policy/tos"
+                                    target = WindowTarget._blank
                                     +"TOS"
                                 }
                                 +"."
@@ -102,28 +102,28 @@ val newReview = fc<NewReviewProps>("newReview") { props ->
                         }
                     }
                     textarea {
-                        attrs.className = ClassName("form-control")
+                        className = ClassName("form-control")
                         key = "description"
                         ref = textareaRef
-                        attrs.id = "description"
-                        attrs.rows = 5
-                        attrs.maxLength = ReviewConstants.MAX_LENGTH
-                        attrs.disabled = loading == true
-                        attrs.onChange = {
+                        id = "description"
+                        rows = 5
+                        maxLength = ReviewConstants.MAX_LENGTH
+                        disabled = loading == true
+                        onChange = {
                             setReviewLength(it.target.value.length)
                         }
                     }
                     span {
-                        attrs.className = ClassName("badge badge-" + if (reviewLength > ReviewConstants.MAX_LENGTH - 20) "danger" else "dark")
-                        attrs.id = "count_message"
+                        className = ClassName("badge badge-" + if (reviewLength > ReviewConstants.MAX_LENGTH - 20) "danger" else "dark")
+                        id = "count_message"
                         +"$reviewLength / ${ReviewConstants.MAX_LENGTH}"
                     }
                     div {
-                        attrs.className = ClassName("d-flex flex-row-reverse mt-1")
+                        className = ClassName("d-flex flex-row-reverse mt-1")
                         button {
-                            attrs.className = ClassName("btn btn-info")
-                            attrs.disabled = reviewLength < 1 || loading
-                            attrs.onClick = {
+                            className = ClassName("btn btn-info")
+                            disabled = reviewLength < 1 || loading
+                            onClick = {
                                 val newReview = textareaRef.current?.value ?: ""
 
                                 setLoading(true)
@@ -155,7 +155,7 @@ val newReview = fc<NewReviewProps>("newReview") { props ->
                         }
 
                         errors {
-                            attrs.errors = errors
+                            this.errors = errors
                         }
                     }
                 }

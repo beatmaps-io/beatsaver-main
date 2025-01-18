@@ -5,17 +5,17 @@ import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
-import kotlinx.browser.window
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.b
 import react.dom.html.ReactHTML.br
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.img
-import react.fc
 import react.useEffectOnce
 import react.useState
 import web.cssom.ClassName
+import web.window.window
 
 external interface OauthHeaderProps : Props {
     var clientName: String
@@ -24,7 +24,7 @@ external interface OauthHeaderProps : Props {
     var logoutLink: String?
 }
 
-val oauthHeader = fc<OauthHeaderProps>("oauthHeader") { props ->
+val oauthHeader = fcmemo<OauthHeaderProps>("oauthHeader") { props ->
     val (username, setUsername) = useState<String?>(null)
     val (avatar, setAvatar) = useState<String?>(null)
 
@@ -48,13 +48,13 @@ val oauthHeader = fc<OauthHeaderProps>("oauthHeader") { props ->
     }
 
     div {
-        attrs.className = ClassName("card-header")
+        className = ClassName("card-header")
         props.clientIcon?.let {
             img {
-                attrs.alt = "Icon"
-                attrs.src = it
-                attrs.className = ClassName("oauthicon")
-                attrs.title = props.clientName
+                alt = "Icon"
+                src = it
+                className = ClassName("oauthicon")
+                title = props.clientName
             }
         }
         b {
@@ -70,13 +70,13 @@ val oauthHeader = fc<OauthHeaderProps>("oauthHeader") { props ->
             }
             +" "
             img {
-                attrs.src = avatar
-                attrs.className = ClassName("authorize-avatar")
+                src = avatar
+                className = ClassName("authorize-avatar")
             }
             br {}
 
             a {
-                attrs.href = props.logoutLink ?: ("/oauth2/authorize/not-me" + window.location.search)
+                href = props.logoutLink ?: ("/oauth2/authorize/not-me" + window.location.search)
                 +"Not you?"
             }
         }

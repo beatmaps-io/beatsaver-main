@@ -2,7 +2,6 @@ package io.beatmaps.util
 
 import io.beatmaps.api.LeaderboardType
 import js.objects.jso
-import react.RElementBuilder
 import react.dom.html.HTMLAttributes
 
 fun String.transformURLIntoLinks() =
@@ -49,8 +48,8 @@ fun String.parseSocialLinks() =
         v.replace(it.first.toRegex(setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE)), it.second)
     }
 
-fun RElementBuilder<HTMLAttributes<*>>.textToContent(text: String) {
-    attrs.dangerouslySetInnerHTML = jso {
+fun HTMLAttributes<*>.textToContent(text: String) {
+    dangerouslySetInnerHTML = jso {
         __html = text
             .replace(Regex("<.+?>"), "")
             .parseBoldMarkdown()

@@ -3,11 +3,8 @@ package io.beatmaps.shared.search
 import io.beatmaps.common.EnvironmentSet
 import io.beatmaps.common.api.EBeatsaberEnvironment
 import io.beatmaps.util.applyIf
+import io.beatmaps.util.fcmemo
 import js.objects.jso
-import kotlinx.browser.document
-import kotlinx.browser.window
-import org.w3c.dom.events.Event
-import org.w3c.dom.events.KeyboardEvent
 import react.Props
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.h4
@@ -15,13 +12,17 @@ import react.dom.html.ReactHTML.h5
 import react.dom.html.ReactHTML.input
 import react.dom.html.ReactHTML.label
 import react.dom.html.ReactHTML.span
-import react.fc
 import react.useEffect
 import react.useEffectOnceWithCleanup
 import react.useState
 import web.cssom.ClassName
 import web.cssom.number
+import web.dom.document
+import web.events.addEventListener
+import web.events.removeEventListener
 import web.html.InputType
+import web.uievents.KeyboardEvent
+import web.window.window
 
 external interface EnvironmentsProps : Props {
     var default: EnvironmentSet?
@@ -29,15 +30,12 @@ external interface EnvironmentsProps : Props {
     var highlightOnEmpty: Boolean?
 }
 
-val environments = fc<EnvironmentsProps>("environments") { props ->
+val environments = fcmemo<EnvironmentsProps>("environments") { props ->
     val (selected, setSelected) = useState<EnvironmentSet>(emptySet())
     val (shiftHeld, setShiftHeld) = useState(false)
 
-    val handleShift = { it: Event ->
-        val ke = (it as? KeyboardEvent)
-        if (ke?.repeat == false) {
-            setShiftHeld(ke.shiftKey)
-        }
+    val handleShift = { ke: KeyboardEvent ->
+        if (!ke.repeat) setShiftHeld(ke.shiftKey)
     }
 
     useEffect(props.default) {
@@ -50,16 +48,16 @@ val environments = fc<EnvironmentsProps>("environments") { props ->
     }
 
     useEffectOnceWithCleanup {
-        document.addEventListener("keyup", handleShift)
-        document.addEventListener("keydown", handleShift)
+        document.addEventListener(KeyboardEvent.KEY_UP, handleShift)
+        document.addEventListener(KeyboardEvent.KEY_DOWN, handleShift)
         onCleanup {
-            document.removeEventListener("keyup", handleShift)
-            document.removeEventListener("keydown", handleShift)
+            document.removeEventListener(KeyboardEvent.KEY_UP, handleShift)
+            document.removeEventListener(KeyboardEvent.KEY_DOWN, handleShift)
         }
     }
 
     div {
-        attrs.className = ClassName("environments")
+        className = ClassName("environments")
         h4 {
             +"Environments"
         }
@@ -76,13 +74,13 @@ val environments = fc<EnvironmentsProps>("environments") { props ->
                 h5 {
                     val id = "env-cat-${it.category().lowercase()}"
                     input {
-                        attrs.type = InputType.checkbox
-                        attrs.id = id
+                        type = InputType.checkbox
+                        this.id = id
                         val envs = EBeatsaberEnvironment.entries.filter { e -> e.v3 == it.v3 }.toSet()
 
-                        attrs.checked = selected.containsAll(envs)
+                        checked = selected.containsAll(envs)
 
-                        attrs.onClick = { ev ->
+                        onChange = { ev ->
                             if (ev.currentTarget.checked) {
                                 updateSelected(selected + envs)
                             } else {
@@ -91,19 +89,19 @@ val environments = fc<EnvironmentsProps>("environments") { props ->
                         }
                     }
                     label {
-                        attrs.htmlFor = id
+                        htmlFor = id
                         +it.category()
                     }
                 }
             }
 
             div {
-                attrs.className = ClassName("badge badge-${it.color()} me-2 mb-2")
-                attrs.style = jso {
+                className = ClassName("badge badge-${it.color()} me-2 mb-2")
+                style = jso {
                     opacity = number(if (!highlightAll && !selected.contains(it)) 0.4 else 1.0)
                 }
 
-                attrs.onClick = { _ ->
+                onClick = { _ ->
                     val shouldAdd = !selected.contains(it)
 
                     val newSelected = (if (shiftHeld) selected else emptySet())
@@ -114,8 +112,7 @@ val environments = fc<EnvironmentsProps>("environments") { props ->
                         }
 
                     updateSelected(newSelected)
-                    window.asDynamic().getSelection().removeAllRanges()
-                    Unit
+                    window.getSelection()?.removeAllRanges()
                 }
 
                 span {

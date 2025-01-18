@@ -16,18 +16,18 @@ external interface DownloadProps : Props {
 
 val downloadZip = fcmemo<DownloadProps>("downloadZip") { props ->
     a {
-        attrs.href = props.version.downloadURL
+        href = props.version.downloadURL
         val text = "Download zip"
-        attrs.rel = "noopener"
-        attrs.title = text
-        attrs.ariaLabel = text
+        rel = "noopener"
+        title = text
+        ariaLabel = text
         span {
-            attrs.className = ClassName("dd-text")
+            className = ClassName("dd-text")
             +text
         }
         i {
-            attrs.className = ClassName("fas fa-download text-info")
-            attrs.ariaHidden = true
+            className = ClassName("fas fa-download text-info")
+            ariaHidden = true
         }
     }
 }

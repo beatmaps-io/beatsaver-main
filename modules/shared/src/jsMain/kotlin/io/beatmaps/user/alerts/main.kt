@@ -21,8 +21,6 @@ import io.beatmaps.util.includeIfNotNull
 import io.beatmaps.util.updateAlertDisplay
 import io.beatmaps.util.useDidUpdateEffect
 import io.beatmaps.util.useObjectMemoize
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.url.URLSearchParams
 import react.Props
 import react.dom.aria.AriaRole
 import react.dom.html.ReactHTML.a
@@ -42,7 +40,9 @@ import react.useMemo
 import react.useRef
 import react.useState
 import web.cssom.ClassName
+import web.html.HTMLElement
 import web.html.InputType
+import web.url.URLSearchParams
 import kotlin.js.Promise
 
 val alertsPage = fcmemo<Props>("alertsPage") {
@@ -152,27 +152,27 @@ val alertsPage = fcmemo<Props>("alertsPage") {
     val renderer = useMemo(read, forceHide, hiddenAlerts) {
         InfiniteScrollElementRenderer<UserAlert> {
             alert {
-                attrs.alert = it
-                attrs.read = read
-                attrs.hidden = (forceHide && it?.type != EAlertType.Collaboration) || hiddenAlerts.contains(it?.hashCode())
-                attrs.markAlert = markAlert
+                alert = it
+                this.read = read
+                hidden = (forceHide && it?.type != EAlertType.Collaboration) || hiddenAlerts.contains(it?.hashCode())
+                this.markAlert = markAlert
             }
         }
     }
 
     div {
-        attrs.className = ClassName("row")
+        className = ClassName("row")
         h1 {
-            attrs.className = ClassName("col-lg-8")
+            className = ClassName("col-lg-8")
             +"Alerts & Notifications"
         }
         div {
-            attrs.className = ClassName("col-lg-4 d-flex")
+            className = ClassName("col-lg-4 d-flex")
             if (!read && alertStats?.let { it.unread > 0 } == true) {
                 a {
-                    attrs.href = "#"
-                    attrs.className = ClassName("mark-read")
-                    attrs.onClick = { e ->
+                    href = "#"
+                    className = ClassName("mark-read")
+                    onClick = { e ->
                         e.preventDefault()
                         markAll()
                     }
@@ -182,43 +182,43 @@ val alertsPage = fcmemo<Props>("alertsPage") {
         }
     }
     div {
-        attrs.className = ClassName("row")
+        className = ClassName("row")
         div {
-            attrs.className = ClassName("col-lg-4 alert-nav")
+            className = ClassName("col-lg-4 alert-nav")
             div {
-                attrs.className = ClassName("list-group")
+                className = ClassName("list-group")
                 alertsListItem {
-                    attrs.active = !read
-                    attrs.count = alertStats?.unread
-                    attrs.icon = "fa-envelope"
-                    attrs.text = "Unread"
-                    attrs.action = {
+                    active = !read
+                    count = alertStats?.unread
+                    icon = "fa-envelope"
+                    text = "Unread"
+                    action = {
                         toURL(false)
                     }
                 }
                 alertsListItem {
-                    attrs.active = read
-                    attrs.count = alertStats?.read
-                    attrs.icon = "fa-envelope-open"
-                    attrs.text = "Read"
-                    attrs.action = {
+                    active = read
+                    count = alertStats?.read
+                    icon = "fa-envelope-open"
+                    text = "Read"
+                    action = {
                         toURL(true)
                     }
                 }
             }
             h6 {
-                attrs.className = ClassName("mt-3")
+                className = ClassName("mt-3")
                 +"Filters"
             }
             div {
-                attrs.className = ClassName("list-group")
+                className = ClassName("list-group")
                 alertStats?.byType?.forEach { (type, count) ->
                     alertsListItem {
-                        attrs.active = filters.contains(type)
-                        attrs.count = count
-                        attrs.icon = type.icon
-                        attrs.text = type.readable()
-                        attrs.action = {
+                        active = filters.contains(type)
+                        this.count = count
+                        icon = type.icon
+                        text = type.readable()
+                        action = {
                             toURL(
                                 filtersLocal = if (filters.contains(type)) {
                                     filters.minus(type)
@@ -231,31 +231,31 @@ val alertsPage = fcmemo<Props>("alertsPage") {
                 }
             }
             h6 {
-                attrs.className = ClassName("mt-3")
+                className = ClassName("mt-3")
                 +"Preferences"
             }
             if (alertStats != null) {
                 div {
-                    attrs.className = ClassName("list-group")
+                    className = ClassName("list-group")
                     label {
-                        attrs.className = ClassName("list-group-item list-group-item-action d-flex justify-content-between align-items-center")
-                        attrs.htmlFor = "pref-map-curation"
-                        attrs.role = AriaRole.button
+                        className = ClassName("list-group-item list-group-item-action d-flex justify-content-between align-items-center")
+                        htmlFor = "pref-map-curation"
+                        role = AriaRole.button
                         span {
                             i {
-                                attrs.className = ClassName("fas ${EAlertType.Curation.icon} me-2")
+                                className = ClassName("fas ${EAlertType.Curation.icon} me-2")
                             }
                             +"Map Curation"
                         }
                         span {
-                            attrs.className = ClassName("form-switch")
+                            className = ClassName("form-switch")
                             input {
-                                attrs.type = InputType.checkbox
-                                attrs.className = ClassName("form-check-input")
-                                attrs.id = "pref-map-curation"
-                                attrs.disabled = loading
-                                attrs.defaultChecked = alertStats.curationAlerts
-                                attrs.onChange = { ev ->
+                                type = InputType.checkbox
+                                className = ClassName("form-check-input")
+                                id = "pref-map-curation"
+                                disabled = loading
+                                defaultChecked = alertStats.curationAlerts
+                                onChange = { ev ->
                                     setOptions(
                                         ev.target.checked,
                                         alertStats.reviewAlerts,
@@ -266,24 +266,24 @@ val alertsPage = fcmemo<Props>("alertsPage") {
                         }
                     }
                     label {
-                        attrs.className = ClassName("list-group-item list-group-item-action d-flex justify-content-between align-items-center")
-                        attrs.htmlFor = "pref-map-review"
-                        attrs.role = AriaRole.button
+                        className = ClassName("list-group-item list-group-item-action d-flex justify-content-between align-items-center")
+                        htmlFor = "pref-map-review"
+                        role = AriaRole.button
                         span {
                             i {
-                                attrs.className = ClassName("fas ${EAlertType.Review.icon} me-2")
+                                className = ClassName("fas ${EAlertType.Review.icon} me-2")
                             }
                             +"Map Review"
                         }
                         span {
-                            attrs.className = ClassName("form-switch")
+                            className = ClassName("form-switch")
                             input {
-                                attrs.type = InputType.checkbox
-                                attrs.className = ClassName("form-check-input")
-                                attrs.id = "pref-map-review"
-                                attrs.disabled = loading
-                                attrs.defaultChecked = alertStats.reviewAlerts
-                                attrs.onChange = { ev ->
+                                type = InputType.checkbox
+                                className = ClassName("form-check-input")
+                                id = "pref-map-review"
+                                disabled = loading
+                                defaultChecked = alertStats.reviewAlerts
+                                onChange = { ev ->
                                     setOptions(
                                         alertStats.curationAlerts,
                                         ev.target.checked,
@@ -294,24 +294,24 @@ val alertsPage = fcmemo<Props>("alertsPage") {
                         }
                     }
                     label {
-                        attrs.className = ClassName("list-group-item list-group-item-action d-flex justify-content-between align-items-center")
-                        attrs.htmlFor = "pref-follow"
-                        attrs.role = AriaRole.button
+                        className = ClassName("list-group-item list-group-item-action d-flex justify-content-between align-items-center")
+                        htmlFor = "pref-follow"
+                        role = AriaRole.button
                         span {
                             i {
-                                attrs.className = ClassName("fas ${EAlertType.Follow.icon} me-2")
+                                className = ClassName("fas ${EAlertType.Follow.icon} me-2")
                             }
                             +"Follows"
                         }
                         span {
-                            attrs.className = ClassName("form-switch")
+                            className = ClassName("form-switch")
                             input {
-                                attrs.type = InputType.checkbox
-                                attrs.className = ClassName("form-check-input")
-                                attrs.id = "pref-follow"
-                                attrs.disabled = loading
-                                attrs.defaultChecked = alertStats.followAlerts
-                                attrs.onChange = { ev ->
+                                type = InputType.checkbox
+                                className = ClassName("form-check-input")
+                                id = "pref-follow"
+                                disabled = loading
+                                defaultChecked = alertStats.followAlerts
+                                onChange = { ev ->
                                     setOptions(
                                         alertStats.curationAlerts,
                                         alertStats.reviewAlerts,
@@ -325,17 +325,17 @@ val alertsPage = fcmemo<Props>("alertsPage") {
             }
         }
         div {
-            attrs.className = ClassName("col-lg-8 vstack alerts")
+            className = ClassName("col-lg-8 vstack alerts")
             ref = resultsColumn
             key = "resultsColumn"
 
             alertInfiniteScroll {
-                attrs.resetRef = resetRef
-                attrs.rowHeight = 114.0
-                attrs.itemsPerPage = 20
-                attrs.container = resultsColumn
-                attrs.loadPage = loadPageRef
-                attrs.renderElement = renderer
+                this.resetRef = resetRef
+                rowHeight = 114.0
+                itemsPerPage = 20
+                container = resultsColumn
+                loadPage = loadPageRef
+                renderElement = renderer
             }
         }
     }

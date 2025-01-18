@@ -8,13 +8,13 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.shared.ModalButton
 import io.beatmaps.shared.ModalCallbacks
 import io.beatmaps.shared.ModalData
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.RefObject
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.i
 import react.dom.html.ReactHTML.p
 import react.dom.html.ReactHTML.span
-import react.fc
 import web.cssom.ClassName
 
 external interface CollaboratorLeaveProps : Props {
@@ -24,14 +24,14 @@ external interface CollaboratorLeaveProps : Props {
     var modal: RefObject<ModalCallbacks>?
 }
 
-val collaboratorLeave = fc<CollaboratorLeaveProps>("collaboratorLeave") { props ->
+val collaboratorLeave = fcmemo<CollaboratorLeaveProps>("collaboratorLeave") { props ->
     a {
-        attrs.href = "#"
+        href = "#"
 
         val title = "Leave collaboration"
-        attrs.title = title
-        attrs.ariaLabel = title
-        attrs.onClick = {
+        this.title = title
+        ariaLabel = title
+        onClick = {
             it.preventDefault()
 
             props.modal?.current?.showDialog?.invoke(
@@ -59,11 +59,11 @@ val collaboratorLeave = fc<CollaboratorLeaveProps>("collaboratorLeave") { props 
             )
         }
         span {
-            attrs.className = ClassName("dd-text")
+            className = ClassName("dd-text")
             +title
         }
         i {
-            attrs.className = ClassName("fas fa-users-slash text-danger-light")
+            className = ClassName("fas fa-users-slash text-danger-light")
         }
     }
 }

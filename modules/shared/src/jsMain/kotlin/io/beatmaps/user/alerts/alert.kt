@@ -15,7 +15,6 @@ import io.beatmaps.util.fcmemo
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.updateAlertDisplay
 import js.objects.jso
-import org.w3c.dom.HTMLDivElement
 import react.Props
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.b
@@ -32,6 +31,7 @@ import web.cssom.Margin
 import web.cssom.Opacity
 import web.cssom.number
 import web.cssom.px
+import web.html.HTMLDivElement
 
 external interface AlertProps : Props {
     var alert: UserAlert?
@@ -96,10 +96,10 @@ val alert = fcmemo<AlertProps>("alert") { props ->
 
     props.alert?.let { alert ->
         coloredCard {
-            attrs.color = alert.type.color
-            attrs.icon = alert.type.icon
+            color = alert.type.color
+            icon = alert.type.icon
 
-            attrs.extra = { d ->
+            extra = { d ->
                 d.style = jso {
                     this.height = height
                     this.opacity = opacity
@@ -108,30 +108,30 @@ val alert = fcmemo<AlertProps>("alert") { props ->
             }
 
             div {
-                attrs.className = ClassName("card-header d-flex")
+                className = ClassName("card-header d-flex")
                 span {
                     b {
                         +alert.head
                     }
                     +" - "
                     TimeAgo.default {
-                        attrs.date = alert.time.toString()
+                        date = alert.time.toString()
                     }
                 }
                 if (props.alert?.id != null) {
                     props.markAlert?.let { ma ->
                         div {
-                            attrs.className = ClassName("link-buttons")
+                            className = ClassName("link-buttons")
                             a {
-                                attrs.href = "#"
-                                attrs.title = if (props.read != true) "Mark as read" else "Mark as unread"
-                                attrs.onClick = { ev ->
+                                href = "#"
+                                title = if (props.read != true) "Mark as read" else "Mark as unread"
+                                onClick = { ev ->
                                     ev.preventDefault()
                                     markAlert(alert, props.read != true, ma)
                                 }
 
                                 i {
-                                    attrs.className = ClassName("fas text-info fa-eye" + if (props.read != true) "-slash" else "")
+                                    className = ClassName("fas text-info fa-eye" + if (props.read != true) "-slash" else "")
                                 }
                             }
                         }
@@ -140,23 +140,23 @@ val alert = fcmemo<AlertProps>("alert") { props ->
             }
             div {
                 ref = bodyRef
-                attrs.className = ClassName("card-body")
+                className = ClassName("card-body")
                 p {
                     textToContent(alert.body)
                 }
 
                 if (alert.type == EAlertType.Collaboration) {
                     div {
-                        attrs.className = ClassName("alert-buttons")
+                        className = ClassName("alert-buttons")
                         a {
                             +"Accept"
-                            attrs.className = ClassName("btn btn-success")
-                            attrs.onClick = { respondCollaboration(true) }
+                            className = ClassName("btn btn-success")
+                            onClick = { respondCollaboration(true) }
                         }
                         a {
                             +"Reject"
-                            attrs.className = ClassName("btn btn-danger")
-                            attrs.onClick = { respondCollaboration(false) }
+                            className = ClassName("btn btn-danger")
+                            onClick = { respondCollaboration(false) }
                         }
                     }
                 }
@@ -164,7 +164,7 @@ val alert = fcmemo<AlertProps>("alert") { props ->
         }
     } ?: run {
         div {
-            attrs.style = jso {
+            style = jso {
                 this.height = 144.px
             }
         }

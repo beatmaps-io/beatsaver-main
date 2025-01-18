@@ -2,10 +2,10 @@ package io.beatmaps.maps
 
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.api.MapVersion
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.span
-import react.fc
 import web.cssom.ClassName
 
 external interface MapRequirementsProps : Props {
@@ -13,7 +13,7 @@ external interface MapRequirementsProps : Props {
     var version: MapVersion
 }
 
-val mapRequirements = fc<MapRequirementsProps>("mapRequirements") { props ->
+val mapRequirements = fcmemo<MapRequirementsProps>("mapRequirements") { props ->
     val margins = props.margins ?: "me-2 mb-2"
 
     val requirementConditions = mapOf<String, (MapDifficulty) -> Boolean>(
@@ -29,9 +29,9 @@ val mapRequirements = fc<MapRequirementsProps>("mapRequirements") { props ->
 
     requirements.forEach { requirement ->
         div {
-            attrs.className = ClassName("badge badge-warning $margins")
+            className = ClassName("badge badge-warning $margins")
             span {
-                attrs.title = requirement
+                title = requirement
                 +requirement
             }
         }

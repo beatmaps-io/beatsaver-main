@@ -27,29 +27,29 @@ val rating = fcmemo<RatingProps>("rating") {
 
     div {
         small {
-            attrs.className = ClassName("text-center vote")
+            className = ClassName("text-center vote")
             div {
-                attrs.className = ClassName("u")
-                attrs.style = jso {
+                className = ClassName("u")
+                style = jso {
                     flex = it.up.pct
                 }
             }
             div {
-                attrs.className = ClassName("o")
-                attrs.style = jso {
+                className = ClassName("o")
+                style = jso {
                     flex = (if (totalVotes < 1) 1 else (uncertainty * totalVotes / (1 - uncertainty))).pct
                 }
             }
             div {
-                attrs.className = ClassName("d")
-                attrs.style = jso {
+                className = ClassName("d")
+                style = jso {
                     flex = it.down.pct
                 }
             }
         }
         div {
-            attrs.className = ClassName("percentage")
-            attrs.title = "${it.up}/${it.down}"
+            className = ClassName("percentage")
+            title = "${it.up}/${it.down}"
             +"${it.rating}%"
         }
     }

@@ -3,13 +3,8 @@ package io.beatmaps.shared
 import io.beatmaps.previewBaseUrl
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.textToContent
-import kotlinx.browser.window
-import kotlinx.dom.addClass
-import kotlinx.dom.removeClass
-import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.HTMLIFrameElement
+import react.ChildrenBuilder
 import react.Props
-import react.RBuilder
 import react.RefObject
 import react.createContext
 import react.dom.html.ReactHTML.button
@@ -20,11 +15,14 @@ import react.useRef
 import react.useState
 import web.cssom.ClassName
 import web.html.ButtonType
+import web.html.HTMLDivElement
+import web.html.HTMLIFrameElement
+import web.timers.setTimeout
 import kotlin.js.Promise
 
 val modalContext = createContext<RefObject<ModalCallbacks>?>(null)
 
-data class ModalData(val titleText: String, val bodyText: String = "", val buttons: List<ModalButton>, val large: Boolean = false, val bodyCallback: (RBuilder.(HTMLDivElement?) -> Unit)? = null)
+data class ModalData(val titleText: String, val bodyText: String = "", val buttons: List<ModalButton>, val large: Boolean = false, val bodyCallback: (ChildrenBuilder.(HTMLDivElement?) -> Unit)? = null)
 data class ModalButton(val text: String, val color: String = "secondary", val callback: () -> Promise<Boolean> = { Promise.resolve(true) })
 data class ModalCallbacks(
     val hide: () -> Unit,
@@ -50,10 +48,10 @@ val modal = fcmemo<ModalProps>("Modal") { props ->
             backdrop.current?.let { bd ->
                 bd.hidden = false
                 md.hidden = false
-                window.setTimeout(
+                setTimeout(
                     {
-                        bd.addClass("show")
-                        md.addClass("show")
+                        bd.classList.add("show")
+                        md.classList.add("show")
                     },
                     10
                 )
@@ -65,9 +63,9 @@ val modal = fcmemo<ModalProps>("Modal") { props ->
         iframe.current?.src = "about:blank"
         modalRef.current?.let { md ->
             backdrop.current?.let { bd ->
-                md.removeClass("show")
-                bd.removeClass("show")
-                window.setTimeout(
+                bd.classList.remove("show")
+                md.classList.remove("show")
+                setTimeout(
                     {
                         md.hidden = true
                         bd.hidden = true
@@ -102,59 +100,59 @@ val modal = fcmemo<ModalProps>("Modal") { props ->
     )
 
     div {
-        attrs.className = ClassName("modal-backdrop fade")
+        className = ClassName("modal-backdrop fade")
         ref = backdrop
-        attrs.hidden = true
+        hidden = true
     }
     div {
-        attrs.className = ClassName("modal")
+        className = ClassName("modal")
         ref = modalRef
-        attrs.hidden = true
-        attrs.onClick = { hide() }
+        hidden = true
+        onClick = { hide() }
         div {
-            attrs.className = ClassName("modal-dialog modal-dialog-centered rabbit-dialog")
-            attrs.hidden = modalData != null
+            className = ClassName("modal-dialog modal-dialog-centered rabbit-dialog")
+            hidden = modalData != null
             iframe {
                 ref = iframe
-                attrs.className = ClassName("modal-content")
-                attrs.src = "about:blank"
-                attrs.allow = "fullscreen"
+                className = ClassName("modal-content")
+                src = "about:blank"
+                allow = "fullscreen"
             }
         }
         div {
-            attrs.className = ClassName("modal-dialog" + if (modalData?.large == true) " modal-lg" else "")
-            attrs.hidden = modalData == null
-            attrs.onClick = {
+            className = ClassName("modal-dialog" + if (modalData?.large == true) " modal-lg" else "")
+            hidden = modalData == null
+            onClick = {
                 it.stopPropagation()
             }
             div {
-                attrs.className = ClassName("modal-content")
+                className = ClassName("modal-content")
                 div {
-                    attrs.className = ClassName("modal-header")
+                    className = ClassName("modal-header")
                     h5 {
-                        attrs.className = ClassName("modal-title")
+                        className = ClassName("modal-title")
                         +(modalData?.titleText ?: "")
                     }
                     button {
-                        attrs.type = ButtonType.button
-                        attrs.className = ClassName("btn-close")
-                        attrs.onClick = { hide() }
+                        type = ButtonType.button
+                        className = ClassName("btn-close")
+                        onClick = { hide() }
                     }
                 }
                 div {
-                    attrs.className = ClassName("modal-body")
+                    className = ClassName("modal-body")
                     modalData?.let { m ->
                         m.bodyCallback?.invoke(this, modalRef.current) ?: textToContent(m.bodyText)
                     }
                 }
                 div {
-                    attrs.className = ClassName("modal-footer")
+                    className = ClassName("modal-footer")
                     modalData?.buttons?.forEach { b ->
                         button {
-                            attrs.type = ButtonType.button
-                            attrs.className = ClassName("btn btn-${b.color}")
-                            attrs.disabled = loading
-                            attrs.onClick = {
+                            type = ButtonType.button
+                            className = ClassName("btn btn-${b.color}")
+                            disabled = loading
+                            onClick = {
                                 setLoading(true)
                                 b.callback().then({
                                     if (it) hide()

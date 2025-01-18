@@ -16,20 +16,20 @@ external interface DiffTextProps : Props {
 val diffText = fcmemo<DiffTextProps>("diffText") { props ->
     if (props.new != props.old) {
         p {
-            attrs.className = ClassName("card-text")
+            className = ClassName("card-text")
             if (props.new.isNotEmpty()) {
                 +"Updated ${props.description}"
                 span {
-                    attrs.className = ClassName("text-danger d-block")
+                    className = ClassName("text-danger d-block")
                     i {
-                        attrs.className = ClassName("fas fa-minus")
+                        className = ClassName("fas fa-minus")
                     }
                     +" ${props.old}"
                 }
                 span {
-                    attrs.className = ClassName("text-success d-block")
+                    className = ClassName("text-success d-block")
                     i {
-                        attrs.className = ClassName("fas fa-plus")
+                        className = ClassName("fas fa-plus")
                     }
                     +" ${props.new}"
                 }

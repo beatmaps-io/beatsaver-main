@@ -7,9 +7,9 @@ import io.beatmaps.maps.testplay.TimelineEntrySectionRenderer
 import io.beatmaps.maps.testplay.timelineEntry
 import io.beatmaps.shared.editableText
 import io.beatmaps.shared.form.errors
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
 import react.PropsWithChildren
-import react.fc
 import react.useState
 import kotlin.js.Promise
 
@@ -20,7 +20,7 @@ external interface NewCommentProps : PropsWithChildren {
     var buttonText: String
 }
 
-val newIssueComment = fc<NewCommentProps>("newIssueComment") { props ->
+val newIssueComment = fcmemo<NewCommentProps>("newIssueComment") { props ->
     val (loading, setLoading) = useState(false)
     val (errors, setErrors) = useState(emptyList<String>())
 
@@ -29,31 +29,31 @@ val newIssueComment = fc<NewCommentProps>("newIssueComment") { props ->
     }
 
     timelineEntry {
-        attrs.id = "new-comment"
-        attrs.icon = "fa-plus"
-        attrs.color = "success"
-        attrs.bodyCallback = TimelineEntrySectionRenderer {
+        id = "new-comment"
+        icon = "fa-plus"
+        color = "success"
+        bodyCallback = TimelineEntrySectionRenderer {
             editableText {
-                attrs.buttonText = props.buttonText
-                attrs.editing = true
-                attrs.maxLength = IssueConstants.MAX_COMMENT_LENGTH
-                attrs.saveText = { newText ->
+                buttonText = props.buttonText
+                editing = true
+                maxLength = IssueConstants.MAX_COMMENT_LENGTH
+                saveText = { newText ->
                     props.saveCallback(newText)
                         ?.finally {
                             setLoading(false)
                         }
                 }
-                attrs.onError = {
+                onError = {
                     setErrors(it)
                 }
-                attrs.stopEditing = {
+                stopEditing = {
                     props.successCallback?.invoke()
                 }
 
-                props.children()
+                +props.children
 
                 errors {
-                    attrs.errors = errors
+                    this.errors = errors
                 }
             }
         }

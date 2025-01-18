@@ -1,13 +1,13 @@
 package io.beatmaps.shared.form
 
 import io.beatmaps.util.fcmemo
-import org.w3c.dom.HTMLInputElement
 import react.Props
 import react.Ref
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.input
 import react.dom.html.ReactHTML.label
 import web.cssom.ClassName
+import web.html.HTMLInputElement
 import web.html.InputType
 
 external interface ToggleProps : Props {
@@ -22,21 +22,21 @@ external interface ToggleProps : Props {
 
 val toggle = fcmemo<ToggleProps>("toggle") { props ->
     div {
-        attrs.className = ClassName("form-check form-switch ${props.className ?: ""}")
+        className = ClassName("form-check form-switch ${props.className ?: ""}")
         input {
-            attrs.type = InputType.checkbox
-            attrs.className = ClassName("form-check-input")
-            attrs.id = props.id
-            attrs.defaultChecked = props.default ?: false
-            attrs.disabled = props.disabled ?: false
+            type = InputType.checkbox
+            className = ClassName("form-check-input")
+            id = props.id
+            defaultChecked = props.default ?: false
+            disabled = props.disabled ?: false
             ref = props.toggleRef
-            attrs.onChange = { ev ->
+            onChange = { ev ->
                 props.block?.invoke(ev.target.checked)
             }
         }
         label {
-            attrs.className = ClassName("form-check-label")
-            attrs.htmlFor = props.id
+            className = ClassName("form-check-label")
+            htmlFor = props.id
             +props.text
         }
     }

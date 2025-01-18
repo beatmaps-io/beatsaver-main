@@ -2,17 +2,17 @@ package io.beatmaps.playlist
 
 import external.component
 import js.import.importAsync
-import react.ComponentClass
+import react.ComponentType
 import react.ExoticComponent
 import react.Props
 
 external interface PlaylistsModule {
-    val edit: ComponentClass<Props>
-    val multiAdd: ComponentClass<Props>
-    val feed: ComponentClass<Props>
-    val page: ComponentClass<Props>
-    val addTo: ComponentClass<AddToPlaylistProps>
-    val table: ComponentClass<PlaylistTableProps>
+    val edit: ComponentType<Props>
+    val multiAdd: ComponentType<Props>
+    val feed: ComponentType<Props>
+    val page: ComponentType<Props>
+    val addTo: ComponentType<AddToPlaylistProps>
+    val table: ComponentType<PlaylistTableProps>
 }
 
 data class PlaylistsExotics(

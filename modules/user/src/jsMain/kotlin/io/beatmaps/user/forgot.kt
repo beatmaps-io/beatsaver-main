@@ -11,7 +11,6 @@ import io.beatmaps.captcha.captcha
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import io.beatmaps.util.fcmemo
-import org.w3c.dom.HTMLInputElement
 import react.Props
 import react.dom.html.ReactHTML.button
 import react.dom.html.ReactHTML.div
@@ -23,6 +22,7 @@ import react.useRef
 import react.useState
 import web.cssom.ClassName
 import web.html.ButtonType
+import web.html.HTMLInputElement
 import web.html.InputType
 
 val forgotPage = fcmemo<Props>("forgotPage") {
@@ -38,20 +38,20 @@ val forgotPage = fcmemo<Props>("forgotPage") {
     }
 
     div {
-        attrs.className = ClassName("login-form card border-dark")
+        className = ClassName("login-form card border-dark")
         div {
-            attrs.className = ClassName("card-header")
+            className = ClassName("card-header")
             +"Reset password"
         }
         form {
-            attrs.className = ClassName("card-body")
+            className = ClassName("card-body")
 
             if (complete) {
                 p {
                     +"We've sent you an email with a password reset link."
                 }
             } else {
-                attrs.onSubmit = { ev ->
+                onSubmit = { ev ->
                     ev.preventDefault()
                     setLoading(true)
 
@@ -79,24 +79,24 @@ val forgotPage = fcmemo<Props>("forgotPage") {
                     }
                 }
                 errors {
-                    attrs.errors = errors
+                    this.errors = errors
                 }
                 input {
-                    attrs.type = InputType.email
-                    attrs.className = ClassName("form-control")
+                    type = InputType.email
+                    className = ClassName("form-control")
                     key = "email"
                     ref = emailRef
-                    attrs.placeholder = "Email"
-                    attrs.required = true
-                    attrs.autoFocus = true
+                    placeholder = "Email"
+                    required = true
+                    autoFocus = true
                 }
                 div {
-                    attrs.className = ClassName("d-grid")
+                    className = ClassName("d-grid")
                     button {
-                        attrs.className = ClassName("btn btn-success")
-                        attrs.type = ButtonType.submit
+                        className = ClassName("btn btn-success")
+                        type = ButtonType.submit
 
-                        attrs.disabled = loading
+                        disabled = loading
                         +"Reset password"
                     }
                 }
@@ -109,7 +109,7 @@ val forgotPage = fcmemo<Props>("forgotPage") {
 
     captcha {
         key = "captcha"
-        attrs.captchaRef = captchaRef
-        attrs.page = "forgot"
+        this.captchaRef = captchaRef
+        page = "forgot"
     }
 }

@@ -2,21 +2,21 @@ package io.beatmaps.user
 
 import external.component
 import js.import.importAsync
-import react.ComponentClass
+import react.ComponentType
 import react.ExoticComponent
 import react.Props
 
 external interface UserModule {
-    val changeEmail: ComponentClass<Props>
-    val forgot: ComponentClass<Props>
-    val login: ComponentClass<Props>
-    val register: ComponentClass<Props>
-    val username: ComponentClass<Props>
-    val reset: ComponentClass<Props>
-    val quest: ComponentClass<Props>
-    val authorize: ComponentClass<Props>
-    val userList: ComponentClass<Props>
-    val followList: ComponentClass<FollowListProps>
+    val changeEmail: ComponentType<Props>
+    val forgot: ComponentType<Props>
+    val login: ComponentType<Props>
+    val register: ComponentType<Props>
+    val username: ComponentType<Props>
+    val reset: ComponentType<Props>
+    val quest: ComponentType<Props>
+    val authorize: ComponentType<Props>
+    val userList: ComponentType<Props>
+    val followList: ComponentType<FollowListProps>
 }
 
 data class UserExotics(

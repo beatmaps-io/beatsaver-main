@@ -11,7 +11,6 @@ import io.beatmaps.captcha.captcha
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import io.beatmaps.util.fcmemo
-import org.w3c.dom.HTMLInputElement
 import react.Props
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.button
@@ -28,6 +27,7 @@ import react.useState
 import web.autofill.AutoFillNormalField
 import web.cssom.ClassName
 import web.html.ButtonType
+import web.html.HTMLInputElement
 import web.html.InputType
 
 val signupPage = fcmemo<Props>("signupPage") {
@@ -47,13 +47,13 @@ val signupPage = fcmemo<Props>("signupPage") {
     }
 
     div {
-        attrs.className = ClassName("login-form card border-dark")
+        className = ClassName("login-form card border-dark")
         div {
-            attrs.className = ClassName("card-header")
+            className = ClassName("card-header")
             +"Register"
         }
         form {
-            attrs.className = ClassName("card-body")
+            className = ClassName("card-body")
 
             if (complete) {
                 p {
@@ -63,7 +63,7 @@ val signupPage = fcmemo<Props>("signupPage") {
                     +"Please check your email to finish setting up your account."
                 }
             } else {
-                attrs.onSubmit = { ev ->
+                onSubmit = { ev ->
                     ev.preventDefault()
                     setLoading(true)
 
@@ -92,61 +92,61 @@ val signupPage = fcmemo<Props>("signupPage") {
                     }
                 }
                 errors {
-                    attrs.errors = errors
+                    this.errors = errors
                 }
                 input {
-                    attrs.type = InputType.text
-                    attrs.className = ClassName("form-control")
+                    type = InputType.text
+                    className = ClassName("form-control")
                     key = "username"
                     ref = usernameRef
-                    attrs.id = "username"
-                    attrs.placeholder = "Username"
-                    attrs.required = true
-                    attrs.autoFocus = true
+                    id = "username"
+                    placeholder = "Username"
+                    required = true
+                    autoFocus = true
                 }
                 small {
-                    attrs.className = ClassName("d-block form-text text-muted mb-3 text-start")
+                    className = ClassName("d-block form-text text-muted mb-3 text-start")
                     +"Can only contain letters, numbers and ' . ', ' _ ', ' - ', no spaces"
                 }
                 input {
-                    attrs.type = InputType.email
-                    attrs.className = ClassName("form-control mb-3")
+                    type = InputType.email
+                    className = ClassName("form-control mb-3")
                     key = "email"
                     ref = emailRef
-                    attrs.id = "email"
-                    attrs.name = "email"
-                    attrs.placeholder = "Email"
-                    attrs.required = true
+                    id = "email"
+                    name = "email"
+                    placeholder = "Email"
+                    required = true
                 }
                 input {
-                    attrs.type = InputType.password
-                    attrs.className = ClassName("form-control")
+                    type = InputType.password
+                    className = ClassName("form-control")
                     key = "password"
                     ref = passwordRef
-                    attrs.id = "password"
-                    attrs.placeholder = "Password"
-                    attrs.required = true
-                    attrs.autoComplete = AutoFillNormalField.newPassword
+                    id = "password"
+                    placeholder = "Password"
+                    required = true
+                    autoComplete = AutoFillNormalField.newPassword
                 }
                 input {
-                    attrs.type = InputType.password
-                    attrs.className = ClassName("form-control")
+                    type = InputType.password
+                    className = ClassName("form-control")
                     key = "password2"
                     ref = password2Ref
-                    attrs.id = "password2"
-                    attrs.placeholder = "Repeat Password"
-                    attrs.required = true
-                    attrs.autoComplete = AutoFillNormalField.newPassword
+                    id = "password2"
+                    placeholder = "Repeat Password"
+                    required = true
+                    autoComplete = AutoFillNormalField.newPassword
                 }
                 div {
-                    attrs.className = ClassName("d-grid")
+                    className = ClassName("d-grid")
                     button {
-                        attrs.className = ClassName("btn btn-success")
-                        attrs.type = ButtonType.submit
+                        className = ClassName("btn btn-success")
+                        type = ButtonType.submit
 
-                        attrs.disabled = loading
+                        disabled = loading
                         i {
-                            attrs.className = ClassName("fas fa-user-plus")
+                            className = ClassName("fas fa-user-plus")
                         }
                         +" Register"
                     }
@@ -155,7 +155,7 @@ val signupPage = fcmemo<Props>("signupPage") {
                 small {
                     +"By clicking Register, you agree to our "
                     a {
-                        attrs.href = "/policy/tos"
+                        href = "/policy/tos"
                         +"Terms of Service"
                     }
                     +"."
@@ -170,7 +170,7 @@ val signupPage = fcmemo<Props>("signupPage") {
 
     captcha {
         key = "captcha"
-        attrs.captchaRef = captchaRef
-        attrs.page = "register"
+        this.captchaRef = captchaRef
+        page = "register"
     }
 }

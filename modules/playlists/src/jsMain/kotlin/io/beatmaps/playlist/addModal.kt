@@ -2,11 +2,11 @@ package io.beatmaps.playlist
 
 import external.routeLink
 import io.beatmaps.api.InPlaylist
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.input
 import react.dom.html.ReactHTML.label
-import react.fc
 import web.cssom.ClassName
 import web.html.InputType
 
@@ -15,7 +15,7 @@ external interface AddModalProps : Props {
     var inPlaylists: Array<InPlaylist>
 }
 
-val addModal = fc<AddModalProps>("addModal") { props ->
+val addModal = fcmemo<AddModalProps>("addModal") { props ->
     if (props.inPlaylists.isEmpty()) {
         div {
             +"You don't have any playlists yet!"
@@ -26,14 +26,14 @@ val addModal = fc<AddModalProps>("addModal") { props ->
     }
     props.inPlaylists.map { ip ->
         div {
-            attrs.className = ClassName("form-check mb-2")
+            className = ClassName("form-check mb-2")
             val id = "in-playlist-${ip.playlist.playlistId}"
             input {
-                attrs.type = InputType.checkbox
-                attrs.className = ClassName("form-check-input")
-                attrs.id = id
-                attrs.defaultChecked = ip.inPlaylist
-                attrs.onChange = {
+                type = InputType.checkbox
+                className = ClassName("form-check-input")
+                this.id = id
+                defaultChecked = ip.inPlaylist
+                onChange = {
                     val current = it.currentTarget.checked
 
                     if (ip.inPlaylist == current) {
@@ -44,8 +44,8 @@ val addModal = fc<AddModalProps>("addModal") { props ->
                 }
             }
             label {
-                attrs.className = ClassName("w-100 form-check-label")
-                attrs.htmlFor = id
+                className = ClassName("w-100 form-check-label")
+                htmlFor = id
                 +ip.playlist.name
             }
         }

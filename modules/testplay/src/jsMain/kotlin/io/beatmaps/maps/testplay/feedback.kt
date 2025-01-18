@@ -5,19 +5,19 @@ import external.TimeAgo
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.FeedbackUpdate
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.textToContent
 import kotlinx.datetime.Clock
-import org.w3c.dom.HTMLTextAreaElement
 import react.Props
 import react.dom.html.ReactHTML.button
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.h3
 import react.dom.html.ReactHTML.small
 import react.dom.html.ReactHTML.textarea
-import react.fc
 import react.useRef
 import react.useState
 import web.cssom.ClassName
+import web.html.HTMLTextAreaElement
 
 external interface FeedbackProps : Props {
     var hash: String
@@ -27,7 +27,7 @@ external interface FeedbackProps : Props {
     var isOwner: Boolean
 }
 
-val feedback = fc<FeedbackProps>("feedback") { props ->
+val feedback = fcmemo<FeedbackProps>("feedback") { props ->
     val (editing, setEditing) = useState(false)
     val (loading, setLoading) = useState(false)
     val (text, setText) = useState(props.feedback)
@@ -36,16 +36,16 @@ val feedback = fc<FeedbackProps>("feedback") { props ->
     val textareaRef = useRef<HTMLTextAreaElement>()
 
     timelineEntry {
-        attrs.icon = "fa-comments"
-        attrs.color = "primary"
-        attrs.headerCallback = TimelineEntrySectionRenderer {
+        icon = "fa-comments"
+        color = "primary"
+        headerCallback = TimelineEntrySectionRenderer {
             if (props.isOwner) {
                 div {
-                    attrs.className = ClassName("float-end")
+                    className = ClassName("float-end")
                     if (editing) {
                         button {
-                            attrs.className = ClassName("btn btn-success m-1")
-                            attrs.onClick = {
+                            className = ClassName("btn btn-success m-1")
+                            onClick = {
                                 val newText = textareaRef.current?.value ?: ""
 
                                 setLoading(true)
@@ -59,16 +59,16 @@ val feedback = fc<FeedbackProps>("feedback") { props ->
                                     setLoading(false)
                                 }
                             }
-                            attrs.disabled = loading
+                            disabled = loading
                             +"Save"
                         }
                     }
                     button {
-                        attrs.className = ClassName("btn btn-info m-1")
-                        attrs.onClick = {
+                        className = ClassName("btn btn-info m-1")
+                        onClick = {
                             setEditing(!editing)
                         }
-                        attrs.disabled = loading
+                        disabled = loading
                         +(if (editing) "Cancel" else "Edit")
                     }
                 }
@@ -84,24 +84,24 @@ val feedback = fc<FeedbackProps>("feedback") { props ->
                 +props.hash
             }
         }
-        attrs.bodyCallback = TimelineEntrySectionRenderer {
+        bodyCallback = TimelineEntrySectionRenderer {
             if (editing) {
                 textarea {
                     ref = textareaRef
-                    attrs.rows = 10
-                    attrs.className = ClassName("form-control")
-                    attrs.disabled = loading
+                    rows = 10
+                    className = ClassName("form-control")
+                    disabled = loading
                     +text
                 }
             } else {
                 textToContent(text)
             }
         }
-        attrs.footerCallback = TimelineEntrySectionRenderer {
+        footerCallback = TimelineEntrySectionRenderer {
             small {
                 TimeAgo.default {
                     key = time
-                    attrs.date = time
+                    date = time
                 }
             }
         }

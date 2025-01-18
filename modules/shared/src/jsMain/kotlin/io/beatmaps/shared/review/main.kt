@@ -15,15 +15,15 @@ import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
-import org.w3c.dom.HTMLElement
 import react.Props
 import react.dom.html.ReactHTML.div
+import react.use
 import react.useCallback
-import react.useContext
 import react.useMemo
 import react.useRef
 import react.useState
 import web.cssom.ClassName
+import web.html.HTMLElement
 import kotlin.js.Promise
 
 external interface ReviewTableProps : Props {
@@ -40,7 +40,7 @@ val reviewTable = fcmemo<ReviewTableProps>("reviewTable") { props ->
     val (existingReview, setExistingReview) = useState(false)
 
     val resultsTable = useRef<HTMLElement>()
-    val userData = useContext(globalContext)
+    val userData = use(globalContext)
 
     val captchaRef = useRef<ICaptchaHandler>()
 
@@ -71,24 +71,24 @@ val reviewTable = fcmemo<ReviewTableProps>("reviewTable") { props ->
     val renderer = useMemo(props.map, props.userDetail) {
         InfiniteScrollElementRenderer<ReviewDetail> { rv ->
             reviewItem {
-                attrs.obj = rv
-                attrs.userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
-                attrs.map = props.map ?: rv?.map
-                attrs.captcha = captchaRef
-                attrs.setExistingReview = updateReview
+                obj = rv
+                userId = props.userDetail?.id ?: rv?.creator?.id ?: -1
+                map = props.map ?: rv?.map
+                captcha = captchaRef
+                this.setExistingReview = updateReview
             }
         }
     }
 
     captcha {
         key = "captcha"
-        attrs.captchaRef = captchaRef
-        attrs.page = "review"
+        this.captchaRef = captchaRef
+        page = "review"
     }
 
     if (props.visible != false) {
         div {
-            attrs.className = ClassName("reviews")
+            className = ClassName("reviews")
             ref = resultsTable
             key = "resultsTable"
 
@@ -98,14 +98,14 @@ val reviewTable = fcmemo<ReviewTableProps>("reviewTable") { props ->
                 } ?: false
                 if (userData != null && !userData.suspended && userData.userId != props.mapUploaderId && !userIsCollaborator) {
                     newReview {
-                        attrs.mapId = map.id
-                        attrs.userId = userData.userId
-                        attrs.existingReview = existingReview
-                        attrs.captcha = captchaRef
-                        attrs.setExistingReview = { nv ->
+                        mapId = map.id
+                        userId = userData.userId
+                        this.existingReview = existingReview
+                        captcha = captchaRef
+                        this.setExistingReview = { nv ->
                             setExistingReview(nv)
                         }
-                        attrs.reloadList = {
+                        reloadList = {
                             resetRef.current?.invoke()
                         }
                     }
@@ -113,12 +113,12 @@ val reviewTable = fcmemo<ReviewTableProps>("reviewTable") { props ->
             }
 
             commentsInfiniteScroll {
-                attrs.resetRef = resetRef
-                attrs.rowHeight = 116.0
-                attrs.itemsPerPage = 20
-                attrs.container = resultsTable
-                attrs.renderElement = renderer
-                attrs.loadPage = loadPageRef
+                this.resetRef = resetRef
+                rowHeight = 116.0
+                itemsPerPage = 20
+                container = resultsTable
+                renderElement = renderer
+                loadPage = loadPageRef
             }
         }
     }

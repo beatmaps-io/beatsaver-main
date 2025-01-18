@@ -1,7 +1,7 @@
 package external
 
-import react.ComponentClass
 import react.ComponentModule
+import react.ComponentType
 import react.Props
 
 external interface ReactSlideProps : Props {
@@ -41,5 +41,5 @@ external interface ThumbState {
 @JsModule("react-slider")
 @JsNonModule
 external object ReactSlider : ComponentModule<ReactSlideProps> {
-    override val default: ComponentClass<ReactSlideProps>
+    override val default: ComponentType<ReactSlideProps>
 }

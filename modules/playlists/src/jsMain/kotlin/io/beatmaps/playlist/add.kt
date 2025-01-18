@@ -15,7 +15,7 @@ import io.beatmaps.util.launch
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.i
 import react.dom.html.ReactHTML.span
-import react.useContext
+import react.use
 import react.useState
 import web.cssom.ClassName
 import kotlin.js.Promise
@@ -23,7 +23,7 @@ import kotlin.js.Promise
 val addToPlaylist = fcmemo<AddToPlaylistProps>("addToPlaylist") { props ->
     val (loading, setLoading) = useState(false)
 
-    val modal = useContext(modalContext)
+    val modal = use(modalContext)
 
     fun save(mapId: String, data: MutableMap<Int, Boolean>) = Promise.resolve(true).also {
         launch {
@@ -50,8 +50,8 @@ val addToPlaylist = fcmemo<AddToPlaylistProps>("addToPlaylist") { props ->
                     "Add to playlist",
                     bodyCallback = {
                         addModal {
-                            attrs.inPlaylists = res.data
-                            attrs.changes = changes
+                            inPlaylists = res.data
+                            this.changes = changes
                         }
                     },
                     buttons = listOf(
@@ -68,23 +68,23 @@ val addToPlaylist = fcmemo<AddToPlaylistProps>("addToPlaylist") { props ->
     }
 
     a {
-        attrs.href = "#"
+        href = "#"
 
-        attrs.onClick = {
+        onClick = {
             it.preventDefault()
             openDialog()
         }
 
         val text = "Add to playlist"
-        attrs.title = text
-        attrs.ariaLabel = text
+        title = text
+        ariaLabel = text
         span {
-            attrs.className = ClassName("dd-text")
+            className = ClassName("dd-text")
             +text
         }
         i {
-            attrs.className = ClassName("fas fa-plus text-success")
-            attrs.ariaHidden = true
+            className = ClassName("fas fa-plus text-success")
+            ariaHidden = true
         }
     }
 }

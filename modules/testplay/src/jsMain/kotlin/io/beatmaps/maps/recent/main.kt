@@ -61,21 +61,21 @@ val recentTestplays = fcmemo<Props>("RecentTestplays") { _ ->
     }
 
     modal {
-        attrs.callbacks = modalRef
+        callbacks = modalRef
     }
 
     modalContext.Provider {
-        attrs.value = modalRef
+        value = modalRef
 
         table {
-            attrs.className = ClassName("table table-dark search-results")
+            className = ClassName("table table-dark search-results")
             tbody {
                 testplays.forEach { rt ->
                     recentTestplayRow {
-                        attrs.map = rt.mapDetail
-                        attrs.version = rt.version
-                        attrs.feedback = rt.testplay.feedback
-                        attrs.time = rt.testplay.feedbackAt.toString()
+                        map = rt.mapDetail
+                        version = rt.version
+                        feedback = rt.testplay.feedback
+                        time = rt.testplay.feedbackAt.toString()
                     }
                 }
             }

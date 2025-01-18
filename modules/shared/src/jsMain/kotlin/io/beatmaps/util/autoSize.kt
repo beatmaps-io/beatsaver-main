@@ -1,11 +1,7 @@
 package io.beatmaps.util
 
 import js.objects.jso
-import kotlinx.browser.window
-import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.HTMLElement
 import react.Props
-import react.RElementBuilder
 import react.RefObject
 import react.dom.html.HTMLAttributes
 import react.useEffect
@@ -15,29 +11,34 @@ import web.cssom.Auto.Companion.auto
 import web.cssom.Height
 import web.cssom.Margin
 import web.cssom.px
+import web.html.HTMLDivElement
+import web.html.HTMLElement
+import web.timers.Timeout
+import web.timers.clearTimeout
+import web.timers.setTimeout
 
 external interface AutoSizeComponentProps<T> : Props {
     var obj: T?
 }
 
-data class AutoSizeHelper(
+data class AutoSizeHelper<T : HTMLElement>(
     val divRef: RefObject<HTMLDivElement>,
-    val style: (RElementBuilder<HTMLAttributes<*>>) -> Unit,
+    val style: (HTMLAttributes<T>) -> Unit,
     val hide: () -> Unit
 )
 
-fun <T> useAutoSize(props: AutoSizeComponentProps<T>, padding: Int): AutoSizeHelper {
+fun <T, U : HTMLElement> useAutoSize(props: AutoSizeComponentProps<T>, padding: Int): AutoSizeHelper<U> {
     val loaded = useRef(false)
     val styleRef = useRef<HTMLElement>()
     val height = useRef<Height>()
     val margin = useRef<Margin>()
-    val autoSizeHandle = useRef<Int>()
+    val autoSizeHandle = useRef<Timeout>()
 
     val divRef = useRef<HTMLDivElement>()
 
     useEffectOnceWithCleanup {
         onCleanup {
-            autoSizeHandle.current?.let { window.clearTimeout(it) }
+            autoSizeHandle.current?.let { clearTimeout(it) }
         }
     }
 
@@ -53,7 +54,7 @@ fun <T> useAutoSize(props: AutoSizeComponentProps<T>, padding: Int): AutoSizeHel
 
     useEffect(props.obj) {
         if (loaded.current != true && props.obj != null) {
-            val handleLocal = window.setTimeout({
+            val handleLocal = setTimeout({
                 setHeight(auto)
             }, 200)
 
@@ -69,9 +70,9 @@ fun <T> useAutoSize(props: AutoSizeComponentProps<T>, padding: Int): AutoSizeHel
 
     return AutoSizeHelper(
         divRef,
-        { builder: RElementBuilder<HTMLAttributes<*>> ->
+        { builder: HTMLAttributes<U> ->
             builder.ref = styleRef
-            builder.attrs.style = jso {
+            builder.style = jso {
                 this.height = height.current
                 margin.current?.let {
                     this.margin = it
@@ -79,7 +80,7 @@ fun <T> useAutoSize(props: AutoSizeComponentProps<T>, padding: Int): AutoSizeHel
             }
         },
         {
-            val handleLocal = window.setTimeout({
+            val handleLocal = setTimeout({
                 setHeight(0.px)
             }, 10)
 

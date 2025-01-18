@@ -45,6 +45,5 @@ class ReOrderTest {
             assertContentEquals(newOrder, sorted, "Maps should be returned sorted")
             assertContentEquals(output, newOrder?.map { it.order }, "Ordering should match expected value ($output)")
         }
-
     }
 }
