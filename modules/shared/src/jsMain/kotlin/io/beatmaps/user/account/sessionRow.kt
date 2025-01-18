@@ -20,8 +20,7 @@ import web.cssom.ClassName
 import web.cssom.Margin
 import web.cssom.px
 import web.html.ButtonType
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
+import kotlin.time.Duration.Companion.days
 
 external interface SiteRowProps : Props {
     var session: SiteSession
@@ -112,7 +111,7 @@ val sessionRowCommon = fcmemo<SessionRowProps>("sessionRowCommon") { props ->
         className = ClassName("text-end col-sm-2")
         TimeAgo.default {
             minPeriod = 60
-            date = session.expiry.minus(props.days.toDuration(DurationUnit.DAYS)).toString()
+            date = session.expiry.minus(props.days.days).toString()
         }
     }
     td {
