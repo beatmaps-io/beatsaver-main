@@ -3,11 +3,11 @@ package io.beatmaps.shared.map
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
 import io.beatmaps.util.fcmemo
-import kotlinx.html.title
 import react.Props
-import react.dom.a
-import react.dom.i
-import react.dom.span
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.span
+import web.cssom.ClassName
 
 external interface DownloadProps : Props {
     var map: MapDetail
@@ -15,14 +15,19 @@ external interface DownloadProps : Props {
 }
 
 val downloadZip = fcmemo<DownloadProps>("downloadZip") { props ->
-    a(props.version.downloadURL) {
+    a {
+        href = props.version.downloadURL
         val text = "Download zip"
-        attrs.rel = "noopener"
-        attrs.title = text
-        attrs.attributes["aria-label"] = text
-        span("dd-text") { +text }
-        i("fas fa-download text-info") {
-            attrs.attributes["aria-hidden"] = "true"
+        rel = "noopener"
+        title = text
+        ariaLabel = text
+        span {
+            className = ClassName("dd-text")
+            +text
+        }
+        i {
+            className = ClassName("fas fa-download text-info")
+            ariaHidden = true
         }
     }
 }

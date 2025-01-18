@@ -7,8 +7,8 @@ import io.beatmaps.maps.mapInfo
 import io.beatmaps.shared.ModalCallbacks
 import io.beatmaps.shared.modal
 import io.beatmaps.shared.modalContext
+import io.beatmaps.util.fcmemo
 import react.Props
-import react.fc
 import react.useRef
 
 external interface TestplayProps : Props {
@@ -18,34 +18,30 @@ external interface TestplayProps : Props {
     var updateMapinfo: (MapDetail) -> Unit
 }
 
-val testplay = fc<TestplayProps>("testplay") { props ->
+val testplay = fcmemo<TestplayProps>("testplay") { props ->
     val modalRef = useRef<ModalCallbacks>()
 
     modal {
-        attrs.callbacks = modalRef
+        callbacks = modalRef
     }
 
     modalContext.Provider {
-        attrs.value = modalRef
+        value = modalRef
 
         mapInfo {
-            attrs {
-                mapInfo = props.mapInfo
-                reloadMap = props.refreshPage
-                updateMapinfo = props.updateMapinfo
-            }
+            mapInfo = props.mapInfo
+            reloadMap = props.refreshPage
+            updateMapinfo = props.updateMapinfo
         }
         infoTable {
-            attrs.map = props.mapInfo
-            attrs.horizontal = true
-            attrs.selected = null
+            map = props.mapInfo
+            horizontal = true
+            selected = null
         }
         timeline {
-            attrs {
-                mapInfo = props.mapInfo
-                reloadMap = props.refreshPage
-                history = props.history
-            }
+            mapInfo = props.mapInfo
+            reloadMap = props.refreshPage
+            history = props.history
         }
     }
 }

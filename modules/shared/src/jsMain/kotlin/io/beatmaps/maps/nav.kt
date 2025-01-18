@@ -1,14 +1,13 @@
 package io.beatmaps.maps
 
 import io.beatmaps.api.MapDetail
-import kotlinx.html.id
-import kotlinx.html.js.onClickFunction
+import io.beatmaps.util.fcmemo
 import react.Props
-import react.dom.a
-import react.dom.li
-import react.dom.span
-import react.dom.ul
-import react.fc
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.li
+import react.dom.html.ReactHTML.span
+import react.dom.html.ReactHTML.ul
+import web.cssom.ClassName
 
 external interface MapPageNavProps : Props {
     var map: MapDetail
@@ -16,13 +15,17 @@ external interface MapPageNavProps : Props {
     var setTab: ((MapTabs) -> Unit)?
 }
 
-val mapPageNav = fc<MapPageNavProps>("mapPageNav") { props ->
-    ul("nav nav-minimal mb-3") {
+val mapPageNav = fcmemo<MapPageNavProps>("mapPageNav") { props ->
+    ul {
+        className = ClassName("nav nav-minimal mb-3")
         MapTabs.entries.filter { it.enabled }.forEach { tab ->
-            li("nav-item") {
-                a("#", classes = "nav-link" + if (props.tab == tab) " active" else "") {
-                    attrs.id = "nav-${tab.id}"
-                    attrs.onClickFunction = { e ->
+            li {
+                className = ClassName("nav-item")
+                a {
+                    href = "#"
+                    className = ClassName("nav-link" + if (props.tab == tab) " active" else "")
+                    id = "nav-${tab.id}"
+                    onClick = { e ->
                         e.preventDefault()
                         props.setTab?.invoke(tab)
                     }

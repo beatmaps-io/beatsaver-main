@@ -10,30 +10,32 @@ import io.beatmaps.shared.form.toggle
 import io.beatmaps.shared.loadingElem
 import io.beatmaps.util.fcmemo
 import js.objects.jso
-import kotlinx.browser.document
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.js.onClickFunction
-import org.w3c.dom.HTMLButtonElement
-import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.events.Event
 import react.Props
-import react.RBuilder
 import react.Suspense
 import react.createElement
-import react.dom.button
-import react.dom.div
-import react.dom.form
-import react.dom.h4
-import react.dom.i
-import react.dom.input
-import react.dom.span
+import react.dom.html.HTMLAttributes
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.h4
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.span
 import react.useCallback
 import react.useEffect
 import react.useEffectWithCleanup
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.dom.document
+import web.events.addEventListener
+import web.events.removeEventListener
+import web.html.ButtonType
+import web.html.HTMLButtonElement
+import web.html.HTMLDivElement
+import web.html.HTMLInputElement
+import web.html.InputType
+import web.uievents.MouseEvent
 
 enum class FilterCategory {
     NONE, GENERAL, REQUIREMENTS
@@ -69,10 +71,10 @@ fun interface SearchParamGenerator<T : CommonParams> {
 }
 
 fun interface ExtraContentRenderer {
-    fun RBuilder.invoke()
+    fun HTMLAttributes<*>.invoke()
 }
 
-fun RBuilder.invokeECR(renderer: ExtraContentRenderer?) {
+fun HTMLAttributes<*>.invokeECR(renderer: ExtraContentRenderer?) {
     renderer?.let { exr ->
         with(exr) {
             this@invokeECR.invoke()
@@ -122,11 +124,11 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
     val (endDate, setEndDate) = useState<Moment>()
     val (filtersOpen, setFiltersOpen) = useState(false)
 
-    val stopProp = { it: Event ->
+    val stopProp = { it: MouseEvent ->
         it.stopPropagation()
     }
 
-    val hideFilters = { _: Event ->
+    val hideFilters = { _: MouseEvent ->
         if (filtersOpen) setFiltersOpen(false)
     }
 
@@ -161,14 +163,14 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
     }
 
     useEffectWithCleanup {
-        dropdownRef.current?.addEventListener("mouseup", stopProp)
-        dropdownDivRef.current?.addEventListener("mouseup", stopProp)
-        document.addEventListener("mouseup", hideFilters)
+        dropdownRef.current?.addEventListener(MouseEvent.MOUSE_UP, stopProp)
+        dropdownDivRef.current?.addEventListener(MouseEvent.MOUSE_UP, stopProp)
+        document.addEventListener(MouseEvent.MOUSE_UP, hideFilters)
 
         onCleanup {
-            document.removeEventListener("mouseup", hideFilters)
-            dropdownDivRef.current?.addEventListener("mouseup", stopProp)
-            dropdownRef.current?.removeEventListener("mouseup", stopProp)
+            document.removeEventListener(MouseEvent.MOUSE_UP, hideFilters)
+            dropdownDivRef.current?.removeEventListener(MouseEvent.MOUSE_UP, stopProp)
+            dropdownRef.current?.removeEventListener(MouseEvent.MOUSE_UP, stopProp)
         }
     }
 
@@ -185,18 +187,25 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
         override fun filterOrNull(key: String) = filterMap.getByKeyOrNull(key)
     }
 
-    form("") {
-        div("row") {
-            div("mb-3 col-lg-9") {
-                input(InputType.search, classes = "form-control") {
-                    attrs.placeholder = "Search"
-                    attrs.attributes["aria-label"] = "Search"
+    form {
+        div {
+            className = ClassName("row")
+            div {
+                className = ClassName("mb-3 col-lg-9")
+                input {
+                    type = InputType.search
+                    className = ClassName("form-control")
+                    placeholder = "Search"
+                    ariaLabel = "Search"
                     ref = inputRef
                 }
             }
-            div("mb-3 col-lg-3 btn-group") {
-                button(type = ButtonType.submit, classes = "btn btn-primary") {
-                    attrs.onClickFunction = {
+            div {
+                className = ClassName("mb-3 col-lg-3 btn-group")
+                button {
+                    type = ButtonType.submit
+                    className = ClassName("btn btn-primary")
+                    onClick = {
                         it.preventDefault()
                         val newState = with(props.paramsFromPage) {
                             searchHelper.get()
@@ -208,10 +217,13 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
                 }
             }
         }
-        div("row") {
-            div("filter-container col-sm-3") {
-                button(classes = "filter-dropdown") {
-                    attrs.onClickFunction = {
+        div {
+            className = ClassName("row")
+            div {
+                className = ClassName("filter-container col-sm-3")
+                button {
+                    className = ClassName("filter-dropdown")
+                    onClick = {
                         it.preventDefault()
                         setFiltersOpen(!filtersOpen)
                     }
@@ -226,35 +238,40 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
                             +filters.joinToString(", ")
                         }
                     }
-                    i("fas fa-angle-" + if (filtersOpen) "up" else "down") {}
+                    i {
+                        className = ClassName("fas fa-angle-" + if (filtersOpen) "up" else "down")
+                    }
                 }
-                div("dropdown-menu" + if (filtersOpen) " show" else "") {
+                div {
                     ref = dropdownDivRef
+                    className = ClassName("dropdown-menu" + if (filtersOpen) " show" else "")
 
-                    div("d-flex") {
+                    div {
+                        className = ClassName("d-flex")
                         div {
                             filterRefs.entries.fold(FilterCategory.NONE) { cat, (filter, filterRef) ->
                                 if (cat != filter.cat) {
-                                    h4(if (cat == FilterCategory.NONE) "" else "mt-4") {
+                                    h4 {
+                                        className = ClassName(if (cat == FilterCategory.NONE) "" else "mt-4")
                                         +filter.cat.toString()
                                     }
                                 }
 
                                 if (filter is BooleanFilterInfo) {
                                     toggle {
-                                        attrs.id = filter.key
-                                        attrs.text = filter.name
-                                        attrs.toggleRef = filterRef
-                                        attrs.block = {
+                                        id = filter.key
+                                        text = filter.name
+                                        toggleRef = filterRef
+                                        block = {
                                             setFilterMap(filterMap.plus(filter to it))
                                         }
                                     }
                                 } else if (filter is MultipleChoiceFilterInfo) {
                                     multipleChoice {
-                                        attrs.choices = filter.choices
-                                        attrs.name = filter.key
-                                        attrs.selectedValue = filterMap.getByKeyOrNull(filter.key) ?: filter.default
-                                        attrs.block = {
+                                        choices = filter.choices
+                                        this.name = filter.key
+                                        selectedValue = filterMap.getByKeyOrNull(filter.key) ?: filter.default
+                                        block = {
                                             setFilterMap(filterMap.plus(filter to it))
                                         }
                                     }
@@ -269,37 +286,38 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
                 }
             }
             slider {
-                attrs.text = "NPS"
-                attrs.currentMin = minNps
-                attrs.currentMax = maxNps
-                attrs.max = props.maxNps
-                attrs.block = {
+                text = "NPS"
+                currentMin = minNps
+                currentMax = maxNps
+                max = props.maxNps
+                block = {
                     setMinNps(it[0] / 10f)
                     setMaxNps(it[1] / 10f)
                 }
-                attrs.className = "mb-3 col-sm-3"
+                className = ClassName("mb-3 col-sm-3")
             }
-            div("mb-3 col-sm-3") {
+            div {
+                className = ClassName("mb-3 col-sm-3")
                 Suspense {
-                    attrs.fallback = loadingElem
+                    fallback = loadingElem
                     dates.dateRangePicker {
-                        attrs.startDate = startDate
-                        attrs.endDate = endDate
-                        attrs.startDateId = "startobj"
-                        attrs.endDateId = "endobj"
-                        attrs.onFocusChange = useCallback {
+                        this.startDate = startDate
+                        this.endDate = endDate
+                        startDateId = "startobj"
+                        endDateId = "endobj"
+                        onFocusChange = useCallback {
                             setFocusedInput(it)
                         }
-                        attrs.onDatesChange = useCallback {
+                        onDatesChange = useCallback {
                             setStartDate(it.startDate)
                             setEndDate(it.endDate)
                         }
-                        attrs.isOutsideRange = { false }
-                        attrs.focusedInput = focusedInput
-                        attrs.displayFormat = "DD/MM/YYYY"
-                        attrs.small = true
-                        attrs.numberOfMonths = 1
-                        attrs.renderCalendarInfo = useCallback {
+                        isOutsideRange = { false }
+                        this.focusedInput = focusedInput
+                        displayFormat = "DD/MM/YYYY"
+                        small = true
+                        numberOfMonths = 1
+                        renderCalendarInfo = useCallback {
                             createElement(
                                 presets,
                                 jso {
@@ -313,13 +331,14 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
                     }
                 }
             }
-            div("mb-3 col-sm-3") {
+            div {
+                className = ClassName("mb-3 col-sm-3")
                 sort {
-                    attrs.target = props.sortOrderTarget
-                    attrs.cb = {
+                    target = props.sortOrderTarget
+                    cb = {
                         setOrder(it)
                     }
-                    attrs.default = order
+                    default = order
                 }
             }
         }

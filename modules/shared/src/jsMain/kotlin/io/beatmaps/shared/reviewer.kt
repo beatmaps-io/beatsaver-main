@@ -5,11 +5,12 @@ import external.routeLink
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.UserDetail
 import io.beatmaps.user.ProfileTab
+import io.beatmaps.util.fcmemo
 import kotlinx.datetime.Instant
 import react.Props
-import react.dom.div
-import react.dom.img
-import react.fc
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.img
+import web.cssom.ClassName
 
 external interface ReviewerProps : Props {
     var reviewer: UserDetail?
@@ -17,10 +18,14 @@ external interface ReviewerProps : Props {
     var time: Instant
 }
 
-val reviewer = fc<ReviewerProps>("reviewer") { props ->
-    div("owner") {
+val reviewer = fcmemo<ReviewerProps>("reviewer") { props ->
+    div {
+        className = ClassName("owner")
         props.reviewer?.let { owner ->
-            img(src = owner.avatar) { }
+            img {
+                alt = owner.name
+                src = owner.avatar
+            }
             routeLink(owner.profileLink(ProfileTab.REVIEWS)) {
                 +owner.name
             }
@@ -33,7 +38,7 @@ val reviewer = fc<ReviewerProps>("reviewer") { props ->
         }
         +" - "
         TimeAgo.default {
-            attrs.date = props.time.toString()
+            date = props.time.toString()
         }
     }
 }

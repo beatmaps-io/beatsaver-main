@@ -5,19 +5,19 @@ import external.TimeAgo
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.FeedbackUpdate
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.textToContent
 import kotlinx.datetime.Clock
-import kotlinx.html.js.onClickFunction
-import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.h3
-import react.dom.small
-import react.dom.textarea
-import react.fc
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h3
+import react.dom.html.ReactHTML.small
+import react.dom.html.ReactHTML.textarea
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.HTMLTextAreaElement
 
 external interface FeedbackProps : Props {
     var hash: String
@@ -27,7 +27,7 @@ external interface FeedbackProps : Props {
     var isOwner: Boolean
 }
 
-val feedback = fc<FeedbackProps>("feedback") { props ->
+val feedback = fcmemo<FeedbackProps>("feedback") { props ->
     val (editing, setEditing) = useState(false)
     val (loading, setLoading) = useState(false)
     val (text, setText) = useState(props.feedback)
@@ -36,14 +36,16 @@ val feedback = fc<FeedbackProps>("feedback") { props ->
     val textareaRef = useRef<HTMLTextAreaElement>()
 
     timelineEntry {
-        attrs.icon = "fa-comments"
-        attrs.color = "primary"
-        attrs.headerCallback = TimelineEntrySectionRenderer {
+        icon = "fa-comments"
+        color = "primary"
+        headerCallback = TimelineEntrySectionRenderer {
             if (props.isOwner) {
-                div("float-end") {
+                div {
+                    className = ClassName("float-end")
                     if (editing) {
-                        button(classes = "btn btn-success m-1") {
-                            attrs.onClickFunction = {
+                        button {
+                            className = ClassName("btn btn-success m-1")
+                            onClick = {
                                 val newText = textareaRef.current?.value ?: ""
 
                                 setLoading(true)
@@ -57,15 +59,16 @@ val feedback = fc<FeedbackProps>("feedback") { props ->
                                     setLoading(false)
                                 }
                             }
-                            attrs.disabled = loading
+                            disabled = loading
                             +"Save"
                         }
                     }
-                    button(classes = "btn btn-info m-1") {
-                        attrs.onClickFunction = {
+                    button {
+                        className = ClassName("btn btn-info m-1")
+                        onClick = {
                             setEditing(!editing)
                         }
-                        attrs.disabled = loading
+                        disabled = loading
                         +(if (editing) "Cancel" else "Edit")
                     }
                 }
@@ -81,22 +84,24 @@ val feedback = fc<FeedbackProps>("feedback") { props ->
                 +props.hash
             }
         }
-        attrs.bodyCallback = TimelineEntrySectionRenderer {
+        bodyCallback = TimelineEntrySectionRenderer {
             if (editing) {
-                textarea("10", classes = "form-control") {
+                textarea {
                     ref = textareaRef
-                    attrs.disabled = loading
+                    rows = 10
+                    className = ClassName("form-control")
+                    disabled = loading
                     +text
                 }
             } else {
                 textToContent(text)
             }
         }
-        attrs.footerCallback = TimelineEntrySectionRenderer {
+        footerCallback = TimelineEntrySectionRenderer {
             small {
                 TimeAgo.default {
                     key = time
-                    attrs.date = time
+                    date = time
                 }
             }
         }

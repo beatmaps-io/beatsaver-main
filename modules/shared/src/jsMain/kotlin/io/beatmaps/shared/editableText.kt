@@ -2,22 +2,22 @@ package io.beatmaps.shared
 
 import external.AxiosResponse
 import io.beatmaps.api.ActionResponse
+import io.beatmaps.util.fcmemo
+import io.beatmaps.util.setData
 import io.beatmaps.util.textToContent
-import kotlinx.html.ButtonType
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
-import org.w3c.dom.HTMLTextAreaElement
+import js.objects.jso
 import react.PropsWithChildren
-import react.dom.button
-import react.dom.defaultValue
-import react.dom.div
-import react.dom.jsStyle
-import react.dom.span
-import react.dom.textarea
-import react.fc
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.span
+import react.dom.html.ReactHTML.textarea
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.cssom.Flex
+import web.cssom.None
+import web.html.ButtonType
+import web.html.HTMLTextAreaElement
 import kotlin.js.Promise
 
 external interface EditableTextProps : PropsWithChildren {
@@ -31,12 +31,12 @@ external interface EditableTextProps : PropsWithChildren {
     var maxLength: Int?
     var rows: Int?
     var btnClass: String?
-    var flex: String?
+    var flex: Flex?
     var placeholder: String?
-    var textClass: String?
+    var textClass: ClassName?
 }
 
-val editableText = fc<EditableTextProps>("editableText") { props ->
+val editableText = fcmemo<EditableTextProps>("editableText") { props ->
     val (loading, setLoading) = useState(false)
     val (textLength, setTextLength) = useState(props.text?.length ?: 0)
 
@@ -45,37 +45,42 @@ val editableText = fc<EditableTextProps>("editableText") { props ->
     val displayText = (props.text ?: "")
 
     if (props.editing == true) {
-        div(classes = props.textClass) {
-            textarea((props.rows ?: 10).toString(), classes = "form-control") {
-                attrs.id = "review"
-                attrs.disabled = loading == true
-                attrs.placeholder = props.placeholder ?: ""
-                attrs.defaultValue = displayText
+        div {
+            className = props.textClass
+            textarea {
+                rows = props.rows ?: 10
+                className = ClassName("form-control")
+                id = "review"
+                disabled = loading == true
+                placeholder = props.placeholder ?: ""
+                defaultValue = displayText
                 ref = textareaRef
-                props.maxLength?.let { max ->
-                    attrs.maxLength = "$max"
-                }
-                attrs.onChangeFunction = {
-                    setTextLength((it.target as HTMLTextAreaElement).value.length)
+                maxLength = props.maxLength
+                onChange = {
+                    setTextLength(it.target.value.length)
                 }
             }
             props.maxLength?.let {
-                span("badge badge-" + if (textLength > it - 20) "danger" else "dark") {
-                    attrs.id = "count_message"
+                span {
+                    className = ClassName("badge badge-" + if (textLength > it - 20) "danger" else "dark")
+                    id = "count_message"
                     +"$textLength / $it"
                 }
             }
         }
 
-        div("d-flex flex-row-reverse") {
-            button(classes = "text-nowrap btn " + (props.btnClass ?: "btn-primary mt-1"), type = ButtonType.submit) {
-                attrs.disabled = loading || textLength < 1 || props.maxLength?.let { textLength > it } ?: false
-                attrs.attributes["data-loading"] = "$loading"
+        div {
+            className = ClassName("d-flex flex-row-reverse")
+            button {
+                className = ClassName("text-nowrap btn " + (props.btnClass ?: "btn-primary mt-1"))
+                type = ButtonType.submit
+                disabled = loading || textLength < 1 || props.maxLength?.let { textLength > it } ?: false
+                setData("loading", loading)
 
-                attrs.jsStyle {
-                    flex = props.flex ?: "none"
+                style = jso {
+                    flex = props.flex ?: None.none
                 }
-                attrs.onClickFunction = {
+                onClick = {
                     val newReview = textareaRef.current?.value ?: ""
                     if (!loading) {
                         setLoading(true)
@@ -100,7 +105,7 @@ val editableText = fc<EditableTextProps>("editableText") { props ->
                 +(props.buttonText ?: "Save")
             }
 
-            props.children()
+            +props.children
         }
     } else if (props.renderText == true) {
         div {

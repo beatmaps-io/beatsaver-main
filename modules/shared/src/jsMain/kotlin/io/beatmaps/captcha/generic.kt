@@ -2,13 +2,13 @@ package io.beatmaps.captcha
 
 import io.beatmaps.configContext
 import io.beatmaps.util.fcmemo
-import react.MutableRefObject
 import react.Props
-import react.useContext
+import react.RefObject
+import react.use
 import kotlin.js.Promise
 
 external interface CaptchaProps : Props {
-    var captchaRef: MutableRefObject<ICaptchaHandler>
+    var captchaRef: RefObject<ICaptchaHandler>
     var enabled: Boolean
     var page: String
 }
@@ -25,18 +25,18 @@ object FakeCaptchaHandler : ICaptchaHandler {
 }
 
 val captcha = fcmemo<CaptchaProps>("CaptchaWrapper") { props ->
-    val configData = useContext(configContext)
+    val configData = use(configContext)
 
     when (configData?.captchaProvider) {
         "ReCaptcha" -> recaptcha {
-            attrs.captchaRef = props.captchaRef
-            attrs.enabled = configData.showCaptcha
-            attrs.page = props.page
+            captchaRef = props.captchaRef
+            enabled = configData.showCaptcha
+            page = props.page
         }
         "Turnstile" -> turnstile {
-            attrs.captchaRef = props.captchaRef
-            attrs.enabled = configData.showCaptcha
-            attrs.page = props.page
+            captchaRef = props.captchaRef
+            enabled = configData.showCaptcha
+            page = props.page
         }
         else -> {
             props.captchaRef.current = FakeCaptchaHandler

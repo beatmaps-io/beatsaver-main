@@ -29,48 +29,49 @@ import io.beatmaps.util.buildURL
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.includeIfNotNull
 import io.beatmaps.util.toPlaylistConfig
-import kotlinx.html.ButtonType
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
-import org.w3c.dom.url.URLSearchParams
+import js.objects.jso
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.i
-import react.dom.jsStyle
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
 import react.router.useLocation
 import react.router.useNavigate
+import react.use
 import react.useCallback
-import react.useContext
 import react.useEffect
 import react.useEffectOnce
 import react.useMemo
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.cssom.Position
+import web.cssom.px
+import web.html.ButtonType
+import web.url.URLSearchParams
 
 val homePage = fcmemo<Props>("homePage") {
     val location = useLocation()
 
     fun fromURL() = URLSearchParams(location.search).let { params ->
         SearchParams(
-            params.get("q") ?: "",
-            params.get("auto")?.toBoolean(),
-            params.get("minNps")?.toFloatOrNull(),
-            params.get("maxNps")?.toFloatOrNull(),
-            params.get("chroma")?.toBoolean(),
-            SearchOrder.fromString(params.get("order")) ?: SearchOrder.Relevance,
-            params.get("from"),
-            params.get("to"),
-            params.get("noodle")?.toBoolean(),
-            RankedFilter.fromString(params.get("ranked")),
-            params.get("curated")?.toBoolean(),
-            params.get("verified")?.toBoolean(),
-            params.get("followed")?.toBoolean(),
-            params.get("fullSpread")?.toBoolean(),
-            params.get("me")?.toBoolean(),
-            params.get("cinema")?.toBoolean(),
-            params.get("tags")?.toQuery()?.toTagSet() ?: mapOf(),
-            params.get("environments").toEnvironmentSet()
+            params["q"] ?: "",
+            params["auto"]?.toBoolean(),
+            params["minNps"]?.toFloatOrNull(),
+            params["maxNps"]?.toFloatOrNull(),
+            params["chroma"]?.toBoolean(),
+            SearchOrder.fromString(params["order"]) ?: SearchOrder.Relevance,
+            params["from"],
+            params["to"],
+            params["noodle"]?.toBoolean(),
+            RankedFilter.fromString(params["ranked"]),
+            params["curated"]?.toBoolean(),
+            params["verified"]?.toBoolean(),
+            params["followed"]?.toBoolean(),
+            params["fullSpread"]?.toBoolean(),
+            params["me"]?.toBoolean(),
+            params["cinema"]?.toBoolean(),
+            params["tags"]?.toQuery()?.toTagSet() ?: mapOf(),
+            params["environments"].toEnvironmentSet()
         )
     }
 
@@ -86,7 +87,7 @@ val homePage = fcmemo<Props>("homePage") {
     val modalRef = useRef<ModalCallbacks>()
     val history = History(useNavigate())
 
-    val userData = useContext(globalContext)
+    val userData = use(globalContext)
 
     val mapFilters = useMemo(userData) {
         listOfNotNull<FilterInfo<SearchParams, *>>(
@@ -134,7 +135,7 @@ val homePage = fcmemo<Props>("homePage") {
                     includeIfNotNull(fullSpread, "fullSpread"),
                     includeIfNotNull(followed, "followed"),
                     (if (tagStr.isNotEmpty()) "tags=$tagStr" else null),
-                    (if (environments?.isNotEmpty() == true) "environments=${environments.joinToString(",")}" else null)
+                    (if (this.environments.isNotEmpty()) "environments=${this.environments.joinToString(",")}" else null)
                 ),
                 "", row, searchParams, history
             )
@@ -153,7 +154,7 @@ val homePage = fcmemo<Props>("homePage") {
     }
 
     modal {
-        attrs.callbacks = modalRef
+        callbacks = modalRef
     }
 
     val paramGenerator = useMemo(tags, environments) {
@@ -184,14 +185,14 @@ val homePage = fcmemo<Props>("homePage") {
     val extraFilters = useMemo(tags, environments) {
         ExtraContentRenderer {
             tags {
-                attrs.default = tags
-                attrs.callback = {
+                default = tags
+                callback = {
                     setTags(it)
                 }
             }
             environments {
-                attrs.default = environments
-                attrs.callback = {
+                default = environments
+                callback = {
                     setEnvironments(it)
                 }
             }
@@ -204,39 +205,42 @@ val homePage = fcmemo<Props>("homePage") {
     }
 
     modalContext.Provider {
-        attrs.value = modalRef
+        value = modalRef
 
         beatmapSearch {
-            attrs.typedState = searchParams
-            attrs.sortOrderTarget = SortOrderTarget.Map
-            attrs.filters = mapFilters
-            attrs.maxNps = 16
-            attrs.paramsFromPage = paramGenerator
-            attrs.extraFilters = extraFilters
-            attrs.updateUI = useCallback { params: SearchParams? ->
+            typedState = searchParams
+            sortOrderTarget = SortOrderTarget.Map
+            filters = mapFilters
+            maxNps = 16
+            paramsFromPage = paramGenerator
+            this.extraFilters = extraFilters
+            updateUI = useCallback { params: SearchParams? ->
                 setTags(params?.tags)
                 setEnvironments(params?.environments)
             }
-            attrs.filterTexts = filterTextCallback
-            attrs.updateSearchParams = updateSearchParams
+            filterTexts = filterTextCallback
+            this.updateSearchParams = updateSearchParams
         }
 
         beatmapTable {
-            attrs.search = searchParams
-            attrs.updateScrollIndex = usiRef
+            search = searchParams
+            updateScrollIndex = usiRef
         }
 
         if (userData != null) {
-            div("position-fixed btn-group") {
-                attrs.jsStyle {
-                    position = "absolute"
-                    right = "10px"
-                    bottom = "10px"
+            div {
+                className = ClassName("position-fixed btn-group")
+                style = jso {
+                    position = Position.absolute
+                    right = 10.px
+                    bottom = 10.px
                 }
 
-                button(type = ButtonType.button, classes = "btn btn-sm btn-primary") {
-                    attrs.title = "Create playlist from search"
-                    attrs.onClickFunction = {
+                button {
+                    type = ButtonType.button
+                    className = ClassName("btn btn-sm btn-primary")
+                    title = "Create playlist from search"
+                    onClick = {
                         it.preventDefault()
 
                         history.go(
@@ -244,7 +248,9 @@ val homePage = fcmemo<Props>("homePage") {
                             stateNavOptions(searchParams.toPlaylistConfig(), false)
                         )
                     }
-                    i("fas fa-list-ul") { }
+                    i {
+                        className = ClassName("fas fa-list-ul")
+                    }
                 }
             }
         }

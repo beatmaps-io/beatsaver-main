@@ -6,21 +6,20 @@ import io.beatmaps.Config
 import io.beatmaps.api.QuestCode
 import io.beatmaps.api.QuestCodeResponse
 import io.beatmaps.shared.form.errors
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onSubmitFunction
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.url.URLSearchParams
+import io.beatmaps.util.fcmemo
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.form
-import react.dom.input
-import react.fc
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.input
 import react.router.useLocation
 import react.useEffect
 import react.useRef
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.HTMLInputElement
+import web.html.InputType
+import web.url.URLSearchParams
 
 external interface QuestCodeProps : Props {
     var deviceCodeCallback: (String, QuestCodeResponse) -> Unit
@@ -28,7 +27,7 @@ external interface QuestCodeProps : Props {
     var error: Boolean
 }
 
-val questCode = fc<QuestCodeProps>("questCode") { props ->
+val questCode = fcmemo<QuestCodeProps>("questCode") { props ->
     val location = useLocation()
     val inputRef = useRef<HTMLInputElement>()
 
@@ -50,40 +49,49 @@ val questCode = fc<QuestCodeProps>("questCode") { props ->
 
     useEffect(location) {
         val params = URLSearchParams(location.search)
-        inputRef.current?.value = params.get("code") ?: ""
+        inputRef.current?.value = params["code"] ?: ""
         onSubmit()
     }
 
-    div("login-form card border-dark") {
-        div("card-header") {
+    div {
+        className = ClassName("login-form card border-dark")
+        div {
+            className = ClassName("card-header")
             +"Enter code"
         }
-        form(classes = "card-body") {
-            attrs.onSubmitFunction = { ev ->
+        form {
+            className = ClassName("card-body")
+            onSubmit = { ev ->
                 ev.preventDefault()
                 onSubmit()
             }
 
-            div("quest-errors") {
+            div {
+                className = ClassName("quest-errors")
                 if (props.error) {
                     errors {
-                        attrs.errors = listOf("Code not recognised. Try again.")
+                        errors = listOf("Code not recognised. Try again.")
                     }
                 }
             }
 
-            input(InputType.text, classes = "form-control quest-code") {
+            input {
                 key = "code"
-                attrs.maxLength = "8"
-                attrs.placeholder = "Enter code"
-                attrs.onChangeFunction = {
+                type = InputType.text
+                className = ClassName("form-control quest-code")
+                maxLength = 8
+                placeholder = "Enter code"
+                onChange = {
                     props.setError(false)
                 }
                 ref = inputRef
             }
 
-            div("d-grid") {
-                button(classes = "btn btn-success mb-2 mt-4", type = ButtonType.submit) {
+            div {
+                className = ClassName("d-grid")
+                button {
+                    className = ClassName("btn btn-success mb-2 mt-4")
+                    type = ButtonType.submit
                     +"Continue"
                 }
             }

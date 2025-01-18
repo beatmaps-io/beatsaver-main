@@ -4,9 +4,10 @@ import external.Axios
 import external.Moment
 import external.dates
 import external.generateConfig
-import external.reactFor
 import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
+import io.beatmaps.common.EnvironmentSet
+import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchParamsPlaylist
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.SortOrderTarget
@@ -21,31 +22,27 @@ import io.beatmaps.shared.search.environments
 import io.beatmaps.shared.search.presets
 import io.beatmaps.shared.search.sort
 import io.beatmaps.shared.search.tags
+import io.beatmaps.util.fcmemo
 import js.objects.jso
 import kotlinx.datetime.Instant
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLSelectElement
 import react.Props
 import react.StateSetter
 import react.Suspense
 import react.createElement
-import react.dom.attrs
-import react.dom.defaultValue
-import react.dom.div
-import react.dom.h4
-import react.dom.hr
-import react.dom.input
-import react.dom.label
-import react.dom.option
-import react.dom.select
-import react.fc
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h4
+import react.dom.html.ReactHTML.hr
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
+import react.dom.html.ReactHTML.option
+import react.dom.html.ReactHTML.select
 import react.useCallback
 import react.useEffect
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.HTMLInputElement
+import web.html.InputType
 
 external interface PSEProps : Props {
     var config: SearchPlaylistConfig
@@ -65,7 +62,7 @@ class PlaylistSearchBooleanFilter(override val id: String, val text: String, val
 
 class PlaylistSearchMultipleChoiceFilter<T : Any?>(override val id: String, val choices: Map<String, T>, val getter: T, val setter: StateSetter<T>) : PlaylistSearchFilter<T>
 
-val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
+val playlistSearchEditor = fcmemo<PSEProps>("playlistSearchEditor") { props ->
     val (automapper, setAutomapper) = useState(props.config.searchParams.automapper)
     val (minNps, setMinNps) = useState(props.config.searchParams.minNps ?: 0f)
     val (maxNps, setMaxNps) = useState(props.config.searchParams.maxNps ?: 16f)
@@ -162,50 +159,58 @@ val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
         }
     }
 
-    div("row") {
-        div("col-4") {
-            div("mb-3") {
-                label("form-label") {
-                    attrs.reactFor = "search"
+    div {
+        className = ClassName("row")
+        div {
+            className = ClassName("col-4")
+            div {
+                className = ClassName("mb-3")
+                label {
+                    className = ClassName("form-label")
+                    htmlFor = "search"
                     +"Search"
                 }
-                input(type = InputType.text, classes = "form-control") {
+                input {
+                    type = InputType.text
+                    className = ClassName("form-control")
                     key = "search"
                     ref = searchRef
-                    attrs.defaultValue = props.config.searchParams.search
-                    attrs.id = "search"
-                    attrs.placeholder = "Search Terms"
-                    attrs.disabled = props.loading
-                    attrs.onChangeFunction = {
+                    defaultValue = props.config.searchParams.search
+                    id = "search"
+                    placeholder = "Search Terms"
+                    disabled = props.loading
+                    onChange = {
                         doCallback()
                     }
                 }
             }
-            div("mb-3") {
+            div {
+                className = ClassName("mb-3")
                 Suspense {
-                    attrs.fallback = loadingElem
-                    label("form-label") {
+                    fallback = loadingElem
+                    label {
+                        className = ClassName("form-label")
                         +"Date range"
                     }
                     div {
                         dates.dateRangePicker {
-                            attrs.startDate = startDate
-                            attrs.endDate = endDate
-                            attrs.startDateId = "startobj"
-                            attrs.endDateId = "endobj"
-                            attrs.onFocusChange = useCallback {
+                            this.startDate = startDate
+                            this.endDate = endDate
+                            startDateId = "startobj"
+                            endDateId = "endobj"
+                            onFocusChange = useCallback {
                                 setDateFocused(it)
                             }
-                            attrs.onDatesChange = useCallback {
+                            onDatesChange = useCallback {
                                 setStartDate(it.startDate)
                                 setEndDate(it.endDate)
                             }
-                            attrs.isOutsideRange = { false }
-                            attrs.focusedInput = dateFocused
-                            attrs.displayFormat = "DD/MM/YYYY"
-                            attrs.small = true
-                            attrs.numberOfMonths = 1
-                            attrs.renderCalendarInfo = useCallback {
+                            isOutsideRange = { false }
+                            focusedInput = dateFocused
+                            displayFormat = "DD/MM/YYYY"
+                            small = true
+                            numberOfMonths = 1
+                            renderCalendarInfo = useCallback {
                                 createElement(
                                     presets,
                                     jso {
@@ -221,76 +226,82 @@ val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
                 }
             }
             slider {
-                attrs.text = "NPS"
-                attrs.currentMin = minNps
-                attrs.currentMax = maxNps
-                attrs.block = {
+                text = "NPS"
+                currentMin = minNps
+                currentMax = maxNps
+                block = {
                     setMinNps(it[0] / 10f)
                     setMaxNps(it[1] / 10f)
                 }
-                attrs.className = "mb-3"
+                className = ClassName("mb-3")
             }
-            div("mb-3") {
-                label("form-label") {
-                    attrs.reactFor = "sort-by"
+            div {
+                className = ClassName("mb-3")
+                label {
+                    className = ClassName("form-label")
+                    htmlFor = "sort-by"
                     +"Sort by"
                 }
                 sort {
-                    attrs.target = SortOrderTarget.Map
-                    attrs.cb = {
+                    target = SortOrderTarget.Map
+                    cb = {
                         setOrder(it)
                     }
-                    attrs.default = order
-                    attrs.id = "sort-by"
+                    default = order
+                    id = "sort-by"
                 }
             }
-            div("mb-3") {
-                label("form-label") {
-                    attrs.reactFor = "map-count"
+            div {
+                className = ClassName("mb-3")
+                label {
+                    className = ClassName("form-label")
+                    htmlFor = "map-count"
                     +"Map Count"
                 }
-                select("form-select") {
-                    attrs {
-                        id = "map-count"
-                        disabled = props.loading
-                        onChangeFunction = { ev ->
-                            setMapCount((ev.target as HTMLSelectElement).value.toIntOrNull() ?: 100)
-                        }
-                        value = mapCount.toString()
+                select {
+                    className = ClassName("form-select")
+                    id = "map-count"
+                    disabled = props.loading
+                    onChange = { ev ->
+                        setMapCount(ev.target.value.toIntOrNull() ?: 100)
                     }
+                    value = mapCount.toString()
+
                     mapCounts.forEach {
                         option {
-                            attrs.value = it.toString()
+                            value = it.toString()
                             +it.toString()
                         }
                     }
                 }
             }
         }
-        div("col-4 mb-3 ps-filter") {
+        div {
+            className = ClassName("col-4 mb-3 ps-filter")
             filters.forEachIndexed { idx, s ->
-                h4(if (idx > 0) "mt-4" else "") {
+                h4 {
+                    className = if (idx > 0) ClassName("mt-4") else null
                     +s.first
                 }
 
                 s.second.forEach { f ->
                     if (f is PlaylistSearchBooleanFilter) {
                         toggle {
-                            attrs.id = f.id
-                            attrs.disabled = props.loading
-                            attrs.default = f.filter(props.config.searchParams)
-                            attrs.text = f.text
-                            attrs.toggleRef = f.ref
-                            attrs.block = {
+                            id = f.id
+                            disabled = props.loading
+                            default = f.filter(props.config.searchParams)
+                            text = f.text
+                            toggleRef = f.ref
+                            block = {
                                 doCallback()
                             }
                         }
                     } else if (f is PlaylistSearchMultipleChoiceFilter) {
                         multipleChoice {
-                            attrs.choices = f.choices
-                            attrs.name = f.id
-                            attrs.selectedValue = f.getter
-                            attrs.block = {
+                            choices = f.choices
+                            name = f.id
+                            selectedValue = f.getter
+                            block = {
                                 f.setter(it)
                             }
                         }
@@ -298,34 +309,38 @@ val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
                 }
             }
         }
-        div("col-4 mb-3") {
+        div {
+            className = ClassName("col-4 mb-3")
             tags {
-                attrs.default = props.config.searchParams.tags
-                attrs.callback = {
+                default = props.config.searchParams.tags
+                callback = useCallback { it: MapTagSet ->
                     setTags(it)
                 }
             }
             environments {
-                attrs.default = props.config.searchParams.environments
-                attrs.callback = {
+                default = props.config.searchParams.environments
+                callback = useCallback { it: EnvironmentSet ->
                     setEnvironments(it)
                 }
             }
         }
     }
     hr {}
-    div("row playlist-mappers") {
-        label("form-label") {
-            attrs.reactFor = "mappers"
+    div {
+        className = ClassName("row playlist-mappers")
+        label {
+            className = ClassName("form-label")
+            htmlFor = "mappers"
             +"Mappers"
         }
 
-        div("collaborator-cards") {
+        div {
+            className = ClassName("collaborator-cards")
             currentMappers.forEach { user ->
                 collaboratorCard {
                     key = user.id.toString()
-                    attrs.user = user
-                    attrs.callback = {
+                    this.user = user
+                    callback = {
                         setCurrentMappers(currentMappers.minus(user))
                     }
                 }
@@ -334,12 +349,13 @@ val playlistSearchEditor = fc<PSEProps>("playlistSearchEditor") { props ->
 
         if (currentMappers.size < maxMappersInFilter) {
             userSearch {
-                attrs.disabled = props.loading
-                attrs.excludeUsers = currentMappers.map { it.id }
-                attrs.callback = { newUser ->
+                disabled = props.loading
+                noForm = true
+                excludeUsers = currentMappers.map { it.id }
+                callback = { newUser ->
                     setCurrentMappers(currentMappers.plus(newUser))
                 }
-                attrs.addText = "Add"
+                addText = "Add"
             }
         }
     }

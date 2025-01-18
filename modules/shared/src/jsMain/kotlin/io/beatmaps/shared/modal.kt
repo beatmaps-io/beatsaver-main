@@ -3,30 +3,26 @@ package io.beatmaps.shared
 import io.beatmaps.previewBaseUrl
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.textToContent
-import kotlinx.browser.window
-import kotlinx.dom.addClass
-import kotlinx.dom.removeClass
-import kotlinx.html.ButtonType
-import kotlinx.html.hidden
-import kotlinx.html.js.onClickFunction
-import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.HTMLIFrameElement
-import react.MutableRefObject
+import react.ChildrenBuilder
 import react.Props
-import react.RBuilder
 import react.RefObject
 import react.createContext
-import react.dom.button
-import react.dom.div
-import react.dom.h5
-import react.dom.iframe
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h5
+import react.dom.html.ReactHTML.iframe
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.HTMLDivElement
+import web.html.HTMLIFrameElement
+import web.timers.setTimeout
 import kotlin.js.Promise
 
 val modalContext = createContext<RefObject<ModalCallbacks>?>(null)
 
-data class ModalData(val titleText: String, val bodyText: String = "", val buttons: List<ModalButton>, val large: Boolean = false, val bodyCallback: (RBuilder.(HTMLDivElement?) -> Unit)? = null)
+data class ModalData(val titleText: String, val bodyText: String = "", val buttons: List<ModalButton>, val large: Boolean = false, val bodyCallback: (ChildrenBuilder.(HTMLDivElement?) -> Unit)? = null)
 data class ModalButton(val text: String, val color: String = "secondary", val callback: () -> Promise<Boolean> = { Promise.resolve(true) })
 data class ModalCallbacks(
     val hide: () -> Unit,
@@ -36,7 +32,7 @@ data class ModalCallbacks(
 )
 
 external interface ModalProps : Props {
-    var callbacks: MutableRefObject<ModalCallbacks>?
+    var callbacks: RefObject<ModalCallbacks>?
 }
 
 val modal = fcmemo<ModalProps>("Modal") { props ->
@@ -52,10 +48,10 @@ val modal = fcmemo<ModalProps>("Modal") { props ->
             backdrop.current?.let { bd ->
                 bd.hidden = false
                 md.hidden = false
-                window.setTimeout(
+                setTimeout(
                     {
-                        bd.addClass("show")
-                        md.addClass("show")
+                        bd.classList.add("show")
+                        md.classList.add("show")
                     },
                     10
                 )
@@ -67,9 +63,9 @@ val modal = fcmemo<ModalProps>("Modal") { props ->
         iframe.current?.src = "about:blank"
         modalRef.current?.let { md ->
             backdrop.current?.let { bd ->
-                md.removeClass("show")
-                bd.removeClass("show")
-                window.setTimeout(
+                bd.classList.remove("show")
+                md.classList.remove("show")
+                setTimeout(
                     {
                         md.hidden = true
                         bd.hidden = true
@@ -103,46 +99,60 @@ val modal = fcmemo<ModalProps>("Modal") { props ->
         }
     )
 
-    div("modal-backdrop fade") {
+    div {
+        className = ClassName("modal-backdrop fade")
         ref = backdrop
-        attrs.hidden = true
+        hidden = true
     }
-    div("modal") {
+    div {
+        className = ClassName("modal")
         ref = modalRef
-        attrs.hidden = true
-        attrs.onClickFunction = { hide() }
-        div("modal-dialog modal-dialog-centered rabbit-dialog") {
-            attrs.hidden = modalData != null
-            iframe(classes = "modal-content") {
+        hidden = true
+        onClick = { hide() }
+        div {
+            className = ClassName("modal-dialog modal-dialog-centered rabbit-dialog")
+            hidden = modalData != null
+            iframe {
                 ref = iframe
-                attrs.src = "about:blank"
-                attrs["allow"] = "fullscreen"
+                className = ClassName("modal-content")
+                src = "about:blank"
+                allow = "fullscreen"
             }
         }
-        div("modal-dialog" + if (modalData?.large == true) " modal-lg" else "") {
-            attrs.hidden = modalData == null
-            attrs.onClickFunction = {
+        div {
+            className = ClassName("modal-dialog" + if (modalData?.large == true) " modal-lg" else "")
+            hidden = modalData == null
+            onClick = {
                 it.stopPropagation()
             }
-            div("modal-content") {
-                div("modal-header") {
-                    h5("modal-title") {
+            div {
+                className = ClassName("modal-content")
+                div {
+                    className = ClassName("modal-header")
+                    h5 {
+                        className = ClassName("modal-title")
                         +(modalData?.titleText ?: "")
                     }
-                    button(type = ButtonType.button, classes = "btn-close") {
-                        attrs.onClickFunction = { hide() }
+                    button {
+                        type = ButtonType.button
+                        className = ClassName("btn-close")
+                        onClick = { hide() }
                     }
                 }
-                div("modal-body") {
+                div {
+                    className = ClassName("modal-body")
                     modalData?.let { m ->
                         m.bodyCallback?.invoke(this, modalRef.current) ?: textToContent(m.bodyText)
                     }
                 }
-                div("modal-footer") {
+                div {
+                    className = ClassName("modal-footer")
                     modalData?.buttons?.forEach { b ->
-                        button(type = ButtonType.button, classes = "btn btn-${b.color}") {
-                            attrs.disabled = loading
-                            attrs.onClickFunction = {
+                        button {
+                            type = ButtonType.button
+                            className = ClassName("btn btn-${b.color}")
+                            disabled = loading
+                            onClick = {
                                 setLoading(true)
                                 b.callback().then({
                                     if (it) hide()

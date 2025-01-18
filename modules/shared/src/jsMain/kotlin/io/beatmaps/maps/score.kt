@@ -2,11 +2,11 @@ package io.beatmaps.maps
 
 import io.beatmaps.common.fixedStr
 import io.beatmaps.util.fcmemo
-import kotlinx.html.ThScope
 import react.Props
-import react.dom.td
-import react.dom.th
-import react.dom.tr
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.th
+import react.dom.html.ReactHTML.tr
+import web.cssom.ClassName
 
 external interface ScoreProps : Props {
     var position: Int
@@ -21,7 +21,8 @@ external interface ScoreProps : Props {
 
 val score = fcmemo<ScoreProps>("score") { props ->
     tr {
-        th(scope = ThScope.row) {
+        th {
+            scope = "row"
             +"${props.position}"
         }
         td {
@@ -37,7 +38,8 @@ val score = fcmemo<ScoreProps>("score") { props ->
                 props.mods.joinToString(", ")
             }
         }
-        td(props.scoreColor) {
+        td {
+            className = ClassName(props.scoreColor)
             +props.percentage
         }
         td {

@@ -5,47 +5,52 @@ import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserSearchResponse
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onClickFunction
-import org.w3c.dom.HTMLInputElement
+import io.beatmaps.util.fcmemo
+import react.ChildrenBuilder
 import react.Props
-import react.dom.a
-import react.dom.button
-import react.dom.div
-import react.dom.form
-import react.dom.img
-import react.dom.input
-import react.dom.span
-import react.fc
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.span
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.HTMLInputElement
+import web.html.InputType
 import kotlin.js.Promise
 
 external interface UserSearchProps : Props {
     var callback: ((UserDetail) -> Unit)?
     var excludeUsers: List<Int>?
     var disabled: Boolean?
+    var noForm: Boolean?
     var addText: String?
 }
 
-val userSearch = fc<UserSearchProps>("userSearch") { props ->
+val userSearch = fcmemo<UserSearchProps>("userSearch") { props ->
     val (foundUsers, setFoundUsers) = useState<List<UserDetail>?>(null)
     val (loading, setLoading) = useState(false)
     val inputRef = useRef<HTMLInputElement>()
 
-    form("", classes = "search") {
-        input(InputType.search, classes = "form-control") {
-            attrs.id = "collaborators"
-            attrs.placeholder = "Add users"
-            attrs.disabled = props.disabled == true
+    fun ChildrenBuilder.formContent() {
+        input {
+            type = InputType.search
+            className = ClassName("form-control")
+            id = "collaborators"
+            placeholder = "Add users"
+            disabled = props.disabled == true
             ref = inputRef
         }
 
-        button(type = ButtonType.submit, classes = "btn btn-primary") {
-            attrs.disabled = loading
-            attrs.onClickFunction = {
+        button {
+            type = ButtonType.submit
+            className = ClassName("btn btn-primary")
+            disabled = loading
+            onClick = {
                 it.preventDefault()
                 setLoading(true)
                 val q = inputRef.current?.value
@@ -66,20 +71,38 @@ val userSearch = fc<UserSearchProps>("userSearch") { props ->
         }
     }
 
+    if (props.noForm == true) {
+        div {
+            className = ClassName("search")
+            formContent()
+        }
+    } else {
+        form {
+            className = ClassName("search")
+            formContent()
+        }
+    }
+
     foundUsers?.filter {
         props.excludeUsers?.contains(it.id) != true
     }?.take(10)?.let { users ->
-        div("search-results") {
+        div {
+            className = ClassName("search-results")
             if (users.isNotEmpty()) {
                 users.forEach { user ->
-                    div("list-group-item user") {
+                    div {
+                        className = ClassName("list-group-item user")
                         span {
-                            img(user.name, user.avatar) { }
+                            img {
+                                alt = user.name
+                                src = user.avatar
+                            }
                             +user.name
                         }
 
-                        a(classes = "btn btn-success btn-sm") {
-                            attrs.onClickFunction = {
+                        a {
+                            className = ClassName("btn btn-success btn-sm")
+                            onClick = {
                                 props.callback?.invoke(user)
                             }
                             +(props.addText ?: "Invite")
@@ -87,7 +110,8 @@ val userSearch = fc<UserSearchProps>("userSearch") { props ->
                     }
                 }
             } else {
-                div("list-group-item text-center") {
+                div {
+                    className = ClassName("list-group-item text-center")
                     +"No results"
                 }
             }

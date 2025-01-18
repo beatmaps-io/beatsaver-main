@@ -1,11 +1,11 @@
 package io.beatmaps.user.alerts
 
 import io.beatmaps.util.fcmemo
-import kotlinx.html.js.onClickFunction
 import react.Props
-import react.dom.a
-import react.dom.i
-import react.dom.span
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.span
+import web.cssom.ClassName
 
 external interface AlertListItemProps : Props {
     var active: Boolean?
@@ -16,21 +16,26 @@ external interface AlertListItemProps : Props {
 }
 
 val alertsListItem = fcmemo<AlertListItemProps>("alertsListItem") {
-    a("#", classes = "list-group-item list-group-item-action d-flex justify-content-between align-items-center" + if (it.active == true) " active" else "") {
-        attrs.onClickFunction = { ev ->
+    a {
+        href = "#"
+        className = ClassName("list-group-item list-group-item-action d-flex justify-content-between align-items-center" + if (it.active == true) " active" else "")
+        onClick = { ev ->
             ev.preventDefault()
             it.action?.invoke()
         }
         span {
             it.icon?.let { i ->
-                i("fas $i me-2") {}
+                i {
+                    className = ClassName("fas $i me-2")
+                }
             }
             it.text?.let { t ->
                 +t
             }
         }
         it.count?.let { c ->
-            span("badge rounded-pill " + if (it.active == true) "bg-light" else "bg-primary") {
+            span {
+                className = ClassName("badge rounded-pill " + if (it.active == true) "bg-light" else "bg-primary")
                 +"$c"
             }
         }

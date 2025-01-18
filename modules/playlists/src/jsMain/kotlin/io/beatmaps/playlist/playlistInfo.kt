@@ -14,14 +14,14 @@ import io.beatmaps.shared.coloredCard
 import io.beatmaps.shared.itemUserInfo
 import io.beatmaps.shared.map.rating
 import io.beatmaps.user.ProfileTab
-import kotlinx.html.title
+import io.beatmaps.util.fcmemo
 import react.Props
-import react.dom.a
-import react.dom.div
-import react.dom.i
-import react.dom.img
-import react.dom.span
-import react.fc
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.span
+import web.cssom.ClassName
 
 external interface PlaylistInfoProps : Props {
     var playlist: PlaylistFull?
@@ -52,7 +52,7 @@ val stats = listOf(
     StatInfo("fa-sort-amount-down", { it.searchParams.sortOrder.name }, { true })
 )
 
-val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
+val playlistInfo = fcmemo<PlaylistInfoProps>("playlistInfo") { props ->
     props.playlist?.let { pl ->
         val plAttrs = listOfNotNull(
             if (pl.curator != null) {
@@ -64,55 +64,71 @@ val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
             }
         )
 
-        div("playlist-card" + if (props.small == true) "-small" else "") {
+        div {
+            className = ClassName("playlist-card" + if (props.small == true) "-small" else "")
             coloredCard {
-                attrs.color = plAttrs.joinToString(" ") { it.color }
-                attrs.title = plAttrs.joinToString(" + ") { it.name }
-                attrs.classes = if (pl.type == EPlaylistType.System) "border-warning" else ""
+                color = plAttrs.joinToString(" ") { it.color }
+                title = plAttrs.joinToString(" + ") { it.name }
+                classes = if (pl.type == EPlaylistType.System) "border-warning" else ""
 
-                div("info") {
-                    img(src = pl.playlistImage, alt = "Cover Image", classes = "cover") { }
+                div {
+                    className = ClassName("info")
+                    img {
+                        alt = "Cover Image"
+                        src = pl.playlistImage
+                        className = ClassName("cover")
+                    }
 
-                    div("title") {
+                    div {
+                        className = ClassName("title")
                         routeLink(pl.link()) {
                             +pl.name.ifEmpty {
                                 "<NO NAME>"
                             }
                         }
                         itemUserInfo {
-                            attrs.users = listOf(pl.owner)
-                            attrs.tab = ProfileTab.PLAYLISTS
-                            attrs.time = pl.createdAt
+                            users = listOf(pl.owner)
+                            tab = ProfileTab.PLAYLISTS
+                            time = pl.createdAt
                         }
                     }
                 }
-                div("additional") {
+                div {
+                    className = ClassName("additional")
                     val plStats = pl.stats
                     if (pl.type == EPlaylistType.Search) {
-                        div("rating") {
-                            i("fas fa-search me-1") { }
+                        div {
+                            className = ClassName("rating")
+                            i {
+                                className = ClassName("fas fa-search me-1")
+                            }
                         }
-                        div("stats") {
+                        div {
+                            className = ClassName("stats")
                             val config = pl.config
                             if (config is SearchPlaylistConfig) {
                                 stats.filter { it.filter(config) }.take(5).forEach {
                                     div {
                                         val txt = it.text(config)
                                         if (it.icon.startsWith("/")) {
-                                            img(txt, it.icon) {
-                                                attrs.title = txt
-                                                attrs.attributes["aria-label"] = txt
-                                                attrs.width = "12"
-                                                attrs.height = "12"
+                                            img {
+                                                alt = txt
+                                                src = it.icon
+                                                title = txt
+                                                ariaLabel = txt
+                                                width = 12.0
+                                                height = 12.0
                                             }
                                         } else {
-                                            i("fas ${it.icon}") {
-                                                attrs.title = txt
-                                                attrs.attributes["aria-label"] = txt
+                                            i {
+                                                className = ClassName("fas ${it.icon}")
+                                                title = txt
+                                                ariaLabel = txt
                                             }
                                         }
                                         it.value(config)?.let { v ->
-                                            span("ms-1") {
+                                            span {
+                                                className = ClassName("ms-1")
                                                 +v
                                             }
                                         }
@@ -121,47 +137,55 @@ val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
                             }
                         }
                     } else if (plStats != null) {
-                        div("rating") {
+                        div {
+                            className = ClassName("rating")
                             rating {
-                                attrs.up = plStats.upVotes
-                                attrs.down = plStats.downVotes
-                                attrs.rating = plStats.scoreOneDP
+                                up = plStats.upVotes
+                                down = plStats.downVotes
+                                rating = plStats.scoreOneDP
                             }
                         }
-                        div("stats") {
+                        div {
+                            className = ClassName("stats")
                             div {
-                                i("fas fa-map me-1") {
-                                    attrs.title = "Total amount of maps"
-                                    attrs.attributes["aria-label"] = "Total amount of maps"
+                                i {
+                                    className = ClassName("fas fa-map me-1")
+                                    title = "Total amount of maps"
+                                    ariaLabel = "Total amount of maps"
                                 }
                                 span {
                                     +plStats.totalMaps.toString()
                                 }
                             }
                             div {
-                                i("fas fa-user me-1") {
-                                    attrs.title = "Total amount of mappers"
-                                    attrs.attributes["aria-label"] = "Total amount of mappers"
+                                i {
+                                    className = ClassName("fas fa-user me-1")
+                                    title = "Total amount of mappers"
+                                    ariaLabel = "Total amount of mappers"
                                 }
                                 span {
                                     +plStats.mapperCount.toString()
                                 }
                             }
                             div {
-                                i("fas fa-clock me-1") {
-                                    attrs.title = "Total runtime of all maps combined"
-                                    attrs.attributes["aria-label"] = "Total runtime of all maps combined"
+                                i {
+                                    className = ClassName("fas fa-clock me-1")
+                                    title = "Total runtime of all maps combined"
+                                    ariaLabel = "Total runtime of all maps combined"
                                 }
                                 span {
                                     +plStats.totalDuration.formatTime()
                                 }
                             }
                             div {
-                                img("NPS", "/static/icons/nps.png", "me-1") {
-                                    attrs.title = "NPS range"
-                                    attrs.attributes["aria-label"] = "NPS range"
-                                    attrs.width = "12"
-                                    attrs.height = "12"
+                                img {
+                                    alt = "NPS"
+                                    src = "/static/icons/nps.png"
+                                    className = ClassName("me-1")
+                                    title = "NPS range"
+                                    ariaLabel = "NPS range"
+                                    width = 12.0
+                                    height = 12.0
                                 }
                                 span {
                                     +"${plStats.minNpsTwoDP} - ${plStats.maxNpsTwoDP}"
@@ -169,22 +193,31 @@ val playlistInfo = fc<PlaylistInfoProps>("playlistInfo") { props ->
                             }
                         }
                     }
-                    div("buttons") {
-                        a(pl.downloadURL) {
-                            attrs.title = "Download"
-                            attrs.attributes["aria-label"] = "Download"
-                            i("fas fa-download text-info") { }
+                    div {
+                        className = ClassName("buttons")
+                        a {
+                            href = pl.downloadURL
+                            title = "Download"
+                            ariaLabel = "Download"
+                            i {
+                                className = ClassName("fas fa-download text-info")
+                            }
                         }
-                        a(pl.oneClickURL()) {
-                            attrs.title = "One-Click"
-                            attrs.attributes["aria-label"] = "One-Click"
-                            i("fas fa-cloud-download-alt text-info") { }
+                        a {
+                            href = pl.oneClickURL()
+                            title = "One-Click"
+                            ariaLabel = "One-Click"
+                            i {
+                                className = ClassName("fas fa-cloud-download-alt text-info")
+                            }
                         }
                     }
                 }
             }
         }
     } ?: run {
-        div("playlist-card loading") { }
+        div {
+            className = ClassName("playlist-card loading")
+        }
     }
 }

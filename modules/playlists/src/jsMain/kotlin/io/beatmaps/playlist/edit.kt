@@ -2,7 +2,6 @@ package io.beatmaps.playlist
 
 import external.Axios
 import external.generateConfig
-import external.reactFor
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
@@ -23,38 +22,36 @@ import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.form.toggle
 import io.beatmaps.upload.UploadRequestConfig
 import io.beatmaps.util.fcmemo
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.hidden
-import kotlinx.html.id
-import kotlinx.html.js.onSubmitFunction
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromDynamic
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLTextAreaElement
-import org.w3c.dom.url.URLSearchParams
-import org.w3c.files.get
-import org.w3c.xhr.FormData
 import react.Props
-import react.dom.button
-import react.dom.defaultValue
-import react.dom.div
-import react.dom.form
-import react.dom.hr
-import react.dom.input
-import react.dom.label
-import react.dom.textarea
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.hr
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
+import react.dom.html.ReactHTML.textarea
 import react.router.useLocation
 import react.router.useNavigate
 import react.router.useParams
-import react.useContext
+import react.use
+import react.useCallback
 import react.useEffect
 import react.useEffectOnce
+import react.useMemo
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.form.FormData
+import web.html.ButtonType
+import web.html.HTMLInputElement
+import web.html.HTMLTextAreaElement
+import web.html.InputType
+import web.url.URLSearchParams
 
-val editPlaylist = fcmemo<Props>("editPlaylist") {
+val editPlaylist = fcmemo<Props>("editPlaylist") { props ->
     val captchaRef = useRef<ICaptchaHandler>()
     val coverRef = useRef<HTMLInputElement>()
 
@@ -63,7 +60,7 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
     val publicRef = useRef<HTMLInputElement>()
 
     val location = useLocation()
-    val fromState = location.readState<SearchParamsPlaylist>()?.let { SearchPlaylistConfig(it, 100) }
+    val fromState = useMemo(location) { location.readState<SearchParamsPlaylist>()?.let { SearchPlaylistConfig(it, 100) } }
 
     val params = useParams()
     val history = History(useNavigate())
@@ -72,7 +69,7 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
     val query = URLSearchParams(location.search)
     val hasSearchQuery = query.has("search")
 
-    val userData = useContext(globalContext)
+    val userData = use(globalContext)
 
     useEffectOnce {
         if (userData == null) {
@@ -84,7 +81,7 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
     val (init, setInit) = useState(false)
     val (playlist, setPlaylist) = useState<PlaylistFull?>(null)
     val (errors, setErrors) = useState(listOf<UploadValidationInfo>())
-    val (config, setConfig) = useState(playlist?.config as? SearchPlaylistConfig ?: fromState)
+    val config = useRef(playlist?.config as? SearchPlaylistConfig ?: fromState)
     val isSearch = playlist?.type == EPlaylistType.Search || (playlist == null && (fromState != null || hasSearchQuery))
 
     fun loadData() {
@@ -117,13 +114,20 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
         }
     }
 
+    val configCallback = useCallback { it: SearchPlaylistConfig ->
+        config.current = it
+    }
+
     if (init) {
-        div("card border-dark") {
-            div("card-header") {
+        div {
+            className = ClassName("card border-dark")
+            div {
+                className = ClassName("card-header")
                 +((if (id == null) "Create" else "Edit") + " playlist")
             }
-            form(classes = "card-body") {
-                attrs.onSubmitFunction = { ev ->
+            form {
+                className = ClassName("card-body")
+                onSubmit = { ev ->
                     ev.preventDefault()
                     setLoading(true)
 
@@ -135,7 +139,7 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
                             data.append("type", EPlaylistType.Search.name)
                             data.append(
                                 "config",
-                                json.encodeToString(config)
+                                json.encodeToString(config.current)
                             )
                         } else {
                             data.append(
@@ -177,72 +181,84 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
                         sendForm(data)
                     }
                 }
-                div("mb-3") {
-                    label("form-label") {
-                        attrs.reactFor = "name"
+                div {
+                    className = ClassName("mb-3")
+                    label {
+                        className = ClassName("form-label")
+                        htmlFor = "name"
                         +"Name"
                     }
-                    input(type = InputType.text, classes = "form-control") {
+                    input {
+                        type = InputType.text
+                        className = ClassName("form-control")
                         key = "name"
                         ref = nameRef
-                        attrs.defaultValue = playlist?.name ?: ""
-                        attrs.id = "name"
-                        attrs.placeholder = "Name"
-                        attrs.disabled = loading
-                        attrs.required = true
-                        attrs.autoFocus = true
+                        defaultValue = playlist?.name ?: ""
+                        this.id = "name"
+                        placeholder = "Name"
+                        disabled = loading
+                        required = true
+                        autoFocus = true
                     }
                 }
-                div("mb-3") {
-                    label("form-label") {
-                        attrs.reactFor = "description"
+                div {
+                    className = ClassName("mb-3")
+                    label {
+                        className = ClassName("form-label")
+                        htmlFor = "description"
                         +"Description"
                     }
-                    textarea("10", classes = "form-control") {
-                        attrs.id = "description"
-                        attrs.disabled = loading
-                        attrs.defaultValue = playlist?.description ?: ""
+                    textarea {
+                        rows = 10
+                        className = ClassName("form-control")
+                        this.id = "description"
+                        disabled = loading
+                        defaultValue = playlist?.description ?: ""
                         ref = descriptionRef
                     }
                 }
                 if (userData?.suspended == false && !isSearch) {
                     toggle {
-                        attrs.id = "public"
-                        attrs.disabled = loading
-                        attrs.default = playlist?.type?.anonymousAllowed != false
-                        attrs.toggleRef = publicRef
-                        attrs.text = "Public"
-                        attrs.className = "mb-3"
+                        this.id = "public"
+                        disabled = loading
+                        default = playlist?.type?.anonymousAllowed != false
+                        toggleRef = publicRef
+                        text = "Public"
+                        className = "mb-3"
                     }
                 }
-                div("mb-3 w-25") {
-                    label("form-label") {
-                        attrs.reactFor = "cover"
-                        div("text-truncate") {
+                div {
+                    className = ClassName("mb-3 w-25")
+                    label {
+                        className = ClassName("form-label")
+                        htmlFor = "cover"
+                        div {
+                            className = ClassName("text-truncate")
                             +"Cover image"
                         }
                     }
-                    input(InputType.file, classes = "form-control") {
+                    input {
+                        type = InputType.file
+                        className = ClassName("form-control")
                         key = "cover"
-                        attrs.id = "cover"
+                        this.id = "cover"
                         ref = coverRef
-                        attrs.hidden = loading
+                        hidden = loading
                     }
                 }
                 if (isSearch) {
                     hr {}
                     playlistSearchEditor {
-                        attrs.loading = loading
-                        attrs.config = (playlist?.config as? SearchPlaylistConfig) ?: fromState ?: SearchPlaylistConfig.DEFAULT
-                        attrs.callback = {
-                            setConfig(it)
-                        }
+                        this.loading = loading
+                        this.config = (playlist?.config as? SearchPlaylistConfig) ?: fromState ?: SearchPlaylistConfig.DEFAULT
+                        callback = configCallback
                     }
                 }
                 errors {
-                    attrs.validationErrors = errors
+                    validationErrors = errors
                 }
-                div("btn-group w-100 mt-3") {
+                div {
+                    className = ClassName("btn-group w-100 mt-3")
                     routeLink(id?.let { "/playlists/$it" } ?: "/", className = "btn btn-secondary w-50") {
                         +"Cancel"
                     }
@@ -250,12 +266,14 @@ val editPlaylist = fcmemo<Props>("editPlaylist") {
                         // Middle element otherwise the button corners don't round properly
                         captcha {
                             key = "captcha"
-                            attrs.captchaRef = captchaRef
-                            attrs.page = "playlist"
+                            this.captchaRef = captchaRef
+                            page = "playlist"
                         }
                     }
-                    button(classes = "btn btn-success w-50", type = ButtonType.submit) {
-                        attrs.disabled = loading
+                    button {
+                        className = ClassName("btn btn-success w-50")
+                        type = ButtonType.submit
+                        disabled = loading
                         +(if (id == null) "Create" else "Save")
                     }
                 }

@@ -11,11 +11,12 @@ import io.beatmaps.shared.modal
 import io.beatmaps.shared.modalContext
 import io.beatmaps.util.fcmemo
 import react.Props
-import react.dom.table
-import react.dom.tbody
+import react.dom.html.ReactHTML.table
+import react.dom.html.ReactHTML.tbody
 import react.useEffectOnce
 import react.useRef
 import react.useState
+import web.cssom.ClassName
 
 data class RecentTestplay(val mapDetail: MapDetail, val version: MapVersion, val testplay: MapTestplay)
 
@@ -60,20 +61,21 @@ val recentTestplays = fcmemo<Props>("RecentTestplays") { _ ->
     }
 
     modal {
-        attrs.callbacks = modalRef
+        callbacks = modalRef
     }
 
     modalContext.Provider {
-        attrs.value = modalRef
+        value = modalRef
 
-        table("table table-dark search-results") {
+        table {
+            className = ClassName("table table-dark search-results")
             tbody {
                 testplays.forEach { rt ->
                     recentTestplayRow {
-                        attrs.map = rt.mapDetail
-                        attrs.version = rt.version
-                        attrs.feedback = rt.testplay.feedback
-                        attrs.time = rt.testplay.feedbackAt.toString()
+                        map = rt.mapDetail
+                        version = rt.version
+                        feedback = rt.testplay.feedback
+                        time = rt.testplay.feedbackAt.toString()
                     }
                 }
             }

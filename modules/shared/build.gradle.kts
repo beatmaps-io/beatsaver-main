@@ -30,7 +30,7 @@ kotlin {
                 implementation(npm("react-timeago", "5.2.0"))
                 implementation(npm("react-dropzone", "11.2.4"))
                 implementation(npm("react-beautiful-dnd", "13.1.0"))
-                implementation(npm("react-dates", "21.8.0"))
+                implementation(npm("@aerialist7/react-dates", "21.8.0-patch.3"))
                 implementation(npm("react-google-recaptcha", "2.1.0"))
                 implementation(npm("@marsidev/react-turnstile", "1.0.2"))
                 implementation(npm("axios", "0.21.1"))

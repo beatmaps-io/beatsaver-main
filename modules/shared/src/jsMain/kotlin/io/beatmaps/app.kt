@@ -16,15 +16,16 @@ import io.beatmaps.user.profilePage
 import io.beatmaps.user.user
 import io.beatmaps.util.fcmemo
 import js.objects.jso
-import kotlinx.browser.window
 import react.Props
 import react.createElement
 import react.dom.client.createRoot
-import react.dom.div
+import react.dom.html.ReactHTML.div
 import react.router.dom.RouterProvider
 import react.router.dom.createBrowserRouter
 import react.useEffectOnce
 import web.dom.document
+import web.events.EventHandler
+import web.window.window
 
 fun setPageTitle(page: String) {
     document.title = "BeatSaver - $page"
@@ -36,7 +37,7 @@ fun setPageTitle(page: String) {
 private val init = init()
 
 private fun init() {
-    window.onload = {
+    window.onload = EventHandler {
         document.getElementById("root")?.let { root ->
             createRoot(root).render(createElement(app))
         }
@@ -50,12 +51,12 @@ val appRouter = createBrowserRouter(
         },
         bsroute("/beatsaver/:mapKey") {
             mapPage {
-                attrs.beatsaver = true
+                beatsaver = true
             }
         },
         bsroute("/maps/:mapKey") {
             mapPage {
-                attrs.beatsaver = false
+                beatsaver = false
             }
         },
         bsroute("/maps/:mapKey/embed") {
@@ -96,12 +97,12 @@ val appRouter = createBrowserRouter(
         },
         bsroute("/modreview") {
             admin.modReview {
-                attrs.type = ReviewDetail::class
+                type = ReviewDetail::class
             }
         },
         bsroute("/modreply") {
             admin.modReview {
-                attrs.type = ReviewReplyDetail::class
+                type = ReviewReplyDetail::class
             }
         },
         bsroute("/policy/dmca", replaceHomelink = false) {
@@ -160,8 +161,8 @@ val app = fcmemo<Props>("BeatSaver Root") {
     provide(configContext, "config-data") {
         provide(globalContext, "user-data") {
             RouterProvider {
-                attrs.router = appRouter
-                attrs.future = jso {
+                router = appRouter
+                future = jso {
                     v7_startTransition = true
                     v7_relativeSplatPath = false
                 }

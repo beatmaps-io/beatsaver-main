@@ -6,19 +6,19 @@ import io.beatmaps.Config
 import io.beatmaps.api.FeedbackUpdate
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.textToContent
 import kotlinx.datetime.internal.JSJoda.Instant
-import kotlinx.html.js.onClickFunction
-import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.td
-import react.dom.textarea
-import react.dom.tr
-import react.fc
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.textarea
+import react.dom.html.ReactHTML.tr
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.HTMLTextAreaElement
 
 external interface RecentTestplayRowProps : Props {
     var map: MapDetail
@@ -27,7 +27,7 @@ external interface RecentTestplayRowProps : Props {
     var time: String
 }
 
-val recentTestplayRow = fc<RecentTestplayRowProps>("RecentTestplayRow") { props ->
+val recentTestplayRow = fcmemo<RecentTestplayRowProps>("RecentTestplayRow") { props ->
     val textareaRef = useRef<HTMLTextAreaElement>()
     val (editing, setEditing) = useState(props.feedback == null)
     val (loading, setLoading) = useState(false)
@@ -35,29 +35,33 @@ val recentTestplayRow = fc<RecentTestplayRowProps>("RecentTestplayRow") { props 
     val (time, setTime) = useState(props.time)
 
     beatmapTableRow {
-        attrs.key = props.map.id
-        attrs.map = props.map
-        attrs.version = props.version
+        key = props.map.id
+        map = props.map
+        version = props.version
     }
 
     tr {
         td {
-            attrs.colSpan = "4"
+            colSpan = 4
             div {
                 if (editing) {
-                    textarea("10", classes = "form-control") {
+                    textarea {
                         ref = textareaRef
-                        attrs.disabled = loading == true
+                        rows = 10
+                        className = ClassName("form-control")
+                        disabled = loading == true
                         +text
                     }
                 } else {
                     textToContent(text)
                 }
             }
-            div("text-end mt-3") {
+            div {
+                className = ClassName("text-end mt-3")
                 if (editing) {
-                    button(classes = "btn btn-success m-1") {
-                        attrs.onClickFunction = {
+                    button {
+                        className = ClassName("btn btn-success m-1")
+                        onClick = {
                             val newText = textareaRef.current?.value ?: ""
 
                             setLoading(true)
@@ -70,15 +74,16 @@ val recentTestplayRow = fc<RecentTestplayRowProps>("RecentTestplayRow") { props 
                                 setLoading(false)
                             }
                         }
-                        attrs.disabled = loading
+                        disabled = loading
                         +"Save"
                     }
                 }
-                button(classes = "btn btn-info m-1") {
-                    attrs.onClickFunction = {
+                button {
+                    className = ClassName("btn btn-info m-1")
+                    onClick = {
                         setEditing(!editing)
                     }
-                    attrs.disabled = loading
+                    disabled = loading
                     +(if (editing) "Cancel" else "Edit")
                 }
             }

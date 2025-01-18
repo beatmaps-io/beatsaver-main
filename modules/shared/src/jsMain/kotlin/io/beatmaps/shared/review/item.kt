@@ -4,7 +4,6 @@ import external.Axios
 import external.axiosDelete
 import external.axiosGet
 import external.generateConfig
-import external.reactFor
 import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.api.ActionResponse
@@ -30,27 +29,24 @@ import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.useAutoSize
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLTextAreaElement
 import react.RefObject
-import react.dom.a
-import react.dom.div
-import react.dom.i
-import react.dom.input
-import react.dom.label
-import react.dom.p
-import react.dom.span
-import react.dom.textarea
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
+import react.dom.html.ReactHTML.textarea
 import react.router.useNavigate
-import react.useContext
+import react.use
 import react.useEffect
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.HTMLDivElement
+import web.html.HTMLTextAreaElement
+import web.html.InputType
 import kotlin.js.Promise
 
 external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
@@ -61,7 +57,7 @@ external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
 }
 
 val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
-    val autoSize = useAutoSize(props, 2)
+    val autoSize = useAutoSize<ReviewDetail, HTMLDivElement>(props, 2)
 
     val (featured, setFeatured) = useState<Boolean?>(null)
     val (sentiment, setSentiment) = useState<ReviewSentiment?>(null)
@@ -74,8 +70,8 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
     val (replies, setReplies) = useState(propReplies)
     val (editing, setEditing) = useState(false)
 
-    val userData = useContext(globalContext)
-    val modal = useContext(modalContext)
+    val userData = use(globalContext)
+    val modal = use(modalContext)
     val history = History(useNavigate())
 
     val reasonRef = useRef<HTMLTextAreaElement>()
@@ -130,58 +126,73 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
     props.obj?.let { rv ->
         val featLocal = featured ?: (rv.curatedAt != null)
         val sentimentLocal = sentiment ?: rv.sentiment
-        div("review-card") {
+        div {
+            className = ClassName("review-card")
             ref = autoSize.divRef
             autoSize.style(this)
 
-            div("main" + if (editing) " border-secondary" else "") {
+            div {
+                className = ClassName("main" + if (editing) " border-secondary" else "")
                 sentimentIcon {
-                    attrs.sentiment = sentimentLocal
+                    this.sentiment = sentimentLocal
                 }
 
-                div("content") {
-                    div("review-header") {
+                div {
+                    className = ClassName("content")
+                    div {
+                        className = ClassName("review-header")
                         reviewer {
-                            attrs.reviewer = rv.creator
-                            attrs.map = rv.map
-                            attrs.time = rv.createdAt
+                            reviewer = rv.creator
+                            map = rv.map
+                            time = rv.createdAt
                         }
 
-                        if (featLocal) span("badge badge-success") { +"Featured" }
+                        if (featLocal) {
+                            span {
+                                className = ClassName("badge badge-success")
+                                +"Featured"
+                            }
+                        }
                         if (userData != null) {
-                            div("options") {
+                            div {
+                                className = ClassName("options")
                                 // Curator/Admin gets to feature and delete
                                 if (userData.curator) {
-                                    div("form-check form-switch d-inline-block") {
-                                        input(InputType.checkBox, classes = "form-check-input") {
-                                            attrs.checked = featLocal
-                                            attrs.id = "featured-${rv.id}"
-                                            attrs.onChangeFunction = {
-                                                val current = (it.currentTarget as HTMLInputElement).checked
+                                    div {
+                                        className = ClassName("form-check form-switch d-inline-block")
+                                        input {
+                                            type = InputType.checkbox
+                                            className = ClassName("form-check-input")
+                                            checked = featLocal
+                                            id = "featured-${rv.id}"
+                                            onChange = {
+                                                val current = it.currentTarget.checked
                                                 curate(rv.id, current)
                                             }
                                         }
-                                        label("form-check-label") {
-                                            attrs.reactFor = "featured-${rv.id}"
+                                        label {
+                                            className = ClassName("form-check-label")
+                                            htmlFor = "featured-${rv.id}"
                                             +"Featured"
                                         }
                                     }
                                 }
                                 if (!userData.suspended && !userData.curator && props.userId != userData.userId) {
-                                    a("#") {
-                                        attrs.title = "Report"
-                                        attrs.attributes["aria-label"] = "Report"
-                                        attrs.onClickFunction = {
+                                    a {
+                                        href = "#"
+                                        title = "Report"
+                                        ariaLabel = "Report"
+                                        onClick = {
                                             it.preventDefault()
                                             modal?.current?.showDialog?.invoke(
                                                 ModalData(
                                                     "Report review",
                                                     bodyCallback = {
                                                         reportModal {
-                                                            attrs.subject = "review"
-                                                            attrs.reasonRef = reasonRef
-                                                            attrs.captchaRef = captchaRef
-                                                            attrs.errorsRef = errorRef
+                                                            subject = "review"
+                                                            this.reasonRef = reasonRef
+                                                            this.captchaRef = captchaRef
+                                                            errorsRef = errorRef
                                                         }
                                                     },
                                                     buttons = listOf(
@@ -191,23 +202,28 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                                                 )
                                             )
                                         }
-                                        i("fas fa-flag text-danger") { }
+                                        i {
+                                            className = ClassName("fas fa-flag text-danger")
+                                        }
                                     }
                                 }
                                 if (!userData.suspended && (props.userId == userData.userId || userData.curator)) {
-                                    a("#") {
-                                        attrs.title = "Edit"
-                                        attrs.attributes["aria-label"] = "Edit"
-                                        attrs.onClickFunction = {
+                                    a {
+                                        href = "#"
+                                        title = "Edit"
+                                        ariaLabel = "Edit"
+                                        onClick = {
                                             it.preventDefault()
                                             setEditing(!editing)
                                         }
-                                        i("fas fa-pen text-warning") { }
+                                        i {
+                                            className = ClassName("fas fa-pen text-warning")
+                                        }
                                     }
-                                    a("#") {
-                                        attrs.title = "Delete"
-                                        attrs.attributes["aria-label"] = "Delete"
-                                        attrs.onClickFunction = {
+                                    a {
+                                        href = "#"
+                                        ariaLabel = "Delete"
+                                        onClick = {
                                             it.preventDefault()
                                             modal?.current?.showDialog?.invoke(
                                                 ModalData(
@@ -220,8 +236,9 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                                                             p {
                                                                 +"Reason for action:"
                                                             }
-                                                            textarea(classes = "form-control") {
+                                                            textarea {
                                                                 ref = reasonRef
+                                                                className = ClassName("form-control")
                                                             }
                                                         }
                                                     },
@@ -232,28 +249,31 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                                                 )
                                             )
                                         }
-                                        i("fas fa-trash text-danger-light") { }
+                                        i {
+                                            className = ClassName("fas fa-trash text-danger-light")
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                    div("review-body") {
+                    div {
+                        className = ClassName("review-body")
                         if (editing) {
                             sentimentPicker {
-                                attrs.sentiment = newSentiment ?: sentimentLocal
-                                attrs.updateSentiment = {
+                                this.sentiment = newSentiment ?: sentimentLocal
+                                updateSentiment = {
                                     setNewSentiment(it)
                                 }
                             }
                         }
                         editableText {
-                            attrs.text = text ?: rv.text
-                            attrs.editing = editing
-                            attrs.renderText = true
-                            attrs.textClass = "mt-2"
-                            attrs.maxLength = ReviewConstants.MAX_LENGTH
-                            attrs.saveText = { newReview ->
+                            this.text = text ?: rv.text
+                            this.editing = editing
+                            renderText = true
+                            textClass = ClassName("mt-2")
+                            maxLength = ReviewConstants.MAX_LENGTH
+                            saveText = { newReview ->
                                 val reqSentiment = newSentiment ?: sentimentLocal
                                 Axios.put<ActionResponse>(
                                     "${Config.apibase}/review/single/${props.map?.id}/${props.userId}",
@@ -267,19 +287,20 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                                     r
                                 }
                             }
-                            attrs.stopEditing = { t ->
+                            stopEditing = { t ->
                                 setText(t)
                                 setEditing(false)
                             }
                         }
 
                         if (replies.any() && !editing) {
-                            div("replies") {
+                            div {
+                                className = ClassName("replies")
                                 replies.forEach {
                                     reply {
-                                        attrs.reply = it
-                                        attrs.modal = modal
-                                        attrs.captcha = props.captcha
+                                        reply = it
+                                        this.modal = modal
+                                        captcha = props.captcha
                                     }
                                 }
                             }
@@ -287,7 +308,7 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
 
                         if (!editing && userData != null && (userData.userId == rv.creator?.id || userData.userId == props.map?.uploader?.id || props.map?.collaborators?.any { it.id == userData.userId } == true)) {
                             replyInput {
-                                attrs.onSave = { reply ->
+                                onSave = { reply ->
                                     props.captcha?.current?.execute()?.then {
                                         props.captcha?.current?.reset()
                                         Axios.post<ActionResponse>(
@@ -297,7 +318,7 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                                         )
                                     }?.then { it }
                                 }
-                                attrs.onSuccess = {
+                                onSuccess = {
                                     axiosGet<ReviewDetail>("${Config.apibase}/review/single/${props.map?.id}/${props.userId}").then {
                                         setReplies(it.data.replies)
                                     }
@@ -309,6 +330,8 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
             }
         }
     } ?: run {
-        div("review-card loading") { }
+        div {
+            className = ClassName("review-card loading")
+        }
     }
 }

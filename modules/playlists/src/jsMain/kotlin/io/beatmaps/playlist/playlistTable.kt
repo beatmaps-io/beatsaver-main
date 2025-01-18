@@ -13,17 +13,18 @@ import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.util.encodeURIComponent
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
-import org.w3c.dom.HTMLElement
-import react.dom.div
-import react.useContext
+import react.dom.html.ReactHTML.div
+import react.use
 import react.useMemo
 import react.useRef
+import web.cssom.ClassName
+import web.html.HTMLElement
 import kotlin.js.Promise
 
 val playlistTable = fcmemo<PlaylistTableProps>("playlistTable") { props ->
     val resetRef = useRef<() -> Unit>()
     val loadPageRef = useRef<(Int, CancelTokenSource) -> Promise<GenericSearchResponse<PlaylistFull>?>>()
-    val config = useContext(configContext)
+    val config = use(configContext)
 
     val resultsTable = useRef<HTMLElement>()
 
@@ -62,25 +63,26 @@ val playlistTable = fcmemo<PlaylistTableProps>("playlistTable") { props ->
     val renderer = useMemo(props.small) {
         InfiniteScrollElementRenderer<PlaylistFull> { pl ->
             playlistInfo {
-                attrs.playlist = pl
-                attrs.small = props.small
+                playlist = pl
+                small = props.small
             }
         }
     }
 
     if (props.visible != false) {
-        div("search-results") {
+        div {
+            className = ClassName("search-results")
             ref = resultsTable
             key = "resultsTable"
 
             playlistInfiniteScroll {
-                attrs.resetRef = resetRef
-                attrs.rowHeight = 80.0
-                attrs.itemsPerPage = 20
-                attrs.container = resultsTable
-                attrs.renderElement = renderer
-                attrs.updateScrollIndex = props.updateScrollIndex
-                attrs.loadPage = loadPageRef
+                this.resetRef = resetRef
+                rowHeight = 80.0
+                itemsPerPage = 20
+                container = resultsTable
+                renderElement = renderer
+                updateScrollIndex = props.updateScrollIndex
+                loadPage = loadPageRef
             }
         }
     }

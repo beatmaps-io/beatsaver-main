@@ -2,43 +2,33 @@ package io.beatmaps.upload
 
 import external.Axios
 import external.AxiosResponse
+import external.DropInfo
 import external.DropzoneProps
 import io.beatmaps.History
 import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.captcha.ICaptchaHandler
-import kotlinx.html.InputType
-import kotlinx.html.hidden
-import kotlinx.html.js.onBlurFunction
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.js.onDragEnterFunction
-import kotlinx.html.js.onDragLeaveFunction
-import kotlinx.html.js.onDragOverFunction
-import kotlinx.html.js.onDropFunction
-import kotlinx.html.js.onFocusFunction
-import kotlinx.html.js.onKeyDownFunction
-import kotlinx.html.role
-import kotlinx.html.tabIndex
+import io.beatmaps.util.fcmemo
+import js.objects.jso
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromDynamic
-import org.w3c.dom.HTMLElement
-import org.w3c.xhr.FormData
 import react.Props
-import react.RElementBuilder
+import react.Ref
 import react.RefObject
 import react.createElement
-import react.dom.attrs
-import react.dom.div
-import react.dom.i
-import react.dom.input
-import react.dom.p
-import react.dom.small
+import react.dom.aria.AriaRole
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.small
+import web.cssom.ClassName
+import web.form.FormData
+import web.html.HTMLElement
 
-fun RElementBuilder<DropzoneProps>.simple(
+fun DropzoneProps.simple(
     history: History,
     loading: Boolean,
-    errors: Boolean,
     progressBarInnerRef: RefObject<HTMLElement>,
     dropText: String,
     captchaRef: RefObject<ICaptchaHandler>,
@@ -47,11 +37,11 @@ fun RElementBuilder<DropzoneProps>.simple(
     extraInfo: List<String> = emptyList(),
     successBlock: ((AxiosResponse<dynamic>) -> Unit)? = null
 ) {
-    attrs.onDrop = { file ->
+    onDrop = { file ->
         captchaRef.current?.execute()?.then({
             val data = FormData().also(block)
             data.append("recaptcha", it)
-            data.asDynamic().append("file", file[0]) // Kotlin doesn't have an equivalent method to this js
+            data.append("file", file[0])
 
             Axios.post<dynamic>(
                 "/upload", data,
@@ -82,58 +72,81 @@ fun RElementBuilder<DropzoneProps>.simple(
             errorsBlock(listOf(UploadValidationInfo(it.message ?: "Unknown error")))
         }
     }
-    attrs.children = { info ->
-        createElement<Props> {
-            div("dropzone") {
-                val rootProps = info.getRootProps()
-                val props = info.getInputProps()
-                attrs {
-                    onKeyDownFunction = rootProps.onKeyDown
-                    onFocusFunction = rootProps.onFocus
-                    onBlurFunction = rootProps.onBlur
-                    onClickFunction = rootProps.onClick
-                    onDragEnterFunction = rootProps.onDragEnter
-                    onDragOverFunction = rootProps.onDragOver
-                    onDragLeaveFunction = rootProps.onDragLeave
-                    onDropFunction = rootProps.onDrop
-                    tabIndex = (rootProps.tabIndex ?: 0).toString()
-                }
-                ref = rootProps.ref
+    children = { info ->
+        createElement(
+            dropzoneDiv,
+            jso {
+                dropInfo = info
+                this.loading = loading
+                this.progressBarInnerRef = progressBarInnerRef
+                this.dropText = dropText
+                this.extraInfo = extraInfo
+            }
+        )
+    }
+}
 
-                input(InputType.valueOf(props.type), classes = "d-none") {
-                    attrs {
-                        accept = props.accept ?: ""
-                        multiple = props.multiple
-                        onChangeFunction = props.onChange
-                        onClickFunction = props.onClick
-                        autoComplete = props.autoComplete == "on"
-                        tabIndex = props.tabIndex.toString()
-                    }
-                    ref = props.ref
-                }
+external interface DropzoneDivProps : Props {
+    var dropInfo: DropInfo
+    var loading: Boolean
+    var progressBarInnerRef: Ref<HTMLElement>
+    var dropText: String
+    var extraInfo: List<String>
+}
 
-                div("progress") {
-                    attrs.hidden = !loading
-                    div("progress-bar progress-bar-striped progress-bar-animated bg-info") {
-                        attrs.role = "progressbar"
-                        ref = progressBarInnerRef
-                    }
-                }
+val dropzoneDiv = fcmemo<DropzoneDivProps>("DropzoneDiv") { props ->
+    div {
+        className = ClassName("dropzone")
+        val rootProps = props.dropInfo.getRootProps()
+        val inputProps = props.dropInfo.getInputProps()
 
-                div {
-                    attrs.hidden = loading
-                    i("fas fa-upload") {}
-                    p {
-                        +dropText
-                    }
-                    small {
-                        +"Max file size: 15MiB"
-                    }
-                    extraInfo.forEach {
-                        small {
-                            +it
-                        }
-                    }
+        onKeyDown = rootProps.onKeyDown
+        onFocus = rootProps.onFocus
+        onBlur = rootProps.onBlur
+        onClick = rootProps.onClick
+        onDragEnter = rootProps.onDragEnter
+        onDragOver = rootProps.onDragOver
+        onDragLeave = rootProps.onDragLeave
+        onDrop = rootProps.onDrop
+        tabIndex = rootProps.tabIndex ?: 0
+        ref = rootProps.ref
+
+        input {
+            type = inputProps.type
+            className = ClassName("d-none")
+            accept = inputProps.accept ?: ""
+            multiple = inputProps.multiple
+            onChange = inputProps.onChange
+            onClick = inputProps.onClick
+            autoComplete = inputProps.autoComplete
+            tabIndex = inputProps.tabIndex
+            ref = inputProps.ref
+        }
+
+        div {
+            className = ClassName("progress")
+            hidden = !props.loading
+            div {
+                className = ClassName("progress-bar progress-bar-striped progress-bar-animated bg-info")
+                role = AriaRole.progressbar
+                ref = props.progressBarInnerRef
+            }
+        }
+
+        div {
+            hidden = props.loading
+            i {
+                className = ClassName("fas fa-upload")
+            }
+            p {
+                +props.dropText
+            }
+            small {
+                +"Max file size: 15MiB"
+            }
+            props.extraInfo.forEach {
+                small {
+                    +it
                 }
             }
         }

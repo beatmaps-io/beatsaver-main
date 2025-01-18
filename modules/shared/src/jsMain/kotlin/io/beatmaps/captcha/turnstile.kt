@@ -4,19 +4,25 @@ import external.ITurnstile
 import external.TurnStileRenderOptions
 import external.Turnstile
 import io.beatmaps.util.fcmemo
-import react.MutableRefObject
-import react.dom.div
-import react.dom.jsStyle
+import js.objects.jso
+import react.RefObject
+import react.dom.html.ReactHTML.div
 import react.useCallback
 import react.useEffectOnceWithCleanup
 import react.useMemo
 import react.useRef
 import react.useState
+import web.cssom.Display
+import web.cssom.None
+import web.cssom.Position
+import web.cssom.integer
+import web.cssom.px
+import web.cssom.rgb
 import web.timers.setTimeout
 import kotlin.js.Promise
 import kotlin.time.Duration.Companion.seconds
 
-class TurnstileHandler(private val ext: MutableRefObject<ITurnstile>, private val pRef: MutableRefObject<() -> Unit>) : ICaptchaHandler {
+class TurnstileHandler(private val ext: RefObject<ITurnstile>, private val pRef: RefObject<() -> Unit>) : ICaptchaHandler {
     override fun execute() =
         ext.current?.let { ext ->
             Promise { resolve, reject ->
@@ -50,43 +56,43 @@ val turnstile = fcmemo<CaptchaProps>("TurnstileWrapper") { props ->
     }
 
     div {
-        attrs.jsStyle {
+        style = jso {
             if (popover) {
-                background = "rgba(0,0,0,0.5)"
-                position = "absolute"
-                top = "0"
-                bottom = "0"
-                left = "0"
-                right = "0"
-                display = "flex"
-                zIndex = "10000"
+                background = rgb(0, 0, 0, 0.5)
+                position = Position.absolute
+                top = 0.px
+                bottom = 0.px
+                left = 0.px
+                right = 0.px
+                display = Display.flex
+                zIndex = integer(10000)
             } else {
-                display = "none"
+                display = None.none
             }
         }
         Turnstile.Turnstile {
             if (props.enabled) {
-                attrs.siteKey = "0x4AAAAAAAk0Ed-ky7FsJ7Ur"
+                siteKey = "0x4AAAAAAAk0Ed-ky7FsJ7Ur"
             } else {
-                // attrs.siteKey = "1x00000000000000000000AA" // Always passes
-                // attrs.siteKey = "2x00000000000000000000AB" // Always blocks
-                attrs.siteKey = "3x00000000000000000000FF" // Forced interactive
+                // siteKey = "1x00000000000000000000AA" // Always passes
+                // siteKey = "2x00000000000000000000AB" // Always blocks
+                siteKey = "3x00000000000000000000FF" // Forced interactive
             }
             this.ref = ref
-            attrs.options = useMemo(props.page) {
+            options = useMemo(props.page) {
                 TurnStileRenderOptions(
                     appearance = "interaction-only",
                     execution = "execute",
                     action = props.page
                 )
             }
-            attrs.onError = useCallback {
+            onError = useCallback {
                 pRef.current?.invoke()
             }
-            attrs.onBeforeInteractive = useCallback {
+            onBeforeInteractive = useCallback {
                 setPopover(true)
             }
-            attrs.onAfterInteractive = useCallback {
+            onAfterInteractive = useCallback {
                 setTimeout(1.seconds) {
                     setPopover(false)
                 }

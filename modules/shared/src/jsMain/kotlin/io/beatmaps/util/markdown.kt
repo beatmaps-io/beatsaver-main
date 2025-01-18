@@ -1,9 +1,8 @@
 package io.beatmaps.util
 
 import io.beatmaps.api.LeaderboardType
-import kotlinx.html.Tag
-import react.dom.InnerHTML
-import react.dom.RDOMBuilder
+import js.objects.jso
+import react.dom.html.HTMLAttributes
 
 fun String.transformURLIntoLinks() =
     replace("\\b((https?|ftp)://)?[-a-zA-Z0-9@:%._+~#=]{2,256}\\.[A-Za-z]{2,6}\\b(/[-a-zA-Z0-9@:%_+.~#?&/=]*)*(?:/|\\b)".toRegex()) {
@@ -49,12 +48,9 @@ fun String.parseSocialLinks() =
         v.replace(it.first.toRegex(setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE)), it.second)
     }
 
-// Kotlin IR be adding underscores everywhere
-class DangerousHtml(override var __html: String) : InnerHTML
-
-fun <T : Tag> RDOMBuilder<T>.textToContent(text: String) {
-    domProps.dangerouslySetInnerHTML = DangerousHtml(
-        text
+fun HTMLAttributes<*>.textToContent(text: String) {
+    dangerouslySetInnerHTML = jso {
+        __html = text
             .replace(Regex("<.+?>"), "")
             .parseBoldMarkdown()
             .parseItalicMarkdown()
@@ -65,5 +61,5 @@ fun <T : Tag> RDOMBuilder<T>.textToContent(text: String) {
             .parseSocialLinks()
             .replace(Regex("\n{3,}"), "\n\n")
             .replace("\n", "<br />")
-    )
+    }
 }

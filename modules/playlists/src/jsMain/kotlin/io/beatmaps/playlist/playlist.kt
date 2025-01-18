@@ -36,35 +36,31 @@ import io.beatmaps.util.fcmemo
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.useAudio
-import kotlinx.html.classes
-import kotlinx.html.id
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
 import kotlinx.serialization.SerializationException
-import org.w3c.dom.HTMLTextAreaElement
-import org.w3c.xhr.FormData
 import react.Props
 import react.Suspense
-import react.dom.a
-import react.dom.button
-import react.dom.div
-import react.dom.i
-import react.dom.img
-import react.dom.p
-import react.dom.span
-import react.dom.textarea
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
+import react.dom.html.ReactHTML.textarea
 import react.router.useNavigate
 import react.router.useParams
-import react.useContext
+import react.use
 import react.useEffect
 import react.useEffectOnce
 import react.useEffectWithCleanup
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.form.FormData
+import web.html.HTMLTextAreaElement
 import kotlin.js.Promise
-import kotlin.math.ceil
 
-val playlistPage = fcmemo<Props>("playlistPage") {
+val playlistPage = fcmemo<Props>("playlistPage") { props ->
     val (playlist, setPlaylist) = useState<PlaylistFull?>(null)
     val (maps, setMaps) = useState(listOf<MapDetailWithOrder>())
     val tokenRef = useRef(Axios.CancelToken.source())
@@ -76,7 +72,7 @@ val playlistPage = fcmemo<Props>("playlistPage") {
     val itemsPerPage = PlaylistConstants.PAGE_SIZE
 
     val audio = useAudio()
-    val userData = useContext(globalContext)
+    val userData = use(globalContext)
 
     val history = History(useNavigate())
     val params = useParams()
@@ -111,39 +107,12 @@ val playlistPage = fcmemo<Props>("playlistPage") {
         )
     }
 
-    fun reorderMaps(start: Int, end: Int) {
-        if (start == end) {
-            return
+    fun reorderMaps(start: Int, end: Int) =
+        reorderMaps(maps, start, end)?.let {
+            val elem = it[end]
+            updateOrder(elem.map.id, elem.order)
+            setMaps(it)
         }
-
-        setMaps(
-            maps.toMutableList().also { mutable ->
-                val elem = mutable.removeAt(start)
-
-                val previousOrder = if (end <= 0) 0f else mutable[end - 1].order
-                val nextOrder = if (end > 0 && end >= mutable.size - 1) mutable[end - 1].order + 2 else mutable[end].order
-
-                val midOrder = (previousOrder + nextOrder) / 2
-                val nextWholeOrder = ceil(previousOrder)
-                val previousIsWhole = nextWholeOrder == previousOrder
-
-                val newOrder = if (nextOrder - previousOrder > 1) {
-                    if (previousIsWhole) {
-                        previousOrder + 1 // 1, 4 -> 2
-                    } else {
-                        nextWholeOrder // 1.1, 4 -> 2
-                    }
-                } else if (nextWholeOrder != ceil(nextOrder) && !previousIsWhole) {
-                    nextWholeOrder // 1.6, 2.1 -> 2
-                } else {
-                    midOrder // 1, 2 -> 1.5
-                }
-
-                mutable.add(end, elem.copy(order = newOrder))
-                updateOrder(elem.map.id, newOrder)
-            }
-        )
-    }
 
     fun delete(): Promise<Boolean> {
         val data = FormData()
@@ -205,21 +174,25 @@ val playlistPage = fcmemo<Props>("playlistPage") {
     }
 
     modal {
-        attrs.callbacks = modalRef
+        callbacks = modalRef
     }
 
     modalContext.Provider {
-        attrs.value = modalRef
+        value = modalRef
 
-        div("row mt-3") {
-            div("playlist-info col-lg-4") {
+        div {
+            className = ClassName("row mt-3")
+            div {
+                className = ClassName("playlist-info col-lg-4")
                 playlist?.let { pl ->
                     if (pl.deletedAt != null) {
-                        div("alert alert-danger text-center") {
+                        div {
+                            className = ClassName("alert alert-danger text-center")
                             +"DELETED"
                         }
                     } else if (pl.type != EPlaylistType.System && (pl.owner.id == userData?.userId || userData?.admin == true)) {
-                        div("btn-group") {
+                        div {
+                            className = ClassName("btn-group")
                             routeLink("${pl.link()}/edit", className = "btn btn-primary") {
                                 +"Edit"
                             }
@@ -228,8 +201,10 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                                     +"Multi-Add"
                                 }
                             }
-                            a("#", classes = "btn btn-danger") {
-                                attrs.onClickFunction = {
+                            a {
+                                href = "#"
+                                className = ClassName("btn btn-danger")
+                                onClick = {
                                     it.preventDefault()
                                     modalRef.current?.showDialog?.invoke(
                                         ModalData(
@@ -242,7 +217,8 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                                                     p {
                                                         +"Reason for action:"
                                                     }
-                                                    textarea(classes = "form-control") {
+                                                    textarea {
+                                                        className = ClassName("form-control")
                                                         ref = reasonRef
                                                     }
                                                 }
@@ -256,13 +232,18 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                         }
                     }
                     if (pl.type != EPlaylistType.System && pl.deletedAt == null && userData?.curator == true) {
-                        div("break") {}
-                        div("btn-group") {
-                            a("#", classes = "btn " + if (pl.curatedAt == null) "btn-green" else "btn-expert") {
+                        div {
+                            className = ClassName("break")
+                        }
+                        div {
+                            className = ClassName("btn-group")
+                            a {
+                                href = "#"
+                                className = ClassName("btn " + if (pl.curatedAt == null) "btn-green" else "btn-expert")
                                 val text = ((if (pl.curatedAt == null) "" else "Un-") + "Curate")
-                                attrs.title = text
-                                attrs.attributes["aria-label"] = text
-                                attrs.onClickFunction = {
+                                title = text
+                                ariaLabel = text
+                                onClick = {
                                     it.preventDefault()
                                     curate(pl.playlistId, pl.curatedAt == null)
                                 }
@@ -270,53 +251,72 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                             }
                         }
                     }
-                    div("list-group") {
-                        img("Cover", pl.playlistImage512 ?: pl.playlistImage) { }
-                        div("list-group-item d-flex justify-content-between") {
+                    div {
+                        className = ClassName("list-group")
+                        img {
+                            alt = "Cover"
+                            src = pl.playlistImage512 ?: pl.playlistImage
+                        }
+                        div {
+                            className = ClassName("list-group-item d-flex justify-content-between")
                             +"Name"
-                            span("text-truncate ms-4") {
+                            span {
+                                className = ClassName("text-truncate ms-4")
                                 +pl.name
                             }
                         }
                         routeLink(pl.owner.profileLink(ProfileTab.PLAYLISTS), className = "list-group-item d-flex justify-content-between") {
                             +"Created by"
-                            span("text-truncate ms-4") {
-                                attrs.title = pl.owner.name
+                            span {
+                                className = ClassName("text-truncate ms-4")
+                                title = pl.owner.name
                                 +pl.owner.name
                             }
                         }
                         pl.curator?.let { curator ->
                             routeLink(curator.profileLink(ProfileTab.CURATED), className = "list-group-item d-flex justify-content-between") {
                                 +"Curated by"
-                                span("text-truncate ms-4") {
+                                span {
+                                    className = ClassName("text-truncate ms-4")
                                     +curator.name
                                 }
                             }
                         }
-                        div("list-group-item d-flex justify-content-between") {
+                        div {
+                            className = ClassName("list-group-item d-flex justify-content-between")
                             +"Maps"
-                            span("text-truncate ms-4") {
+                            span {
+                                className = ClassName("text-truncate ms-4")
                                 +maps.size.toString()
                             }
                         }
                         if (pl.description.isNotBlank()) {
-                            div("list-group-item ws-normal text-break") {
+                            div {
+                                className = ClassName("list-group-item ws-normal text-break")
                                 textToContent(pl.description)
                             }
                         }
                     }
-                    div("btn-group d-flex") {
-                        a(pl.downloadURL, classes = "btn btn-success") {
+                    div {
+                        className = ClassName("btn-group d-flex")
+                        a {
+                            href = pl.downloadURL
+                            className = ClassName("btn btn-success")
                             +"Download"
                         }
-                        a(pl.oneClickURL(), classes = "btn btn-info") {
+                        a {
+                            href = pl.oneClickURL()
+                            className = ClassName("btn btn-info")
                             +"One-Click"
                         }
                     }
                     if (maps.isNotEmpty()) {
-                        div("list-group") {
-                            div("list-group-item ws-normal") {
-                                div("mb-1") {
+                        div {
+                            className = ClassName("list-group")
+                            div {
+                                className = ClassName("list-group-item ws-normal")
+                                div {
+                                    className = ClassName("mb-1")
                                     +"Mappers"
                                 }
                                 maps
@@ -335,23 +335,25 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                         }
                     }
                     if (userData?.suspended == false && !userData.admin && userData.userId != pl.owner.id) {
-                        div("btn-group") {
-                            button(classes = "btn btn-danger") {
+                        div {
+                            className = ClassName("btn-group")
+                            button {
+                                className = ClassName("btn btn-danger")
                                 val text = "Report"
-                                attrs.id = "report"
-                                attrs.title = text
-                                attrs.attributes["aria-label"] = text
-                                attrs.onClickFunction = {
+                                this.id = "report"
+                                title = text
+                                ariaLabel = text
+                                onClick = {
                                     it.preventDefault()
                                     modalRef.current?.showDialog?.invoke(
                                         ModalData(
                                             "Report playlist",
                                             bodyCallback = {
                                                 reportModal {
-                                                    attrs.subject = "playlist"
-                                                    attrs.reasonRef = reasonRef
-                                                    attrs.captchaRef = captchaRef
-                                                    attrs.errorsRef = errorRef
+                                                    subject = "playlist"
+                                                    this.reasonRef = reasonRef
+                                                    this.captchaRef = captchaRef
+                                                    errorsRef = errorRef
                                                 }
                                             },
                                             buttons = listOf(
@@ -361,34 +363,37 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                                         )
                                     )
                                 }
-                                i("fas fa-flag me-2") { }
+                                i {
+                                    className = ClassName("fas fa-flag me-2")
+                                }
                                 +text
                             }
                         }
                     }
                 }
             }
-            div("col-lg-8") {
+            div {
+                className = ClassName("col-lg-8")
                 Suspense {
-                    attrs.fallback = loadingElem
+                    fallback = loadingElem
                     if (playlist?.owner?.id == userData?.userId && playlist?.type?.orderable == true) {
                         dndExotics.dragDropContext {
-                            attrs.onDragEnd = {
+                            onDragEnd = {
                                 it.destination?.let { dest ->
                                     reorderMaps(it.source.index, dest.index)
                                 }
                             }
                             droppable("playlist") {
-                                attrs.classes = setOf("playlist")
+                                className = ClassName("playlist")
                                 maps.mapIndexed { idx, it ->
                                     draggable(it.map.id, idx) {
-                                        attrs.classes = setOf("drag-beatmap")
+                                        className = ClassName("drag-beatmap")
 
                                         playlistMapEditable {
-                                            attrs.obj = it.map
-                                            attrs.audio = audio
-                                            attrs.playlistKey = playlist.playlistId
-                                            attrs.removeMap = {
+                                            obj = it.map
+                                            this.audio = audio
+                                            playlistKey = playlist.playlistId
+                                            removeMap = {
                                                 setMaps(maps - it)
                                             }
                                         }
@@ -397,12 +402,13 @@ val playlistPage = fcmemo<Props>("playlistPage") {
                             }
                         }
                     } else {
-                        div("playlist") {
+                        div {
+                            className = ClassName("playlist")
                             maps.map {
                                 beatmapInfo {
-                                    attrs.obj = it.map
-                                    attrs.version = it.map.publishedVersion()
-                                    attrs.audio = audio
+                                    obj = it.map
+                                    version = it.map.publishedVersion()
+                                    this.audio = audio
                                 }
                             }
                         }

@@ -13,23 +13,23 @@ import io.beatmaps.common.api.EMapState
 import io.beatmaps.shared.ModalButton
 import io.beatmaps.shared.ModalData
 import io.beatmaps.shared.modalContext
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.textToContent
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlinx.html.js.onClickFunction
-import org.w3c.dom.HTMLTextAreaElement
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.h3
-import react.dom.i
-import react.dom.p
-import react.dom.small
-import react.dom.strong
-import react.fc
-import react.useContext
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h3
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.small
+import react.dom.html.ReactHTML.strong
+import react.use
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.HTMLTextAreaElement
 
 external interface VersionProps : Props {
     var mapId: Int
@@ -48,7 +48,7 @@ external interface VersionProps : Props {
 }
 private const val testplayEnabled = false
 
-val version = fc<VersionProps>("version") { props ->
+val version = fcmemo<VersionProps>("version") { props ->
     val (state, setState) = useState(props.state)
     val (loading, setLoading) = useState(false)
     val (loadingState, setLoadingState) = useState(false)
@@ -60,7 +60,7 @@ val version = fc<VersionProps>("version") { props ->
 
     val textareaRef = useRef<HTMLTextAreaElement>()
 
-    val modal = useContext(modalContext)
+    val modal = use(modalContext)
 
     val mapState = { nextState: EMapState ->
         setLoadingState(true)
@@ -90,14 +90,16 @@ val version = fc<VersionProps>("version") { props ->
     val shouldDisable = loading || loadingState
 
     timelineEntry {
-        attrs.icon = "fa-upload"
-        attrs.color = "danger"
-        attrs.headerCallback = TimelineEntrySectionRenderer {
+        icon = "fa-upload"
+        color = "danger"
+        headerCallback = TimelineEntrySectionRenderer {
             if (props.isOwner) {
-                div("float-end") {
+                div {
+                    className = ClassName("float-end")
                     if (props.firstVersion && textareaRef.current != null) {
-                        button(classes = "btn btn-success m-1") {
-                            attrs.onClickFunction = {
+                        button {
+                            className = ClassName("btn btn-success m-1")
+                            onClick = {
                                 val newText = textareaRef.current?.value ?: ""
                                 setLoading(true)
 
@@ -109,15 +111,16 @@ val version = fc<VersionProps>("version") { props ->
                                     setLoading(false)
                                 }
                             }
-                            attrs.disabled = shouldDisable
+                            disabled = shouldDisable
                             +"Save"
                         }
                     }
 
                     if (state == EMapState.Uploaded || state == EMapState.Feedback) {
                         if (props.allowPublish == true) {
-                            button(classes = "btn btn-danger m-1") {
-                                attrs.onClickFunction = {
+                            button {
+                                className = ClassName("btn btn-danger m-1")
+                                onClick = {
                                     alert.current = props.alreadyPublished != true
                                     modal?.current?.showDialog?.invoke(
                                         ModalData(
@@ -127,51 +130,56 @@ val version = fc<VersionProps>("version") { props ->
                                         ) {
                                             scheduleAt.current = null
                                             publishModal {
-                                                attrs.callbackScheduleAt = {
+                                                callbackScheduleAt = {
                                                     scheduleAt.current = it
                                                 }
-                                                attrs.notifyFollowersRef = alert
+                                                notifyFollowersRef = alert
                                             }
                                         }
                                     )
                                 }
-                                attrs.disabled = shouldDisable
+                                disabled = shouldDisable
                                 +"Publish"
                             }
                         } else {
-                            button(classes = "btn btn-danger m-1") {
-                                attrs.disabled = true
+                            button {
+                                className = ClassName("btn btn-danger m-1")
+                                disabled = true
                                 +"Set a name to publish"
                             }
                         }
                         if (testplayEnabled && props.firstVersion) {
-                            button(classes = "btn btn-info m-1") {
-                                attrs.onClickFunction = {
+                            button {
+                                className = ClassName("btn btn-info m-1")
+                                onClick = {
                                     mapState(EMapState.Testplay)
                                 }
-                                attrs.disabled = shouldDisable
+                                disabled = shouldDisable
                                 +"Add to testplay queue"
                             }
                         }
                     } else if (state == EMapState.Testplay) {
-                        button(classes = "btn btn-danger m-1") {
-                            attrs.onClickFunction = {
+                        button {
+                            className = ClassName("btn btn-danger m-1")
+                            onClick = {
                                 mapState(EMapState.Uploaded)
                             }
-                            attrs.disabled = shouldDisable
+                            disabled = shouldDisable
                             +"Remove from testplay queue"
                         }
                     } else if (state == EMapState.Scheduled) {
-                        button(classes = "btn btn-info m-1") {
-                            attrs.disabled = true
+                        button {
+                            className = ClassName("btn btn-info m-1")
+                            disabled = true
                             val formatted = Moment(scheduledAt.toString()).format("YYYY-MM-DD HH:mm")
                             +"Scheduled for $formatted"
                         }
-                        button(classes = "btn btn-danger m-1") {
-                            attrs.onClickFunction = {
+                        button {
+                            className = ClassName("btn btn-danger m-1")
+                            onClick = {
                                 mapState(EMapState.Uploaded)
                             }
-                            attrs.disabled = shouldDisable
+                            disabled = shouldDisable
                             +"Cancel"
                         }
                     }
@@ -184,16 +192,20 @@ val version = fc<VersionProps>("version") { props ->
                 +props.hash
             }
         }
-        attrs.bodyCallback = TimelineEntrySectionRenderer {
+        bodyCallback = TimelineEntrySectionRenderer {
             if (props.isOwner) {
                 val anyErrors = props.diffs?.any {
                     (it.paritySummary.errors / it.notes.toFloat()) > 0.1
                 } ?: false
 
                 if (anyErrors) {
-                    div("alert alert-danger") {
-                        i("fas fa-exclamation-circle float-start mt-1 fa-2x") {}
-                        p("ms-5") {
+                    div {
+                        className = ClassName("alert alert-danger")
+                        i {
+                            className = ClassName("fas fa-exclamation-circle float-start mt-1 fa-2x")
+                        }
+                        p {
+                            className = ClassName("ms-5")
                             textToContent(
                                 "Some of your difficulties have a high percentage of parity errors\n\n" +
                                     "You can read more about parity on the BSMG wiki:\nhttps://bsmg.wiki/mapping/basic-mapping.html#do-mapping-with-flow\n\n" +
@@ -221,15 +233,20 @@ val version = fc<VersionProps>("version") { props ->
              */
 
             props.diffs?.chunked(4) { chunk ->
-                div("row") {
+                div {
+                    className = ClassName("row")
                     chunk.forEach {
-                        div("col-lg-3") {
+                        div {
+                            className = ClassName("col-lg-3")
                             val error = (it.paritySummary.errors / it.notes.toFloat()) > 0.1
 
-                            div("alert alert-" + if (error) "danger" else "info") {
+                            div {
+                                className = ClassName("alert alert-" + if (error) "danger" else "info")
                                 strong {
                                     if (error) {
-                                        i("fas fa-exclamation-circle me-1") {}
+                                        i {
+                                            className = ClassName("fas fa-exclamation-circle me-1")
+                                        }
                                     }
                                     +"${it.characteristic.human()} - ${it.difficulty.human()}"
                                 }
@@ -245,10 +262,10 @@ val version = fc<VersionProps>("version") { props ->
                 }
             }
         }
-        attrs.footerCallback = TimelineEntrySectionRenderer {
+        footerCallback = TimelineEntrySectionRenderer {
             small {
                 TimeAgo.default {
-                    attrs.date = time
+                    date = time
                 }
             }
         }

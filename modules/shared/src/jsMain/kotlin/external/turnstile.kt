@@ -1,10 +1,10 @@
 package external
 
-import react.ComponentClass
-import react.Props
+import react.ComponentType
+import react.PropsWithRef
 import kotlin.js.Promise
 
-external interface ITurnstileProps : Props {
+external interface ITurnstileProps : PropsWithRef<ITurnstile> {
     var siteKey: String
     var `as`: String?
     var options: ITurnstileRenderOptions
@@ -53,7 +53,7 @@ class TurnStileRenderOptions(
 @JsModule("@marsidev/react-turnstile")
 @JsNonModule
 external object Turnstile : ITurnstile {
-    val Turnstile: ComponentClass<ITurnstileProps>
+    val Turnstile: ComponentType<ITurnstileProps>
 
     override fun getResponse(): String
     override fun getResponsePromise(): Promise<String>

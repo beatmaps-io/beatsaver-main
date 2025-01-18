@@ -1,26 +1,22 @@
 package external
 
-import kotlinx.html.LABEL
-import react.PropsWithChildren
-import react.RBuilder
-import react.RHandler
+import react.ChildrenBuilder
 import react.router.dom.Link
 import web.cssom.ClassName
 import web.window.WindowTarget
 
 fun ClassName(className: String?) = className?.let { ClassName(it) }
 
-fun RBuilder.routeLink(href: String, className: String? = null, id: String? = null, target: WindowTarget? = null, block: RHandler<PropsWithChildren>?) {
+fun ChildrenBuilder.routeLink(href: String, className: String, id: String? = null, target: WindowTarget? = null, block: (ChildrenBuilder.() -> Unit)?) =
+    routeLink(href, ClassName(className), id, target, block)
+
+fun ChildrenBuilder.routeLink(href: String, className: ClassName? = null, id: String? = null, target: WindowTarget? = null, block: (ChildrenBuilder.() -> Unit)?) {
     Link {
-        attrs.id = id
-        attrs.to = href
-        attrs.replace = false
-        attrs.className = ClassName(className)
-        attrs.target = target
+        this.id = id
+        to = href
+        replace = false
+        this.className = className
+        this.target = target
         block?.invoke(this)
     }
 }
-
-var LABEL.reactFor: String
-    get() = attributes["htmlFor"] ?: ""
-    set(newValue) { attributes["htmlFor"] = newValue }

@@ -24,20 +24,21 @@ import io.beatmaps.util.fcmemo
 import io.beatmaps.util.hashRegex
 import io.beatmaps.util.useAudio
 import io.beatmaps.util.useDidUpdateEffect
-import kotlinx.browser.window
-import org.w3c.dom.HTMLElement
 import react.Props
 import react.RefObject
-import react.dom.div
-import react.dom.h4
-import react.dom.img
-import react.dom.p
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h4
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.p
 import react.router.useNavigate
-import react.useContext
+import react.use
 import react.useEffect
 import react.useMemo
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.HTMLElement
+import web.window.window
 import kotlin.js.Promise
 
 external interface BeatmapTableProps : Props {
@@ -81,7 +82,7 @@ val beatmapTable = fcmemo<BeatmapTableProps>("beatmapTable") { props ->
     val audioRef = useAudio()
 
     val history = History(useNavigate())
-    val config = useContext(configContext)
+    val config = use(configContext)
 
     useDidUpdateEffect(props.user, props.wip, props.curated, props.search, props.fallbackOrder) {
         setUser(null)
@@ -171,9 +172,9 @@ val beatmapTable = fcmemo<BeatmapTableProps>("beatmapTable") { props ->
     val renderer = useMemo(props.wip) {
         InfiniteScrollElementRenderer<MapDetail> { it ->
             beatmapInfo {
-                attrs.obj = it
-                attrs.version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
-                attrs.audio = audioRef
+                obj = it
+                version = it?.let { if (props.wip == true) it.latestVersion() else it.publishedVersion() }
+                audio = audioRef
             }
         }
     }
@@ -181,33 +182,40 @@ val beatmapTable = fcmemo<BeatmapTableProps>("beatmapTable") { props ->
     if (props.visible != false) {
         user?.let {
             routeLink(it.profileLink(), className = "card border-dark user-suggestion-card") {
-                div("card-body") {
-                    h4("card-title") {
+                div {
+                    className = ClassName("card-body")
+                    h4 {
+                        className = ClassName("card-title")
                         +"Were you looking for:"
                     }
-                    p("card-text") {
-                        img("${it.name} avatar", it.avatar, classes = "rounded-circle") {
-                            attrs.width = "40"
-                            attrs.height = "40"
+                    p {
+                        className = ClassName("card-text")
+                        img {
+                            alt = "${it.name} avatar"
+                            src = it.avatar
+                            className = ClassName("rounded-circle")
+                            width = 40.0
+                            height = 40.0
                         }
                         +it.name
                     }
                 }
             }
         }
-        div("search-results") {
+        div {
+            className = ClassName("search-results")
             ref = resultsTable
             key = "resultsTable"
 
             mapDetailInfiniteScroll {
-                attrs.resetRef = resetRef
-                attrs.rowHeight = 155.0
-                attrs.itemsPerRow = itemsPerRow
-                attrs.itemsPerPage = 20
-                attrs.container = resultsTable
-                attrs.renderElement = renderer
-                attrs.updateScrollIndex = props.updateScrollIndex
-                attrs.loadPage = loadPageRef
+                this.resetRef = resetRef
+                rowHeight = 155.0
+                this.itemsPerRow = itemsPerRow
+                itemsPerPage = 20
+                container = resultsTable
+                renderElement = renderer
+                updateScrollIndex = props.updateScrollIndex
+                loadPage = loadPageRef
             }
         }
     }

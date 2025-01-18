@@ -2,37 +2,44 @@ package io.beatmaps.shared.map
 
 import io.beatmaps.api.MapDetail
 import io.beatmaps.util.fcmemo
-import kotlinx.browser.document
-import kotlinx.browser.window
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
 import react.Props
-import react.dom.a
-import react.dom.i
-import react.dom.span
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.span
+import web.cssom.ClassName
+import web.navigator.navigator
+import web.window.window
 
 external interface CopyBSProps : Props {
     var map: MapDetail
 }
 
 val copyBsr = fcmemo<CopyBSProps>("copyBsr") { props ->
-    a("#") {
+    a {
+        href = "#"
+
         val text = "Copy BSR"
-        attrs.title = text
-        attrs.attributes["aria-label"] = text
-        attrs.onClickFunction = {
+        title = text
+        ariaLabel = text
+        onClick = {
             it.preventDefault()
             setClipboard("!bsr ${props.map.id}")
         }
-        span("dd-text") { +text }
-        i("fab fa-twitch text-info") {
-            attrs.attributes["aria-hidden"] = "true"
+        span {
+            className = ClassName("dd-text")
+            +text
+        }
+        i {
+            className = ClassName("fab fa-twitch text-info")
+            ariaHidden = true
         }
     }
 }
 
 val copyEmbed = fcmemo<CopyBSProps>("copyEmbed") { props ->
-    a("#") {
+    a {
+        href = "#"
+
         //language=html
         val iframe = """
             <iframe 
@@ -43,29 +50,22 @@ val copyEmbed = fcmemo<CopyBSProps>("copyEmbed") { props ->
         """.trimIndent()
 
         val text = "Copy Embed Code"
-        attrs.title = text
-        attrs.attributes["aria-label"] = text
-        attrs.onClickFunction = {
+        title = text
+        ariaLabel = text
+        onClick = {
             it.preventDefault()
             setClipboard(iframe)
         }
-        span("dd-text") { +text }
-        i("fas fa-code text-info") {
-            attrs.attributes["aria-hidden"] = "true"
+        span {
+            className = ClassName("dd-text")
+            +text
+        }
+        i {
+            className = ClassName("fas fa-code text-info")
+            ariaHidden = true
         }
     }
 }
 
-private fun setClipboard(str: String) {
-    val tempElement = document.createElement("span")
-    tempElement.textContent = str
-    document.body?.appendChild(tempElement)
-    val selection = window.asDynamic().getSelection()
-    val range = window.document.createRange()
-    selection.removeAllRanges()
-    range.selectNode(tempElement)
-    selection.addRange(range)
-    window.document.execCommand("copy")
-    selection.removeAllRanges()
-    window.document.body?.removeChild(tempElement)
-}
+private fun setClipboard(str: String) =
+    navigator.clipboard.writeTextAsync(str)

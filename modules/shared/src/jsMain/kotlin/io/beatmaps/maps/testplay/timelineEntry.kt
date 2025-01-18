@@ -1,13 +1,12 @@
 package io.beatmaps.maps.testplay
 
-import kotlinx.html.DIV
-import kotlinx.html.id
+import io.beatmaps.util.fcmemo
 import react.Props
-import react.dom.RDOMBuilder
-import react.dom.article
-import react.dom.div
-import react.dom.i
-import react.fc
+import react.dom.html.HTMLAttributes
+import react.dom.html.ReactHTML.article
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import web.cssom.ClassName
 
 external interface TimelineEntryProps : Props {
     var headerCallback: TimelineEntrySectionRenderer?
@@ -21,34 +20,41 @@ external interface TimelineEntryProps : Props {
 }
 
 fun interface TimelineEntrySectionRenderer {
-    fun RDOMBuilder<DIV>.invoke()
+    fun HTMLAttributes<*>.invoke()
 }
 
-val timelineEntry = fc<TimelineEntryProps>("timelineEntry") { props ->
-    article("card border-${props.color ?: "primary"} ${props.className ?: ""}") {
+val timelineEntry = fcmemo<TimelineEntryProps>("timelineEntry") { props ->
+    article {
+        className = ClassName("card border-${props.color ?: "primary"} ${props.className ?: ""}")
         props.id?.let { id ->
-            attrs.id = id
+            this.id = id
         }
-        div("card-header icon bg-${props.color ?: "primary"}") {
-            i("fas ${props.icon ?: "fa-comments"}") {}
+        div {
+            className = ClassName("card-header icon bg-${props.color ?: "primary"}")
+            i {
+                className = ClassName("fas ${props.icon ?: "fa-comments"}")
+            }
         }
         with(props.headerCallback) {
             this?.let {
-                div("card-header ${props.headerClass ?: ""}") {
+                div {
+                    className = ClassName("card-header ${props.headerClass ?: ""}")
                     invoke()
                 }
             }
         }
         with(props.bodyCallback) {
             this?.let {
-                div("card-body") {
+                div {
+                    className = ClassName("card-body")
                     invoke()
                 }
             }
         }
         with(props.footerCallback) {
             this?.let {
-                div("card-footer") {
+                div {
+                    className = ClassName("card-footer")
                     invoke()
                 }
             }

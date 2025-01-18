@@ -1,13 +1,13 @@
 package io.beatmaps.maps.collab
 
 import io.beatmaps.api.UserDetail
-import kotlinx.html.js.onClickFunction
+import io.beatmaps.util.fcmemo
 import react.Props
-import react.dom.a
-import react.dom.div
-import react.dom.img
-import react.dom.span
-import react.fc
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.span
+import web.cssom.ClassName
 
 external interface CollaboratorCardProps : Props {
     var user: UserDetail
@@ -15,19 +15,25 @@ external interface CollaboratorCardProps : Props {
     var accepted: Boolean?
 }
 
-val collaboratorCard = fc<CollaboratorCardProps>("collaboratorCard") { props ->
-    div("collaborator" + if (props.accepted != false) " accepted" else "") {
-        img(props.user.name, props.user.avatar) { }
+val collaboratorCard = fcmemo<CollaboratorCardProps>("collaboratorCard") { props ->
+    div {
+        className = ClassName("collaborator" + if (props.accepted != false) " accepted" else "")
+        img {
+            alt = props.user.name
+            src = props.user.avatar
+        }
         span {
             +props.user.name
             props.accepted?.let { status ->
-                span("status") {
+                span {
+                    className = ClassName("status")
                     +(if (status) "Accepted" else "Pending")
                 }
             }
         }
-        a(classes = "btn-close") {
-            attrs.onClickFunction = {
+        a {
+            className = ClassName("btn-close")
+            onClick = {
                 props.callback?.invoke()
             }
         }

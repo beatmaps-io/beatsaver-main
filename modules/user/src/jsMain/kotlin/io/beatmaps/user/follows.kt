@@ -9,15 +9,15 @@ import io.beatmaps.api.UserDetail
 import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.userCard
 import io.beatmaps.user.list.userInfiniteScroll
+import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
-import org.w3c.dom.HTMLElement
-import react.dom.div
-import react.fc
+import react.dom.html.ReactHTML.div
 import react.useMemo
 import react.useRef
+import web.html.HTMLElement
 import kotlin.js.Promise
 
-val followList = fc<FollowListProps>("followList") { props ->
+val followList = fcmemo<FollowListProps>("followList") { props ->
     val resetRef = useRef<() -> Unit>()
     val loadPageRef = useRef<(Int, CancelTokenSource) -> Promise<GenericSearchResponse<UserDetail>?>>()
 
@@ -49,7 +49,7 @@ val followList = fc<FollowListProps>("followList") { props ->
         InfiniteScrollElementRenderer<UserDetail> { u ->
             if (u != null) {
                 userCard {
-                    attrs.user = u
+                    user = u
                 }
             }
         }
@@ -59,14 +59,14 @@ val followList = fc<FollowListProps>("followList") { props ->
         ref = resultRef
 
         userInfiniteScroll {
-            attrs.resetRef = resetRef
-            attrs.rowHeight = 73.5
-            attrs.itemsPerPage = 20
-            attrs.container = resultRef
-            attrs.scrollParent = props.scrollParent
-            attrs.headerSize = 0.0
-            attrs.loadPage = loadPageRef
-            attrs.renderElement = renderer
+            this.resetRef = resetRef
+            rowHeight = 73.5
+            itemsPerPage = 20
+            container = resultRef
+            scrollParent = props.scrollParent
+            headerSize = 0.0
+            loadPage = loadPageRef
+            renderElement = renderer
         }
     }
 }

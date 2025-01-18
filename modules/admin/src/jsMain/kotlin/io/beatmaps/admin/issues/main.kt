@@ -20,32 +20,30 @@ import io.beatmaps.shared.form.toggle
 import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
-import kotlinx.html.ButtonType
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLSelectElement
-import org.w3c.dom.url.URLSearchParams
 import react.Props
-import react.dom.button
-import react.dom.form
-import react.dom.option
-import react.dom.select
-import react.dom.table
-import react.dom.tbody
-import react.dom.td
-import react.dom.th
-import react.dom.thead
-import react.dom.tr
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.option
+import react.dom.html.ReactHTML.select
+import react.dom.html.ReactHTML.table
+import react.dom.html.ReactHTML.tbody
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.th
+import react.dom.html.ReactHTML.thead
+import react.dom.html.ReactHTML.tr
 import react.router.useLocation
 import react.router.useNavigate
-import react.useContext
+import react.use
 import react.useEffect
 import react.useEffectOnce
 import react.useMemo
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.HTMLElement
+import web.html.HTMLInputElement
+import web.url.URLSearchParams
 import kotlin.js.Promise
 
 val issueList = fcmemo<Props>("issueList") {
@@ -53,12 +51,12 @@ val issueList = fcmemo<Props>("issueList") {
 
     val openRef = useRef<HTMLInputElement>()
 
-    val userData = useContext(globalContext)
+    val userData = use(globalContext)
     val history = History(useNavigate())
     val location = useLocation()
 
     val (openLocal, typeLocal) = URLSearchParams(location.search).let { u ->
-        Pair(u.get("open").toBoolean(), EIssueType.fromName(u.get("type") ?: ""))
+        Pair(u["open"].toBoolean(), EIssueType.fromName(u["type"] ?: ""))
     }
 
     val (isOpen, setIsOpen) = useState(openLocal)
@@ -126,7 +124,7 @@ val issueList = fcmemo<Props>("issueList") {
                     }
                     td {
                         TimeAgo.default {
-                            attrs.date = it.createdAt.toString()
+                            date = it.createdAt.toString()
                         }
                     }
                     td {
@@ -134,7 +132,7 @@ val issueList = fcmemo<Props>("issueList") {
                             +"OPEN"
                         } else {
                             TimeAgo.default {
-                                attrs.date = it.closedAt.toString()
+                                date = it.closedAt.toString()
                             }
                         }
                     }
@@ -173,7 +171,7 @@ val issueList = fcmemo<Props>("issueList") {
                     }
                 } ?: run {
                     td {
-                        attrs.colSpan = "5"
+                        colSpan = 5
                     }
                 }
             }
@@ -181,7 +179,8 @@ val issueList = fcmemo<Props>("issueList") {
     }
 
     form {
-        table("table table-dark table-striped modlog") {
+        table {
+            className = ClassName("table table-dark table-striped modlog")
             thead {
                 tr {
                     th { +"Creator" }
@@ -193,22 +192,22 @@ val issueList = fcmemo<Props>("issueList") {
                 tr {
                     td { }
                     td {
-                        select("form-select") {
-                            attrs.attributes["aria-label"] = "Type"
-                            attrs.value = newType?.name ?: ""
-                            attrs.onChangeFunction = {
-                                val elem = it.currentTarget as HTMLSelectElement
-                                setNewType(EIssueType.fromName(elem.value))
+                        select {
+                            className = ClassName("form-select")
+                            ariaLabel = "Type"
+                            value = newType?.name ?: ""
+                            onChange = {
+                                setNewType(EIssueType.fromName(it.currentTarget.value))
                             }
 
                             EIssueType.entries.filter { userData?.admin == true || it.curatorAllowed }.forEach {
                                 option {
-                                    attrs.value = it.name
+                                    value = it.name
                                     +it.toString()
                                 }
                             }
                             option {
-                                attrs.value = ""
+                                value = ""
                                 +"All"
                             }
                         }
@@ -216,16 +215,18 @@ val issueList = fcmemo<Props>("issueList") {
                     td { }
                     td {
                         toggle {
-                            attrs.id = "openOnly"
-                            attrs.toggleRef = openRef
-                            attrs.text = "Open only"
-                            attrs.default = isOpen
-                            attrs.className = "mb-2"
+                            id = "openOnly"
+                            toggleRef = openRef
+                            text = "Open only"
+                            default = isOpen
+                            className = "mb-2"
                         }
                     }
                     td {
-                        button(type = ButtonType.submit, classes = "btn btn-primary") {
-                            attrs.onClickFunction = {
+                        button {
+                            className = ClassName("btn btn-primary")
+                            this.type = ButtonType.submit
+                            onClick = {
                                 it.preventDefault()
                                 updateHistory()
                             }
@@ -240,12 +241,12 @@ val issueList = fcmemo<Props>("issueList") {
                 key = "issuesTable"
 
                 issuesInfiniteScroll {
-                    attrs.resetRef = resetRef
-                    attrs.rowHeight = 47.5
-                    attrs.itemsPerPage = 30
-                    attrs.container = resultsTable
-                    attrs.loadPage = loadPageRef
-                    attrs.renderElement = renderer
+                    this.resetRef = resetRef
+                    rowHeight = 47.5
+                    itemsPerPage = 30
+                    container = resultsTable
+                    loadPage = loadPageRef
+                    renderElement = renderer
                 }
             }
         }

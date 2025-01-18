@@ -38,34 +38,33 @@ import io.beatmaps.util.fcmemo
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
 import io.beatmaps.util.useAudio
-import kotlinx.browser.document
-import kotlinx.browser.window
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.js.onMouseUpFunction
-import kotlinx.html.title
-import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLTextAreaElement
-import org.w3c.dom.events.Event
 import react.Props
 import react.Suspense
-import react.dom.a
-import react.dom.button
-import react.dom.div
-import react.dom.i
-import react.dom.input
-import react.dom.p
-import react.dom.span
-import react.dom.textarea
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
+import react.dom.html.ReactHTML.textarea
 import react.router.useNavigate
+import react.use
 import react.useCallback
-import react.useContext
 import react.useEffectWithCleanup
 import react.useRef
 import react.useState
-import kotlin.collections.set
+import web.cssom.ClassName
+import web.dom.document
+import web.events.Event
+import web.events.addEventListener
+import web.events.removeEventListener
+import web.html.HTMLDivElement
+import web.html.HTMLInputElement
+import web.html.HTMLTextAreaElement
+import web.html.InputType
+import web.timers.setTimeout
+import web.uievents.MouseEvent
 import kotlin.js.Promise
 
 external interface MapInfoProps : Props {
@@ -93,18 +92,18 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
         val hideDropdown = { _: Event ->
             setDropdown(false)
         }
-        document.addEventListener("mouseup", hideDropdown)
+        document.addEventListener(MouseEvent.MOUSE_UP, hideDropdown)
         onCleanup {
-            document.removeEventListener("mouseup", hideDropdown)
+            document.removeEventListener(MouseEvent.MOUSE_UP, hideDropdown)
         }
     }
 
-    val userData = useContext(globalContext)
+    val userData = use(globalContext)
     val loggedInId = userData?.userId
     val isOwnerLocal = loggedInId == props.mapInfo.uploader.id
     val isCollaboratorLocal = props.mapInfo.collaborators?.let { loggedInId in it.map { collaborator -> collaborator.id } } == true
 
-    val modal = useContext(modalContext)
+    val modal = use(modalContext)
     val captchaRef = useRef<ICaptchaHandler>()
 
     fun recall() =
@@ -204,14 +203,18 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
     val deleted = props.mapInfo.deletedAt != null
 
     if (props.mapInfo.let { it.declaredAi == AiDeclarationType.SageScore && isOwnerLocal }) {
-        div("alert alert-danger alert-dismissible") {
+        div {
+            className = ClassName("alert alert-danger alert-dismissible")
             +"This map was automatically flagged as an AI-generated map. If you believe this was a mistake, please report it in the "
-            a("https://discord.gg/rjVDapkMmj", classes = "alert-link") {
+            a {
+                href = "https://discord.gg/rjVDapkMmj"
+                className = ClassName("alert-link")
                 +"BeatSaver Discord server"
             }
             +"."
-            button(classes = "btn-close") {
-                attrs.onClickFunction = {
+            button {
+                className = ClassName("btn-close")
+                onClick = {
                     it.preventDefault()
                     declareAi(true)
                 }
@@ -229,32 +232,39 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
     }
 
     coloredCard {
-        attrs.color = mapAttrs.joinToString(" ") { it.color }
-        attrs.title = mapAttrs.joinToString(" + ") { it.name }
-        attrs.classes = "m-0"
+        color = mapAttrs.joinToString(" ") { it.color }
+        title = mapAttrs.joinToString(" + ") { it.name }
+        classes = "m-0"
 
-        div("card-header d-flex" + if (deleted) " bg-danger" else "") {
+        div {
+            className = ClassName("card-header d-flex" + if (deleted) " bg-danger" else "")
             if (editing) {
                 +"Edit map"
             } else {
                 +props.mapInfo.name
             }
-            div("link-buttons") {
+            div {
+                className = ClassName("link-buttons")
                 if (!deleted) {
                     props.mapInfo.mainVersion()?.let { version ->
-                        div("thin-dd" + if (dropdown) " show" else "") {
-                            a("#", classes = "dd") {
-                                attrs.attributes["aria-label"] = "${if (dropdown) "Hide" else "Show"} dropdown"
-                                attrs.onClickFunction = {
+                        div {
+                            className = ClassName("thin-dd" + if (dropdown) " show" else "")
+                            a {
+                                href = "#"
+                                className = ClassName("dd")
+                                ariaLabel = "${if (dropdown) "Hide" else "Show"} dropdown"
+                                onClick = {
                                     setDropdown(!dropdown)
                                 }
-                                attrs.onMouseUpFunction = {
+                                onMouseUp = {
                                     it.stopPropagation()
                                 }
-                                i("fas fa-ellipsis-v") { }
+                                i {
+                                    className = ClassName("fas fa-ellipsis-v")
+                                }
                             }
                             div {
-                                attrs.onMouseUpFunction = {
+                                onMouseUp = {
                                     if (it.target == it.currentTarget || it.target.let { d -> d is HTMLDivElement && d.className == "dropdown-divider" }) {
                                         it.stopPropagation()
                                     }
@@ -262,64 +272,76 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                                 if (userData != null) {
                                     Suspense {
                                         playlists.addTo {
-                                            attrs.map = props.mapInfo
+                                            map = props.mapInfo
                                         }
                                         bookmarkButton {
-                                            attrs.bookmarked = props.mapInfo.bookmarked == true
-                                            attrs.onClick = useCallback(loading) { e, bm ->
-                                                e.preventDefault()
+                                            bookmarked = props.mapInfo.bookmarked == true
+                                            onClick = useCallback(loading) { bm ->
                                                 if (!loading) bookmark(!bm)
                                             }
                                         }
 
-                                        div("dropdown-divider") {}
+                                        div {
+                                            className = ClassName("dropdown-divider")
+                                        }
                                     }
                                 }
 
                                 links {
-                                    attrs.map = props.mapInfo
-                                    attrs.version = version
+                                    map = props.mapInfo
+                                    this.version = version
                                 }
 
                                 if (userData != null) {
-                                    div("dropdown-divider") {}
+                                    div {
+                                        className = ClassName("dropdown-divider")
+                                    }
                                 }
 
                                 if (userData?.curator == true || isOwnerLocal) {
-                                    a("#") {
-                                        attrs.title = "Edit"
-                                        attrs.attributes["aria-label"] = "Edit"
-                                        attrs.onClickFunction = {
+                                    a {
+                                        href = "#"
+
+                                        title = "Edit"
+                                        ariaLabel = "Edit"
+                                        onClick = {
                                             it.preventDefault()
                                             setEditing(!editing)
-                                            window.setTimeout(
+                                            setTimeout(
                                                 {
                                                     inputRef.current?.value = props.mapInfo.name
                                                 },
                                                 1
                                             )
                                         }
-                                        span("dd-text") { +"Edit" }
-                                        i("fas fa-pen text-warning") { }
+                                        span {
+                                            className = ClassName("dd-text")
+                                            +"Edit"
+                                        }
+                                        i {
+                                            className = ClassName("fas fa-pen text-warning")
+                                        }
                                     }
                                 }
 
                                 if (loggedInId != null && isCollaboratorLocal) {
                                     collaboratorLeave {
-                                        attrs.map = props.mapInfo
-                                        attrs.collaboratorId = loggedInId
-                                        attrs.reloadMap = props.reloadMap
-                                        attrs.modal = modal
+                                        map = props.mapInfo
+                                        collaboratorId = loggedInId
+                                        reloadMap = props.reloadMap
+                                        this.modal = modal
                                     }
                                 }
 
                                 if (userData?.curator == true && !isOwnerLocal) {
-                                    a("#") {
+                                    a {
+                                        href = "#"
+
                                         val isCurated = props.mapInfo.curator != null
                                         val text = if (isCurated) "Uncurate" else "Curate"
-                                        attrs.title = text
-                                        attrs.attributes["aria-label"] = text
-                                        attrs.onClickFunction = {
+                                        title = text
+                                        ariaLabel = text
+                                        onClick = {
                                             it.preventDefault()
                                             if (!isCurated) {
                                                 modal?.current?.showDialog?.invoke(
@@ -347,8 +369,9 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                                                             p {
                                                                 +"Reason for action:"
                                                             }
-                                                            textarea(classes = "form-control") {
+                                                            textarea {
                                                                 ref = reasonRef
+                                                                className = ClassName("form-control")
                                                             }
                                                         },
                                                         buttons = listOf(
@@ -359,37 +382,59 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                                                 )
                                             }
                                         }
-                                        span("dd-text") { +text }
-                                        i("fas fa-award " + if (isCurated) "text-danger-light" else "text-success") { }
+                                        span {
+                                            className = ClassName("dd-text")
+                                            +text
+                                        }
+                                        i {
+                                            className = ClassName("fas fa-award " + if (isCurated) "text-danger-light" else "text-success")
+                                        }
                                     }
                                 }
                                 if (userData?.admin == true) {
-                                    a("#") {
+                                    a {
+                                        href = "#"
+
                                         val tooltip = if (props.mapInfo.declaredAi.markAsBot) "Flag as Human-made Map" else "Flag as AI-assisted Map"
-                                        attrs.title = tooltip
-                                        attrs.attributes["aria-label"] = tooltip
-                                        attrs.onClickFunction = {
+                                        title = tooltip
+                                        ariaLabel = tooltip
+                                        onClick = {
                                             it.preventDefault()
                                             if (!loading) declareAi(!props.mapInfo.declaredAi.markAsBot)
                                         }
-                                        span("dd-text") { +tooltip }
-                                        i("fas " + if (props.mapInfo.declaredAi.markAsBot) "fa-user-check text-success" else "fa-user-times text-danger-light") { }
+                                        span {
+                                            className = ClassName("dd-text")
+                                            +tooltip
+                                        }
+                                        i {
+                                            className = ClassName("fas " + if (props.mapInfo.declaredAi.markAsBot) "fa-user-check text-success" else "fa-user-times text-danger-light")
+                                        }
                                     }
-                                    a("#") {
+                                    a {
+                                        href = "#"
+
                                         val tooltip = if (props.mapInfo.nsfw) "Flag as safe" else "Flag as NSFW"
-                                        attrs.title = tooltip
-                                        attrs.attributes["aria-label"] = tooltip
-                                        attrs.onClickFunction = {
+                                        title = tooltip
+                                        ariaLabel = tooltip
+                                        onClick = {
                                             it.preventDefault()
                                             if (!loading) markNsfw(!props.mapInfo.nsfw)
                                         }
-                                        span("dd-text") { +tooltip }
-                                        i("fas fa-shield-alt " + if (props.mapInfo.nsfw) "text-success" else "text-danger-light") { }
+                                        span {
+                                            className = ClassName("dd-text")
+                                            +tooltip
+                                        }
+                                        i {
+                                            className = ClassName("fas fa-shield-alt " + if (props.mapInfo.nsfw) "text-success" else "text-danger-light")
+                                        }
                                     }
-                                    a("#") {
-                                        attrs.title = "Delete"
-                                        attrs.attributes["aria-label"] = "Delete"
-                                        attrs.onClickFunction = {
+                                    a {
+                                        href = "#"
+
+                                        val text = "Delete"
+                                        title = text
+                                        ariaLabel = text
+                                        onClick = {
                                             it.preventDefault()
                                             modal?.current?.showDialog?.invoke(
                                                 ModalData(
@@ -401,8 +446,9 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                                                         p {
                                                             +"Reason for action:"
                                                         }
-                                                        textarea(classes = "form-control") {
+                                                        textarea {
                                                             ref = reasonRef
+                                                            className = ClassName("form-control")
                                                         }
                                                     },
                                                     buttons = listOf(
@@ -413,25 +459,33 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                                                 )
                                             )
                                         }
-                                        span("dd-text") { +"Delete" }
-                                        i("fas fa-trash text-danger-light") { }
+                                        span {
+                                            className = ClassName("dd-text")
+                                            +text
+                                        }
+                                        i {
+                                            className = ClassName("fas fa-trash text-danger-light")
+                                        }
                                     }
                                 } else if (userData?.suspended == false && !isOwnerLocal) {
-                                    a("#") {
-                                        attrs.id = "report"
-                                        attrs.title = "Report"
-                                        attrs.attributes["aria-label"] = "Report"
-                                        attrs.onClickFunction = {
+                                    a {
+                                        href = "#"
+                                        id = "report"
+
+                                        val text = "Report"
+                                        title = text
+                                        ariaLabel = text
+                                        onClick = {
                                             it.preventDefault()
                                             modal?.current?.showDialog?.invoke(
                                                 ModalData(
                                                     "Report map",
                                                     bodyCallback = {
                                                         reportModal {
-                                                            attrs.subject = "map"
-                                                            attrs.reasonRef = reasonRef
-                                                            attrs.captchaRef = captchaRef
-                                                            attrs.errorsRef = errorRef
+                                                            subject = "map"
+                                                            this.reasonRef = reasonRef
+                                                            this.captchaRef = captchaRef
+                                                            errorsRef = errorRef
                                                         }
                                                     },
                                                     buttons = listOf(
@@ -441,8 +495,13 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                                                 )
                                             )
                                         }
-                                        span("dd-text") { +"Report" }
-                                        i("fas fa-flag text-danger-light") { }
+                                        span {
+                                            className = ClassName("dd-text")
+                                            +text
+                                        }
+                                        i {
+                                            className = ClassName("fas fa-flag text-danger-light")
+                                        }
                                     }
                                 }
                             }
@@ -451,63 +510,72 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                 }
             }
         }
-        div("card-body mapinfo") {
+        div {
+            className = ClassName("card-body mapinfo")
             audioPreview {
-                attrs.nsfw = props.mapInfo.nsfw
-                attrs.version = props.mapInfo.mainVersion()
-                attrs.size = AudioPreviewSize.Large
-                attrs.audio = audio
+                nsfw = props.mapInfo.nsfw
+                version = props.mapInfo.mainVersion()
+                size = AudioPreviewSize.Large
+                this.audio = audio
             }
-            div("card-text clearfix") {
+            div {
+                className = ClassName("card-text clearfix")
                 val tagCb = useCallback { it: Set<MapTag> ->
                     setTags(it)
                 }
                 if (editing) {
                     // If you're not an admin or the owner I hope you're a curator
                     val isCurating = !(userData?.admin == true || isOwnerLocal)
-                    input(InputType.text, classes = "form-control m-2") {
-                        attrs.id = "name"
-                        attrs.disabled = loading || isCurating
+                    input {
                         ref = inputRef
+                        type = InputType.text
+                        className = ClassName("form-control m-2")
+                        id = "name"
+                        disabled = loading || isCurating
                     }
-                    textarea("10", classes = "form-control m-2") {
-                        attrs.id = "description"
-                        attrs.disabled = loading || isCurating
-                        +props.mapInfo.description
+                    textarea {
                         ref = textareaRef
+                        rows = 10
+                        className = ClassName("form-control m-2")
+                        id = "description"
+                        disabled = loading || isCurating
+                        +props.mapInfo.description
                     }
 
                     tagPicker {
-                        attrs.classes = "m-2"
-                        attrs.tags = tags
-                        attrs.tagUpdateCallback = tagCb
+                        classes = "m-2"
+                        this.tags = tags
+                        tagUpdateCallback = tagCb
                     }
 
                     if (userData?.suspended == false) {
                         collaboratorPicker {
-                            attrs.classes = "m-2"
-                            attrs.map = props.mapInfo
-                            attrs.disabled = loading || isCurating
+                            classes = "m-2"
+                            map = props.mapInfo
+                            disabled = loading || isCurating
                         }
                     }
                 } else {
-                    p("text-break") {
+                    p {
+                        className = ClassName("text-break")
                         textToContent(props.mapInfo.description)
                     }
                 }
             }
 
             if (editing) {
-                div("text-end") {
+                div {
+                    className = ClassName("text-end")
                     errors {
-                        attrs.errors = errors
+                        this.errors = errors
                     }
 
                     if (isOwnerLocal) {
                         if (props.mapInfo.publishedVersion() != null) {
-                            button(classes = "btn btn-danger m-1") {
-                                attrs.disabled = loading
-                                attrs.onClickFunction = {
+                            button {
+                                className = ClassName("btn btn-danger m-1")
+                                disabled = loading
+                                onClick = {
                                     modal?.current?.showDialog?.invoke(
                                         ModalData(
                                             "Are you sure?",
@@ -519,9 +587,10 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                                 +"Unpublish"
                             }
                         } else {
-                            button(classes = "btn btn-danger m-1") {
-                                attrs.disabled = loading
-                                attrs.onClickFunction = {
+                            button {
+                                className = ClassName("btn btn-danger m-1")
+                                disabled = loading
+                                onClick = {
                                     modal?.current?.showDialog?.invoke(
                                         ModalData(
                                             "Are you sure?",
@@ -534,9 +603,10 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                             }
                         }
                     }
-                    button(classes = "btn btn-primary m-1") {
-                        attrs.disabled = loading
-                        attrs.onClickFunction = {
+                    button {
+                        className = ClassName("btn btn-primary m-1")
+                        disabled = loading
+                        onClick = {
                             val newTitle = inputRef.current?.value ?: ""
                             val newDescription = textareaRef.current?.value ?: ""
                             val newTags = tags.toList()

@@ -14,35 +14,32 @@ import io.beatmaps.shared.InfiniteScrollElementRenderer
 import io.beatmaps.shared.generateInfiniteScrollComponent
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useDidUpdateEffect
-import kotlinx.dom.hasClass
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLSelectElement
-import org.w3c.dom.url.URLSearchParams
 import react.Props
-import react.dom.button
-import react.dom.form
-import react.dom.input
-import react.dom.option
-import react.dom.select
-import react.dom.table
-import react.dom.tbody
-import react.dom.td
-import react.dom.th
-import react.dom.thead
-import react.dom.tr
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.option
+import react.dom.html.ReactHTML.select
+import react.dom.html.ReactHTML.table
+import react.dom.html.ReactHTML.tbody
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.th
+import react.dom.html.ReactHTML.thead
+import react.dom.html.ReactHTML.tr
 import react.router.useLocation
 import react.router.useNavigate
-import react.useContext
+import react.use
 import react.useEffect
 import react.useEffectOnce
 import react.useMemo
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.HTMLElement
+import web.html.HTMLInputElement
+import web.html.InputType
+import web.url.URLSearchParams
 import kotlin.js.Promise
 
 val modlog = fcmemo<Props>("modlog") {
@@ -51,12 +48,12 @@ val modlog = fcmemo<Props>("modlog") {
     val modRef = useRef<HTMLInputElement>()
     val userRef = useRef<HTMLInputElement>()
 
-    val userData = useContext(globalContext)
+    val userData = use(globalContext)
     val history = History(useNavigate())
     val location = useLocation()
 
     val (modLocal, userLocal, typeLocal) = URLSearchParams(location.search).let { u ->
-        Triple(u.get("mod") ?: "", u.get("user") ?: "", ModLogOpType.fromName(u.get("type") ?: ""))
+        Triple(u["mod"] ?: "", u["user"] ?: "", ModLogOpType.fromName(u["type"] ?: ""))
     }
 
     val (mod, setMod) = useState(modLocal)
@@ -124,14 +121,15 @@ val modlog = fcmemo<Props>("modlog") {
 
         InfiniteScrollElementRenderer<ModLogEntry> {
             modLogEntryRenderer {
-                attrs.entry = it
-                attrs.setUser = setUserCb
+                entry = it
+                this.setUser = setUserCb
             }
         }
     }
 
     form {
-        table("table table-dark table-striped-3 modlog") {
+        table {
+            className = ClassName("table table-dark table-striped-3 modlog")
             thead {
                 tr {
                     th { +"Moderator" }
@@ -142,44 +140,50 @@ val modlog = fcmemo<Props>("modlog") {
                 }
                 tr {
                     td {
-                        input(InputType.text, classes = "form-control") {
-                            attrs.placeholder = "Moderator"
-                            attrs.attributes["aria-label"] = "Moderator"
+                        input {
+                            this.type = InputType.text
+                            className = ClassName("form-control")
+                            placeholder = "Moderator"
+                            ariaLabel = "Moderator"
                             ref = modRef
                         }
                     }
                     td {
-                        input(InputType.text, classes = "form-control") {
-                            attrs.placeholder = "User"
-                            attrs.attributes["aria-label"] = "User"
+                        input {
+                            this.type = InputType.text
+                            className = ClassName("form-control")
+                            placeholder = "User"
+                            ariaLabel = "User"
                             ref = userRef
                         }
                     }
                     td { }
                     td {
-                        select("form-select") {
-                            attrs.attributes["aria-label"] = "Type"
-                            attrs.value = newType?.name ?: ""
-                            attrs.onChangeFunction = {
-                                val elem = it.currentTarget as HTMLSelectElement
-                                setNewType(ModLogOpType.fromName(elem.value))
+                        select {
+                            className = ClassName("form-select")
+                            ariaLabel = "Type"
+                            value = newType?.name ?: ""
+                            onChange = {
+                                setNewType(ModLogOpType.fromName(it.currentTarget.value))
                             }
 
                             ModLogOpType.entries.forEach {
                                 option {
-                                    attrs.value = it.toString()
+                                    value = it.toString()
                                     +it.toString()
                                 }
                             }
                             option {
-                                attrs.value = ""
+                                value = ""
                                 +"All"
                             }
                         }
                     }
                     td {
-                        button(type = ButtonType.submit, classes = "btn btn-primary") {
-                            attrs.onClickFunction = {
+                        button {
+                            this.type = ButtonType.submit
+                            className = ClassName("btn btn-primary")
+                            onClick = {
                                 it.preventDefault()
                                 updateHistory()
                             }
@@ -194,15 +198,15 @@ val modlog = fcmemo<Props>("modlog") {
                 key = "modlogTable"
 
                 modLogInfiniteScroll {
-                    attrs.resetRef = resetRef
-                    attrs.rowHeight = 48.0
-                    attrs.itemsPerPage = 30
-                    attrs.container = resultsTable
-                    attrs.loadPage = loadPageRef
-                    attrs.childFilter = {
-                        !it.hasClass("hiddenRow")
+                    this.resetRef = resetRef
+                    rowHeight = 48.0
+                    itemsPerPage = 30
+                    container = resultsTable
+                    loadPage = loadPageRef
+                    childFilter = {
+                        !it.classList.contains("hiddenRow")
                     }
-                    attrs.renderElement = renderer
+                    renderElement = renderer
                 }
             }
         }

@@ -2,7 +2,6 @@ package io.beatmaps.playlist
 
 import external.Axios
 import external.generateConfig
-import external.reactFor
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
@@ -13,34 +12,35 @@ import io.beatmaps.common.jsonIgnoreUnknown
 import io.beatmaps.setPageTitle
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.hashRegex
-import kotlinx.browser.window
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.role
+import js.objects.jso
 import kotlinx.serialization.SerializationException
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLTextAreaElement
-import org.w3c.files.FileReader
-import org.w3c.files.get
 import react.Props
-import react.dom.br
-import react.dom.button
-import react.dom.div
-import react.dom.input
-import react.dom.jsStyle
-import react.dom.label
-import react.dom.p
-import react.dom.textarea
+import react.dom.aria.AriaRole
+import react.dom.html.ReactHTML.br
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.textarea
 import react.router.useNavigate
 import react.router.useParams
 import react.useEffectOnce
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.cssom.pct
+import web.events.ProgressEvent
+import web.events.addEventListener
+import web.file.FileReader
+import web.html.HTMLInputElement
+import web.html.HTMLTextAreaElement
+import web.html.InputType
+import web.timers.setTimeout
 
 val multiAddPlaylist = fcmemo<Props>("multiAddPlaylist") {
-    val (progress, setProgress) = useState<Pair<Int, Int>?>(null)
+    val (progress, setProgressInt) = useState<Pair<Int, Int>?>(null)
+    val progressRef = useRef(progress)
 
     val hashRef = useRef<HTMLTextAreaElement>()
     val bplistUploadRef = useRef<HTMLInputElement>()
@@ -48,13 +48,18 @@ val multiAddPlaylist = fcmemo<Props>("multiAddPlaylist") {
     val history = History(useNavigate())
     val params = useParams()
 
+    fun setProgress(newProgress: Pair<Int, Int>?) {
+        progressRef.current = newProgress
+        setProgressInt(newProgress)
+    }
+
     useEffectOnce {
         setPageTitle("Playlist - Multi-Add")
     }
 
     fun doAdd(queue: List<List<String>>) {
         if (queue.isEmpty()) {
-            if (progress?.first == progress?.second) {
+            if (progressRef.current?.first == progressRef.current?.second) {
                 history.push("/playlists/${params["id"]}")
             }
 
@@ -69,15 +74,16 @@ val multiAddPlaylist = fcmemo<Props>("multiAddPlaylist") {
             PlaylistBatchRequest(hashList, keyList, inPlaylist = true, ignoreUnknown = true),
             generateConfig<PlaylistBatchRequest, ActionResponse>()
         ).then {
-            setProgress(progress?.let { p -> p.first + hashes.size to p.second })
-            window.setTimeout(
+            val newQueue = queue.minus(setOf(hashes))
+            setProgress(progressRef.current?.let { p -> p.first + hashes.size to p.second })
+            setTimeout(
                 {
-                    doAdd(queue.minus(setOf(hashes)))
+                    doAdd(newQueue)
                 },
-                500
+                if (newQueue.isEmpty()) 0 else 500
             )
         }.catch {
-            setProgress(progress?.let { p -> -1 to p.second })
+            setProgress(progressRef.current?.let { p -> -1 to p.second })
         }
     }
 
@@ -87,32 +93,39 @@ val multiAddPlaylist = fcmemo<Props>("multiAddPlaylist") {
 
     val id = params["id"]
 
-    div("card border-dark w-50 m-auto") {
-        div("card-header") {
+    div {
+        className = ClassName("card border-dark w-50 m-auto")
+        div {
+            className = ClassName("card-header")
             +"Add maps to playlist"
         }
-        div(classes = "card-body") {
+        div {
+            className = ClassName("card-body")
             progress?.let { progress ->
                 if (progress.first >= 0) {
-                    p("h4 text-center mt-4") {
+                    p {
+                        className = ClassName("h4 text-center mt-4")
                         +"Adding maps to playlist (${progress.first} / ${progress.second})"
                     }
-                    div("progress m-4") {
-                        div("progress-bar progress-bar-striped progress-bar-animated bg-info") {
-                            attrs.role = "progressbar"
-                            attrs.jsStyle {
-                                val v = ((progress.first * 100f) / progress.second).toInt()
-                                width = "$v%"
+                    div {
+                        className = ClassName("progress m-4")
+                        div {
+                            className = ClassName("progress-bar progress-bar-striped progress-bar-animated bg-info")
+                            role = AriaRole.progressbar
+                            style = jso {
+                                width = ((progress.first * 100f) / progress.second).toInt().pct
                             }
                         }
                     }
                 } else {
-                    p("h4 text-center") {
+                    p {
+                        className = ClassName("h4 text-center")
                         +"Error adding maps to playlist"
                         br {}
                         +"Hashes/keys are invalid or the maps don't exist"
                     }
-                    div("btn-group w-100 mt-5") {
+                    div {
+                        className = ClassName("btn-group w-100 mt-5")
                         routeLink(id?.let { "/playlists/$it" } ?: "/", className = "btn btn-secondary") {
                             +"Back"
                         }
@@ -122,58 +135,68 @@ val multiAddPlaylist = fcmemo<Props>("multiAddPlaylist") {
                 p {
                     +"Paste comma or line seperated hashes or keys into the box below to add them to the playlist"
                 }
-                textarea(classes = "form-control") {
+                textarea {
+                    className = ClassName("form-control")
                     ref = hashRef
-                    attrs.rows = "10"
+                    rows = 10
                 }
 
-                div("mt-3") {
-                    label("form-label") {
-                        attrs.reactFor = "bplist"
-                        div("text-truncate") {
+                div {
+                    className = ClassName("mt-3")
+                    label {
+                        className = ClassName("form-label")
+                        htmlFor = "bplist"
+                        div {
+                            className = ClassName("text-truncate")
                             +"Or upload bplist"
                         }
                     }
-                    input(InputType.file, classes = "form-control") {
-                        attrs.onChangeFunction = {
+                    input {
+                        type = InputType.file
+                        className = ClassName("form-control")
+                        onChange = {
                             bplistUploadRef.current?.files?.let { it[0] }?.let { file ->
                                 val reader = FileReader()
 
-                                reader.onload = {
-                                    val data = reader.result as String
+                                reader.addEventListener(
+                                    ProgressEvent.LOAD,
+                                    {
+                                        val data = reader.result as String
 
-                                    val csv = data.split(",")
-                                    val hashes = if (csv.all { it.length == 32 }) {
-                                        data
-                                    } else {
-                                        try {
-                                            val playlist = jsonIgnoreUnknown.decodeFromString<Playlist>(data)
-                                            playlist.songs.joinToString(",") { song -> song.hash }
-                                        } catch (e: SerializationException) {
-                                            // Bad bplist :O
-                                            ""
+                                        val csv = data.split(",")
+                                        val hashes = if (csv.all { it.length == 32 }) {
+                                            data
+                                        } else {
+                                            try {
+                                                val playlist = jsonIgnoreUnknown.decodeFromString<Playlist>(data)
+                                                playlist.songs.joinToString(",") { song -> song.hash }
+                                            } catch (e: SerializationException) {
+                                                // Bad bplist :O
+                                                ""
+                                            }
                                         }
-                                    }
 
-                                    hashRef.current?.value = hashes
-                                    0
-                                }
+                                        hashRef.current?.value = hashes
+                                    }
+                                )
 
                                 reader.readAsText(file)
                             }
                         }
                         key = "bplist"
-                        attrs.id = "bplist"
+                        this.id = "bplist"
                         ref = bplistUploadRef
                     }
                 }
 
-                div("btn-group w-100 mt-5") {
+                div {
+                    className = ClassName("btn-group w-100 mt-5")
                     routeLink(id?.let { "/playlists/$it" } ?: "/", className = "btn btn-secondary") {
                         +"Cancel"
                     }
-                    button(classes = "btn btn-success") {
-                        attrs.onClickFunction = {
+                    button {
+                        className = ClassName("btn btn-success")
+                        onClick = {
                             val hashes = (hashRef.current?.value ?: "").split(",", "\r\n", "\n").filter { it.isNotBlank() }
                             startAdd(hashes)
                             setProgress(0 to hashes.size)

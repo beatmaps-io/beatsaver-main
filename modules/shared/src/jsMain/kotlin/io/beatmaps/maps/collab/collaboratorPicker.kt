@@ -7,12 +7,13 @@ import io.beatmaps.api.CollaborationDetail
 import io.beatmaps.api.CollaborationRemoveData
 import io.beatmaps.api.CollaborationRequestData
 import io.beatmaps.api.MapDetail
+import io.beatmaps.util.fcmemo
 import react.Props
-import react.dom.div
-import react.dom.h4
-import react.fc
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.h4
 import react.useEffect
 import react.useState
+import web.cssom.ClassName
 
 external interface CollaboratorPickerProps : Props {
     var classes: String?
@@ -20,7 +21,7 @@ external interface CollaboratorPickerProps : Props {
     var disabled: Boolean
 }
 
-val collaboratorPicker = fc<CollaboratorPickerProps>("collaboratorPicker") { props ->
+val collaboratorPicker = fcmemo<CollaboratorPickerProps>("collaboratorPicker") { props ->
     val (collaborators, setCollaborators) = useState(listOf<CollaborationDetail>())
 
     fun updateCollaborators() {
@@ -36,20 +37,22 @@ val collaboratorPicker = fc<CollaboratorPickerProps>("collaboratorPicker") { pro
         updateCollaborators()
     }
 
-    div("collaborators " + (props.classes ?: "")) {
+    div {
+        className = ClassName("collaborators " + (props.classes ?: ""))
         h4 {
             +"Collaborators"
         }
 
         if (collaborators.isNotEmpty()) {
-            div("collaborator-cards") {
+            div {
+                className = ClassName("collaborator-cards")
                 collaborators.forEach { c ->
                     if (c.collaborator == null) return@forEach
 
                     collaboratorCard {
-                        attrs.user = c.collaborator
-                        attrs.accepted = c.accepted
-                        attrs.callback = {
+                        user = c.collaborator
+                        accepted = c.accepted
+                        callback = {
                             Axios.post<String>(
                                 "${Config.apibase}/collaborations/remove",
                                 CollaborationRemoveData(c.mapId, c.collaborator.id),
@@ -64,9 +67,9 @@ val collaboratorPicker = fc<CollaboratorPickerProps>("collaboratorPicker") { pro
         }
 
         userSearch {
-            attrs.excludeUsers = collaborators.mapNotNull { it.collaborator?.id }.plus(props.map.uploader.id)
-            attrs.disabled = props.disabled
-            attrs.callback = { newUser ->
+            excludeUsers = collaborators.mapNotNull { it.collaborator?.id }.plus(props.map.uploader.id)
+            disabled = props.disabled
+            callback = { newUser ->
                 Axios.post<String>(
                     "${Config.apibase}/collaborations/request",
                     CollaborationRequestData(props.map.intId(), newUser.id),

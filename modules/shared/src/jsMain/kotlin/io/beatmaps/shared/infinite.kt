@@ -5,20 +5,23 @@ import external.CancelTokenSource
 import external.invoke
 import io.beatmaps.api.GenericSearchResponse
 import io.beatmaps.util.fcmemo
-import kotlinx.browser.window
-import org.w3c.dom.Element
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.asList
-import org.w3c.dom.events.Event
-import react.MutableRefObject
+import js.array.asList
+import react.ChildrenBuilder
 import react.Props
-import react.RBuilder
 import react.RefObject
 import react.useEffect
 import react.useEffectOnceWithCleanup
 import react.useEffectWithCleanup
 import react.useRef
 import react.useState
+import web.dom.Element
+import web.events.Event
+import web.events.addEventListener
+import web.events.removeEventListener
+import web.history.HashChangeEvent
+import web.html.HTMLElement
+import web.timers.setTimeout
+import web.window.window
 import kotlin.js.Promise
 import kotlin.math.ceil
 import kotlin.math.max
@@ -28,15 +31,15 @@ import kotlin.reflect.KClass
 sealed interface ElementRenderer<T>
 
 fun interface InfiniteScrollElementRenderer<T> : ElementRenderer<T> {
-    fun RBuilder.invoke(it: T?)
+    fun ChildrenBuilder.invoke(it: T?)
 }
 
 fun interface IndexedInfiniteScrollElementRenderer<T> : ElementRenderer<T> {
-    fun RBuilder.invoke(idx: Int, it: T?)
+    fun ChildrenBuilder.invoke(idx: Int, it: T?)
 }
 
 external interface InfiniteScrollProps<T> : Props {
-    var resetRef: MutableRefObject<() -> Unit>
+    var resetRef: RefObject<() -> Unit>
     var rowHeight: Double
     var itemsPerRow: RefObject<() -> Int>?
     var itemsPerPage: Int
@@ -201,7 +204,8 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<I
             )
 
             loading.current = false
-            window.setTimeout({
+
+            setTimeout({
                 loadNextPage.current?.invoke()
             }, 1)
         }.catch {
@@ -228,20 +232,20 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<I
         }
         location.current = window.location.search
 
-        window.addEventListener("resize", onResize)
-        window.addEventListener("hashchange", onHashChange)
-
+        window.addEventListener(Event.RESIZE, onResize)
+        window.addEventListener(HashChangeEvent.HASH_CHANGE, onHashChange)
         onCleanup {
-            window.removeEventListener("resize", onResize)
-            window.removeEventListener("hashchange", onHashChange)
+            window.removeEventListener(Event.RESIZE, onResize)
+            window.removeEventListener(HashChangeEvent.HASH_CHANGE, onHashChange)
         }
     }
 
     useEffectWithCleanup(props.scrollParent) {
         val target = props.scrollParent ?: window
-        target.addEventListener("scroll", onScroll)
+
+        target.addEventListener(Event.SCROLL, onScroll)
         onCleanup {
-            target.removeEventListener("scroll", onScroll)
+            target.removeEventListener(Event.SCROLL, onScroll)
         }
     }
 

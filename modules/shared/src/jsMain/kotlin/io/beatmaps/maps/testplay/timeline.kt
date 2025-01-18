@@ -11,21 +11,22 @@ import io.beatmaps.common.api.EMapState
 import io.beatmaps.globalContext
 import io.beatmaps.shared.form.errors
 import io.beatmaps.upload.simple
+import io.beatmaps.util.fcmemo
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import org.w3c.dom.HTMLElement
 import react.Props
 import react.Suspense
-import react.dom.article
-import react.dom.br
-import react.dom.div
-import react.dom.i
-import react.dom.small
-import react.dom.strong
-import react.fc
-import react.useContext
+import react.dom.html.ReactHTML.article
+import react.dom.html.ReactHTML.br
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.small
+import react.dom.html.ReactHTML.strong
+import react.use
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.HTMLElement
 
 enum class EventType {
     Feedback, Play, Version
@@ -38,14 +39,14 @@ external interface TimelineProps : Props {
     var history: History
 }
 
-val timeline = fc<TimelineProps>("timeline") { props ->
+val timeline = fcmemo<TimelineProps>("timeline") { props ->
     val (errors, setErrors) = useState(listOf<UploadValidationInfo>())
     val (loading, setLoading) = useState(false)
 
     val captchaRef = useRef<ICaptchaHandler>()
     val progressBarInnerRef = useRef<HTMLElement>()
 
-    val userData = useContext(globalContext)
+    val userData = use(globalContext)
     val loggedInId = userData?.userId
     val isOwnerLocal = loggedInId == props.mapInfo.uploader.id
 
@@ -63,18 +64,26 @@ val timeline = fc<TimelineProps>("timeline") { props ->
         )
     }.filterNotNull().sortedWith(compareByDescending<Event> { versionTimes[it.hash] }.thenByDescending { it.time })
 
-    div("timeline") {
+    div {
+        className = ClassName("timeline")
         // Watch out, this must be at the top
-        div("line text-muted") {}
+        div {
+            className = ClassName("line text-muted")
+        }
 
         val latestVersion = props.mapInfo.latestVersion()
         val givenFeedback = latestVersion?.testplays?.any { it.user.id == loggedInId && it.feedbackAt != null } == true || loggedInId == null
         if (isOwnerLocal) {
-            article("card") {
-                div("card-header icon bg-success") {
-                    i("fas fa-plus") {}
+            article {
+                className = ClassName("card")
+                div {
+                    className = ClassName("card-header icon bg-success")
+                    i {
+                        className = ClassName("fas fa-plus")
+                    }
                 }
-                div("card-body") {
+                div {
+                    className = ClassName("card-body")
                     val now = Clock.System.now()
                     val recentVersions = props.mapInfo.versions.map { now.minus(it.createdAt).inWholeHours }.filter { it < 12 }
 
@@ -94,7 +103,7 @@ val timeline = fc<TimelineProps>("timeline") { props ->
 
                     Dropzone.default {
                         simple(
-                            props.history, loading, errors.isNotEmpty(), progressBarInnerRef,
+                            props.history, loading, progressBarInnerRef,
                             "Drag and drop some files here, or click to upload a new version", captchaRef,
                             {
                                 setLoading(true)
@@ -113,21 +122,21 @@ val timeline = fc<TimelineProps>("timeline") { props ->
                     }
                     if (!loading) {
                         errors {
-                            attrs.validationErrors = errors
+                            validationErrors = errors
                         }
                     }
                 }
 
                 captcha {
                     key = "captcha"
-                    attrs.captchaRef = captchaRef
-                    attrs.page = "timeline"
+                    this.captchaRef = captchaRef
+                    page = "timeline"
                 }
             }
         } else if (!givenFeedback && latestVersion != null) {
             Suspense {
                 testplayModule.newFeedback {
-                    attrs.hash = latestVersion.hash
+                    hash = latestVersion.hash
                 }
             }
         }
@@ -138,38 +147,43 @@ val timeline = fc<TimelineProps>("timeline") { props ->
                 EventType.Version -> {
                     val version = props.mapInfo.versions.find { v -> v.hash == it.hash }
                     version {
-                        attrs.hash = it.hash
-                        attrs.downloadUrl = version?.downloadURL
-                        attrs.diffs = version?.diffs
-                        attrs.isOwner = isOwnerLocal
-                        attrs.feedback = it.body
-                        attrs.firstVersion = first
-                        attrs.time = it.time.toString()
-                        attrs.state = it.state
-                        attrs.scheduledAt = it.secondaryTime
-                        attrs.reloadMap = props.reloadMap
-                        attrs.mapId = props.mapInfo.intId()
-                        attrs.allowPublish = props.mapInfo.name.isNotEmpty()
-                        attrs.alreadyPublished = (props.mapInfo.lastPublishedAt != null)
+                        hash = it.hash
+                        downloadUrl = version?.downloadURL
+                        diffs = version?.diffs
+                        isOwner = isOwnerLocal
+                        feedback = it.body
+                        firstVersion = first
+                        time = it.time.toString()
+                        state = it.state
+                        scheduledAt = it.secondaryTime
+                        reloadMap = props.reloadMap
+                        mapId = props.mapInfo.intId()
+                        allowPublish = props.mapInfo.name.isNotEmpty()
+                        alreadyPublished = (props.mapInfo.lastPublishedAt != null)
                     }
                     first = false
                 }
                 EventType.Feedback ->
                     // In testplay module
                     /*feedback {
-                        attrs.hash = it.hash
-                        attrs.isOwner = it.userId != null && it.userId == loggedInId
-                        attrs.feedback = it.body
-                        attrs.name = it.title
-                        attrs.time = it.time.toString()
+                        hash = it.hash
+                        isOwner = it.userId != null && it.userId == loggedInId
+                        feedback = it.body
+                        name = it.title
+                        time = it.time.toString()
                     }*/
                     Unit
                 EventType.Play -> {
-                    article("card card-outline") {
-                        div("card-header icon bg-warning") {
-                            i("fas fa-vial") {}
+                    article {
+                        className = ClassName("card card-outline")
+                        div {
+                            className = ClassName("card-header icon bg-warning")
+                            i {
+                                className = ClassName("fas fa-vial")
+                            }
                         }
-                        div("card-body") {
+                        div {
+                            className = ClassName("card-body")
                             strong {
                                 +it.title
                             }
@@ -177,7 +191,7 @@ val timeline = fc<TimelineProps>("timeline") { props ->
                         }
                         small {
                             TimeAgo.default {
-                                attrs.date = it.time.toString()
+                                date = it.time.toString()
                             }
                             br {}
                             +it.hash

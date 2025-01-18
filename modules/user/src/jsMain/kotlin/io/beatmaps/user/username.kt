@@ -12,23 +12,25 @@ import io.beatmaps.common.json
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import io.beatmaps.util.fcmemo
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.js.onSubmitFunction
-import org.w3c.dom.HTMLInputElement
+import js.objects.jso
+import react.CSSProperties
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.form
-import react.dom.i
-import react.dom.input
-import react.dom.jsStyle
-import react.dom.p
-import react.dom.span
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
 import react.router.useNavigate
 import react.useEffectOnce
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.cssom.rem
+import web.html.ButtonType
+import web.html.HTMLInputElement
+import web.html.InputType
 
 val pickUsernamePage = fcmemo<Props>("pickUsernamePage") {
     val (submitted, setSubmitted) = useState(false)
@@ -63,12 +65,16 @@ val pickUsernamePage = fcmemo<Props>("pickUsernamePage") {
         }
     }
 
-    div("login-form card border-dark") {
-        div("card-header") {
+    div {
+        className = ClassName("login-form card border-dark")
+        div {
+            className = ClassName("card-header")
             +"Pick a username"
         }
-        form(classes = "card-body") {
-            attrs.onSubmitFunction = { ev ->
+        form {
+            className = ClassName("card-body")
+
+            onSubmit = { ev ->
                 ev.preventDefault()
                 setSubmitted(true)
 
@@ -88,40 +94,48 @@ val pickUsernamePage = fcmemo<Props>("pickUsernamePage") {
                     setSubmitted(false)
                 }
             }
-            p("text-start") {
-                attrs.jsStyle {
-                    fontSize = "0.8rem"
-                }
+            val smallTextStyle = jso<CSSProperties> {
+                fontSize = 0.8.rem
+            }
+            p {
+                className = ClassName("text-start")
+                style = smallTextStyle
                 +"Please pick a beatsaver username for your account. You will not be able to change this later."
             }
-            p("text-start") {
-                attrs.jsStyle {
-                    fontSize = "0.8rem"
-                }
+            p {
+                className = ClassName("text-start")
+                style = smallTextStyle
                 +"Usernames must be made up of letters, numbers and any of "
-                span("badge badge-secondary") {
-                    attrs.jsStyle {
-                        fontSize = "0.8rem"
-                    }
+                span {
+                    className = ClassName("badge badge-secondary")
+                    style = smallTextStyle
                     +". _ -"
                 }
             }
             errors {
-                attrs.errors = errors
+                this.errors = errors
             }
-            input(type = InputType.text, classes = "form-control") {
+            input {
+                type = InputType.text
+                className = ClassName("form-control")
                 ref = inputRef
                 key = "username"
-                attrs.name = "username"
-                attrs.placeholder = "Username"
-                attrs.disabled = loading
-                attrs.required = true
-                attrs.autoFocus = true
+                name = "username"
+                placeholder = "Username"
+                disabled = loading
+                required = true
+                autoFocus = true
             }
-            div("d-grid") {
-                button(classes = "btn btn-success", type = ButtonType.submit) {
-                    attrs.disabled = submitted
-                    i("fas fa-check") {}
+            div {
+                className = ClassName("d-grid")
+                button {
+                    className = ClassName("btn btn-success")
+                    type = ButtonType.submit
+
+                    disabled = submitted
+                    i {
+                        className = ClassName("fas fa-check")
+                    }
                     +" Continue"
                 }
             }

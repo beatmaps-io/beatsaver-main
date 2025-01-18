@@ -9,20 +9,21 @@ import io.beatmaps.api.ResetRequest
 import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import io.beatmaps.util.fcmemo
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.js.onSubmitFunction
-import org.w3c.dom.HTMLInputElement
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.form
-import react.dom.input
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.input
 import react.router.useNavigate
 import react.router.useParams
 import react.useEffectOnce
 import react.useRef
 import react.useState
+import web.autofill.AutoFillNormalField
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.HTMLInputElement
+import web.html.InputType
 
 val resetPage = fcmemo<Props>("resetPage") {
     val (errors, setErrors) = useState(emptyList<String>())
@@ -38,12 +39,16 @@ val resetPage = fcmemo<Props>("resetPage") {
         setPageTitle("Reset password")
     }
 
-    div("login-form card border-dark") {
-        div("card-header") {
+    div {
+        className = ClassName("login-form card border-dark")
+        div {
+            className = ClassName("card-header")
             +"Reset password"
         }
-        form(classes = "card-body") {
-            attrs.onSubmitFunction = { ev ->
+        form {
+            className = ClassName("card-body")
+
+            onSubmit = { ev ->
                 ev.preventDefault()
                 setLoading(true)
 
@@ -68,26 +73,34 @@ val resetPage = fcmemo<Props>("resetPage") {
                 }
             }
             errors {
-                attrs.errors = errors
+                this.errors = errors
             }
-            input(type = InputType.password, classes = "form-control") {
+            input {
+                type = InputType.password
+                className = ClassName("form-control")
                 key = "password"
                 ref = passwordRef
-                attrs.placeholder = "Password"
-                attrs.required = true
-                attrs.autoFocus = true
-                attrs.attributes["autocomplete"] = "new-password"
+                placeholder = "Password"
+                required = true
+                autoFocus = true
+                autoComplete = AutoFillNormalField.newPassword
             }
-            input(type = InputType.password, classes = "form-control") {
+            input {
+                type = InputType.password
+                className = ClassName("form-control")
                 key = "password2"
                 ref = password2Ref
-                attrs.placeholder = "Repeat Password"
-                attrs.required = true
-                attrs.attributes["autocomplete"] = "new-password"
+                placeholder = "Repeat Password"
+                required = true
+                autoComplete = AutoFillNormalField.newPassword
             }
-            div("d-grid") {
-                button(classes = "btn btn-success", type = ButtonType.submit) {
-                    attrs.disabled = loading
+            div {
+                className = ClassName("d-grid")
+                button {
+                    className = ClassName("btn btn-success")
+                    type = ButtonType.submit
+
+                    disabled = loading
                     +"Reset password"
                 }
             }

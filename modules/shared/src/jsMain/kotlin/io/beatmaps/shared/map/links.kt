@@ -6,13 +6,13 @@ import io.beatmaps.common.api.EMapState
 import io.beatmaps.previewBaseUrl
 import io.beatmaps.shared.modalContext
 import io.beatmaps.util.fcmemo
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
 import react.Props
-import react.dom.a
-import react.dom.i
-import react.dom.span
-import react.useContext
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.span
+import react.use
+import web.cssom.ClassName
+import web.window.WindowTarget
 
 external interface LinksProps : Props {
     var map: MapDetail
@@ -21,14 +21,14 @@ external interface LinksProps : Props {
 }
 
 val links = fcmemo<LinksProps>("links") { props ->
-    val modal = useContext(modalContext)
+    val modal = use(modalContext)
 
     copyBsr {
-        attrs.map = props.map
+        map = props.map
     }
     if (props.limited != true) {
         copyEmbed {
-            attrs.map = props.map
+            map = props.map
         }
     }
     val version = props.version
@@ -39,12 +39,13 @@ val links = fcmemo<LinksProps>("links") { props ->
     } else {
         "#"
     }
-    a(altLink) {
+    a {
+        href = altLink
         val text = "Preview"
-        attrs.title = text
-        attrs.attributes["aria-label"] = text
-        attrs.target = "_top"
-        attrs.onClickFunction = {
+        title = text
+        ariaLabel = text
+        target = WindowTarget._top
+        onClick = {
             if (modal?.current != null) it.preventDefault()
 
             if (props.version?.state == EMapState.Published) {
@@ -55,18 +56,22 @@ val links = fcmemo<LinksProps>("links") { props ->
                 }
             }
         }
-        span("dd-text") { +text }
-        i("fas fa-play text-info") {
-            attrs.attributes["aria-hidden"] = "true"
+        span {
+            className = ClassName("dd-text")
+            +text
+        }
+        i {
+            className = ClassName("fas fa-play text-info")
+            ariaHidden = true
         }
     }
     oneclick {
-        attrs.mapId = props.map.id
+        mapId = props.map.id
     }
     props.version?.let { v ->
         downloadZip {
-            attrs.map = props.map
-            attrs.version = v
+            map = props.map
+            this.version = v
         }
     }
 }

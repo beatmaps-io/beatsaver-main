@@ -29,8 +29,7 @@ import org.litote.kmongo.getCollection
 import org.litote.kmongo.setValue
 import java.util.logging.Logger
 import kotlin.reflect.KProperty1
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
+import kotlin.time.Duration.Companion.seconds
 
 val mongoHost = System.getenv("MONGO_HOST") ?: ""
 val mongoPort = System.getenv("MONGO_PORT") ?: "27017"
@@ -127,7 +126,7 @@ class MongoSessionStorage(private val collection: MongoCollection<MongoSession>)
     private fun writeLocal(id: String, value: Session, ttl: Long = 7 * 24 * 3600L) {
         collection.replaceOne(
             MongoSession::id eq id,
-            MongoSession(id, value, Clock.System.now().plus(ttl.toDuration(DurationUnit.SECONDS))),
+            MongoSession(id, value, Clock.System.now().plus(ttl.seconds)),
             ReplaceOptions().upsert(true)
         )
     }

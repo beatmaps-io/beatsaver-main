@@ -8,15 +8,14 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.shared.ModalButton
 import io.beatmaps.shared.ModalCallbacks
 import io.beatmaps.shared.ModalData
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.RefObject
-import react.dom.a
-import react.dom.i
-import react.dom.p
-import react.dom.span
-import react.fc
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
+import web.cssom.ClassName
 
 external interface CollaboratorLeaveProps : Props {
     var map: MapDetail
@@ -25,12 +24,14 @@ external interface CollaboratorLeaveProps : Props {
     var modal: RefObject<ModalCallbacks>?
 }
 
-val collaboratorLeave = fc<CollaboratorLeaveProps>("collaboratorLeave") { props ->
-    a("#") {
+val collaboratorLeave = fcmemo<CollaboratorLeaveProps>("collaboratorLeave") { props ->
+    a {
+        href = "#"
+
         val title = "Leave collaboration"
-        attrs.title = title
-        attrs.attributes["aria-label"] = title
-        attrs.onClickFunction = {
+        this.title = title
+        ariaLabel = title
+        onClick = {
             it.preventDefault()
 
             props.modal?.current?.showDialog?.invoke(
@@ -57,7 +58,12 @@ val collaboratorLeave = fc<CollaboratorLeaveProps>("collaboratorLeave") { props 
                 )
             )
         }
-        span("dd-text") { +title }
-        i("fas fa-users-slash text-danger-light") { }
+        span {
+            className = ClassName("dd-text")
+            +title
+        }
+        i {
+            className = ClassName("fas fa-users-slash text-danger-light")
+        }
     }
 }

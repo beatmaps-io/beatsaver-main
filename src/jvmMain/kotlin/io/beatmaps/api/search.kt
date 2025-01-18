@@ -69,11 +69,10 @@ import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.logging.Logger
-import kotlin.time.DurationUnit
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
-import kotlin.time.toDuration
 
-private val searchThreshold = (System.getenv("SEARCH_THRESHOLD")?.toIntOrNull() ?: 10).toDuration(DurationUnit.SECONDS)
+private val searchThreshold = (System.getenv("SEARCH_THRESHOLD")?.toIntOrNull() ?: 10).seconds
 private val searchLogger = Logger.getLogger("bmio.Search")
 
 @Location("/api")

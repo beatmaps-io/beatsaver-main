@@ -138,8 +138,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Base64
 import java.util.Date
 import kotlin.time.Duration
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.minutes
 
 fun JwtBuilder.setExpiration(duration: Duration): JwtBuilder = setExpiration(Date.from(Clock.System.now().plus(duration).toJavaInstant()))
 fun parseJwtUntrusted(jwt: String): Jwt<Header<*>, Claims> =
@@ -491,7 +491,7 @@ fun Route.userRoute(client: HttpClient) {
                         // Otherwise the email was a duplicate, tell the user via email so we don't reveal which emails have been registered already.
                         newUserId.first?.let {
                             val jwt = Jwts.builder()
-                                .setExpiration(30.toDuration(DurationUnit.DAYS))
+                                .setExpiration(30.days)
                                 .setSubject(it.value.toString())
                                 .claim("action", "register")
                                 .signWith(UserCrypto.key())
@@ -539,7 +539,7 @@ fun Route.userRoute(client: HttpClient) {
                     }.firstOrNull()?.let { UserDao.wrapRow(it) }
                 }?.let { user ->
                     val jwt = Jwts.builder()
-                        .setExpiration(20.toDuration(DurationUnit.MINUTES))
+                        .setExpiration(20.minutes)
                         .setSubject(user.id.toString())
                         .claim("action", "reset")
                         .signWith(UserCrypto.keyForUser(user))
@@ -693,11 +693,11 @@ fun Route.userRoute(client: HttpClient) {
                             (User.id eq sess.userId)
                         }.firstOrNull()?.let { UserDao.wrapRow(it) }
                     }?.let { user ->
-                        if (user.emailChangedAt.toKotlinInstant() > Clock.System.now().minus(10.toDuration(DurationUnit.DAYS))) {
+                        if (user.emailChangedAt.toKotlinInstant() > Clock.System.now().minus(10.days)) {
                             ActionResponse.error("You can only change email once every 10 days")
                         } else {
                             val jwt = Jwts.builder()
-                                .setExpiration(20.toDuration(DurationUnit.MINUTES))
+                                .setExpiration(20.minutes)
                                 .setSubject(user.id.toString())
                                 .claim("email", req.email)
                                 .claim("action", "email")
@@ -726,7 +726,7 @@ fun Route.userRoute(client: HttpClient) {
     fun PipelineContext<*, ApplicationCall>.sendReclaimMail(user: UserDao) =
         user.email?.let {
             val jwt = Jwts.builder()
-                .setExpiration(7.toDuration(DurationUnit.DAYS))
+                .setExpiration(7.days)
                 .setSubject(user.id.toString())
                 .claim("email", user.email)
                 .claim("action", "reclaim")
@@ -764,7 +764,7 @@ fun Route.userRoute(client: HttpClient) {
                         if (user.email == newEmail) {
                             // Ignore if this is a re-do
                             ActionResponse.success()
-                        } else if (!isReclaim && user.emailChangedAt.toKotlinInstant() > Clock.System.now().minus(10.toDuration(DurationUnit.DAYS))) {
+                        } else if (!isReclaim && user.emailChangedAt.toKotlinInstant() > Clock.System.now().minus(10.days)) {
                             ActionResponse.error("You can only change email once every 10 days")
                         } else if (isReclaim || user.password?.let { curPw -> Bcrypt.verify(req.password, curPw.toByteArray()) } == true) {
                             // If the jwt is valid we can change the users email

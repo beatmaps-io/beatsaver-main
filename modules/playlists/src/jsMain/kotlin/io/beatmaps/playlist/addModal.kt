@@ -1,24 +1,21 @@
 package io.beatmaps.playlist
 
-import external.reactFor
 import external.routeLink
 import io.beatmaps.api.InPlaylist
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLInputElement
+import io.beatmaps.util.fcmemo
 import react.Props
-import react.dom.div
-import react.dom.input
-import react.dom.label
-import react.fc
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
+import web.cssom.ClassName
+import web.html.InputType
 
 external interface AddModalProps : Props {
     var changes: MutableMap<Int, Boolean>
     var inPlaylists: Array<InPlaylist>
 }
 
-val addModal = fc<AddModalProps>("addModal") { props ->
+val addModal = fcmemo<AddModalProps>("addModal") { props ->
     if (props.inPlaylists.isEmpty()) {
         div {
             +"You don't have any playlists yet!"
@@ -28,13 +25,16 @@ val addModal = fc<AddModalProps>("addModal") { props ->
         }
     }
     props.inPlaylists.map { ip ->
-        div("form-check mb-2") {
+        div {
+            className = ClassName("form-check mb-2")
             val id = "in-playlist-${ip.playlist.playlistId}"
-            input(InputType.checkBox, classes = "form-check-input") {
-                attrs.id = id
-                attrs.defaultChecked = ip.inPlaylist
-                attrs.onChangeFunction = {
-                    val current = (it.currentTarget as HTMLInputElement).checked
+            input {
+                type = InputType.checkbox
+                className = ClassName("form-check-input")
+                this.id = id
+                defaultChecked = ip.inPlaylist
+                onChange = {
+                    val current = it.currentTarget.checked
 
                     if (ip.inPlaylist == current) {
                         props.changes.remove(ip.playlist.playlistId)
@@ -43,8 +43,9 @@ val addModal = fc<AddModalProps>("addModal") { props ->
                     }
                 }
             }
-            label("w-100 form-check-label") {
-                attrs.reactFor = id
+            label {
+                className = ClassName("w-100 form-check-label")
+                htmlFor = id
                 +ip.playlist.name
             }
         }

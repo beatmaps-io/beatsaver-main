@@ -7,18 +7,17 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.PlaylistMapRequest
 import io.beatmaps.index.beatmapInfo
 import io.beatmaps.util.fcmemo
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.title
-import org.w3c.dom.Audio
-import react.MutableRefObject
 import react.Props
-import react.dom.a
-import react.dom.div
-import react.dom.i
+import react.RefObject
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import web.cssom.ClassName
+import web.html.Audio
 
 external interface PlaylistMapEditableProps : Props {
     var obj: MapDetail
-    var audio: MutableRefObject<Audio>
+    var audio: RefObject<Audio>
     var playlistKey: Int
     var removeMap: (() -> Unit)?
 }
@@ -33,23 +32,31 @@ var playlistMapEditable = fcmemo<PlaylistMapEditableProps>("playlistMapEditable"
         props.removeMap?.invoke()
     }
 
-    div("playlist-map") {
-        i("fas fa-grip-lines-vertical") { }
-        beatmapInfo {
-            attrs.obj = props.obj
-            attrs.version = props.obj.publishedVersion()
-            attrs.audio = props.audio
+    div {
+        className = ClassName("playlist-map")
+        i {
+            className = ClassName("fas fa-grip-lines-vertical")
         }
-        div("delete") {
-            a("#", classes = "btn btn-danger") {
-                attrs.onClickFunction = {
+        beatmapInfo {
+            obj = props.obj
+            version = props.obj.publishedVersion()
+            audio = props.audio
+        }
+        div {
+            className = ClassName("delete")
+            a {
+                href = "#"
+                className = ClassName("btn btn-danger")
+                onClick = {
                     it.preventDefault()
                     remove()
                 }
                 val title = "Remove from playlist"
-                attrs.title = title
-                attrs.attributes["aria-label"] = title
-                i("fa fa-times") { }
+                this.title = title
+                ariaLabel = title
+                i {
+                    className = ClassName("fa fa-times")
+                }
             }
         }
     }

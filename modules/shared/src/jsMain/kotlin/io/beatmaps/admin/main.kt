@@ -2,15 +2,15 @@ package io.beatmaps.admin
 
 import external.component
 import js.import.importAsync
-import react.ComponentClass
+import react.ComponentType
 import react.ExoticComponent
 import react.Props
 
 external interface AdminModule {
-    val modLog: ComponentClass<Props>
-    val modReview: ComponentClass<ModReviewProps>
-    val issueList: ComponentClass<Props>
-    val adminAccount: ComponentClass<AdminAccountComponentProps>
+    val modLog: ComponentType<Props>
+    val modReview: ComponentType<ModReviewProps>
+    val issueList: ComponentType<Props>
+    val adminAccount: ComponentType<AdminAccountComponentProps>
 }
 
 data class AdminExotics(

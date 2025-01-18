@@ -3,8 +3,9 @@ package io.beatmaps.shared.map
 import io.beatmaps.api.MapDetail
 import io.beatmaps.util.fcmemo
 import react.Props
-import react.dom.img
-import react.dom.span
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.span
+import web.cssom.ClassName
 
 external interface RankedStatusProps : Props {
     var map: MapDetail
@@ -21,10 +22,13 @@ val rankedStatus = fcmemo<RankedStatusProps>("rankedStatus") { props ->
 
     criteria.forEach {
         if (it.second || it.third) {
-            span("ranked-status ${it.first.lowercase()}") {
-                img(it.first, "/static/${it.first.lowercase()}.svg") {
-                    attrs.width = "16"
-                    attrs.height = "16"
+            span {
+                className = ClassName("ranked-status ${it.first.lowercase()}")
+                img {
+                    alt = it.first
+                    src = "/static/${it.first.lowercase()}.svg"
+                    width = 16.0
+                    height = 16.0
                 }
                 +(if (it.second) "Ranked" else "Qualified")
             }

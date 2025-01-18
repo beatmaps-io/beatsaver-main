@@ -1,7 +1,7 @@
 package io.beatmaps.user
 
-import org.w3c.dom.HTMLDivElement
 import react.Props
+import web.html.HTMLDivElement
 
 external interface FollowListProps : Props {
     var scrollParent: HTMLDivElement?

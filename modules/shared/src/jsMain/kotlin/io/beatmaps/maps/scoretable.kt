@@ -10,27 +10,29 @@ import io.beatmaps.api.LeaderboardScore
 import io.beatmaps.api.LeaderboardType
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.fixedStr
+import io.beatmaps.util.fcmemo
 import js.objects.jso
-import kotlinx.browser.window
-import kotlinx.html.ThScope
-import kotlinx.html.js.onScrollFunction
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.events.Event
 import react.Props
 import react.RefObject
-import react.dom.a
-import react.dom.div
-import react.dom.img
-import react.dom.table
-import react.dom.tbody
-import react.dom.th
-import react.dom.thead
-import react.dom.tr
-import react.fc
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.table
+import react.dom.html.ReactHTML.tbody
+import react.dom.html.ReactHTML.th
+import react.dom.html.ReactHTML.thead
+import react.dom.html.ReactHTML.tr
 import react.useEffectOnceWithCleanup
 import react.useEffectWithCleanup
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.events.Event
+import web.events.addEventListener
+import web.events.removeEventListener
+import web.html.HTMLElement
+import web.window.WindowTarget
+import web.window.window
 
 external interface ScoreTableProps : Props {
     var mapKey: String
@@ -49,7 +51,7 @@ fun RefObject<ScoreTableRef>.update(block: ScoreTableRef.() -> Unit) = current?.
     block(it)
 }
 
-val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
+val scoreTable = fcmemo<ScoreTableProps>("scoreTable") { props ->
     val (uid, setUid) = useState<String?>(null)
     val state = useRef<ScoreTableRef>(jso())
     val (scores, setScores) = useState(listOf<LeaderboardScore>())
@@ -106,7 +108,7 @@ val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
             }
         }
 
-    val handleScroll = { _: Event ->
+    val handleScroll = { _: Event? ->
         val trigger = 100
         if (myRef.current != null) {
             val clientHeight = myRef.current?.clientHeight ?: 0
@@ -124,9 +126,9 @@ val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
     }
 
     useEffectOnceWithCleanup {
-        window.addEventListener("scroll", handleScroll)
+        window.addEventListener(Event.SCROLL, handleScroll)
         onCleanup {
-            window.removeEventListener("scroll", handleScroll)
+            window.removeEventListener(Event.SCROLL, handleScroll)
         }
     }
 
@@ -149,20 +151,46 @@ val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
         }
     }
 
-    div("scores") {
-        table("table table-striped table-dark") {
+    div {
+        className = ClassName("scores")
+        table {
+            className = ClassName("table table-striped table-dark")
             thead {
                 tr {
-                    th(scope = ThScope.col) { +"#" }
-                    th(scope = ThScope.col) { +"Player" }
-                    th(scope = ThScope.col) { +"Score" }
-                    th(scope = ThScope.col) { +"Mods" }
-                    th(scope = ThScope.col) { +"%" }
-                    th(scope = ThScope.col) { +"PP" }
-                    th(scope = ThScope.col) {
+                    th {
+                        scope = "col"
+                        +"#"
+                    }
+                    th {
+                        scope = "col"
+                        +"Player"
+                    }
+                    th {
+                        scope = "col"
+                        +"Score"
+                    }
+                    th {
+                        scope = "col"
+                        +"Mods"
+                    }
+                    th {
+                        scope = "col"
+                        +"%"
+                    }
+                    th {
+                        scope = "col"
+                        +"PP"
+                    }
+                    th {
+                        scope = "col"
                         uid?.let { uid1 ->
-                            a("${props.type.url}$uid1", "_blank") {
-                                img(props.type.name, src = "/static/${props.type.name.lowercase()}.svg") { }
+                            a {
+                                href = "${props.type.url}$uid1"
+                                target = WindowTarget._blank
+                                img {
+                                    alt = props.type.name
+                                    src = "/static/${props.type.name.lowercase()}.svg"
+                                }
                             }
                         }
                     }
@@ -170,20 +198,22 @@ val scoreTable = fc<ScoreTableProps>("scoreTable") { props ->
             }
             tbody {
                 ref = myRef
-                attrs.onScrollFunction = handleScroll
+                onScroll = {
+                    handleScroll(null)
+                }
                 scores.forEachIndexed { idx, it ->
                     val maxScore = props.selected?.maxScore ?: 0
                     val accuracy = it.accuracy ?: (it.score / maxScore.toFloat())
                     score {
-                        attrs.key = idx.toString()
-                        attrs.position = idx + 1
-                        attrs.playerId = it.playerId
-                        attrs.name = it.name
-                        attrs.pp = it.pp
-                        attrs.score = it.score
-                        attrs.scoreColor = scoreColor(accuracy)
-                        attrs.mods = it.mods
-                        attrs.percentage = (accuracy * 100f).fixedStr(2) + "%"
+                        key = idx.toString()
+                        position = idx + 1
+                        playerId = it.playerId
+                        name = it.name
+                        pp = it.pp
+                        score = it.score
+                        scoreColor = scoreColor(accuracy)
+                        mods = it.mods
+                        percentage = (accuracy * 100f).fixedStr(2) + "%"
                     }
                 }
             }

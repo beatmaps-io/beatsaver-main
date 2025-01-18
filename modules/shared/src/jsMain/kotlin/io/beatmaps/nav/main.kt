@@ -1,14 +1,13 @@
 package io.beatmaps.nav
 
-import kotlinx.browser.document
-import kotlinx.browser.window
-import kotlinx.dom.addClass
-import kotlinx.dom.hasClass
-import kotlinx.dom.removeClass
-import org.w3c.dom.HTMLButtonElement
-import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.asList
+import js.array.asList
+import web.dom.document
+import web.events.Event
+import web.events.EventHandler
+import web.html.HTMLButtonElement
+import web.html.HTMLDivElement
+import web.html.HTMLElement
+import web.timers.setTimeout
 
 data class DropDown(val menu: HTMLElement, val button: HTMLElement, var shouldClose: Boolean = false)
 
@@ -18,12 +17,12 @@ fun manageNav() {
 
     if (navMenu == null || navButton == null) return
 
-    navButton.onclick = {
+    navButton.onclick = EventHandler { it: Event ->
         it.preventDefault()
-        val expanding = !navMenu.hasClass("show")
+        val expanding = !navMenu.classList.contains("show")
 
         if (expanding) {
-            navMenu.addClass("collapsing")
+            navMenu.classList.add("collapsing")
         }
 
         val oldHeight = if (expanding) 0 else navMenu.scrollHeight
@@ -31,21 +30,21 @@ fun manageNav() {
         // Set old height -> change classes -> set new height -> change classes
 
         navMenu.style.height = "${oldHeight}px"
-        window.setTimeout(
+        setTimeout(
             {
-                navMenu.addClass("collapsing")
-                navMenu.removeClass("collapse", "show")
+                navMenu.classList.add("collapsing")
+                navMenu.classList.remove("collapse", "show")
 
                 val newHeight = if (expanding) navMenu.scrollHeight else 0
                 navMenu.style.height = "${newHeight}px"
 
-                window.setTimeout(
+                setTimeout(
                     {
-                        navMenu.addClass("collapse")
-                        navMenu.removeClass("collapsing")
+                        navMenu.classList.add("collapse")
+                        navMenu.classList.remove("collapsing")
                         navMenu.style.height = ""
                         if (expanding) {
-                            navMenu.addClass("show")
+                            navMenu.classList.add("show")
                         }
                     },
                     500
@@ -59,34 +58,33 @@ fun manageNav() {
     val dropDownInfo = dropdowns.asList().map {
         val childList = it.children.asList()
         val dropdown = DropDown(
-            childList.find { child -> child.hasClass("dropdown-menu") } as HTMLElement,
-            childList.find { child -> child.hasClass("dropdown-toggle") } as HTMLElement
+            childList.find { child -> child.classList.contains("dropdown-menu") } as HTMLElement,
+            childList.find { child -> child.classList.contains("dropdown-toggle") } as HTMLElement
         )
 
-        dropdown.button.onblur = {
-            dropdown.shouldClose = dropdown.menu.hasClass("show")
-            true
+        dropdown.button.onblur = EventHandler {
+            dropdown.shouldClose = dropdown.menu.classList.contains("show")
         }
 
-        dropdown.button.onclick = { e ->
+        dropdown.button.onclick = EventHandler { e ->
             e.preventDefault()
-            if (dropdown.menu.hasClass("show")) {
-                dropdown.menu.removeClass("show")
-                dropdown.button.removeClass("show")
+            if (dropdown.menu.classList.contains("show")) {
+                dropdown.menu.classList.remove("show")
+                dropdown.button.classList.remove("show")
             } else {
-                dropdown.menu.addClass("show")
-                dropdown.button.addClass("show")
+                dropdown.menu.classList.add("show")
+                dropdown.button.classList.add("show")
             }
         }
 
         dropdown
     }
 
-    document.onmouseup = {
+    document.onmouseup = EventHandler {
         dropDownInfo.forEach {
             if (it.shouldClose) {
-                it.menu.removeClass("show")
-                it.button.removeClass("show")
+                it.menu.classList.remove("show")
+                it.button.classList.remove("show")
             }
         }
     }

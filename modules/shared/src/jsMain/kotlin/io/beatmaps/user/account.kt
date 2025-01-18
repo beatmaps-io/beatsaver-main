@@ -4,7 +4,6 @@ import external.Axios
 import external.axiosDelete
 import external.axiosGet
 import external.generateConfig
-import external.reactFor
 import io.beatmaps.Config
 import io.beatmaps.api.AccountDetailReq
 import io.beatmaps.api.AccountType
@@ -24,33 +23,30 @@ import io.beatmaps.upload.UploadRequestConfig
 import io.beatmaps.user.account.accountEmail
 import io.beatmaps.user.account.changePassword
 import io.beatmaps.user.account.manageSessions
-import kotlinx.html.ButtonType
-import kotlinx.html.FormMethod
-import kotlinx.html.InputType
-import kotlinx.html.hidden
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
-import kotlinx.html.js.onSubmitFunction
-import kotlinx.html.role
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.HTMLInputElement
-import org.w3c.files.get
-import org.w3c.xhr.FormData
+import io.beatmaps.util.fcmemo
+import io.beatmaps.util.form
 import react.Props
-import react.dom.a
-import react.dom.button
-import react.dom.div
-import react.dom.form
-import react.dom.h5
-import react.dom.hr
-import react.dom.input
-import react.dom.label
-import react.fc
+import react.dom.aria.AriaRole
+import react.dom.html.ReactHTML.a
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.h5
+import react.dom.html.ReactHTML.hr
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
 import react.useCallback
 import react.useEffect
 import react.useRef
 import react.useState
+import web.cssom.Auto.Companion.auto
+import web.cssom.ClassName
+import web.form.FormData
+import web.form.FormMethod
+import web.html.ButtonType
+import web.html.HTMLElement
+import web.html.HTMLInputElement
+import web.html.InputType
 import kotlin.js.Promise
 
 external interface AccountComponentProps : Props {
@@ -58,7 +54,7 @@ external interface AccountComponentProps : Props {
     var onUpdate: () -> Unit
 }
 
-val accountTab = fc<AccountComponentProps>("accountTab") { props ->
+val accountTab = fcmemo<AccountComponentProps>("accountTab") { props ->
     val (username, setUsername) = useState(props.userDetail.name)
     val (usernameErrors, setUsernameErrors) = useState(emptyList<String>())
     val (userLoading, setUserLoading) = useState(false)
@@ -101,37 +97,48 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
         }) { false }
 
     // Having 2 forms confuses password managers, only the password section needs to invoke them
-    div(classes = "user-form") {
-        h5("mt-5") {
+    div {
+        className = ClassName("user-form")
+        h5 {
+            className = ClassName("mt-5")
             +"Account details"
         }
-        hr("mt-2") {}
+        hr {
+            className = ClassName("mt-2")
+        }
         if (props.userDetail.type != AccountType.DISCORD) {
             accountEmail {
-                attrs.userDetail = props.userDetail
-                attrs.captchaRef = captchaRef
+                userDetail = props.userDetail
+                this.captchaRef = captchaRef
             }
         }
-        div("mb-3") {
-            attrs.id = "change-username"
+        div {
+            className = ClassName("mb-3")
+            id = "change-username"
             errors {
-                attrs.errors = usernameErrors
+                errors = usernameErrors
             }
-            label("form-label") {
-                attrs.reactFor = "name"
+            label {
+                className = ClassName("form-label")
+                htmlFor = "name"
                 +"Username"
             }
-            input(InputType.text, classes = "form-control") {
+            input {
                 key = "username"
-                attrs.id = "name"
-                attrs.value = username
-                attrs.onChangeFunction = {
-                    setUsername((it.target as HTMLInputElement).value)
+                type = InputType.text
+                className = ClassName("form-control")
+                id = "name"
+                value = username
+                onChange = {
+                    setUsername(it.target.value)
                 }
             }
-            div("d-grid") {
-                button(classes = "btn btn-success", type = ButtonType.submit) {
-                    attrs.onClickFunction = { ev ->
+            div {
+                className = ClassName("d-grid")
+                button {
+                    className = ClassName("btn btn-success")
+                    type = ButtonType.submit
+                    onClick = { ev ->
                         ev.preventDefault()
 
                         if (props.userDetail.name == username) {
@@ -154,34 +161,36 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
                             }
                         }
                     }
-                    attrs.disabled = userLoading
+                    disabled = userLoading
                     +"Change username"
                 }
             }
         }
         errors {
-            attrs.errors = descriptionErrors
+            errors = descriptionErrors
         }
-        div("mb-3") {
-            label("form-label") {
-                attrs.reactFor = "description"
+        div {
+            className = ClassName("mb-3")
+            label {
+                className = ClassName("form-label")
+                htmlFor = "description"
                 +"Description"
             }
             editableText {
-                attrs.editing = true
-                attrs.rows = 5
-                attrs.btnClass = "btn-success"
-                attrs.flex = "auto"
-                attrs.text = props.userDetail.description ?: ""
-                attrs.buttonText = "Change description"
-                attrs.maxLength = UserConstants.MAX_DESCRIPTION_LENGTH
-                attrs.onError = {
+                editing = true
+                rows = 5
+                btnClass = "btn-success"
+                flex = auto
+                text = props.userDetail.description ?: ""
+                buttonText = "Change description"
+                maxLength = UserConstants.MAX_DESCRIPTION_LENGTH
+                onError = {
                     setDescriptionErrors(it)
                 }
-                attrs.stopEditing = {
+                stopEditing = {
                     props.onUpdate()
                 }
-                attrs.saveText = { newDescription ->
+                saveText = { newDescription ->
                     if (props.userDetail.description != newDescription) {
                         Axios.post(
                             "${Config.apibase}/users/description",
@@ -196,21 +205,30 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
         }
     }
     if (props.userDetail.type == AccountType.SIMPLE) {
-        div(classes = "user-form") {
-            h5("mt-5") {
+        div {
+            className = ClassName("user-form")
+            h5 {
+                className = ClassName("mt-5")
                 +"Avatar"
             }
-            hr("mt-2") {}
-            div("mb-3") {
-                input(InputType.file) {
+            hr {
+                className = ClassName("mt-2")
+            }
+            div {
+                className = ClassName("mb-3")
+                input {
                     key = "avatar"
                     ref = avatarRef
-                    attrs.hidden = uploading == true
+                    type = InputType.file
+                    hidden = uploading == true
                 }
-                div("d-grid") {
-                    button(classes = "btn btn-success", type = ButtonType.submit) {
-                        attrs.hidden = uploading == true
-                        attrs.onClickFunction = { ev ->
+                div {
+                    className = ClassName("d-grid")
+                    button {
+                        type = ButtonType.submit
+                        className = ClassName("btn btn-success")
+                        hidden = uploading == true
+                        onClick = { ev ->
                             ev.preventDefault()
 
                             val file = avatarRef.current?.files?.let { it[0] }
@@ -218,7 +236,7 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
                                 setUploading(true)
 
                                 val data = FormData()
-                                data.asDynamic().append("file", file)
+                                data.append("file", file)
 
                                 Axios.post<dynamic>(
                                     "/avatar", data,
@@ -242,10 +260,12 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
                         +"Upload"
                     }
                 }
-                div("progress") {
-                    attrs.hidden = uploading == false
-                    div("progress-bar progress-bar-striped progress-bar-animated bg-info") {
-                        attrs.role = "progressbar"
+                div {
+                    className = ClassName("progress")
+                    hidden = uploading == false
+                    div {
+                        className = ClassName("progress-bar progress-bar-striped progress-bar-animated bg-info")
+                        role = AriaRole.progressbar
                         ref = progressBarInnerRef
                     }
                 }
@@ -254,18 +274,19 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
     }
     if (props.userDetail.type != AccountType.DISCORD) {
         changePassword {
-            attrs.userDetail = props.userDetail
+            userDetail = props.userDetail
         }
     }
     sessions?.let { s ->
         manageSessions {
-            attrs.revokeAllCallback = ::revokeAll
-            attrs.removeSessionCallback = ::removeSessionCallback
-            attrs.sessions = s
+            revokeAllCallback = ::revokeAll
+            removeSessionCallback = ::removeSessionCallback
+            this.sessions = s
         }
     }
-    form(classes = "user-form", action = "/profile", method = FormMethod.post) {
-        attrs.onSubmitFunction = { ev ->
+    form {
+        className = ClassName("user-form")
+        onSubmit = { ev ->
             ev.preventDefault()
             setBlurLoading(true)
             Axios.post<ActionResponse>(
@@ -278,44 +299,59 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
                 setBlurLoading(false)
             }
         }
-        h5("mt-5") {
+        h5 {
+            className = ClassName("mt-5")
             +"NSFW Content"
         }
-        hr("mt-2") {}
-        div("mb-3 d-grid") {
+        hr {
+            className = ClassName("mt-2")
+        }
+        div {
+            className = ClassName("mb-3 d-grid")
             val cb = useCallback { it: Boolean ->
                 setBlur(it)
             }
             toggle {
                 key = "nsfw"
-                attrs.id = "nsfw"
-                attrs.disabled = blurLoading
-                attrs.block = cb
-                attrs.text = "Hide content"
-                attrs.default = props.userDetail.blurnsfw
+                id = "nsfw"
+                disabled = blurLoading
+                block = cb
+                text = "Hide content"
+                default = props.userDetail.blurnsfw
             }
         }
-        div("d-grid") {
-            button(classes = "btn btn-success", type = ButtonType.submit) {
-                attrs.disabled = blurLoading == true
+        div {
+            className = ClassName("d-grid")
+            button {
+                className = ClassName("btn btn-success")
+                type = ButtonType.submit
+                disabled = blurLoading == true
                 +"Save"
             }
         }
     }
     if (props.userDetail.type != AccountType.DISCORD) {
-        form(classes = "user-form", action = "/profile/unlink-discord", method = FormMethod.post) {
-            h5("mt-5") {
+        form("user-form", FormMethod.post, "/profile/unlink-discord") {
+            h5 {
+                className = ClassName("mt-5")
                 +"Discord"
             }
-            hr("mt-2") {}
-            div("mb-3 d-grid") {
+            hr {
+                className = ClassName("mt-2")
+            }
+            div {
+                className = ClassName("mb-3 d-grid")
                 if (props.userDetail.type == AccountType.SIMPLE) {
                     // Can't use form as redirect to external site triggers CSP
-                    a(classes = "btn btn-info", href = "/discord-link") {
+                    a {
+                        className = ClassName("btn btn-info")
+                        href = "/discord-link"
                         +"Link discord"
                     }
                 } else {
-                    button(classes = "btn btn-info", type = ButtonType.submit) {
+                    button {
+                        className = ClassName("btn btn-info")
+                        type = ButtonType.submit
                         +"Unlink discord"
                     }
                 }
@@ -323,19 +359,27 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
         }
     }
 
-    form(classes = "user-form", action = "/profile/unlink-patreon", method = FormMethod.post) {
-        h5("mt-5") {
+    form("user-form", FormMethod.post, "/profile/unlink-patreon") {
+        h5 {
+            className = ClassName("mt-5")
             +"Patreon"
         }
-        hr("mt-2") {}
-        div("mb-3 d-grid") {
+        hr {
+            className = ClassName("mt-2")
+        }
+        div {
+            className = ClassName("mb-3 d-grid")
             if (props.userDetail.patreon == null) {
                 // Can't use form as redirect to external site triggers CSP
-                a(classes = "btn btn-patreon", href = "/patreon") {
+                a {
+                    className = ClassName("btn btn-patreon")
+                    href = "/patreon"
                     +"Link patreon"
                 }
             } else {
-                button(classes = "btn btn-patreon", type = ButtonType.submit) {
+                button {
+                    className = ClassName("btn btn-patreon")
+                    type = ButtonType.submit
                     +"Unlink patreon"
                 }
             }
@@ -344,7 +388,7 @@ val accountTab = fc<AccountComponentProps>("accountTab") { props ->
 
     captcha {
         key = "captcha"
-        attrs.captchaRef = captchaRef
-        attrs.page = "account"
+        this.captchaRef = captchaRef
+        page = "account"
     }
 }

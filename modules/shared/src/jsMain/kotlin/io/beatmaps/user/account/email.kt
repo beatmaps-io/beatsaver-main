@@ -2,35 +2,32 @@ package io.beatmaps.user.account
 
 import external.Axios
 import external.generateConfig
-import external.reactFor
 import io.beatmaps.Config
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.EmailRequest
 import io.beatmaps.api.UserDetail
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.shared.form.errors
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
-import org.w3c.dom.HTMLInputElement
+import io.beatmaps.util.fcmemo
 import react.Props
 import react.RefObject
-import react.dom.button
-import react.dom.div
-import react.dom.input
-import react.dom.label
-import react.fc
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
 import react.useRef
 import react.useState
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.HTMLInputElement
+import web.html.InputType
 
 external interface AccountEmailProps : Props {
     var userDetail: UserDetail
     var captchaRef: RefObject<ICaptchaHandler>
 }
 
-val accountEmail = fc<AccountEmailProps>("accountEmail") { props ->
+val accountEmail = fcmemo<AccountEmailProps>("accountEmail") { props ->
     val (email, setEmail) = useState(props.userDetail.email ?: "")
     val (errors, setErrors) = useState(emptyList<String>())
     val (valid, setValid) = useState(false)
@@ -38,26 +35,33 @@ val accountEmail = fc<AccountEmailProps>("accountEmail") { props ->
     val emailRef = useRef<HTMLInputElement>()
 
     errors {
-        attrs.errors = errors.take(1)
-        attrs.valid = valid
+        this.errors = errors.take(1)
+        this.valid = valid
     }
-    div("mb-3") {
-        label("col-sm-2 col-form-label") {
-            attrs.reactFor = "email"
+    div {
+        className = ClassName("mb-3")
+        label {
+            className = ClassName("col-sm-2 col-form-label")
+            htmlFor = "email"
             +"Email"
         }
-        input(InputType.text, classes = "form-control") {
+        input {
             key = "email"
-            attrs.id = "email"
-            attrs.value = email
-            attrs.onChangeFunction = {
+            type = InputType.text
+            className = ClassName("form-control")
+            id = "email"
+            value = email
+            onChange = {
                 setEmail(emailRef.current?.value ?: "")
             }
             ref = emailRef
         }
-        div("d-grid") {
-            button(classes = "btn btn-success", type = ButtonType.submit) {
-                attrs.onClickFunction = { ev ->
+        div {
+            className = ClassName("d-grid")
+            button {
+                className = ClassName("btn btn-success")
+                type = ButtonType.submit
+                onClick = { ev ->
                     ev.preventDefault()
 
                     if (props.userDetail.email == email) {
@@ -87,7 +91,7 @@ val accountEmail = fc<AccountEmailProps>("accountEmail") { props ->
                         }
                     }
                 }
-                attrs.disabled = loading
+                disabled = loading
                 +"Change email"
             }
         }

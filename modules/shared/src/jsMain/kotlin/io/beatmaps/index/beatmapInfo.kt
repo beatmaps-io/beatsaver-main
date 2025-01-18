@@ -24,19 +24,20 @@ import io.beatmaps.shared.map.uploaderWithInfo
 import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useAutoSize
-import org.w3c.dom.Audio
-import org.w3c.dom.events.Event
 import react.RefObject
 import react.Suspense
-import react.dom.div
-import react.dom.i
-import react.dom.img
-import react.dom.p
-import react.dom.span
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.i
+import react.dom.html.ReactHTML.img
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
+import react.use
 import react.useCallback
-import react.useContext
 import react.useEffect
 import react.useState
+import web.cssom.ClassName
+import web.html.Audio
+import web.html.HTMLDivElement
 
 external interface BeatmapInfoProps : AutoSizeComponentProps<MapDetail> {
     var version: MapVersion?
@@ -44,16 +45,15 @@ external interface BeatmapInfoProps : AutoSizeComponentProps<MapDetail> {
 }
 
 val beatmapInfo = fcmemo<BeatmapInfoProps>("beatmapInfo") { props ->
-    val autoSize = useAutoSize(props, 30)
+    val autoSize = useAutoSize<MapDetail, HTMLDivElement>(props, 30)
     val (bookmarked, setBookmarked) = useState<Boolean?>(null)
-    val userData = useContext(globalContext)
+    val userData = use(globalContext)
 
     useEffect(props.version) {
         setBookmarked(null)
     }
 
-    val bookmarkCb: (Event, Boolean) -> Unit = useCallback(props.obj) { e: Event, bm: Boolean ->
-        e.preventDefault()
+    val bookmarkCb: (Boolean) -> Unit = useCallback(props.obj) { bm: Boolean ->
         setBookmarked(!bm)
 
         Axios.post<String>("${Config.apibase}/bookmark", BookmarkRequest(props.obj?.id, bookmarked = !bm), generateConfig<BookmarkRequest, String>())
@@ -69,94 +69,106 @@ val beatmapInfo = fcmemo<BeatmapInfoProps>("beatmapInfo") { props ->
             )
         }
 
-        div("beatmap") {
+        div {
+            className = ClassName("beatmap")
             autoSize.style(this)
 
             coloredCard {
-                attrs.color = mapAttrs.joinToString(" ") { it.color }
-                attrs.title = mapAttrs.joinToString(" + ") { it.name }
+                color = mapAttrs.joinToString(" ") { it.color }
+                title = mapAttrs.joinToString(" + ") { it.name }
 
                 div {
                     audioPreview {
-                        attrs.nsfw = map.nsfw
-                        attrs.version = props.version
-                        attrs.size = AudioPreviewSize.Small
-                        attrs.audio = props.audio
+                        nsfw = map.nsfw
+                        version = props.version
+                        size = AudioPreviewSize.Small
+                        audio = props.audio
                     }
                     rating {
-                        attrs.up = map.stats.upvotes
-                        attrs.down = map.stats.downvotes
-                        attrs.rating = map.stats.scoreOneDP
+                        up = map.stats.upvotes
+                        down = map.stats.downvotes
+                        rating = map.stats.scoreOneDP
                     }
                 }
-                div("info") {
+                div {
+                    className = ClassName("info")
                     ref = autoSize.divRef
 
                     mapTitle {
-                        attrs.title = map.name
-                        attrs.mapKey = map.id
+                        title = map.name
+                        mapKey = map.id
                     }
                     p {
                         uploaderWithInfo {
-                            attrs.map = map
-                            attrs.version = props.version
+                            this.map = map
+                            version = props.version
                         }
                     }
-                    div("diffs") {
+                    div {
+                        className = ClassName("diffs")
                         diffIcons {
-                            attrs.diffs = props.version?.diffs
+                            diffs = props.version?.diffs
                         }
                     }
-                    div("ranked-statuses") {
+                    div {
+                        className = ClassName("ranked-statuses")
                         rankedStatus {
-                            attrs.map = map
+                            this.map = map
                         }
                     }
                 }
-                div("additional") {
+                div {
+                    className = ClassName("additional")
                     span {
                         +map.id
-                        i("fas fa-key") {
-                            attrs.attributes["aria-hidden"] = "true"
+                        i {
+                            className = ClassName("fas fa-key")
+                            ariaHidden = true
                         }
                     }
                     span {
                         +map.metadata.duration.formatTime()
-                        i("fas fa-clock") {
-                            attrs.attributes["aria-hidden"] = "true"
+                        i {
+                            className = ClassName("fas fa-clock")
+                            ariaHidden = true
                         }
                     }
                     span {
                         +map.metadata.bpm.fixed(2).toString()
-                        img("Metronome", "/static/icons/metronome.svg") {
-                            attrs.width = "12"
-                            attrs.height = "12"
+                        img {
+                            alt = "Metronome"
+                            src = "/static/icons/metronome.svg"
+                            width = 12.0
+                            height = 12.0
                         }
                     }
                     if (userData != null) {
                         Suspense {
                             div {
                                 bookmarkButton {
-                                    attrs.bookmarked = bookmarked ?: (map.bookmarked == true)
-                                    attrs.onClick = bookmarkCb
+                                    this.bookmarked = bookmarked ?: (map.bookmarked == true)
+                                    onClick = bookmarkCb
                                 }
                                 playlists.addTo {
-                                    attrs.map = map
+                                    this.map = map
                                 }
                             }
                         }
                     }
                 }
-                div("links") {
+                div {
+                    className = ClassName("links")
                     links {
-                        attrs.map = map
-                        attrs.version = props.version
-                        attrs.limited = true
+                        this.map = map
+                        version = props.version
+                        limited = true
                     }
                 }
             }
         }
     } ?: run {
-        div("beatmap loading") { }
+        div {
+            className = ClassName("beatmap loading")
+        }
     }
 }

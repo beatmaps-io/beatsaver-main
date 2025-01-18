@@ -1,15 +1,12 @@
 package io.beatmaps.shared.form
 
-import external.reactFor
-import io.beatmaps.util.betterChecked
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
+import io.beatmaps.util.fcmemo
 import react.Props
-import react.dom.div
-import react.dom.input
-import react.dom.label
-import react.fc
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
+import web.cssom.ClassName
+import web.html.InputType
 
 external interface MultipleChoiceProps<T> : Props {
     var name: String
@@ -19,23 +16,26 @@ external interface MultipleChoiceProps<T> : Props {
     var className: String?
 }
 
-val multipleChoice = fc<MultipleChoiceProps<Any?>>("multipleChoice") { props ->
-    div("multiple-choice ${props.className ?: ""}") {
+val multipleChoice = fcmemo<MultipleChoiceProps<Any?>>("multipleChoice") { props ->
+    div {
+        className = ClassName("multiple-choice ${props.className ?: ""}")
         props.choices.forEach { (text, value) ->
             val id = "${props.name}:${text.lowercase()}"
 
-            input(InputType.radio, classes = "form-check-input") {
+            input {
                 key = id
-                attrs.id = id
-                attrs.name = props.name
-                // If you use the checked option react gets upset that the controlled state changes
-                betterChecked(value == props.selectedValue)
-                attrs.onChangeFunction = {
+                type = InputType.radio
+                className = ClassName("form-check-input")
+                this.id = id
+                name = props.name
+                checked = value == props.selectedValue
+                onChange = {
                     props.block?.invoke(value)
                 }
             }
-            label("form-check-label") {
-                attrs.reactFor = id
+            label {
+                className = ClassName("form-check-label")
+                htmlFor = id
                 +text
             }
         }

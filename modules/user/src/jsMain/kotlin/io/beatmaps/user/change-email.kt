@@ -10,23 +10,23 @@ import io.beatmaps.setPageTitle
 import io.beatmaps.shared.form.errors
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.parseJwt
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onSubmitFunction
 import kotlinx.serialization.json.jsonPrimitive
-import org.w3c.dom.HTMLInputElement
 import react.Props
-import react.dom.button
-import react.dom.div
-import react.dom.form
-import react.dom.input
-import react.dom.label
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
 import react.router.useNavigate
 import react.router.useParams
 import react.useEffectOnce
 import react.useRef
 import react.useState
+import web.autofill.AutoFillNormalField
+import web.cssom.ClassName
+import web.html.ButtonType
+import web.html.HTMLInputElement
+import web.html.InputType
 
 val changeEmailPage = fcmemo<Props>("changeEmailPage") {
     val (loading, setLoading) = useState(false)
@@ -41,12 +41,16 @@ val changeEmailPage = fcmemo<Props>("changeEmailPage") {
         setPageTitle("Change Email")
     }
 
-    div("login-form card border-dark") {
-        div("card-header") {
+    div {
+        className = ClassName("login-form card border-dark")
+        div {
+            className = ClassName("card-header")
             +"Change email"
         }
-        form(classes = "card-body pt-2") {
-            attrs.onSubmitFunction = { ev ->
+        form {
+            className = ClassName("card-body pt-2")
+
+            onSubmit = { ev ->
                 ev.preventDefault()
 
                 setLoading(true)
@@ -71,36 +75,46 @@ val changeEmailPage = fcmemo<Props>("changeEmailPage") {
                 }
             }
             errors {
-                attrs.errors = errors
+                this.errors = errors
             }
-            label("form-label float-start mt-2") {
-                attrs.htmlFor = "email"
+            label {
+                className = ClassName("form-label float-start mt-2")
+                htmlFor = "email"
                 +"New email"
             }
-            input(type = InputType.email, classes = "form-control") {
+            input {
+                type = InputType.email
+                className = ClassName("form-control")
                 key = "email"
-                attrs.id = "email"
-                attrs.disabled = true
-                attrs.value = parsedJwt["email"]?.jsonPrimitive?.content ?: ""
+                id = "email"
+                disabled = true
+                value = parsedJwt["email"]?.jsonPrimitive?.content ?: ""
             }
             if (parsedJwt["action"]?.jsonPrimitive?.content != "reclaim") {
-                label("form-label float-start mt-3") {
-                    attrs.htmlFor = "password"
+                label {
+                    className = ClassName("form-label float-start mt-3")
+                    htmlFor = "password"
                     +"Verify password"
                 }
-                input(type = InputType.password, classes = "form-control") {
+                input {
+                    type = InputType.password
+                    className = ClassName("form-control")
                     key = "password"
                     ref = passwordRef
-                    attrs.id = "password"
-                    attrs.placeholder = "************"
-                    attrs.required = true
-                    attrs.autoFocus = true
-                    attrs.attributes["autocomplete"] = "new-password"
+                    id = "password"
+                    placeholder = "************"
+                    required = true
+                    autoFocus = true
+                    autoComplete = AutoFillNormalField.newPassword
                 }
             }
-            div("d-grid") {
-                button(classes = "btn btn-success", type = ButtonType.submit) {
-                    attrs.disabled = loading
+            div {
+                className = ClassName("d-grid")
+                button {
+                    className = ClassName("btn btn-success")
+                    type = ButtonType.submit
+
+                    disabled = loading
                     +"Change email"
                 }
             }
