@@ -118,7 +118,7 @@ fun Iterable<ResultRow>.preHydrate(isAdmin: Boolean) = also {
                         .where {
                             User.id inList rows.filterIsInstance<UserReportData>().map { it.userId }
                         }
-                )
+                ).toList()
             }
 
             EIssueType.PlaylistReport -> {
