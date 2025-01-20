@@ -68,7 +68,7 @@ import react.useEffectWithCleanup
 import react.useRef
 import react.useState
 import web.cssom.ClassName
-import web.cssom.pct
+import web.cssom.number
 import web.dom.document
 import web.events.Event
 import web.events.addEventListener
@@ -559,35 +559,35 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                                                         div {
                                                             className = ClassName("badge-green")
                                                             style = jso {
-                                                                flex = ds.easy.pct
+                                                                flex = number(ds.easy.toDouble())
                                                             }
                                                             title = "${ds.easy}"
                                                         }
                                                         div {
                                                             className = ClassName("badge-blue")
                                                             style = jso {
-                                                                flex = ds.normal.pct
+                                                                flex = number(ds.normal.toDouble())
                                                             }
                                                             title = "${ds.normal}"
                                                         }
                                                         div {
                                                             className = ClassName("badge-hard")
                                                             style = jso {
-                                                                flex = ds.hard.pct
+                                                                flex = number(ds.hard.toDouble())
                                                             }
                                                             title = "${ds.hard}"
                                                         }
                                                         div {
                                                             className = ClassName("badge-expert")
                                                             style = jso {
-                                                                flex = ds.expert.pct
+                                                                flex = number(ds.expert.toDouble())
                                                             }
                                                             title = "${ds.expert}"
                                                         }
                                                         div {
                                                             className = ClassName("badge-purple")
                                                             style = jso {
-                                                                flex = ds.expertPlus.pct
+                                                                flex = number(ds.expertPlus.toDouble())
                                                             }
                                                             title = "${ds.expertPlus}"
                                                         }
