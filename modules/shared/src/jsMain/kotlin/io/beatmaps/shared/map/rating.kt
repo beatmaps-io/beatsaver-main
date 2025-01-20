@@ -6,7 +6,7 @@ import react.Props
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.small
 import web.cssom.ClassName
-import web.cssom.pct
+import web.cssom.number
 import kotlin.math.log
 import kotlin.math.pow
 
@@ -31,19 +31,19 @@ val rating = fcmemo<RatingProps>("rating") {
             div {
                 className = ClassName("u")
                 style = jso {
-                    flex = it.up.pct
+                    flex = number(it.up.toDouble())
                 }
             }
             div {
                 className = ClassName("o")
                 style = jso {
-                    flex = (if (totalVotes < 1) 1 else (uncertainty * totalVotes / (1 - uncertainty))).pct
+                    flex = number(if (totalVotes < 1) 1.0 else (uncertainty * totalVotes / (1 - uncertainty)))
                 }
             }
             div {
                 className = ClassName("d")
                 style = jso {
-                    flex = it.down.pct
+                    flex = number(it.down.toDouble())
                 }
             }
         }
