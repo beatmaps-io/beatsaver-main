@@ -43,6 +43,7 @@ import org.valiktor.constraints.NotBlank
 import org.valiktor.functions.hasSize
 import org.valiktor.functions.isNotBlank
 import org.valiktor.validate
+import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
@@ -94,6 +95,7 @@ fun Route.playlistCreate(client: HttpClient) {
                                 Thumbnails
                                     .of(tmp.toByteArray().inputStream())
                                     .size(s, s)
+                                    .imageType(BufferedImage.TYPE_INT_RGB)
                                     .outputFormat("JPEG")
                                     .outputQuality(0.8)
                                     .toFile(localFile)
@@ -171,6 +173,7 @@ fun Route.playlistCreate(client: HttpClient) {
                         Thumbnails
                             .of(tmp.toByteArray().inputStream())
                             .size(s, s)
+                            .imageType(BufferedImage.TYPE_INT_RGB)
                             .outputFormat("JPEG")
                             .outputQuality(0.8)
                             .toFile(localFile)
