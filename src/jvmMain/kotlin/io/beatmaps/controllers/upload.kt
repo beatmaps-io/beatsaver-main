@@ -62,6 +62,7 @@ import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.OutputStream
@@ -119,6 +120,7 @@ fun Route.uploadController(client: HttpClient) {
                         Thumbnails
                             .of(its)
                             .size(128, 128)
+                            .imageType(BufferedImage.TYPE_INT_RGB)
                             .outputFormat("JPEG")
                             .outputQuality(0.8)
                             .toFile(localFile)
