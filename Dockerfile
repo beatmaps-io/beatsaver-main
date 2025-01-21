@@ -1,7 +1,7 @@
 # For prod. Don't try and build this locally
 FROM debian:trixie-slim AS ffsampled
 RUN apt update && \
-    apt install -y build-essential git maven openjdk-21-jdk doxygen g++-aarch64-linux-gnu zlib1g-dev libbz2-dev && \
+    apt install -y build-essential git maven openjdk-21-jdk-headless doxygen g++-aarch64-linux-gnu zlib1g-dev libbz2-dev && \
     rm -rf /var/lib/apt/lists/*
 RUN git clone https://github.com/hendriks73/ffsampledsp.git /opt/ffsampledsp
 WORKDIR /opt/ffsampledsp
@@ -13,7 +13,8 @@ FROM debian:trixie-slim
 EXPOSE 8080
 
 RUN apt update && \
-    apt install -y openjdk-21-jdk curl ffmpeg && \
+    apt install -y --no-install-recommends \
+        openjdk-21-jdk-headless curl ffmpeg && \
     rm -rf /var/lib/apt/lists/*
 RUN mkdir /app
 
