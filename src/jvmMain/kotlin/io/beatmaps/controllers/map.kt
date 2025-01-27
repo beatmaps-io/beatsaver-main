@@ -144,7 +144,6 @@ fun Route.mapController() {
                             }
                         }
                     }
-                    .limit(1)
                     .complexToBeatmap()
                     .firstOrNull()
                     ?.let { MapDetail.from(it, cdnPrefix()) }
