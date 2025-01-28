@@ -5,9 +5,9 @@ import external.generateConfig
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
-import io.beatmaps.api.FailedUploadResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
+import io.beatmaps.api.UploadResponse
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.captcha.captcha
@@ -23,8 +23,6 @@ import io.beatmaps.shared.form.toggle
 import io.beatmaps.upload.UploadRequestConfig
 import io.beatmaps.util.fcmemo
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromDynamic
 import react.Props
 import react.dom.html.ReactHTML.button
 import react.dom.html.ReactHTML.div
@@ -152,7 +150,7 @@ val editPlaylist = fcmemo<Props>("editPlaylist") { props ->
                             data.asDynamic().append("file", file) // Kotlin doesn't have an equivalent method to this js
                         }
 
-                        Axios.post<dynamic>(
+                        Axios.post<UploadResponse>(
                             Config.apibase + "/playlists" + if (id == null) "/create" else "/id/$id/edit", data,
                             UploadRequestConfig { }
                         ).then { r ->
@@ -160,8 +158,7 @@ val editPlaylist = fcmemo<Props>("editPlaylist") { props ->
                                 history.push("/playlists/${id ?: r.data}")
                             } else {
                                 captchaRef.current?.reset()
-                                val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)
-                                setErrors(failedResponse.errors)
+                                setErrors(r.data.errors)
                                 setLoading(false)
                             }
                         }.catch {

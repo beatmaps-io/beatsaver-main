@@ -40,6 +40,7 @@ data class UserDetail(
     val type: AccountType,
     val email: String? = null,
     val uploadLimit: Int? = null,
+    val vivifyLimit: Int? = null,
     val admin: Boolean? = null,
     val curator: Boolean? = null,
     val seniorCurator: Boolean? = null,
@@ -113,9 +114,10 @@ data class ChangeEmailRequest(val jwt: String, val password: String)
 data class AccountRequest(val currentPassword: String? = null, val password: String? = null, val password2: String? = null)
 
 @Serializable
-data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val curator: Boolean, val seniorCurator: Boolean, val curatorTab: Boolean, val verifiedMapper: Boolean) {
+data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val maxVivifySize: Int, val curator: Boolean, val seniorCurator: Boolean, val curatorTab: Boolean, val verifiedMapper: Boolean) {
     companion object {
         val allowedUploadSizes = arrayOf(0, 15, 30, 50)
+        val allowedVivifySizes = arrayOf(0, 5, 10, 20)
     }
 }
 

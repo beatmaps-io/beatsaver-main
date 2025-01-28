@@ -6,7 +6,7 @@ import io.beatmaps.Config
 import io.beatmaps.Config.dateFormat
 import io.beatmaps.api.UserDetail
 import io.beatmaps.common.fixed
-import io.beatmaps.common.formatTime
+import io.beatmaps.common.util.formatTime
 import io.beatmaps.util.fcmemo
 import kotlinx.datetime.Clock
 import react.Props

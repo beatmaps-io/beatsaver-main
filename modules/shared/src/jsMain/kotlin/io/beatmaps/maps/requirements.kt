@@ -20,7 +20,8 @@ val mapRequirements = fcmemo<MapRequirementsProps>("mapRequirements") { props ->
         "Noodle Extensions" to { it.ne },
         "Mapping Extensions" to { it.me },
         "Chroma" to { it.chroma },
-        "Cinema" to { it.cinema }
+        "Cinema" to { it.cinema },
+        "Vivify" to { it.vivify }
     )
 
     val requirements = requirementConditions.mapNotNull { (name, condition) ->

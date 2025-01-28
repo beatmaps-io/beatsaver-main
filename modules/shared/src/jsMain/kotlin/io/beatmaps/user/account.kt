@@ -12,6 +12,7 @@ import io.beatmaps.api.BlurReq
 import io.beatmaps.api.SessionInfo
 import io.beatmaps.api.SessionRevokeRequest
 import io.beatmaps.api.SessionsData
+import io.beatmaps.api.UploadResponse
 import io.beatmaps.api.UserConstants
 import io.beatmaps.api.UserDetail
 import io.beatmaps.captcha.ICaptchaHandler
@@ -238,7 +239,7 @@ val accountTab = fcmemo<AccountComponentProps>("accountTab") { props ->
                                 val data = FormData()
                                 data.append("file", file)
 
-                                Axios.post<dynamic>(
+                                Axios.post<UploadResponse>(
                                     "/avatar", data,
                                     UploadRequestConfig { progress ->
                                         val v = ((progress.loaded * 100f) / progress.total).toInt()

@@ -41,6 +41,7 @@ fun SearchParams?.toPlaylistConfig() = SearchParamsPlaylist(
     this?.fullSpread,
     this?.me,
     this?.cinema,
+    this?.vivify,
     this?.tags ?: mapOf(),
     environments = this?.environments ?: emptySet()
 )

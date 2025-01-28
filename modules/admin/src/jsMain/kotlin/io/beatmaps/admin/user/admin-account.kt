@@ -39,6 +39,7 @@ import web.html.HTMLTextAreaElement
 
 val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
     val maxUploadRef = useRef<HTMLSelectElement>()
+    val maxVivifyRef = useRef<HTMLSelectElement>()
     val curatorRef = useRef<HTMLInputElement>()
     val seniorCuratorRef = useRef<HTMLInputElement>()
     val curatorTabRef = useRef<HTMLInputElement>()
@@ -50,6 +51,7 @@ val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
     val (success, setSuccess) = useState(false)
     val (errors, setErrors) = useState(emptyList<String>())
     val (uploadLimit, setUploadLimit) = useState(props.userDetail.uploadLimit ?: 1)
+    val (vivifyLimit, setVivifyLimit) = useState(props.userDetail.vivifyLimit ?: 1)
 
     val modal = use(modalContext)
 
@@ -134,6 +136,25 @@ val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
                 }
                 ref = maxUploadRef
             }
+            label {
+                className = ClassName("form-label")
+                htmlFor = "name"
+                +"Max vivify size"
+            }
+            select {
+                className = ClassName("form-select")
+                UserAdminRequest.allowedVivifySizes.forEach {
+                    option {
+                        +"$it"
+                    }
+                }
+
+                value = vivifyLimit.toString()
+                onChange = {
+                    setVivifyLimit(maxVivifyRef.current?.value?.toInt() ?: 15)
+                }
+                ref = maxVivifyRef
+            }
             toggle {
                 key = "curator"
                 toggleRef = curatorRef
@@ -188,6 +209,7 @@ val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
                             UserAdminRequest(
                                 props.userDetail.id,
                                 uploadLimit,
+                                vivifyLimit,
                                 curatorRef.current?.checked ?: false,
                                 seniorCuratorRef.current?.checked ?: false,
                                 curatorTabRef.current?.checked ?: false,

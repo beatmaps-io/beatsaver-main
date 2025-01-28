@@ -12,7 +12,6 @@ import io.beatmaps.shared.search.SearchParamGenerator
 import io.beatmaps.shared.search.generateSearchComponent
 import io.beatmaps.util.buildURL
 import io.beatmaps.util.fcmemo
-import io.beatmaps.util.includeIfNotNull
 import react.Props
 import react.router.useLocation
 import react.router.useNavigate
@@ -62,14 +61,7 @@ val playlistFeed = fcmemo<Props>("playlistFeed") {
         if (searchParamsLocal == null) return@useCallback
 
         with(searchParamsLocal) {
-            buildURL(
-                listOfNotNull(
-                    *queryParams(),
-                    includeIfNotNull(curated, "curated"),
-                    includeIfNotNull(verified, "verified")
-                ),
-                "playlists", row, searchParams, history
-            )
+            buildURL(queryParams().toList(), "playlists", row, searchParams, history)
         }
 
         setSearchParams(searchParamsLocal)

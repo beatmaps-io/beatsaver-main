@@ -11,6 +11,7 @@ import io.beatmaps.api.search.SolrSearchParams
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.MapTagQuery
+import io.beatmaps.common.ModChecker
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EBeatsaberEnvironment
@@ -152,6 +153,7 @@ class SearchApi {
         val characteristics: String? = null,
         val me: Boolean? = null,
         val cinema: Boolean? = null,
+        val vivify: Boolean? = null,
         @Description("Tag query, separated by `,` (and) or `|` (or). Excluded tags are prefixed with `!`.")
         val tags: String? = null,
         @Description("Comma seperated list of environments")
@@ -285,21 +287,19 @@ fun Route.searchRoute() {
                         val mapperIds = followingSubQuery + (searchInfo.userSubQuery?.map { it[User.id].value } ?: listOf())
                         q.apply(BsSolr.mapperIds inList mapperIds)
                     }
-                    .notNull(it.chroma) { o ->
-                        val chromaQuery = (BsSolr.suggestions eq "Chroma") or (BsSolr.requirements eq "Chroma")
-                        if (o) chromaQuery else chromaQuery.not()
-                    }
-                    .notNull(it.noodle) { o ->
-                        val noodleQuery = BsSolr.requirements eq "Noodle Extensions"
-                        if (o) noodleQuery else noodleQuery.not()
-                    }
-                    .notNull(it.me) { o ->
-                        val meQuery = BsSolr.requirements eq "Mapping Extensions"
-                        if (o) meQuery else meQuery.not()
-                    }
-                    .notNull(it.cinema) { o ->
-                        val cinemaQuery = (BsSolr.suggestions eq "Cinema") or (BsSolr.requirements eq "Cinema")
-                        if (o) cinemaQuery else cinemaQuery.not()
+                    .also { q ->
+                        val mods = mapOf(
+                            it.chroma to { ModChecker.chroma() },
+                            it.noodle to { ModChecker.ne() },
+                            it.me to { ModChecker.me() },
+                            it.cinema to { ModChecker.cinema() },
+                            it.vivify to { ModChecker.vivify() }
+                        )
+                        mods.forEach { (t, u) ->
+                            q.notNull(t) { o ->
+                                if (o) u() else u().not()
+                            }
+                        }
                     }
                     .let { q ->
                         BsSolr.addSortArgs(q, it.seed.hashCode(), actualSortOrder)

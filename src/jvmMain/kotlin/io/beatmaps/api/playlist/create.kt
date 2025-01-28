@@ -5,6 +5,7 @@ import io.beatmaps.api.PlaylistApi
 import io.beatmaps.api.PlaylistBasic
 import io.beatmaps.api.PlaylistConstants
 import io.beatmaps.api.PlaylistFull
+import io.beatmaps.api.UploadResponse
 import io.beatmaps.api.from
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
@@ -23,7 +24,6 @@ import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.handleMultipart
 import io.beatmaps.util.requireAuthorization
 import io.ktor.client.HttpClient
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.streamProvider
 import io.ktor.server.application.call
 import io.ktor.server.locations.post
@@ -139,7 +139,7 @@ fun Route.playlistCreate(client: HttpClient) {
                 }
 
                 call.pub("beatmaps", "playlists.$newId.created", null, newId)
-                call.respond(newId)
+                call.respond(UploadResponse(newId.toString()))
             } finally {
                 files.values.forEach { temp ->
                     temp.delete()
@@ -235,7 +235,7 @@ fun Route.playlistCreate(client: HttpClient) {
             }
 
             call.pub("beatmaps", "playlists.${req.id}.updated.detail", null, req.id)
-            call.respond(HttpStatusCode.OK)
+            call.respond(UploadResponse(req.id.toString()))
         }
     }
 }

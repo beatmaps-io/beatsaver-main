@@ -22,6 +22,7 @@ import io.beatmaps.shared.search.CommonParams
 import io.beatmaps.util.encodeURIComponent
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.hashRegex
+import io.beatmaps.util.includeIfNotNull
 import io.beatmaps.util.useAudio
 import io.beatmaps.util.useDidUpdateEffect
 import react.Props
@@ -68,9 +69,26 @@ data class SearchParams(
     val fullSpread: Boolean?,
     val me: Boolean?,
     val cinema: Boolean?,
+    val vivify: Boolean?,
     val tags: MapTagSet,
     val environments: EnvironmentSet
-) : CommonParams()
+) : CommonParams() {
+    override fun queryParams() = super.queryParams() + listOfNotNull(
+        includeIfNotNull(automapper, "automapper"),
+        includeIfNotNull(chroma, "chroma"),
+        includeIfNotNull(noodle, "noodle"),
+        includeIfNotNull(me, "me"),
+        includeIfNotNull(cinema, "cinema"),
+        includeIfNotNull(vivify, "vivify"),
+        includeIfNotNull(ranked, "leaderboard"),
+        includeIfNotNull(curated, "curated"),
+        includeIfNotNull(verified, "verified"),
+        includeIfNotNull(followed, "followed"),
+        includeIfNotNull(fullSpread, "fullSpread"),
+        (if (environments.isNotEmpty()) "&environments=${environments.joinToString(",")}" else null),
+        tags.toQuery().let { tagStr -> (if (tagStr.isNotEmpty()) "&tags=$tagStr" else null) }
+    )
+}
 
 val beatmapTable = fcmemo<BeatmapTableProps>("beatmapTable") { props ->
     val (user, setUser) = useState<UserDetail?>(null)
@@ -115,26 +133,7 @@ val beatmapTable = fcmemo<BeatmapTableProps>("beatmapTable") { props ->
                 (props.fallbackOrder?.let { "&sortOrder=$it" } ?: "")
         } else {
             props.search?.let { search ->
-                val tagStr = search.tags.toQuery()
-
-                "${Config.apibase}/search/${if (config?.v2Search == true) "text" else "v1"}/$page?sortOrder=${search.sortOrder}" +
-                    (if (search.automapper != null) "&automapper=${search.automapper}" else "") +
-                    (if (search.chroma != null) "&chroma=${search.chroma}" else "") +
-                    (if (search.noodle != null) "&noodle=${search.noodle}" else "") +
-                    (if (search.me != null) "&me=${search.me}" else "") +
-                    (if (search.cinema != null) "&cinema=${search.cinema}" else "") +
-                    (if (search.ranked != null) "&leaderboard=${search.ranked}" else "") +
-                    (if (search.curated != null) "&curated=${search.curated}" else "") +
-                    (if (search.verified != null) "&verified=${search.verified}" else "") +
-                    (if (search.followed != null) "&followed=${search.followed}" else "") +
-                    (if (search.fullSpread != null) "&fullSpread=${search.fullSpread}" else "") +
-                    (if (search.search.isNotBlank()) "&q=${encodeURIComponent(search.search)}" else "") +
-                    (if (search.maxNps != null) "&maxNps=${search.maxNps}" else "") +
-                    (if (search.minNps != null) "&minNps=${search.minNps}" else "") +
-                    (if (search.from != null) "&from=${search.from}" else "") +
-                    (if (search.to != null) "&to=${search.to}" else "") +
-                    (if (tagStr.isNotEmpty()) "&tags=$tagStr" else "") +
-                    (if (search.environments.isNotEmpty()) "&environments=${search.environments.joinToString(",")}" else "")
+                "${Config.apibase}/search/${if (config?.v2Search == true) "text" else "v1"}/$page?" + search.queryParams().joinToString("&")
             } ?: ""
         }
 

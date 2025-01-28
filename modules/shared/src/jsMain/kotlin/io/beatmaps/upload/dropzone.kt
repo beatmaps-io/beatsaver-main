@@ -5,13 +5,11 @@ import external.AxiosResponse
 import external.DropInfo
 import external.DropzoneProps
 import io.beatmaps.History
-import io.beatmaps.api.FailedUploadResponse
+import io.beatmaps.api.UploadResponse
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.util.fcmemo
 import js.objects.jso
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromDynamic
 import react.Props
 import react.Ref
 import react.RefObject
@@ -43,7 +41,7 @@ fun DropzoneProps.simple(
             data.append("recaptcha", it)
             data.append("file", file[0])
 
-            Axios.post<dynamic>(
+            Axios.post<UploadResponse>(
                 "/upload", data,
                 UploadRequestConfig { progress ->
                     val v = ((progress.loaded * 100f) / progress.total).toInt()
@@ -54,7 +52,7 @@ fun DropzoneProps.simple(
                     if (successBlock != null) {
                         successBlock(r)
                     } else {
-                        history.push("/maps/${r.data}")
+                        history.push("/maps/${r.data.mapId}")
                     }
                 } else if (r.status == 401) {
                     errorsBlock(listOf(UploadValidationInfo("Not logged in")))
@@ -62,8 +60,7 @@ fun DropzoneProps.simple(
                     errorsBlock(listOf(UploadValidationInfo("Zip file too big")))
                 } else {
                     captchaRef.current?.reset()
-                    val failedResponse = Json.decodeFromDynamic<FailedUploadResponse>(r.data)
-                    errorsBlock(failedResponse.errors)
+                    errorsBlock(r.data.errors)
                 }
             }) {
                 errorsBlock(listOf(UploadValidationInfo("Internal server error")))

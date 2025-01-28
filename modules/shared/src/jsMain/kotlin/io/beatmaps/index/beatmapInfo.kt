@@ -8,7 +8,7 @@ import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
 import io.beatmaps.common.api.MapAttr
 import io.beatmaps.common.fixed
-import io.beatmaps.common.formatTime
+import io.beatmaps.common.util.formatTime
 import io.beatmaps.globalContext
 import io.beatmaps.playlist.playlists
 import io.beatmaps.shared.AudioPreviewSize

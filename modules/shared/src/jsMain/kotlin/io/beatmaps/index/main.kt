@@ -27,7 +27,6 @@ import io.beatmaps.shared.search.tags
 import io.beatmaps.stateNavOptions
 import io.beatmaps.util.buildURL
 import io.beatmaps.util.fcmemo
-import io.beatmaps.util.includeIfNotNull
 import io.beatmaps.util.toPlaylistConfig
 import js.objects.jso
 import react.Props
@@ -70,6 +69,7 @@ val homePage = fcmemo<Props>("homePage") {
             params["fullSpread"]?.toBoolean(),
             params["me"]?.toBoolean(),
             params["cinema"]?.toBoolean(),
+            params["vivify"]?.toBoolean(),
             params["tags"]?.toQuery()?.toTagSet() ?: mapOf(),
             params["environments"].toEnvironmentSet()
         )
@@ -111,34 +111,16 @@ val homePage = fcmemo<Props>("homePage") {
             BooleanFilterInfo("chroma", "Chroma", FilterCategory.REQUIREMENTS) { it.chroma == true },
             BooleanFilterInfo("noodle", "Noodle Extensions", FilterCategory.REQUIREMENTS) { it.noodle == true },
             BooleanFilterInfo("me", "Mapping Extensions", FilterCategory.REQUIREMENTS) { it.me == true },
-            BooleanFilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true }
+            BooleanFilterInfo("cinema", "Cinema", FilterCategory.REQUIREMENTS) { it.cinema == true },
+            BooleanFilterInfo("vivify", "Vivify", FilterCategory.REQUIREMENTS) { it.vivify == true }
         )
     }
 
     val updateSearchParams = useCallback(searchParams) { searchParamsLocal: SearchParams?, row: Int? ->
         if (searchParamsLocal == null) return@useCallback
 
-        val tagStr = searchParamsLocal.tags.toQuery()
-
         with(searchParamsLocal) {
-            buildURL(
-                listOfNotNull(
-                    *queryParams(),
-                    includeIfNotNull(chroma, "chroma"),
-                    includeIfNotNull(ranked, "ranked"),
-                    includeIfNotNull(curated, "curated"),
-                    includeIfNotNull(verified, "verified"),
-                    includeIfNotNull(noodle, "noodle"),
-                    includeIfNotNull(me, "me"),
-                    includeIfNotNull(cinema, "cinema"),
-                    includeIfNotNull(automapper, "auto"),
-                    includeIfNotNull(fullSpread, "fullSpread"),
-                    includeIfNotNull(followed, "followed"),
-                    (if (tagStr.isNotEmpty()) "tags=$tagStr" else null),
-                    (if (this.environments.isNotEmpty()) "environments=${this.environments.joinToString(",")}" else null)
-                ),
-                "", row, searchParams, history
-            )
+            buildURL(queryParams().toList(), "", row, searchParams, history)
         }
 
         setSearchParams(searchParamsLocal)
@@ -176,6 +158,7 @@ val homePage = fcmemo<Props>("homePage") {
                 if (isFiltered("fs")) true else null,
                 if (isFiltered("me")) true else null,
                 if (isFiltered("cinema")) true else null,
+                if (isFiltered("vivify")) true else null,
                 tags ?: mapOf(),
                 environments ?: emptySet()
             )

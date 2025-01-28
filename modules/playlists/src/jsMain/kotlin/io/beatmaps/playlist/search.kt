@@ -99,7 +99,8 @@ val playlistSearchEditor = fcmemo<PSEProps>("playlistSearchEditor") { props ->
             PlaylistSearchBooleanFilter("chroma", "Chroma") { it.chroma },
             PlaylistSearchBooleanFilter("noodle", "Noodle Extensions") { it.noodle },
             PlaylistSearchBooleanFilter("me", "Mapping Extensions") { it.me },
-            PlaylistSearchBooleanFilter("cinema", "Cinema") { it.cinema }
+            PlaylistSearchBooleanFilter("cinema", "Cinema") { it.cinema },
+            PlaylistSearchBooleanFilter("vivify", "Vivify") { it.vivify }
         )
     )
 
@@ -134,6 +135,7 @@ val playlistSearchEditor = fcmemo<PSEProps>("playlistSearchEditor") { props ->
                     fromFilter("fullspread"),
                     fromFilter("me"),
                     fromFilter("cinema"),
+                    fromFilter("vivify"),
                     tags,
                     currentMappers.map { it.id },
                     environments
