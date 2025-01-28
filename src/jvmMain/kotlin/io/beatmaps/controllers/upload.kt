@@ -1,31 +1,20 @@
 package io.beatmaps.controllers
 
 import io.beatmaps.api.FailedUploadResponse
-import io.beatmaps.api.MapConstants
-import io.beatmaps.api.PatreonTier
 import io.beatmaps.api.UploadValidationInfo
-import io.beatmaps.api.toTier
 import io.beatmaps.common.Config
 import io.beatmaps.common.CopyException
 import io.beatmaps.common.FileLimits
 import io.beatmaps.common.Folders
-import io.beatmaps.common.MapTag
-import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.beatsaber.info.BaseMapInfo
 import io.beatmaps.common.beatsaber.info.toJson
 import io.beatmaps.common.beatsaber.vivify.Vivify
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
-import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Beatmap
-import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.User
-import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
-import io.beatmaps.common.dbo.VersionsDao
-import io.beatmaps.common.dbo.handlePatreon
-import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.pub
 import io.beatmaps.common.zip.ExtractedInfo
 import io.beatmaps.common.zip.RarException
@@ -33,7 +22,7 @@ import io.beatmaps.common.zip.ZipHelper
 import io.beatmaps.common.zip.ZipHelper.Companion.openZip
 import io.beatmaps.common.zip.ZipHelperException
 import io.beatmaps.common.zip.ZipHelperWithAudio
-import io.beatmaps.common.zip.sharedInsert
+import io.beatmaps.controllers.upload.Upload
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session
 import io.beatmaps.util.handleMultipart
@@ -50,17 +39,12 @@ import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
-import kotlinx.datetime.Clock
-import kotlinx.datetime.toKotlinInstant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import net.coobird.thumbnailator.Thumbnails
 import net.coobird.thumbnailator.tasks.UnsupportedFormatException
-import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -69,12 +53,8 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.OutputStream
 import java.lang.Integer.toHexString
-import java.math.BigInteger
-import java.nio.file.Files
 import java.security.DigestOutputStream
-import java.security.MessageDigest
 import java.util.logging.Logger
-import kotlin.math.roundToInt
 
 val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
 
@@ -145,71 +125,42 @@ fun Route.uploadController(client: HttpClient) {
 
     post<UploadMap> {
         requireAuthorization { authType, session ->
-            val (user, patreon, currentWipCount) = transaction {
-                val user = UserDao.wrapRow(
-                    User.joinPatreon().selectAll().where { User.id eq session.userId }.handlePatreon().first()
-                )
-
-                Triple(user, user.patreon, userWipCount(session.userId))
-            }
-
-            // Throw error if user is missing a username
-            (user.active && user.uniqueName != null) || throw UploadException("Please pick a username to complete your account")
-
-            // Don't allow suspended users to upload
-            user.suspendedAt == null || throw UploadException("Suspended account")
-
-            // Limit WIP maps
-            val maxWips = (patreon.toTier() ?: PatreonTier.None).maxWips
-            currentWipCount < maxWips || throw UploadException(PatreonTier.maxWipsMessage)
+            val user = Upload.checkUserCanUpload(session)
 
             val file = File(
                 Folders.uploadTempFolder(),
                 "upload-${System.currentTimeMillis()}-${session.userId.hashCode()}.zip"
             )
 
-            val md = MessageDigest.getInstance("SHA1")
-            var extractedInfoTmp: ExtractedInfo? = null
+            val basicLimit = user.uploadLimit * 1024 * 1024L
+            val vivifyLimit = user.vivifyLimit * 1024 * 1024L
+            val totalLimit = basicLimit + (vivifyLimit * Vivify.allowedBundles.size)
 
             val multipart = handleMultipart(client) { part ->
                 uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
 
-                val basicLimit = user.uploadLimit * 1024 * 1024L
-                val vivifyLimit = user.vivifyLimit * 1024 * 1024L
-                val totalLimit = basicLimit + (vivifyLimit * Vivify.allowedBundles.size)
-
-                extractedInfoTmp = part.streamProvider().use { its ->
+                part.streamProvider().use { its ->
                     try {
                         file.outputStream().buffered().use {
                             its.copyToSuspend(it, sizeLimit = totalLimit)
                         }.let { actualSize ->
-                            DigestOutputStream(OutputStream.nullOutputStream(), md).use { dos ->
-                                openZip(file) {
-                                    validateFiles(dos, vivifyLimit)
-                                }
-                            }.also { info ->
-                                val sizeWithoutVivify = actualSize - info.vivifySize
-                                if (sizeWithoutVivify > basicLimit) {
-                                    throw UploadException("Zip file too big (${FileLimits.printLimit(sizeWithoutVivify, basicLimit)})")
-                                }
-                            }
+                            openZip(file) {
+                                validateFiles(vivifyLimit)
+                            }.copy(uncompressedSize = actualSize)
                         }
                     } catch (_: RarException) {
-                        file.delete()
                         throw UploadException("Don't upload rar files. Use the package button in your map editor.")
                     } catch (e: SerializationException) {
                         e.printStackTrace()
-                        file.delete()
                         throw UploadException("Could not parse json")
                     } catch (e: ZipHelperException) {
-                        file.delete()
                         throw UploadException(e.msg)
                     } catch (_: CopyException) {
-                        file.delete()
                         throw UploadException("Zip file too big")
                     } catch (e: Exception) {
-                        file.delete()
                         throw e
+                    } finally {
+                        file.delete()
                     }
                 }
             }
@@ -217,153 +168,15 @@ fun Route.uploadController(client: HttpClient) {
             multipart.validRecaptcha(authType) || throw UploadException("Missing recaptcha?")
             val data = multipart.get<MapUploadMultipart>()
 
-            val newMapId = transaction {
-                // Process upload
-                val fx = "%0" + md.digestLength * 2 + "x"
-                val digest = String.format(fx, BigInteger(1, md.digest()))
-                val newFile = File(Folders.localFolder(digest), "$digest.zip")
-                val newImageFile = File(Folders.localCoverFolder(digest), "$digest.jpg")
-                val newAudioFile = File(Folders.localAudioFolder(digest), "$digest.mp3")
+            val extractedInfo = multipart.fileOutput ?: throw UploadException("Internal error 1")
 
-                val existsAlready = Versions.selectAll().where {
-                    Versions.hash eq digest
-                }.count() > 0
-
-                val extractedInfo = extractedInfoTmp ?: throw UploadException("Internal error 1")
-
-                if (existsAlready) {
-                    file.delete()
-                    throw UploadException("Map already uploaded")
-                }
-
-                if (!session.testplay && !allowUploads) {
-                    file.delete()
-                    throw UploadException("Your map is fine but we're not accepting uploads yet")
-                }
-
-                val newMap = try {
-                    fun insertOrUpdate() =
-                        data.mapId?.let { mapId ->
-                            fun updateIt() = Beatmap.updateReturning(
-                                {
-                                    (Beatmap.id eq mapId) and (Beatmap.uploader eq session.userId)
-                                },
-                                {
-                                    // Bpm and duration will be updated on publish
-                                    it[updatedAt] = NowExpression(updatedAt)
-                                },
-                                Beatmap.id
-                            )?.firstOrNull()?.let { it[Beatmap.id] } ?: throw UploadException("Map doesn't exist to add version")
-
-                            updateIt().also {
-                                val latestVersions = VersionsDao.wrapRows(
-                                    Versions.selectAll().where {
-                                        (Versions.mapId eq mapId)
-                                    }.orderBy(Versions.uploaded, SortOrder.DESC).limit(2)
-                                ).toList()
-
-                                if (latestVersions.size > 1) {
-                                    // Check time since one before previous upload = 2 uploads / day / map
-                                    val hoursUntilNext = 12 - Clock.System.now().minus(latestVersions[1].uploaded.toKotlinInstant()).inWholeHours
-                                    if (hoursUntilNext > 0) {
-                                        throw UploadException("Please wait another $hoursUntilNext hours before uploading another version")
-                                    }
-                                }
-                            }
-                        } ?: Beatmap.insertAndGetId {
-                            it[name] = (data.title ?: "").take(MapConstants.MAX_NAME_LENGTH)
-                            it[description] = (data.description ?: "").take(MapConstants.MAX_DESCRIPTION_LENGTH)
-
-                            val tagsList = (data.tags ?: "").split(',').mapNotNull { t -> MapTag.fromSlug(t) }.toSet()
-                            val tooMany = tagsList.groupBy { t -> t.type }.mapValues { t -> t.value.size }.withDefault { 0 }.let { byType ->
-                                MapTag.maxPerType.any { type -> byType.getValue(type.key) > type.value }
-                            }
-
-                            if (!tooMany) {
-                                it[tags] = tagsList.filter { t -> t != MapTag.None }.map { t -> t.slug }
-                            }
-                            it[uploader] = EntityID(session.userId, User)
-
-                            // Should these be real data, fields are updated on publish
-                            it[bpm] = extractedInfo.mapInfo.getBpm() ?: 0f
-                            it[duration] = extractedInfo.duration.roundToInt()
-
-                            val declaredAsAI = !data.beatsage.isNullOrEmpty()
-                            it[declaredAi] = when {
-                                declaredAsAI -> AiDeclarationType.Uploader
-                                extractedInfo.score < 0 -> AiDeclarationType.SageScore
-                                else -> AiDeclarationType.None
-                            }
-
-                            it[plays] = 0
-                        }
-
-                    insertOrUpdate().also {
-                        // How is a file here if it hasn't been uploaded before?
-                        if (newFile.exists()) {
-                            newFile.delete()
-                        }
-
-                        Files.move(file.toPath(), newFile.toPath())
-                    }
-                } catch (e: Exception) {
-                    file.delete()
-                    throw e
-                }
-
-                try {
-                    extractedInfo.thumbnail?.let {
-                        newImageFile.writeBytes(it.toByteArray())
-                    } ?: throw UploadException("Internal error 2")
-
-                    extractedInfo.preview?.let {
-                        newAudioFile.writeBytes(it.toByteArray())
-                    } ?: throw UploadException("Internal error 3")
-
-                    // Pretty much guaranteed to be set
-                    val sli = extractedInfo.songLengthInfo ?: throw UploadException("Couldn't determine song length")
-
-                    val newVersion = Versions.insertAndGetId {
-                        it[mapId] = newMap
-                        it[key64] = null
-                        it[hash] = digest
-                        it[state] = EMapState.Uploaded
-                        it[sageScore] = extractedInfo.score
-                        it[schemaVersion] = extractedInfo.mapInfo.version.orNull()
-
-                        it[bpm] = extractedInfo.mapInfo.getBpm() ?: 0f
-                        it[duration] = extractedInfo.duration.roundToInt()
-                        it[songName] = extractedInfo.mapInfo.getSongName() ?: ""
-                        it[songSubName] = extractedInfo.mapInfo.getSubName() ?: ""
-                        it[levelAuthorName] = extractedInfo.mapInfo.getLevelAuthorNamesString()
-                        it[songAuthorName] = extractedInfo.mapInfo.getSongAuthorName() ?: ""
-                    }
-
-                    extractedInfo.diffs.forEach { cLoop ->
-                        cLoop.value.forEach { dLoop ->
-                            val diffInfo = dLoop.key
-                            val bsdiff = dLoop.value
-                            val bslights = extractedInfo.lights[cLoop.key]?.get(dLoop.key)
-
-                            Difficulty.insertAndGetId {
-                                it[mapId] = newMap
-                                it[versionId] = newVersion
-
-                                sharedInsert(it, cLoop.key, diffInfo, bsdiff, bslights, extractedInfo.mapInfo, sli)
-                                it[characteristic] = cLoop.key
-                                it[difficulty] = dLoop.key.enumValue()
-                            }
-                        }
-                    }
-
-                    newMap.value
-                } catch (e: Exception) {
-                    if (newFile.exists()) newFile.delete()
-                    if (newImageFile.exists()) newImageFile.delete()
-                    if (newAudioFile.exists()) newAudioFile.delete()
-                    throw e
-                }
+            // Zip could have been too big but within vivify allowance
+            val sizeWithoutVivify = extractedInfo.uncompressedSize - extractedInfo.vivifySize
+            if (sizeWithoutVivify > basicLimit) {
+                throw UploadException("Zip file too big (${FileLimits.printLimit(sizeWithoutVivify, basicLimit)})")
             }
+
+            val newMapId = Upload.insertNewMap(extractedInfo, data, session, file)
 
             call.pub("beatmaps", "maps.$newMapId.updated.upload", null, newMapId)
             call.respond(toHexString(newMapId))
@@ -371,54 +184,56 @@ fun Route.uploadController(client: HttpClient) {
     }
 }
 
-fun ZipHelperWithAudio.validateFiles(dos: DigestOutputStream, maxVivify: Long) =
+fun ZipHelperWithAudio.validateFiles(maxVivify: Long) =
     info.let {
         // Add files referenced in info.dat to whitelist
         ExtractedInfo(findAllowedFiles(it), ByteArrayOutputStream(), it, scoreMap())
     }.also { p ->
-        // Rename audio file if it ends in .ogg
-        val (newFiles, newFilesOriginalCase) = oggToEgg(p)
+        DigestOutputStream(OutputStream.nullOutputStream(), p.md).use { dos ->
+            // Rename audio file if it ends in .ogg
+            val (newFiles, newFilesOriginalCase) = oggToEgg(p)
 
-        // Ensure it ends in a slash
-        val prefix = infoPrefix()
-        val withoutPrefix = newFiles.map { its -> its.removePrefix(prefix.lowercase()) }.toSet()
+            // Ensure it ends in a slash
+            val prefix = infoPrefix()
+            val withoutPrefix = newFiles.map { its -> its.removePrefix(prefix.lowercase()) }.toSet()
 
-        // Validate info.dat
-        p.mapInfo.validate(withoutPrefix, p, audioFile, previewAudioFile, maxVivify, ::fromInfo)
+            // Validate info.dat
+            p.mapInfo.validate(withoutPrefix, p, audioFile, previewAudioFile, maxVivify, ::fromInfo)
 
-        val output = p.mapInfo.toJson().toByteArray()
-        dos.write(output)
-        p.toHash.writeTo(dos)
+            val output = p.mapInfo.toJson().toByteArray()
+            dos.write(output)
+            p.toHash.writeTo(dos)
 
-        // Generate 10 second preview
-        p.preview = ByteArrayOutputStream().also {
-            it.writeBytes(generatePreview())
-        }
-
-        // Write updated info.dat back to zip
-        infoPath.deleteIfExists()
-        getPathDirect("/Info.dat").outputStream().use {
-            it.write(output)
-        }
-
-        // Delete any extra files in the zip (like autosaves)
-        val paritioned = newFilesOriginalCase.filter { !it.endsWith("/Info.dat", true) }.partition {
-            val originalWithoutPrefix = it.lowercase().removePrefix(prefix.lowercase())
-            !p.allowedFiles.contains(originalWithoutPrefix)
-        }
-
-        paritioned.first.forEach {
-            getPathDirect(it).deleteIfExists()
-        }
-
-        // Move files to root
-        if (prefix.length > 1) {
-            // Files in subfolder!
-            paritioned.second.forEach {
-                moveFile(getPathDirect(it), "/" + it.removePrefix(prefix))
+            // Generate 10 second preview
+            p.preview = ByteArrayOutputStream().also {
+                it.writeBytes(generatePreview())
             }
-            directories.filter { it.startsWith(prefix) }.sortedBy { it.length }.forEach {
+
+            // Write updated info.dat back to zip
+            infoPath.deleteIfExists()
+            getPathDirect("/Info.dat").outputStream().use {
+                it.write(output)
+            }
+
+            // Delete any extra files in the zip (like autosaves)
+            val paritioned = newFilesOriginalCase.filter { !it.endsWith("/Info.dat", true) }.partition {
+                val originalWithoutPrefix = it.lowercase().removePrefix(prefix.lowercase())
+                !p.allowedFiles.contains(originalWithoutPrefix)
+            }
+
+            paritioned.first.forEach {
                 getPathDirect(it).deleteIfExists()
+            }
+
+            // Move files to root
+            if (prefix.length > 1) {
+                // Files in subfolder!
+                paritioned.second.forEach {
+                    moveFile(getPathDirect(it), "/" + it.removePrefix(prefix))
+                }
+                directories.filter { it.startsWith(prefix) }.sortedBy { it.length }.forEach {
+                    getPathDirect(it).deleteIfExists()
+                }
             }
         }
     }

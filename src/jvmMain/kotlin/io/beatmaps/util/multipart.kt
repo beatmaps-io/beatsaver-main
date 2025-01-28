@@ -19,15 +19,16 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 
-data class MultipartRequest(val dataMap: JsonElement, private val recaptchaSuccess: Boolean) {
+data class MultipartRequest<U>(val dataMap: JsonElement, private val recaptchaSuccess: Boolean, val fileOutput: U?) {
     inline fun <reified T> get() = json.decodeFromJsonElement<T>(dataMap)
     fun validRecaptcha(authType: AuthType) = authType == AuthType.Oauth || recaptchaSuccess
 }
 
-suspend fun PipelineContext<*, ApplicationCall>.handleMultipart(client: HttpClient, cb: suspend (PartData.FileItem) -> Unit): MultipartRequest {
+suspend fun <U> PipelineContext<*, ApplicationCall>.handleMultipart(client: HttpClient, cb: suspend (PartData.FileItem) -> U): MultipartRequest<U> {
     val multipart = call.receiveMultipart()
     val dataMap = mutableMapOf<String, JsonElement>()
     var recaptchaSuccess = false
+    var responseTemp: U? = null
 
     multipart.forEachPart { part ->
         if (part is PartData.FormItem) {
@@ -52,9 +53,9 @@ suspend fun PipelineContext<*, ApplicationCall>.handleMultipart(client: HttpClie
                 } ?: JsonPrimitive(part.value)
             }
         } else if (part is PartData.FileItem) {
-            cb(part)
+            responseTemp = cb(part)
         }
     }
 
-    return MultipartRequest(JsonObject(dataMap), recaptchaSuccess)
+    return MultipartRequest(JsonObject(dataMap), recaptchaSuccess, responseTemp)
 }
