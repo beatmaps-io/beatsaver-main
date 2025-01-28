@@ -16,6 +16,7 @@ import io.beatmaps.api.PlaylistConstants
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistMapRequest
 import io.beatmaps.api.PlaylistPage
+import io.beatmaps.api.UploadResponse
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.api.PlaylistReportData

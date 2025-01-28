@@ -7,8 +7,8 @@ import de.nielsfalk.ktor.swagger.version.shared.Information
 import de.nielsfalk.ktor.swagger.version.v2.Swagger
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.ApiException
-import io.beatmaps.api.UploadResponse
 import io.beatmaps.api.ServerApiException
+import io.beatmaps.api.UploadResponse
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.api.UserApiException
 import io.beatmaps.api.alertsRoute

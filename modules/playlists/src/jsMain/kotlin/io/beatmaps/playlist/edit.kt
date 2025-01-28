@@ -5,9 +5,9 @@ import external.generateConfig
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
-import io.beatmaps.api.UploadResponse
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.PlaylistPage
+import io.beatmaps.api.UploadResponse
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.captcha.captcha

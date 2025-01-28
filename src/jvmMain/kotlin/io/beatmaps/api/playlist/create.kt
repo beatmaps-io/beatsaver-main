@@ -24,7 +24,6 @@ import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.handleMultipart
 import io.beatmaps.util.requireAuthorization
 import io.ktor.client.HttpClient
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.streamProvider
 import io.ktor.server.application.call
 import io.ktor.server.locations.post
