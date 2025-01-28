@@ -145,7 +145,9 @@ fun Route.uploadController(client: HttpClient) {
                             its.copyToSuspend(it, sizeLimit = totalLimit)
                         }.let { actualSize ->
                             openZip(file) {
-                                validateFiles(vivifyLimit)
+                                validateFiles(
+                                    initValidation(vivifyLimit)
+                                )
                             }.copy(uncompressedSize = actualSize)
                         }
                     } catch (_: RarException) {
@@ -184,65 +186,65 @@ fun Route.uploadController(client: HttpClient) {
     }
 }
 
-fun ZipHelperWithAudio.validateFiles(maxVivify: Long) =
-    info.let {
-        // Add files referenced in info.dat to whitelist
-        ExtractedInfo(findAllowedFiles(it), ByteArrayOutputStream(), it, scoreMap())
-    }.also { p ->
-        DigestOutputStream(OutputStream.nullOutputStream(), p.md).use { dos ->
-            // Rename audio file if it ends in .ogg
-            val (newFiles, newFilesOriginalCase) = oggToEgg(p)
+fun ZipHelperWithAudio.initValidation(maxVivify: Long) = info.let {
+    // Add files referenced in info.dat to whitelist
+    ExtractedInfo(findAllowedFiles(it), it, scoreMap(), maxVivify = maxVivify)
+}
 
-            // Ensure it ends in a slash
-            val prefix = infoPrefix()
-            val withoutPrefix = newFiles.map { its -> its.removePrefix(prefix.lowercase()) }.toSet()
+fun ZipHelperWithAudio.validateFiles(q: ExtractedInfo) =
+    DigestOutputStream(OutputStream.nullOutputStream(), q.md).use { dos ->
+        // Rename audio file if it ends in .ogg
+        val (info, newFiles, newFilesOriginalCase) = oggToEgg(q)
 
-            // Validate info.dat
-            p.mapInfo.validate(withoutPrefix, p, audioFile, previewAudioFile, maxVivify, ::fromInfo)
+        // Ensure it ends in a slash
+        val prefix = infoPrefix()
+        val withoutPrefix = newFiles.map { its -> its.removePrefix(prefix.lowercase()) }.toSet()
 
-            val output = p.mapInfo.toJson().toByteArray()
-            dos.write(output)
-            p.toHash.writeTo(dos)
+        // Validate info.dat
+        info.mapInfo.validate(withoutPrefix, info, audioFile, previewAudioFile, ::fromInfo)
 
-            // Generate 10 second preview
-            p.preview = ByteArrayOutputStream().also {
-                it.writeBytes(generatePreview())
+        val output = info.mapInfo.toJson().toByteArray()
+        dos.write(output)
+        info.toHash.writeTo(dos)
+
+        // Generate 10 second preview
+        generatePreview(info.preview)
+
+        // Write updated info.dat back to zip
+        infoPath.deleteIfExists()
+        getPathDirect("/Info.dat").outputStream().use {
+            it.write(output)
+        }
+
+        // Delete any extra files in the zip (like autosaves)
+        val paritioned = newFilesOriginalCase.filter { !it.endsWith("/Info.dat", true) }.partition {
+            val originalWithoutPrefix = it.lowercase().removePrefix(prefix.lowercase())
+            !info.allowedFiles.contains(originalWithoutPrefix)
+        }
+
+        paritioned.first.forEach {
+            getPathDirect(it).deleteIfExists()
+        }
+
+        // Move files to root
+        if (prefix.length > 1) {
+            // Files in subfolder!
+            paritioned.second.forEach {
+                moveFile(getPathDirect(it), "/" + it.removePrefix(prefix))
             }
-
-            // Write updated info.dat back to zip
-            infoPath.deleteIfExists()
-            getPathDirect("/Info.dat").outputStream().use {
-                it.write(output)
-            }
-
-            // Delete any extra files in the zip (like autosaves)
-            val paritioned = newFilesOriginalCase.filter { !it.endsWith("/Info.dat", true) }.partition {
-                val originalWithoutPrefix = it.lowercase().removePrefix(prefix.lowercase())
-                !p.allowedFiles.contains(originalWithoutPrefix)
-            }
-
-            paritioned.first.forEach {
+            directories.filter { it.startsWith(prefix) }.sortedBy { it.length }.forEach {
                 getPathDirect(it).deleteIfExists()
             }
-
-            // Move files to root
-            if (prefix.length > 1) {
-                // Files in subfolder!
-                paritioned.second.forEach {
-                    moveFile(getPathDirect(it), "/" + it.removePrefix(prefix))
-                }
-                directories.filter { it.startsWith(prefix) }.sortedBy { it.length }.forEach {
-                    getPathDirect(it).deleteIfExists()
-                }
-            }
         }
+
+        info
     }
 
 fun findAllowedFiles(info: BaseMapInfo) =
     (listOfNotNull("info.dat", "cinema-video.json") + info.getExtraFiles())
         .map { it.lowercase() }
 
-fun ZipHelper.oggToEgg(info: ExtractedInfo): Pair<Set<String>, Set<String>> {
+fun ZipHelper.oggToEgg(info: ExtractedInfo): Triple<ExtractedInfo, Set<String>, Set<String>> {
     val moved = setOf(info.mapInfo.getSongFilename(), info.mapInfo.getPreviewInfo().filename)
         .filterNotNull()
         .filter { it.endsWith(".ogg") }
@@ -254,13 +256,14 @@ fun ZipHelper.oggToEgg(info: ExtractedInfo): Pair<Set<String>, Set<String>> {
             } ?: acc
         }
 
-    info.mapInfo = info.mapInfo.updateFiles(moved)
-
-    return files
+    return Triple(
+        info.copy(mapInfo = info.mapInfo.updateFiles(moved)),
+        files
         .minus(moved.keys.map { (infoPrefix() + it).lowercase() }.toSet())
-        .plus(moved.values.map { (infoPrefix() + it).lowercase() }.toSet()) to
+        .plus(moved.values.map { (infoPrefix() + it).lowercase() }.toSet()),
         // Don't add it back so that we don't later try and remove the file as it's no longer whitelisted
         filesOriginalCase.minus(moved.keys.map { infoPrefix() + it }.toSet())
+    )
 }
 
 class UploadException(private val msg: String) : RuntimeException() {

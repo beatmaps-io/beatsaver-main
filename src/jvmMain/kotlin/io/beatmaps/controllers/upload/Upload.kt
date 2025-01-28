@@ -65,13 +65,15 @@ object Upload {
         val newAudioFile = File(Folders.localAudioFolder(digest), "$digest.mp3")
 
         try {
-            info.thumbnail?.let {
-                newImageFile.writeBytes(it.toByteArray())
-            } ?: throw UploadException("Internal error 2")
+            info.thumbnail.size() > 0 || throw UploadException("Internal error 2")
+            newImageFile.outputStream().use {
+                info.thumbnail.writeTo(it)
+            }
 
-            info.preview?.let {
-                newAudioFile.writeBytes(it.toByteArray())
-            } ?: throw UploadException("Internal error 3")
+            info.preview.size() > 0 || throw UploadException("Internal error 3")
+            newAudioFile.outputStream().use {
+                info.preview.writeTo(it)
+            }
 
             // Pretty much guaranteed to be set
             val sli = info.songLengthInfo ?: throw UploadException("Couldn't determine song length")
