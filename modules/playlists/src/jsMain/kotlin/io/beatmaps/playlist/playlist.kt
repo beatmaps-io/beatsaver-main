@@ -119,7 +119,7 @@ val playlistPage = fcmemo<Props>("playlistPage") { props ->
         data.append("deleted", "true")
         data.append("reason", reasonRef.current?.value ?: "")
 
-        return Axios.post<String>(
+        return Axios.post<UploadResponse>(
             "${Config.apibase}/playlists/id/$id/edit", data,
             UploadRequestConfig { }
         ).then { r ->

@@ -21,7 +21,6 @@ import io.beatmaps.common.zip.ExtractedInfo
 import io.beatmaps.common.zip.sharedInsert
 import io.beatmaps.controllers.MapUploadMultipart
 import io.beatmaps.controllers.UploadException
-import io.beatmaps.controllers.allowUploads
 import io.beatmaps.controllers.userWipCount
 import io.beatmaps.login.Session
 import kotlinx.datetime.Clock
@@ -37,6 +36,8 @@ import java.nio.file.Files
 import kotlin.math.roundToInt
 
 object Upload {
+    private val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
+
     fun checkUserCanUpload(session: Session): UserDao {
         val (user, patreon, currentWipCount) = transaction {
             val user = UserDao.wrapRow(

@@ -4,10 +4,12 @@ import external.AxiosProgress
 import external.AxiosRequestConfig
 import external.Dropzone
 import io.beatmaps.History
+import io.beatmaps.api.UploadResponse
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.captcha.captcha
 import io.beatmaps.common.MapTag
+import io.beatmaps.common.json
 import io.beatmaps.maps.TagPickerHeadingRenderer
 import io.beatmaps.maps.tagPicker
 import io.beatmaps.setPageTitle
@@ -47,6 +49,9 @@ class UploadRequestConfig(block: (AxiosProgress) -> Unit) : AxiosRequestConfig {
     override var onUploadProgress: ((progressEvent: AxiosProgress) -> Unit)? = block
     override var validateStatus: ((Number) -> Boolean)? = {
         arrayOf(200, 400, 401, 413).contains(it)
+    }
+    override var transformResponse: (String) -> UploadResponse = {
+        json.decodeFromString(it)
     }
 }
 

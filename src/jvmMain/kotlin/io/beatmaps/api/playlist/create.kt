@@ -5,6 +5,7 @@ import io.beatmaps.api.PlaylistApi
 import io.beatmaps.api.PlaylistBasic
 import io.beatmaps.api.PlaylistConstants
 import io.beatmaps.api.PlaylistFull
+import io.beatmaps.api.UploadResponse
 import io.beatmaps.api.from
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
@@ -139,7 +140,7 @@ fun Route.playlistCreate(client: HttpClient) {
                 }
 
                 call.pub("beatmaps", "playlists.$newId.created", null, newId)
-                call.respond(newId)
+                call.respond(UploadResponse(newId.toString()))
             } finally {
                 files.values.forEach { temp ->
                     temp.delete()
@@ -235,7 +236,7 @@ fun Route.playlistCreate(client: HttpClient) {
             }
 
             call.pub("beatmaps", "playlists.${req.id}.updated.detail", null, req.id)
-            call.respond(HttpStatusCode.OK)
+            call.respond(UploadResponse(req.id.toString()))
         }
     }
 }
