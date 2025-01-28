@@ -111,6 +111,7 @@ data class MapDifficulty(
     val me: Boolean,
     val ne: Boolean,
     val cinema: Boolean,
+    val vivify: Boolean = false,
     val seconds: Double,
     val paritySummary: MapParitySummary,
     val stars: Float? = null,

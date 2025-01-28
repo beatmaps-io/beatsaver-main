@@ -12,7 +12,7 @@ abstract class CommonParams {
     abstract val from: String?
     abstract val to: String?
 
-    fun queryParams() = listOfNotNull(
+    open fun queryParams() = listOfNotNull(
         (if (search.isNotBlank()) "q=${encodeURIComponent(search)}" else null),
         includeIfNotNull(maxNps, "maxNps"),
         includeIfNotNull(minNps, "minNps"),

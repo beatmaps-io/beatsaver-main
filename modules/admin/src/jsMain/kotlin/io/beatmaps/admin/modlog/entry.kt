@@ -217,6 +217,9 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                             p {
                                 className = ClassName("card-text")
                                 +"Upload Limit: ${action.newValue}"
+                                action.newVivify?.let { nv ->
+                                    +" / Vivify Limit: $nv"
+                                }
                                 br {}
                                 +"Curator: ${action.newCurator}"
                                 action.verifiedMapper?.let { vm ->

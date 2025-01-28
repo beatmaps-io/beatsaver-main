@@ -5,7 +5,7 @@ import external.routeLink
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapDifficulty
 import io.beatmaps.common.fixedStr
-import io.beatmaps.common.formatTime
+import io.beatmaps.common.util.formatTime
 import io.beatmaps.shared.map.uploaderWithInfo
 import io.beatmaps.shared.profileLink
 import io.beatmaps.user.ProfileTab

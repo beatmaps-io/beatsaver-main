@@ -8,8 +8,8 @@ import io.beatmaps.common.api.MapAttr
 import io.beatmaps.common.api.RankedFilter
 import io.beatmaps.common.asQuery
 import io.beatmaps.common.fixed
-import io.beatmaps.common.formatTime
 import io.beatmaps.common.human
+import io.beatmaps.common.util.formatTime
 import io.beatmaps.shared.coloredCard
 import io.beatmaps.shared.itemUserInfo
 import io.beatmaps.shared.map.rating

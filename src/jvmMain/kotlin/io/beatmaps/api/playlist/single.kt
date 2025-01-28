@@ -21,6 +21,7 @@ import io.beatmaps.api.search.SolrSearchParams
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.Config
 import io.beatmaps.common.Folders
+import io.beatmaps.common.ModChecker
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
@@ -108,21 +109,19 @@ fun Route.playlistSingle() {
                     val mapperIds = params.mappers + (searchInfo.userSubQuery?.map { it[User.id].value } ?: listOf())
                     q.apply(BsSolr.mapperIds inList mapperIds)
                 }
-                .notNull(params.chroma) { o ->
-                    val chromaQuery = (BsSolr.suggestions eq "Chroma") or (BsSolr.requirements eq "Chroma")
-                    if (o) chromaQuery else chromaQuery.not()
-                }
-                .notNull(params.noodle) { o ->
-                    val noodleQuery = BsSolr.requirements eq "Noodle Extensions"
-                    if (o) noodleQuery else noodleQuery.not()
-                }
-                .notNull(params.me) { o ->
-                    val meQuery = BsSolr.requirements eq "Mapping Extensions"
-                    if (o) meQuery else meQuery.not()
-                }
-                .notNull(params.cinema) { o ->
-                    val cinemaQuery = (BsSolr.suggestions eq "Cinema") or (BsSolr.requirements eq "Cinema")
-                    if (o) cinemaQuery else cinemaQuery.not()
+                .also { q ->
+                    val mods = mapOf(
+                        params.chroma to { ModChecker.chroma() },
+                        params.noodle to { ModChecker.ne() },
+                        params.me to { ModChecker.me() },
+                        params.cinema to { ModChecker.cinema() },
+                        params.vivify to { ModChecker.vivify() }
+                    )
+                    mods.forEach { (t, u) ->
+                        q.notNull(t) { o ->
+                            if (o) u() else u().not()
+                        }
+                    }
                 }
                 .apply {
                     listOfNotNull(

@@ -7,12 +7,14 @@ import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.api.toTier
 import io.beatmaps.common.Config
 import io.beatmaps.common.CopyException
+import io.beatmaps.common.FileLimits
 import io.beatmaps.common.Folders
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
-import io.beatmaps.common.beatsaber.BaseMapInfo
-import io.beatmaps.common.beatsaber.toJson
+import io.beatmaps.common.beatsaber.info.BaseMapInfo
+import io.beatmaps.common.beatsaber.info.toJson
+import io.beatmaps.common.beatsaber.vivify.Vivify
 import io.beatmaps.common.copyToSuspend
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
@@ -171,14 +173,24 @@ fun Route.uploadController(client: HttpClient) {
 
             val multipart = handleMultipart(client) { part ->
                 uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
+
+                val basicLimit = user.uploadLimit * 1024 * 1024L
+                val vivifyLimit = user.vivifyLimit * 1024 * 1024L
+                val totalLimit = basicLimit + (vivifyLimit * Vivify.allowedBundles.size)
+
                 extractedInfoTmp = part.streamProvider().use { its ->
                     try {
                         file.outputStream().buffered().use {
-                            its.copyToSuspend(it, sizeLimit = user.uploadLimit * 1024 * 1024)
-                        }.run {
+                            its.copyToSuspend(it, sizeLimit = totalLimit)
+                        }.let { actualSize ->
                             DigestOutputStream(OutputStream.nullOutputStream(), md).use { dos ->
                                 openZip(file) {
-                                    validateFiles(dos)
+                                    validateFiles(dos, vivifyLimit)
+                                }
+                            }.also { info ->
+                                val sizeWithoutVivify = actualSize - info.vivifySize
+                                if (sizeWithoutVivify > basicLimit) {
+                                    throw UploadException("Zip file too big (${FileLimits.printLimit(sizeWithoutVivify, basicLimit)})")
                                 }
                             }
                         }
@@ -359,7 +371,7 @@ fun Route.uploadController(client: HttpClient) {
     }
 }
 
-fun ZipHelperWithAudio.validateFiles(dos: DigestOutputStream) =
+fun ZipHelperWithAudio.validateFiles(dos: DigestOutputStream, maxVivify: Long) =
     info.let {
         // Add files referenced in info.dat to whitelist
         ExtractedInfo(findAllowedFiles(it), ByteArrayOutputStream(), it, scoreMap())
@@ -372,7 +384,7 @@ fun ZipHelperWithAudio.validateFiles(dos: DigestOutputStream) =
         val withoutPrefix = newFiles.map { its -> its.removePrefix(prefix.lowercase()) }.toSet()
 
         // Validate info.dat
-        p.mapInfo.validate(withoutPrefix, p, audioFile, previewAudioFile, ::fromInfo)
+        p.mapInfo.validate(withoutPrefix, p, audioFile, previewAudioFile, maxVivify, ::fromInfo)
 
         val output = p.mapInfo.toJson().toByteArray()
         dos.write(output)

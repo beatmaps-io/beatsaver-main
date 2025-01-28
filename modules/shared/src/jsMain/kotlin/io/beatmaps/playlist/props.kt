@@ -3,6 +3,7 @@ package io.beatmaps.playlist
 import io.beatmaps.api.MapDetail
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.shared.search.CommonParams
+import io.beatmaps.util.includeIfNotNull
 import react.Props
 import react.RefObject
 
@@ -20,7 +21,12 @@ data class PlaylistSearchParams(
     val curated: Boolean? = null,
     val verified: Boolean? = null,
     override val sortOrder: SearchOrder
-) : CommonParams()
+) : CommonParams() {
+    override fun queryParams() = super.queryParams() + listOfNotNull(
+        includeIfNotNull(curated, "curated"),
+        includeIfNotNull(verified, "verified")
+    )
+}
 
 external interface PlaylistTableProps : Props {
     var search: PlaylistSearchParams?

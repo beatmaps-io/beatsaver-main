@@ -351,13 +351,14 @@ fun Route.userRoute(client: HttpClient) {
                 ActionResponse.error("Not an admin")
             } else {
                 val req = call.receive<UserAdminRequest>()
-                if (UserAdminRequest.allowedUploadSizes.contains(req.maxUploadSize)) {
+                if (UserAdminRequest.allowedUploadSizes.contains(req.maxUploadSize) && UserAdminRequest.allowedVivifySizes.contains(req.maxVivifySize)) {
                     transaction {
                         fun runUpdate() =
                             User.update({
                                 User.id eq req.userId
                             }) { u ->
                                 u[uploadLimit] = req.maxUploadSize
+                                u[vivifyLimit] = req.maxVivifySize
                                 u[curator] = req.curator
                                 u[seniorCurator] = req.curator && req.seniorCurator
                                 u[verifiedMapper] = req.verifiedMapper
@@ -370,7 +371,7 @@ fun Route.userRoute(client: HttpClient) {
                                 ModLog.insert(
                                     sess.userId,
                                     null,
-                                    UploadLimitData(req.maxUploadSize, req.curator, req.verifiedMapper, req.curatorTab),
+                                    UploadLimitData(req.maxUploadSize, req.curator, req.verifiedMapper, req.curatorTab, req.maxVivifySize),
                                     req.userId
                                 )
                             }
@@ -1202,7 +1203,7 @@ fun Route.userRoute(client: HttpClient) {
 
                 UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let {
                     if (call.sessions.get<Session>()?.isAdmin() == true) {
-                        it.copy(uploadLimit = user.uploadLimit)
+                        it.copy(uploadLimit = user.uploadLimit, vivifyLimit = user.vivifyLimit)
                     } else {
                         it
                     }
