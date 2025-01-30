@@ -87,7 +87,8 @@ class SearchApi {
         val maxNps: Float? = null,
         val chroma: Boolean? = null,
         @DefaultValue("0") val page: Long = 0,
-        val sortOrder: SearchOrder = SearchOrder.Relevance,
+        @Ignore val sortOrder: SearchOrder = SearchOrder.Relevance,
+        val order: SearchOrder? = null,
         val from: Instant? = null,
         val to: Instant? = null,
         @Ignore val api: SearchApi,
@@ -122,7 +123,8 @@ class SearchApi {
         val maxNps: Float? = null,
         val chroma: Boolean? = null,
         @DefaultValue("0") val page: Long = 0,
-        val sortOrder: SearchOrder = SearchOrder.Relevance,
+        @Ignore val sortOrder: SearchOrder = SearchOrder.Relevance,
+        val order: SearchOrder? = null,
         val from: Instant? = null,
         val to: Instant? = null,
         @Ignore val api: SearchApi,
@@ -200,7 +202,7 @@ fun Route.searchRoute() {
     getWithOptions<SearchApi.Solr>("Search for maps with solr".responds(ok<SearchResponse>())) {
         optionalAuthorization(OauthScope.SEARCH) { _, user ->
             val searchInfo = SolrSearchParams.parseSearchQuery(it.q)
-            val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
+            val actualSortOrder = searchInfo.validateSearchOrder(it.order ?: it.sortOrder)
 
             newSuspendedTransaction {
                 if (searchInfo.checkKeySearch(call)) return@newSuspendedTransaction
@@ -333,7 +335,7 @@ fun Route.searchRoute() {
             val needsDiff = it.minNps != null || it.maxNps != null
             val searchFields = Beatmap.name
             val searchInfo = PgSearchParams.parseSearchQuery(it.q, searchFields)
-            val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
+            val actualSortOrder = searchInfo.validateSearchOrder(it.order ?: it.sortOrder)
             val sortArgs = searchInfo.sortArgsFor(actualSortOrder)
 
             newSuspendedTransaction {

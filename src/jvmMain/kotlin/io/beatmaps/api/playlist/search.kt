@@ -96,7 +96,7 @@ fun Route.playlistSearch() {
 
     getWithOptions<PlaylistApi.Solr>("Search for playlists with solr".responds(ok<PlaylistSearchResponse>())) { req ->
         val searchInfo = SolrSearchParams.parseSearchQuery(req.q)
-        val actualSortOrder = searchInfo.validateSearchOrder(req.sortOrder)
+        val actualSortOrder = searchInfo.validateSearchOrder(req.order ?: req.sortOrder)
 
         newSuspendedTransaction {
             val results = PlaylistSolr.newQuery()
@@ -152,7 +152,7 @@ fun Route.playlistSearch() {
     getWithOptions<PlaylistApi.Text>("Search for playlists".responds(ok<PlaylistSearchResponse>())) {
         val searchFields = PgConcat(" ", Playlist.name, Playlist.description)
         val searchInfo = PgSearchParams.parseSearchQuery(it.q, searchFields)
-        val actualSortOrder = searchInfo.validateSearchOrder(it.sortOrder)
+        val actualSortOrder = searchInfo.validateSearchOrder(it.order ?: it.sortOrder)
         val sortArgs = when (actualSortOrder) {
             SearchOrder.Curated -> listOf(Playlist.curatedAt to SortOrder.DESC_NULLS_LAST, Playlist.createdAt to SortOrder.DESC)
             else -> listOf(Playlist.createdAt to SortOrder.DESC)

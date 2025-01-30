@@ -98,7 +98,8 @@ class PlaylistApi {
     data class Solr(
         val q: String = "",
         @DefaultValue("0") val page: Long = 0,
-        val sortOrder: SearchOrder = SearchOrder.Relevance,
+        @Ignore val sortOrder: SearchOrder = SearchOrder.Relevance,
+        val order: SearchOrder? = null,
         val minNps: Float? = null,
         val maxNps: Float? = null,
         val from: Instant? = null,
@@ -115,7 +116,8 @@ class PlaylistApi {
     data class Text(
         val q: String = "",
         @DefaultValue("0") val page: Long = 0,
-        val sortOrder: SearchOrder = SearchOrder.Relevance,
+        @Ignore val sortOrder: SearchOrder = SearchOrder.Relevance,
+        val order: SearchOrder? = null,
         val minNps: Float? = null,
         val maxNps: Float? = null,
         val from: Instant? = null,
