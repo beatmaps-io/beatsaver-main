@@ -16,7 +16,7 @@ abstract class CommonParams {
         (if (search.isNotBlank()) "q=${encodeURIComponent(search)}" else null),
         includeIfNotNull(maxNps, "maxNps"),
         includeIfNotNull(minNps, "minNps"),
-        (if (sortOrder != SearchOrder.Relevance) "order=$sortOrder" else null),
+        (if (sortOrder != SearchOrder.Relevance) "sortOrder=$sortOrder" else null),
         includeIfNotNull(from, "from"),
         includeIfNotNull(to, "to")
     ).toTypedArray()
