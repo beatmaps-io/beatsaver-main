@@ -113,20 +113,26 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
     val history = History(useNavigate())
     val params = useParams()
 
-    fun setupTabState(user: UserDetail) {
-        val hash = location.hash.substring(1)
-        val tabContext = TabContext(params["userId"]?.toIntOrNull())
-        val newState = ProfileTab.entries.firstOrNull {
-            hash == it.tabText.lowercase() && it.condition(userData, tabContext, user)
-        } ?: ProfileTab.entries.firstOrNull { it.bootCondition() && it.condition(userData, tabContext, user) } ?: run {
-            if (ProfileTab.UNPUBLISHED.condition(userData, tabContext, user)) {
-                ProfileTab.UNPUBLISHED
-            } else {
-                ProfileTab.PUBLISHED
-            }
+    fun defaultTab(tabContext: TabContext, user: UserDetail?) =
+        if (ProfileTab.UNPUBLISHED.condition(userData, tabContext, user)) {
+            ProfileTab.UNPUBLISHED
+        } else {
+            ProfileTab.PUBLISHED
         }
 
-        setTabState(newState)
+    fun firstTab(tabContext: TabContext, user: UserDetail?) =
+        ProfileTab.entries.firstOrNull { it.bootCondition() && it.condition(userData, tabContext, user) }
+
+    fun tabFromHash(user: UserDetail?): ProfileTab {
+        val hash = window.location.hash.substring(1)
+        val tabContext = TabContext(params["userId"]?.toIntOrNull())
+        return ProfileTab.entries.firstOrNull {
+            hash == it.tabText.lowercase() && it.condition(userData, tabContext, user)
+        } ?: firstTab(tabContext, user) ?: defaultTab(tabContext, user)
+    }
+
+    fun setupTabState(user: UserDetail?) {
+        setTabState(tabFromHash(user))
         setStartup(true)
     }
 
@@ -233,10 +239,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
 
     useEffectWithCleanup(location.pathname, params["userId"]) {
         val onHashChange = { _: Event ->
-            val hash = window.location.hash.substring(1)
-            val tabContext = TabContext(params["userId"]?.toIntOrNull())
-            val newState = ProfileTab.entries.firstOrNull { hash == it.tabText.lowercase() && it.condition(userData, tabContext, userDetail) } ?: tabState
-            setTabState(newState)
+            setTabState(tabFromHash(userDetail))
         }
 
         window.addEventListener(HashChangeEvent.HASH_CHANGE, onHashChange)
