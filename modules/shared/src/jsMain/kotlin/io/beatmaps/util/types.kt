@@ -11,15 +11,18 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlin.io.encoding.Base64
+import kotlin.io.encoding.Base64.PaddingOption
 
 fun String.toInstant() = Instant.parse(Moment(this).toISOString())
 
 external fun encodeURIComponent(uri: String): String
 external fun decodeURIComponent(encodedURI: String): String
 
+private val base64 = Base64.withPadding(PaddingOption.PRESENT_OPTIONAL)
+
 fun parseJwt(jwt: String): JsonObject {
     val base64Url = jwt.split('.')[1]
-    val jsonPayload = Base64.decode(base64Url).decodeToString()
+    val jsonPayload = base64.decode(base64Url).decodeToString()
     return json.parseToJsonElement(jsonPayload).jsonObject
 }
 
