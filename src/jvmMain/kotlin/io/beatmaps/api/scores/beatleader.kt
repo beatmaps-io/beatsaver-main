@@ -2,8 +2,8 @@ package io.beatmaps.api.scores
 
 import io.beatmaps.api.LeaderboardData
 import io.beatmaps.api.LeaderboardScore
-import io.beatmaps.common.SSGameMode
 import io.beatmaps.common.api.EDifficulty
+import io.beatmaps.common.beatsaber.leaderboard.SSGameMode
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -13,7 +13,7 @@ class BeatLeaderScores(private val client: HttpClient) : RemoteScores {
     override suspend fun getLeaderboard(hash: String, diff: EDifficulty, mode: SSGameMode, page: Int) =
         ssTry {
             client.get(
-                "https://api.beatleader.com/v5/scores/$hash/${diff.enumName()}/${mode.characteristic.enumName()}?page=$page&count=12"
+                "https://api.beatleader.com/v5/scores/$hash/${diff.name}/${mode.characteristic.human()}?page=$page&count=12"
             ).body<BLPaged>()
         }.let {
             LeaderboardData(

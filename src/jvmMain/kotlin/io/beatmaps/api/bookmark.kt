@@ -3,6 +3,7 @@ package io.beatmaps.api
 import de.nielsfalk.ktor.swagger.DefaultValue
 import de.nielsfalk.ktor.swagger.Description
 import de.nielsfalk.ktor.swagger.Ignore
+import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.db.ConflictType
 import io.beatmaps.common.db.NowExpression
@@ -17,7 +18,6 @@ import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
-import io.beatmaps.common.pub
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization
 import io.ktor.server.application.call

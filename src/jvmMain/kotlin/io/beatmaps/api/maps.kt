@@ -12,6 +12,7 @@ import io.beatmaps.common.DeletedData
 import io.beatmaps.common.FlagsEditData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.MapTag
+import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EMapState
@@ -33,7 +34,6 @@ import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
-import io.beatmaps.common.pub
 import io.beatmaps.common.solr.all
 import io.beatmaps.common.solr.collections.BsSolr
 import io.beatmaps.common.solr.field.eq

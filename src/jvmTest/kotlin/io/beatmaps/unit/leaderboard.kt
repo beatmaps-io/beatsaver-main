@@ -5,8 +5,8 @@ import io.beatmaps.api.scores.BeatLeaderScores
 import io.beatmaps.api.scores.SSLeaderboardInfo
 import io.beatmaps.api.scores.SSPaged
 import io.beatmaps.api.scores.ScoreSaberScores
-import io.beatmaps.common.SSGameMode
 import io.beatmaps.common.api.EDifficulty
+import io.beatmaps.common.beatsaber.leaderboard.SSGameMode
 import io.beatmaps.common.json
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders

@@ -4,10 +4,10 @@ import io.beatmaps.api.CuratePlaylist
 import io.beatmaps.api.PlaylistApi
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.from
+import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Playlist
-import io.beatmaps.common.pub
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization
 import io.ktor.http.HttpStatusCode

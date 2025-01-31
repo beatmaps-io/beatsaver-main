@@ -1,6 +1,7 @@
 package io.beatmaps.util
 
 import io.beatmaps.common.Folders
+import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
@@ -8,7 +9,6 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.joinVersions
-import io.beatmaps.common.pub
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.JoinType

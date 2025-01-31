@@ -18,8 +18,6 @@ import io.beatmaps.common.api.EBeatsaberEnvironment
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.RankedFilter
-import io.beatmaps.common.api.searchEnumOrNull
-import io.beatmaps.common.applyToQuery
 import io.beatmaps.common.db.greaterEqF
 import io.beatmaps.common.db.lateral
 import io.beatmaps.common.db.lessEqF
@@ -48,6 +46,7 @@ import io.beatmaps.common.solr.field.inList
 import io.beatmaps.common.solr.getIds
 import io.beatmaps.common.solr.paged
 import io.beatmaps.common.toQuery
+import io.beatmaps.common.util.applyToQuery
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
 import io.ktor.server.application.call
@@ -250,7 +249,7 @@ fun Route.searchRoute() {
 
                         it.characteristics?.let { char ->
                             char.split(",")
-                                .mapNotNull { c -> searchEnumOrNull<ECharacteristic>(c)?.human() }
+                                .mapNotNull { c -> ECharacteristic.fromNameOrNull(c)?.human() }
                                 .let {
                                     q.apply(BsSolr.characteristics inList it)
                                 }

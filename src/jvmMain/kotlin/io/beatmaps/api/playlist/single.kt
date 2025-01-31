@@ -26,7 +26,6 @@ import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.asQuery
-import io.beatmaps.common.cleanString
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.PlaylistDao
@@ -49,11 +48,11 @@ import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.solr.collections.BsSolr
 import io.beatmaps.common.solr.field.anyOf
 import io.beatmaps.common.solr.field.apply
-import io.beatmaps.common.solr.field.eq
 import io.beatmaps.common.solr.field.greaterEq
 import io.beatmaps.common.solr.field.inList
 import io.beatmaps.common.solr.field.lessEq
 import io.beatmaps.common.solr.getIds
+import io.beatmaps.common.util.cleanString
 import io.beatmaps.controllers.CdnSig
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix

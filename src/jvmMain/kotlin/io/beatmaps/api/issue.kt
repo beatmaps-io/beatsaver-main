@@ -1,6 +1,7 @@
 package io.beatmaps.api
 
 import io.beatmaps.api.user.from
+import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EIssueType
 import io.beatmaps.common.api.IDbIssueData
@@ -33,7 +34,6 @@ import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
-import io.beatmaps.common.pub
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
 import io.beatmaps.util.requireAuthorization

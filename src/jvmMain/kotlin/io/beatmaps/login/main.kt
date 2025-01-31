@@ -2,11 +2,11 @@ package io.beatmaps.login
 
 import io.beatmaps.api.user.UserCrypto
 import io.beatmaps.common.Config
+import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.getCountry
-import io.beatmaps.common.pub
 import io.beatmaps.genericPage
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts

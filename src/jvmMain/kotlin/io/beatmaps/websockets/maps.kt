@@ -2,15 +2,15 @@ package io.beatmaps.websockets
 
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
-import io.beatmaps.common.CDNUpdate
-import io.beatmaps.common.consumeAck
+import io.beatmaps.common.amqp.consumeAck
+import io.beatmaps.common.amqp.rabbitOptional
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.json
-import io.beatmaps.common.rabbitOptional
+import io.beatmaps.common.util.CDNUpdate
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.application
 import kotlinx.serialization.Serializable

@@ -19,6 +19,8 @@ import io.beatmaps.common.PasswordChangedData
 import io.beatmaps.common.RevokeSessionsData
 import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UploadLimitData
+import io.beatmaps.common.amqp.pub
+import io.beatmaps.common.amqp.sendEmail
 import io.beatmaps.common.api.ApiOrder
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EDifficulty
@@ -51,8 +53,6 @@ import io.beatmaps.common.dbo.handlePatreon
 import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
-import io.beatmaps.common.pub
-import io.beatmaps.common.sendEmail
 import io.beatmaps.common.solr.SolrHelper
 import io.beatmaps.common.solr.SolrResults
 import io.beatmaps.common.solr.collections.UserSolr

@@ -1,10 +1,10 @@
 package io.beatmaps.util
 
+import io.beatmaps.common.amqp.rabbitOptional
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
-import io.beatmaps.common.rabbitOptional
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.and

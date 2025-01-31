@@ -85,8 +85,8 @@ data class SearchParams(
         includeIfNotNull(verified, "verified"),
         includeIfNotNull(followed, "followed"),
         includeIfNotNull(fullSpread, "fullSpread"),
-        (if (environments.isNotEmpty()) "&environments=${environments.joinToString(",")}" else null),
-        tags.toQuery().let { tagStr -> (if (tagStr.isNotEmpty()) "&tags=$tagStr" else null) }
+        (if (environments.isNotEmpty()) "environments=${environments.joinToString(",")}" else null),
+        tags.toQuery().let { tagStr -> (if (tagStr.isNotEmpty()) "tags=$tagStr" else null) }
     )
 }
 

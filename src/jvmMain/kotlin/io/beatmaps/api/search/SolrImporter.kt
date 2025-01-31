@@ -1,9 +1,10 @@
 package io.beatmaps.api.search
 
 import io.beatmaps.api.UserStats
+import io.beatmaps.common.amqp.consumeAck
+import io.beatmaps.common.amqp.rabbitOptional
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EMapState
-import io.beatmaps.common.consumeAck
 import io.beatmaps.common.db.arrayAgg
 import io.beatmaps.common.db.boolOr
 import io.beatmaps.common.db.countWithFilter
@@ -22,7 +23,6 @@ import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
-import io.beatmaps.common.rabbitOptional
 import io.beatmaps.common.solr.collections.BsSolr
 import io.beatmaps.common.solr.collections.PlaylistSolr
 import io.beatmaps.common.solr.collections.UserSolr
