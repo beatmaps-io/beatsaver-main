@@ -13,7 +13,8 @@ import io.beatmaps.api.complexToReview
 import io.beatmaps.api.from
 import io.beatmaps.api.preHydrate
 import io.beatmaps.common.Config
-import io.beatmaps.common.consumeAck
+import io.beatmaps.common.amqp.consumeAck
+import io.beatmaps.common.amqp.rabbitOptional
 import io.beatmaps.common.db.avgWithFilter
 import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.dbo.Beatmap
@@ -27,7 +28,6 @@ import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
-import io.beatmaps.common.rabbitOptional
 import io.beatmaps.common.util.TextHelper
 import io.ktor.client.HttpClient
 import io.ktor.client.request.post

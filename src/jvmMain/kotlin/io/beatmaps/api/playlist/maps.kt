@@ -12,6 +12,7 @@ import io.beatmaps.api.PlaylistBatchRequest
 import io.beatmaps.api.PlaylistMapRequest
 import io.beatmaps.api.UserApiException
 import io.beatmaps.api.getMaxMap
+import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
@@ -21,7 +22,6 @@ import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.joinVersions
-import io.beatmaps.common.pub
 import io.beatmaps.util.requireAuthorization
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call

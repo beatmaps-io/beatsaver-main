@@ -1,15 +1,15 @@
 package io.beatmaps.cloudflare
 
-import io.beatmaps.common.CDNUpdate
+import io.beatmaps.common.util.CDNUpdate
 import io.beatmaps.common.Folders
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
-import io.beatmaps.common.consumeAck
+import io.beatmaps.common.amqp.consumeAck
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
-import io.beatmaps.common.downloadFilename
-import io.beatmaps.common.rabbitOptional
+import io.beatmaps.common.util.downloadFilename
+import io.beatmaps.common.amqp.rabbitOptional
 import io.ktor.client.HttpClient
 import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.JoinType

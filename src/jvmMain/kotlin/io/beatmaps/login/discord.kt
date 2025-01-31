@@ -4,13 +4,13 @@ import io.beatmaps.api.alertCount
 import io.beatmaps.api.user.UserCrypto
 import io.beatmaps.common.Config
 import io.beatmaps.common.Folders
+import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
-import io.beatmaps.common.pub
 import io.beatmaps.util.requireAuthorization
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body

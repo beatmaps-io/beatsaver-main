@@ -1,9 +1,9 @@
 package io.beatmaps.util
 
 import io.beatmaps.api.alertCount
-import io.beatmaps.common.consumeAck
-import io.beatmaps.common.rabbitOptional
-import io.beatmaps.common.rb
+import io.beatmaps.common.amqp.consumeAck
+import io.beatmaps.common.amqp.rabbitOptional
+import io.beatmaps.common.amqp.rb
 import io.beatmaps.login.MongoClient
 import io.beatmaps.login.Session
 import io.ktor.server.application.Application

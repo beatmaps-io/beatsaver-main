@@ -1,14 +1,14 @@
 package io.beatmaps.util
 
 import io.beatmaps.common.CountryInfo
-import io.beatmaps.common.DownloadInfo
-import io.beatmaps.common.DownloadType
-import io.beatmaps.common.consumeAck
+import io.beatmaps.common.amqp.DownloadInfo
+import io.beatmaps.common.amqp.DownloadType
+import io.beatmaps.common.amqp.consumeAck
+import io.beatmaps.common.amqp.rabbitOptional
 import io.beatmaps.common.db.incrementBy
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.getCountry
-import io.beatmaps.common.rabbitOptional
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call

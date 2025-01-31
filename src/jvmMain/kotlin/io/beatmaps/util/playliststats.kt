@@ -1,13 +1,13 @@
 package io.beatmaps.util
 
-import io.beatmaps.common.consumeAck
+import io.beatmaps.common.amqp.consumeAck
+import io.beatmaps.common.amqp.rabbitOptional
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.PlaylistMapDao
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
-import io.beatmaps.common.rabbitOptional
 import io.ktor.server.application.Application
 import kotlinx.serialization.builtins.serializer
 import org.jetbrains.exposed.sql.JoinType

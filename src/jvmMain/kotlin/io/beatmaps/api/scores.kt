@@ -4,7 +4,7 @@ import io.beatmaps.api.scores.BeatLeaderScores
 import io.beatmaps.api.scores.ScoreSaberScores
 import io.beatmaps.api.scores.scoresClient
 import io.beatmaps.api.util.getWithOptions
-import io.beatmaps.common.SSGameMode
+import io.beatmaps.common.beatsaber.leaderboard.SSGameMode
 import io.beatmaps.common.api.EDifficulty
 import io.ktor.server.application.call
 import io.ktor.server.locations.Location

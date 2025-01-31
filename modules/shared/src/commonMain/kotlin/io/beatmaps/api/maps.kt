@@ -1,4 +1,4 @@
-@file:UseSerializers(InstantAsStringSerializer::class, ECharacteristicSerializer::class)
+@file:UseSerializers(InstantAsStringSerializer::class)
 
 package io.beatmaps.api
 
@@ -6,7 +6,6 @@ import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EBeatsaberEnvironment
 import io.beatmaps.common.api.ECharacteristic
-import io.beatmaps.common.api.ECharacteristicSerializer
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.fixed

@@ -5,6 +5,7 @@ import io.beatmaps.common.ReplyDeleteData
 import io.beatmaps.common.ReplyModerationData
 import io.beatmaps.common.ReviewDeleteData
 import io.beatmaps.common.ReviewModerationData
+import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.common.db.NowExpression
@@ -31,7 +32,6 @@ import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
-import io.beatmaps.common.pub
 import io.beatmaps.util.captchaIfPresent
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization
