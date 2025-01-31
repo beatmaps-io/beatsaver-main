@@ -1,8 +1,8 @@
 package io.beatmaps.api.scores
 
 import io.beatmaps.api.LeaderboardData
-import io.beatmaps.common.beatsaber.leaderboard.SSGameMode
 import io.beatmaps.common.api.EDifficulty
+import io.beatmaps.common.beatsaber.leaderboard.SSGameMode
 import io.beatmaps.common.jsonIgnoreUnknown
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
