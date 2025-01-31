@@ -364,7 +364,7 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
     installOauth(httpClient)
     if (rabbitHost.isNotEmpty()) {
         install(RabbitMQ) {
-            setupAMQP {
+            setupAMQP(false) {
                 exchangeDeclare("beatmaps.dlq", BuiltinExchangeType.TOPIC, true)
                 exchangeDeclare("beatmaps", BuiltinExchangeType.TOPIC, true)
                 queueDeclare("vote", true, false, false, genericQueueConfig)
