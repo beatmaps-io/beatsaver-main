@@ -231,6 +231,9 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
                 )
             )
         }
+        nonce = { call ->
+            call.getNonce()
+        }
     }
 
     install(XForwardedHeaders)
