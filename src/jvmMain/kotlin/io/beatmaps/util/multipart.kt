@@ -29,7 +29,7 @@ private suspend fun <U> handleMultipartInternal(data: MultiPartData, ctx: Pipeli
 
     return if (part is PartData.FormItem) {
         // Process recaptcha immediately as it is time-critical
-        if (part.name.toString() == "recaptcha") {
+        if (part.name == "recaptcha") {
             val recaptchaSuccess = ctx.captchaProvider { provider ->
                 val verifyResponse = withContext(Dispatchers.IO) {
                     CaptchaVerifier.verify(client, provider, part.value, ctx.call.request.origin.remoteHost)
