@@ -15,7 +15,7 @@ import nl.myndocs.oauth2.json.JsonMapper
 import nl.myndocs.oauth2.request.CallContext
 import java.net.URI
 
-class BSCallContext(val applicationCall: ApplicationCall) : CallContext {
+class BSCallContext(private val applicationCall: ApplicationCall) : CallContext {
     override val path: String = applicationCall.request.path()
     override val method: String = applicationCall.request.httpMethod.value
     override val headers: Map<String, String> = applicationCall.request
@@ -31,21 +31,13 @@ class BSCallContext(val applicationCall: ApplicationCall) : CallContext {
         .filterValues { it.isNotEmpty() }
         .mapValues { it.value.first() }
 
-    private var _formParameters: Map<String, String>? = null
-    override val formParameters: Map<String, String>
-        get() = receiveParameters()
-
-    private fun receiveParameters(): Map<String, String> {
-        if (_formParameters == null) {
-            _formParameters = runBlocking {
-                applicationCall.receiveParameters()
-                    .toMap()
-                    .filterValues { it.isNotEmpty() }
-                    .mapValues { it.value.first() }
-            }
+    override val formParameters by lazy {
+        runBlocking {
+            applicationCall.receiveParameters()
+                .toMap()
+                .filterValues { it.isNotEmpty() }
+                .mapValues { it.value.first() }
         }
-
-        return _formParameters!!
     }
 
     override fun respondStatus(statusCode: Int) {

@@ -130,8 +130,12 @@ import kotlin.time.Duration.Companion.nanoseconds
 suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) =
     call.genericPage(statusCode, headerTemplate)
 
+fun ApplicationCall.getNonce() =
+    request.headers["X-CSP-Nonce"]
+
 suspend fun ApplicationCall.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null, includeHeader: Boolean = true) {
     val sess = sessions.get<Session>()
+    val nonce = getNonce()
     val provider = CaptchaVerifier.provider(this)
 
     // Force renew session
@@ -142,11 +146,10 @@ suspend fun ApplicationCall.genericPage(statusCode: HttpStatusCode = HttpStatusC
     if (sess != null && sess.uniqueName == null && request.path() != "/username") {
         respondRedirect("/username")
     } else {
-        respondHtmlTemplate(MainTemplate(sess, GenericPageTemplate(sess, provider), includeHeader), statusCode) {
+        respondHtmlTemplate(MainTemplate(sess, GenericPageTemplate(sess, provider, nonce), "BeatSaver.com", includeHeader, nonce), statusCode) {
             headElements {
                 headerTemplate?.invoke(this)
             }
-            pageTitle = "BeatSaver.com"
         }
     }
 }

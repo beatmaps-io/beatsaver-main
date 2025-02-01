@@ -15,31 +15,32 @@ import kotlinx.html.head
 import kotlinx.html.lang
 import kotlinx.html.link
 import kotlinx.html.meta
-import kotlinx.html.styleLink
 import kotlinx.html.title
 
-fun HEAD.deferredStyle(url: String): Unit = link {
+fun HEAD.bmStyle(url: String, nonce: String?, deferred: Boolean = false): Unit = link {
     rel = LinkRel.stylesheet
     type = LinkType.textCss
-    attributes["data-lazy"] = "true"
-    media = "print"
+    nonce?.let { attributes["nonce"] = it }
     href = url
+    if (deferred) {
+        attributes["data-lazy"] = "true"
+        media = "print"
+    }
 }
 
-class MainTemplate(private val s: Session?, private val body: Template<BODY>, private val includeHeader: Boolean = true) : Template<HTML> {
+class MainTemplate(private val s: Session?, private val body: Template<BODY>, private val pageTitle: String = "", private val includeHeader: Boolean = true, private val nonce: String? = null) : Template<HTML> {
     private val header = TemplatePlaceholder<HeaderTemplate>()
     private val bodyPlaceholder = TemplatePlaceholder<Template<BODY>>()
     val headElements = Placeholder<HEAD>()
-    var pageTitle = ""
 
     override fun HTML.apply() {
         lang = "en"
         head {
             insert(headElements)
             title { +pageTitle }
-            styleLink("/static/main.css")
-            deferredStyle("https://use.fontawesome.com/releases/v5.15.4/css/all.css")
-            deferredStyle("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400&display=swap")
+            bmStyle("/static/main.css", nonce)
+            bmStyle("https://use.fontawesome.com/releases/v5.15.4/css/all.css", nonce, true)
+            bmStyle("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400&display=swap", nonce, true)
             meta("theme-color", "#375a7f")
             meta("viewport", "width=device-width, min-width=575")
             meta("Description", "Beat saber custom maps")

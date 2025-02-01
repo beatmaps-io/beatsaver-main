@@ -8,6 +8,7 @@ import io.beatmaps.common.solr.SolrHelper
 import io.beatmaps.login.Session
 import io.ktor.server.html.Template
 import kotlinx.html.BODY
+import kotlinx.html.SCRIPT
 import kotlinx.html.div
 import kotlinx.html.id
 import kotlinx.html.main
@@ -15,7 +16,7 @@ import kotlinx.html.script
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-class GenericPageTemplate(private val s: Session?, private val provider: CaptchaProvider) : Template<BODY> {
+class GenericPageTemplate(private val s: Session?, private val provider: CaptchaProvider, private val nonce: String?) : Template<BODY> {
     override fun BODY.apply() {
         main("container") {
             id = "root"
@@ -34,13 +35,23 @@ class GenericPageTemplate(private val s: Session?, private val provider: Captcha
                 ConfigData(CaptchaVerifier.enabled(provider), SolrHelper.enabled, provider.name)
             )
         }
-        jsTags()
+        jsTags(nonce)
     }
 }
 
-fun BODY.jsTags() {
-    script(src = "/static/modules.js") {}
-    script(src = "/static/kotlin.js") {}
-    script(src = "/static/time.js") {}
-    script(src = "/static/main.js") {}
+private val applyNonce: SCRIPT.(String?) -> Unit = { n ->
+    n?.let { nonce = it }
+}
+
+private fun BODY.scriptWithNonce(src: String, nonce: String?) {
+    script(src = src) {
+        applyNonce(nonce)
+    }
+}
+
+fun BODY.jsTags(nonce: String? = null) {
+    scriptWithNonce("/static/modules.js", nonce)
+    scriptWithNonce("/static/kotlin.js", nonce)
+    scriptWithNonce("/static/time.js", nonce)
+    scriptWithNonce("/static/main.js", nonce)
 }
