@@ -3,6 +3,7 @@ package io.beatmaps.util
 import io.beatmaps.api.LeaderboardType
 import js.objects.jso
 import react.dom.html.HTMLAttributes
+import web.window.window
 
 fun String.transformURLIntoLinks() =
     replace("\\b((https?|ftp)://)?[-a-zA-Z0-9@:%._+~#=]{2,256}\\.[A-Za-z]{2,6}\\b(/[-a-zA-Z0-9@:%_+.~#?&/=]*)*(?:/|\\b)".toRegex()) {
@@ -48,6 +49,29 @@ fun String.parseSocialLinks() =
         v.replace(it.first.toRegex(setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE)), it.second)
     }
 
+external interface TrustedTypes {
+    fun createPolicy(name: String, options: PolicyOptions? = definedExternally): TrustedPolicy
+}
+
+external interface TrustedPolicy {
+    fun createHTML(input: String): String
+}
+
+external interface PolicyOptions {
+    var createHTML: (String) -> String
+    var createScript: (String) -> String
+    var createScriptURL: (String) -> String
+}
+
+private val trustedType = try {
+    (window.asDynamic().trustedTypes as? TrustedTypes)?.createPolicy(
+        "BeatMaps",
+        jso {
+            createHTML = { it }
+        }
+    )
+} catch (e: Exception) { null }
+private fun String.makeSafe() = trustedType?.createHTML(this) ?: this
 fun HTMLAttributes<*>.textToContent(text: String) {
     dangerouslySetInnerHTML = jso {
         __html = text
@@ -61,5 +85,6 @@ fun HTMLAttributes<*>.textToContent(text: String) {
             .parseSocialLinks()
             .replace(Regex("\n{3,}"), "\n\n")
             .replace("\n", "<br />")
+            .makeSafe()
     }
 }
