@@ -35,6 +35,9 @@
             }
         }
     };
+
+    config.output.trustedTypes = true;
+
     config.plugins.push(new ContextReplacementPlugin(/moment[\/\\]locale$/, /en\-gb/));
 
     const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
