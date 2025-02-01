@@ -30,16 +30,16 @@ private suspend fun <U> handleMultipartInternal(data: MultiPartData, ctx: Pipeli
     return if (part is PartData.FormItem) {
         // Process recaptcha immediately as it is time-critical
         if (part.name.toString() == "recaptcha") {
-            handleMultipartInternal(data, ctx, client, cb)
-                .copy(
-                    recaptchaSuccess = ctx.captchaProvider { provider ->
-                        val verifyResponse = withContext(Dispatchers.IO) {
-                            CaptchaVerifier.verify(client, provider, part.value, ctx.call.request.origin.remoteHost)
-                        }
+            val recaptchaSuccess = ctx.captchaProvider { provider ->
+                val verifyResponse = withContext(Dispatchers.IO) {
+                    CaptchaVerifier.verify(client, provider, part.value, ctx.call.request.origin.remoteHost)
+                }
 
-                        verifyResponse.success || throw UploadException("Could not verify user [${verifyResponse.errorCodes.joinToString(", ")}]")
-                    }
-                )
+                verifyResponse.success || throw UploadException("Could not verify user [${verifyResponse.errorCodes.joinToString(", ")}]")
+            }
+
+            handleMultipartInternal(data, ctx, client, cb)
+                .copy(recaptchaSuccess = recaptchaSuccess)
         } else {
             val newData = try {
                 if (part.value.startsWith("{") && part.value.endsWith("}")) {
@@ -56,7 +56,8 @@ private suspend fun <U> handleMultipartInternal(data: MultiPartData, ctx: Pipeli
             }
         }
     } else if (part is PartData.FileItem) {
-        handleMultipartInternal(data, ctx, client, cb).copy(fileOutput = cb(part))
+        val fileOutput = cb(part)
+        handleMultipartInternal(data, ctx, client, cb).copy(fileOutput = fileOutput)
     } else if (part != null) {
         handleMultipartInternal(data, ctx, client, cb)
     } else {
