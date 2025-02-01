@@ -1,5 +1,6 @@
 package io.beatmaps.controllers
 
+import io.beatmaps.getNonce
 import io.beatmaps.login.Session
 import io.beatmaps.pages.DMCAPageTemplate
 import io.beatmaps.pages.PrivacyPageTemplate
@@ -29,22 +30,16 @@ class PolicyController {
 fun Route.policyController() {
     get<PolicyController.DMCA> {
         val sess = call.sessions.get<Session>()
-        call.respondHtmlTemplate(MainTemplate(sess, DMCAPageTemplate()), HttpStatusCode.OK) {
-            pageTitle = "BeatSaver - DMCA Policy"
-        }
+        call.respondHtmlTemplate(MainTemplate(sess, DMCAPageTemplate(), "BeatSaver - DMCA Policy", nonce = call.getNonce()), HttpStatusCode.OK) {}
     }
 
     get<PolicyController.TOS> {
         val sess = call.sessions.get<Session>()
-        call.respondHtmlTemplate(MainTemplate(sess, TOSPageTemplate()), HttpStatusCode.OK) {
-            pageTitle = "BeatSaver - Terms of Service"
-        }
+        call.respondHtmlTemplate(MainTemplate(sess, TOSPageTemplate(), "BeatSaver - Terms of Service", nonce = call.getNonce()), HttpStatusCode.OK) {}
     }
 
     get<PolicyController.Privacy> {
         val sess = call.sessions.get<Session>()
-        call.respondHtmlTemplate(MainTemplate(sess, PrivacyPageTemplate()), HttpStatusCode.OK) {
-            pageTitle = "BeatSaver - Privacy Policy"
-        }
+        call.respondHtmlTemplate(MainTemplate(sess, PrivacyPageTemplate(), "BeatSaver - Privacy Policy", nonce = call.getNonce()), HttpStatusCode.OK) {}
     }
 }

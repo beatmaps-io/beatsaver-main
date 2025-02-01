@@ -55,17 +55,15 @@ object DBTokenStore : TokenStore {
             refreshToken(row)
         )
 
-    override fun codeToken(token: String): CodeToken? {
-        var code = codes[token]
-
-        if (code != null && code.expired()) {
-            codes.remove(token)
-
-            code = null
+    override fun codeToken(token: String) =
+        codes[token]?.let { code ->
+            if (code.expired()) {
+                codes.remove(token)
+                null
+            } else {
+                code
+            }
         }
-
-        return code
-    }
 
     override fun consumeCodeToken(token: String): CodeToken? = codes.remove(token)
 
