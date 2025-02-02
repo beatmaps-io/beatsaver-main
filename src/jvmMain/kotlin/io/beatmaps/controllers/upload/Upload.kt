@@ -71,7 +71,7 @@ object Upload {
                 info.thumbnail.writeTo(it)
             }
 
-            info.preview.size() > 0 || throw UploadException("Internal error 3")
+            info.preview.size() > 0 || throw UploadException("Failed to generate preview audio")
             newAudioFile.outputStream().use {
                 info.preview.writeTo(it)
             }
