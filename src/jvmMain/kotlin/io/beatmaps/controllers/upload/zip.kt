@@ -30,7 +30,7 @@ fun ZipHelperWithAudio.validateFiles(q: ExtractedInfo) =
         info.toHash.writeTo(dos)
 
         // Generate 10 second preview
-        generatePreview(info.preview)
+        generatePreview(info.preview, info.duration)
 
         // Write updated info.dat back to zip
         infoPath.deleteIfExists()
