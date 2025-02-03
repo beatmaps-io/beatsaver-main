@@ -65,7 +65,7 @@ external interface PolicyOptions {
 
 private val trustedType = try {
     (window.asDynamic().trustedTypes as? TrustedTypes)?.createPolicy(
-        "BeatMaps",
+        "BMMD",
         jso {
             createHTML = { it }
         }
