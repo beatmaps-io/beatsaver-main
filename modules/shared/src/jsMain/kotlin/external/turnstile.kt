@@ -11,7 +11,7 @@ external interface ITurnstileProps : PropsWithRef<ITurnstile> {
     var onWidgetLoad: (String) -> Unit
     var onSuccess: (String) -> Unit
     var onExpire: () -> Unit
-    var onError: () -> Unit
+    var onError: (Int) -> Boolean
     var onBeforeInteractive: () -> Unit
     var onAfterInteractive: () -> Unit
 }

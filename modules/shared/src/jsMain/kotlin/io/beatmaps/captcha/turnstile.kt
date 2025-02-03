@@ -22,12 +22,12 @@ import web.timers.setTimeout
 import kotlin.js.Promise
 import kotlin.time.Duration.Companion.seconds
 
-class TurnstileHandler(private val ext: RefObject<ITurnstile>, private val pRef: RefObject<() -> Unit>) : ICaptchaHandler {
+class TurnstileHandler(private val ext: RefObject<ITurnstile>, private val pRef: RefObject<(Int) -> Unit>) : ICaptchaHandler {
     override fun execute() =
         ext.current?.let { ext ->
             Promise { resolve, reject ->
                 pRef.current = {
-                    reject(Exception("Turnstile error"))
+                    reject(Exception("Turnstile error [$it]"))
                     reset()
                 }
 
@@ -45,13 +45,13 @@ class TurnstileHandler(private val ext: RefObject<ITurnstile>, private val pRef:
 
 val turnstile = fcmemo<CaptchaProps>("TurnstileWrapper") { props ->
     val ref = useRef<ITurnstile>()
-    val pRef = useRef<() -> Unit>()
+    val pRef = useRef<(Int) -> Unit>()
     val (popover, setPopover) = useState(false)
 
     useEffectOnceWithCleanup {
         onCleanup {
             // Pretend there was an error when unmounting
-            pRef.current?.invoke()
+            pRef.current?.invoke(0)
         }
     }
 
@@ -87,7 +87,7 @@ val turnstile = fcmemo<CaptchaProps>("TurnstileWrapper") { props ->
                 )
             }
             onError = useCallback {
-                pRef.current?.invoke()
+                pRef.current?.invoke(it) != null
             }
             onBeforeInteractive = useCallback {
                 setPopover(true)

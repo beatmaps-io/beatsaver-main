@@ -121,7 +121,7 @@ val newReview = fcmemo<NewReviewProps>("newReview") { props ->
                     div {
                         className = ClassName("d-flex flex-row-reverse mt-1")
                         button {
-                            className = ClassName("btn btn-info")
+                            className = ClassName("btn btn-info text-nowrap")
                             disabled = reviewLength < 1 || loading
                             onClick = {
                                 val newReview = textareaRef.current?.value ?: ""
