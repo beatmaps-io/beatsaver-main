@@ -62,6 +62,7 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -209,11 +210,11 @@ fun Route.issueRoute(client: HttpClient) {
 
             val req = call.receive<IssueCreationRequest>()
 
-            requireCaptcha(
+            val (res, issueId) = requireCaptcha(
                 client,
                 req.captcha,
                 {
-                    transaction {
+                    ActionResponse.success() to transaction {
                         Issue.insertAndGetId {
                             it[creator] = sess.userId
                             it[createdAt] = NowExpression(createdAt)
@@ -242,10 +243,14 @@ fun Route.issueRoute(client: HttpClient) {
                     }
                 }
             ) {
-                it.toActionResponse()
-            }.let {
-                call.pub("beatmaps", "issues.$it.created", null, it)
-                call.respond(HttpStatusCode.Created, it)
+                it.toActionResponse() to null
+            }
+
+            if (issueId != null) {
+                call.pub("beatmaps", "issues.$issueId.created", null, issueId)
+                call.respond(HttpStatusCode.Created, issueId)
+            } else {
+                call.respond(HttpStatusCode.BadRequest, res)
             }
         }
     }
@@ -260,10 +265,14 @@ fun Route.issueRoute(client: HttpClient) {
                         (Issue.id eq it.id).let { q ->
                             if (sess?.isAdmin() == true) {
                                 q
-                            } else if (sess?.isCurator() == true) {
-                                q and (Issue.type inList(EIssueType.curatorTypes))
                             } else {
-                                q and (Issue.creator eq sess?.userId)
+                                val cond = Issue.creator eq sess?.userId
+
+                                if (sess?.isCurator() == true) {
+                                    q and ((Issue.type inList(EIssueType.curatorTypes)) or cond)
+                                } else {
+                                    q and cond
+                                }
                             }
                         }
                     }
