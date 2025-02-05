@@ -241,9 +241,7 @@ fun Route.issueRoute(client: HttpClient) {
                         }
                     }
                 }
-            ) {
-                it.toActionResponse()
-            }.let {
+            ).let {
                 call.pub("beatmaps", "issues.$it.created", null, it)
                 call.respond(HttpStatusCode.Created, it)
             }
