@@ -161,10 +161,10 @@ object SolrImporter {
     private fun triggerUserInfo(updateUserId: Int) {
         transaction {
             val (user, stats) = User
-                .join(Beatmap, JoinType.INNER, User.id, Beatmap.uploader) {
+                .join(Beatmap, JoinType.LEFT, User.id, Beatmap.uploader) {
                     Beatmap.deletedAt.isNull()
                 }
-                .join(Versions, JoinType.INNER, onColumn = Beatmap.id, otherColumn = Versions.mapId, additionalConstraint = { Versions.state eq EMapState.Published })
+                .join(Versions, JoinType.LEFT, onColumn = Beatmap.id, otherColumn = Versions.mapId, additionalConstraint = { Versions.state eq EMapState.Published })
                 .select(
                     User.columns +
                         Beatmap.uploader +
