@@ -209,11 +209,11 @@ fun Route.issueRoute(client: HttpClient) {
 
             val req = call.receive<IssueCreationRequest>()
 
-            requireCaptcha(
+            val (res, issueId) = requireCaptcha(
                 client,
                 req.captcha,
                 {
-                    transaction {
+                    ActionResponse.success() to transaction {
                         Issue.insertAndGetId {
                             it[creator] = sess.userId
                             it[createdAt] = NowExpression(createdAt)
@@ -241,9 +241,15 @@ fun Route.issueRoute(client: HttpClient) {
                         }
                     }
                 }
-            ).let {
-                call.pub("beatmaps", "issues.$it.created", null, it)
-                call.respond(HttpStatusCode.Created, it)
+            ) {
+                it.toActionResponse() to null
+            }
+
+            if (issueId != null) {
+                call.pub("beatmaps", "issues.$issueId.created", null, issueId)
+                call.respond(HttpStatusCode.Created, issueId)
+            } else {
+                call.respond(HttpStatusCode.BadRequest, res)
             }
         }
     }
