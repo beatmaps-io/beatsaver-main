@@ -4,6 +4,7 @@ import io.beatmaps.api.user.from
 import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EIssueType
+import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.IDbIssueData
 import io.beatmaps.common.api.MapReportData
 import io.beatmaps.common.api.PlaylistReportData
@@ -24,6 +25,7 @@ import io.beatmaps.common.dbo.Review
 import io.beatmaps.common.dbo.ReviewDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.handleCurator
@@ -96,7 +98,13 @@ fun Iterable<ResultRow>.preHydrate(isAdmin: Boolean) = also {
             EIssueType.MapperApplication -> {}
             EIssueType.MapReport -> {
                 Beatmap
-                    .joinVersions()
+                    .joinVersions {
+                        if (isAdmin) {
+                            Op.TRUE
+                        } else {
+                            Versions.state eq EMapState.Published
+                        }
+                    }
                     .joinUploader()
                     .joinCurator()
                     .selectAll()
