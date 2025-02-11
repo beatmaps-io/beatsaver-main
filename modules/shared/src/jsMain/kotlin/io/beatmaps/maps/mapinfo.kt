@@ -19,7 +19,6 @@ import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EIssueType
 import io.beatmaps.common.api.EMapState
-import io.beatmaps.common.api.MapAttr
 import io.beatmaps.globalContext
 import io.beatmaps.index.attrs
 import io.beatmaps.index.colorStr

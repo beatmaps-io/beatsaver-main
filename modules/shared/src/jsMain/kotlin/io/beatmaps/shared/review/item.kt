@@ -6,6 +6,7 @@ import external.axiosGet
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.History
+import io.beatmaps.UserData
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.CurateReview
 import io.beatmaps.api.DeleteReview
@@ -306,9 +307,8 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                             }
                         }
 
-                        fun userCanReply() = userData != null && (userData.userId == rv.creator?.id || userData.userId == props.map?.uploader?.id ||
-                            props.map?.collaborators?.any { it.id == userData.userId } == true)
-                        if (!editing && props.captcha != null && userCanReply()) {
+                        fun userCanReply(user: UserData) = user.userId == rv.creator?.id || user.userId == props.map?.uploader?.id || props.map?.collaborators?.any { it.id == user.userId } == true
+                        if (!editing && props.captcha != null && userData != null && userCanReply(userData)) {
                             replyInput {
                                 onSave = { reply ->
                                     props.captcha?.current?.execute()?.then {

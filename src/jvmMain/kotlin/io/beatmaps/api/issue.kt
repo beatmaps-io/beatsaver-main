@@ -297,7 +297,8 @@ fun createDbIssue(type: EIssueType, id: Int): IDbIssueData = when (type) {
                 Beatmap.id, Beatmap.name, Beatmap.description, Beatmap.uploader, Beatmap.uploaded, Beatmap.declaredAi,
                 Versions.id, Versions.bpm, Versions.duration, Versions.hash,
                 User.id, User.name, User.uniqueName, User.description, User.avatar,
-                reviewerAlias[User.id], reviewerAlias[User.name], reviewerAlias[User.uniqueName], reviewerAlias[User.description], reviewerAlias[User.avatar])
+                reviewerAlias[User.id], reviewerAlias[User.name], reviewerAlias[User.uniqueName], reviewerAlias[User.description], reviewerAlias[User.avatar]
+            )
             .where {
                 (Review.id eq id) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
             }
