@@ -42,7 +42,20 @@ import web.html.HTMLDivElement
 external interface BeatmapInfoProps : AutoSizeComponentProps<MapDetail> {
     var version: MapVersion?
     var audio: RefObject<Audio>
+    var altColors: Boolean?
 }
+
+fun MapDetail.attrs() = listOfNotNull(
+    if (ranked || blRanked) MapAttr.Ranked else null,
+    if (curator != null) MapAttr.Curated else null
+).ifEmpty {
+    listOfNotNull(
+        if (uploader.verifiedMapper || collaborators?.any { it.verifiedMapper } == true) MapAttr.Verified else null
+    )
+}
+
+fun List<MapAttr>.colorStr() = joinToString(" ") { it.color }
+fun List<MapAttr>.titleStr() = joinToString(" + ") { it.name }
 
 val beatmapInfo = fcmemo<BeatmapInfoProps>("beatmapInfo") { props ->
     val autoSize = useAutoSize<MapDetail, HTMLDivElement>(props, 30)
@@ -60,22 +73,15 @@ val beatmapInfo = fcmemo<BeatmapInfoProps>("beatmapInfo") { props ->
     }
 
     props.obj?.let { map ->
-        val mapAttrs = listOfNotNull(
-            if (map.ranked || map.blRanked) MapAttr.Ranked else null,
-            if (map.curator != null) MapAttr.Curated else null
-        ).ifEmpty {
-            listOfNotNull(
-                if (map.uploader.verifiedMapper || map.collaborators?.any { it.verifiedMapper } == true) MapAttr.Verified else null
-            )
-        }
+        val mapAttrs = map.attrs()
 
         div {
             className = ClassName("beatmap")
             autoSize.style(this)
 
             coloredCard {
-                color = mapAttrs.joinToString(" ") { it.color }
-                title = mapAttrs.joinToString(" + ") { it.name }
+                color = mapAttrs.colorStr()
+                title = mapAttrs.titleStr()
 
                 div {
                     audioPreview {

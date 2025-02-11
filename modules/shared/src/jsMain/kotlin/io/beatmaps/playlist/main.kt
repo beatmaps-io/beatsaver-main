@@ -13,6 +13,7 @@ external interface PlaylistsModule {
     val page: ComponentType<Props>
     val addTo: ComponentType<AddToPlaylistProps>
     val table: ComponentType<PlaylistTableProps>
+    val info: ComponentType<PlaylistInfoProps>
 }
 
 data class PlaylistsExotics(
@@ -21,7 +22,8 @@ data class PlaylistsExotics(
     val feed: ExoticComponent<Props>,
     val page: ExoticComponent<Props>,
     val addTo: ExoticComponent<AddToPlaylistProps>,
-    val table: ExoticComponent<PlaylistTableProps>
+    val table: ExoticComponent<PlaylistTableProps>,
+    val info: ExoticComponent<PlaylistInfoProps>
 )
 
 val playlists = importAsync<PlaylistsModule>("./BeatMaps-playlists").let { promise ->
@@ -31,6 +33,7 @@ val playlists = importAsync<PlaylistsModule>("./BeatMaps-playlists").let { promi
         promise.component { it.feed },
         promise.component { it.page },
         promise.component { it.addTo },
-        promise.component { it.table }
+        promise.component { it.table },
+        promise.component { it.info }
     )
 }

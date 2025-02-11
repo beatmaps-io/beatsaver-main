@@ -6,6 +6,7 @@ import external.axiosGet
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.History
+import io.beatmaps.UserData
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.CurateReview
 import io.beatmaps.api.DeleteReview
@@ -16,7 +17,7 @@ import io.beatmaps.api.ReplyRequest
 import io.beatmaps.api.ReviewConstants
 import io.beatmaps.api.ReviewDetail
 import io.beatmaps.captcha.ICaptchaHandler
-import io.beatmaps.common.api.ReviewReportData
+import io.beatmaps.common.api.EIssueType
 import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.globalContext
 import io.beatmaps.issues.reportModal
@@ -111,7 +112,7 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                 val reason = reasonRef.current?.value?.trim() ?: ""
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
-                    IssueCreationRequest(captcha, reason, ReviewReportData(reviewId)),
+                    IssueCreationRequest(captcha, reason, reviewId, EIssueType.ReviewReport),
                     generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
                 ).then {
                     history.push("/issues/${it.data}")
@@ -306,7 +307,8 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                             }
                         }
 
-                        if (!editing && userData != null && (userData.userId == rv.creator?.id || userData.userId == props.map?.uploader?.id || props.map?.collaborators?.any { it.id == userData.userId } == true)) {
+                        fun userCanReply(user: UserData) = user.userId == rv.creator?.id || user.userId == props.map?.uploader?.id || props.map?.collaborators?.any { it.id == user.userId } == true
+                        if (!editing && props.captcha != null && userData != null && userCanReply(userData)) {
                             replyInput {
                                 onSave = { reply ->
                                     props.captcha?.current?.execute()?.then {

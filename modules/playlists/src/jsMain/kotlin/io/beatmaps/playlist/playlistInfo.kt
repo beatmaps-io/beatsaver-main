@@ -10,23 +10,19 @@ import io.beatmaps.common.asQuery
 import io.beatmaps.common.fixed
 import io.beatmaps.common.human
 import io.beatmaps.common.util.formatTime
+import io.beatmaps.index.colorStr
+import io.beatmaps.index.titleStr
 import io.beatmaps.shared.coloredCard
 import io.beatmaps.shared.itemUserInfo
 import io.beatmaps.shared.map.rating
 import io.beatmaps.user.ProfileTab
 import io.beatmaps.util.fcmemo
-import react.Props
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.i
 import react.dom.html.ReactHTML.img
 import react.dom.html.ReactHTML.span
 import web.cssom.ClassName
-
-external interface PlaylistInfoProps : Props {
-    var playlist: PlaylistFull?
-    var small: Boolean?
-}
 
 data class StatInfo(val icon: String, val text: (SearchPlaylistConfig) -> String, val filter: (SearchPlaylistConfig) -> Boolean = { true }, val value: (SearchPlaylistConfig) -> String? = { null })
 
@@ -52,23 +48,25 @@ val stats = listOf(
     StatInfo("fa-sort-amount-down", { it.searchParams.sortOrder.name }, { true })
 )
 
+fun PlaylistFull.attrs() = listOfNotNull(
+    if (curator != null) {
+        MapAttr.Curated
+    } else if (owner.verifiedMapper) {
+        MapAttr.Verified
+    } else {
+        null
+    }
+)
+
 val playlistInfo = fcmemo<PlaylistInfoProps>("playlistInfo") { props ->
     props.playlist?.let { pl ->
-        val plAttrs = listOfNotNull(
-            if (pl.curator != null) {
-                MapAttr.Curated
-            } else if (pl.owner.verifiedMapper) {
-                MapAttr.Verified
-            } else {
-                null
-            }
-        )
+        val plAttrs = pl.attrs()
 
         div {
             className = ClassName("playlist-card" + if (props.small == true) "-small" else "")
             coloredCard {
-                color = plAttrs.joinToString(" ") { it.color }
-                title = plAttrs.joinToString(" + ") { it.name }
+                color = plAttrs.colorStr()
+                title = plAttrs.titleStr()
                 classes = if (pl.type == EPlaylistType.System) "border-warning" else ""
 
                 div {
@@ -86,6 +84,7 @@ val playlistInfo = fcmemo<PlaylistInfoProps>("playlistInfo") { props ->
                                 "<NO NAME>"
                             }
                         }
+
                         itemUserInfo {
                             users = listOf(pl.owner)
                             tab = ProfileTab.PLAYLISTS

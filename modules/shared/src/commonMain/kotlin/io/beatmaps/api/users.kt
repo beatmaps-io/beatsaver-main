@@ -57,9 +57,9 @@ data class UserDetail(
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 expect object LinkHelper {
-    fun profileLink(userDetail: UserDetail, tab: String?, absolute: Boolean): String
-    fun mapLink(mapDetail: MapDetail, absolute: Boolean): String
-    fun playlistLink(playlist: PlaylistFull, absolute: Boolean): String
+    fun profileLink(userDetail: UserDetail, tab: String? = null, absolute: Boolean = false): String
+    fun mapLink(mapDetail: MapDetail, absolute: Boolean = false): String
+    fun playlistLink(playlist: PlaylistFull, absolute: Boolean = false): String
 }
 
 @Serializable

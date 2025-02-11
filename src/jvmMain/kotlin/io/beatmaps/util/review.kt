@@ -169,12 +169,12 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                             description = comment.text,
                             url = "${Config.siteBase()}/issues/${issue.id}",
                             thumbnail = when (data) {
-                                is HydratedMapReportData -> data.map.mainVersion()?.let {
+                                is HydratedMapReportData -> data.detail()?.mainVersion()?.let {
                                     "${Config.cdnBase("", true)}/${it.hash}.jpg"
                                 }
-                                is HydratedUserReportData -> data.user.avatar
-                                is HydratedPlaylistReportData -> data.playlist.playlistImage
-                                is HydratedReviewReportData -> data.review.map?.mainVersion()?.let {
+                                is HydratedUserReportData -> data.user?.avatar
+                                is HydratedPlaylistReportData -> data.playlist?.playlistImage
+                                is HydratedReviewReportData -> data.detail()?.map?.mainVersion()?.let {
                                     "${Config.cdnBase("", true)}/${it.hash}.jpg"
                                 }
                                 null -> "https://avatars.githubusercontent.com/u/83342266"
@@ -182,50 +182,56 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                                 DiscordEmbed.HasUrl(it)
                             },
                             fields = when (data) {
-                                is HydratedMapReportData -> listOf(
-                                    DiscordEmbed.Field(
-                                        "Map",
-                                        data.map.let { "[${it.name}](${Config.siteBase()}/maps/${it.id})" }
-                                    ),
-                                    data.map.uploader.let { u ->
-                                        DiscordEmbed.Field(
-                                            "Uploader",
-                                            "[${u.name}](${u.profileLink(absolute = true)})"
-                                        )
-                                    }
-                                )
-                                is HydratedUserReportData -> listOf(
-                                    DiscordEmbed.Field(
-                                        "User",
-                                        "[${data.user.name}](${data.user.profileLink(absolute = true)})"
-                                    )
-                                )
-                                is HydratedPlaylistReportData -> listOf(
-                                    DiscordEmbed.Field(
-                                        "Playlist",
-                                        "[${data.playlist.name}](${data.playlist.link(true)})"
-                                    ),
-                                    DiscordEmbed.Field(
-                                        "Uploader",
-                                        "[${data.playlist.owner.name}](${data.playlist.owner.profileLink(absolute = true)})"
-                                    )
-                                )
-                                is HydratedReviewReportData -> listOfNotNull(
-                                    data.review.map?.let { m ->
+                                is HydratedMapReportData -> data.detail()?.let { map ->
+                                    listOf(
                                         DiscordEmbed.Field(
                                             "Map",
-                                            "[${m.name}](${m.link(true)})"
-                                        )
-                                    },
-                                    data.review.creator?.let { u ->
+                                            "[${map.name}](${Config.siteBase()}/maps/${data.mapId})"
+                                        ),
                                         DiscordEmbed.Field(
-                                            "Reviewer",
-                                            "[${u.name}](${u.profileLink(absolute = true)})"
+                                            "Uploader",
+                                            "[${map.uploader.name}](${map.uploader.profileLink(absolute = true)})"
                                         )
-                                    }
-                                )
-                                null -> listOf()
-                            },
+                                    )
+                                }
+                                is HydratedUserReportData -> data.detail()?.let { user ->
+                                    listOf(
+                                        DiscordEmbed.Field(
+                                            "User",
+                                            "[${user.name}](${user.profileLink(absolute = true)})"
+                                        )
+                                    )
+                                }
+                                is HydratedPlaylistReportData -> data.detail()?.let { pl ->
+                                    listOf(
+                                        DiscordEmbed.Field(
+                                            "Playlist",
+                                            "[${pl.name}](${pl.link(absolute = true)})"
+                                        ),
+                                        DiscordEmbed.Field(
+                                            "Owner",
+                                            "[${pl.owner.name}](${pl.owner.profileLink(absolute = true)})"
+                                        )
+                                    )
+                                }
+                                is HydratedReviewReportData -> data.detail()?.let { review ->
+                                    listOfNotNull(
+                                        review.map?.let { map ->
+                                            DiscordEmbed.Field(
+                                                "Map",
+                                                "[${map.name}](${map.link(absolute = true)})"
+                                            )
+                                        },
+                                        review.creator?.let { user ->
+                                            DiscordEmbed.Field(
+                                                "Reviewer",
+                                                "[${user.name}](${user.profileLink(absolute = true)})"
+                                            )
+                                        }
+                                    )
+                                }
+                                null -> null
+                            } ?: emptyList(),
                             color = 11431783
                         )
                     )
