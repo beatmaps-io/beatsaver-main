@@ -17,10 +17,13 @@ import io.beatmaps.api.StateUpdate
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.AiDeclarationType
+import io.beatmaps.common.api.EIssueType
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.MapAttr
-import io.beatmaps.common.api.MapReportData
 import io.beatmaps.globalContext
+import io.beatmaps.index.attrs
+import io.beatmaps.index.colorStr
+import io.beatmaps.index.titleStr
 import io.beatmaps.issues.reportModal
 import io.beatmaps.maps.collab.collaboratorLeave
 import io.beatmaps.maps.collab.collaboratorPicker
@@ -188,7 +191,7 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                 val reason = reasonRef.current?.value?.trim() ?: ""
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
-                    IssueCreationRequest(captcha, reason, MapReportData(props.mapInfo.id)),
+                    IssueCreationRequest(captcha, reason, props.mapInfo.intId(), EIssueType.MapReport),
                     generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
                 ).then {
                     history.push("/issues/${it.data}")
@@ -222,18 +225,11 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
         }
     }
 
-    val mapAttrs = listOfNotNull(
-        if (props.mapInfo.ranked || props.mapInfo.blRanked) MapAttr.Ranked else null,
-        if (props.mapInfo.curator != null) MapAttr.Curated else null
-    ).ifEmpty {
-        listOfNotNull(
-            if (props.mapInfo.uploader.verifiedMapper) MapAttr.Verified else null
-        )
-    }
+    val mapAttrs = props.mapInfo.attrs()
 
     coloredCard {
-        color = mapAttrs.joinToString(" ") { it.color }
-        title = mapAttrs.joinToString(" + ") { it.name }
+        color = mapAttrs.colorStr()
+        title = mapAttrs.titleStr()
         classes = "m-0"
 
         div {

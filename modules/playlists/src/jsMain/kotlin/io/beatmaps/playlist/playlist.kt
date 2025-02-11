@@ -18,8 +18,8 @@ import io.beatmaps.api.PlaylistMapRequest
 import io.beatmaps.api.PlaylistPage
 import io.beatmaps.api.UploadResponse
 import io.beatmaps.captcha.ICaptchaHandler
+import io.beatmaps.common.api.EIssueType
 import io.beatmaps.common.api.EPlaylistType
-import io.beatmaps.common.api.PlaylistReportData
 import io.beatmaps.globalContext
 import io.beatmaps.index.beatmapInfo
 import io.beatmaps.issues.reportModal
@@ -145,7 +145,7 @@ val playlistPage = fcmemo<Props>("playlistPage") { props ->
                 val reason = reasonRef.current?.value?.trim() ?: ""
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
-                    IssueCreationRequest(captcha, reason, PlaylistReportData(playlistId)),
+                    IssueCreationRequest(captcha, reason, playlistId, EIssueType.PlaylistReport),
                     generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
                 ).then {
                     history.push("/issues/${it.data}")

@@ -148,7 +148,9 @@ data class MapStats(
     val sentiment: UserSentiment = UserSentiment.PENDING
 ) {
     val scoreOneDP by lazy { (score * 100).fixed(1) }
-    companion object
+    companion object {
+        val default = MapStats(0, 0, 0, 0, 0.5f)
+    }
 }
 
 @Serializable

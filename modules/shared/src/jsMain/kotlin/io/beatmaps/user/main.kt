@@ -15,7 +15,7 @@ import io.beatmaps.api.UserFollowRequest
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
-import io.beatmaps.common.api.UserReportData
+import io.beatmaps.common.api.EIssueType
 import io.beatmaps.common.json
 import io.beatmaps.globalContext
 import io.beatmaps.index.beatmapTable
@@ -213,7 +213,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                 val reason = reasonRef.current?.value?.trim() ?: ""
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
-                    IssueCreationRequest(captcha, reason, UserReportData(userId)),
+                    IssueCreationRequest(captcha, reason, userId, EIssueType.UserReport),
                     generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
                 ).then {
                     history.push("/issues/${it.data}")

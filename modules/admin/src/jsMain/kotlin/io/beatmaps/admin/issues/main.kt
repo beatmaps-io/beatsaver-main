@@ -139,27 +139,33 @@ val issueList = fcmemo<Props>("issueList") {
                     td {
                         when (val data = it.data) {
                             is HydratedMapReportData -> {
-                                routeLink(data.map.link()) {
-                                    +data.map.name
+                                data.map?.let { map ->
+                                    routeLink(map.link()) {
+                                        +map.name
+                                    }
                                 }
                             }
 
                             is HydratedUserReportData -> {
-                                routeLink(data.user.profileLink()) {
-                                    +data.user.name
+                                data.detail()?.let {
+                                    routeLink(it.profileLink()) {
+                                        +it.name
+                                    }
                                 }
                             }
 
                             is HydratedPlaylistReportData -> {
-                                routeLink(data.playlist.link()) {
-                                    +data.playlist.name
+                                data.detail()?.let {
+                                    routeLink(it.link()) {
+                                        +it.name
+                                    }
                                 }
                             }
 
                             is HydratedReviewReportData -> {
-                                data.review.map?.let { m ->
-                                    routeLink(m.link()) {
-                                        +m.name
+                                data.detail()?.map?.let {
+                                    routeLink(it.link()) {
+                                        +it.name
                                     }
                                 }
                             }

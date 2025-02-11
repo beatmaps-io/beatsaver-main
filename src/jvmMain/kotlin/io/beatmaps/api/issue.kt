@@ -1,15 +1,26 @@
 package io.beatmaps.api
 
 import io.beatmaps.api.user.from
+import io.beatmaps.api.user.getAvatar
 import io.beatmaps.common.amqp.pub
+import io.beatmaps.common.api.BasicMapInfo
+import io.beatmaps.common.api.BasicPlaylistInfo
+import io.beatmaps.common.api.BasicReviewInfo
+import io.beatmaps.common.api.BasicUserInfo
+import io.beatmaps.common.api.DbMapReportData
+import io.beatmaps.common.api.DbPlaylistReportData
+import io.beatmaps.common.api.DbReviewReportData
+import io.beatmaps.common.api.DbUserReportData
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EIssueType
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.api.IDbIssueData
-import io.beatmaps.common.api.MapReportData
-import io.beatmaps.common.api.PlaylistReportData
-import io.beatmaps.common.api.ReviewReportData
-import io.beatmaps.common.api.UserReportData
+import io.beatmaps.common.api.MapReportDataBase
+import io.beatmaps.common.api.PlaylistReportDataBase
+import io.beatmaps.common.api.ReviewReportDataBase
+import io.beatmaps.common.api.ReviewSentiment
+import io.beatmaps.common.api.UserReportDataBase
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Alert
@@ -26,6 +37,7 @@ import io.beatmaps.common.dbo.ReviewDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
+import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.handleCurator
@@ -69,6 +81,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import java.lang.Integer.toHexString
 
 @Location("/api/issues")
 class IssueApi {
@@ -109,7 +122,7 @@ fun Iterable<ResultRow>.preHydrate(isAdmin: Boolean) = also {
                     .joinCurator()
                     .selectAll()
                     .where {
-                        (Beatmap.id inList rows.filterIsInstance<MapReportData>().mapNotNull { it.id() }).let { q ->
+                        (Beatmap.id inList rows.filterIsInstance<MapReportDataBase>().mapNotNull { it.id() }).let { q ->
                             if (isAdmin) {
                                 q
                             } else {
@@ -125,27 +138,25 @@ fun Iterable<ResultRow>.preHydrate(isAdmin: Boolean) = also {
                     User
                         .selectAll()
                         .where {
-                            User.id inList rows.filterIsInstance<UserReportData>().map { it.userId }
+                            User.id inList rows.filterIsInstance<UserReportDataBase>().map { it.userId }
                         }
                 ).toList()
             }
 
             EIssueType.PlaylistReport -> {
                 Playlist
-                    .joinMaps()
                     .joinUser(Playlist.owner)
                     .joinPlaylistCurator()
-                    .select(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all)
+                    .select(Playlist.columns + User.columns + curatorAlias.columns)
                     .where {
-                        (Playlist.id inList rows.filterIsInstance<PlaylistReportData>().map { it.playlistId }).let { q ->
+                        (Playlist.id inList rows.filterIsInstance<PlaylistReportDataBase>().map { it.playlistId }).let { q ->
                             if (isAdmin) {
                                 q
                             } else {
-                                q and Playlist.deletedAt.isNull()
+                                q and Playlist.deletedAt.isNull() and (Playlist.type inList EPlaylistType.publicTypes)
                             }
                         }
                     }
-                    .groupBy(Playlist.id, User.id, curatorAlias[User.id])
                     .handleUser()
                     .handleCurator()
                     .forEach { PlaylistDao.wrapRow(it) }
@@ -155,12 +166,18 @@ fun Iterable<ResultRow>.preHydrate(isAdmin: Boolean) = also {
                 Review
                     .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
                     .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
-                    .joinVersions()
+                    .joinVersions {
+                        if (isAdmin) {
+                            Op.TRUE
+                        } else {
+                            Versions.state eq EMapState.Published
+                        }
+                    }
                     .joinUploader()
                     .joinCurator()
                     .selectAll()
                     .where {
-                        (Review.id inList rows.filterIsInstance<ReviewReportData>().map { it.reviewId }).let { q ->
+                        (Review.id inList rows.filterIsInstance<ReviewReportDataBase>().map { it.reviewId }).let { q ->
                             if (isAdmin) {
                                 q
                             } else {
@@ -178,12 +195,122 @@ fun <P : EntityClass<ID, T>, ID : Comparable<ID>, T : Entity<ID>> P.cacheOnly(id
     testCache(EntityID(id, table))
 
 // Kinda dangerous, we don't recheck the content isn't deleted / unpublished but it shouldn't be in the cache if it is
-fun IDbIssueData.hydrate(cdnPrefix: String): IHydratedIssueData? = when (this) {
-    is MapReportData -> id()?.let { mapId -> BeatmapDao.cacheOnly(mapId) }?.let { map -> HydratedMapReportData(MapDetail.from(map, cdnPrefix)) }
-    is UserReportData -> UserDao.cacheOnly(userId)?.let { HydratedUserReportData(UserDetail.from(it)) }
-    is PlaylistReportData -> PlaylistDao.cacheOnly(playlistId)?.let { HydratedPlaylistReportData(PlaylistFull.from(it, null, cdnPrefix)) }
-    is ReviewReportData -> ReviewDao.cacheOnly(reviewId)?.let { HydratedReviewReportData(ReviewDetail.from(it, cdnPrefix)) }
+fun IDbIssueData.hydrate(cdnPrefix: String): IHydratedIssueData = when (this) {
+    is DbMapReportData -> HydratedMapReportData(id()?.let { mapId -> BeatmapDao.cacheOnly(mapId) }?.let { map -> MapDetail.from(map, cdnPrefix) }, this)
+    is DbUserReportData -> HydratedUserReportData(UserDao.cacheOnly(userId)?.let { UserDetail.from(it, description = true) }, this)
+    is DbPlaylistReportData -> HydratedPlaylistReportData(PlaylistDao.cacheOnly(playlistId)?.let { PlaylistFull.from(it, null, cdnPrefix) }, this)
+    is DbReviewReportData -> HydratedReviewReportData(ReviewDao.cacheOnly(reviewId)?.let { ReviewDetail.from(it, cdnPrefix) }, this)
 }
+
+fun UserDao.toBasicInfo() = BasicUserInfo(
+    id.value, uniqueName ?: name, description, avatar ?: UserDetail.getAvatar(uniqueName ?: name)
+)
+
+fun BeatmapDao.toBasicInfo(version: VersionsDao) = BasicMapInfo(
+    toHexString(id.value),
+    name,
+    description,
+    declaredAi,
+    uploaded?.toKotlinInstant(),
+    version.hash,
+    uploader.toBasicInfo(),
+    version.bpm,
+    version.duration
+)
+
+fun PlaylistDao.toBasicInfo() = BasicPlaylistInfo(
+    id.value,
+    name,
+    description,
+    owner.toBasicInfo()
+)
+
+fun ReviewDao.toBasicInfo(version: VersionsDao) = BasicReviewInfo(
+    id.value,
+    text,
+    ReviewSentiment.fromInt(sentiment),
+    map.toBasicInfo(version),
+    user.toBasicInfo(),
+    createdAt.toKotlinInstant()
+)
+
+fun createDbIssue(type: EIssueType, id: Int): IDbIssueData = when (type) {
+    EIssueType.MapperApplication -> null
+    EIssueType.MapReport -> {
+        Beatmap
+            .joinVersions()
+            .joinUploader()
+            .select(
+                Beatmap.id, Beatmap.name, Beatmap.description, Beatmap.uploader, Beatmap.uploaded, Beatmap.declaredAi,
+                Versions.id, Versions.bpm, Versions.duration, Versions.hash,
+                User.id, User.name, User.uniqueName, User.description, User.avatar
+            )
+            .where {
+                Beatmap.deletedAt.isNull() and (Beatmap.id eq id)
+            }
+            .limit(1)
+            .singleOrNull()
+            ?.let { row ->
+                UserDao.wrapRow(row) // Populate cache
+                BeatmapDao.wrapRow(row).toBasicInfo(VersionsDao.wrapRow(row)).let { mi ->
+                    DbMapReportData(mi.key, mi)
+                }
+            }
+    }
+    EIssueType.UserReport -> {
+        User
+            .select(User.id, User.name, User.uniqueName, User.description, User.avatar)
+            .where {
+                User.id eq id
+            }
+            .limit(1)
+            .singleOrNull()
+            ?.let { row ->
+                DbUserReportData(id, UserDao.wrapRow(row).toBasicInfo())
+            }
+    }
+    EIssueType.PlaylistReport -> {
+        Playlist
+            .joinUser(Playlist.owner)
+            .select(
+                Playlist.id, Playlist.name, Playlist.description, Playlist.owner,
+                User.id, User.uniqueName, User.name, User.description, User.avatar
+            )
+            .where {
+                (Playlist.id eq id) and Playlist.deletedAt.isNull() and (Playlist.type inList EPlaylistType.publicTypes)
+            }
+            .limit(1)
+            .singleOrNull()
+            ?.let { row ->
+                UserDao.wrapRow(row) // Populate cache
+                DbPlaylistReportData(id, PlaylistDao.wrapRow(row).toBasicInfo())
+            }
+    }
+    EIssueType.ReviewReport -> {
+        Review
+            .join(reviewerAlias, JoinType.INNER, Review.userId, reviewerAlias[User.id])
+            .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+            .joinUploader()
+            .joinVersions()
+            .select(
+                Review.id, Review.userId, Review.text, Review.createdAt, Review.sentiment, Review.mapId,
+                Beatmap.id, Beatmap.name, Beatmap.description, Beatmap.uploader, Beatmap.uploaded, Beatmap.declaredAi,
+                Versions.id, Versions.bpm, Versions.duration, Versions.hash,
+                User.id, User.name, User.uniqueName, User.description, User.avatar,
+                reviewerAlias[User.id], reviewerAlias[User.name], reviewerAlias[User.uniqueName], reviewerAlias[User.description], reviewerAlias[User.avatar])
+            .where {
+                (Review.id eq id) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
+            }
+            .limit(1)
+            .singleOrNull()
+            ?.let { row ->
+                UserDao.wrapRow(row, reviewerAlias) // Populate cache
+                UserDao.wrapRow(row)
+                BeatmapDao.wrapRow(row)
+                DbReviewReportData(id, ReviewDao.wrapRow(row).toBasicInfo(VersionsDao.wrapRow(row)))
+            }
+    }
+} ?: throw ServerApiException("Error hydrating issue")
 
 fun IssueDetail.Companion.from(row: ResultRow, cdnPrefix: String, comments: Iterable<ResultRow>? = null) = from(IssueDao.wrapRow(row), cdnPrefix, comments)
 
@@ -227,8 +354,8 @@ fun Route.issueRoute(client: HttpClient) {
                             it[creator] = sess.userId
                             it[createdAt] = NowExpression(createdAt)
                             it[updatedAt] = NowExpression(updatedAt)
-                            it[type] = req.data.typeEnum
-                            it[data] = req.data
+                            it[type] = req.type
+                            it[data] = createDbIssue(req.type, req.id)
                         }.also { newId ->
                             IssueComment.insert {
                                 it[issueId] = newId
@@ -242,7 +369,7 @@ fun Route.issueRoute(client: HttpClient) {
                         }.value.also {
                             Alert.insert(
                                 "You created an issue",
-                                "You created a ${req.data.typeEnum.name} issue {$it}",
+                                "You created a ${req.type.name} issue {$it}",
                                 EAlertType.Issue,
                                 sess.userId
                             )

@@ -1,6 +1,7 @@
 package io.beatmaps.playlist
 
 import io.beatmaps.api.MapDetail
+import io.beatmaps.api.PlaylistFull
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.shared.search.CommonParams
 import io.beatmaps.util.includeIfNotNull
@@ -35,4 +36,9 @@ external interface PlaylistTableProps : Props {
     var small: Boolean?
     var visible: Boolean?
     var updateScrollIndex: RefObject<(Int) -> Unit>
+}
+
+external interface PlaylistInfoProps : Props {
+    var playlist: PlaylistFull?
+    var small: Boolean?
 }
