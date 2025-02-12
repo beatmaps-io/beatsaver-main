@@ -133,6 +133,14 @@ suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStat
 fun ApplicationCall.getNonce() =
     request.headers["X-CSP-Nonce"]
 
+val dockerHash = File("/etc/hostname").let {
+    if (it.exists()) {
+        it.readText()
+    } else {
+        ""
+    }
+}
+
 suspend fun ApplicationCall.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null, includeHeader: Boolean = true) {
     val sess = sessions.get<Session>()
     val nonce = getNonce()
@@ -240,13 +248,6 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
 
     install(ConditionalHeaders) {
         val md = MessageDigest.getInstance("MD5")
-        val dockerHash = File("/etc/hostname").let {
-            if (it.exists()) {
-                it.readText()
-            } else {
-                ""
-            }
-        }
         md.update(dockerHash.toByteArray())
 
         val fx = "%0" + md.digestLength * 2 + "x"
