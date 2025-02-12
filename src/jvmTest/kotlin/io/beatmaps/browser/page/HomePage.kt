@@ -2,20 +2,29 @@ package io.beatmaps.browser.page
 
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 
 class HomePage(page: Page) : PageBase(page) {
     private fun cardSelector() = element(".beatmap")
     fun cardCount() = cardSelector().count()
     private fun cards() = cardSelector().all()
 
-    val searchBox = element("form input[type='search']")
-    val searchButton = element("form button[type='submit']")
-    val filterDropdown = element(".filter-dropdown")
+    private val searchBox = element("form input[type='search']")
+    private val searchButton = element("form button[type='submit']")
+    private val filterDropdown = element(".filter-dropdown")
     private val filters = SearchFilters(element(".filter-container .dropdown-menu"))
 
     fun search(text: String) {
         searchBox.fill(text)
         searchButton.click()
+
+        waitForSearch()
+    }
+
+    fun waitForSearch() {
+        val loading = element(".beatmap.loading").first()
+        if (loading.count() == 0) page.waitForTimeout(10.0)
+        assertThat(loading).isHidden()
     }
 
     fun getMap(i: Int, block: MapCard.() -> Unit) {
@@ -28,7 +37,7 @@ class HomePage(page: Page) : PageBase(page) {
         filterDropdown.click()
     }
 
-    class SearchFilters(element: Locator): ElementBase(element) {
+    class SearchFilters(element: Locator) : ElementBase(element) {
         fun visible() = elem.isVisible
         val aiMaps = element("[for=bot-ai]")
         val allMaps = element("[for=bot-all]")

@@ -28,14 +28,14 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.nio.file.Paths
 
 class BrowserDsl(private val testHost: String, private val client: HttpClient, private val page: Page) : FixtureHelpers() {
-    fun navigate(url: String) {
+    fun navigate(url: String, waitForLoad: () -> Unit = { waitForNetwork() }) {
         page.navigate("$testHost$url")
-        waitForNetwork()
+        waitForLoad()
     }
 
-    fun reload() {
+    fun reload(waitForLoad: () -> Unit = { waitForNetwork() }) {
         page.navigate(page.url())
-        waitForNetwork()
+        waitForLoad()
     }
 
     fun <T> mock(url: String, serializer: SerializationStrategy<T>, handler: (Request) -> T) {

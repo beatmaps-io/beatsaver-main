@@ -31,8 +31,9 @@ class MapCardTest : BrowserTestBase() {
 
         login(userId)
 
-        navigate("/")
         homePage {
+            navigate("/", ::waitForSearch)
+
             getMap(0) {
                 addToPlaylist.click()
             }
@@ -87,8 +88,9 @@ class MapCardTest : BrowserTestBase() {
 
         login(userId)
 
-        navigate("/")
         homePage {
+            navigate("/", ::waitForSearch)
+
             getMap(0) {
                 bookmark.click()
                 assertEquals(1, countBookmarks())
@@ -108,8 +110,9 @@ class MapCardTest : BrowserTestBase() {
             username to mapId
         }
 
-        navigate("/")
         homePage {
+            navigate("/", ::waitForSearch)
+
             search("mapper:$username")
 
             getMap(0) {
@@ -130,8 +133,9 @@ class MapCardTest : BrowserTestBase() {
             Triple(username, mapId, hash)
         }
 
-        navigate("/")
         homePage {
+            navigate("/", ::waitForSearch)
+
             search("mapper:$username")
 
             getMap(0) {

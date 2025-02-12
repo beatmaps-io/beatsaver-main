@@ -15,8 +15,9 @@ class SearchTest : BrowserTestBase() {
             username
         }
 
-        navigate("/")
         homePage {
+            navigate("/", ::waitForSearch)
+
             filters {
                 aiMaps.click()
             }
