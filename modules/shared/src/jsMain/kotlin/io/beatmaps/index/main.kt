@@ -54,7 +54,7 @@ val homePage = fcmemo<Props>("homePage") {
     fun fromURL() = URLSearchParams(location.search).let { params ->
         SearchParams(
             params["q"] ?: "",
-            params["auto"]?.toBoolean(),
+            params["automapper"]?.toBoolean(),
             params["minNps"]?.toFloatOrNull(),
             params["maxNps"]?.toFloatOrNull(),
             params["chroma"]?.toBoolean(),

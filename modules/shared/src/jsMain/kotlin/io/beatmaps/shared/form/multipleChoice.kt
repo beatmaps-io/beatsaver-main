@@ -20,7 +20,7 @@ val multipleChoice = fcmemo<MultipleChoiceProps<Any?>>("multipleChoice") { props
     div {
         className = ClassName("multiple-choice ${props.className ?: ""}")
         props.choices.forEach { (text, value) ->
-            val id = "${props.name}:${text.lowercase()}"
+            val id = "${props.name}-${text.lowercase()}"
 
             input {
                 key = id

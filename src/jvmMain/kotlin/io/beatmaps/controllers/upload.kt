@@ -139,7 +139,7 @@ fun Route.uploadController(client: HttpClient) {
                                 validateFiles(
                                     initValidation(vivifyLimit)
                                 )
-                            }.copy(uncompressedSize = actualSize)
+                            }.copy(compressedSize = actualSize)
                         }
                     }.getOrElse { e ->
                         file.delete()
@@ -164,7 +164,7 @@ fun Route.uploadController(client: HttpClient) {
             val extractedInfo = multipart.fileOutput ?: throw UploadException("Internal error 1")
 
             // Zip could have been too big but within vivify allowance
-            val sizeWithoutVivify = extractedInfo.uncompressedSize - extractedInfo.vivifySize
+            val sizeWithoutVivify = extractedInfo.compressedSize - extractedInfo.vivifySize
             if (sizeWithoutVivify > basicLimit) {
                 throw UploadException("Zip file too big (${FileLimits.printLimit(sizeWithoutVivify, basicLimit)})")
             }
