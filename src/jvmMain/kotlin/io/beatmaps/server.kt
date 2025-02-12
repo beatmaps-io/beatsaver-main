@@ -135,7 +135,7 @@ fun ApplicationCall.getNonce() =
 
 val dockerHash = File("/etc/hostname").let {
     if (it.exists()) {
-        it.readText()
+        it.readText().trim()
     } else {
         ""
     }
