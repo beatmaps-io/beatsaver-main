@@ -139,7 +139,7 @@ fun Route.uploadController(client: HttpClient) {
                                 validateFiles(
                                     initValidation(vivifyLimit)
                                 )
-                            }.copy(uncompressedSize = actualSize)
+                            }.copy(compressedSize = actualSize)
                         }
                     }.getOrElse { e ->
                         file.delete()
