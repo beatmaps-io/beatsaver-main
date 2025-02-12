@@ -4,6 +4,7 @@ import io.beatmaps.ConfigData
 import io.beatmaps.UserData
 import io.beatmaps.cloudflare.CaptchaProvider
 import io.beatmaps.cloudflare.CaptchaVerifier
+import io.beatmaps.common.amqp.hostname
 import io.beatmaps.common.solr.SolrHelper
 import io.beatmaps.login.Session
 import io.ktor.server.html.Template
@@ -44,7 +45,7 @@ private val applyNonce: SCRIPT.(String?) -> Unit = { n ->
 }
 
 private fun BODY.scriptWithNonce(src: String, nonce: String?) {
-    script(src = src) {
+    script(src = "$src?v=$hostname") {
         applyNonce(nonce)
     }
 }
