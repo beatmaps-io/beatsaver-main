@@ -23,8 +23,7 @@ external interface AutoSizeComponentProps<T> : Props {
 
 data class AutoSizeHelper<T : HTMLElement>(
     val divRef: RefObject<HTMLDivElement>,
-    val style: (HTMLAttributes<T>) -> Unit,
-    val hide: () -> Unit
+    val style: (HTMLAttributes<T>) -> Unit
 )
 
 fun <T, U : HTMLElement> useAutoSize(props: AutoSizeComponentProps<T>, padding: Int): AutoSizeHelper<U> {
@@ -78,16 +77,6 @@ fun <T, U : HTMLElement> useAutoSize(props: AutoSizeComponentProps<T>, padding: 
                     this.margin = it
                 }
             }
-        },
-        {
-            val handleLocal = setTimeout({
-                setHeight(0.px)
-            }, 10)
-
-            // Set current size so animation works
-            setHeight((autoSize() + 10).px)
-            setMargin(0.px)
-            autoSizeHandle.current = handleLocal
         }
     )
 }
