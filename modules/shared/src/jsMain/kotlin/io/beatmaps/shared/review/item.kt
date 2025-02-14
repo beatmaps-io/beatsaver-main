@@ -29,7 +29,6 @@ import io.beatmaps.shared.reviewer
 import io.beatmaps.util.AutoSizeComponentProps
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.orCatch
-import io.beatmaps.util.useAutoSize
 import react.RefObject
 import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.div
@@ -48,6 +47,7 @@ import web.cssom.ClassName
 import web.html.HTMLDivElement
 import web.html.HTMLTextAreaElement
 import web.html.InputType
+import web.timers.setTimeout
 import kotlin.js.Promise
 
 external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
@@ -58,7 +58,7 @@ external interface ReviewItemProps : AutoSizeComponentProps<ReviewDetail> {
 }
 
 val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
-    val autoSize = useAutoSize<ReviewDetail, HTMLDivElement>(props, 2)
+    val divRef = useRef<HTMLDivElement>()
 
     val (featured, setFeatured) = useState<Boolean?>(null)
     val (sentiment, setSentiment) = useState<ReviewSentiment?>(null)
@@ -91,6 +91,14 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
         }) { }
     }
 
+    fun hide() {
+        val height = divRef.current?.scrollHeight
+        divRef.current?.style?.height = "${height}px"
+        setTimeout({
+            divRef.current?.style?.height = "0px"
+        }, 10)
+    }
+
     fun delete(currentUser: Boolean) =
         (reasonRef.current?.value ?: "").let { reason ->
             reasonRef.current?.value = ""
@@ -99,7 +107,7 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                 setSentiment(null)
                 setFeatured(null)
                 setText(null)
-                autoSize.hide()
+                hide()
 
                 if (currentUser) props.setExistingReview?.invoke(false)
                 true
@@ -124,14 +132,13 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
             }
         } ?: Promise.resolve(false)
 
-    props.obj?.let { rv ->
-        val featLocal = featured ?: (rv.curatedAt != null)
-        val sentimentLocal = sentiment ?: rv.sentiment
-        div {
-            className = ClassName("review-card")
-            ref = autoSize.divRef
-            autoSize.style(this)
+    div {
+        className = ClassName("review-card${if (props.obj == null) " loading" else ""}")
+        ref = divRef
 
+        props.obj?.let { rv ->
+            val featLocal = featured ?: (rv.curatedAt != null)
+            val sentimentLocal = sentiment ?: rv.sentiment
             div {
                 className = ClassName("main" + if (editing) " border-secondary" else "")
                 sentimentIcon {
@@ -330,10 +337,6 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                     }
                 }
             }
-        }
-    } ?: run {
-        div {
-            className = ClassName("review-card loading")
         }
     }
 }
