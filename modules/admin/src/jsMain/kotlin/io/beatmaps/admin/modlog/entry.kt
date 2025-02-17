@@ -314,6 +314,7 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
 
                         is UnCurateMapData -> {
                             p {
+                                className = ClassName("card-text")
                                 +"Reason: ${action.reason}"
                             }
                         }
@@ -327,6 +328,7 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                                 }
                             }
                             p {
+                                className = ClassName("card-text")
                                 +"Reason: ${action.reason}"
                             }
                         }
