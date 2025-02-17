@@ -130,7 +130,7 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
     fun delete(): Promise<Boolean> {
         setLoading(true)
 
-        return Axios.post<String>("${Config.apibase}/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.value?.trim()), generateConfig<MapInfoUpdate, String>()).then({
+        return Axios.post<String>("${Config.apibase}/maps/update", MapInfoUpdate(props.mapInfo.intId(), deleted = true, reason = reasonRef.current?.value), generateConfig<MapInfoUpdate, String>()).then({
             props.deleteMap?.invoke(isOwnerLocal) ?: run {
                 // Fallback
                 history.push("/profile" + if (!isOwnerLocal) "/${props.mapInfo.uploader.id}" else "")
@@ -145,7 +145,7 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
     fun curate(curated: Boolean = true): Promise<Boolean> {
         setLoading(true)
 
-        return Axios.post<String>("${Config.apibase}/maps/curate", CurateMap(props.mapInfo.intId(), curated, reason = reasonRef.current?.value?.trim()), generateConfig<CurateMap, String>()).then({
+        return Axios.post<String>("${Config.apibase}/maps/curate", CurateMap(props.mapInfo.intId(), curated, reason = reasonRef.current?.value), generateConfig<CurateMap, String>()).then({
             props.reloadMap()
             true
         }) {
@@ -333,34 +333,24 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                                         href = "#"
 
                                         val isCurated = props.mapInfo.curator != null
-                                        val text = if (isCurated) "Uncurate" else "Curate"
+                                        val (text, giveReason) = if (isCurated) {
+                                            listOf("Uncurate", " If so, please provide a comprehensive reason.")
+                                        } else {
+                                            listOf("Curate", "")
+                                        }
                                         title = text
                                         ariaLabel = text
                                         onClick = {
                                             it.preventDefault()
-                                            if (!isCurated) {
-                                                modal?.current?.showDialog?.invoke(
-                                                    ModalData(
-                                                        "Curate map",
-                                                        bodyCallback = {
-                                                            p {
-                                                                +"Are you sure you want to curate this map?"
-                                                            }
-                                                        },
-                                                        buttons = listOf(
-                                                            ModalButton("Curate", "primary") { curate() },
-                                                            ModalButton("Cancel")
-                                                        )
-                                                    )
-                                                )
-                                            } else {
-                                                modal?.current?.showDialog?.invoke(
-                                                    ModalData(
-                                                        "Uncurate map",
-                                                        bodyCallback = {
-                                                            p {
-                                                                +"Are you sure you want to uncurate this map? If so, please provide a comprehensive reason."
-                                                            }
+
+                                            modal?.current?.showDialog?.invoke(
+                                                ModalData(
+                                                    "$text map",
+                                                    bodyCallback = {
+                                                        p {
+                                                            +"Are you sure you want to $text this map?$giveReason"
+                                                        }
+                                                        if (isCurated) {
                                                             p {
                                                                 +"Reason for action:"
                                                             }
@@ -368,14 +358,14 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                                                                 ref = reasonRef
                                                                 className = ClassName("form-control")
                                                             }
-                                                        },
-                                                        buttons = listOf(
-                                                            ModalButton("Uncurate", "primary") { curate(false) },
-                                                            ModalButton("Cancel")
-                                                        )
+                                                        }
+                                                    },
+                                                    buttons = listOf(
+                                                        ModalButton(text, "primary") { curate(!isCurated) },
+                                                        ModalButton("Cancel")
                                                     )
                                                 )
-                                            }
+                                            )
                                         }
                                         span {
                                             className = ClassName("dd-text")

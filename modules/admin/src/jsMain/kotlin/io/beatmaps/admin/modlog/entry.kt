@@ -15,6 +15,8 @@ import io.beatmaps.common.ReviewDeleteData
 import io.beatmaps.common.ReviewModerationData
 import io.beatmaps.common.RevokeSessionsData
 import io.beatmaps.common.SuspendData
+import io.beatmaps.common.UnCurateMapData
+import io.beatmaps.common.UnCuratePlaylistData
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.UploadLimitData
 import io.beatmaps.common.api.ReviewSentiment
@@ -307,6 +309,25 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                                     br {}
                                     +"Reason: $reason"
                                 }
+                            }
+                        }
+
+                        is UnCurateMapData -> {
+                            p {
+                                "Reason: ${action.reason}"
+                            }
+                        }
+
+                        is UnCuratePlaylistData -> {
+                            p {
+                                className = ClassName("card-text")
+                                +"Playlist: "
+                                routeLink("/playlist/${action.playlistId}") {
+                                    +"${action.playlistId}"
+                                }
+                            }
+                            p {
+                                "Reason: ${action.reason}"
                             }
                         }
                     }

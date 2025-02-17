@@ -133,10 +133,11 @@ val playlistPage = fcmemo<Props>("playlistPage") { props ->
         }
     }
 
-    fun curate(playlistId: Int, curated: Boolean = true) {
-        Axios.post<PlaylistFull>("${Config.apibase}/playlists/curate", CurateMap(playlistId, curated), generateConfig<CurateMap, PlaylistFull>()).then({
+    fun curate(playlistId: Int, curated: Boolean = true): Promise<Boolean> {
+        return Axios.post<PlaylistFull>("${Config.apibase}/playlists/curate", CurateMap(playlistId, curated, reasonRef.current?.value), generateConfig<CurateMap, PlaylistFull>()).then({
             setPlaylist(it.data)
-        }) { }
+            true
+        }) { false }
     }
 
     fun report(playlistId: Int) =
@@ -240,13 +241,42 @@ val playlistPage = fcmemo<Props>("playlistPage") { props ->
                             className = ClassName("btn-group")
                             a {
                                 href = "#"
-                                className = ClassName("btn " + if (pl.curatedAt == null) "btn-green" else "btn-expert")
-                                val text = ((if (pl.curatedAt == null) "" else "Un-") + "Curate")
+                                val isCurated = pl.curatedAt != null
+                                val (text, giveReason, color) = if (isCurated) {
+                                    listOf("Uncurate", " If so, please provide a comprehensive reason.", "btn-expert")
+                                } else {
+                                    listOf("Curate", "", "btn-green")
+                                }
+
+                                className = ClassName("btn $color")
                                 title = text
                                 ariaLabel = text
                                 onClick = {
                                     it.preventDefault()
-                                    curate(pl.playlistId, pl.curatedAt == null)
+
+                                    modalRef.current?.showDialog?.invoke(
+                                        ModalData(
+                                            "$text playlist",
+                                            bodyCallback = {
+                                                p {
+                                                    +"Are you sure you want to $text this playlist?$giveReason"
+                                                }
+                                                if (isCurated) {
+                                                    p {
+                                                        +"Reason for action:"
+                                                    }
+                                                    textarea {
+                                                        ref = reasonRef
+                                                        className = ClassName("form-control")
+                                                    }
+                                                }
+                                            },
+                                            buttons = listOf(
+                                                ModalButton(text, "primary") { curate(pl.playlistId, !isCurated) },
+                                                ModalButton("Cancel")
+                                            )
+                                        )
+                                    )
                                 }
                                 +text
                             }
