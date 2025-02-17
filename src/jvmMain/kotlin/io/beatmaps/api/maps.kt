@@ -12,6 +12,7 @@ import io.beatmaps.common.DeletedData
 import io.beatmaps.common.FlagsEditData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.MapTag
+import io.beatmaps.common.UnCurateMapData
 import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EAlertType
@@ -245,6 +246,8 @@ fun Route.mapDetailRoute() {
                                         it.uploader.id.value
                                     )
                                     updateAlertCount(it.uploader.id.value)
+
+                                    ModLog.insert(user.userId, mapUpdate.id, UnCurateMapData(mapUpdate.reason), it.uploader.id.value)
                                 }
                             }
                         }
