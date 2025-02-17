@@ -4,7 +4,6 @@ import io.beatmaps.api.CuratePlaylist
 import io.beatmaps.api.PlaylistApi
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.from
-import io.beatmaps.common.UnCurateMapData
 import io.beatmaps.common.UnCuratePlaylistData
 import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.db.NowExpression
@@ -14,7 +13,7 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.handleCurator
 import io.beatmaps.common.dbo.handleUser
-import io.beatmaps.common.dbo.joinCurator
+import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization
@@ -55,8 +54,8 @@ fun Route.playlistCurate() {
                         if (success) {
                             Playlist
                                 .joinUser(Playlist.owner)
-                                .joinCurator()
-                                .select(Playlist.columns + User.columns + curatorAlias.columns + Playlist.Stats.all)
+                                .joinPlaylistCurator()
+                                .select(Playlist.columns + User.columns + curatorAlias.columns)
                                 .where {
                                     (Playlist.id eq playlistUpdate.id) and Playlist.deletedAt.isNull()
                                 }

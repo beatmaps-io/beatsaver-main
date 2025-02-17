@@ -314,7 +314,7 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
 
                         is UnCurateMapData -> {
                             p {
-                                "Reason: ${action.reason}"
+                                +"Reason: ${action.reason}"
                             }
                         }
 
@@ -327,7 +327,7 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                                 }
                             }
                             p {
-                                "Reason: ${action.reason}"
+                                +"Reason: ${action.reason}"
                             }
                         }
                     }
