@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   db:
-    image: iamtopcat/postgres:master-b91
+    image: postgres:14
     ports:
       - "5432:5432"
     volumes:

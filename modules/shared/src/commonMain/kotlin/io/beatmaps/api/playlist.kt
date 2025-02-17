@@ -108,7 +108,7 @@ data class PlaylistPage(val playlist: PlaylistFull? = null, val maps: List<MapDe
 data class PlaylistSearchResponse(override val docs: List<PlaylistFull>, override val info: SearchInfo? = null) : GenericSearchResponse<PlaylistFull>
 
 @Serializable
-data class CuratePlaylist(val id: Int, val curated: Boolean = false)
+data class CuratePlaylist(val id: Int, val curated: Boolean = false, val reason: String? = null)
 
 @Serializable
 data class BookmarkRequest(val key: String? = null, val hash: String? = null, val bookmarked: Boolean)
