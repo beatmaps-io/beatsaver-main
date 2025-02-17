@@ -44,6 +44,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.util.pipeline.PipelineContext
 import kotlinx.datetime.toJavaInstant
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.JoinType
@@ -78,7 +79,7 @@ class TestplayApi {
 }
 
 @Serializable
-data class AuthRequest(val steamId: String? = null, val oculusId: String? = null, val proof: String)
+data class AuthRequest(val steamId: String? = null, val oculusId: String? = null, val proof: String, @EncodeDefault val gameVersion: String = "1.40.2")
 
 @Serializable
 data class MarkRequest(val hash: String, val markPlayed: Boolean = true, val removeFromQueue: Boolean = false, val addToQueue: Boolean = false)
