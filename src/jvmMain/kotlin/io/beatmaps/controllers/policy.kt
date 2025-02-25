@@ -1,5 +1,6 @@
 package io.beatmaps.controllers
 
+import de.nielsfalk.ktor.swagger.Ignore
 import io.beatmaps.getNonce
 import io.beatmaps.login.Session
 import io.beatmaps.pages.DMCAPageTemplate
@@ -7,24 +8,32 @@ import io.beatmaps.pages.PrivacyPageTemplate
 import io.beatmaps.pages.TOSPageTemplate
 import io.beatmaps.pages.templates.MainTemplate
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
+import io.ktor.resources.Resource
 import io.ktor.server.html.respondHtmlTemplate
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
+import io.ktor.server.resources.get
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 
-@Location("/policy")
+@Resource("/policy")
 class PolicyController {
-    @Location("/dmca")
-    data class DMCA(val api: PolicyController)
+    @Resource("/dmca")
+    data class DMCA(
+        @Ignore
+        val api: PolicyController
+    )
 
-    @Location("/tos")
-    data class TOS(val api: PolicyController)
+    @Resource("/tos")
+    data class TOS(
+        @Ignore
+        val api: PolicyController
+    )
 
-    @Location("/privacy")
-    data class Privacy(val api: PolicyController)
+    @Resource("/privacy")
+    data class Privacy(
+        @Ignore
+        val api: PolicyController
+    )
 }
 
 fun Route.policyController() {

@@ -6,11 +6,9 @@ import io.beatmaps.controllers.UploadException
 import io.ktor.client.HttpClient
 import io.ktor.http.content.MultiPartData
 import io.ktor.http.content.PartData
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.receiveMultipart
-import io.ktor.util.pipeline.PipelineContext
+import io.ktor.server.routing.RoutingContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
@@ -24,7 +22,7 @@ data class MultipartRequest<U>(val dataMap: Map<String, JsonElement> = emptyMap(
     fun validRecaptcha(authType: AuthType) = authType == AuthType.Oauth || recaptchaSuccess
 }
 
-private suspend fun <U> handleMultipartInternal(data: MultiPartData, ctx: PipelineContext<*, ApplicationCall>, client: HttpClient, cb: suspend (PartData.FileItem) -> U): MultipartRequest<U> {
+private suspend fun <U> handleMultipartInternal(data: MultiPartData, ctx: RoutingContext, client: HttpClient, cb: suspend (PartData.FileItem) -> U): MultipartRequest<U> {
     val part = data.readPart()
 
     return if (part is PartData.FormItem) {
@@ -65,5 +63,5 @@ private suspend fun <U> handleMultipartInternal(data: MultiPartData, ctx: Pipeli
     }
 }
 
-suspend fun <U> PipelineContext<*, ApplicationCall>.handleMultipart(client: HttpClient, cb: suspend (PartData.FileItem) -> U) =
+suspend fun <U> RoutingContext.handleMultipart(client: HttpClient, cb: suspend (PartData.FileItem) -> U) =
     handleMultipartInternal(call.receiveMultipart(), this, client, cb)

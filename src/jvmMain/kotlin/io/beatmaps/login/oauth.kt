@@ -10,7 +10,6 @@ import io.ktor.client.HttpClient
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
-import io.ktor.server.auth.Principal
 import io.ktor.server.auth.form
 import io.ktor.server.auth.oauth
 import io.ktor.server.request.uri
@@ -20,7 +19,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 
-class SimpleUserPrincipal(val user: UserDao, val alertCount: Int, val redirect: String) : Principal
+class SimpleUserPrincipal(val user: UserDao, val alertCount: Int, val redirect: String)
 
 fun Application.installOauth(httpClient: HttpClient) {
     val discordHelper = DiscordHelper(httpClient)

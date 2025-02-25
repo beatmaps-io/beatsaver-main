@@ -1,5 +1,6 @@
 package io.beatmaps.controllers
 
+import de.nielsfalk.ktor.swagger.Ignore
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
 import io.beatmaps.common.Config
@@ -16,9 +17,8 @@ import io.beatmaps.login.Session
 import io.beatmaps.previewBaseUrl
 import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
+import io.ktor.resources.Resource
+import io.ktor.server.resources.get
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
@@ -36,43 +36,66 @@ import java.lang.Integer.toHexString
 import java.net.URLEncoder
 import kotlin.time.Duration.Companion.seconds
 
-@Location("/maps")
+@Resource("/maps")
 class MapController {
-    @Location("/{key}")
-    data class Detail(val key: String, val api: MapController)
+    @Resource("/{key}")
+    data class Detail(
+        val key: String,
+        @Ignore
+        val api: MapController
+    )
 
-    @Location("/viewer/{hash}")
-    data class Viewer(val hash: String, val api: MapController)
+    @Resource("/viewer/{hash}")
+    data class Viewer(
+        val hash: String,
+        @Ignore
+        val api: MapController
+    )
 
-    @Location("/{key}/embed")
-    data class Embed(val key: String, val api: MapController)
+    @Resource("/{key}/embed")
+    data class Embed(
+        val key: String,
+        @Ignore
+        val api: MapController
+    )
 }
 
-@Location("/beatsaver")
+@Resource("/beatsaver")
 class BeatsaverController {
-    @Location("/{key}")
-    data class Detail(val key: String, val api: BeatsaverController)
+    @Resource("/{key}")
+    data class Detail(
+        val key: String,
+        @Ignore
+        val api: BeatsaverController
+    )
 }
 
-@Location("/beatmap")
+@Resource("/beatmap")
 class BeatmapController {
-    @Location("/{key}")
-    data class RedirectOld(val key: String, val api: BeatmapController)
+    @Resource("/{key}")
+    data class RedirectOld(
+        val key: String,
+        @Ignore
+        val api: BeatmapController
+    )
 }
 
-@Location("/search")
+@Resource("/search")
 class OldSearch
 
-@Location("/browse")
+@Resource("/browse")
 class OldBrowseController {
-    @Location("/hot")
-    data class Hot(val api: OldBrowseController)
+    @Resource("/hot")
+    data class Hot(
+        @Ignore
+        val api: OldBrowseController
+    )
 }
 
-@Location("/mappers")
+@Resource("/mappers")
 class Mappers
 
-@Location("/test")
+@Resource("/test")
 class Testplays
 
 fun Route.mapController() {

@@ -1,7 +1,13 @@
+@file:UseSerializers(OptionalPropertySerializer::class)
+
 package io.beatmaps.api
 
+import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.ModelClass
 import io.beatmaps.api.user.from
 import io.beatmaps.common.ModLogOpType
+import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.ModLog
@@ -10,14 +16,17 @@ import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.curatorAlias
 import io.beatmaps.common.dbo.joinUser
+import io.beatmaps.common.or
+import io.beatmaps.common.util.paramInfo
+import io.beatmaps.common.util.requireParams
 import io.beatmaps.util.requireAuthorization
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
+import io.ktor.resources.Resource
+import io.ktor.server.resources.get
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import kotlinx.datetime.toKotlinInstant
+import kotlinx.serialization.UseSerializers
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
@@ -25,16 +34,24 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.lang.Integer.toHexString
 
-@Location("/api")
+@Resource("/api")
 class ModLogApi {
-    @Location("/modlog/{page}")
+    @Resource("/modlog/{page}")
     data class ModLog(
-        val page: Long = 0,
-        val api: ModLogApi,
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
         val mod: String? = null,
         val user: String? = null,
-        val type: String? = null
-    )
+        val type: String? = null,
+        @Ignore
+        val api: ModLogApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(ModLog::page)
+            )
+        }
+    }
 }
 
 fun Route.modLogRoute() {
@@ -56,7 +73,7 @@ fun Route.modLogRoute() {
                                 .notNull(it.type) { t -> ModLogOpType.fromName(t)?.let { ModLog.type eq it.ordinal } ?: Op.FALSE }
                         }
                         .orderBy(ModLog.opAt, SortOrder.DESC)
-                        .limit(it.page, 30)
+                        .limit(it.page.or(0), 30)
                         .map { row ->
                             // Cache joins
                             UserDao.wrapRow(row)

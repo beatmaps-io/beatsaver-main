@@ -24,9 +24,8 @@ import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.util.requireAuthorization
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.locations.post
 import io.ktor.server.request.receive
+import io.ktor.server.resources.post
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import org.jetbrains.exposed.exceptions.ExposedSQLException
@@ -98,7 +97,7 @@ fun Route.playlistMaps() {
                     Playlist
                         .updateReturning(
                             {
-                                (Playlist.id eq req.id) and (Playlist.owner eq sess.userId) and Playlist.deletedAt.isNull()
+                                (Playlist.id eq req.id?.orNull()) and (Playlist.owner eq sess.userId) and Playlist.deletedAt.isNull()
                             },
                             {
                                 it[songsChangedAt] = NowExpression(songsChangedAt)
@@ -179,7 +178,7 @@ fun Route.playlistMaps() {
                     Playlist
                         .updateReturning(
                             {
-                                (Playlist.id eq req.id) and (Playlist.owner eq sess.userId) and Playlist.deletedAt.isNull()
+                                (Playlist.id eq req.id?.orNull()) and (Playlist.owner eq sess.userId) and Playlist.deletedAt.isNull()
                             },
                             {
                                 it[songsChangedAt] = NowExpression(songsChangedAt)

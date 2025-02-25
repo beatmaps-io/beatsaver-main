@@ -1,9 +1,12 @@
+@file:UseSerializers(LenientInstantSerializer::class, OptionalPropertySerializer::class)
+
 package io.beatmaps.api
 
 import com.toxicbakery.bcrypt.Bcrypt
 import de.nielsfalk.ktor.swagger.DefaultValue
 import de.nielsfalk.ktor.swagger.Description
 import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.ModelClass
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
@@ -15,6 +18,8 @@ import io.beatmaps.api.user.getAvatar
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.Config
 import io.beatmaps.common.EmailChangedData
+import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.PasswordChangedData
 import io.beatmaps.common.RevokeSessionsData
 import io.beatmaps.common.SuspendData
@@ -53,12 +58,16 @@ import io.beatmaps.common.dbo.handlePatreon
 import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.common.or
 import io.beatmaps.common.solr.SolrHelper
 import io.beatmaps.common.solr.SolrResults
 import io.beatmaps.common.solr.collections.UserSolr
 import io.beatmaps.common.solr.field.apply
 import io.beatmaps.common.solr.get
 import io.beatmaps.common.solr.paged
+import io.beatmaps.common.util.LenientInstantSerializer
+import io.beatmaps.common.util.paramInfo
+import io.beatmaps.common.util.requireParams
 import io.beatmaps.login.MongoClient
 import io.beatmaps.login.MongoSession
 import io.beatmaps.login.Session
@@ -82,24 +91,23 @@ import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.delete
-import io.ktor.server.locations.get
-import io.ktor.server.locations.post
+import io.ktor.resources.Resource
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.request.receive
+import io.ktor.server.resources.delete
+import io.ktor.server.resources.get
+import io.ktor.server.resources.post
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.RoutingContext
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
-import io.ktor.util.pipeline.PipelineContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import kotlinx.datetime.toKotlinInstant
+import kotlinx.serialization.UseSerializers
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Column
@@ -157,95 +165,218 @@ fun PatreonDao?.toTier() = if (this != null) {
     null
 }
 
-@Location("/api/users")
+@Resource("/api/users")
 class UsersApi {
-    @Location("/me")
-    data class Me(val api: UsersApi)
-
-    @Location("/username")
-    data class Username(val api: UsersApi)
-
-    @Location("/description")
-    data class DescriptionApi(val api: UsersApi)
-
-    @Location("/blur")
-    data class BlurApi(val api: UsersApi)
-
-    @Location("/admin")
-    data class Admin(val api: UsersApi)
-
-    @Location("/suspend")
-    data class Suspend(val api: UsersApi)
-
-    @Location("/register")
-    data class Register(val api: UsersApi)
-
-    @Location("/forgot")
-    data class Forgot(val api: UsersApi)
-
-    @Location("/reset")
-    data class Reset(val api: UsersApi)
-
-    @Location("/email")
-    data class Email(val api: UsersApi)
-
-    @Location("/change-email")
-    data class ChangeEmail(val api: UsersApi)
-
-    @Location("/sessions")
-    data class Sessions(val api: UsersApi)
-
-    @Location("/sessions/{id}")
-    data class SessionsById(val id: String, val api: UsersApi)
-
-    @Location("/id/{id}/playlist/{filename?}")
-    data class UserPlaylist(val id: Int, val filename: String? = null, val collabs: Boolean = true, val api: UsersApi)
-
-    @Location("/find/{id}")
-    data class Find(val id: String, val api: UsersApi)
-
-    @Location("/list/{page}")
-    data class List(val page: Long = 0, val api: UsersApi)
-
-    @Location("/follow")
-    data class Follow(val api: UsersApi)
-
-    @Location("/following/{user}/{page}")
-    data class Following(val user: Int, val page: Long = 0, val api: UsersApi)
-
-    @Location("/followedBy/{user}/{page}")
-    data class FollowedBy(val user: Int, val page: Long = 0, val api: UsersApi)
-
-    @Group("Users")
-    @Location("/search/{page}")
-    data class Search(
-        val q: String? = "",
-        val curator: Boolean? = null,
-        val verified: Boolean? = null,
-        val minUpvotes: Int? = null,
-        val maxUpvotes: Int? = null,
-        val minDownvotes: Int? = null,
-        val maxDownvotes: Int? = null,
-        val minMaps: Int? = null,
-        val maxMaps: Int? = null,
-        val minRankedMaps: Int? = null,
-        val maxRankedMaps: Int? = null,
-        val firstUploadBefore: Instant? = null,
-        val firstUploadAfter: Instant? = null,
-        val lastUploadBefore: Instant? = null,
-        val lastUploadAfter: Instant? = null,
-        @DefaultValue("0")
-        val page: Long = 0,
-        @Description("1 - 100") @DefaultValue("20")
-        val pageSize: Int = 20,
-        val sort: UserSearchSort = UserSearchSort.RELEVANCE,
-        val order: ApiOrder = ApiOrder.DESC,
+    @Resource("/me")
+    data class Me(
         @Ignore
         val api: UsersApi
     )
 
-    @Location("/curators")
-    data class Curators(val api: UsersApi)
+    @Resource("/username")
+    data class Username(
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/description")
+    data class DescriptionApi(
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/blur")
+    data class BlurApi(
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/admin")
+    data class Admin(
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/suspend")
+    data class Suspend(
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/register")
+    data class Register(
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/forgot")
+    data class Forgot(
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/reset")
+    data class Reset(
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/email")
+    data class Email(
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/change-email")
+    data class ChangeEmail(
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/sessions")
+    data class Sessions(
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/sessions/{id}")
+    data class SessionsById(
+        val id: String,
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/id/{id}/playlist/{filename?}")
+    data class UserPlaylist(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        val filename: String? = null,
+        val collabs: Boolean = true,
+        @Ignore
+        val api: UsersApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(UserPlaylist::id)
+            )
+        }
+    }
+
+    @Resource("/find/{id}")
+    data class Find(
+        val id: String,
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/list/{page}")
+    data class List(
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: UsersApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(List::page)
+            )
+        }
+    }
+
+    @Resource("/follow")
+    data class Follow(
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/following/{user}/{page}")
+    data class Following(
+        @ModelClass(Int::class)
+        val user: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: UsersApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Following::user), paramInfo(Following::page)
+            )
+        }
+    }
+
+    @Resource("/followedBy/{user}/{page}")
+    data class FollowedBy(
+        @ModelClass(Int::class)
+        val user: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: UsersApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(FollowedBy::user), paramInfo(FollowedBy::page)
+            )
+        }
+    }
+
+    @Group("Users")
+    @Resource("/search/{page}")
+    data class Search(
+        val q: String? = "",
+        val curator: Boolean? = null,
+        val verified: Boolean? = null,
+        @ModelClass(Int::class)
+        val minUpvotes: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Int::class)
+        val maxUpvotes: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Int::class)
+        val minDownvotes: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Int::class)
+        val maxDownvotes: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Int::class)
+        val minMaps: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Int::class)
+        val maxMaps: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Int::class)
+        val minRankedMaps: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Int::class)
+        val maxRankedMaps: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Instant::class)
+        val firstUploadBefore: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        @ModelClass(Instant::class)
+        val firstUploadAfter: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        @ModelClass(Instant::class)
+        val lastUploadBefore: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        @ModelClass(Instant::class)
+        val lastUploadAfter: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        @ModelClass(Long::class) @DefaultValue("0")
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @ModelClass(Int::class) @Description("1 - 100") @DefaultValue("20")
+        val pageSize: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(UserSearchSort::class)
+        val sort: OptionalProperty<UserSearchSort>? = OptionalProperty.NotPresent,
+        @ModelClass(ApiOrder::class)
+        val order: OptionalProperty<ApiOrder>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: UsersApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Search::minUpvotes), paramInfo(Search::maxUpvotes), paramInfo(Search::minDownvotes), paramInfo(Search::maxDownvotes), paramInfo(Search::minMaps),
+                paramInfo(Search::maxMaps), paramInfo(Search::minRankedMaps), paramInfo(Search::maxRankedMaps), paramInfo(Search::firstUploadBefore),
+                paramInfo(Search::firstUploadAfter), paramInfo(Search::lastUploadBefore), paramInfo(Search::lastUploadAfter), paramInfo(Search::page), paramInfo(Search::pageSize),
+                paramInfo(Search::sort), paramInfo(Search::order)
+            )
+        }
+    }
+
+    @Resource("/curators")
+    data class Curators(
+        @Ignore
+        val api: UsersApi
+    )
 }
 
 fun followData(uploaderId: Int, userId: Int?): UserFollowData {
@@ -724,7 +855,7 @@ fun Route.userRoute(client: HttpClient) {
         }
     }
 
-    fun PipelineContext<*, ApplicationCall>.sendReclaimMail(user: UserDao) =
+    fun RoutingContext.sendReclaimMail(user: UserDao) =
         user.email?.let {
             val jwt = Jwts.builder()
                 .setExpiration(7.days)
@@ -995,7 +1126,7 @@ fun Route.userRoute(client: HttpClient) {
         val us = transaction {
             val userAlias = User.select(User.upvotes, User.id, User.name, User.uniqueName, User.description, User.avatar, User.hash, User.discordId).where {
                 Op.TRUE and User.active
-            }.orderBy(User.upvotes, SortOrder.DESC).limit(req.page).alias("u")
+            }.orderBy(User.upvotes, SortOrder.DESC).limit(req.page.or(0)).alias("u")
 
             val query = userAlias
                 .join(Beatmap, JoinType.INNER, userAlias[User.id], Beatmap.uploader) {
@@ -1059,16 +1190,16 @@ fun Route.userRoute(client: HttpClient) {
             Beatmap.joinVersions()
                 .selectAll().where {
                     Beatmap.id.inSubQuery(
-                        Beatmap.select(Beatmap.id).where { (Beatmap.uploader eq it.id) and Beatmap.deletedAt.isNull() }
+                        Beatmap.select(Beatmap.id).where { (Beatmap.uploader eq it.id?.orNull()) and Beatmap.deletedAt.isNull() }
                             .let { q ->
                                 if (it.collabs) {
-                                    q.union(Collaboration.select(Collaboration.mapId).where { Collaboration.collaboratorId eq it.id and Collaboration.accepted })
+                                    q.union(Collaboration.select(Collaboration.mapId).where { Collaboration.collaboratorId eq it.id?.orNull() and Collaboration.accepted })
                                 } else {
                                     q
                                 }
                             }
                     )
-                }.complexToBeatmap().sortedByDescending { b -> b.uploaded } to User.selectAll().where { User.id eq it.id and User.active }.firstOrNull()?.let { row -> UserDetail.from(row) }
+                }.complexToBeatmap().sortedByDescending { b -> b.uploaded } to User.selectAll().where { User.id eq it.id?.orNull() and User.active }.firstOrNull()?.let { row -> UserDetail.from(row) }
         }
 
         if (user == null) {
@@ -1197,7 +1328,7 @@ fun Route.userRoute(client: HttpClient) {
         optionalAuthorization(OauthScope.FOLLOW) { _, sess ->
             val userDetail = transaction {
                 val user = userBy {
-                    (User.id eq it.id) and User.active
+                    (User.id eq it.id?.orNull()) and User.active
                 }
                 val followData = followData(user.id.value, sess?.userId)
 
@@ -1270,8 +1401,8 @@ fun Route.userRoute(client: HttpClient) {
     }
 
     get<UsersApi.Following> {
-        val users = getFollowerData(it.page, Follows.followerId) {
-            Follows.userId eq it.user
+        val users = getFollowerData(it.page.or(0), Follows.followerId) {
+            Follows.userId eq it.user?.orNull()
         }
 
         call.respond(users)
@@ -1279,10 +1410,10 @@ fun Route.userRoute(client: HttpClient) {
 
     get<UsersApi.FollowedBy> {
         requireAuthorization(OauthScope.FOLLOW) { _, sess ->
-            if (it.user != sess.userId) call.respond(HttpStatusCode.Forbidden, ActionResponse.error())
+            if (it.user?.orNull() != sess.userId) call.respond(HttpStatusCode.Forbidden, ActionResponse.error())
 
-            val users = getFollowerData(it.page, Follows.userId) {
-                Follows.followerId eq it.user
+            val users = getFollowerData(it.page.or(0), Follows.userId) {
+                Follows.followerId eq it.user?.orNull()
             }
 
             call.respond(users)
@@ -1318,20 +1449,20 @@ fun Route.userRoute(client: HttpClient) {
                     searchInfo.applyQuery(q)
                 }
                 .let { q ->
-                    UserSolr.addSortArgs(q, req.sort, req.order)
+                    UserSolr.addSortArgs(q, req.sort.or(UserSearchSort.RELEVANCE), req.order.or(ApiOrder.DESC))
                 }
                 .notNull(req.curator) { o -> UserSolr.curator eq o }
                 .notNull(req.verified) { o -> UserSolr.verifiedMapper eq o }
                 .also { q ->
-                    q.apply(UserSolr.totalUpvotes.betweenNullableInc(req.minUpvotes, req.maxUpvotes))
-                    q.apply(UserSolr.totalDownvotes.betweenNullableInc(req.minDownvotes, req.maxDownvotes))
-                    q.apply(UserSolr.totalMaps.betweenNullableInc(req.minMaps, req.maxMaps))
-                    q.apply(UserSolr.rankedMaps.betweenNullableInc(req.minRankedMaps, req.maxRankedMaps))
+                    q.apply(UserSolr.totalUpvotes.betweenNullableInc(req.minUpvotes?.orNull(), req.maxUpvotes?.orNull()))
+                    q.apply(UserSolr.totalDownvotes.betweenNullableInc(req.minDownvotes?.orNull(), req.maxDownvotes?.orNull()))
+                    q.apply(UserSolr.totalMaps.betweenNullableInc(req.minMaps?.orNull(), req.maxMaps?.orNull()))
+                    q.apply(UserSolr.rankedMaps.betweenNullableInc(req.minRankedMaps?.orNull(), req.maxRankedMaps?.orNull()))
 
-                    q.apply(UserSolr.firstUpload.betweenNullableInc(req.firstUploadAfter, req.firstUploadBefore))
-                    q.apply(UserSolr.lastUpload.betweenNullableInc(req.lastUploadAfter, req.lastUploadBefore))
+                    q.apply(UserSolr.firstUpload.betweenNullableInc(req.firstUploadAfter?.orNull(), req.firstUploadBefore?.orNull()))
+                    q.apply(UserSolr.lastUpload.betweenNullableInc(req.lastUploadAfter?.orNull(), req.lastUploadBefore?.orNull()))
                 }
-                .paged(req.page.toInt(), req.pageSize.coerceIn(1, 100))
+                .paged(req.page.or(0).toInt(), req.pageSize.or(20).coerceIn(1, 100))
                 .let { UserSolr.query(it) }
 
             val userIds = response.results.mapNotNull { it[UserSolr.id] }

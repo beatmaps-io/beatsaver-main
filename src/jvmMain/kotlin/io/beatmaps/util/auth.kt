@@ -11,14 +11,13 @@ import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.auth.HttpAuthHeader
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
 import io.ktor.server.auth.parseAuthorizationHeader
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.origin
 import io.ktor.server.response.respond
+import io.ktor.server.routing.RoutingContext
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
-import io.ktor.util.pipeline.PipelineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import nl.myndocs.oauth2.token.AccessToken
@@ -39,14 +38,14 @@ suspend fun <T> ApplicationCall.optionalAuthorization(scope: OauthScope? = null,
         ?: run { block(AuthType.None, null) }
 }
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.optionalAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(AuthType, Session?) -> T) {
+suspend fun <T> RoutingContext.optionalAuthorization(scope: OauthScope? = null, block: suspend RoutingContext.(AuthType, Session?) -> T) {
     val that = this
     call.optionalAuthorization(scope) { a, b ->
         block(that, a, b)
     }
 }
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.requireAuthorization(scope: OauthScope? = null, block: suspend PipelineContext<*, ApplicationCall>.(AuthType, Session) -> T) {
+suspend fun <T> RoutingContext.requireAuthorization(scope: OauthScope? = null, block: suspend RoutingContext.(AuthType, Session) -> T) {
     optionalAuthorization(scope) { type, sess ->
         if (type == AuthType.None || sess == null) {
             call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
@@ -73,9 +72,9 @@ fun ApplicationCall.checkOauthHeader(scope: OauthScope? = null) =
         } else { null }
     }
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.captchaProvider(block: suspend (CaptchaProvider) -> T): T = block(CaptchaVerifier.provider(call))
+suspend fun <T> RoutingContext.captchaProvider(block: suspend (CaptchaProvider) -> T): T = block(CaptchaVerifier.provider(call))
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(client: HttpClient, captcha: String?, block: suspend PipelineContext<*, ApplicationCall>.() -> T, error: (suspend PipelineContext<*, ApplicationCall>.(SiteVerifyResponse) -> T)? = null) =
+suspend fun <T> RoutingContext.requireCaptcha(client: HttpClient, captcha: String?, block: suspend RoutingContext.() -> T, error: (suspend RoutingContext.(SiteVerifyResponse) -> T)? = null) =
     captchaProvider { provider ->
         withContext(Dispatchers.IO) {
             CaptchaVerifier.verify(client, provider, captcha ?: "", call.request.origin.remoteHost)
@@ -88,7 +87,7 @@ suspend fun <T> PipelineContext<*, ApplicationCall>.requireCaptcha(client: HttpC
         }
     }
 
-suspend fun <T> PipelineContext<*, ApplicationCall>.captchaIfPresent(client: HttpClient, captcha: String?, block: suspend PipelineContext<*, ApplicationCall>.() -> T) =
+suspend fun <T> RoutingContext.captchaIfPresent(client: HttpClient, captcha: String?, block: suspend RoutingContext.() -> T) =
     if (captcha != null) {
         this.requireCaptcha(client, captcha, block)
     } else {

@@ -1,12 +1,17 @@
+@file:UseSerializers(OptionalPropertySerializer::class)
+
 package io.beatmaps.api
 
 import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.ModelClass
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.api.util.postWithOptions
+import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.amqp.consumeAck
 import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.amqp.rabbitOptional
@@ -20,20 +25,24 @@ import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.Votes
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.common.or
 import io.beatmaps.common.solr.collections.BsSolr
 import io.beatmaps.common.solr.insert
 import io.beatmaps.common.tag
+import io.beatmaps.common.util.paramInfo
+import io.beatmaps.common.util.requireParams
 import io.beatmaps.util.GameTokenValidator
 import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
+import io.ktor.resources.Resource
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.application
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.builtins.serializer
 import org.apache.solr.client.solrj.SolrServerException
 import org.jetbrains.exposed.sql.Count
@@ -52,15 +61,29 @@ import java.lang.Integer.toHexString
 import kotlin.math.log
 import kotlin.math.pow
 
-@Location("/api")
+@Resource("/api")
 class VoteApi {
     @Group("Vote")
-    @Location("/vote")
-    data class Vote(@Ignore val api: VoteApi)
+    @Resource("/vote")
+    data class Vote(
+        @Ignore
+        val api: VoteApi
+    )
 
     @Group("Vote")
-    @Location("/vote")
-    data class Since(val since: Instant, @Ignore val api: VoteApi)
+    @Resource("/vote")
+    data class Since(
+        @ModelClass(Instant::class)
+        val since: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: VoteApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Since::since)
+            )
+        }
+    }
 }
 
 @Serializable
@@ -161,7 +184,7 @@ fun Route.voteRoute(client: HttpClient) {
         val voteSummary = transaction {
             val updatedMaps =
                 Beatmap.joinVersions(false).selectAll().where {
-                    Beatmap.lastVoteAt greaterEq req.since.toJavaInstant()
+                    Beatmap.lastVoteAt greaterEq (req.since.or(Clock.System.now())).toJavaInstant()
                 }.complexToBeatmap()
 
             updatedMaps.map {

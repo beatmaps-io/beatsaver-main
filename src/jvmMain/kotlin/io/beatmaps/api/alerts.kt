@@ -1,5 +1,11 @@
+@file:UseSerializers(OptionalPropertySerializer::class)
+
 package io.beatmaps.api
 
+import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.ModelClass
+import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Alert
@@ -10,21 +16,23 @@ import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.joinUser
+import io.beatmaps.common.or
+import io.beatmaps.common.util.paramInfo
+import io.beatmaps.common.util.requireParams
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization
 import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
-import io.ktor.server.locations.post
+import io.ktor.resources.Resource
 import io.ktor.server.request.receive
+import io.ktor.server.resources.get
+import io.ktor.server.resources.post
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
-import io.ktor.util.pipeline.PipelineContext
+import io.ktor.server.routing.RoutingContext
 import kotlinx.datetime.toKotlinInstant
+import kotlinx.serialization.UseSerializers
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SortOrder
@@ -40,25 +48,61 @@ import org.jetbrains.exposed.sql.unionAll
 import org.jetbrains.exposed.sql.update
 import java.lang.Integer.toHexString
 
-@Location("/api/alerts")
+@Resource("/api/alerts")
 class AlertsApi {
-    @Location("/unread/{page?}")
-    data class Unread(val page: Long? = null, val type: String? = null, val api: AlertsApi)
+    @Resource("/unread/{page?}")
+    data class Unread(
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        val type: String? = null,
+        @Ignore
+        val api: AlertsApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Unread::page)
+            )
+        }
+    }
 
-    @Location("/read/{page?}")
-    data class Read(val page: Long? = null, val type: String? = null, val api: AlertsApi)
+    @Resource("/read/{page?}")
+    data class Read(
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        val type: String? = null,
+        @Ignore
+        val api: AlertsApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Read::page)
+            )
+        }
+    }
 
-    @Location("/stats")
-    data class Stats(val api: AlertsApi)
+    @Resource("/stats")
+    data class Stats(
+        @Ignore
+        val api: AlertsApi
+    )
 
-    @Location("/options")
-    data class Options(val api: AlertsApi)
+    @Resource("/options")
+    data class Options(
+        @Ignore
+        val api: AlertsApi
+    )
 
-    @Location("/mark")
-    data class Mark(val api: AlertsApi)
+    @Resource("/mark")
+    data class Mark(
+        @Ignore
+        val api: AlertsApi
+    )
 
-    @Location("/markall")
-    data class MarkAll(val api: AlertsApi)
+    @Resource("/markall")
+    data class MarkAll(
+        @Ignore
+        val api: AlertsApi
+    )
 }
 
 val ac = AlertRecipient.id.count().alias("ac")
@@ -99,7 +143,7 @@ fun UserAlert.Companion.from(collaboration: CollaborationDetail) = collaboration
 }
 
 fun Route.alertsRoute() {
-    fun PipelineContext<*, ApplicationCall>.getAlerts(userId: Int, read: Boolean, page: Long? = null, type: List<EAlertType>? = null): List<UserAlert> = transaction {
+    fun RoutingContext.getAlerts(userId: Int, read: Boolean, page: Long? = null, type: List<EAlertType>? = null): List<UserAlert> = transaction {
         val (s0, s1) = intLiteral(0).alias("s") to intLiteral(1).alias("s")
 
         val collabQuery = Collaboration
@@ -143,7 +187,7 @@ fun Route.alertsRoute() {
 
     get<AlertsApi.Unread> {
         requireAuthorization(OauthScope.ALERTS) { _, user ->
-            val alerts = getAlerts(user.userId, false, it.page, EAlertType.fromList(it.type))
+            val alerts = getAlerts(user.userId, false, it.page.or(0), EAlertType.fromList(it.type))
 
             call.respond(alerts)
         }
@@ -151,7 +195,7 @@ fun Route.alertsRoute() {
 
     get<AlertsApi.Read> {
         requireAuthorization(OauthScope.ALERTS) { _, user ->
-            val alerts = getAlerts(user.userId, true, it.page, EAlertType.fromList(it.type))
+            val alerts = getAlerts(user.userId, true, it.page.or(0), EAlertType.fromList(it.type))
 
             call.respond(alerts)
         }
@@ -214,7 +258,7 @@ fun Route.alertsRoute() {
         }
     }
 
-    suspend fun PipelineContext<*, ApplicationCall>.respondStats(sess: Session, stats: List<StatPart>?) =
+    suspend fun RoutingContext.respondStats(sess: Session, stats: List<StatPart>?) =
         if (stats != null) {
             val user = transaction { UserDao[sess.userId] }
 

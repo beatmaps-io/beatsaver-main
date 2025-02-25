@@ -1,20 +1,40 @@
+@file:UseSerializers(OptionalPropertySerializer::class)
+
 package io.beatmaps.controllers
 
+import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.ModelClass
+import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.OptionalPropertySerializer
+import io.beatmaps.common.util.paramInfo
+import io.beatmaps.common.util.requireParams
 import io.beatmaps.genericPage
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
+import io.ktor.resources.Resource
+import io.ktor.server.resources.get
 import io.ktor.server.routing.Route
+import kotlinx.serialization.UseSerializers
 
-@Location("/modlog")
+@Resource("/modlog")
 class ModLog
 
-@Location("/modreview")
+@Resource("/modreview")
 class ModReview
 
-@Location("/issues")
+@Resource("/issues")
 class IssuesController {
-    @Location("/{id}")
-    data class Detail(val id: Int, val api: IssuesController)
+    @Resource("/{id}")
+    data class Detail(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: IssuesController
+    ) {
+        init {
+            requireParams(
+                paramInfo(Detail::id)
+            )
+        }
+    }
 }
 
 fun Route.adminController() {

@@ -1,7 +1,13 @@
+@file:UseSerializers(OptionalPropertySerializer::class)
+
 package io.beatmaps.api
 
+import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.ModelClass
 import io.beatmaps.api.user.from
 import io.beatmaps.api.user.getAvatar
+import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.api.BasicMapInfo
 import io.beatmaps.common.api.BasicPlaylistInfo
@@ -48,6 +54,9 @@ import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
+import io.beatmaps.common.or
+import io.beatmaps.common.util.paramInfo
+import io.beatmaps.common.util.requireParams
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
 import io.beatmaps.util.requireAuthorization
@@ -55,16 +64,16 @@ import io.beatmaps.util.requireCaptcha
 import io.beatmaps.util.updateAlertCount
 import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
-import io.ktor.server.locations.post
-import io.ktor.server.locations.put
+import io.ktor.resources.Resource
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.request.receive
+import io.ktor.server.resources.get
+import io.ktor.server.resources.post
+import io.ktor.server.resources.put
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import kotlinx.datetime.toKotlinInstant
+import kotlinx.serialization.UseSerializers
 import org.jetbrains.exposed.dao.Entity
 import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -83,24 +92,60 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.lang.Integer.toHexString
 
-@Location("/api/issues")
+@Resource("/api/issues")
 class IssueApi {
-    @Location("/list/{page?}")
+    @Resource("/list/{page?}")
     data class IssueList(
         val open: Boolean? = null,
-        val type: EIssueType? = null,
-        val page: Long = 0,
+        @ModelClass(EIssueType::class)
+        val type: OptionalProperty<EIssueType>? = OptionalProperty.NotPresent,
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: IssueApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(IssueList::type), paramInfo(IssueList::page)
+            )
+        }
+    }
+
+    @Resource("/{id}")
+    data class IssueDetail(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: IssueApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(IssueDetail::id)
+            )
+        }
+    }
+
+    @Resource("/comments/{id}/{commentId?}")
+    data class IssueComments(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Int::class)
+        val commentId: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: IssueApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(IssueComments::id), paramInfo(IssueComments::commentId)
+            )
+        }
+    }
+
+    @Resource("/create")
+    data class Issue(
+        @Ignore
         val api: IssueApi
     )
-
-    @Location("/{id}")
-    data class IssueDetail(val id: Int, val api: IssueApi)
-
-    @Location("/comments/{id}/{commentId?}")
-    data class IssueComments(val id: Int, val commentId: Int? = null, val api: IssueApi)
-
-    @Location("/create")
-    data class Issue(val api: IssueApi)
 }
 
 fun Iterable<ResultRow>.preHydrate(isAdmin: Boolean) = also {
@@ -398,7 +443,7 @@ fun Route.issueRoute(client: HttpClient) {
                     .joinUser(Issue.creator)
                     .selectAll()
                     .where {
-                        (Issue.id eq it.id).let { q ->
+                        (Issue.id eq it.id?.orNull()).let { q ->
                             if (sess?.isAdmin() == true) {
                                 q
                             } else {
@@ -419,7 +464,7 @@ fun Route.issueRoute(client: HttpClient) {
                 val comments = IssueComment
                     .joinUser(IssueComment.userId)
                     .selectAll()
-                    .where { (IssueComment.issueId eq it.id) and IssueComment.deletedAt.isNull() and (if (sess?.isAdmin() == true) Op.TRUE else IssueComment.public) }
+                    .where { (IssueComment.issueId eq it.id?.orNull()) and IssueComment.deletedAt.isNull() and (if (sess?.isAdmin() == true) Op.TRUE else IssueComment.public) }
                     .orderBy(IssueComment.createdAt, SortOrder.ASC)
                     .handleUser()
 
@@ -437,7 +482,7 @@ fun Route.issueRoute(client: HttpClient) {
             val issueUpdate = call.receive<IssueUpdateRequest>()
             val success = transaction {
                 Issue.update({
-                    (Issue.id eq req.id).let { q ->
+                    (Issue.id eq req.id?.orNull()).let { q ->
                         if (sess.isAdmin()) {
                             q
                         } else {
@@ -474,7 +519,7 @@ fun Route.issueRoute(client: HttpClient) {
             val response = newSuspendedTransaction {
                 val intermediaryResult = Issue
                     .updateReturning(
-                        { Issue.id eq req.id and Issue.closedAt.isNull() },
+                        { Issue.id eq req.id?.orNull() and Issue.closedAt.isNull() },
                         {
                             it[updatedAt] = NowExpression(updatedAt)
                         },
@@ -490,7 +535,8 @@ fun Route.issueRoute(client: HttpClient) {
 
                 val userPrivileged = sess.isAdmin() || (sess.isCurator() && EIssueType.curatorTypes.contains(intermediaryResult.type))
 
-                if (req.commentId == null) {
+                val commentId = req.commentId?.orNull()
+                if (commentId == null) {
                     requireCaptcha(
                         client,
                         comment.captcha,
@@ -502,7 +548,7 @@ fun Route.issueRoute(client: HttpClient) {
 
                             IssueComment
                                 .insertAndGetId {
-                                    it[issueId] = req.id
+                                    it[issueId] = req.id.or(0)
                                     it[userId] = sess.userId
                                     it[text] = comment.text?.take(IssueConstants.MAX_COMMENT_LENGTH) ?: ""
                                     it[public] = if (!userPrivileged) { true } else { comment.public ?: false }
@@ -516,7 +562,7 @@ fun Route.issueRoute(client: HttpClient) {
                 } else {
                     val success = IssueComment
                         .update({
-                            ((IssueComment.id eq req.commentId) and (IssueComment.issueId eq req.id)).let { q ->
+                            ((IssueComment.id eq commentId) and (IssueComment.issueId eq req.id.or(0))).let { q ->
                                 if (userPrivileged) q else q.and(IssueComment.userId eq sess.userId)
                             }
                         }) {
@@ -554,11 +600,11 @@ fun Route.issueRoute(client: HttpClient) {
                                     q
                                 }
                             }
-                            .notNull(req.type) { o -> Issue.type eq o }
+                            .notNullOpt(req.type) { o -> Issue.type eq o }
                             .notNull(req.open) { o -> Issue.closedAt.run { if (o) isNull() else isNotNull() } }
                     }
                     .orderBy(Issue.updatedAt, SortOrder.DESC)
-                    .limit(req.page, 30)
+                    .limit(req.page.or(0), 30)
                     .handleUser()
                     .preHydrate(admin)
                     .map {

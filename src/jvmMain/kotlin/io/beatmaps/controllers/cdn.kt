@@ -1,9 +1,15 @@
+@file:UseSerializers(OptionalPropertySerializer::class)
+
 package io.beatmaps.controllers
 
+import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.ModelClass
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.from
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.Folders
+import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.amqp.DownloadInfo
 import io.beatmaps.common.amqp.DownloadType
 import io.beatmaps.common.amqp.pub
@@ -12,23 +18,25 @@ import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.common.or
 import io.beatmaps.common.util.downloadFilename
+import io.beatmaps.common.util.paramInfo
+import io.beatmaps.common.util.requireParams
 import io.beatmaps.common.util.returnFile
 import io.beatmaps.login.Session
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
+import io.ktor.resources.Resource
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.ApplicationRequest
+import io.ktor.server.resources.get
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.RoutingContext
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.util.hex
-import io.ktor.util.pipeline.PipelineContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlinx.serialization.UseSerializers
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.and
@@ -40,37 +48,85 @@ import java.util.Base64
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
-@Location("/cdn")
+@Resource("/cdn")
 class CDN {
-    @Location("/{file}.zip")
-    data class Zip(val file: String, val api: CDN)
+    @Resource("/{file}.zip")
+    data class Zip(
+        val file: String,
+        @Ignore
+        val api: CDN
+    )
 
-    @Location("/viewer/{file}")
-    data class Test(val file: String, val api: CDN)
+    @Resource("/viewer/{file}")
+    data class Test(
+        val file: String,
+        @Ignore
+        val api: CDN
+    )
 
-    @Location("/{file}.jpg")
-    data class Cover(val file: String, val api: CDN)
+    @Resource("/{file}.jpg")
+    data class Cover(
+        val file: String,
+        @Ignore
+        val api: CDN
+    )
 
-    @Location("/avatar/{user}.png")
-    data class Avatar(val user: String, val api: CDN)
+    @Resource("/avatar/{user}.png")
+    data class Avatar(
+        val user: String,
+        @Ignore
+        val api: CDN
+    )
 
-    @Location("/avatar/{user}.jpg")
-    data class AvatarSimple(val user: String, val api: CDN)
+    @Resource("/avatar/{user}.jpg")
+    data class AvatarSimple(
+        val user: String,
+        @Ignore
+        val api: CDN
+    )
 
-    @Location("/beatsaver/{file}.zip")
-    data class BeatSaver(val file: String, val api: CDN)
+    @Resource("/beatsaver/{file}.zip")
+    data class BeatSaver(
+        val file: String,
+        @Ignore
+        val api: CDN
+    )
 
-    @Location("/{file}.mp3")
-    data class Audio(val file: String, val api: CDN)
+    @Resource("/{file}.mp3")
+    data class Audio(
+        val file: String,
+        @Ignore
+        val api: CDN
+    )
 
-    @Location("/beatsaver/{file}.mp3")
-    data class BSAudio(val file: String, val api: CDN)
+    @Resource("/beatsaver/{file}.mp3")
+    data class BSAudio(
+        val file: String,
+        @Ignore
+        val api: CDN
+    )
 
-    @Location("/playlist/{file}.jpg")
-    data class PlaylistCover(val file: String, val api: CDN)
+    @Resource("/playlist/{file}.jpg")
+    data class PlaylistCover(
+        val file: String,
+        @Ignore
+        val api: CDN
+    )
 
-    @Location("/playlist/{size}/{file}.jpg")
-    data class PlaylistCoverSized(val file: String, val size: Int, val api: CDN)
+    @Resource("/playlist/{size}/{file}.jpg")
+    data class PlaylistCoverSized(
+        val file: String,
+        @ModelClass(Int::class)
+        val size: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: CDN
+    ) {
+        init {
+            requireParams(
+                paramInfo(PlaylistCoverSized::size)
+            )
+        }
+    }
 }
 
 object CdnSig {
@@ -215,7 +271,7 @@ fun Route.cdnRoute() {
             throw NotFoundException()
         }
 
-        returnFile(File(Folders.localPlaylistCoverFolder(it.size), "${it.file}.jpg"))
+        returnFile(File(Folders.localPlaylistCoverFolder(it.size.or(256)), "${it.file}.jpg"))
     }
 
     get<CDN.Avatar> {
@@ -227,7 +283,7 @@ fun Route.cdnRoute() {
     }
 }
 
-suspend fun PipelineContext<Unit, ApplicationCall>.getAudio(hash: String) =
+suspend fun RoutingContext.getAudio(hash: String) =
     returnFile(
         File(Folders.localAudioFolder(hash), "$hash.mp3")
     )

@@ -19,14 +19,13 @@ import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.http.HttpMethod
+import io.ktor.resources.Resource
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
 import io.ktor.server.auth.OAuthAccessTokenResponse
 import io.ktor.server.auth.OAuthServerSettings
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.authentication
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
+import io.ktor.server.resources.get
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -46,7 +45,7 @@ import java.util.Base64
 
 val discordSecret = System.getenv("DISCORD_HASH_SECRET")?.let { Base64.getDecoder().decode(it) } ?: byteArrayOf()
 
-@Location("/discord")
+@Resource("/discord")
 class DiscordLogin(val state: String? = null)
 
 @Serializable

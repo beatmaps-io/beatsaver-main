@@ -17,6 +17,7 @@ import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
+import io.beatmaps.common.or
 import io.beatmaps.common.util.copyToSuspend
 import io.beatmaps.controllers.UploadException
 import io.beatmaps.login.Session
@@ -24,9 +25,7 @@ import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.handleMultipart
 import io.beatmaps.util.requireAuthorization
 import io.ktor.client.HttpClient
-import io.ktor.http.content.streamProvider
-import io.ktor.server.application.call
-import io.ktor.server.locations.post
+import io.ktor.server.resources.post
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import kotlinx.serialization.Serializable
@@ -86,20 +85,19 @@ fun Route.playlistCreate(client: HttpClient) {
 
             try {
                 val multipart = handleMultipart(client) { part ->
-                    part.streamProvider().use { its ->
-                        val tmp = ByteArrayOutputStream()
-                        its.copyToSuspend(tmp, sizeLimit = FileLimits.PLAYLIST_IMAGE_LIMIT)
+                    val its = part.provider()
+                    val tmp = ByteArrayOutputStream()
+                    its.copyToSuspend(tmp, sizeLimit = FileLimits.PLAYLIST_IMAGE_LIMIT)
 
-                        thumbnailSizes.forEach { s ->
-                            files[s] = File(Folders.uploadTempFolder(), "upload-${System.currentTimeMillis()}-${sess.userId.hashCode()}-$s.jpg").also { localFile ->
-                                Thumbnails
-                                    .of(tmp.toByteArray().inputStream())
-                                    .size(s, s)
-                                    .imageType(BufferedImage.TYPE_INT_RGB)
-                                    .outputFormat("JPEG")
-                                    .outputQuality(0.8)
-                                    .toFile(localFile)
-                            }
+                    thumbnailSizes.forEach { s ->
+                        files[s] = File(Folders.uploadTempFolder(), "upload-${System.currentTimeMillis()}-${sess.userId.hashCode()}-$s.jpg").also { localFile ->
+                            Thumbnails
+                                .of(tmp.toByteArray().inputStream())
+                                .size(s, s)
+                                .imageType(BufferedImage.TYPE_INT_RGB)
+                                .outputFormat("JPEG")
+                                .outputQuality(0.8)
+                                .toFile(localFile)
                         }
                     }
                 }
@@ -150,7 +148,7 @@ fun Route.playlistCreate(client: HttpClient) {
 
     post<PlaylistApi.Edit> { req ->
         requireAuthorization(OauthScope.ADMIN_PLAYLISTS) { _, sess ->
-            val query = (Playlist.id eq req.id and Playlist.deletedAt.isNull()).let { q ->
+            val query = (Playlist.id eq req.id?.orNull() and Playlist.deletedAt.isNull()).let { q ->
                 if (sess.isAdmin()) {
                     q
                 } else {
@@ -163,21 +161,20 @@ fun Route.playlistCreate(client: HttpClient) {
             } ?: throw UploadException("Playlist not found")
 
             val multipart = handleMultipart(client) { part ->
-                part.streamProvider().use { its ->
-                    val tmp = ByteArrayOutputStream()
-                    its.copyToSuspend(tmp, sizeLimit = FileLimits.PLAYLIST_IMAGE_LIMIT)
+                val its = part.provider()
+                val tmp = ByteArrayOutputStream()
+                its.copyToSuspend(tmp, sizeLimit = FileLimits.PLAYLIST_IMAGE_LIMIT)
 
-                    thumbnailSizes.forEach { s ->
-                        val localFile = File(Folders.localPlaylistCoverFolder(s), "${req.id}.jpg")
+                thumbnailSizes.forEach { s ->
+                    val localFile = File(Folders.localPlaylistCoverFolder(s), "${req.id}.jpg")
 
-                        Thumbnails
-                            .of(tmp.toByteArray().inputStream())
-                            .size(s, s)
-                            .imageType(BufferedImage.TYPE_INT_RGB)
-                            .outputFormat("JPEG")
-                            .outputQuality(0.8)
-                            .toFile(localFile)
-                    }
+                    Thumbnails
+                        .of(tmp.toByteArray().inputStream())
+                        .size(s, s)
+                        .imageType(BufferedImage.TYPE_INT_RGB)
+                        .outputFormat("JPEG")
+                        .outputQuality(0.8)
+                        .toFile(localFile)
                 }
             }
             val data = multipart.get<PlaylistEditMultipart>()
@@ -220,10 +217,10 @@ fun Route.playlistCreate(client: HttpClient) {
                             sess.userId,
                             null,
                             if (data.deleted == true) {
-                                DeletedPlaylistData(req.id, data.reason ?: "")
+                                DeletedPlaylistData(req.id.or(0), data.reason ?: "")
                             } else {
                                 EditPlaylistData(
-                                    req.id,
+                                    req.id.or(0),
                                     beforePlaylist.name, beforePlaylist.description, beforePlaylist.type == EPlaylistType.Public,
                                     toCreate.name, newDescription, toCreate.type == EPlaylistType.Public
                                 )
@@ -234,7 +231,7 @@ fun Route.playlistCreate(client: HttpClient) {
                 }
             }
 
-            call.pub("beatmaps", "playlists.${req.id}.updated.detail", null, req.id)
+            call.pub("beatmaps", "playlists.${req.id}.updated.detail", null, req.id.or(0))
             call.respond(UploadResponse(req.id.toString()))
         }
     }
