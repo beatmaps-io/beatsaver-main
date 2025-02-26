@@ -106,7 +106,7 @@ fun Route.userController() {
         if (reqId == null && call.sessions.get<Session>() == null) {
             call.respondRedirect("/login")
         } else {
-            val userData =reqId?.let {
+            val userData = reqId?.let {
                 transaction {
                     User
                         .selectAll()
