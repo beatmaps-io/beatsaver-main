@@ -18,9 +18,8 @@ import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.locations.post
 import io.ktor.server.request.receive
+import io.ktor.server.resources.post
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import org.jetbrains.exposed.sql.and

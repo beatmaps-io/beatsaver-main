@@ -1,28 +1,34 @@
 package io.beatmaps.api
 
+import de.nielsfalk.ktor.swagger.Ignore
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.login.server.DBClientService
 import io.beatmaps.login.server.toIdentity
 import io.beatmaps.util.requireAuthorization
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.post
+import io.ktor.resources.Resource
 import io.ktor.server.request.receive
+import io.ktor.server.resources.post
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import nl.myndocs.oauth2.tokenstore.inmemory.InMemoryDeviceCodeStore
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
-@Location("/api/quest")
+@Resource("/api/quest")
 class QuestApi {
-    @Location("/code")
-    data class Code(val api: QuestApi)
+    @Resource("/code")
+    data class Code(
+        @Ignore
+        val api: QuestApi
+    )
 
-    @Location("/complete")
-    data class Complete(val api: QuestApi)
+    @Resource("/complete")
+    data class Complete(
+        @Ignore
+        val api: QuestApi
+    )
 }
 
 fun Route.questRoute(deviceCodeStore: InMemoryDeviceCodeStore) {

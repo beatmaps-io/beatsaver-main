@@ -1,22 +1,31 @@
+@file:UseSerializers(LenientInstantSerializer::class, OptionalPropertySerializer::class)
+
 package io.beatmaps.api
 
 import de.nielsfalk.ktor.swagger.DefaultValue
 import de.nielsfalk.ktor.swagger.Description
 import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.ModelClass
 import de.nielsfalk.ktor.swagger.version.shared.Group
 import io.beatmaps.api.playlist.playlistCreate
 import io.beatmaps.api.playlist.playlistCurate
 import io.beatmaps.api.playlist.playlistMaps
 import io.beatmaps.api.playlist.playlistSearch
 import io.beatmaps.api.playlist.playlistSingle
+import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.db.wrapAsExpressionNotNull
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
+import io.beatmaps.common.util.LenientInstantSerializer
+import io.beatmaps.common.util.paramInfo
+import io.beatmaps.common.util.requireParams
 import io.ktor.client.HttpClient
-import io.ktor.server.locations.Location
+import io.ktor.resources.Resource
 import io.ktor.server.routing.Route
 import kotlinx.datetime.Instant
+import kotlinx.serialization.UseSerializers
 import org.jetbrains.exposed.sql.Coalesce
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
@@ -25,108 +34,245 @@ import org.jetbrains.exposed.sql.floatLiteral
 
 const val prefix: String = "/playlists"
 
-@Location("/api")
+@Resource("/api")
 class PlaylistApi {
-    @Location("$prefix/id/{id}")
-    data class Detail(val id: Int, val api: PlaylistApi)
-
-    @Group("Playlists")
-    @Location("$prefix/id/{id}/{page}")
-    data class DetailWithPage(val id: Int, @DefaultValue("0") val page: Long, @Ignore val api: PlaylistApi)
-
-    @Location("$prefix/id/{id}/download/{filename?}")
-    data class Download(val id: Int, val filename: String? = null, val api: PlaylistApi)
-
-    @Location("$prefix/id/{id}/sign")
-    data class OneClickSign(val id: Int, val api: PlaylistApi)
-
-    @Location("$prefix/id/{id}/add")
-    data class Add(val id: Int, val api: PlaylistApi)
-
-    @Group("Playlists")
-    @Location("$prefix/id/{id}/batch")
-    data class Batch(val id: Int, @Ignore val api: PlaylistApi)
-
-    @Location("$prefix/id/{id}/edit")
-    data class Edit(val id: Int, val api: PlaylistApi)
-
-    @Location("$prefix/create")
-    data class Create(val api: PlaylistApi)
-
-    @Location("$prefix/curate")
-    data class Curate(val api: PlaylistApi)
-
-    @Group("Playlists")
-    @Location("$prefix/user/{userId}/{page}")
-    data class ByUser(
-        val userId: Int,
-        val page: Long,
+    @Resource("$prefix/id/{id}")
+    data class Detail(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
         @Ignore
-        val basic: Boolean = false,
+        val api: PlaylistApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Detail::id)
+            )
+        }
+    }
+
+    @Group("Playlists")
+    @Resource("$prefix/id/{id}/{page}")
+    data class DetailWithPage(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Long::class) @DefaultValue("0")
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: PlaylistApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(DetailWithPage::id), paramInfo(DetailWithPage::page)
+            )
+        }
+    }
+
+    @Resource("$prefix/id/{id}/download/{filename?}")
+    data class Download(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        val filename: String? = null,
+        @Ignore
+        val api: PlaylistApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Download::id)
+            )
+        }
+    }
+
+    @Resource("$prefix/id/{id}/sign")
+    data class OneClickSign(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: PlaylistApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(OneClickSign::id)
+            )
+        }
+    }
+
+    @Resource("$prefix/id/{id}/add")
+    data class Add(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: PlaylistApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Add::id)
+            )
+        }
+    }
+
+    @Group("Playlists")
+    @Resource("$prefix/id/{id}/batch")
+    data class Batch(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: PlaylistApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Batch::id)
+            )
+        }
+    }
+
+    @Resource("$prefix/id/{id}/edit")
+    data class Edit(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: PlaylistApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Edit::id)
+            )
+        }
+    }
+
+    @Resource("$prefix/create")
+    data class Create(
+        @Ignore
+        val api: PlaylistApi
+    )
+
+    @Resource("$prefix/curate")
+    data class Curate(
         @Ignore
         val api: PlaylistApi
     )
 
     @Group("Playlists")
-    @Location("$prefix/map/{mapId}/{page}")
+    @Resource("$prefix/user/{userId}/{page}")
+    data class ByUser(
+        @ModelClass(Int::class)
+        val userId: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore
+        val basic: Boolean = false,
+        @Ignore
+        val api: PlaylistApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(ByUser::userId), paramInfo(ByUser::page)
+            )
+        }
+    }
+
+    @Group("Playlists")
+    @Resource("$prefix/map/{mapId}/{page}")
     data class ByMap(
         val mapId: String,
         val curated: Boolean? = null,
-        val page: Long,
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
         @Ignore
         val basic: Boolean = false,
         @Ignore
         val api: PlaylistApi
-    )
+    ) {
+        init {
+            requireParams(
+                paramInfo(ByMap::page)
+            )
+        }
+    }
 
     @Group("Playlists")
-    @Location("$prefix/latest")
+    @Resource("$prefix/latest")
     data class ByUploadDate(
-        @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
-        val before: Instant? = null,
-        @Description("Like `before` but will get you maps more recent than the time supplied.\nYYYY-MM-DDTHH:MM:SS+00:00")
-        val after: Instant? = null,
-        val sort: LatestPlaylistSort? = LatestPlaylistSort.CREATED,
-        @Description("1 - 100") @DefaultValue("20")
-        val pageSize: Int = 20,
+        @ModelClass(Instant::class) @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
+        val before: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        @ModelClass(Instant::class) @Description("Like `before` but will get you maps more recent than the time supplied.\nYYYY-MM-DDTHH:MM:SS+00:00")
+        val after: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        @ModelClass(LatestPlaylistSort::class)
+        val sort: OptionalProperty<LatestPlaylistSort>? = OptionalProperty.NotPresent,
+        @ModelClass(Int::class) @Description("1 - 100") @DefaultValue("20")
+        val pageSize: OptionalProperty<Int>? = OptionalProperty.NotPresent,
         @Ignore
         val api: PlaylistApi
-    )
+    ) {
+        init {
+            requireParams(
+                paramInfo(ByUploadDate::before), paramInfo(ByUploadDate::after), paramInfo(ByUploadDate::sort), paramInfo(ByUploadDate::pageSize)
+            )
+        }
+    }
 
     @Group("Playlists")
-    @Location("$prefix/search/{page}")
+    @Resource("$prefix/search/{page}")
     data class Solr(
         val q: String = "",
-        @DefaultValue("0") val page: Long = 0,
-        @Ignore val sortOrder: SearchOrder = SearchOrder.Relevance,
-        val order: SearchOrder? = null,
-        val minNps: Float? = null,
-        val maxNps: Float? = null,
-        val from: Instant? = null,
-        val to: Instant? = null,
+        @ModelClass(Long::class) @DefaultValue("0")
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore @ModelClass(SearchOrder::class)
+        val sortOrder: OptionalProperty<SearchOrder>? = OptionalProperty.NotPresent,
+        @ModelClass(SearchOrder::class)
+        val order: OptionalProperty<SearchOrder>? = OptionalProperty.NotPresent,
+        @ModelClass(Float::class)
+        val minNps: OptionalProperty<Float>? = OptionalProperty.NotPresent,
+        @ModelClass(Float::class)
+        val maxNps: OptionalProperty<Float>? = OptionalProperty.NotPresent,
+        @ModelClass(Instant::class)
+        val from: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        @ModelClass(Instant::class)
+        val to: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
         val includeEmpty: Boolean? = null,
         val curated: Boolean? = null,
         val verified: Boolean? = null,
-        @Ignore val seed: String? = null,
-        @Ignore val api: PlaylistApi
-    )
+        @Ignore
+        val seed: String? = null,
+        @Ignore
+        val api: PlaylistApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Solr::page), paramInfo(Solr::sortOrder), paramInfo(Solr::order), paramInfo(Solr::minNps), paramInfo(Solr::maxNps), paramInfo(Solr::to)
+            )
+        }
+    }
 
     @Group("Playlists")
-    @Location("$prefix/search/v1/{page}")
+    @Resource("$prefix/search/v1/{page}")
     data class Text(
         val q: String = "",
-        @DefaultValue("0") val page: Long = 0,
-        @Ignore val sortOrder: SearchOrder = SearchOrder.Relevance,
-        val order: SearchOrder? = null,
-        val minNps: Float? = null,
-        val maxNps: Float? = null,
-        val from: Instant? = null,
-        val to: Instant? = null,
+        @ModelClass(Long::class) @DefaultValue("0")
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore @ModelClass(SearchOrder::class)
+        val sortOrder: OptionalProperty<SearchOrder>? = OptionalProperty.NotPresent,
+        @ModelClass(SearchOrder::class)
+        val order: OptionalProperty<SearchOrder>? = OptionalProperty.NotPresent,
+        @ModelClass(Float::class)
+        val minNps: OptionalProperty<Float>? = OptionalProperty.NotPresent,
+        @ModelClass(Float::class)
+        val maxNps: OptionalProperty<Float>? = OptionalProperty.NotPresent,
+        @ModelClass(Instant::class)
+        val from: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        @ModelClass(Instant::class)
+        val to: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
         val includeEmpty: Boolean? = null,
         val curated: Boolean? = null,
         val verified: Boolean? = null,
-        @Ignore val api: PlaylistApi
-    )
+        @Ignore
+        val api: PlaylistApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Text::page), paramInfo(Text::sortOrder), paramInfo(Text::order), paramInfo(Text::minNps), paramInfo(Text::maxNps), paramInfo(Text::to)
+            )
+        }
+    }
 }
 
 enum class LatestPlaylistSort {

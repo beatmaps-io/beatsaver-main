@@ -1,5 +1,6 @@
 package io.beatmaps.login
 
+import de.nielsfalk.ktor.swagger.Ignore
 import io.beatmaps.api.user.UserCrypto
 import io.beatmaps.common.Config
 import io.beatmaps.common.amqp.pub
@@ -17,17 +18,16 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
 import io.ktor.http.parametersOf
+import io.ktor.resources.Resource
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.principal
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
-import io.ktor.server.locations.post
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.queryString
 import io.ktor.server.request.uri
 import io.ktor.server.request.userAgent
+import io.ktor.server.resources.get
+import io.ktor.server.resources.post
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -36,6 +36,7 @@ import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.util.StringValues
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -74,48 +75,67 @@ data class Session(
     }
 }
 
-@Location("/login")
+@Resource("/login")
 class Login
 
-@Location("/oauth2")
+@Resource("/oauth2")
 class Oauth2 {
-    @Location("/authorize")
-    class Authorize(val client_id: String, val api: Oauth2)
+    @Resource("/authorize")
+    class Authorize(
+        @SerialName("client_id")
+        val clientId: String,
+        @Ignore
+        val api: Oauth2
+    )
 
-    @Location("/authorize/success")
-    class AuthorizeSuccess(val client_id: String, val api: Oauth2)
+    @Resource("/authorize/success")
+    class AuthorizeSuccess(
+        @SerialName("client_id")
+        val clientId: String,
+        @Ignore
+        val api: Oauth2
+    )
 
-    @Location("/authorize/not-me")
-    class NotMe(val api: Oauth2)
+    @Resource("/authorize/not-me")
+    class NotMe(
+        @Ignore
+        val api: Oauth2
+    )
 }
 
-@Location("/quest")
+@Resource("/quest")
 class Quest {
-    @Location("")
-    class CodeLogin(val api: Quest)
+    @Resource("")
+    class CodeLogin(
+        @Ignore
+        val api: Quest
+    )
 
-    @Location("/not-me")
-    class NotMe(val api: Quest)
+    @Resource("/not-me")
+    class NotMe(
+        @Ignore
+        val api: Quest
+    )
 }
 
-@Location("/register")
+@Resource("/register")
 class Register
 
-@Location("/forgot")
+@Resource("/forgot")
 class Forgot
 
-@Location("/reset/{jwt}")
+@Resource("/reset/{jwt}")
 class Reset(val jwt: String)
 
-@Location("/verify/{jwt}")
+@Resource("/verify/{jwt}")
 data class Verify(
     val jwt: String
 )
 
-@Location("/username")
+@Resource("/username")
 class Username
 
-@Location("/steam")
+@Resource("/steam")
 class Steam
 
 fun Route.authRoute(client: HttpClient) {
@@ -164,7 +184,7 @@ fun Route.authRoute(client: HttpClient) {
         post<Oauth2.Authorize> {
             call.principal<SimpleUserPrincipal>()?.let { newPrincipal ->
                 val user = newPrincipal.user
-                call.sessions.set(Session.fromUser(user, newPrincipal.alertCount, it.client_id, call))
+                call.sessions.set(Session.fromUser(user, newPrincipal.alertCount, it.clientId, call))
 
                 call.respondRedirect(newPrincipal.redirect)
             }
@@ -181,7 +201,7 @@ fun Route.authRoute(client: HttpClient) {
 
     get<Oauth2.AuthorizeSuccess> {
         call.sessions.get<Session>()?.let { s ->
-            call.sessions.set(s.copy(oauth2ClientId = it.client_id))
+            call.sessions.set(s.copy(oauth2ClientId = it.clientId))
 
             call.respondRedirect("/oauth2/authorize?" + call.request.queryString())
         }

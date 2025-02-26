@@ -1,6 +1,10 @@
+@file:UseSerializers(OptionalPropertySerializer::class)
+
 package io.beatmaps.api
 
+import de.nielsfalk.ktor.swagger.Ignore
 import io.beatmaps.api.user.from
+import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EMapState
@@ -21,14 +25,14 @@ import io.beatmaps.util.isUploader
 import io.beatmaps.util.requireAuthorization
 import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
-import io.ktor.server.locations.post
+import io.ktor.resources.Resource
 import io.ktor.server.request.receive
+import io.ktor.server.resources.get
+import io.ktor.server.resources.post
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import kotlinx.datetime.toKotlinInstant
+import kotlinx.serialization.UseSerializers
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
@@ -53,19 +57,32 @@ fun CollaborationDetail.Companion.from(row: ResultRow, cdnPrefix: String) = Coll
     )
 }
 
-@Location("/api/collaborations")
+@Resource("/api/collaborations")
 class CollaborationApi {
-    @Location("/request")
-    data class CollaborationRequest(val api: CollaborationApi)
+    @Resource("/request")
+    data class CollaborationRequest(
+        @Ignore
+        val api: CollaborationApi
+    )
 
-    @Location("/response")
-    data class CollaborationResponse(val api: CollaborationApi)
+    @Resource("/response")
+    data class CollaborationResponse(
+        @Ignore
+        val api: CollaborationApi
+    )
 
-    @Location("/remove")
-    data class CollaborationRemove(val api: CollaborationApi)
+    @Resource("/remove")
+    data class CollaborationRemove(
+        @Ignore
+        val api: CollaborationApi
+    )
 
-    @Location("/map/{id}")
-    data class Collaborations(val api: CollaborationApi, val id: String)
+    @Resource("/map/{id}")
+    data class Collaborations(
+        val id: String,
+        @Ignore
+        val api: CollaborationApi
+    )
 }
 
 fun Route.collaborationRoute() {

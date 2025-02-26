@@ -1,50 +1,83 @@
+@file:UseSerializers(OptionalPropertySerializer::class)
+
 package io.beatmaps.controllers
 
+import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.ModelClass
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.user.from
+import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
+import io.beatmaps.common.util.paramInfo
+import io.beatmaps.common.util.requireParams
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
-import io.ktor.server.locations.post
+import io.ktor.resources.Resource
+import io.ktor.server.resources.get
+import io.ktor.server.resources.post
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import kotlinx.html.link
 import kotlinx.html.meta
+import kotlinx.serialization.UseSerializers
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-@Location("/uploader")
+@Resource("/uploader")
 class UploaderController {
-    @Location("/{key}")
-    data class RedirectOld(val key: String, val api: UploaderController)
+    @Resource("/{key}")
+    data class RedirectOld(
+        val key: String,
+        @Ignore
+        val api: UploaderController
+    )
 }
 
-@Location("/profile")
+@Resource("/profile")
 class UserController {
-    @Location("/unlink-discord")
-    data class UnlinkDiscord(val api: UserController)
+    @Resource("/unlink-discord")
+    data class UnlinkDiscord(
+        @Ignore
+        val api: UserController
+    )
 
-    @Location("/unlink-patreon")
-    data class UnlinkPatreon(val api: UserController)
+    @Resource("/unlink-patreon")
+    data class UnlinkPatreon(
+        @Ignore
+        val api: UserController
+    )
 
-    @Location("/{id?}")
-    data class Detail(val id: Int? = null, val api: UserController)
+    @Resource("/{id?}")
+    data class Detail(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: UserController
+    ) {
+        init {
+            requireParams(
+                paramInfo(Detail::id)
+            )
+        }
+    }
 
-    @Location("/username/{name}")
-    data class RedirectName(val name: String, val api: UserController)
+    @Resource("/username/{name}")
+    data class RedirectName(
+        val name: String,
+        @Ignore
+        val api: UserController
+    )
 }
 
-@Location("/alerts")
+@Resource("/alerts")
 class AlertController
 
 fun Route.userController() {
@@ -69,15 +102,16 @@ fun Route.userController() {
     }
 
     get<UserController.Detail> { req ->
-        if (req.id == null && call.sessions.get<Session>() == null) {
+        val reqId = req.id?.orNull()
+        if (reqId == null && call.sessions.get<Session>() == null) {
             call.respondRedirect("/login")
         } else {
-            val userData = req.id?.let {
+            val userData = reqId?.let {
                 transaction {
                     User
                         .selectAll()
                         .where {
-                            User.id eq req.id and User.active
+                            User.id eq reqId and User.active
                         }
                         .limit(1)
                         .firstOrNull()

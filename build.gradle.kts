@@ -139,9 +139,10 @@ kotlin {
                 implementation("io.ktor:ktor-server-netty:$ktorVersion")
                 implementation("io.ktor:ktor-server-html-builder:$ktorVersion")
                 implementation("io.ktor:ktor-server-auth:$ktorVersion")
-                implementation("io.ktor:ktor-server-locations:$ktorVersion")
+                implementation("io.ktor:ktor-server-resources:$ktorVersion")
                 implementation("io.ktor:ktor-server-forwarded-header:$ktorVersion")
                 implementation("io.ktor:ktor-server-conditional-headers:$ktorVersion")
+                implementation("io.ktor:ktor-server-data-conversion:$ktorVersion")
                 implementation("io.ktor:ktor-client-apache:$ktorVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.0")
                 implementation("ch.qos.logback:logback-classic:1.5.6")
@@ -154,7 +155,7 @@ kotlin {
 
                 // Helpful
                 implementation("org.valiktor:valiktor-core:0.12.0")
-                implementation("de.nielsfalk.ktor:ktor-swagger:0.8.23")
+                implementation("de.nielsfalk.ktor:ktor-swagger:0.9.27")
                 implementation("org.bouncycastle:bcprov-jdk15:1.46")
 
                 // Database library

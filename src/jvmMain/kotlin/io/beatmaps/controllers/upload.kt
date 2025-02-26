@@ -25,16 +25,15 @@ import io.beatmaps.login.Session
 import io.beatmaps.util.handleMultipart
 import io.beatmaps.util.requireAuthorization
 import io.ktor.client.HttpClient
-import io.ktor.http.content.streamProvider
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
-import io.ktor.server.locations.post
+import io.ktor.resources.Resource
+import io.ktor.server.resources.get
+import io.ktor.server.resources.post
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
+import io.ktor.utils.io.jvm.javaio.toInputStream
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import net.coobird.thumbnailator.Thumbnails
@@ -49,10 +48,10 @@ import java.io.File
 import java.lang.Integer.toHexString
 import java.util.logging.Logger
 
-@Location("/upload")
+@Resource("/upload")
 class UploadMap
 
-@Location("/avatar")
+@Resource("/avatar")
 class UploadAvatar
 
 @Serializable
@@ -89,7 +88,7 @@ fun Route.uploadController(client: HttpClient) {
                 val localFile = File(Folders.localAvatarFolder(), filename)
 
                 handleMultipart(client) { part ->
-                    part.streamProvider().use { its ->
+                    part.provider().toInputStream().use { its ->
                         Thumbnails
                             .of(its)
                             .size(128, 128)
@@ -130,30 +129,30 @@ fun Route.uploadController(client: HttpClient) {
             val multipart = handleMultipart(client) { part ->
                 uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
 
-                part.streamProvider().use { its ->
-                    runCatching {
-                        file.outputStream().buffered().use {
-                            its.copyToSuspend(it, sizeLimit = totalLimit)
-                        }.let { actualSize ->
-                            openZip(file) {
-                                validateFiles(
-                                    initValidation(vivifyLimit)
-                                )
-                            }.copy(compressedSize = actualSize)
-                        }
-                    }.getOrElse { e ->
-                        file.delete()
+                val its = part.provider()
 
-                        when (e) {
-                            is RarException -> throw UploadException("Don't upload rar files. Use the package button in your map editor.")
-                            is SerializationException -> {
-                                e.printStackTrace()
-                                throw UploadException("Could not parse json")
-                            }
-                            is ZipHelperException -> throw UploadException(e.msg)
-                            is CopyException -> throw UploadException("Zip file too big")
-                            else -> throw e
+                runCatching {
+                    file.outputStream().buffered().use {
+                        its.copyToSuspend(it, sizeLimit = totalLimit)
+                    }.let { actualSize ->
+                        openZip(file) {
+                            validateFiles(
+                                initValidation(vivifyLimit)
+                            )
+                        }.copy(compressedSize = actualSize)
+                    }
+                }.getOrElse { e ->
+                    file.delete()
+
+                    when (e) {
+                        is RarException -> throw UploadException("Don't upload rar files. Use the package button in your map editor.")
+                        is SerializationException -> {
+                            e.printStackTrace()
+                            throw UploadException("Could not parse json")
                         }
+                        is ZipHelperException -> throw UploadException(e.msg)
+                        is CopyException -> throw UploadException("Zip file too big")
+                        else -> throw e
                     }
                 }
             }

@@ -7,9 +7,7 @@ import io.beatmaps.common.amqp.rb
 import io.beatmaps.login.MongoClient
 import io.beatmaps.login.Session
 import io.ktor.server.application.Application
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.util.pipeline.PipelineContext
+import io.ktor.server.routing.RoutingContext
 import kotlinx.serialization.builtins.serializer
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -24,8 +22,8 @@ fun updateAlertCount(rb: RabbitMQInstance?, userId: Int) {
 }
 
 fun updateAlertCount(rb: RabbitMQInstance?, ids: List<Int>) = ids.map { updateAlertCount(rb, it) }
-fun PipelineContext<*, ApplicationCall>.updateAlertCount(ids: List<Int>) = ids.map { updateAlertCount(it) }
-fun PipelineContext<*, ApplicationCall>.updateAlertCount(userId: Int) = updateAlertCount(call.rb(), userId)
+fun RoutingContext.updateAlertCount(ids: List<Int>) = ids.map { updateAlertCount(it) }
+fun RoutingContext.updateAlertCount(userId: Int) = updateAlertCount(call.rb(), userId)
 
 fun Application.alertsThread() {
     rabbitOptional {

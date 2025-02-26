@@ -1,8 +1,13 @@
+@file:UseSerializers(OptionalPropertySerializer::class)
+
 package io.beatmaps.api
 
 import de.nielsfalk.ktor.swagger.DefaultValue
 import de.nielsfalk.ktor.swagger.Description
 import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.ModelClass
+import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.db.ConflictType
@@ -18,16 +23,19 @@ import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
+import io.beatmaps.common.or
+import io.beatmaps.common.util.paramInfo
+import io.beatmaps.common.util.requireParams
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
-import io.ktor.server.locations.post
+import io.ktor.resources.Resource
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.request.receive
+import io.ktor.server.resources.get
+import io.ktor.server.resources.post
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import kotlinx.serialization.UseSerializers
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -38,18 +46,29 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-@Location("/api")
+@Resource("/api")
 class BookmarksApi {
-    @Location("/bookmark")
-    data class Bookmark(@Ignore val api: BookmarksApi)
-
-    @Location("/bookmarks/{page}")
-    data class Bookmarks(
-        @Ignore val api: BookmarksApi,
-        @DefaultValue("0") val page: Long = 0,
-        @Description("Allowed values between 1 and 100")
-        @DefaultValue("20") val pageSize: Int = 20
+    @Resource("/bookmark")
+    data class Bookmark(
+        @Ignore
+        val api: BookmarksApi
     )
+
+    @Resource("/bookmarks/{page}")
+    data class Bookmarks(
+        @ModelClass(Long::class) @DefaultValue("0")
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Description("Allowed values between 1 and 100") @ModelClass(Int::class) @DefaultValue("20")
+        val pageSize: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: BookmarksApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Bookmarks::page), paramInfo(Bookmarks::pageSize)
+            )
+        }
+    }
 }
 
 object BookmarksConflict : ConflictType {
@@ -143,7 +162,7 @@ fun Route.bookmarkRoute() {
                     .selectAll()
                     .where { Beatmap.deletedAt.isNull() and (reviewerAlias[User.id] eq sess.userId) }
                     .orderBy(PlaylistMap.order)
-                    .limit(it.page, it.pageSize.coerceIn(1, 100))
+                    .limit(it.page.or(0), it.pageSize.or(20).coerceIn(1, 100))
                     .complexToBeatmap()
                     .map {
                         MapDetail.from(it, cdnPrefix())

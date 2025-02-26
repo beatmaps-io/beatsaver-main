@@ -44,6 +44,7 @@ import io.beatmaps.common.jackson
 import io.beatmaps.common.json
 import io.beatmaps.common.jsonClient
 import io.beatmaps.common.setupLogging
+import io.beatmaps.common.util.BadParameter
 import io.beatmaps.controllers.UploadException
 import io.beatmaps.controllers.adminController
 import io.beatmaps.controllers.cdnRoute
@@ -78,37 +79,32 @@ import io.ktor.serialization.jackson.JacksonConverter
 import io.ktor.serialization.kotlinx.KotlinxSerializationConverter
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.html.respondHtmlTemplate
 import io.ktor.server.http.content.staticResources
-import io.ktor.server.locations.Locations
 import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.plugins.ParameterConversionException
 import io.ktor.server.plugins.conditionalheaders.ConditionalHeaders
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.server.plugins.dataconversion.DataConversion
 import io.ktor.server.plugins.forwardedheaders.XForwardedHeaders
 import io.ktor.server.request.path
+import io.ktor.server.resources.Resources
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
+import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
-import io.ktor.util.converters.DataConversionException
-import io.ktor.util.pipeline.PipelineContext
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.charsets.Charset
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
 import kotlinx.html.HEAD
 import kotlinx.html.link
 import nl.myndocs.oauth2.exception.InvalidGrantException
@@ -127,7 +123,7 @@ import java.util.logging.Logger
 import javax.sql.DataSource
 import kotlin.time.Duration.Companion.nanoseconds
 
-suspend fun PipelineContext<*, ApplicationCall>.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) =
+suspend fun RoutingContext.genericPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) =
     call.genericPage(statusCode, headerTemplate)
 
 fun ApplicationCall.getNonce() =
@@ -162,7 +158,7 @@ suspend fun ApplicationCall.genericPage(statusCode: HttpStatusCode = HttpStatusC
     }
 }
 
-suspend fun PipelineContext<*, ApplicationCall>.emptyPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) =
+suspend fun RoutingContext.emptyPage(statusCode: HttpStatusCode = HttpStatusCode.OK, headerTemplate: (HEAD.() -> Unit)? = null) =
     call.genericPage(statusCode, headerTemplate, false)
 
 enum class DbMigrationType(val folder: String) {
@@ -210,12 +206,12 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
                         null
                     } ?: jsConv.deserialize(charset, typeInfo, content)
 
-                override suspend fun serializeNullable(contentType: ContentType, charset: Charset, typeInfo: TypeInfo, value: Any?) =
+                override suspend fun serialize(contentType: ContentType, charset: Charset, typeInfo: TypeInfo, value: Any?) =
                     try {
-                        kotlinx.serializeNullable(contentType, charset, typeInfo, value)
+                        kotlinx.serialize(contentType, charset, typeInfo, value)
                     } catch (e: Exception) {
                         null
-                    } ?: jsConv.serializeNullable(contentType, charset, typeInfo, value)
+                    } ?: jsConv.serialize(contentType, charset, typeInfo, value)
             }
         )
     }
@@ -262,39 +258,22 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
         }
     }
 
-    install(DataConversion) {
-        convert<Instant> {
-            decode { values ->
-                values.singleOrNull()?.let {
-                    try {
-                        Instant.parse(it)
-                    } catch (e: IllegalArgumentException) {
-                        LocalDate.parse(it).atStartOfDayIn(TimeZone.UTC)
-                    }
-                } ?: throw DataConversionException("Cannot convert $values to Instant")
-            }
-            encode {
-                listOf(it.toString())
-            }
-        }
-    }
-
-    install(Locations)
+    install(Resources)
     install(StatusPagesCustom) {
         val errorLogger = Logger.getLogger("bmio.error")
 
-        status(HttpStatusCode.NotFound) {
+        status(HttpStatusCode.NotFound) { call, code ->
             val reqPath = call.request.path()
             if (reqPath.startsWith("/api")) {
                 call.respond(HttpStatusCode.NotFound, ActionResponse.error("Not Found"))
             } else if (reqPath.startsWith("/cdn")) {
                 call.respond(HttpStatusCode.NotFound)
             } else {
-                genericPage(HttpStatusCode.NotFound)
+                call.genericPage(HttpStatusCode.NotFound)
             }
         }
 
-        exception<ConstraintViolationException> { e ->
+        exception<ConstraintViolationException> { call, e ->
             call.respond(
                 HttpStatusCode.BadRequest,
                 UploadResponse(
@@ -316,19 +295,32 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
             )
         }
 
-        exception<UploadException> { cause ->
+        exception<UploadException> { call, cause ->
             call.respond(HttpStatusCode.BadRequest, cause.toResponse())
         }
 
-        exception<ScoreSaberServerException> { cause ->
+        exception<ScoreSaberServerException> { call, cause ->
             call.respond(HttpStatusCode.BadGateway, ActionResponse.error("Upstream responded with ${cause.originalException.response}"))
         }
 
-        exception<DataConversionException> { cause ->
-            call.respond(HttpStatusCode.InternalServerError, ActionResponse.error(cause.message ?: ""))
+        exception<BadRequestException> { call, cause ->
+            when (val c2 = cause.cause?.cause) {
+                is BadParameter -> {
+                    val helpMessage = if (c2.paramType == Instant::class) {
+                        val now = Clock.System.now().let {
+                            it.minus(it.nanosecondsOfSecond.nanoseconds)
+                        }
+                        ". Most likely you're missing a timezone. Example: $now"
+                    } else {
+                        ""
+                    }
+                    call.respond(HttpStatusCode.InternalServerError, ActionResponse.error("Failed to convert parameter '${c2.paramName}' to ${c2.paramType.simpleName}$helpMessage"))
+                }
+                else -> call.respond(HttpStatusCode.InternalServerError, ActionResponse.error("Bad request, check parameters"))
+            }
         }
 
-        exception<ApiException> { cause ->
+        exception<ApiException> { call, cause ->
             val code = when (cause) {
                 is UserApiException -> HttpStatusCode.BadRequest
                 is ServerApiException -> HttpStatusCode.InternalServerError
@@ -336,7 +328,8 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
             call.respond(code, cause.toResponse())
         }
 
-        exception<ParameterConversionException> { cause ->
+        // TODO: Is this possible? Wrap up in BadRequestException?
+        exception<ParameterConversionException> { call, cause ->
             if (cause.type == Instant::class.toString()) {
                 val now = Clock.System.now().let {
                     it.minus(it.nanosecondsOfSecond.nanoseconds)
@@ -348,19 +341,19 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
             }
         }
 
-        exception<NotFoundException> {
+        exception<NotFoundException> { call, _ ->
             call.respond(HttpStatusCode.NotFound, ActionResponse.error("Not Found"))
         }
 
-        exception<InvalidGrantException> {
+        exception<InvalidGrantException> { call, _ ->
             call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
         }
 
-        exception<OauthException> {
+        exception<OauthException> { call, it ->
             call.respond(HttpStatusCode.BadRequest, it.toMap())
         }
 
-        exception<Throwable> { cause ->
+        exception<Throwable> { call, cause ->
             call.respond(HttpStatusCode.InternalServerError, "Internal Server Error")
             errorLogger.log(Level.SEVERE, "Error processing request", cause)
         }

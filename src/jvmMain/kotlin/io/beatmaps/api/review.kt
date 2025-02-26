@@ -1,6 +1,12 @@
+@file:UseSerializers(OptionalPropertySerializer::class)
+
 package io.beatmaps.api
 
+import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.ModelClass
 import io.beatmaps.api.user.from
+import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.ReplyDeleteData
 import io.beatmaps.common.ReplyModerationData
 import io.beatmaps.common.ReviewDeleteData
@@ -32,6 +38,9 @@ import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
 import io.beatmaps.common.dbo.reviewerAlias
+import io.beatmaps.common.or
+import io.beatmaps.common.util.paramInfo
+import io.beatmaps.common.util.requireParams
 import io.beatmaps.util.captchaIfPresent
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization
@@ -39,19 +48,19 @@ import io.beatmaps.util.requireCaptcha
 import io.beatmaps.util.updateAlertCount
 import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.delete
-import io.ktor.server.locations.get
-import io.ktor.server.locations.post
-import io.ktor.server.locations.put
+import io.ktor.resources.Resource
 import io.ktor.server.request.receive
+import io.ktor.server.resources.delete
+import io.ktor.server.resources.get
+import io.ktor.server.resources.post
+import io.ktor.server.resources.put
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import kotlinx.datetime.toKotlinInstant
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.ColumnSet
 import org.jetbrains.exposed.sql.Index
@@ -91,37 +100,138 @@ fun ReviewReplyDetail.Companion.from(other: ReviewReplyDao) =
 
 fun ColumnSet.joinReplies() = join(ReviewReply, JoinType.LEFT, Review.id, ReviewReply.reviewId)
 
-@Location("/api/review")
+@Resource("/api/review")
 class ReviewApi {
-    @Location("/id/{reviewId}")
-    data class Detail(val reviewId: Int, val api: ReviewApi)
+    @Resource("/id/{reviewId}")
+    data class Detail(
+        @ModelClass(Int::class)
+        val reviewId: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: ReviewApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Detail::reviewId)
+            )
+        }
+    }
 
-    @Location("/map/{id}/{page?}")
-    data class ByMap(val id: String, val page: Long = 0, val api: ReviewApi)
+    @Resource("/map/{id}/{page?}")
+    data class ByMap(
+        val id: String,
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: ReviewApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(ByMap::page)
+            )
+        }
+    }
 
-    @Location("/user/{id}/{page?}")
-    data class ByUser(val id: Int, val page: Long = 0, val api: ReviewApi)
+    @Resource("/user/{id}/{page?}")
+    data class ByUser(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: ReviewApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(ByUser::id), paramInfo(ByUser::page)
+            )
+        }
+    }
 
-    @Location("/single/{mapId}/{userId}")
-    data class Single(val mapId: String, val userId: Int, val api: ReviewApi)
+    @Resource("/single/{mapId}/{userId}")
+    data class Single(
+        val mapId: String,
+        @ModelClass(Int::class)
+        val userId: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: ReviewApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Single::userId)
+            )
+        }
+    }
 
-    @Location("/latest/{page}")
-    data class ByDate(val before: Instant? = null, val user: String? = null, val page: Long = 0, val api: ReviewApi)
+    @Resource("/latest/{page}")
+    data class ByDate(
+        @ModelClass(Instant::class)
+        val before: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        val user: String? = null,
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: ReviewApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(ByDate::before), paramInfo(ByDate::page)
+            )
+        }
+    }
 
-    @Location("/curate")
-    data class Curate(val api: ReviewApi)
+    @Resource("/curate")
+    data class Curate(
+        @Ignore
+        val api: ReviewApi
+    )
 }
 
-@Location("/api/reply")
+@Resource("/api/reply")
 class ReplyApi {
-    @Location("/create/{reviewId}")
-    data class Create(val reviewId: Int, val api: ReplyApi)
+    @Resource("/create/{reviewId}")
+    data class Create(
+        @ModelClass(Int::class)
+        val reviewId: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: ReplyApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Create::reviewId)
+            )
+        }
+    }
 
-    @Location("/single/{replyId}")
-    data class Single(val replyId: Int, val api: ReplyApi)
+    @Resource("/single/{replyId}")
+    data class Single(
+        @ModelClass(Int::class)
+        val replyId: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: ReplyApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Single::replyId)
+            )
+        }
+    }
 
-    @Location("/latest/{page}")
-    data class ByDate(val before: Instant? = null, val user: String? = null, val page: Long = 0, val api: ReplyApi)
+    @Resource("/latest/{page}")
+    data class ByDate(
+        @ModelClass(Instant::class)
+        val before: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        val user: String? = null,
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: ReplyApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(ByDate::before), paramInfo(ByDate::page)
+            )
+        }
+    }
 }
 
 @Serializable
@@ -161,13 +271,13 @@ fun Route.reviewRoute(client: HttpClient) {
                     .selectAll()
                     .where {
                         Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
-                            .notNull(it.before) { o -> Review.createdAt less o.toJavaInstant() }
+                            .notNullOpt(it.before) { o -> Review.createdAt less o.toJavaInstant() }
                             .notNull(it.user) { u -> reviewerAlias[User.uniqueName] eq u }
                     }
                     .orderBy(
                         Review.createdAt to SortOrder.DESC
                     )
-                    .limit(it.page)
+                    .limit(it.page.or(0))
                     .complexToReview()
                     .map { ReviewDetail.from(it, cdnPrefix()) }
             } catch (_: NumberFormatException) {
@@ -191,7 +301,7 @@ fun Route.reviewRoute(client: HttpClient) {
                     .joinVersions(false)
                     .select(Review.columns + ReviewReply.columns)
                     .where {
-                        Review.id eq it.reviewId and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
+                        Review.id eq it.reviewId?.orNull() and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
                     .orderBy(
                         ReviewReply.createdAt to SortOrder.ASC
@@ -233,7 +343,7 @@ fun Route.reviewRoute(client: HttpClient) {
                                     Review.curatedAt to SortOrder.DESC_NULLS_LAST,
                                     Review.createdAt to SortOrder.DESC
                                 )
-                                .limit(it.page)
+                                .limit(it.page.or(0))
                         )
                     }
                     .orderBy(
@@ -274,10 +384,10 @@ fun Route.reviewRoute(client: HttpClient) {
                                 .joinVersions()
                                 .select(Review.id)
                                 .where {
-                                    Review.userId eq it.id and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
+                                    Review.userId eq it.id?.orNull() and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                                 }
                                 .orderBy(Review.createdAt to SortOrder.DESC)
-                                .limit(it.page)
+                                .limit(it.page.or(0))
                         )
                     }
                     .orderBy(
@@ -309,7 +419,7 @@ fun Route.reviewRoute(client: HttpClient) {
                     .joinVersions(false)
                     .select(Review.columns + ReviewReply.columns)
                     .where {
-                        Review.mapId eq it.mapId.toInt(16) and (Review.userId eq it.userId) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
+                        Review.mapId eq it.mapId.toInt(16) and (Review.userId eq it.userId?.orNull()) and Review.deletedAt.isNull() and Beatmap.deletedAt.isNull()
                     }
                     .orderBy(
                         ReviewReply.createdAt to SortOrder.ASC
@@ -334,10 +444,16 @@ fun Route.reviewRoute(client: HttpClient) {
             val update = call.receive<PutReview>()
             val updateMapId = single.mapId.toInt(16)
             val newText = update.text.take(ReviewConstants.MAX_LENGTH)
+            val reqUid = single.userId?.orNull()
+
+            if (reqUid == null) {
+                call.respond(HttpStatusCode.Forbidden, ActionResponse.error())
+                return@requireAuthorization
+            }
 
             captchaIfPresent(client, update.captcha) {
                 val success = newSuspendedTransaction {
-                    if (single.userId != sess.userId && !sess.isCurator()) {
+                    if (reqUid != sess.userId && !sess.isCurator()) {
                         call.respond(HttpStatusCode.Forbidden, ActionResponse.error())
                         return@newSuspendedTransaction false
                     }
@@ -347,14 +463,14 @@ fun Route.reviewRoute(client: HttpClient) {
                         throw UserApiException("Suspended account")
                     }
 
-                    val oldData = if (single.userId != sess.userId) {
-                        ReviewDao.wrapRow(Review.selectAll().where { Review.mapId eq updateMapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }.single())
+                    val oldData = if (reqUid != sess.userId) {
+                        ReviewDao.wrapRow(Review.selectAll().where { Review.mapId eq updateMapId and (Review.userId eq reqUid) and Review.deletedAt.isNull() }.single())
                     } else {
                         null
                     }
 
                     if (update.captcha == null) {
-                        Review.update({ Review.mapId eq updateMapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }) { r ->
+                        Review.update({ Review.mapId eq updateMapId and (Review.userId eq reqUid) and Review.deletedAt.isNull() }) { r ->
                             r[updatedAt] = NowExpression(updatedAt)
                             r[text] = newText
                             r[sentiment] = update.sentiment.dbValue
@@ -364,13 +480,13 @@ fun Route.reviewRoute(client: HttpClient) {
                             Beatmap.id eq updateMapId
                         }.complexToBeatmap().single()
 
-                        if (map.uploaderId.value == single.userId) {
+                        if (map.uploaderId.value == reqUid) {
                             // Can't review your own map
                             throw UserApiException("Own map")
                         }
 
                         val isCollaborator = map.collaborators.values.any { singleCollaborator ->
-                            singleCollaborator.id.value == single.userId
+                            singleCollaborator.id.value == reqUid
                         }
 
                         if (isCollaborator) {
@@ -380,7 +496,7 @@ fun Route.reviewRoute(client: HttpClient) {
 
                         Review.upsert(conflictIndex = Index(listOf(Review.mapId, Review.userId), true, "review_unique")) { r ->
                             r[mapId] = updateMapId
-                            r[userId] = single.userId
+                            r[userId] = reqUid
                             r[text] = newText
                             r[sentiment] = update.sentiment.dbValue
                             r[createdAt] = NowExpression(createdAt)
@@ -415,12 +531,12 @@ fun Route.reviewRoute(client: HttpClient) {
                         }
                     }
 
-                    if (single.userId != sess.userId && oldData != null) {
+                    if (reqUid != sess.userId && oldData != null) {
                         ModLog.insert(
                             sess.userId,
                             updateMapId,
                             ReviewModerationData(oldData.sentiment, update.sentiment.dbValue, oldData.text, newText),
-                            single.userId
+                            reqUid
                         )
                     }
 
@@ -429,7 +545,7 @@ fun Route.reviewRoute(client: HttpClient) {
 
                 if (success) {
                     val updateType = if (update.captcha == null) "updated" else "created"
-                    call.pub("beatmaps", "reviews.$updateMapId.$updateType", null, ReviewUpdateInfo(updateMapId, single.userId))
+                    call.pub("beatmaps", "reviews.$updateMapId.$updateType", null, ReviewUpdateInfo(updateMapId, reqUid))
                     call.respond(ActionResponse.success())
                 }
             }
@@ -440,21 +556,22 @@ fun Route.reviewRoute(client: HttpClient) {
         requireAuthorization { _, sess ->
             val deleteReview = call.receive<DeleteReview>()
             val mapId = single.mapId.toInt(16)
+            val reqUid = single.userId?.orNull()
 
-            if (single.userId != sess.userId && !sess.isCurator()) {
+            if (reqUid == null || (reqUid != sess.userId && !sess.isCurator())) {
                 call.respond(HttpStatusCode.Forbidden, ActionResponse.error())
                 return@requireAuthorization
             }
 
             transaction {
-                val result = Review.updateReturning({ Review.mapId eq mapId and (Review.userId eq single.userId) and Review.deletedAt.isNull() }, { r ->
+                val result = Review.updateReturning({ Review.mapId eq mapId and (Review.userId eq reqUid) and Review.deletedAt.isNull() }, { r ->
                     r[deletedAt] = NowExpression(deletedAt)
                 }, Review.id, Review.text, Review.sentiment)
 
                 if (!result.isNullOrEmpty()) {
                     ReviewReply.deleteWhere { reviewId inList result.map { it[Review.id] } }
 
-                    if (single.userId != sess.userId) {
+                    if (reqUid != sess.userId) {
                         val info = result.first().let {
                             it[Review.text] to it[Review.sentiment]
                         }
@@ -463,7 +580,7 @@ fun Route.reviewRoute(client: HttpClient) {
                             sess.userId,
                             mapId,
                             ReviewDeleteData(deleteReview.reason, info.first, info.second),
-                            single.userId
+                            reqUid
                         )
 
                         Alert.insert(
@@ -471,14 +588,14 @@ fun Route.reviewRoute(client: HttpClient) {
                             "A moderator deleted your review on #${toHexString(mapId)}.\n" +
                                 "Reason: *\"${deleteReview.reason}\"*",
                             EAlertType.ReviewDeletion,
-                            single.userId
+                            reqUid
                         )
-                        updateAlertCount(single.userId)
+                        updateAlertCount(reqUid)
                     }
                 }
             }
 
-            call.pub("beatmaps", "reviews.$mapId.deleted", null, ReviewUpdateInfo(mapId, single.userId))
+            call.pub("beatmaps", "reviews.$mapId.deleted", null, ReviewUpdateInfo(mapId, reqUid))
             call.respond(HttpStatusCode.OK)
         }
     }
@@ -521,6 +638,7 @@ fun Route.reviewRoute(client: HttpClient) {
             val reply = call.receive<ReplyRequest>()
 
             if (reply.captcha == null) throw UserApiException("Missing Captcha")
+            val reviewId = req.reviewId?.orNull() ?: throw UserApiException("Review id missing")
 
             val response = requireCaptcha(
                 client,
@@ -531,7 +649,7 @@ fun Route.reviewRoute(client: HttpClient) {
                             .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
                             .joinUser(Beatmap.uploader)
                             .select(Review.userId, Beatmap.id, Beatmap.name, Beatmap.uploader, User.reviewAlerts)
-                            .where { Review.id eq req.reviewId and Beatmap.deletedAt.isNull() and Review.deletedAt.isNull() }
+                            .where { Review.id eq reviewId and Beatmap.deletedAt.isNull() and Review.deletedAt.isNull() }
                             .firstOrNull()
 
                         if (intermediaryResult == null) {
@@ -564,7 +682,7 @@ fun Route.reviewRoute(client: HttpClient) {
 
                         val insertedId = ReviewReply.insertAndGetId {
                             it[userId] = user.userId
-                            it[reviewId] = req.reviewId
+                            it[this.reviewId] = reviewId
                             it[text] = reply.text
                             it[createdAt] = NowExpression(createdAt)
                             it[updatedAt] = NowExpression(updatedAt)
@@ -625,12 +743,13 @@ fun Route.reviewRoute(client: HttpClient) {
     put<ReplyApi.Single> { req ->
         requireAuthorization { _, user ->
             val update = call.receive<ReplyRequest>()
+            val replyId = req.replyId?.orNull() ?: throw UserApiException("Reply id missing")
 
             captchaIfPresent(client, update.captcha) {
                 val response = newSuspendedTransaction {
                     val ownerId = ReviewReply
                         .select(ReviewReply.userId)
-                        .where { ReviewReply.id eq req.replyId }
+                        .where { ReviewReply.id eq replyId }
                         .single().let { it[ReviewReply.userId].value }
 
                     if (ownerId != user.userId && !user.isCurator()) {
@@ -638,12 +757,12 @@ fun Route.reviewRoute(client: HttpClient) {
                     }
 
                     val oldData = if (ownerId != user.userId) {
-                        ReviewReplyDao.wrapRow(ReviewReply.selectAll().where { ReviewReply.id eq req.replyId and ReviewReply.deletedAt.isNull() }.single())
+                        ReviewReplyDao.wrapRow(ReviewReply.selectAll().where { ReviewReply.id eq replyId and ReviewReply.deletedAt.isNull() }.single())
                     } else {
                         null
                     }
 
-                    val updated = ReviewReply.update({ ReviewReply.id eq req.replyId and ReviewReply.deletedAt.isNull() }) {
+                    val updated = ReviewReply.update({ ReviewReply.id eq replyId and ReviewReply.deletedAt.isNull() }) {
                         it[text] = update.text
                         it[updatedAt] = NowExpression(updatedAt)
                     } > 0
@@ -652,7 +771,7 @@ fun Route.reviewRoute(client: HttpClient) {
                         val (mapId, userId) = ReviewReply
                             .join(Review, JoinType.INNER, ReviewReply.reviewId, Review.id)
                             .select(Review.mapId, ReviewReply.userId)
-                            .where { ReviewReply.id eq req.replyId }
+                            .where { ReviewReply.id eq replyId }
                             .single().let { it[Review.mapId].value to it[ReviewReply.userId].value }
 
                         ModLog.insert(
@@ -678,12 +797,13 @@ fun Route.reviewRoute(client: HttpClient) {
 
     delete<ReplyApi.Single> { req ->
         val delete = call.receive<DeleteReview>()
+        val replyId = req.replyId?.orNull() ?: throw UserApiException("Reply id missing")
 
         requireAuthorization { _, user ->
             val response = newSuspendedTransaction {
                 val ownerId = ReviewReply
                     .select(ReviewReply.userId)
-                    .where { ReviewReply.id eq req.replyId }
+                    .where { ReviewReply.id eq replyId }
                     .single().let { it[ReviewReply.userId].value }
 
                 if (ownerId != user.userId && !user.isCurator()) {
@@ -692,7 +812,7 @@ fun Route.reviewRoute(client: HttpClient) {
 
                 val deleted = ReviewReply
                     .updateReturning({
-                        ReviewReply.id eq req.replyId and ReviewReply.deletedAt.isNull()
+                        ReviewReply.id eq replyId and ReviewReply.deletedAt.isNull()
                     }, {
                         it[deletedAt] = NowExpression(deletedAt)
                     }, *ReviewReply.columns.toTypedArray())?.firstOrNull()
@@ -745,13 +865,13 @@ fun Route.reviewRoute(client: HttpClient) {
                     .selectAll()
                     .where {
                         ReviewReply.deletedAt.isNull() and Beatmap.deletedAt.isNull()
-                            .notNull(it.before) { o -> ReviewReply.createdAt less o.toJavaInstant() }
+                            .notNullOpt(it.before) { o -> ReviewReply.createdAt less o.toJavaInstant() }
                             .notNull(it.user) { u -> reviewerAlias[User.uniqueName] eq u }
                     }
                     .orderBy(
                         ReviewReply.createdAt to SortOrder.DESC
                     )
-                    .limit(it.page)
+                    .limit(it.page.or(0))
                     .complexToReview()
                     .map { r -> ReviewDetail.from(r, cdnPrefix()) }
                     .flatMap { review ->

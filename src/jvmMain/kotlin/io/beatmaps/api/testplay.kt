@@ -1,8 +1,14 @@
+@file:UseSerializers(OptionalPropertySerializer::class)
+
 package io.beatmaps.api
 
+import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.ModelClass
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.post
 import de.nielsfalk.ktor.swagger.responds
+import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.UnpublishData
 import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.amqp.rb
@@ -25,6 +31,9 @@ import io.beatmaps.common.dbo.joinPatreon
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.common.or
+import io.beatmaps.common.util.paramInfo
+import io.beatmaps.common.util.requireParams
 import io.beatmaps.controllers.userWipCount
 import io.beatmaps.util.GameTokenValidator
 import io.beatmaps.util.captchaIfPresent
@@ -34,18 +43,17 @@ import io.beatmaps.util.publishVersion
 import io.beatmaps.util.requireAuthorization
 import io.ktor.client.HttpClient
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
-import io.ktor.server.locations.post
+import io.ktor.resources.Resource
 import io.ktor.server.request.receive
+import io.ktor.server.resources.get
+import io.ktor.server.resources.post
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
-import io.ktor.util.pipeline.PipelineContext
+import io.ktor.server.routing.RoutingContext
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
@@ -57,25 +65,60 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
 
-@Location("/api/testplay")
+@Resource("/api/testplay")
 class TestplayApi {
-    @Location("/queue/{page}")
-    data class Queue(val page: Long = 0, val includePlayed: Boolean = true, val api: TestplayApi)
+    @Resource("/queue/{page}")
+    data class Queue(
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        val includePlayed: Boolean = true,
+        @Ignore
+        val api: TestplayApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Queue::page)
+            )
+        }
+    }
 
-    @Location("/recent/{page}")
-    data class Recent(val page: Long = 0, val api: TestplayApi)
+    @Resource("/recent/{page}")
+    data class Recent(
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: TestplayApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Recent::page)
+            )
+        }
+    }
 
-    @Location("/feedback")
-    data class Feedback(val api: TestplayApi)
+    @Resource("/feedback")
+    data class Feedback(
+        @Ignore
+        val api: TestplayApi
+    )
 
-    @Location("/state")
-    data class State(val api: TestplayApi)
+    @Resource("/state")
+    data class State(
+        @Ignore
+        val api: TestplayApi
+    )
 
-    @Location("/version")
-    data class Version(val api: TestplayApi)
+    @Resource("/version")
+    data class Version(
+        @Ignore
+        val api: TestplayApi
+    )
 
-    @Location("/mark")
-    data class Mark(val api: TestplayApi)
+    @Resource("/mark")
+    data class Mark(
+        @Ignore
+        val api: TestplayApi
+    )
 }
 
 @Serializable
@@ -101,7 +144,7 @@ data class OculusAuthResponse(val success: Boolean, val error: String? = null)
 
 const val beatsaberAppid = 620980
 
-fun PipelineContext<*, ApplicationCall>.getTestplayQueue(userId: Int?, includePlayed: Boolean, page: Long?) = transaction {
+fun RoutingContext.getTestplayQueue(userId: Int?, includePlayed: Boolean, page: Long?) = transaction {
     Beatmap
         .joinVersions(true) { Versions.state eq EMapState.Testplay }
         .joinUploader()
@@ -137,7 +180,7 @@ fun PipelineContext<*, ApplicationCall>.getTestplayQueue(userId: Int?, includePl
         }
 }
 
-fun PipelineContext<*, ApplicationCall>.getTestplayRecent(userId: Int, page: Long?) = transaction {
+fun RoutingContext.getTestplayRecent(userId: Int, page: Long?) = transaction {
     // Maybe a little bit cross-product, but not made worse by testplay info as only info from the current user is included
     // Beatmaps get grouped by complexToBeatmap and clients need to reconstruct the ordering
     Testplay
@@ -163,19 +206,19 @@ fun PipelineContext<*, ApplicationCall>.getTestplayRecent(userId: Int, page: Lon
 fun Route.testplayRoute(client: HttpClient) {
     post<TestplayApi.Queue> { req ->
         requireAuthorization(OauthScope.TESTPLAY) { _, sess ->
-            call.respond(getTestplayQueue(sess.userId, false, req.page))
+            call.respond(getTestplayQueue(sess.userId, false, req.page.or(0)))
         }
     }
 
     get<TestplayApi.Queue> { req ->
         optionalAuthorization(OauthScope.TESTPLAY) { _, sess ->
-            call.respond(getTestplayQueue(sess?.userId, req.includePlayed, req.page))
+            call.respond(getTestplayQueue(sess?.userId, req.includePlayed, req.page.or(0)))
         }
     }
 
     get<TestplayApi.Recent> { req ->
         requireAuthorization(OauthScope.TESTPLAY) { _, sess ->
-            call.respond(getTestplayRecent(sess.userId, req.page))
+            call.respond(getTestplayRecent(sess.userId, req.page.or(0)))
         }
     }
 

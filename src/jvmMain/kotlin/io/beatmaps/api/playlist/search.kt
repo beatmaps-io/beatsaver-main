@@ -11,6 +11,7 @@ import io.beatmaps.api.PlaylistSearchResponse
 import io.beatmaps.api.from
 import io.beatmaps.api.limit
 import io.beatmaps.api.notNull
+import io.beatmaps.api.notNullOpt
 import io.beatmaps.api.search.PgSearchParams
 import io.beatmaps.api.search.SolrSearchParams
 import io.beatmaps.api.util.getWithOptions
@@ -27,13 +28,13 @@ import io.beatmaps.common.dbo.handleCurator
 import io.beatmaps.common.dbo.handleUser
 import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUser
+import io.beatmaps.common.or
 import io.beatmaps.common.solr.collections.PlaylistSolr
 import io.beatmaps.common.solr.field.apply
 import io.beatmaps.common.solr.getIds
 import io.beatmaps.common.solr.paged
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.optionalAuthorization
-import io.ktor.server.application.call
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import kotlinx.datetime.toJavaInstant
@@ -52,7 +53,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 fun Route.playlistSearch() {
     getWithOptions<PlaylistApi.ByUploadDate>("Get playlists ordered by created/updated".responds(ok<PlaylistSearchResponse>())) {
         optionalAuthorization(OauthScope.PLAYLISTS) { _, sess ->
-            val sortField = when (it.sort) {
+            val sortField = when (it.sort?.orNull()) {
                 null, LatestPlaylistSort.CREATED -> Playlist.createdAt
                 LatestPlaylistSort.SONGS_UPDATED -> Playlist.songsChangedAt
                 LatestPlaylistSort.UPDATED -> Playlist.updatedAt
@@ -71,14 +72,14 @@ fun Route.playlistSearch() {
                                 .select(Playlist.id)
                                 .where {
                                     (Playlist.deletedAt.isNull() and (sess?.let { s -> Playlist.owner eq s.userId or (Playlist.type eq EPlaylistType.Public) } ?: (Playlist.type eq EPlaylistType.Public)))
-                                        .notNull(it.before) { o -> sortField less o.toJavaInstant() }
-                                        .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
+                                        .notNullOpt(it.before) { o -> sortField less o.toJavaInstant() }
+                                        .notNullOpt(it.after) { o -> sortField greater o.toJavaInstant() }
                                         .let { q ->
-                                            if (it.sort == LatestPlaylistSort.CURATED) q.and(Playlist.curatedAt.isNotNull()) else q
+                                            if (it.sort?.orNull() == LatestPlaylistSort.CURATED) q.and(Playlist.curatedAt.isNotNull()) else q
                                         }
                                 }
                                 .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
-                                .limit(it.pageSize.coerceIn(1, 100))
+                                .limit(it.pageSize.or(20).coerceIn(1, 100))
                         )
                     }
                     .groupBy(Playlist.id, User.id, curatorAlias[User.id])
@@ -96,7 +97,7 @@ fun Route.playlistSearch() {
 
     getWithOptions<PlaylistApi.Solr>("Search for playlists with solr".responds(ok<PlaylistSearchResponse>())) { req ->
         val searchInfo = SolrSearchParams.parseSearchQuery(req.q)
-        val actualSortOrder = searchInfo.validateSearchOrder(req.order ?: req.sortOrder)
+        val actualSortOrder = searchInfo.validateSearchOrder(req.order.or(req.sortOrder.or(SearchOrder.Relevance)))
 
         newSuspendedTransaction {
             val results = PlaylistSolr.newQuery()
@@ -115,16 +116,16 @@ fun Route.playlistSearch() {
                     val mapperIds = searchInfo.userSubQuery?.map { it[User.id].value } ?: listOf()
                     q.apply(PlaylistSolr.ownerId inList mapperIds)
                 }
-                .notNull(req.minNps) { o -> PlaylistSolr.maxNps greaterEq o }
-                .notNull(req.maxNps) { o -> PlaylistSolr.minNps lessEq o }
-                .notNull(req.from) { o -> PlaylistSolr.created greaterEq o }
-                .notNull(req.to) { o -> PlaylistSolr.created lessEq o }
+                .notNullOpt(req.minNps) { o -> PlaylistSolr.maxNps greaterEq o }
+                .notNullOpt(req.maxNps) { o -> PlaylistSolr.minNps lessEq o }
+                .notNullOpt(req.from) { o -> PlaylistSolr.created greaterEq o }
+                .notNullOpt(req.to) { o -> PlaylistSolr.created lessEq o }
                 .notNull(req.curated) { o -> PlaylistSolr.curated.any().let { if (o) it else it.not() } }
                 .notNull(req.verified) { o -> PlaylistSolr.verified eq o }
                 .let { q ->
                     PlaylistSolr.addSortArgs(q, req.seed.hashCode(), actualSortOrder)
                 }
-                .paged(req.page.toInt())
+                .paged(req.page.or(0).toInt())
                 .getIds(PlaylistSolr, call = call)
 
             val playlists = Playlist
@@ -152,7 +153,7 @@ fun Route.playlistSearch() {
     getWithOptions<PlaylistApi.Text>("Search for playlists".responds(ok<PlaylistSearchResponse>())) {
         val searchFields = PgConcat(" ", Playlist.name, Playlist.description)
         val searchInfo = PgSearchParams.parseSearchQuery(it.q, searchFields)
-        val actualSortOrder = searchInfo.validateSearchOrder(it.order ?: it.sortOrder)
+        val actualSortOrder = searchInfo.validateSearchOrder(it.order.or(it.sortOrder.or(SearchOrder.Relevance)))
         val sortArgs = when (actualSortOrder) {
             SearchOrder.Curated -> listOf(Playlist.curatedAt to SortOrder.DESC_NULLS_LAST, Playlist.createdAt to SortOrder.DESC)
             else -> listOf(Playlist.createdAt to SortOrder.DESC)
@@ -180,15 +181,15 @@ fun Route.playlistSearch() {
                                         } else { q }
                                     }
                                     .notNull(searchInfo.userSubQuery) { o -> Playlist.owner inSubQuery o }
-                                    .notNull(it.minNps) { o -> Playlist.maxNps greaterEqF o }
-                                    .notNull(it.maxNps) { o -> Playlist.minNps lessEqF o }
-                                    .notNull(it.from) { o -> Playlist.createdAt greaterEq o.toJavaInstant() }
-                                    .notNull(it.to) { o -> Playlist.createdAt lessEq o.toJavaInstant() }
+                                    .notNullOpt(it.minNps) { o -> Playlist.maxNps greaterEqF o }
+                                    .notNullOpt(it.maxNps) { o -> Playlist.minNps lessEqF o }
+                                    .notNullOpt(it.from) { o -> Playlist.createdAt greaterEq o.toJavaInstant() }
+                                    .notNullOpt(it.to) { o -> Playlist.createdAt lessEq o.toJavaInstant() }
                                     .notNull(it.curated) { o -> with(Playlist.curatedAt) { if (o) isNotNull() else isNull() } }
                                     .notNull(it.verified) { o -> User.verifiedMapper eq o }
                             }
                             .orderBy(*sortArgs)
-                            .limit(it.page)
+                            .limit(it.page.or(0))
                     )
                 }
                 .groupBy(Playlist.id, User.id, curatorAlias[User.id])
@@ -213,8 +214,8 @@ fun Route.playlistSearch() {
                                 Playlist
                                     .select(Playlist.id)
                                     .where {
-                                        ((Playlist.owner eq req.userId) and Playlist.deletedAt.isNull()).let {
-                                            if (req.userId == sess?.userId) {
+                                        ((Playlist.owner eq req.userId?.orNull()) and Playlist.deletedAt.isNull()).let {
+                                            if (req.userId?.orNull() == sess?.userId) {
                                                 it
                                             } else {
                                                 it and (Playlist.type inList EPlaylistType.publicTypes)
@@ -225,7 +226,7 @@ fun Route.playlistSearch() {
                                         (Playlist.type neq EPlaylistType.System) to SortOrder.ASC,
                                         Playlist.createdAt to SortOrder.DESC
                                     )
-                                    .limit(req.page, 20)
+                                    .limit(req.page.or(0), 20)
                             )
                         }
                         .orderBy(
@@ -280,7 +281,7 @@ fun Route.playlistSearch() {
                                         Playlist.curatedAt to SortOrder.DESC_NULLS_LAST,
                                         Playlist.createdAt to SortOrder.DESC
                                     )
-                                    .limit(req.page, 20)
+                                    .limit(req.page.or(0), 20)
                             )
                         }
                         .orderBy(

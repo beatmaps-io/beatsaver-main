@@ -13,17 +13,16 @@ import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
+import io.ktor.resources.Resource
 import io.ktor.server.auth.OAuthAccessTokenResponse
 import io.ktor.server.auth.OAuthServerSettings
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.authentication
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
-import io.ktor.server.locations.post
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.request.header
 import io.ktor.server.request.receiveText
+import io.ktor.server.resources.get
+import io.ktor.server.resources.post
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
@@ -54,10 +53,10 @@ val patreonProvider = OAuthServerSettings.OAuth2ServerSettings(
     defaultScopes = listOf("identity")
 )
 
-@Location("/patreon")
+@Resource("/patreon")
 class PatreonLink
 
-@Location("/patreon/hook")
+@Resource("/patreon/hook")
 class PatreonHook
 
 @Serializable

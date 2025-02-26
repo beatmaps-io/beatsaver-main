@@ -1,35 +1,67 @@
+@file:UseSerializers(OptionalPropertySerializer::class)
+
 package io.beatmaps.controllers
 
+import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.ModelClass
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.from
 import io.beatmaps.common.Config
+import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.dbo.Playlist
+import io.beatmaps.common.util.paramInfo
+import io.beatmaps.common.util.requireParams
 import io.beatmaps.genericPage
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
+import io.ktor.resources.Resource
+import io.ktor.server.resources.get
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
 import kotlinx.html.link
 import kotlinx.html.meta
+import kotlinx.serialization.UseSerializers
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 
-@Location("/playlists")
+@Resource("/playlists")
 class PlaylistController {
-    @Location("/{id}/edit")
-    data class Edit(val id: Int, val api: PlaylistController)
+    @Resource("/{id}/edit")
+    data class Edit(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: PlaylistController
+    ) {
+        init {
+            requireParams(
+                paramInfo(Edit::id)
+            )
+        }
+    }
 
-    @Location("/new")
-    data class New(val api: PlaylistController)
+    @Resource("/new")
+    data class New(
+        @Ignore
+        val api: PlaylistController
+    )
 
-    @Location("/{id}")
-    data class Detail(val id: Int, val api: PlaylistController)
+    @Resource("/{id}")
+    data class Detail(
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: PlaylistController
+    ) {
+        init {
+            requireParams(
+                paramInfo(Detail::id)
+            )
+        }
+    }
 }
 
 fun Route.playlistController() {
@@ -51,7 +83,7 @@ fun Route.playlistController() {
             Playlist
                 .selectAll()
                 .where {
-                    (Playlist.id eq req.id).let {
+                    (Playlist.id eq req.id?.orNull()).let {
                         if (isAdmin) {
                             it
                         } else {

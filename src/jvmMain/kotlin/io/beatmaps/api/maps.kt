@@ -1,8 +1,11 @@
+@file:UseSerializers(LenientInstantSerializer::class, OptionalPropertySerializer::class)
+
 package io.beatmaps.api
 
 import de.nielsfalk.ktor.swagger.DefaultValue
 import de.nielsfalk.ktor.swagger.Description
 import de.nielsfalk.ktor.swagger.Ignore
+import de.nielsfalk.ktor.swagger.ModelClass
 import de.nielsfalk.ktor.swagger.notFound
 import de.nielsfalk.ktor.swagger.ok
 import de.nielsfalk.ktor.swagger.responds
@@ -12,6 +15,8 @@ import io.beatmaps.common.DeletedData
 import io.beatmaps.common.FlagsEditData
 import io.beatmaps.common.InfoEditData
 import io.beatmaps.common.MapTag
+import io.beatmaps.common.OptionalProperty
+import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.UnCurateMapData
 import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.api.AiDeclarationType
@@ -35,21 +40,24 @@ import io.beatmaps.common.dbo.joinCollaborators
 import io.beatmaps.common.dbo.joinCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.common.or
 import io.beatmaps.common.solr.all
 import io.beatmaps.common.solr.collections.BsSolr
 import io.beatmaps.common.solr.field.eq
 import io.beatmaps.common.solr.getIds
 import io.beatmaps.common.solr.paged
+import io.beatmaps.common.util.LenientInstantSerializer
+import io.beatmaps.common.util.paramInfo
+import io.beatmaps.common.util.requireParams
 import io.beatmaps.login.Session
 import io.beatmaps.util.cdnPrefix
 import io.beatmaps.util.requireAuthorization
 import io.beatmaps.util.updateAlertCount
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.locations.Location
-import io.ktor.server.locations.get
-import io.ktor.server.locations.post
+import io.ktor.resources.Resource
 import io.ktor.server.request.receive
+import io.ktor.server.resources.get
+import io.ktor.server.resources.post
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
@@ -58,6 +66,7 @@ import io.ktor.server.sessions.sessions
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
 import kotlinx.datetime.toKotlinInstant
+import kotlinx.serialization.UseSerializers
 import org.apache.solr.client.solrj.SolrQuery
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SortOrder
@@ -68,38 +77,76 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.lang.Integer.toHexString
 
-@Location("/api")
+@Resource("/api")
 class MapsApi {
-    @Location("/maps/update")
-    data class Update(val api: MapsApi)
+    @Resource("/maps/update")
+    data class Update(
+        @Ignore
+        val api: MapsApi
+    )
 
-    @Location("/maps/tagupdate")
-    data class TagUpdate(val api: MapsApi)
+    @Resource("/maps/tagupdate")
+    data class TagUpdate(
+        @Ignore
+        val api: MapsApi
+    )
 
-    @Location("/maps/curate")
-    data class Curate(val api: MapsApi)
+    @Resource("/maps/curate")
+    data class Curate(
+        @Ignore
+        val api: MapsApi
+    )
 
-    @Location("/maps/declareai")
-    data class DeclareAi(val api: MapsApi)
+    @Resource("/maps/declareai")
+    data class DeclareAi(
+        @Ignore
+        val api: MapsApi
+    )
 
-    @Location("/maps/marknsfw")
-    data class MarkNsfw(val api: MapsApi)
+    @Resource("/maps/marknsfw")
+    data class MarkNsfw(
+        @Ignore
+        val api: MapsApi
+    )
 
-    @Location("/maps/wip/{page}")
-    data class WIP(val page: Long = 0, val api: MapsApi)
+    @Resource("/maps/wip/{page}")
+    data class WIP(
+        @ModelClass(Long::class)
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: MapsApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(WIP::page)
+            )
+        }
+    }
 
-    @Location("/download/key/{key}")
-    data class BeatsaverDownload(val key: String, val api: MapsApi)
+    @Resource("/download/key/{key}")
+    data class BeatsaverDownload(
+        val key: String,
+        @Ignore
+        val api: MapsApi
+    )
 
-    @Location("/maps/beatsaver/{key}")
-    data class Beatsaver(val key: String, @Ignore val api: MapsApi)
+    @Resource("/maps/beatsaver/{key}")
+    data class Beatsaver(
+        val key: String,
+        @Ignore
+        val api: MapsApi
+    )
 
     @Group("Maps")
-    @Location("/maps/id/{id}")
-    data class Detail(val id: String, @Ignore val api: MapsApi)
+    @Resource("/maps/id/{id}")
+    data class Detail(
+        val id: String,
+        @Ignore
+        val api: MapsApi
+    )
 
     @Group("Maps")
-    @Location("/maps/ids/{ids}")
+    @Resource("/maps/ids/{ids}")
     data class ByIds(
         @Description("Up to 50 ids seperated by commas")
         val ids: String,
@@ -107,11 +154,15 @@ class MapsApi {
         val api: MapsApi
     )
 
-    @Location("/maps/id/{id}/playlists")
-    data class InPlaylists(val id: String, @Ignore val api: MapsApi)
+    @Resource("/maps/id/{id}/playlists")
+    data class InPlaylists(
+        val id: String,
+        @Ignore
+        val api: MapsApi
+    )
 
     @Group("Maps")
-    @Location("/maps/hash/{hash}")
+    @Resource("/maps/hash/{hash}")
     data class ByHash(
         @Description("Up to 50 hashes seperated by commas")
         val hash: String,
@@ -120,61 +171,135 @@ class MapsApi {
     )
 
     @Group("Maps")
-    @Location("/maps/uploader/{id}/{page}")
-    data class ByUploader(val id: Int, @DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
+    @Resource("/maps/uploader/{id}/{page}")
+    data class ByUploader(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Long::class) @DefaultValue("0")
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: MapsApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(ByUploader::id), paramInfo(ByUploader::page)
+            )
+        }
+    }
 
     @Group("Maps")
-    @Location("/maps/collaborations/{id}")
-    data class Collaborations(val id: Int, val before: Instant? = null, @DefaultValue("20") @Description("1 - 100") val pageSize: Int = 20, @Ignore val api: MapsApi)
+    @Resource("/maps/collaborations/{id}")
+    data class Collaborations(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @ModelClass(Instant::class)
+        val before: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        @ModelClass(Int::class) @DefaultValue("20") @Description("1 - 100")
+        val pageSize: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: MapsApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Collaborations::id), paramInfo(Collaborations::before), paramInfo(Collaborations::pageSize)
+            )
+        }
+    }
 
     @Group("Maps")
-    @Location("/maps/latest")
+    @Resource("/maps/latest")
     data class ByUploadDate(
-        @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
-        val before: Instant? = null,
-        @Description("Like `before` but will get you maps more recent than the time supplied.\nYYYY-MM-DDTHH:MM:SS+00:00")
-        val after: Instant? = null,
+        @ModelClass(Instant::class) @Description("You probably want this. Supplying the uploaded time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
+        val before: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        @ModelClass(Instant::class) @Description("Like `before` but will get you maps more recent than the time supplied.\nYYYY-MM-DDTHH:MM:SS+00:00")
+        val after: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
         @Description("true = both, false = no ai")
         val automapper: Boolean? = false,
-        val sort: LatestSort? = LatestSort.FIRST_PUBLISHED,
-        @Description("1 - 100") @DefaultValue("20")
-        val pageSize: Int = 20,
+        @ModelClass(LatestSort::class)
+        val sort: OptionalProperty<LatestSort>? = OptionalProperty.NotPresent,
+        @ModelClass(Int::class) @Description("1 - 100") @DefaultValue("20")
+        val pageSize: OptionalProperty<Int>? = OptionalProperty.NotPresent,
         @Ignore
         val api: MapsApi
-    )
+    ) {
+        init {
+            requireParams(
+                paramInfo(ByUploadDate::before), paramInfo(ByUploadDate::after), paramInfo(ByUploadDate::sort), paramInfo(ByUploadDate::pageSize)
+            )
+        }
+    }
 
     @Group("Maps")
-    @Location("/maps/deleted")
+    @Resource("/maps/deleted")
     data class Deleted(
-        @Description("You probably want this. Supplying the deleted time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
-        val before: Instant? = null,
-        @Description("Like `before` but will get you maps deleted more recently than the time supplied.\nYYYY-MM-DDTHH:MM:SS+00:00")
-        val after: Instant? = null,
-        @Description("1 - 100") @DefaultValue("20")
-        val pageSize: Int = 20,
+        @ModelClass(Instant::class) @Description("You probably want this. Supplying the deleted time of the last map in the previous page will get you another page.\nYYYY-MM-DDTHH:MM:SS+00:00")
+        val before: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        @ModelClass(Instant::class) @Description("Like `before` but will get you maps deleted more recently than the time supplied.\nYYYY-MM-DDTHH:MM:SS+00:00")
+        val after: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
+        @ModelClass(Int::class) @Description("1 - 100") @DefaultValue("20")
+        val pageSize: OptionalProperty<Int> = OptionalProperty.NotPresent,
+        @Ignore
+        val api: MapsApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(Deleted::before), paramInfo(Deleted::after), paramInfo(Deleted::pageSize)
+            )
+        }
+    }
+
+    @Group("Maps")
+    @Resource("/maps/plays/{page}")
+    data class ByPlayCount(
+        @ModelClass(Int::class) @DefaultValue("0")
+        val page: OptionalProperty<Long>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: MapsApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(ByPlayCount::page)
+            )
+        }
+    }
+
+    @Group("Users")
+    @Resource("/users/id/{id}")
+    data class UserId(
+        @ModelClass(Int::class)
+        val id: OptionalProperty<Int>? = OptionalProperty.NotPresent,
+        @Ignore
+        val api: MapsApi
+    ) {
+        init {
+            requireParams(
+                paramInfo(UserId::id)
+            )
+        }
+    }
+
+    @Group("Users")
+    @Resource("/users/ids/{ids}")
+    data class UserIds(
+        val ids: String,
         @Ignore
         val api: MapsApi
     )
 
-    @Group("Maps")
-    @Location("/maps/plays/{page}")
-    data class ByPlayCount(@DefaultValue("0") val page: Long = 0, @Ignore val api: MapsApi)
+    @Group("Users")
+    @Resource("/users/name/{name}")
+    data class UserName(
+        val name: String,
+        @Ignore
+        val api: MapsApi
+    )
 
     @Group("Users")
-    @Location("/users/id/{id}")
-    data class UserId(val id: Int, @Ignore val api: MapsApi)
-
-    @Group("Users")
-    @Location("/users/ids/{ids}")
-    data class UserIds(val ids: String, @Ignore val api: MapsApi)
-
-    @Group("Users")
-    @Location("/users/name/{name}")
-    data class UserName(val name: String, @Ignore val api: MapsApi)
-
-    @Group("Users")
-    @Location("/users/verify")
-    data class Verify(@Ignore val api: MapsApi)
+    @Resource("/users/verify")
+    data class Verify(
+        @Ignore
+        val api: MapsApi
+    )
 }
 
 enum class LatestSort {
@@ -385,7 +510,14 @@ fun Route.mapDetailRoute() {
                             if (mapUpdate.deleted) {
                                 DeletedData(mapUpdate.reason ?: "")
                             } else {
-                                InfoEditData(oldData.name, oldData.description, mapUpdate.name ?: "", mapUpdate.description ?: "", oldData.tags?.mapNotNull { MapTag.fromSlug(it) }, mapUpdate.tags)
+                                InfoEditData(
+                                    oldData.name,
+                                    oldData.description,
+                                    mapUpdate.name ?: "",
+                                    mapUpdate.description ?: "",
+                                    oldData.tags?.mapNotNull { MapTag.fromSlug(it) },
+                                    mapUpdate.tags
+                                )
                             },
                             oldData.uploaderId.value
                         )
@@ -678,7 +810,7 @@ fun Route.mapDetailRoute() {
                                 }
                                 .groupBy(Beatmap.id)
                                 .orderBy(Beatmap.uploaded to SortOrder.DESC)
-                                .limit(r.page)
+                                .limit(r.page.or(0))
                         )
                     }
                     .complexToBeatmap()
@@ -707,10 +839,10 @@ fun Route.mapDetailRoute() {
                             .joinVersions()
                             .select(Beatmap.id)
                             .where {
-                                Beatmap.uploader.eq(it.id) and (Beatmap.deletedAt.isNull())
+                                Beatmap.uploader.eq(it.id?.orNull()) and (Beatmap.deletedAt.isNull())
                             }
                             .orderBy(Beatmap.uploaded to SortOrder.DESC)
-                            .limit(it.page)
+                            .limit(it.page.or(0))
                     )
                 }
                 .complexToBeatmap()
@@ -727,10 +859,10 @@ fun Route.mapDetailRoute() {
         val sess = call.sessions.get<Session>()
 
         val results = SolrQuery().all()
-            .notNull(it.before) { o -> BsSolr.uploaded less o }
-            .notNull(it.id) { o -> BsSolr.mapperIds eq o }
+            .notNullOpt(it.before) { o -> BsSolr.uploaded less o }
+            .notNullOpt(it.id) { o -> BsSolr.mapperIds eq o }
             .setSort(BsSolr.uploaded.desc())
-            .paged(pageSize = it.pageSize.coerceIn(1, 100))
+            .paged(pageSize = it.pageSize.or(20).coerceIn(1, 100))
             .getIds(BsSolr, call = call)
 
         val beatmaps = newSuspendedTransaction {
@@ -761,7 +893,7 @@ fun Route.mapDetailRoute() {
     ) {
         val sess = call.sessions.get<Session>()
 
-        val sortField = when (it.sort) {
+        val sortField = when (it.sort?.orNull()) {
             null, LatestSort.FIRST_PUBLISHED -> Beatmap.uploaded
             LatestSort.UPDATED -> Beatmap.updatedAt
             LatestSort.LAST_PUBLISHED -> Beatmap.lastPublishedAt
@@ -787,19 +919,19 @@ fun Route.mapDetailRoute() {
                                     .let { q ->
                                         if (it.automapper != true) q.and(Beatmap.declaredAi eq AiDeclarationType.None) else q
                                     }
-                                    .notNull(it.before) { o -> sortField less o.toJavaInstant() }
-                                    .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
+                                    .notNullOpt(it.before) { o -> sortField less o.toJavaInstant() }
+                                    .notNullOpt(it.after) { o -> sortField greater o.toJavaInstant() }
                                     .let { q ->
-                                        if (it.sort == LatestSort.CURATED) q.and(Beatmap.curatedAt.isNotNull()) else q
+                                        if (it.sort?.orNull() == LatestSort.CURATED) q.and(Beatmap.curatedAt.isNotNull()) else q
                                     }
                             }
                             .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
-                            .limit(it.pageSize.coerceIn(1, 100))
+                            .limit(it.pageSize.or(20).coerceIn(1, 100))
                     )
                 }
                 .complexToBeatmap()
                 .sortedByDescending { map ->
-                    when (it.sort) {
+                    when (it.sort?.orNull()) {
                         null, LatestSort.FIRST_PUBLISHED -> map.uploaded
                         LatestSort.UPDATED -> map.updatedAt
                         LatestSort.LAST_PUBLISHED -> map.lastPublishedAt
@@ -826,11 +958,11 @@ fun Route.mapDetailRoute() {
                 .select(Beatmap.id, Beatmap.deletedAt)
                 .where {
                     Beatmap.deletedAt.isNotNull()
-                        .notNull(it.before) { o -> sortField less o.toJavaInstant() }
-                        .notNull(it.after) { o -> sortField greater o.toJavaInstant() }
+                        .notNullOpt(it.before) { o -> sortField less o.toJavaInstant() }
+                        .notNullOpt(it.after) { o -> sortField greater o.toJavaInstant() }
                 }
                 .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
-                .limit(it.pageSize.coerceIn(1, 100))
+                .limit(it.pageSize.or(20).coerceIn(1, 100))
                 .mapNotNull { map ->
                     val instant = map[Beatmap.deletedAt]
                     if (instant == null) {
@@ -860,7 +992,7 @@ fun Route.mapDetailRoute() {
                                 Beatmap.deletedAt.isNull()
                             }
                             .orderBy(Beatmap.plays to SortOrder.DESC)
-                            .limit(it.page)
+                            .limit(it.page.or(0))
                     )
                 }
                 .complexToBeatmap()

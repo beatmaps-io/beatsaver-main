@@ -10,10 +10,8 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.getCountry
 import io.ktor.server.application.Application
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
+import io.ktor.server.routing.RoutingContext
 import io.ktor.util.AttributeKey
-import io.ktor.util.pipeline.PipelineContext
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -40,7 +38,7 @@ fun getContinentSafe(countryInfo: CountryInfo) =
         countryInfo.continentCode
     }
 
-fun PipelineContext<*, ApplicationCall>.cdnPrefix(): String {
+fun RoutingContext.cdnPrefix(): String {
     if (!call.attributes.contains(cdnPrefixAttr)) {
         call.attributes.put(
             cdnPrefixAttr,

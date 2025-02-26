@@ -45,6 +45,7 @@ import io.beatmaps.common.dbo.joinPlaylistCurator
 import io.beatmaps.common.dbo.joinUploader
 import io.beatmaps.common.dbo.joinUser
 import io.beatmaps.common.dbo.joinVersions
+import io.beatmaps.common.or
 import io.beatmaps.common.solr.collections.BsSolr
 import io.beatmaps.common.solr.field.anyOf
 import io.beatmaps.common.solr.field.apply
@@ -60,8 +61,7 @@ import io.beatmaps.util.optionalAuthorization
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.server.locations.get
+import io.ktor.server.resources.get
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
@@ -243,13 +243,13 @@ fun Route.playlistSingle() {
 
     getWithOptions<PlaylistApi.Detail> { req ->
         optionalAuthorization(OauthScope.PLAYLISTS) { _, sess ->
-            getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, null, call)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
+            getDetail(req.id.or(0), cdnPrefix(), sess?.userId, sess?.isAdmin() == true, null, call)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
         }
     }
 
     getWithOptions<PlaylistApi.DetailWithPage>("Get playlist detail".responds(ok<PlaylistPage>(), notFound())) { req ->
         optionalAuthorization(OauthScope.PLAYLISTS) { _, sess ->
-            getDetail(req.id, cdnPrefix(), sess?.userId, sess?.isAdmin() == true, req.page, call)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
+            getDetail(req.id.or(0), cdnPrefix(), sess?.userId, sess?.isAdmin() == true, req.page.or(0), call)?.let { call.respond(it) } ?: call.respond(HttpStatusCode.NotFound)
         }
     }
 
@@ -264,7 +264,7 @@ fun Route.playlistSingle() {
                     .joinUser(PlaylistTable.owner)
                     .selectAll()
                     .where {
-                        (PlaylistTable.id eq req.id) and PlaylistTable.deletedAt.isNull()
+                        (PlaylistTable.id eq req.id?.orNull()) and PlaylistTable.deletedAt.isNull()
                     }
                     .handleUser()
                     .handleCurator()
@@ -278,7 +278,7 @@ fun Route.playlistSingle() {
                     .joinVersions()
                     .selectAll()
                     .where {
-                        (PlaylistMap.playlistId eq req.id) and (Beatmap.deletedAt.isNull())
+                        (PlaylistMap.playlistId eq req.id?.orNull()) and (Beatmap.deletedAt.isNull())
                     }
                     .orderBy(PlaylistMap.order)
                     .complexToBeatmap()
@@ -344,7 +344,7 @@ fun Route.playlistSingle() {
             PlaylistTable
                 .selectAll()
                 .where {
-                    (PlaylistTable.id eq req.id) and PlaylistTable.deletedAt.isNull()
+                    (PlaylistTable.id eq req.id?.orNull()) and PlaylistTable.deletedAt.isNull()
                 }
                 .firstOrNull()
                 ?.let { PlaylistDao.wrapRow(it) }
