@@ -119,7 +119,7 @@ fun Route.userController() {
                 }
             }
 
-            genericPage(if (req.id == null || userData != null) HttpStatusCode.OK else HttpStatusCode.NotFound) {
+            genericPage(if (reqId == null || userData != null) HttpStatusCode.OK else HttpStatusCode.NotFound) {
                 userData?.let { detail ->
                     meta("og:type", "profile:${detail.name}")
                     meta("og:site_name", "BeatSaver")
