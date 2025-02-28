@@ -200,9 +200,9 @@ kotlin {
 
                 // Asset bundles - os specific
                 val os = DefaultNativePlatform.getCurrentOperatingSystem().toFamilyName()
-                implementation("io.beatmaps:kabt-jni:1.0.7:uber-$os")
-                implementation("io.beatmaps:kabt-base:1.0.7")
-                implementation("io.beatmaps:kabt:1.0.7")
+                implementation("io.beatmaps:kabt-jni:1.0.8:uber-$os")
+                implementation("io.beatmaps:kabt-base:1.0.8")
+                implementation("io.beatmaps:kabt:1.0.8")
 
                 runtimeOnly(files("BeatMaps-BeatSage-1.0-SNAPSHOT.jar"))
             }
