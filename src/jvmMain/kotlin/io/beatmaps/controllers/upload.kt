@@ -137,7 +137,8 @@ fun Route.uploadController(client: HttpClient) {
                     }.let { actualSize ->
                         openZip(file) {
                             validateFiles(
-                                initValidation(vivifyLimit)
+                                initValidation(vivifyLimit),
+                                client
                             )
                         }.copy(compressedSize = actualSize)
                     }

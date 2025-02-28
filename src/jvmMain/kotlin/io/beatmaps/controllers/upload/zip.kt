@@ -5,6 +5,7 @@ import io.beatmaps.common.beatsaber.info.toJson
 import io.beatmaps.common.zip.ExtractedInfo
 import io.beatmaps.common.zip.ZipHelper
 import io.beatmaps.common.zip.ZipHelperWithAudio
+import io.ktor.client.HttpClient
 import java.io.OutputStream
 import java.security.DigestOutputStream
 
@@ -13,7 +14,7 @@ fun ZipHelperWithAudio.initValidation(maxVivify: Long) = info.let {
     ExtractedInfo(findAllowedFiles(it), it, scoreMap(), maxVivify = maxVivify)
 }
 
-fun ZipHelperWithAudio.validateFiles(q: ExtractedInfo) =
+suspend fun ZipHelperWithAudio.validateFiles(q: ExtractedInfo, client: HttpClient) =
     DigestOutputStream(OutputStream.nullOutputStream(), q.md).use { dos ->
         // Rename audio file if it ends in .ogg
         val (info, newFiles, newFilesOriginalCase) = oggToEgg(q)
@@ -23,7 +24,7 @@ fun ZipHelperWithAudio.validateFiles(q: ExtractedInfo) =
         val withoutPrefix = newFiles.map { its -> its.removePrefix(prefix.lowercase()) }.toSet()
 
         // Validate info.dat
-        info.mapInfo.validate(withoutPrefix, info, audioFile, previewAudioFile, ::fromInfo)
+        info.mapInfo.validate(withoutPrefix, info, audioFile, previewAudioFile, client, ::fromInfo)
 
         val output = info.mapInfo.toJson().toByteArray()
         dos.write(output)
