@@ -34,11 +34,12 @@ abstract class SearchParams(
         }
 
     suspend fun checkKeySearch(call: ApplicationCall) =
-        if (escapedQuery.startsWith("key:")) {
+        if (escapedQuery.startsWith("key:") || escapedQuery.startsWith("!bsr")) {
+            val mapId = escapedQuery.substring(4).trim().toIntOrNull(16)
             Beatmap
                 .select(Beatmap.id)
                 .where {
-                    Beatmap.id eq escapedQuery.substring(4).toInt(16) and (Beatmap.deletedAt.isNull())
+                    Beatmap.id eq mapId and (Beatmap.deletedAt.isNull())
                 }
                 .limit(1).firstOrNull()?.let { r ->
                     call.respond(SearchResponse(redirect = toHexString(r[Beatmap.id].value)))
