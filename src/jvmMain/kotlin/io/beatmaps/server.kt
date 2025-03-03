@@ -102,6 +102,7 @@ import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.ClosedByteChannelException
 import io.ktor.utils.io.charsets.Charset
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -351,6 +352,10 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
 
         exception<OauthException> { call, it ->
             call.respond(HttpStatusCode.BadRequest, it.toMap())
+        }
+
+        exception<ClosedByteChannelException> { _, _ ->
+            // Do nothing, client is gone
         }
 
         exception<Throwable> { call, cause ->
