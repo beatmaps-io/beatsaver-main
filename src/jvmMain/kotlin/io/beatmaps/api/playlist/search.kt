@@ -78,7 +78,7 @@ fun Route.playlistSearch() {
                                             if (it.sort?.orNull() == LatestPlaylistSort.CURATED) q.and(Playlist.curatedAt.isNotNull()) else q
                                         }
                                 }
-                                .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
+                                .orderBy(sortField to (if (it.after?.orNull() != null) SortOrder.ASC else SortOrder.DESC))
                                 .limit(it.pageSize.or(20).coerceIn(1, 100))
                         )
                     }

@@ -925,7 +925,7 @@ fun Route.mapDetailRoute() {
                                         if (it.sort?.orNull() == LatestSort.CURATED) q.and(Beatmap.curatedAt.isNotNull()) else q
                                     }
                             }
-                            .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
+                            .orderBy(sortField to (if (it.after?.orNull() != null) SortOrder.ASC else SortOrder.DESC))
                             .limit(it.pageSize.or(20).coerceIn(1, 100))
                     )
                 }
@@ -961,7 +961,7 @@ fun Route.mapDetailRoute() {
                         .notNullOpt(it.before) { o -> sortField less o.toJavaInstant() }
                         .notNullOpt(it.after) { o -> sortField greater o.toJavaInstant() }
                 }
-                .orderBy(sortField to (if (it.after != null) SortOrder.ASC else SortOrder.DESC))
+                .orderBy(sortField to (if (it.after?.orNull() != null) SortOrder.ASC else SortOrder.DESC))
                 .limit(it.pageSize.or(20).coerceIn(1, 100))
                 .mapNotNull { map ->
                     val instant = map[Beatmap.deletedAt]
