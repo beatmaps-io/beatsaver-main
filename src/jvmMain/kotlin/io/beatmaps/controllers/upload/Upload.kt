@@ -33,9 +33,12 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.nio.file.Files
+import java.util.logging.Logger
 import kotlin.math.roundToInt
 
 object Upload {
+    private val logger = Logger.getLogger("bmio.Upload")
+
     private val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
 
     fun checkUserCanUpload(session: Session): UserDao {
@@ -194,19 +197,21 @@ object Upload {
                     it[plays] = 0
                 }
 
-            insertOrUpdate().also {
+            insertOrUpdate().also { newMap ->
                 // How is a file here if it hasn't been uploaded before?
                 if (newFile.exists()) {
-                    newFile.delete()
+                    logger.severe { "File already uploaded" }
+                    throw UploadException("File already uploaded")
+                    // newFile.delete()
                 }
 
                 Files.move(file.toPath(), newFile.toPath())
+
+                insertVersion(info, newMap, newFile)
             }
         } catch (e: Exception) {
             file.delete()
             throw e
-        }.also { newMap ->
-            insertVersion(info, newMap, newFile)
         }.value
     }
 }
