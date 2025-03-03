@@ -27,4 +27,27 @@ class SearchTest : BrowserTestBase() {
             assertEquals(1, cardCount())
         }
     }
+
+    @Test
+    fun `Can filter ranked maps`() = bmTest {
+        val username = transaction {
+            val (userId, username) = createUser()
+            createMap(userId, ranked = true)
+            createMap(userId, ranked = false)
+
+            username
+        }
+
+        homePage {
+            navigate("/", ::waitForSearch)
+
+            filters {
+                rankedMaps.click()
+            }
+
+            search("mapper:$username")
+
+            assertEquals(1, cardCount())
+        }
+    }
 }

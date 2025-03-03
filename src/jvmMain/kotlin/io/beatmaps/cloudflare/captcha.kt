@@ -5,6 +5,7 @@ import io.beatmaps.login.bmSessionId
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.submitForm
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.parameters
 import io.ktor.http.userAgent
 import io.ktor.server.application.ApplicationCall
@@ -110,6 +111,12 @@ object CaptchaVerifier {
                 }
             ) {
                 userAgent(provider.userAgent)
-            }.body<SiteVerifyResponse>()
+            }.let {
+                if (it.status == HttpStatusCode.OK) {
+                    it.body<SiteVerifyResponse>()
+                } else {
+                    SiteVerifyResponse(false, errorCodes = listOf("${it.status} response from CF"))
+                }
+            }
         }
 }

@@ -73,7 +73,7 @@ abstract class FixtureHelpers {
         }
     }
 
-    fun createMap(userId: Int, published: Boolean = true, collaborators: List<Int> = listOf(), ai: AiDeclarationType = AiDeclarationType.None): Pair<Int, String> = transaction {
+    fun createMap(userId: Int, published: Boolean = true, ranked: Boolean = false, collaborators: List<Int> = listOf(), ai: AiDeclarationType = AiDeclarationType.None): Pair<Int, String> = transaction {
         fixture<MapDetail>().let { map ->
             val mId = Beatmap.insertAndGetId {
                 it[name] = map.name
@@ -85,6 +85,7 @@ abstract class FixtureHelpers {
 
                 it[declaredAi] = ai
                 it[plays] = map.stats.plays
+                it[this.ranked] = ranked
             }.value
 
             val digest = randomHash()

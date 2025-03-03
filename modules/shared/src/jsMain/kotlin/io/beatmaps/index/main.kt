@@ -62,7 +62,7 @@ val homePage = fcmemo<Props>("homePage") {
             params["from"],
             params["to"],
             params["noodle"]?.toBoolean(),
-            RankedFilter.fromString(params["ranked"]),
+            RankedFilter.fromString(params["leaderboard"]),
             params["curated"]?.toBoolean(),
             params["verified"]?.toBoolean(),
             params["followed"]?.toBoolean(),
