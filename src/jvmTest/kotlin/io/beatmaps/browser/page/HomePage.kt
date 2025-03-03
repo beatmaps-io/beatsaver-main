@@ -39,9 +39,15 @@ class HomePage(page: Page) : PageBase(page) {
 
     class SearchFilters(element: Locator) : ElementBase(element) {
         fun visible() = elem.isVisible
+
         val aiMaps = element("[for=bot-ai]")
-        val allMaps = element("[for=bot-all]")
+        val aiAndHumanMaps = element("[for=bot-all]")
         val humanMaps = element("[for=bot-human]")
+
+        val rankedAndUnrankedMaps = element("[for=ranked-all]")
+        val rankedMaps = element("[for=ranked-ranked]")
+        val scoreSaberMaps = element("[for=ranked-scoresaber]")
+        val beatLeaderMaps = element("[for=ranked-beatleader]")
     }
 
     class MapCard(element: Locator) : ElementBase(element) {
