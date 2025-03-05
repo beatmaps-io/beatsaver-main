@@ -180,13 +180,17 @@ fun Route.mapController() {
 
         genericPage(if (validMap) HttpStatusCode.OK else HttpStatusCode.NotFound) {
             (if (validMap) mapData else null)?.let {
+                val cleanDescription = it.description
+                    .replace(Regex("[\\p{C}\\p{So}\uFE00-\uFE0F\\x{E0100}-\\x{E01EF}]+"), " ")
+                    .replace(Regex(" {2,}"), " ")
+
                 meta("og:type", "website")
                 meta("og:site_name", "BeatSaver")
                 meta("og:title", it.name)
                 meta("og:url", it.link(true))
                 link(it.link(true), "canonical")
                 meta("og:image", it.publishedVersion()?.coverURL)
-                meta("og:description", it.description.take(400))
+                meta("og:description", cleanDescription.take(400))
 
                 // Joining mappers together for the og:author field so that:
                 // 1. Uploader will be first
