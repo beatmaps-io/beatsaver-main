@@ -91,6 +91,7 @@ import io.ktor.server.plugins.conditionalheaders.ConditionalHeaders
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.forwardedheaders.XForwardedHeaders
 import io.ktor.server.request.path
+import io.ktor.server.request.uri
 import io.ktor.server.resources.Resources
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
@@ -118,6 +119,7 @@ import org.valiktor.i18n.toMessage
 import pl.jutupe.ktor_rabbitmq.RabbitMQ
 import java.io.File
 import java.math.BigInteger
+import java.nio.charset.MalformedInputException
 import java.security.MessageDigest
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -356,6 +358,11 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
 
         exception<ClosedByteChannelException> { _, _ ->
             // Do nothing, client is gone
+        }
+
+        exception<MalformedInputException> { call, _ ->
+            call.respond(HttpStatusCode.InternalServerError, "Internal Server Error")
+            errorLogger.log(Level.SEVERE, "MalformedInputException during request `${call.request.uri}`")
         }
 
         exception<Throwable> { call, cause ->
