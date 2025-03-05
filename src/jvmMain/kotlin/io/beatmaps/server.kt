@@ -331,19 +331,6 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
             call.respond(code, cause.toResponse())
         }
 
-        // TODO: Is this possible? Wrap up in BadRequestException?
-        exception<ParameterConversionException> { call, cause ->
-            if (cause.type == Instant::class.toString()) {
-                val now = Clock.System.now().let {
-                    it.minus(it.nanosecondsOfSecond.nanoseconds)
-                }
-                call.respond(HttpStatusCode.BadRequest, ActionResponse.error("${cause.message}. Most likely you're missing a timezone. Example: $now"))
-            } else {
-                call.respond(HttpStatusCode.BadRequest, ActionResponse.error(cause.message ?: ""))
-                throw cause
-            }
-        }
-
         exception<NotFoundException> { call, _ ->
             call.respond(HttpStatusCode.NotFound, ActionResponse.error("Not Found"))
         }
@@ -354,6 +341,10 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
 
         exception<OauthException> { call, it ->
             call.respond(HttpStatusCode.BadRequest, it.toMap())
+        }
+
+        exception<IllegalArgumentException> { call, cause ->
+            call.respond(HttpStatusCode.BadRequest)
         }
 
         exception<ClosedByteChannelException> { _, _ ->
