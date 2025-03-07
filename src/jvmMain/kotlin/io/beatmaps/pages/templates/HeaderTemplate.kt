@@ -67,7 +67,7 @@ class HeaderTemplate(private val s: Session?) : Template<FlowContent> {
                                         +"From Mappers You Follow"
                                     }
                                 }
-                                a("/?ranked=Ranked", classes = "dropdown-item auto-router") {
+                                a("/?leaderboard=Ranked", classes = "dropdown-item auto-router") {
                                     +"Ranked Maps"
                                 }
                                 div("dropdown-divider") {}
