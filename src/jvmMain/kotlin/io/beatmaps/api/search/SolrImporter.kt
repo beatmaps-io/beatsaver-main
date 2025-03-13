@@ -146,7 +146,7 @@ object SolrImporter {
             val playlistStates = Playlist
                 .joinUser(Playlist.owner)
                 .select(Playlist.id, User.verifiedMapper)
-                .where { Playlist.deletedAt.isNull() }
+                .where { Playlist.owner eq updateUserId and Playlist.deletedAt.isNull() }
                 .map {
                     it[Playlist.id].value to it[User.verifiedMapper]
                 }
