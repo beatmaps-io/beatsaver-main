@@ -181,7 +181,7 @@ fun Route.mapController() {
         genericPage(if (validMap) HttpStatusCode.OK else HttpStatusCode.NotFound) {
             (if (validMap) mapData else null)?.let {
                 val cleanDescription = it.description
-                    .replace(Regex("[\\p{C}\\p{So}\uFE00-\uFE0F\\x{E0100}-\\x{E01EF}]+"), " ")
+                    .replace(Regex("[\\p{So}\uFE00-\uFE0F\\x{E0100}-\\x{E01EF}]+"), " ")
                     .replace(Regex(" {2,}"), " ")
 
                 meta("og:type", "website")
