@@ -166,7 +166,7 @@ fun Route.playlistCreate(client: HttpClient) {
                 its.copyToSuspend(tmp, sizeLimit = FileLimits.PLAYLIST_IMAGE_LIMIT)
 
                 thumbnailSizes.forEach { s ->
-                    val localFile = File(Folders.localPlaylistCoverFolder(s), "${req.id}.jpg")
+                    val localFile = File(Folders.localPlaylistCoverFolder(s), "${req.id?.orNull()}.jpg")
 
                     Thumbnails
                         .of(tmp.toByteArray().inputStream())
