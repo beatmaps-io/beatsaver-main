@@ -164,7 +164,7 @@ fun Route.cdnRoute() {
             throw NotFoundException()
         }
 
-        val file = File(Folders.localFolder(it.file), "${it.file}.zip")
+        val file = File(Folders.localFolder(it.file, false), "${it.file}.zip")
         val name = if (file.exists()) {
             transaction {
                 Beatmap
@@ -208,7 +208,7 @@ fun Route.cdnRoute() {
                     .map { MapDetail.from(it, "") }
                     .firstOrNull()?.let { map ->
                         map.publishedVersion()?.let { version ->
-                            val file = File(Folders.localFolder(version.hash), "${version.hash}.zip")
+                            val file = File(Folders.localFolder(version.hash, false), "${version.hash}.zip")
 
                             if (file.exists()) {
                                 call.pub("beatmaps", "download.key.${it.file}", null, DownloadInfo(it.file, DownloadType.KEY, call.request.origin.remoteHost))
@@ -255,7 +255,7 @@ fun Route.cdnRoute() {
             throw NotFoundException()
         }
 
-        returnFile(File(Folders.localCoverFolder(it.file), "${it.file}.jpg"))
+        returnFile(File(Folders.localCoverFolder(it.file, false), "${it.file}.jpg"))
     }
 
     get<CDN.PlaylistCover> {
@@ -263,7 +263,7 @@ fun Route.cdnRoute() {
             throw NotFoundException()
         }
 
-        returnFile(File(Folders.localPlaylistCoverFolder(), "${it.file}.jpg"))
+        returnFile(File(Folders.localPlaylistCoverFolder(create = false), "${it.file}.jpg"))
     }
 
     get<CDN.PlaylistCoverSized> {
@@ -271,7 +271,7 @@ fun Route.cdnRoute() {
             throw NotFoundException()
         }
 
-        returnFile(File(Folders.localPlaylistCoverFolder(it.size.or(256)), "${it.file}.jpg"))
+        returnFile(File(Folders.localPlaylistCoverFolder(it.size.or(256), false), "${it.file}.jpg"))
     }
 
     get<CDN.Avatar> {
@@ -285,5 +285,5 @@ fun Route.cdnRoute() {
 
 suspend fun RoutingContext.getAudio(hash: String) =
     returnFile(
-        File(Folders.localAudioFolder(hash), "$hash.mp3")
+        File(Folders.localAudioFolder(hash, false), "$hash.mp3")
     )
