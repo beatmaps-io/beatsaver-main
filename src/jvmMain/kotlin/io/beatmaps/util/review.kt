@@ -165,6 +165,7 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                     avatar_url = "https://avatars.githubusercontent.com/u/83342266",
                     embeds = listOf(
                         DiscordEmbed(
+                            author = issue.creator.let { user -> DiscordEmbed.Author(user) },
                             title = "New ${issue.type.human()} created",
                             description = comment.text,
                             url = "${Config.siteBase()}/issues/${issue.id}",
