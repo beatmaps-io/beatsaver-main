@@ -39,7 +39,7 @@ val manageSessions = fcmemo<ManageSessionsProps>("manageSessions") { props ->
         hr {}
         if (full == true) {
             table {
-                className = ClassName("table table-dark table-striped mappers text-nowrap")
+                className = ClassName("table table-dark table-striped sessions text-nowrap")
                 tbody {
                     props.sessions.oauth.forEach {
                         oauthRow {
