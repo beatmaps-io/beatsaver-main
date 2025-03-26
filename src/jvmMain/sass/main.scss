@@ -1770,6 +1770,13 @@ select.dark {
   background-image: escape-svg(url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='none' stroke='#ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/></svg>"));
 }
 
+.sessions td {
+  vertical-align: middle;
+  padding: .4rem;
+  line-height: 2.5rem;
+  text-align: center;
+}
+
 @include media-breakpoint-up(sm) {
   .filter-dropdown {
     width: 100%;
