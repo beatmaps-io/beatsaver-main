@@ -122,12 +122,12 @@ fun Route.playlistSingle() {
                         }
                     }
                 }
-                .apply {
+                .apply(
                     listOfNotNull(
                         if (params.ranked.blRanked) BsSolr.rankedbl eq true else null,
                         if (params.ranked.ssRanked) BsSolr.rankedss eq true else null
                     ).anyOf()
-                }
+                )
                 .notNull(params.curated) { o -> BsSolr.curated.any().let { if (o) it else it.not() } }
                 .notNull(params.verified) { o -> BsSolr.verified eq o }
                 .notNull(params.fullSpread) { o -> BsSolr.fullSpread eq o }
