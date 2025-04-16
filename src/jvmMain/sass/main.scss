@@ -162,6 +162,7 @@ table.search-results {
     margin-bottom: 0.25rem;
     transition: height 0.2s;
     overflow: hidden;
+    word-break: break-word;
 
     .main {
       display: flex;
