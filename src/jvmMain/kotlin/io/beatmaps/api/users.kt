@@ -1235,7 +1235,7 @@ fun Route.userRoute(client: HttpClient) {
                 user.name,
                 "All maps by ${user.name} ($dateStr)",
                 imageStr,
-                PlaylistCustomData("${Config.apiBase(true)}/users/id/${it.id}/playlist"),
+                PlaylistCustomData("${Config.apiBase(true)}/users/id/${user.id}/playlist"),
                 playlistSongs
             )
         )
