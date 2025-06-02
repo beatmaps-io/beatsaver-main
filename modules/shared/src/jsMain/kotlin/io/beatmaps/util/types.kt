@@ -35,6 +35,7 @@ fun SearchParams?.toPlaylistConfig() = SearchParamsPlaylist(
     this?.maxNps,
     this?.chroma,
     this?.sortOrder ?: SearchOrder.Latest,
+    this?.ascending,
     this?.from?.toInstant(),
     this?.to?.toInstant(),
     this?.noodle,

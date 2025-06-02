@@ -123,7 +123,7 @@ fun Route.playlistSearch() {
                 .notNull(req.curated) { o -> PlaylistSolr.curated.any().let { if (o) it else it.not() } }
                 .notNull(req.verified) { o -> PlaylistSolr.verified eq o }
                 .let { q ->
-                    PlaylistSolr.addSortArgs(q, req.seed.hashCode(), actualSortOrder)
+                    PlaylistSolr.addSortArgs(q, req.seed.hashCode(), actualSortOrder, req.ascending ?: false)
                 }
                 .paged(req.page.or(0).toInt())
                 .getIds(PlaylistSolr, call = call)

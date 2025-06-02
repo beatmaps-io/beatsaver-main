@@ -91,6 +91,7 @@ interface ISearch {
     val startDate: Moment?
     val endDate: Moment?
     val order: SearchOrder
+    val ascending: Boolean
     fun searchText(): String
     fun isFiltered(key: String): Boolean
     fun filterOrNull(key: String): Any?
@@ -119,6 +120,7 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
     val (maxNps, setMaxNps) = useState(props.maxNps.toFloat())
     val (filterMap, setFilterMap) = useState(mapOf<FilterInfo<T, *>, Any?>())
     val (order, setOrder) = useState(SearchOrder.Relevance)
+    val (ascending, setAscending) = useState(false)
     val (focusedInput, setFocusedInput) = useState<String>()
     val (startDate, setStartDate) = useState<Moment>()
     val (endDate, setEndDate) = useState<Moment>()
@@ -180,6 +182,7 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
         override val startDate = startDate
         override val endDate = endDate
         override val order = order
+        override val ascending = ascending
         override fun searchText() = inputRef.current?.value?.trim() ?: ""
         override fun isFiltered(key: String): Boolean {
             return filterMap.entries.firstOrNull { it.key.key == key }?.let { (filter, value) -> filter.isFiltered(value) } ?: false
@@ -335,10 +338,12 @@ fun <T : CommonParams> generateSearchComponent(name: String) = fcmemo<SearchProp
                 className = ClassName("mb-3 col-sm-3")
                 sort {
                     target = props.sortOrderTarget
-                    cb = {
-                        setOrder(it)
+                    cb = { order, asc ->
+                        setOrder(order)
+                        setAscending(asc)
                     }
                     default = order
+                    defaultAsc = ascending
                 }
             }
         }

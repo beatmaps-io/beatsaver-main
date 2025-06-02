@@ -50,6 +50,7 @@ external interface BeatmapTableProps : Props {
     var updateScrollIndex: RefObject<(Int) -> Unit>?
     var visible: Boolean?
     var fallbackOrder: SearchOrder?
+    var fallbackAsc: Boolean?
 }
 
 data class SearchParams(
@@ -59,6 +60,7 @@ data class SearchParams(
     override val maxNps: Float?,
     val chroma: Boolean?,
     override val sortOrder: SearchOrder,
+    override val ascending: Boolean?,
     override val from: String?,
     override val to: String?,
     val noodle: Boolean?,
@@ -102,7 +104,7 @@ val beatmapTable = fcmemo<BeatmapTableProps>("beatmapTable") { props ->
     val history = History(useNavigate())
     val config = use(configContext)
 
-    useDidUpdateEffect(props.user, props.wip, props.curated, props.search, props.fallbackOrder) {
+    useDidUpdateEffect(props.user, props.wip, props.curated, props.search, props.fallbackOrder, props.fallbackAsc) {
         setUser(null)
         resetRef.current?.invoke()
     }
@@ -127,10 +129,12 @@ val beatmapTable = fcmemo<BeatmapTableProps>("beatmapTable") { props ->
             "${Config.apibase}/maps/wip/$page"
         } else if (props.curated == true && props.user != null) {
             "${Config.apibase}/search/${if (config?.v2Search == true) "text" else "v1"}/$page?curator=${props.user}&automapper=true" +
-                (props.fallbackOrder?.let { "&sortOrder=$it" } ?: "")
+                (props.fallbackOrder?.let { "&sortOrder=$it" } ?: "") +
+                (props.fallbackAsc?.let { "&ascending=$it" } ?: "")
         } else if (props.user != null) {
             "${Config.apibase}/search/${if (config?.v2Search == true) "text" else "v1"}/$page?collaborator=${props.user}&automapper=true" +
-                (props.fallbackOrder?.let { "&sortOrder=$it" } ?: "")
+                (props.fallbackOrder?.let { "&sortOrder=$it" } ?: "") +
+                (props.fallbackAsc?.let { "&ascending=$it" } ?: "")
         } else {
             props.search?.let { search ->
                 "${Config.apibase}/search/${if (config?.v2Search == true) "text" else "v1"}/$page?" + search.queryParams().joinToString("&")

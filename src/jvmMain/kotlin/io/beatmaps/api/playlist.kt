@@ -220,6 +220,7 @@ class PlaylistApi {
         val sortOrder: OptionalProperty<SearchOrder>? = OptionalProperty.NotPresent,
         @ModelClass(SearchOrder::class)
         val order: OptionalProperty<SearchOrder>? = OptionalProperty.NotPresent,
+        val ascending: Boolean? = null,
         @ModelClass(Float::class)
         val minNps: OptionalProperty<Float>? = OptionalProperty.NotPresent,
         @ModelClass(Float::class)

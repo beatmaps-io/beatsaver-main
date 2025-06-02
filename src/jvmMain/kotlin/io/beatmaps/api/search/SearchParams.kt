@@ -27,9 +27,7 @@ abstract class SearchParams(
 
     open fun validateSearchOrder(originalOrder: SearchOrder) =
         when (originalOrder) {
-            SearchOrder.Rating -> SearchOrder.Rating
-            SearchOrder.Curated -> SearchOrder.Curated
-            SearchOrder.Random -> SearchOrder.Random
+            SearchOrder.Rating, SearchOrder.Curated, SearchOrder.Random, SearchOrder.Duration -> originalOrder
             else -> SearchOrder.Latest
         }
 

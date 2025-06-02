@@ -71,6 +71,7 @@ val playlistSearchEditor = fcmemo<PSEProps>("playlistSearchEditor") { props ->
     val (ranked, setRanked) = useState(props.config.searchParams.ranked)
     val (dateFocused, setDateFocused) = useState<String?>(null)
     val (order, setOrder) = useState(props.config.searchParams.sortOrder)
+    val (ascending, setAscending) = useState(props.config.searchParams.ascending)
     val (mapCount, setMapCount) = useState(props.config.mapCount)
     val (tags, setTags) = useState(props.config.searchParams.tags)
     val (environments, setEnvironments) = useState(props.config.searchParams.environments)
@@ -126,6 +127,7 @@ val playlistSearchEditor = fcmemo<PSEProps>("playlistSearchEditor") { props ->
                     if (maxNps < 16) maxNps else null,
                     fromFilter("chroma"),
                     order,
+                    ascending,
                     startDate?.let { Instant.parse(it.toISOString()) },
                     endDate?.let { Instant.parse(it.toISOString()) },
                     fromFilter("noodle"),
@@ -246,10 +248,12 @@ val playlistSearchEditor = fcmemo<PSEProps>("playlistSearchEditor") { props ->
                 }
                 sort {
                     target = SortOrderTarget.Map
-                    cb = {
-                        setOrder(it)
+                    cb = { order, asc ->
+                        setOrder(order)
+                        setAscending(asc)
                     }
                     default = order
+                    defaultAsc = ascending
                     id = "sort-by"
                 }
             }

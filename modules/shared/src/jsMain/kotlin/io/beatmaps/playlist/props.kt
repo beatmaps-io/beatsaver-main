@@ -21,7 +21,8 @@ data class PlaylistSearchParams(
     val includeEmpty: Boolean? = null,
     val curated: Boolean? = null,
     val verified: Boolean? = null,
-    override val sortOrder: SearchOrder
+    override val sortOrder: SearchOrder,
+    override val ascending: Boolean? = null
 ) : CommonParams() {
     override fun queryParams() = super.queryParams() + listOfNotNull(
         includeIfNotNull(curated, "curated"),

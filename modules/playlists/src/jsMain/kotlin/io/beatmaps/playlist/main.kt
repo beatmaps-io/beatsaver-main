@@ -45,7 +45,8 @@ val playlistFeed = fcmemo<Props>("playlistFeed") {
             params["includeEmpty"]?.toBoolean(),
             params["curated"]?.toBoolean(),
             params["verified"]?.toBoolean(),
-            SearchOrder.fromString(params.get("order")) ?: SearchOrder.Relevance
+            SearchOrder.fromString(params.get("order")) ?: SearchOrder.Relevance,
+            params["ascending"]?.toBoolean()
         )
     }
 

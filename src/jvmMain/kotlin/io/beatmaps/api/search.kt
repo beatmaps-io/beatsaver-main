@@ -167,6 +167,7 @@ class SearchApi {
         val sortOrder: OptionalProperty<SearchOrder>? = OptionalProperty.NotPresent,
         @ModelClass(SearchOrder::class)
         val order: OptionalProperty<SearchOrder>? = OptionalProperty.NotPresent,
+        val ascending: Boolean? = null,
         @ModelClass(Instant::class)
         val from: OptionalProperty<Instant>? = OptionalProperty.NotPresent,
         @ModelClass(Instant::class)
@@ -396,7 +397,7 @@ fun Route.searchRoute() {
                         }
                     }
                     .let { q ->
-                        BsSolr.addSortArgs(q, it.seed.hashCode(), actualSortOrder)
+                        BsSolr.addSortArgs(q, it.seed.hashCode(), actualSortOrder, it.ascending ?: false)
                     }
                     .paged(page = it.page.or(0).toInt(), pageSize = it.pageSize.or(20).coerceIn(1, 100))
                     .getIds(BsSolr, call = call)
