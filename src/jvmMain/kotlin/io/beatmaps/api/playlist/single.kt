@@ -140,7 +140,7 @@ fun Route.playlistSingle() {
                 }
                 .apply(BsSolr.environment inList params.environments.map { e -> e.name })
                 .let { q ->
-                    BsSolr.addSortArgs(q, playlistId, actualSortOrder)
+                    BsSolr.addSortArgs(q, playlistId, actualSortOrder, params.ascending ?: false)
                 }
                 .setStart(offset).setRows(actualPageSize)
                 .getIds(BsSolr, call = call)

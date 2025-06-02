@@ -106,8 +106,11 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
     val (loading, setLoading) = useState(false)
     val errorRef = useRef<List<String>>()
     val publishedSortOrder = useState(SearchOrder.Relevance)
+    val publishedAscending = useState(false)
     val curationsSortOrder = useState(SearchOrder.Curated)
+    val curationsAscending = useState(false)
     val (sortOrder, setSortOrder) = if (tabState == ProfileTab.CURATED) curationsSortOrder else publishedSortOrder
+    val (ascending, setAscending) = if (tabState == ProfileTab.CURATED) curationsAscending else publishedAscending
 
     val location = useLocation()
     val history = History(useNavigate())
@@ -664,10 +667,12 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                     className = ClassName("nav-item right")
                     sort {
                         target = SortOrderTarget.UserMap
-                        cb = {
-                            setSortOrder(it)
+                        cb = { order, asc ->
+                            setSortOrder(order)
+                            setAscending(asc)
                         }
                         default = sortOrder
+                        defaultAsc = ascending
                         dark = true
                     }
                 }
@@ -688,6 +693,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                     curated = tabState == ProfileTab.CURATED
                     visible = setOf(ProfileTab.UNPUBLISHED, ProfileTab.PUBLISHED, ProfileTab.CURATED).contains(tabState)
                     fallbackOrder = sortOrder
+                    fallbackAsc = ascending
                 }
             }
         }
