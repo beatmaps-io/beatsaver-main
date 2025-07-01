@@ -122,13 +122,14 @@ val version = fcmemo<VersionProps>("version") { props ->
                                 className = ClassName("btn btn-danger m-1")
                                 onClick = {
                                     alert.current = props.alreadyPublished != true
+                                    scheduleAt.current = null
+
                                     modal?.current?.showDialog?.invoke(
                                         ModalData(
                                             "Are you sure?",
                                             buttons = listOf(ModalButton("Publish", "primary") { mapState(EMapState.Published) }, ModalButton("Cancel")),
                                             large = true
                                         ) {
-                                            scheduleAt.current = null
                                             publishModal {
                                                 callbackScheduleAt = {
                                                     scheduleAt.current = it
