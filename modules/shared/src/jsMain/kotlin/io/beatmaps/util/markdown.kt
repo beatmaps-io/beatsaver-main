@@ -75,7 +75,8 @@ private fun String.makeSafe() = trustedType?.createHTML(this) ?: this
 fun HTMLAttributes<*>.textToContent(text: String) {
     dangerouslySetInnerHTML = jso {
         __html = text
-            .replace(Regex("<.+?>"), "")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
             .parseBoldMarkdown()
             .parseItalicMarkdown()
             .parseMapReference()
