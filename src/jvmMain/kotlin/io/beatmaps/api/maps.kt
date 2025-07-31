@@ -28,6 +28,7 @@ import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
+import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
@@ -529,8 +530,14 @@ fun Route.mapDetailRoute() {
                                 EAlertType.Deletion,
                                 oldData.uploaderId.value
                             )
+
                             updateAlertCount(oldData.uploaderId.value)
                         }
+                    }
+
+                    if (mapUpdate.deleted) {
+                        val alertIds = Collaboration.deleteForMap(mapUpdate.id)
+                        updateAlertCount(alertIds)
                     }
                 }
             }

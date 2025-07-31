@@ -179,6 +179,7 @@ fun Route.alertsRoute() {
                             UserAlert(alert.id.value, alert.head, alert.body, alert.type, alert.sentAt.toKotlinInstant())
                         }
                     } else if (it.getOrNull(Collaboration.id) != null) {
+                        UserDao.wrapRow(it) // Push to cache
                         UserAlert.from(CollaborationDetail.from(it, cdnPrefix()))
                     } else { null }
                 }
