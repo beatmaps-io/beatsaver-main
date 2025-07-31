@@ -2,10 +2,12 @@ package io.beatmaps.util
 
 import io.beatmaps.common.Folders
 import io.beatmaps.common.amqp.pub
+import io.beatmaps.common.amqp.rb
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Beatmap
+import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.VersionsDao
 import io.beatmaps.common.dbo.joinVersions
@@ -78,6 +80,14 @@ class BeatsageCleanse(private val app: Application) : TimerTask() {
                     it[Beatmap.id].value
                 }?.onEach {
                     logger.info { "Deleted old beatsage map #${toHexString(it)}" }
+                }?.also {
+                    // Remove collaborations (why are you collaborating on beatsage?)
+                    updateAlertCount(
+                        app.rb(),
+                        it.flatMap { mapId ->
+                            Collaboration.deleteForMap(mapId)
+                        }.distinct()
+                    )
                 }
             }?.forEach {
                 app.pub("beatmaps", "maps.$it.updated.deleted", null, it)
