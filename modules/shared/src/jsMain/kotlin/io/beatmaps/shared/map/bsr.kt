@@ -30,7 +30,7 @@ val copyBsr = fcmemo<CopyBSProps>("copyBsr") { props ->
             +text
         }
         i {
-            className = ClassName("fab fa-twitch text-info")
+            className = ClassName("fas fa-exclamation text-info")
             ariaHidden = true
         }
     }
