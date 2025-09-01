@@ -23,6 +23,11 @@ external interface LinksProps : Props {
 val links = fcmemo<LinksProps>("links") { props ->
     val modal = use(modalContext)
 
+    if (props.limited != true) {
+        mapcheck {
+            mapId = props.map.id
+        }
+    }
     copyBsr {
         map = props.map
     }
