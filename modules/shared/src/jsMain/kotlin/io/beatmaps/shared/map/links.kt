@@ -23,6 +23,23 @@ external interface LinksProps : Props {
 val links = fcmemo<LinksProps>("links") { props ->
     val modal = use(modalContext)
 
+    if (props.limited != true) {
+        a {
+            href = "https://kivalevan.me/BeatSaber-MapCheck/?id=${props.map.id}"
+            title = "Map Check"
+            ariaLabel = "Map Check"
+            target = WindowTarget._blank
+
+            span {
+                className = ClassName("dd-text")
+                +"Map Check"
+            }
+            i {
+                className = ClassName("fas fa-search-location text-info")
+                ariaHidden = true
+            }
+        }
+    }
     copyBsr {
         map = props.map
     }
