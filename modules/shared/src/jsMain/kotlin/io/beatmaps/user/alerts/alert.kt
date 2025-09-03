@@ -140,7 +140,7 @@ val alert = fcmemo<AlertProps>("alert") { props ->
             }
             div {
                 ref = bodyRef
-                className = ClassName("card-body")
+                className = ClassName("card-body text-break")
                 p {
                     textToContent(alert.body)
                 }
