@@ -91,7 +91,8 @@ class TOSPageTemplate : Template<BODY> {
                 ul {
                     listOf(
                         "Explicit lyrics or profanities in song audio or map descriptions are only allowed if they are not harmful to the mentioned race, gender, nationality, sexuality, etc. in their intent",
-                        "Map titles or descriptions should be free of excessively sexual or violent language"
+                        "Map titles or descriptions should be free of excessively sexual or violent language",
+                        "While AI generated audio is currently allowed, maps of AI generated songs must have the 'AI generated' music genre, and these maps may be removed from the repository in the future"
                     ).forEach {
                         li {
                             +it
