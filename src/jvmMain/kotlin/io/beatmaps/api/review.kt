@@ -787,7 +787,7 @@ fun Route.reviewRoute(client: HttpClient) {
 
                 // This should be outside the transaction - otherwise the websocket will send the old text
                 if (response.success) {
-                    call.pub("beatmaps", "ws.review-replies.updated", null, req.replyId)
+                    call.pub("beatmaps", "ws.review-replies.updated", null, replyId)
                 }
 
                 call.respond(response)
