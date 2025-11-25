@@ -11,7 +11,6 @@ plugins {
     id("io.miret.etienne.sass") version "1.1.2"
     id("org.flywaydb.flyway") version "9.2.2"
     id("org.jlleitschuh.gradle.ktlint") version "11.5.1"
-    distribution
 }
 
 val exposedVersion: String by project
@@ -273,12 +272,16 @@ tasks.getByName<CompileSass>("compileSass") {
     style = compressed
 }
 
-tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
+val webpack = tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
     sourceMaps = true
     outputDirectory.set(layout.buildDirectory.file("processedResources/jvm/main/assets").get().asFile)
     if (System.getenv("BUILD_NUMBER") == null) {
         mode = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.Mode.DEVELOPMENT
     }
+}
+
+tasks.getByName<Task>("jvmProcessResources") {
+    dependsOn(webpack)
 }
 
 tasks.withType<AbstractCopyTask> {
@@ -290,12 +293,11 @@ tasks.withType<AbstractArchiveTask> {
 }
 
 tasks.getByName<Jar>("jvmJar") {
-    dependsOn(tasks.getByName("jsBrowserProductionWebpack"), tasks.getByName("compileSass"))
-    val jsBrowserProductionWebpack = tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack")
+    dependsOn(webpack, tasks.getByName("compileSass"))
 
-    from(jsBrowserProductionWebpack.outputDirectory.get())
-    listOf(jsBrowserProductionWebpack.mainOutputFileName.get(), jsBrowserProductionWebpack.mainOutputFileName.get() + ".map", "modules.js", "modules.js.map").forEach {
-        from(File(jsBrowserProductionWebpack.outputDirectory.get().asFile, it))
+    from(webpack.outputDirectory.get())
+    listOf(webpack.mainOutputFileName.get(), webpack.mainOutputFileName.get() + ".map", "modules.js", "modules.js.map").forEach {
+        from(File(webpack.outputDirectory.get().asFile, it))
     }
 }
 
