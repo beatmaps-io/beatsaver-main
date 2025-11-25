@@ -5,8 +5,8 @@ import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
-    kotlin("multiplatform") version "2.1.0"
-    kotlin("plugin.serialization") version "2.1.0"
+    kotlin("multiplatform") version "2.2.0"
+    kotlin("plugin.serialization") version "2.2.0"
     id("io.miret.etienne.sass") version "1.1.2"
     id("org.flywaydb.flyway") version "9.2.2"
     id("org.jlleitschuh.gradle.ktlint") version "11.5.1"

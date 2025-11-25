@@ -126,7 +126,7 @@ fun Route.uploadController(client: HttpClient) {
             val vivifyLimit = user.vivifyLimit * 1024 * 1024L
             val totalLimit = basicLimit + (vivifyLimit * Vivify.allowedBundles.size)
 
-            val multipart = handleMultipart(client) { part ->
+            val multipart = handleMultipart(client, totalLimit) { part ->
                 uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
 
                 val its = part.provider()
