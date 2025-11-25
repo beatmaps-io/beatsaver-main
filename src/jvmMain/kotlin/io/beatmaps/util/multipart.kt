@@ -63,5 +63,5 @@ private suspend fun <U> handleMultipartInternal(data: MultiPartData, ctx: Routin
     }
 }
 
-suspend fun <U> RoutingContext.handleMultipart(client: HttpClient, cb: suspend (PartData.FileItem) -> U) =
-    handleMultipartInternal(call.receiveMultipart(), this, client, cb)
+suspend fun <U> RoutingContext.handleMultipart(client: HttpClient, limit: Long = -1L, cb: suspend (PartData.FileItem) -> U) =
+    handleMultipartInternal(call.receiveMultipart(limit), this, client, cb)
