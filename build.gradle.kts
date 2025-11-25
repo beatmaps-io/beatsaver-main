@@ -262,16 +262,6 @@ flyway {
     locations = locs.toTypedArray()
 }
 
-val sass = tasks.getByName<CompileSass>("compileSass") {
-    dependsOn(tasks.getByName("kotlinNpmInstall"))
-
-    outputDir = layout.buildDirectory.file("processedResources/jvm/main/assets").get().asFile
-    setSourceDir(file("$projectDir/src/jvmMain/sass"))
-    loadPath(layout.buildDirectory.file("js/node_modules").get().asFile)
-
-    style = compressed
-}
-
 val webpack = tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
     sourceMaps = true
     outputDirectory.set(layout.buildDirectory.file("processedResources/jvm/main/assets").get().asFile)
@@ -280,8 +270,18 @@ val webpack = tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
     }
 }
 
+val sass = tasks.getByName<CompileSass>("compileSass") {
+    dependsOn(tasks.getByName("kotlinNpmInstall"), webpack)
+
+    outputDir = layout.buildDirectory.file("processedResources/jvm/main/assets").get().asFile
+    setSourceDir(file("$projectDir/src/jvmMain/sass"))
+    loadPath(layout.buildDirectory.file("js/node_modules").get().asFile)
+
+    style = compressed
+}
+
 tasks.getByName<Task>("jvmProcessResources") {
-    dependsOn(webpack, sass)
+    dependsOn(sass)
 }
 
 tasks.withType<AbstractCopyTask> {
