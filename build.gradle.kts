@@ -262,7 +262,7 @@ flyway {
     locations = locs.toTypedArray()
 }
 
-tasks.getByName<CompileSass>("compileSass") {
+val sass = tasks.getByName<CompileSass>("compileSass") {
     dependsOn(tasks.getByName("kotlinNpmInstall"))
 
     outputDir = layout.buildDirectory.file("processedResources/jvm/main/assets").get().asFile
@@ -281,7 +281,7 @@ val webpack = tasks.getByName<KotlinWebpack>("jsBrowserProductionWebpack") {
 }
 
 tasks.getByName<Task>("jvmProcessResources") {
-    dependsOn(webpack)
+    dependsOn(webpack, sass)
 }
 
 tasks.withType<AbstractCopyTask> {
@@ -292,8 +292,8 @@ tasks.withType<AbstractArchiveTask> {
     isPreserveFileTimestamps = true
 }
 
-tasks.getByName<Jar>("jvmJar") {
-    dependsOn(webpack, tasks.getByName("compileSass"))
+val jvmJar = tasks.getByName<Jar>("jvmJar") {
+    dependsOn(webpack, sass)
 
     from(webpack.outputDirectory.get())
     listOf(webpack.mainOutputFileName.get(), webpack.mainOutputFileName.get() + ".map", "modules.js", "modules.js.map").forEach {
@@ -301,18 +301,18 @@ tasks.getByName<Jar>("jvmJar") {
     }
 }
 
-tasks.register<JavaExec>("installPlaywrightBrowsers") {
+val browsers = tasks.register<JavaExec>("installPlaywrightBrowsers") {
     mainClass.set("com.microsoft.playwright.CLI")
     classpath(sourceSets.named("jvmTest").get().runtimeClasspath)
     args = listOf("install", "chromium")
 }
 
 tasks.getByName<Test>("jvmTest") {
-    dependsOn(tasks.getByName("jsBrowserProductionWebpack"), tasks.getByName("compileSass"), tasks.getByName("installPlaywrightBrowsers"))
+    dependsOn(webpack, sass, browsers)
     environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
 }
 
 tasks.getByName<JavaExec>("runJvm") {
-    dependsOn(tasks.getByName<Jar>("jvmJar"))
-    classpath(tasks.getByName<Jar>("jvmJar"))
+    dependsOn(jvmJar)
+    classpath(jvmJar)
 }
