@@ -1,5 +1,6 @@
 import io.miret.etienne.gradle.sass.CompileSass
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
@@ -10,7 +11,7 @@ plugins {
     id("io.miret.etienne.sass") version "1.1.2"
     id("org.flywaydb.flyway") version "9.2.2"
     id("org.jlleitschuh.gradle.ktlint") version "11.5.1"
-    application
+    distribution
 }
 
 val exposedVersion: String by project
@@ -80,7 +81,13 @@ kotlin {
         testRuns["test"].executionTask.configure {
             useJUnit()
         }
-        withJava()
+
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        binaries {
+            executable {
+                mainClass.set("io.beatmaps.ServerKt")
+            }
+        }
     }
     js(IR) {
         browser {
@@ -244,10 +251,6 @@ kotlin {
     }
 }
 
-application {
-    mainClass.set("io.beatmaps.ServerKt")
-}
-
 flyway {
     url = "jdbc:postgresql://localhost:5432/beatmaps"
     user = "beatmaps"
@@ -298,7 +301,7 @@ tasks.getByName<Jar>("jvmJar") {
 
 tasks.register<JavaExec>("installPlaywrightBrowsers") {
     mainClass.set("com.microsoft.playwright.CLI")
-    classpath(sourceSets.test.get().runtimeClasspath)
+    classpath(sourceSets.named("jvmTest").get().runtimeClasspath)
     args = listOf("install", "chromium")
 }
 
@@ -307,18 +310,7 @@ tasks.getByName<Test>("jvmTest") {
     environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
 }
 
-tasks.getByName<JavaExec>("run") {
+tasks.getByName<JavaExec>("runJvm") {
     dependsOn(tasks.getByName<Jar>("jvmJar"))
     classpath(tasks.getByName<Jar>("jvmJar"))
-}
-
-distributions {
-    main {
-        contents {
-            from(layout.buildDirectory.file("libs").get().asFile) {
-                rename("${rootProject.name}-jvm", rootProject.name)
-                into("lib")
-            }
-        }
-    }
 }

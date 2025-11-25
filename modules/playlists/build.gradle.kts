@@ -9,7 +9,6 @@ kotlin {
         testRuns["test"].executionTask.configure {
             useJUnit()
         }
-        withJava()
     }
 
     sourceSets {
