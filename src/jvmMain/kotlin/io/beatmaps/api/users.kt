@@ -110,8 +110,10 @@ import kotlinx.datetime.toKotlinInstant
 import kotlinx.serialization.UseSerializers
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.exceptions.ExposedSQLException
+import org.jetbrains.exposed.sql.Coalesce
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Expression
+import org.jetbrains.exposed.sql.ExpressionWithColumnType
 import org.jetbrains.exposed.sql.IntegerColumnType
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
@@ -126,6 +128,7 @@ import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.intLiteral
+import org.jetbrains.exposed.sql.longLiteral
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.min
 import org.jetbrains.exposed.sql.or
@@ -135,6 +138,7 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.union
 import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.sql.wrapAsExpression
 import org.litote.kmongo.and
 import org.litote.kmongo.descending
 import org.litote.kmongo.div
@@ -1241,12 +1245,26 @@ fun Route.userRoute(client: HttpClient) {
         )
     }
 
-    fun statsForUser(user: UserDao) = transaction {
+    suspend fun statsForUser(user: UserDao) = newSuspendedTransaction {
+        val countField = Playlist.id.count().alias("plcnt")
+        val playlistSubquery = Playlist
+            .select(countField, Playlist.owner)
+            .where {
+                Playlist.deletedAt.isNull() and (Playlist.type inList EPlaylistType.publicTypes)
+            }
+            .groupBy(Playlist.owner)
+            .alias("playlistCount")
+
+        val countCoalesce = Coalesce(playlistSubquery[countField] as ExpressionWithColumnType<Long>, longLiteral(0))
         val statTmp =
-            Beatmap
+            User
+                .join(Beatmap, JoinType.LEFT, User.id, Beatmap.uploader) {
+                    Beatmap.deletedAt.isNull()
+                }
                 .join(Versions, JoinType.INNER, Beatmap.id, Versions.mapId) {
                     Versions.state eq EMapState.Published
                 }
+                .join(playlistSubquery, JoinType.LEFT, Beatmap.uploader, playlistSubquery[Playlist.owner])
                 .select(
                     Beatmap.id.count(),
                     Beatmap.upVotesInt.sum(),
@@ -1256,10 +1274,13 @@ fun Route.userRoute(client: HttpClient) {
                     Beatmap.duration.avg(0),
                     countWithFilter(Beatmap.ranked or Beatmap.blRanked),
                     Beatmap.uploaded.min(),
-                    Beatmap.uploaded.max()
+                    Beatmap.uploaded.max(),
+                    countCoalesce
                 ).where {
-                    (Beatmap.uploader eq user.id) and (Beatmap.deletedAt.isNull())
-                }.first().let {
+                    User.active and (User.id eq user.id)
+                }
+                .groupBy(Beatmap.uploader, User.id, playlistSubquery[countField])
+                .firstOrNull()?.let {
                     UserStats(
                         it[Beatmap.upVotesInt.sum()] ?: 0,
                         it[Beatmap.downVotesInt.sum()] ?: 0,
@@ -1269,7 +1290,8 @@ fun Route.userRoute(client: HttpClient) {
                         it[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f,
                         it[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
                         it[Beatmap.uploaded.min()]?.toKotlinInstant(),
-                        it[Beatmap.uploaded.max()]?.toKotlinInstant()
+                        it[Beatmap.uploaded.max()]?.toKotlinInstant(),
+                        totalPlaylists = it[countCoalesce].toInt()
                     )
                 }
 
@@ -1294,7 +1316,7 @@ fun Route.userRoute(client: HttpClient) {
                 )
             }
 
-        statTmp.copy(diffStats = diffStats)
+        statTmp?.copy(diffStats = diffStats)
     }
 
     fun userBy(where: SqlExpressionBuilder.() -> Op<Boolean>) =
@@ -1302,7 +1324,7 @@ fun Route.userRoute(client: HttpClient) {
 
     get<UsersApi.Me> {
         requireAuthorization { _, sess ->
-            val detail = transaction {
+            val detail = newSuspendedTransaction {
                 val user = userBy {
                     User.id eq sess.userId
                 }
@@ -1326,7 +1348,7 @@ fun Route.userRoute(client: HttpClient) {
 
     getWithOptions<MapsApi.UserId>("Get user info".responds(ok<UserDetail>(), notFound())) {
         optionalAuthorization(OauthScope.FOLLOW) { _, sess ->
-            val userDetail = transaction {
+            val userDetail = newSuspendedTransaction {
                 val user = userBy {
                     (User.id eq it.id?.orNull()) and User.active
                 }
@@ -1363,7 +1385,7 @@ fun Route.userRoute(client: HttpClient) {
     }
 
     getWithOptions<MapsApi.UserName>("Get user info by name".responds(ok<UserDetail>(), notFound())) {
-        val userDetail = transaction {
+        val userDetail = newSuspendedTransaction {
             val user = userBy {
                 (User.uniqueName eq it.name) and User.active
             }

@@ -544,7 +544,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                             }
                         }
                         userDetail?.stats?.let {
-                            if (it.totalMaps != 0) {
+                            if (it.totalMaps != 0 || it.totalPlaylists != 0) {
                                 table {
                                     className = ClassName("table table-dark")
                                     thead {
@@ -552,6 +552,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                                             th { +"Maps" }
                                             th { +"Average Rating" }
                                             th { +"Difficulty Spread" }
+                                            th { +"Playlists" }
                                         }
                                     }
                                     tbody {
@@ -623,6 +624,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                                                     }
                                                 }
                                             }
+                                            td { +"${it.totalPlaylists}" }
                                         }
                                     }
                                 }

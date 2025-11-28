@@ -76,6 +76,7 @@
     <field name="firstUpload" type="pdate" uninvertible="false" indexed="true" stored="true"/>
     <field name="lastUpload" type="pdate" uninvertible="false" indexed="true" stored="true"/>
     <field name="mapAge" type="pint" uninvertible="false" indexed="true" stored="true"/>
+    <field name="totalPlaylists" type="pint" uninvertible="false" indexed="true" stored="true"/>
     <copyField source="description" dest="_text_"/>
     <copyField source="name" dest="_text_"/>
     <copyField source="description" dest="description_en"/>

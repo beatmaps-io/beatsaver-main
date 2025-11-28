@@ -5,6 +5,7 @@ import io.beatmaps.common.amqp.consumeAck
 import io.beatmaps.common.amqp.rabbitOptional
 import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.db.arrayAgg
 import io.beatmaps.common.db.boolOr
 import io.beatmaps.common.db.countWithFilter
@@ -31,12 +32,15 @@ import io.beatmaps.common.solr.insertMany
 import io.ktor.server.application.Application
 import kotlinx.datetime.toKotlinInstant
 import kotlinx.serialization.builtins.serializer
+import org.jetbrains.exposed.sql.Coalesce
+import org.jetbrains.exposed.sql.ExpressionWithColumnType
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.count
+import org.jetbrains.exposed.sql.longLiteral
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.min
 import org.jetbrains.exposed.sql.not
@@ -160,11 +164,24 @@ object SolrImporter {
 
     private fun triggerUserInfo(updateUserId: Int) {
         transaction {
+            val countField = Playlist.id.count()
+            val playlistSubquery = Playlist
+                .select(countField, Playlist.owner)
+                .where {
+                    Playlist.deletedAt.isNull() and (Playlist.type inList EPlaylistType.publicTypes)
+                }
+                .groupBy(Playlist.owner)
+                .alias("playlistCount")
+
+            val countCoalesce = Coalesce(playlistSubquery[countField] as ExpressionWithColumnType<Long>, longLiteral(0))
             val (user, stats) = User
                 .join(Beatmap, JoinType.LEFT, User.id, Beatmap.uploader) {
                     Beatmap.deletedAt.isNull()
                 }
-                .join(Versions, JoinType.LEFT, onColumn = Beatmap.id, otherColumn = Versions.mapId, additionalConstraint = { Versions.state eq EMapState.Published })
+                .join(Versions, JoinType.LEFT, Beatmap.id, Versions.mapId) {
+                    Versions.state eq EMapState.Published
+                }
+                .join(playlistSubquery, JoinType.LEFT, User.id, playlistSubquery[Playlist.owner])
                 .select(
                     User.columns +
                         Beatmap.uploader +
@@ -176,12 +193,13 @@ object SolrImporter {
                         Beatmap.duration.avg(0) +
                         countWithFilter(Beatmap.ranked or Beatmap.blRanked) +
                         Beatmap.uploaded.min() +
-                        Beatmap.uploaded.max()
+                        Beatmap.uploaded.max() +
+                        countCoalesce
                 )
                 .where {
                     User.id eq updateUserId and User.active
                 }
-                .groupBy(Beatmap.uploader, User.id)
+                .groupBy(Beatmap.uploader, User.id, playlistSubquery[countField])
                 .singleOrNull()
                 ?.let { row ->
                     UserDao.wrapRow(row) to UserStats(
@@ -193,7 +211,8 @@ object SolrImporter {
                         row[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f,
                         row[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
                         row[Beatmap.uploaded.min()]?.toKotlinInstant(),
-                        row[Beatmap.uploaded.max()]?.toKotlinInstant()
+                        row[Beatmap.uploaded.max()]?.toKotlinInstant(),
+                        totalPlaylists = row[countCoalesce].toInt()
                     )
                 } ?: (null to null)
 
@@ -223,6 +242,7 @@ object SolrImporter {
                     it[rankedMaps] = stats.rankedMaps
                     it[firstUpload] = stats.firstUpload
                     it[lastUpload] = stats.lastUpload
+                    it[totalPlaylists] = stats.totalPlaylists
                     it[mapAge] = mapAgeValue
                 }
             }

@@ -7,11 +7,14 @@
                         u.&quot;verifiedMapper&quot;, COALESCE(stats.avgbpm, 0) &quot;avgBpm&quot;, COALESCE(stats.avgduration, 0) &quot;avgDuration&quot;,
                         COALESCE(stats.upvote, 0) &quot;totalUpvotes&quot;, COALESCE(stats.downvote, 0) &quot;totalDownvotes&quot;, COALESCE(stats.avgscore, 0) &quot;avgScore&quot;,
                         COALESCE(stats.total, 0) &quot;totalMaps&quot;, COALESCE(stats.ranked, 0) &quot;rankedMaps&quot;, stats.min &quot;firstUpload&quot;,
-                        stats.max &quot;lastUpload&quot;, COALESCE(DATE_PART('DAY', stats.max - stats.min), 0) &quot;mapAge&quot;
+                        stats.max &quot;lastUpload&quot;, COALESCE(DATE_PART('DAY', stats.max - stats.min), 0) &quot;mapAge&quot;, COALESCE(pstats.total, 0) totalPlaylists
                     FROM uploader u
                         LEFT JOIN (
                             SELECT SUM(upvote) upvote, SUM(downvote) downvote, ROUND(AVG(score) * 100, 1) avgscore, ROUND(AVG(v.duration)::numeric, 2) avgduration, ROUND(AVG(v.bpm)::numeric, 2) avgbpm, COUNT(*) total, COUNT(*) FILTER (WHERE b.ranked OR b.&quot;blRanked&quot;) ranked, MIN(uploaded), MAX(uploaded), b.uploader FROM beatmap b INNER JOIN versions v ON b.&quot;mapId&quot; = v.&quot;mapId&quot; AND v.state = 'Published' WHERE b.&quot;deletedAt&quot; IS NULL GROUP BY b.uploader
                         ) stats ON stats.uploader = u.id
+                        LEFT JOIN (
+                            SELECT COUNT(*) total, p.owner FROM playlist p WHERE p.type IN ('Public', 'Search') AND p.&quot;deletedAt&quot; IS NULL GROUP BY p.owner
+                        ) pstats ON pstats.owner = u.id
                     WHERE active"
                 deltaQuery="SELECT id FROM uploader WHERE active AND
                                 GREATEST(&quot;updatedAt&quot;, &quot;statsUpdatedAt&quot;) >= '${dataimporter.last_index_time}'"
@@ -20,11 +23,14 @@
                         u.&quot;verifiedMapper&quot;, COALESCE(stats.avgbpm, 0) &quot;avgBpm&quot;, COALESCE(stats.avgduration, 0) &quot;avgDuration&quot;,
                         COALESCE(stats.upvote, 0) &quot;totalUpvotes&quot;, COALESCE(stats.downvote, 0) &quot;totalDownvotes&quot;, COALESCE(stats.avgscore, 0) &quot;avgScore&quot;,
                         COALESCE(stats.total, 0) &quot;totalMaps&quot;, COALESCE(stats.ranked, 0) &quot;rankedMaps&quot;, stats.min &quot;firstUpload&quot;,
-                        stats.max &quot;lastUpload&quot;, COALESCE(DATE_PART('DAY', stats.max - stats.min), 0) &quot;mapAge&quot;
+                        stats.max &quot;lastUpload&quot;, COALESCE(DATE_PART('DAY', stats.max - stats.min), 0) &quot;mapAge&quot;, COALESCE(pstats.total, 0) totalPlaylists
                     FROM uploader u
                         LEFT JOIN (
                             SELECT SUM(upvote) upvote, SUM(downvote) downvote, ROUND(AVG(score) * 100, 1) avgscore, ROUND(AVG(v.duration)::numeric, 2) avgduration, ROUND(AVG(v.bpm)::numeric, 2) avgbpm, COUNT(*) total, COUNT(*) FILTER (WHERE b.ranked OR b.&quot;blRanked&quot;) ranked, MIN(uploaded), MAX(uploaded), b.uploader FROM beatmap b INNER JOIN versions v ON b.&quot;mapId&quot; = v.&quot;mapId&quot; AND v.state = 'Published' WHERE b.&quot;deletedAt&quot; IS NULL GROUP BY b.uploader
                         ) stats ON stats.uploader = u.id
+                        LEFT JOIN (
+                            SELECT COUNT(*) total, p.owner FROM playlist p WHERE p.type IN ('Public', 'Search') AND p.&quot;deletedAt&quot; IS NULL GROUP BY p.owner
+                        ) pstats ON pstats.owner = u.id
                     WHERE active AND u.id = ${dataimporter.delta.id}"
                 deletedPkQuery="
                     SELECT id FROM uploader
@@ -51,6 +57,7 @@
             <field column="firstUpload" name="firstUpload"></field>
             <field column="lastUpload" name="lastUpload"></field>
             <field column="mapAge" name="mapAge"></field>
+            <field column="totalPlaylists" name="totalPlaylists"></field>
         </entity>
     </document>
 </dataConfig>
