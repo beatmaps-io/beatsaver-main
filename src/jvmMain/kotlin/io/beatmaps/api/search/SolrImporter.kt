@@ -156,7 +156,7 @@ object SolrImporter {
 
     private fun triggerUserInfo(updateUserId: Int) {
         transaction {
-            val countField = Playlist.id.count()
+            val countField = Playlist.id.count().alias("plcnt")
             val playlistSubquery = Playlist
                 .select(countField, Playlist.owner)
                 .where {
