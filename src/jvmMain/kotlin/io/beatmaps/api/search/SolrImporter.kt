@@ -4,11 +4,9 @@ import io.beatmaps.api.UserStats
 import io.beatmaps.common.amqp.consumeAck
 import io.beatmaps.common.amqp.rabbitOptional
 import io.beatmaps.common.api.ECharacteristic
-import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.db.arrayAgg
 import io.beatmaps.common.db.boolOr
-import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.Playlist
@@ -16,7 +14,6 @@ import io.beatmaps.common.dbo.PlaylistDao
 import io.beatmaps.common.dbo.PlaylistMap
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
-import io.beatmaps.common.dbo.Versions
 import io.beatmaps.common.dbo.collaboratorAlias
 import io.beatmaps.common.dbo.complexToBeatmap
 import io.beatmaps.common.dbo.joinCollaborators
@@ -38,15 +35,10 @@ import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.longLiteral
-import org.jetbrains.exposed.sql.max
-import org.jetbrains.exposed.sql.min
 import org.jetbrains.exposed.sql.not
-import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.lang.Integer.toHexString
 
@@ -173,45 +165,37 @@ object SolrImporter {
                 .groupBy(Playlist.owner)
                 .alias("playlistCount")
 
-            val countCoalesce = Coalesce(playlistSubquery[countField] as ExpressionWithColumnType<Long>, longLiteral(0))
-            val (user, stats) = User
-                .join(Beatmap, JoinType.LEFT, User.id, Beatmap.uploader) {
+            val beatmapSubquery = Beatmap
+                .joinVersions()
+                .select(Beatmap.Stats.allColumns + Beatmap.uploader)
+                .groupBy(Beatmap.uploader)
+                .where {
                     Beatmap.deletedAt.isNull()
                 }
-                .join(Versions, JoinType.LEFT, Beatmap.id, Versions.mapId) {
-                    Versions.state eq EMapState.Published
-                }
+                .alias("beatmapStats")
+
+            val beatmapSubqueryFields = Beatmap.Stats.allColumns.map { beatmapSubquery[it] }
+            val countCoalesce = Coalesce(playlistSubquery[countField] as ExpressionWithColumnType<Long>, longLiteral(0))
+            val (user, stats) = User
+                .join(beatmapSubquery, JoinType.LEFT, User.id, beatmapSubquery[Beatmap.uploader])
                 .join(playlistSubquery, JoinType.LEFT, User.id, playlistSubquery[Playlist.owner])
-                .select(
-                    User.columns +
-                        Beatmap.uploader +
-                        Beatmap.id.count() +
-                        Beatmap.upVotesInt.sum() +
-                        Beatmap.downVotesInt.sum() +
-                        Beatmap.bpm.avg() +
-                        Beatmap.score.avg(3) +
-                        Beatmap.duration.avg(0) +
-                        countWithFilter(Beatmap.ranked or Beatmap.blRanked) +
-                        Beatmap.uploaded.min() +
-                        Beatmap.uploaded.max() +
-                        countCoalesce
-                )
+                .select(User.columns + beatmapSubqueryFields + countCoalesce)
                 .where {
                     User.id eq updateUserId and User.active
                 }
-                .groupBy(Beatmap.uploader, User.id, playlistSubquery[countField])
+                .groupBy(User.id, playlistSubquery[countField], *beatmapSubqueryFields.toTypedArray())
                 .singleOrNull()
                 ?.let { row ->
                     UserDao.wrapRow(row) to UserStats(
-                        row[Beatmap.upVotesInt.sum()] ?: 0,
-                        row[Beatmap.downVotesInt.sum()] ?: 0,
-                        row[Beatmap.id.count()].toInt(),
-                        row[countWithFilter(Beatmap.ranked or Beatmap.blRanked)],
-                        row[Beatmap.bpm.avg()]?.toFloat() ?: 0f,
-                        row[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f,
-                        row[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
-                        row[Beatmap.uploaded.min()]?.toKotlinInstant(),
-                        row[Beatmap.uploaded.max()]?.toKotlinInstant(),
+                        row[beatmapSubquery[Beatmap.Stats.upVotes]] ?: 0,
+                        row[beatmapSubquery[Beatmap.Stats.downVotes]] ?: 0,
+                        row[beatmapSubquery[Beatmap.Stats.count]] ?: 0,
+                        row[beatmapSubquery[Beatmap.Stats.rankedCount]] ?: 0,
+                        row[beatmapSubquery[Beatmap.Stats.bpm]]?.toFloat() ?: 0f,
+                        row[beatmapSubquery[Beatmap.Stats.score]]?.movePointRight(2)?.toFloat() ?: 0f,
+                        row[beatmapSubquery[Beatmap.Stats.duration]]?.toFloat() ?: 0f,
+                        row[beatmapSubquery[Beatmap.Stats.minUpload]]?.toKotlinInstant(),
+                        row[beatmapSubquery[Beatmap.Stats.maxUpload]]?.toKotlinInstant(),
                         totalPlaylists = row[countCoalesce].toInt()
                     )
                 } ?: (null to null)

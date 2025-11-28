@@ -404,7 +404,7 @@ fun followData(uploaderId: Int, userId: Int?): UserFollowData {
             Follows.following and (userFilter or followerFilter)
         }
         .single().let {
-            UserFollowData(it[userColumn], it[followerColumn], it[followingColumn], it[uploadColumn], it[curationColumn], it[collabColumn])
+            UserFollowData(it[userColumn] ?: 0, it[followerColumn], it[followingColumn], it[uploadColumn], it[curationColumn], it[collabColumn])
         }
 }
 
@@ -1172,7 +1172,7 @@ fun Route.userRoute(client: HttpClient) {
                         dao.upvotes,
                         it[Beatmap.downVotesInt.sum()] ?: 0,
                         it[Beatmap.id.count()].toInt(),
-                        it[countWithFilter(Beatmap.ranked or Beatmap.blRanked)],
+                        it[countWithFilter(Beatmap.ranked or Beatmap.blRanked)] ?: 0,
                         it[Beatmap.bpm.avg()]?.toFloat() ?: 0f,
                         it[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f,
                         it[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
@@ -1254,43 +1254,38 @@ fun Route.userRoute(client: HttpClient) {
             .groupBy(Playlist.owner)
             .alias("playlistCount")
 
+        val beatmapSubquery = Beatmap
+            .joinVersions()
+            .select(Beatmap.Stats.allColumns + Beatmap.uploader)
+            .groupBy(Beatmap.uploader)
+            .where {
+                Beatmap.deletedAt.isNull()
+            }
+            .alias("beatmapStats")
+
+        val beatmapSubqueryFields = Beatmap.Stats.allColumns.map { beatmapSubquery[it] }
         val countCoalesce = Coalesce(playlistSubquery[countField] as ExpressionWithColumnType<Long>, longLiteral(0))
         val statTmp =
             User
-                .join(Beatmap, JoinType.LEFT, User.id, Beatmap.uploader) {
-                    Beatmap.deletedAt.isNull()
-                }
-                .join(Versions, JoinType.INNER, Beatmap.id, Versions.mapId) {
-                    Versions.state eq EMapState.Published
-                }
-                .join(playlistSubquery, JoinType.LEFT, Beatmap.uploader, playlistSubquery[Playlist.owner])
-                .select(
-                    Beatmap.id.count(),
-                    Beatmap.upVotesInt.sum(),
-                    Beatmap.downVotesInt.sum(),
-                    Beatmap.bpm.avg(),
-                    Beatmap.score.avg(3),
-                    Beatmap.duration.avg(0),
-                    countWithFilter(Beatmap.ranked or Beatmap.blRanked),
-                    Beatmap.uploaded.min(),
-                    Beatmap.uploaded.max(),
-                    countCoalesce
-                ).where {
+                .join(beatmapSubquery, JoinType.LEFT, User.id, beatmapSubquery[Beatmap.uploader])
+                .join(playlistSubquery, JoinType.LEFT, User.id, playlistSubquery[Playlist.owner])
+                .select(beatmapSubqueryFields + countCoalesce)
+                .where {
                     User.active and (User.id eq user.id)
                 }
-                .groupBy(Beatmap.uploader, User.id, playlistSubquery[countField])
-                .firstOrNull()?.let {
+                .groupBy(User.id, playlistSubquery[countField], *beatmapSubqueryFields.toTypedArray())
+                .firstOrNull()?.let { row ->
                     UserStats(
-                        it[Beatmap.upVotesInt.sum()] ?: 0,
-                        it[Beatmap.downVotesInt.sum()] ?: 0,
-                        it[Beatmap.id.count()].toInt(),
-                        it[countWithFilter(Beatmap.ranked or Beatmap.blRanked)],
-                        it[Beatmap.bpm.avg()]?.toFloat() ?: 0f,
-                        it[Beatmap.score.avg(3)]?.movePointRight(2)?.toFloat() ?: 0f,
-                        it[Beatmap.duration.avg(0)]?.toFloat() ?: 0f,
-                        it[Beatmap.uploaded.min()]?.toKotlinInstant(),
-                        it[Beatmap.uploaded.max()]?.toKotlinInstant(),
-                        totalPlaylists = it[countCoalesce].toInt()
+                        row[beatmapSubquery[Beatmap.Stats.upVotes]] ?: 0,
+                        row[beatmapSubquery[Beatmap.Stats.downVotes]] ?: 0,
+                        row[beatmapSubquery[Beatmap.Stats.count]] ?: 0,
+                        row[beatmapSubquery[Beatmap.Stats.rankedCount]] ?: 0,
+                        row[beatmapSubquery[Beatmap.Stats.bpm]]?.toFloat() ?: 0f,
+                        row[beatmapSubquery[Beatmap.Stats.score]]?.movePointRight(2)?.toFloat() ?: 0f,
+                        row[beatmapSubquery[Beatmap.Stats.duration]]?.toFloat() ?: 0f,
+                        row[beatmapSubquery[Beatmap.Stats.minUpload]]?.toKotlinInstant(),
+                        row[beatmapSubquery[Beatmap.Stats.maxUpload]]?.toKotlinInstant(),
+                        totalPlaylists = row[countCoalesce].toInt()
                     )
                 }
 
