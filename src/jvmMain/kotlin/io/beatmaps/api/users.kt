@@ -138,7 +138,6 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.union
 import org.jetbrains.exposed.sql.update
-import org.jetbrains.exposed.sql.wrapAsExpression
 import org.litote.kmongo.and
 import org.litote.kmongo.descending
 import org.litote.kmongo.div

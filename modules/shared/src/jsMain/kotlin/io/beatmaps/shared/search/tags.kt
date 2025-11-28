@@ -22,7 +22,6 @@ import web.events.addEventListener
 import web.events.removeEventListener
 import web.html.InputType
 import web.uievents.KeyboardEvent
-import web.window.window
 
 external interface TagsProps : Props {
     var default: MapTagSet?
@@ -84,13 +83,13 @@ val tags = fcmemo<TagsProps>("tags") { props ->
                                 val newTagsA = if (shiftHeld.current != true) {
                                     emptySet()
                                 } else {
-                                    selected[altHeld.current == true]?.minus( tags) ?: emptySet()
+                                    selected[altHeld.current == true]?.minus(tags) ?: emptySet()
                                 }
 
                                 val newTagsB = if (shiftHeld.current != true) {
                                     tags
                                 } else {
-                                    selected[altHeld.current != true]?.plus( tags) ?: emptySet()
+                                    selected[altHeld.current != true]?.plus(tags) ?: emptySet()
                                 }
 
                                 mapOf(

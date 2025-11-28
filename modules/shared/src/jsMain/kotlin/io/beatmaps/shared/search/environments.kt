@@ -23,7 +23,6 @@ import web.events.addEventListener
 import web.events.removeEventListener
 import web.html.InputType
 import web.uievents.KeyboardEvent
-import web.window.window
 
 external interface EnvironmentsProps : Props {
     var default: EnvironmentSet?
