@@ -73,7 +73,8 @@ data class UserStats(
     val avgDuration: Float = 0f,
     val firstUpload: Instant? = null,
     val lastUpload: Instant? = null,
-    val diffStats: UserDiffStats? = null
+    val diffStats: UserDiffStats? = null,
+    val totalPlaylists: Int = 0
 )
 
 @Serializable

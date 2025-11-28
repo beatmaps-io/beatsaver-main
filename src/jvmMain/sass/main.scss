@@ -775,6 +775,7 @@ table.search-results {
         flex-wrap: wrap;
         width: 358px;
         align-content: start;
+        user-select: none;
         input {
           accent-color: $primary;
           margin-inline-end: 0.5rem;

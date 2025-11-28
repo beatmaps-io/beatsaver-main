@@ -23,7 +23,6 @@ import web.events.addEventListener
 import web.events.removeEventListener
 import web.html.InputType
 import web.uievents.KeyboardEvent
-import web.window.window
 
 external interface EnvironmentsProps : Props {
     var default: EnvironmentSet?
@@ -82,7 +81,6 @@ val environments = fcmemo<EnvironmentsProps>("environments") { props ->
                         checked = selected.containsAll(envs)
 
                         onChange = { ev ->
-                            console.log("onChange", ev.currentTarget.checked)
                             if (ev.currentTarget.checked) {
                                 updateSelected(selected + envs)
                             } else {
@@ -114,7 +112,6 @@ val environments = fcmemo<EnvironmentsProps>("environments") { props ->
                         }
 
                     updateSelected(newSelected)
-                    window.getSelection()?.removeAllRanges()
                 }
 
                 span {
