@@ -82,7 +82,6 @@ val environments = fcmemo<EnvironmentsProps>("environments") { props ->
                         checked = selected.containsAll(envs)
 
                         onChange = { ev ->
-                            console.log("onChange", ev.currentTarget.checked)
                             if (ev.currentTarget.checked) {
                                 updateSelected(selected + envs)
                             } else {
@@ -114,7 +113,6 @@ val environments = fcmemo<EnvironmentsProps>("environments") { props ->
                         }
 
                     updateSelected(newSelected)
-                    window.getSelection()?.removeAllRanges()
                 }
 
                 span {

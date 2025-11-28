@@ -9,6 +9,9 @@ import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.h4
+import react.dom.html.ReactHTML.h5
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
 import react.useEffect
 import react.useEffectOnceWithCleanup
 import react.useRef
@@ -17,6 +20,7 @@ import web.cssom.ClassName
 import web.dom.document
 import web.events.addEventListener
 import web.events.removeEventListener
+import web.html.InputType
 import web.uievents.KeyboardEvent
 import web.window.window
 
@@ -42,6 +46,11 @@ val tags = fcmemo<TagsProps>("tags") { props ->
         props.default?.let { setSelected(it) }
     }
 
+    fun updateSelected(newSelected: MapTagSet) {
+        setSelected(newSelected)
+        props.callback?.invoke(newSelected)
+    }
+
     useEffectOnceWithCleanup {
         document.addEventListener(KeyboardEvent.KEY_UP, handleShift)
         document.addEventListener(KeyboardEvent.KEY_DOWN, handleShift)
@@ -60,8 +69,48 @@ val tags = fcmemo<TagsProps>("tags") { props ->
         val highlightAll = props.highlightOnEmpty == true && selected.all { it.value.isEmpty() }
         MapTag.sorted.fold(MapTagType.None) { prev, it ->
             if (it.type != prev) {
-                div {
-                    className = ClassName("break")
+                h5 {
+                    val id = "tag-cat-${it.type.name.lowercase()}"
+                    input {
+                        type = InputType.checkbox
+                        this.id = id
+                        val tags = MapTag.entries.filter { tag -> tag.type == it.type }.toSet()
+                        val allSelected = (selected[true] ?: emptySet()).plus(selected[false] ?: emptySet()).toSet()
+
+                        checked = allSelected.containsAll(tags)
+
+                        onChange = { ev ->
+                            val newSelected = if (ev.currentTarget.checked) {
+                                val newTagsA = if (shiftHeld.current != true) {
+                                    emptySet()
+                                } else {
+                                    selected[altHeld.current == true]?.minus( tags) ?: emptySet()
+                                }
+
+                                val newTagsB = if (shiftHeld.current != true) {
+                                    tags
+                                } else {
+                                    selected[altHeld.current != true]?.plus( tags) ?: emptySet()
+                                }
+
+                                mapOf(
+                                    (altHeld.current == true) to newTagsA,
+                                    (altHeld.current != true) to newTagsB
+                                )
+                            } else {
+                                mapOf(
+                                    false to (selected[false]?.minus(tags) ?: emptySet()),
+                                    true to (selected[true]?.minus(tags) ?: emptySet())
+                                )
+                            }
+
+                            updateSelected(newSelected)
+                        }
+                    }
+                    label {
+                        htmlFor = id
+                        +it.type.name
+                    }
                 }
             }
 
@@ -72,7 +121,7 @@ val tags = fcmemo<TagsProps>("tags") { props ->
                     tag = it
 
                     onClick = { _ ->
-                        val t = selected[altHeld.current != true] ?: setOf()
+                        val t = selected[altHeld.current != true] ?: emptySet()
 
                         val shouldAdd = !t.contains(it)
 
@@ -86,12 +135,10 @@ val tags = fcmemo<TagsProps>("tags") { props ->
 
                         val newSelected = mapOf(
                             (altHeld.current != true) to newTags,
-                            (altHeld.current == true) to (selected[altHeld.current]?.let { x -> x - it } ?: setOf())
+                            (altHeld.current == true) to (selected[altHeld.current]?.minus(it) ?: emptySet())
                         )
 
-                        setSelected(newSelected)
-                        props.callback?.invoke(newSelected)
-                        window.getSelection()?.removeAllRanges()
+                        updateSelected(newSelected)
                     }
                 }
             }
