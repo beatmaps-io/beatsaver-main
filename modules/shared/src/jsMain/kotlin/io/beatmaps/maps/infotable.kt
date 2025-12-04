@@ -110,14 +110,14 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
             }
         }
 
-    fun ChildrenBuilder.infoItem(label: String, info: String, href: String? = null) =
+    fun ChildrenBuilder.infoItem(label: String, info: String, href: String? = null, title: String? = null) =
         if (info.isNotBlank()) {
             href?.let {
                 routeLink(href, className = itemClasses) {
                     +label
                     span {
                         className = ClassName("text-truncate ms-4")
-                        title = info
+                        this.title = title ?: info
                         +info
                     }
                 }
@@ -126,6 +126,7 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
                 +label
                 span {
                     className = ClassName("text-truncate ms-4")
+                    this.title = title ?: info
                     +info
                 }
             }
@@ -165,7 +166,7 @@ val infoTable = fcmemo<InfoTableProps>("infoTable") { props ->
         }
 
         props.map.curator?.let { curator ->
-            infoItem("Curated by", curator.name, curator.profileLink(ProfileTab.CURATED))
+            infoItem("Curated by", curator.name, curator.profileLink(ProfileTab.CURATED), props.map.curatedAt.toString())
         }
 
         if (props.map.tags.isNotEmpty()) {
