@@ -300,7 +300,7 @@ val playlistPage = fcmemo<Props>("playlistPage") { props ->
                             +"Created by"
                             span {
                                 className = ClassName("text-truncate ms-4")
-                                title = pl.owner.name
+                                title = pl.createdAt.toString()
                                 +pl.owner.name
                             }
                         }
@@ -309,6 +309,7 @@ val playlistPage = fcmemo<Props>("playlistPage") { props ->
                                 +"Curated by"
                                 span {
                                     className = ClassName("text-truncate ms-4")
+                                    title = pl.curatedAt.toString()
                                     +curator.name
                                 }
                             }
