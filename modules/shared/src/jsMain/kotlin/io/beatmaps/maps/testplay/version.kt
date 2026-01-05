@@ -12,6 +12,7 @@ import io.beatmaps.api.StateUpdate
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.shared.ModalButton
 import io.beatmaps.shared.ModalData
+import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.modalContext
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.textToContent
@@ -57,6 +58,7 @@ val version = fcmemo<VersionProps>("version") { props ->
     val (scheduledAt, setScheduledAt) = useState(props.scheduledAt)
     val scheduleAt = useRef<Instant>()
     val alert = useRef(true)
+    val errors = useRef(emptyList<String>())
 
     val textareaRef = useRef<HTMLTextAreaElement>()
 
@@ -65,25 +67,30 @@ val version = fcmemo<VersionProps>("version") { props ->
     val mapState = { nextState: EMapState ->
         setLoadingState(true)
 
-        Axios.post<ActionResponse>("${Config.apibase}/testplay/state", StateUpdate(props.hash, nextState, props.mapId, scheduleAt = scheduleAt.current, alert = alert.current), generateConfig<StateUpdate, ActionResponse>()).then({
-            if (nextState == EMapState.Published) {
-                if (scheduleAt.current == null) {
-                    props.reloadMap()
-                    null
+        Axios.post<ActionResponse>("${Config.apibase}/testplay/state", StateUpdate(props.hash, nextState, props.mapId, scheduleAt = scheduleAt.current, alert = alert.current), generateConfig<StateUpdate, ActionResponse>(validStatus = arrayOf(200, 400))).then({
+            if (it.data.success) {
+                if (nextState == EMapState.Published) {
+                    if (scheduleAt.current == null) {
+                        props.reloadMap()
+                        null
+                    } else {
+                        EMapState.Scheduled
+                    }
                 } else {
-                    EMapState.Scheduled
+                    nextState
+                }?.let { newState ->
+                    setState(newState)
+                    setScheduledAt(scheduleAt.current)
                 }
+                true
             } else {
-                nextState
-            }?.let {
-                setState(it)
-                setLoadingState(false)
-                setScheduledAt(scheduleAt.current)
+                errors.current = it.data.errors
+                false
             }
-            true
-        }) {
-            setLoadingState(false)
+        }, {
             false
+        }).finally {
+            setLoadingState(false)
         }
     }
 
@@ -123,6 +130,7 @@ val version = fcmemo<VersionProps>("version") { props ->
                                 onClick = {
                                     alert.current = props.alreadyPublished != true
                                     scheduleAt.current = null
+                                    errors.current = emptyList()
 
                                     modal?.current?.showDialog?.invoke(
                                         ModalData(
@@ -135,6 +143,10 @@ val version = fcmemo<VersionProps>("version") { props ->
                                                     scheduleAt.current = it
                                                 }
                                                 notifyFollowersRef = alert
+                                            }
+
+                                            errors {
+                                                this.errors = errors.current
                                             }
                                         }
                                     )

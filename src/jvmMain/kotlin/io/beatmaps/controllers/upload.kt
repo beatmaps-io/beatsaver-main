@@ -1,5 +1,6 @@
 package io.beatmaps.controllers
 
+import io.beatmaps.api.PatreonTier
 import io.beatmaps.api.UploadResponse
 import io.beatmaps.api.UploadValidationInfo
 import io.beatmaps.common.Config
@@ -115,7 +116,7 @@ fun Route.uploadController(client: HttpClient) {
 
     post<UploadMap> {
         requireAuthorization { authType, session ->
-            val user = Upload.checkUserCanUpload(session)
+            val (user, wipSlotsFree) = Upload.checkUserCanUpload(session)
 
             val file = File(
                 Folders.uploadTempFolder(),
@@ -160,6 +161,8 @@ fun Route.uploadController(client: HttpClient) {
 
             multipart.validRecaptcha(authType) || throw UploadException("Missing recaptcha?")
             val data = multipart.get<MapUploadMultipart>()
+
+            wipSlotsFree || data.mapId != null || throw UploadException(PatreonTier.maxWipsMessage)
 
             val extractedInfo = multipart.fileOutput ?: throw UploadException("Internal error 1")
 

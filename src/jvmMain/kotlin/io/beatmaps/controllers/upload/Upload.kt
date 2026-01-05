@@ -41,7 +41,7 @@ object Upload {
 
     private val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
 
-    fun checkUserCanUpload(session: Session): UserDao {
+    fun checkUserCanUpload(session: Session): Pair<UserDao, Boolean> {
         val (user, patreon, currentWipCount) = transaction {
             val user = UserDao.wrapRow(
                 User.joinPatreon().selectAll().where { User.id eq session.userId }.handlePatreon().first()
@@ -58,9 +58,8 @@ object Upload {
 
         // Limit WIP maps
         val maxWips = (patreon.toTier() ?: PatreonTier.None).maxWips
-        currentWipCount < maxWips || throw UploadException(PatreonTier.maxWipsMessage)
 
-        return user
+        return user to (currentWipCount < maxWips)
     }
 
     private fun insertVersion(info: ExtractedInfo, newMap: EntityID<Int>, file: File) {
