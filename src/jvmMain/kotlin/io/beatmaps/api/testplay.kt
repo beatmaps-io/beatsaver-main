@@ -265,7 +265,7 @@ fun Route.testplayRoute(client: HttpClient) {
 
                     val currentWipCount = userWipCount(sess.userId)
                     val maxWips = (user.patreon.toTier() ?: PatreonTier.None).maxWips
-                    sess.isAdmin() || currentWipCount < maxWips || throw UserApiException(PatreonTier.maxWipsMessage)
+                    newState.state != EMapState.Uploaded || sess.isAdmin() || currentWipCount < maxWips || throw UserApiException(PatreonTier.maxWipsMessage)
 
                     (updateState() > 0).also { rTemp ->
                         val reason = newState.reason

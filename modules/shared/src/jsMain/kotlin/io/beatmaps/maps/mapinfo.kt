@@ -114,13 +114,14 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
 
             Axios.post<ActionResponse>("${Config.apibase}/testplay/state", StateUpdate(hash, EMapState.Uploaded, props.mapInfo.intId(), reasonRef.current?.value), generateConfig<StateUpdate, ActionResponse>(validStatus = arrayOf(200, 400)))
                 .then({
-                    it.data.success.also { success ->
-                        if (success) {
-                            props.reloadMap()
-                        } else {
-                            setErrors(it.data.errors)
-                        }
+                    if (it.data.success) {
+                        props.reloadMap()
+                    } else {
+                        setLoading(false)
+                        setErrors(it.data.errors)
                     }
+
+                    true
                 }) {
                     setLoading(false)
                     false
@@ -302,6 +303,7 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                                         onClick = {
                                             it.preventDefault()
                                             setEditing(!editing)
+                                            setErrors(emptyList())
                                             setTimeout(
                                                 {
                                                     inputRef.current?.value = props.mapInfo.name
