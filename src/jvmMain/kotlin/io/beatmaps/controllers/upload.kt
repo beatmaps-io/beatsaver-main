@@ -34,6 +34,7 @@ import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
+import io.ktor.utils.io.CancellationException
 import io.ktor.utils.io.jvm.javaio.toInputStream
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -127,12 +128,12 @@ fun Route.uploadController(client: HttpClient) {
             val vivifyLimit = user.vivifyLimit * 1024 * 1024L
             val totalLimit = basicLimit + (vivifyLimit * Vivify.allowedBundles.size)
 
-            val multipart = handleMultipart(client, totalLimit) { part ->
-                uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
+            val multipart = runCatching {
+                handleMultipart(client, totalLimit) { part ->
+                    uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
 
-                val its = part.provider()
+                    val its = part.provider()
 
-                runCatching {
                     file.outputStream().buffered().use {
                         its.copyToSuspend(it, sizeLimit = totalLimit)
                     }.let { actualSize ->
@@ -143,19 +144,20 @@ fun Route.uploadController(client: HttpClient) {
                             )
                         }.copy(compressedSize = actualSize)
                     }
-                }.getOrElse { e ->
-                    file.delete()
+                }
+            }.getOrElse { e ->
+                file.delete()
 
-                    when (e) {
-                        is RarException -> throw UploadException("Don't upload rar files. Use the package button in your map editor.")
-                        is SerializationException -> {
-                            e.printStackTrace()
-                            throw UploadException("Could not parse json")
-                        }
-                        is ZipHelperException -> throw UploadException(e.msg)
-                        is CopyException -> throw UploadException("Zip file too big")
-                        else -> throw e
+                when (e) {
+                    is RarException -> throw UploadException("Don't upload rar files. Use the package button in your map editor.")
+                    is SerializationException -> {
+                        e.printStackTrace()
+                        throw UploadException("Could not parse json")
                     }
+                    is ZipHelperException -> throw UploadException(e.msg)
+                    is CancellationException -> throw UploadException("Zip file too big")
+                    is CopyException -> throw UploadException("Zip file too big")
+                    else -> throw e
                 }
             }
 
