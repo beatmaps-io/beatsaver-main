@@ -34,8 +34,9 @@ import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.sessions.get
 import io.ktor.server.sessions.sessions
-import io.ktor.utils.io.CancellationException
 import io.ktor.utils.io.jvm.javaio.toInputStream
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import net.coobird.thumbnailator.Thumbnails
@@ -47,6 +48,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.awt.image.BufferedImage
 import java.io.File
+import java.io.IOException
 import java.lang.Integer.toHexString
 import java.util.logging.Logger
 
@@ -129,20 +131,22 @@ fun Route.uploadController(client: HttpClient) {
             val totalLimit = basicLimit + (vivifyLimit * Vivify.allowedBundles.size)
 
             val multipart = runCatching {
-                handleMultipart(client, totalLimit) { part ->
-                    uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
+                withContext(NonCancellable) {
+                    handleMultipart(client, totalLimit) { part ->
+                        uploadLogger.info("Upload of '${part.originalFileName}' started by '${session.uniqueName}' (${session.userId})")
 
-                    val its = part.provider()
+                        val its = part.provider()
 
-                    file.outputStream().buffered().use {
-                        its.copyToSuspend(it, sizeLimit = totalLimit)
-                    }.let { actualSize ->
-                        openZip(file) {
-                            validateFiles(
-                                initValidation(vivifyLimit),
-                                client
-                            )
-                        }.copy(compressedSize = actualSize)
+                        file.outputStream().buffered().use {
+                            its.copyToSuspend(it, sizeLimit = totalLimit)
+                        }.let { actualSize ->
+                            openZip(file) {
+                                validateFiles(
+                                    initValidation(vivifyLimit),
+                                    client
+                                )
+                            }.copy(compressedSize = actualSize)
+                        }
                     }
                 }
             }.getOrElse { e ->
@@ -155,7 +159,7 @@ fun Route.uploadController(client: HttpClient) {
                         throw UploadException("Could not parse json")
                     }
                     is ZipHelperException -> throw UploadException(e.msg)
-                    is CancellationException -> throw UploadException("Zip file too big")
+                    is IOException -> throw UploadException("Zip file too big")
                     is CopyException -> throw UploadException("Zip file too big")
                     else -> throw e
                 }
