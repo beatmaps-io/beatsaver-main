@@ -14,7 +14,6 @@ import kotlinx.html.div
 import kotlinx.html.id
 import kotlinx.html.main
 import kotlinx.html.script
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class GenericPageTemplate(private val s: Session?, private val provider: CaptchaProvider, private val nonce: String?) : Template<BODY> {
@@ -50,7 +49,7 @@ private fun BODY.scriptWithNonce(src: String, nonce: String?) {
     }
 }
 
-fun BODY.jsTags(nonce: String? = null) {
+fun BODY.jsTags(nonce: String?) {
     scriptWithNonce("/static/modules.js", nonce)
     scriptWithNonce("/static/kotlin.js", nonce)
     scriptWithNonce("/static/time.js", nonce)

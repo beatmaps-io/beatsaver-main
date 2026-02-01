@@ -21,6 +21,7 @@ import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Issue
 import io.beatmaps.common.dbo.IssueComment
 import io.beatmaps.common.dbo.Review
+import io.beatmaps.common.dbo.ReviewReply
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.handleUser
 import io.beatmaps.common.dbo.joinCurator
@@ -103,6 +104,7 @@ data class DiscordEmbed(
 }
 
 val discordWebhookUrl: String? = System.getenv("DISCORD_WEBHOOK_URL")
+val discordReplyWebhookUrl: String? = System.getenv("DISCORD_REPLY_WEBHOOK_URL")
 val discordIssueWebhookUrl: String? = System.getenv("DISCORD_ISSUE_WEBHOOK_URL")
 
 class DiscordWebhookHandler(private val client: HttpClient, private val webhookUrl: String) {
@@ -143,6 +145,45 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                                     "Sentiment",
                                     review.sentiment.let { s -> "${s.emoji} ${s.name}" },
                                     true
+                                )
+                            ),
+                            color = 6973358
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    suspend fun postReply(review: ReviewDetail) {
+        val reply = review.replies.singleOrNull()
+
+        client.post(webhookUrl) {
+            contentType(ContentType.Application.Json)
+            userAgent("BeatSaver")
+
+            setBody(
+                DiscordWebhookBody(
+                    username = "BeatSaver",
+                    avatar_url = "https://avatars.githubusercontent.com/u/83342266",
+                    embeds = listOf(
+                        DiscordEmbed(
+                            author = reply?.creator?.let { user -> DiscordEmbed.Author(user) },
+                            title = review.map?.name?.let {
+                                TextHelper.ellipsize(it, MAX_TITLE_LEN, true)
+                            },
+                            url = review.map?.let {
+                                "${Config.siteBase()}/maps/${it.id}"
+                            },
+                            thumbnail = review.map?.mainVersion()?.let {
+                                DiscordEmbed.HasUrl(
+                                    "${Config.cdnBase("", true)}/${it.hash}.jpg"
+                                )
+                            },
+                            fields = listOf(
+                                DiscordEmbed.Field(
+                                    "Reply",
+                                    TextHelper.ellipsize(reply?.text ?: "", MAX_REVIEW_LEN, true)
                                 )
                             ),
                             color = 6973358
@@ -279,6 +320,29 @@ fun Application.reviewListeners(client: HttpClient) {
                         }
                 }?.let { review ->
                     handler.post(review)
+                }
+            }
+        }
+
+        discordReplyWebhookUrl?.let { webhookUrl ->
+            val handler = DiscordWebhookHandler(client, webhookUrl)
+            consumeAck("bm.replyDiscordHook", Int::class) { _, replyId ->
+                transaction {
+                    ReviewReply
+                        .join(Review, JoinType.INNER, ReviewReply.reviewId, Review.id)
+                        .join(reviewerAlias, JoinType.INNER, ReviewReply.userId, reviewerAlias[User.id])
+                        .join(Beatmap, JoinType.INNER, Review.mapId, Beatmap.id)
+                        .joinVersions()
+                        .selectAll()
+                        .where {
+                            ReviewReply.id eq replyId
+                        }
+                        .complexToReview()
+                        .singleOrNull()?.let { row ->
+                            ReviewDetail.from(row, "")
+                        }
+                }?.let { review ->
+                    handler.postReply(review)
                 }
             }
         }

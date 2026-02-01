@@ -204,14 +204,14 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
                 override suspend fun deserialize(charset: Charset, typeInfo: TypeInfo, content: ByteReadChannel) =
                     try {
                         kotlinx.deserialize(charset, typeInfo, content)
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         null
                     } ?: jsConv.deserialize(charset, typeInfo, content)
 
                 override suspend fun serialize(contentType: ContentType, charset: Charset, typeInfo: TypeInfo, value: Any?) =
                     try {
                         kotlinx.serialize(contentType, charset, typeInfo, value)
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         null
                     } ?: jsConv.serialize(contentType, charset, typeInfo, value)
             }
@@ -264,7 +264,7 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
     install(StatusPagesCustom) {
         val errorLogger = Logger.getLogger("bmio.error")
 
-        status(HttpStatusCode.NotFound) { call, code ->
+        status(HttpStatusCode.NotFound) { call, _ ->
             val reqPath = call.request.path()
             if (reqPath.startsWith("/api")) {
                 call.respond(HttpStatusCode.NotFound, ActionResponse.error("Not Found"))
@@ -342,7 +342,7 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
             call.respond(HttpStatusCode.BadRequest, it.toMap())
         }
 
-        exception<IllegalArgumentException> { call, cause ->
+        exception<IllegalArgumentException> { call, _ ->
             call.respond(HttpStatusCode.BadRequest)
         }
 
@@ -407,6 +407,9 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
 
                 queueDeclare("bm.reviewDiscordHook", true, false, false, genericQueueConfig)
                 queueBind("bm.reviewDiscordHook", "beatmaps", "reviews.*.created")
+
+                queueDeclare("bm.replyDiscordHook", true, false, false, genericQueueConfig)
+                queueBind("bm.replyDiscordHook", "beatmaps", "ws.review-replies.created")
 
                 queueDeclare("bm.issuesDiscordHook", true, false, false, genericQueueConfig)
                 queueBind("bm.issuesDiscordHook", "beatmaps", "issues.*.created")

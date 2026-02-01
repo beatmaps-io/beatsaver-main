@@ -12,7 +12,7 @@ import kotlinx.html.main
 import kotlinx.html.p
 import kotlinx.html.span
 
-class DMCAPageTemplate : Template<BODY> {
+class DMCAPageTemplate(val nonce: String?) : Template<BODY> {
     override fun BODY.apply() {
         main("container") {
             div("jumbotron") {
@@ -89,6 +89,6 @@ class DMCAPageTemplate : Template<BODY> {
         div {
             id = "root"
         }
-        jsTags()
+        jsTags(nonce)
     }
 }
