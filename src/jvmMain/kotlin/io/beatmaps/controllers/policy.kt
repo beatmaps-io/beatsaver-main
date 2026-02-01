@@ -39,16 +39,19 @@ class PolicyController {
 fun Route.policyController() {
     get<PolicyController.DMCA> {
         val sess = call.sessions.get<Session>()
-        call.respondHtmlTemplate(MainTemplate(sess, DMCAPageTemplate(), "BeatSaver - DMCA Policy", nonce = call.getNonce()), HttpStatusCode.OK) {}
+        val nonce = call.getNonce()
+        call.respondHtmlTemplate(MainTemplate(sess, DMCAPageTemplate(nonce), "BeatSaver - DMCA Policy", nonce = call.getNonce()), HttpStatusCode.OK) {}
     }
 
     get<PolicyController.TOS> {
         val sess = call.sessions.get<Session>()
-        call.respondHtmlTemplate(MainTemplate(sess, TOSPageTemplate(), "BeatSaver - Terms of Service", nonce = call.getNonce()), HttpStatusCode.OK) {}
+        val nonce = call.getNonce()
+        call.respondHtmlTemplate(MainTemplate(sess, TOSPageTemplate(nonce), "BeatSaver - Terms of Service", nonce = call.getNonce()), HttpStatusCode.OK) {}
     }
 
     get<PolicyController.Privacy> {
         val sess = call.sessions.get<Session>()
-        call.respondHtmlTemplate(MainTemplate(sess, PrivacyPageTemplate(), "BeatSaver - Privacy Policy", nonce = call.getNonce()), HttpStatusCode.OK) {}
+        val nonce = call.getNonce()
+        call.respondHtmlTemplate(MainTemplate(sess, PrivacyPageTemplate(nonce), "BeatSaver - Privacy Policy", nonce = call.getNonce()), HttpStatusCode.OK) {}
     }
 }

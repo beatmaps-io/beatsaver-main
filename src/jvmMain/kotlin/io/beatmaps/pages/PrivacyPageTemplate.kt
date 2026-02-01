@@ -17,7 +17,7 @@ import kotlinx.html.p
 import kotlinx.html.span
 import kotlinx.html.ul
 
-class PrivacyPageTemplate : Template<BODY> {
+class PrivacyPageTemplate(val nonce: String?) : Template<BODY> {
     override fun BODY.apply() {
         main("container") {
             div("jumbotron") {
@@ -420,6 +420,6 @@ class PrivacyPageTemplate : Template<BODY> {
         div {
             id = "root"
         }
-        jsTags()
+        jsTags(nonce)
     }
 }

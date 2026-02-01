@@ -12,7 +12,7 @@ import kotlinx.html.main
 import kotlinx.html.p
 import kotlinx.html.ul
 
-class TOSPageTemplate : Template<BODY> {
+class TOSPageTemplate(val nonce: String?) : Template<BODY> {
     override fun BODY.apply() {
         main("container") {
             div("jumbotron") {
@@ -232,6 +232,6 @@ class TOSPageTemplate : Template<BODY> {
         div {
             id = "root"
         }
-        jsTags()
+        jsTags(nonce)
     }
 }
