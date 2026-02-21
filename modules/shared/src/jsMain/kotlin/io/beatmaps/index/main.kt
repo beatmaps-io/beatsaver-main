@@ -59,7 +59,7 @@ val homePage = fcmemo<Props>("homePage") {
             params["maxNps"]?.toFloatOrNull(),
             params["chroma"]?.toBoolean(),
             SearchOrder.fromString(params["order"]) ?: SearchOrder.Relevance,
-            params["ascending"]?.toBoolean(),
+            params["ascending"].toBoolean(),
             params["from"],
             params["to"],
             params["noodle"]?.toBoolean(),
