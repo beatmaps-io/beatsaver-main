@@ -213,11 +213,12 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<I
         }
     }
 
-    // Run as part of first render, useEffect happens after the render
-    if (token.current == null) {
-        onHashChange(null)
-        token.current = Axios.CancelToken.source()
-        loadNextPage.current?.invoke()
+    useEffect {
+        if (token.current == null) {
+            onHashChange(null)
+            token.current = Axios.CancelToken.source()
+            loadNextPage.current?.invoke()
+        }
     }
 
     useEffectOnceWithCleanup {
