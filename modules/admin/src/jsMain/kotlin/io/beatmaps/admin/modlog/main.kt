@@ -29,6 +29,7 @@ import react.dom.html.ReactHTML.tr
 import react.router.useLocation
 import react.router.useNavigate
 import react.use
+import react.useCallback
 import react.useEffect
 import react.useEffectOnce
 import react.useMemo
@@ -85,11 +86,11 @@ val modlog = fcmemo<Props>("modlog") {
         resetRef.current?.invoke()
     }
 
-    fun urlExtension(): String {
+    fun urlExtension(page: Boolean): String {
         val params = listOfNotNull(
             // Fallback to allow this to be called before first render
-            (modRef.current?.value ?: modLocal).let { if (it.isNotBlank()) "mod=$it" else null },
-            (userRef.current?.value ?: userLocal).let { if (it.isNotBlank()) "user=$it" else null },
+            (if (page) modRef.current?.value else modLocal)?.let { if (it.isNotBlank()) "mod=$it" else null },
+            (if (page) userRef.current?.value else userLocal)?.let { if (it.isNotBlank()) "user=$it" else null },
             newType?.let { "type=$it" }
         )
 
@@ -98,21 +99,21 @@ val modlog = fcmemo<Props>("modlog") {
 
     loadPageRef.current = { toLoad: Int, token: CancelTokenSource ->
         Axios.get<List<ModLogEntry>>(
-            "${Config.apibase}/modlog/$toLoad" + urlExtension(),
+            "${Config.apibase}/modlog/$toLoad" + urlExtension(false),
             generateConfig<String, List<ModLogEntry>>(token.token)
         ).then {
             return@then GenericSearchResponse.from(it.data)
         }
     }
 
-    fun updateHistory() {
-        val ext = urlExtension()
+    val updateHistory = useCallback(location) {
+        val ext = urlExtension(true)
         if (location.search != ext) {
             history.push("/modlog$ext")
         }
     }
 
-    val renderer = useMemo {
+    val renderer = useMemo(location) {
         val setUserCb = { modStr: String, userStr: String ->
             modRef.current?.value = modStr
             userRef.current?.value = userStr

@@ -87,10 +87,10 @@ val modReview = fcmemo<ModReviewProps>("modReview") { props ->
         resetRef.current?.invoke()
     }
 
-    fun urlExtension(): String {
+    fun urlExtension(page: Boolean): String {
         val params = listOfNotNull(
             // Fallback to allow this to be called before first render
-            (userRef.current?.value ?: userLocal).let { if (it.isNotBlank()) "user=$it" else null }
+            (if (page) userRef.current?.value else userLocal)?.let { if (it.isNotBlank()) "user=$it" else null }
         )
 
         return if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
@@ -99,7 +99,7 @@ val modReview = fcmemo<ModReviewProps>("modReview") { props ->
     val reviewRenderer = useMemo {
         val setUserCb = { userStr: String ->
             userRef.current?.value = userStr
-            history.push(pathName.current + urlExtension())
+            history.push(pathName.current + urlExtension(true))
         }
         val deleteCb = { it: CommentDetail?, reason: String ->
             axiosDelete<DeleteReview, String>(
@@ -128,7 +128,7 @@ val modReview = fcmemo<ModReviewProps>("modReview") { props ->
     val replyRenderer = useMemo {
         val setUserCb = { userStr: String ->
             userRef.current?.value = userStr
-            history.push(pathName.current + urlExtension())
+            history.push(pathName.current + urlExtension(true))
         }
         val deleteCb = { it: CommentDetail?, reason: String ->
             axiosDelete<DeleteReview, String>(
@@ -190,7 +190,7 @@ val modReview = fcmemo<ModReviewProps>("modReview") { props ->
                                 onClick = {
                                     it.preventDefault()
 
-                                    history.push(location.pathname + urlExtension())
+                                    history.push(location.pathname + urlExtension(true))
                                 }
 
                                 +"Filter"
@@ -199,12 +199,12 @@ val modReview = fcmemo<ModReviewProps>("modReview") { props ->
                         td {
                             when (props.type) {
                                 ReviewDetail::class -> {
-                                    routeLink("/modreply" + urlExtension(), "btn btn-primary") {
+                                    routeLink("/modreply" + urlExtension(true), "btn btn-primary") {
                                         +"Replies"
                                     }
                                 }
                                 ReviewReplyDetail::class -> {
-                                    routeLink("/modreview" + urlExtension(), "btn btn-primary") {
+                                    routeLink("/modreview" + urlExtension(true), "btn btn-primary") {
                                         +"Reviews"
                                     }
                                 }
@@ -220,7 +220,7 @@ val modReview = fcmemo<ModReviewProps>("modReview") { props ->
                         ReviewDetail::class -> {
                             loadReviewPageRef.current = { toLoad: Int, token: CancelTokenSource ->
                                 Axios.get<ReviewsResponse>(
-                                    "${Config.apibase}/review/latest/$toLoad" + urlExtension(),
+                                    "${Config.apibase}/review/latest/$toLoad" + urlExtension(false),
                                     generateConfig<String, ReviewsResponse>(token.token)
                                 ).then {
                                     return@then GenericSearchResponse.from(it.data.docs)
@@ -242,7 +242,7 @@ val modReview = fcmemo<ModReviewProps>("modReview") { props ->
                         ReviewReplyDetail::class -> {
                             loadReplyPageRef.current = { toLoad: Int, token: CancelTokenSource ->
                                 Axios.get<RepliesResponse>(
-                                    "${Config.apibase}/reply/latest/$toLoad" + urlExtension(),
+                                    "${Config.apibase}/reply/latest/$toLoad" + urlExtension(false),
                                     generateConfig<String, RepliesResponse>(token.token)
                                 ).then {
                                     return@then GenericSearchResponse.from(it.data.docs)
