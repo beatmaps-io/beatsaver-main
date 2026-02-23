@@ -111,7 +111,7 @@ private fun <T> generateInfiniteScrollComponentInternal(name: String) = fcmemo<I
 
     fun scrollTo(idx: Int): Boolean {
         val (scrollTo: Double, found: Boolean) = if (idx == 0) { 0.0 to true } else {
-            val rect = filteredChildren()?.get(idx)?.getBoundingClientRect()
+            val rect = filteredChildren()?.getOrNull(idx)?.getBoundingClientRect()
             val top = rect?.top ?: 0.0
             val offset = props.scrollParent?.scrollTop ?: window.pageYOffset
             top + offset - beforeContent() to (rect != null)
