@@ -106,14 +106,14 @@ val modlog = fcmemo<Props>("modlog") {
         }
     }
 
-    val updateHistory = useCallback(location) {
+    val updateHistory = useCallback(location, newType) {
         val ext = urlExtension(true)
         if (location.search != ext) {
             history.push("/modlog$ext")
         }
     }
 
-    val renderer = useMemo(location) {
+    val renderer = useMemo(location, newType) {
         val setUserCb = { modStr: String, userStr: String ->
             modRef.current?.value = modStr
             userRef.current?.value = userStr
