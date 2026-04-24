@@ -82,6 +82,7 @@ val turnstile = fcmemo<CaptchaProps>("TurnstileWrapper") { props ->
             options = useMemo(props.page) {
                 TurnStileRenderOptions(
                     appearance = "interaction-only",
+                    size = "normal",
                     execution = "execute",
                     action = props.page
                 )
