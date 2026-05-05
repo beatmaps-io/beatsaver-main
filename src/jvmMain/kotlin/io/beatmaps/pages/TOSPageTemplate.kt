@@ -77,6 +77,7 @@ class TOSPageTemplate(val nonce: String?) : Template<BODY> {
                         "Harassment and Hate speech are not allowed",
                         "Human (or animated) bodies are not inherently offensive. Cover art should stick to “PG13-rated” themes and imagery to remain fully visible",
                         "Overtly sexual and excessively violent imagery (\"R-rated\"), such as profile pictures or a map’s cover and any additional images included in the zip, needs to be censored or blurred",
+                        "Unofficial cover arts where visible, overtly sexual/fetishistic, and excessively violent imagery that would normally be blurred may be subject to being removed if deemed too explicit",
                         "Explicit Adult content (18+ only) is prohibited",
                         "Do not distribute viruses, malware, or phish others by any means such as exploits or links"
                     ).forEach {
