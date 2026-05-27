@@ -38,10 +38,10 @@ class ScoreSaberScores(private val client: HttpClient) : RemoteScores {
     override suspend fun getLeaderboard(hash: String, diff: EDifficulty, mode: SSGameMode, page: Int) =
         coroutineScope {
             val leaderboard = async {
-                getLeaderboardInfo(hash, diff, mode)
+                getLeaderboardInfo(hash.uppercase(), diff, mode)
             }
             val scores = async {
-                getScores(hash, diff, mode, page)
+                getScores(hash.uppercase(), diff, mode, page)
             }
 
             val (al, ascores) = leaderboard.await() to scores.await()
@@ -89,7 +89,7 @@ data class SSLeaderboardInfo(
     val dailyPlays: Int,
     val positiveModifiers: Boolean,
     val playerScore: SSLeaderboardScore?,
-    val difficulties: List<SSLeaderboardInfoDiff>
+    val difficulties: List<SSLeaderboardInfoDiff>?
 ) {
     fun toLeaderboardData(scores: List<SSLeaderboardScore>) = LeaderboardData(
         ranked, id.toString(),
@@ -105,7 +105,7 @@ data class SSPaged(val metadata: SSPagedMetadata, val scores: List<SSLeaderboard
 data class SSPagedMetadata(val total: Int, val page: Int, val itemsPerPage: Int)
 
 @Serializable
-data class SSLeaderboardInfoDiff(val leaderboardId: Int, val difficulty: Int, val gameMode: String, val difficultyRaw: String)
+data class SSLeaderboardInfoDiff(val leaderboard: Int, val gameMode: String, val difficultyRaw: String)
 
 @Serializable
 data class SSLeaderboardScore(
