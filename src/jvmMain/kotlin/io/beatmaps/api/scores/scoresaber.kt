@@ -83,7 +83,7 @@ data class SSLeaderboardInfo(
     val ranked: Boolean,
     val qualified: Boolean,
     val loved: Boolean,
-    val maxPP: Int,
+    val maxPP: Float,
     val stars: Float,
     val plays: Int,
     val dailyPlays: Int,
