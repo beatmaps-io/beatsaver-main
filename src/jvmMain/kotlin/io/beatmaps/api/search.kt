@@ -504,7 +504,7 @@ fun Route.searchRoute() {
                                             .notNull(it.tags) { o ->
                                                 o.toQuery()?.applyToQuery() ?: Op.TRUE
                                             }
-                                            .notNullOpt(it.mapper ?: it.collaborator) { o -> Beatmap.uploader eq o }
+                                            .notNullOpt(it.mapper.or(it.collaborator)) { o -> Beatmap.uploader eq o }
                                             .notNullOpt(it.curator) { o -> Beatmap.curator eq o }
                                     }
                                     .orderBy(*sortArgs)
