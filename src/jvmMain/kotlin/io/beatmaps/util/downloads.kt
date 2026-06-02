@@ -8,7 +8,6 @@ import io.beatmaps.common.amqp.rabbitOptional
 import io.beatmaps.common.db.incrementBy
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Versions
-import io.beatmaps.common.getCountry
 import io.ktor.server.application.Application
 import io.ktor.server.routing.RoutingContext
 import io.ktor.util.AttributeKey
@@ -42,7 +41,8 @@ fun RoutingContext.cdnPrefix(): String {
     if (!call.attributes.contains(cdnPrefixAttr)) {
         call.attributes.put(
             cdnPrefixAttr,
-            cdnPrefixes.getOrDefault(getContinentSafe(call.getCountry()), "")
+            "cf"
+            // cdnPrefixes.getOrDefault(getContinentSafe(call.getCountry()), "")
         )
     }
 
