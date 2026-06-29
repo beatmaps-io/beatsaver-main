@@ -463,6 +463,8 @@ fun Route.reviewRoute(client: HttpClient) {
                         throw UserApiException("Suspended account")
                     }
 
+                    requireNotReviewSilenced(sess.userId)
+
                     val oldData = if (reqUid != sess.userId) {
                         ReviewDao.wrapRow(Review.selectAll().where { Review.mapId eq updateMapId and (Review.userId eq reqUid) and Review.deletedAt.isNull() }.single())
                     } else {
@@ -645,6 +647,8 @@ fun Route.reviewRoute(client: HttpClient) {
                 reply.captcha,
                 {
                     val (insertedId, response) = newSuspendedTransaction {
+                        requireNotReviewSilenced(user.userId)
+
                         val intermediaryResult = Review
                             .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
                             .joinUser(Beatmap.uploader)
@@ -747,6 +751,8 @@ fun Route.reviewRoute(client: HttpClient) {
 
             captchaIfPresent(client, update.captcha) {
                 val response = newSuspendedTransaction {
+                    requireNotReviewSilenced(user.userId)
+
                     val ownerId = ReviewReply
                         .select(ReviewReply.userId)
                         .where { ReviewReply.id eq replyId }

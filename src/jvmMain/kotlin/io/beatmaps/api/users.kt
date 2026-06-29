@@ -18,10 +18,12 @@ import io.beatmaps.api.user.getAvatar
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.Config
 import io.beatmaps.common.EmailChangedData
+import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.OptionalProperty
 import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.PasswordChangedData
 import io.beatmaps.common.RevokeSessionsData
+import io.beatmaps.common.SilenceData
 import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UploadLimitData
 import io.beatmaps.common.amqp.pub
@@ -44,6 +46,7 @@ import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.ModLog
+import io.beatmaps.common.dbo.ModLogDao
 import io.beatmaps.common.dbo.OauthClient
 import io.beatmaps.common.dbo.Patreon
 import io.beatmaps.common.dbo.PatreonDao
@@ -126,6 +129,7 @@ import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.count
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.longLiteral
@@ -151,6 +155,8 @@ import java.util.Date
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
+
+private val publicAccountStandingDays = (System.getenv("PUBLIC_ACCOUNT_STANDING_DAYS")?.toIntOrNull() ?: 90).days
 
 fun JwtBuilder.setExpiration(duration: Duration): JwtBuilder = setExpiration(Date.from(Clock.System.now().plus(duration).toJavaInstant()))
 fun parseJwtUntrusted(jwt: String): Jwt<Header<*>, Claims> =
@@ -202,6 +208,12 @@ class UsersApi {
 
     @Resource("/suspend")
     data class Suspend(
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/silence")
+    data class Silence(
         @Ignore
         val api: UsersApi
     )
@@ -408,6 +420,66 @@ fun followData(uploaderId: Int, userId: Int?): UserFollowData {
         }
 }
 
+fun accountStanding(userId: Int, showAll: Boolean = false, suspended: Boolean = false): List<AccountStandingEntry> {
+    val now = Clock.System.now()
+    val nowInstant = now.toJavaInstant()
+    val publicCutoff = now.minus(publicAccountStandingDays).toJavaInstant()
+    fun visible(createdAt: java.time.Instant, active: Boolean) = showAll || active || createdAt >= publicCutoff
+
+    val silences = ReviewSilence
+        .selectAll()
+        .where { ReviewSilence.userId eq userId }
+        .orderBy(ReviewSilence.createdAt, SortOrder.DESC)
+        .limit(20)
+        .mapNotNull {
+            val createdAt = it[ReviewSilence.createdAt]
+            val active = it[ReviewSilence.revokedAt] == null && (it[ReviewSilence.silencedUntil]?.let { until -> until > nowInstant } ?: true)
+            if (visible(createdAt, active)) {
+                AccountStandingEntry(
+                    AccountStandingAction.SILENCE,
+                    createdAt.toKotlinInstant(),
+                    it[ReviewSilence.durationMinutes],
+                    it[ReviewSilence.reason]
+                )
+            } else {
+                null
+            }
+        }
+
+    val suspensions = ModLog
+        .selectAll()
+        .where {
+            (ModLog.targetUser eq userId) and (ModLog.type eq ModLogOpType.Suspend.ordinal)
+        }
+        .orderBy(ModLog.opAt, SortOrder.DESC)
+        .limit(20)
+        .mapNotNull {
+            val action = ModLogDao.wrapRow(it).realAction() as? SuspendData
+            if (action?.suspended == true) it to action else null
+        }
+        .mapIndexedNotNull { index, (row, action) ->
+            val createdAt = row[ModLog.opAt]
+            if (visible(createdAt, suspended && index == 0)) {
+                AccountStandingEntry(
+                    AccountStandingAction.SUSPENSION,
+                    createdAt.toKotlinInstant(),
+                    description = action.reason
+                )
+            } else {
+                null
+            }
+        }
+
+    return (silences + suspensions).sortedByDescending { it.createdAt }.take(20)
+}
+
+fun UserDetail.withAccountStanding(userId: Int, showAll: Boolean = false) =
+    copy(
+        reviewSilenced = ReviewSilence.active(userId),
+        reviewSilencedUntil = ReviewSilence.activeUntil(userId)?.toKotlinInstant(),
+        accountStanding = accountStanding(userId, showAll, suspendedAt != null)
+    )
+
 fun Route.userRoute(client: HttpClient) {
     val usernameRegex = Regex("^[._\\-A-Za-z0-9]{3,50}$")
     post<UsersApi.Username> {
@@ -578,6 +650,45 @@ fun Route.userRoute(client: HttpClient) {
             }.let {
                 call.respond(it)
             }
+        }
+    }
+
+    post<UsersApi.Silence> {
+        requireAuthorization { _, sess ->
+            val response = if (!sess.isAdmin()) {
+                ActionResponse.error("Not an admin")
+            } else {
+                val req = call.receive<UserReviewSilenceRequest>()
+                transaction {
+                    if (User.select(User.id).where { User.id eq req.userId }.empty()) {
+                        ActionResponse.error("User not found")
+                    } else {
+                        val now = Clock.System.now()
+                        val nowInstant = now.toJavaInstant()
+                        ReviewSilence.update({
+                            (ReviewSilence.userId eq req.userId) and ReviewSilence.revokedAt.isNull() and (ReviewSilence.silencedUntil.isNull() or (ReviewSilence.silencedUntil greater nowInstant))
+                        }) {
+                            it[revokedAt] = nowInstant
+                        }
+
+                        val durationMinutes = req.durationMinutes
+                        val silenced = durationMinutes == null || durationMinutes > 0
+                        if (silenced) {
+                            ReviewSilence.insert {
+                                it[userId] = req.userId
+                                it[moderatorId] = sess.userId
+                                it[createdAt] = nowInstant
+                                it[silencedUntil] = durationMinutes?.let { minutes -> now.plus(minutes.minutes).toJavaInstant() }
+                                it[ReviewSilence.durationMinutes] = durationMinutes
+                                it[reason] = req.reason
+                            }
+                        }
+                        ModLog.insert(sess.userId, null, SilenceData(silenced, durationMinutes?.takeIf { minutes -> minutes > 0 }, req.reason), req.userId)
+                        ActionResponse.success()
+                    }
+                }
+            }
+            call.respond(response)
         }
     }
 
@@ -1333,7 +1444,7 @@ fun Route.userRoute(client: HttpClient) {
                     } else {
                         tmp
                     }
-                }
+                }.withAccountStanding(user.id.value, sess.isAdmin())
             }
 
             call.respond(detail)
@@ -1348,13 +1459,14 @@ fun Route.userRoute(client: HttpClient) {
                 }
                 val followData = followData(user.id.value, sess?.userId)
 
+                val showAllStanding = sess?.isAdmin() == true
                 UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let {
-                    if (call.sessions.get<Session>()?.isAdmin() == true) {
+                    if (showAllStanding) {
                         it.copy(uploadLimit = user.uploadLimit, vivifyLimit = user.vivifyLimit)
                     } else {
                         it
                     }
-                }
+                }.withAccountStanding(user.id.value, showAllStanding)
             }
 
             call.respond(userDetail)
@@ -1379,12 +1491,13 @@ fun Route.userRoute(client: HttpClient) {
     }
 
     getWithOptions<MapsApi.UserName>("Get user info by name".responds(ok<UserDetail>(), notFound())) {
+        val showAllStanding = call.sessions.get<Session>()?.isAdmin() == true
         val userDetail = newSuspendedTransaction {
             val user = userBy {
                 (User.uniqueName eq it.name) and User.active
             }
 
-            UserDetail.from(user, stats = statsForUser(user), description = true, patreon = true)
+            UserDetail.from(user, stats = statsForUser(user), description = true, patreon = true).withAccountStanding(user.id.value, showAllStanding)
         }
 
         call.respond(userDetail)

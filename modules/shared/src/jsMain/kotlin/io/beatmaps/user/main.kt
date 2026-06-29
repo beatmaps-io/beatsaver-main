@@ -1,6 +1,7 @@
 package io.beatmaps.user
 
 import external.Axios
+import external.TimeAgo
 import external.axiosGet
 import external.generateConfig
 import external.routeLink
@@ -8,6 +9,7 @@ import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.UserData
 import io.beatmaps.admin.admin
+import io.beatmaps.api.AccountStandingAction
 import io.beatmaps.api.IssueCreationRequest
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserFollowData
@@ -89,6 +91,7 @@ enum class ProfileTab(val tabText: String, val condition: (UserData?, TabContext
     PLAYLISTS("Playlists"),
     CURATED("Curations", condition = { _, _, it -> (it?.curatorTab == true) }),
     REVIEWS("Reviews"),
+    ACCOUNT_STANDING("Account Standing", condition = { _, _, it -> it?.accountStanding?.isNotEmpty() == true }),
     ACCOUNT("Account", condition = { it, c, _ -> (it?.admin == true || c.userId == null) })
 }
 
@@ -130,7 +133,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
         val hash = window.location.hash.substring(1)
         val tabContext = TabContext(params["userId"]?.toIntOrNull())
         return ProfileTab.entries.firstOrNull {
-            hash == it.tabText.lowercase() && it.condition(userData, tabContext, user)
+            hash == it.tabText.lowercase().replace(" ", "") && it.condition(userData, tabContext, user)
         } ?: firstTab(tabContext, user) ?: defaultTab(tabContext, user)
     }
 
@@ -527,104 +530,105 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                     }
                 }
             }
+            val description = userDetail?.description?.take(500).orEmpty()
+            val stats = userDetail?.stats
+            val hasStats = stats?.let { it.totalMaps != 0 || it.totalPlaylists != 0 } == true
+            val showProfileInfo = description.isNotBlank() || hasStats
             div {
                 className = ClassName("col-md-8 mb-3 position-relative")
-                div {
-                    className = ClassName("card user-info")
+                if (showProfileInfo) {
                     div {
-                        className = ClassName("card-body")
-                        if (userDetail?.suspendedAt != null) {
-                            span {
-                                className = ClassName("text-danger")
-                                +"This user has been suspended."
+                        className = ClassName("card user-info")
+                        div {
+                            className = ClassName("card-body")
+                            if (description.isNotBlank()) {
+                                span {
+                                    textToContent(description)
+                                }
                             }
-                        } else {
-                            span {
-                                textToContent((userDetail?.description?.take(500) ?: ""))
-                            }
-                        }
-                        userDetail?.stats?.let {
-                            if (it.totalMaps != 0 || it.totalPlaylists != 0) {
-                                table {
-                                    className = ClassName("table table-dark")
-                                    thead {
-                                        tr {
-                                            th { +"Maps" }
-                                            th { +"Average Rating" }
-                                            th { +"Difficulty Spread" }
-                                            th { +"Playlists" }
+                            stats?.let {
+                                if (hasStats) {
+                                    table {
+                                        className = ClassName("table table-dark")
+                                        thead {
+                                            tr {
+                                                th { +"Maps" }
+                                                th { +"Average Rating" }
+                                                th { +"Difficulty Spread" }
+                                                th { +"Playlists" }
+                                            }
                                         }
-                                    }
-                                    tbody {
-                                        tr {
-                                            td { +"${it.totalMaps}" }
-                                            td { +"${it.avgScore}% (${it.totalUpvotes} / ${it.totalDownvotes})" }
-                                            it.diffStats?.let { ds ->
-                                                td {
-                                                    div {
-                                                        className = ClassName("difficulty-spread mb-1")
+                                        tbody {
+                                            tr {
+                                                td { +"${it.totalMaps}" }
+                                                td { +"${it.avgScore}% (${it.totalUpvotes} / ${it.totalDownvotes})" }
+                                                it.diffStats?.let { ds ->
+                                                    td {
                                                         div {
-                                                            className = ClassName("badge-green")
-                                                            style = jso {
-                                                                flex = number(ds.easy.toDouble())
+                                                            className = ClassName("difficulty-spread mb-1")
+                                                            div {
+                                                                className = ClassName("badge-green")
+                                                                style = jso {
+                                                                    flex = number(ds.easy.toDouble())
+                                                                }
+                                                                title = "${ds.easy}"
                                                             }
-                                                            title = "${ds.easy}"
+                                                            div {
+                                                                className = ClassName("badge-blue")
+                                                                style = jso {
+                                                                    flex = number(ds.normal.toDouble())
+                                                                }
+                                                                title = "${ds.normal}"
+                                                            }
+                                                            div {
+                                                                className = ClassName("badge-hard")
+                                                                style = jso {
+                                                                    flex = number(ds.hard.toDouble())
+                                                                }
+                                                                title = "${ds.hard}"
+                                                            }
+                                                            div {
+                                                                className = ClassName("badge-expert")
+                                                                style = jso {
+                                                                    flex = number(ds.expert.toDouble())
+                                                                }
+                                                                title = "${ds.expert}"
+                                                            }
+                                                            div {
+                                                                className = ClassName("badge-purple")
+                                                                style = jso {
+                                                                    flex = number(ds.expertPlus.toDouble())
+                                                                }
+                                                                title = "${ds.expertPlus}"
+                                                            }
                                                         }
                                                         div {
-                                                            className = ClassName("badge-blue")
-                                                            style = jso {
-                                                                flex = number(ds.normal.toDouble())
+                                                            className = ClassName("legend")
+                                                            span {
+                                                                className = ClassName("legend-green")
+                                                                +"Easy"
                                                             }
-                                                            title = "${ds.normal}"
-                                                        }
-                                                        div {
-                                                            className = ClassName("badge-hard")
-                                                            style = jso {
-                                                                flex = number(ds.hard.toDouble())
+                                                            span {
+                                                                className = ClassName("legend-blue")
+                                                                +"Normal"
                                                             }
-                                                            title = "${ds.hard}"
-                                                        }
-                                                        div {
-                                                            className = ClassName("badge-expert")
-                                                            style = jso {
-                                                                flex = number(ds.expert.toDouble())
+                                                            span {
+                                                                className = ClassName("legend-hard")
+                                                                +"Hard"
                                                             }
-                                                            title = "${ds.expert}"
-                                                        }
-                                                        div {
-                                                            className = ClassName("badge-purple")
-                                                            style = jso {
-                                                                flex = number(ds.expertPlus.toDouble())
+                                                            span {
+                                                                className = ClassName("legend-expert")
+                                                                +"Expert"
                                                             }
-                                                            title = "${ds.expertPlus}"
-                                                        }
-                                                    }
-                                                    div {
-                                                        className = ClassName("legend")
-                                                        span {
-                                                            className = ClassName("legend-green")
-                                                            +"Easy"
-                                                        }
-                                                        span {
-                                                            className = ClassName("legend-blue")
-                                                            +"Normal"
-                                                        }
-                                                        span {
-                                                            className = ClassName("legend-hard")
-                                                            +"Hard"
-                                                        }
-                                                        span {
-                                                            className = ClassName("legend-expert")
-                                                            +"Expert"
-                                                        }
-                                                        span {
-                                                            className = ClassName("legend-purple")
-                                                            +"Expert+"
+                                                            span {
+                                                                className = ClassName("legend-purple")
+                                                                +"Expert+"
+                                                            }
                                                         }
                                                     }
                                                 }
+                                                td { +"${it.totalPlaylists}" }
                                             }
-                                            td { +"${it.totalPlaylists}" }
                                         }
                                     }
                                 }
@@ -651,7 +655,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                             it.preventDefault()
 
                             val userPart = if (userId != null) "/$userId" else ""
-                            history.push("/profile$userPart#${tab.tabText.lowercase()}")
+                            history.push("/profile$userPart#${tab.tabText.lowercase().replace(" ", "")}")
 
                             tab.onSelected(tabContext)
                             setTabState(tab)
@@ -705,6 +709,49 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                 this.userDetail = userDetail
                 // There may be collaborators passed here, however they are not passed here as they are not required
                 // And would just result in the purposeless loading of additional data
+            }
+        }
+
+        if (tabState == ProfileTab.ACCOUNT_STANDING && userDetail != null) {
+            div {
+                className = ClassName("card")
+                div {
+                    className = ClassName("card-body")
+                    h4 {
+                        className = ClassName("mb-3")
+                        +"Recent Infringements"
+                    }
+                    table {
+                        className = ClassName("table table-dark mb-0")
+                        thead {
+                            tr {
+                                th { +"Date" }
+                                th { +"Action" }
+                                th { +"Length" }
+                                th { +"Description" }
+                            }
+                        }
+                        tbody {
+                            userDetail.accountStanding.forEach {
+                                tr {
+                                    td {
+                                        TimeAgo.default {
+                                            date = it.createdAt.toString()
+                                        }
+                                    }
+                                    td {
+                                        +when (it.action) {
+                                            AccountStandingAction.SILENCE -> "Silence"
+                                            AccountStandingAction.SUSPENSION -> "Suspension"
+                                        }
+                                    }
+                                    td { +(it.lengthMinutes?.let { minutes -> "$minutes minutes" } ?: "Indefinite") }
+                                    td { +(it.description ?: "") }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 

@@ -131,6 +131,33 @@ class ReviewApiTest : ApiTestBase() {
     }
 
     @Test
+    fun silencedCantReview() = testApplication {
+        val client = setup()
+
+        val (mapId, otherUserId) = newSuspendedTransaction {
+            val (mapOwner, _) = createUser()
+            val (otherUser, _) = createUser()
+            val (mapId, _) = createMap(mapOwner)
+
+            toHexString(mapId) to otherUser
+        }
+
+        login(client, 2)
+        client.post("/api/users/silence") {
+            contentType(ContentType.Application.Json)
+            setBody(UserReviewSilenceRequest(otherUserId, null, "inappropriate beatmap comment"))
+        }
+
+        login(client, otherUserId)
+        val createReview = client.put("/api/review/single/$mapId/$otherUserId") {
+            contentType(ContentType.Application.Json)
+            setBody(fakeReview)
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, createReview.status, "Reviews should not be allowed by silenced users")
+    }
+
+    @Test
     fun uploaderCantReview() = testApplication {
         val client = setup()
 
@@ -204,6 +231,34 @@ class ReviewApiTest : ApiTestBase() {
 
             assertEquals(HttpStatusCode.BadRequest, createCollaboratorReview.status, "Replies should not be allowed by suspended users")
         }
+    }
+
+    @Test
+    fun silencedCantReply() = testApplication {
+        val client = setup()
+
+        val (reviewId, userId) = newSuspendedTransaction {
+            val (mapOwner, _) = createUser()
+            val (otherUser, _) = createUser()
+            val (mapId, _) = createMap(mapOwner)
+            val reviewId = review(otherUser, mapId)
+
+            reviewId to otherUser
+        }
+
+        login(client, 2)
+        client.post("/api/users/silence") {
+            contentType(ContentType.Application.Json)
+            setBody(UserReviewSilenceRequest(userId, 80, "inappropriate beatmap comment"))
+        }
+
+        login(client, userId)
+        val createReply = client.post("/api/reply/create/$reviewId") {
+            contentType(ContentType.Application.Json)
+            setBody(fakeReply)
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, createReply.status, "Replies should not be allowed by silenced users")
     }
 
     @Test

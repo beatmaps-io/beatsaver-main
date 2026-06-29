@@ -14,6 +14,7 @@ import io.beatmaps.common.ReplyModerationData
 import io.beatmaps.common.ReviewDeleteData
 import io.beatmaps.common.ReviewModerationData
 import io.beatmaps.common.RevokeSessionsData
+import io.beatmaps.common.SilenceData
 import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UnCurateMapData
 import io.beatmaps.common.UnCuratePlaylistData
@@ -239,6 +240,21 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                             p {
                                 className = ClassName("card-text")
                                 +"Suspended: ${action.suspended}"
+                                action.reason?.let { reason ->
+                                    br {}
+                                    +"Reason: $reason"
+                                }
+                            }
+                        }
+
+                        is SilenceData -> {
+                            p {
+                                className = ClassName("card-text")
+                                +"Silenced: ${action.silenced}"
+                                action.durationMinutes?.let { minutes ->
+                                    br {}
+                                    +"Length: $minutes minutes"
+                                }
                                 action.reason?.let { reason ->
                                     br {}
                                     +"Reason: $reason"
