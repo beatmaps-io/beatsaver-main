@@ -250,7 +250,7 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                         is SilenceData -> {
                             p {
                                 className = ClassName("card-text")
-                                +"Silenced: ${action.silenced}"
+                                +(if (action.silenced) "Silenced" else "Silence revoked")
                                 action.durationMinutes?.let { minutes ->
                                     br {}
                                     +"Length: $minutes minutes"

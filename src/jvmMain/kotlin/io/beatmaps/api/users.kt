@@ -442,13 +442,13 @@ fun accountStanding(userId: Int, showAll: Boolean = false, suspended: Boolean = 
 
     val silences = ReviewSilence
         .selectAll()
-        .where { (ReviewSilence.userId eq userId) and ReviewSilence.revokedAt.isNull() }
+        .where { ReviewSilence.userId eq userId }
         .orderBy(ReviewSilence.createdAt, SortOrder.DESC)
         .limit(20)
         .mapNotNull {
             val createdAt = it[ReviewSilence.createdAt]
             val silencedUntil = it[ReviewSilence.silencedUntil]
-            val active = silencedUntil?.let { until -> until > nowInstant } ?: true
+            val active = it[ReviewSilence.revokedAt] == null && (silencedUntil?.let { until -> until > nowInstant } ?: true)
             if (active) {
                 activeSilence(silencedUntil)
             }

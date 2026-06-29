@@ -137,6 +137,35 @@ class UserApiTest : ApiTestBase() {
     }
 
     @Test
+    fun revokedSilenceAppearsInModLogAndAccountStanding() = testApplication {
+        val client = setup()
+        val (userId, _) = createUser()
+
+        login(client, 2)
+        client.post("/api/users/silence") {
+            contentType(ContentType.Application.Json)
+            setBody(UserReviewSilenceRequest(userId, 80, "inappropriate beatmap comment"))
+        }
+        client.post("/api/users/silence") {
+            contentType(ContentType.Application.Json)
+            setBody(UserReviewSilenceRequest(userId, 0, null))
+        }
+
+        val silenceEntries = client.get("/api/modlog/0?type=Silence").body<List<ModLogEntry>>()
+        val revoke = silenceEntries.first { it.user.id == userId && (it.action as SilenceData).silenced == false }
+
+        login(client, userId)
+        val detail = client.get("/api/users/id/$userId").body<UserDetail>()
+        val silence = detail.accountStanding.single { it.action == AccountStandingAction.SILENCE }
+
+        assertEquals(ModLogOpType.Silence, revoke.type)
+        assertEquals(false, detail.reviewSilenced)
+        assertEquals(null, detail.reviewSilencedUntil)
+        assertEquals(80, silence.lengthMinutes)
+        assertEquals("inappropriate beatmap comment", silence.description)
+    }
+
+    @Test
     fun permanentSilenceShowsWithoutExpiry() = testApplication {
         val client = setup()
         val (userId, _) = createUser()
