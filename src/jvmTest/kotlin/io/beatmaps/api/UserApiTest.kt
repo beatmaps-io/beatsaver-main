@@ -133,6 +133,7 @@ class UserApiTest : ApiTestBase() {
 
         assertTrue(allEntries.any { it.user.id == userId && it.type == ModLogOpType.Silence })
         assertEquals(ModLogOpType.Silence, silence.type)
+        assertEquals("Silence", silence.actionLabel)
         assertEquals(true, action.silenced)
         assertEquals(80, action.durationMinutes)
         assertEquals("inappropriate beatmap comment", action.reason)
@@ -161,6 +162,7 @@ class UserApiTest : ApiTestBase() {
         val silence = detail.accountStanding.single { it.action == AccountStandingAction.SILENCE }
 
         assertEquals(ModLogOpType.Silence, revoke.type)
+        assertEquals("Silence revoked", revoke.actionLabel)
         assertEquals(false, detail.reviewSilenced)
         assertEquals(null, detail.reviewSilencedUntil)
         assertEquals(80, silence.lengthMinutes)

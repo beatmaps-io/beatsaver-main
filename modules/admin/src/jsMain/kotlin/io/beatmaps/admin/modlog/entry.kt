@@ -81,7 +81,7 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                     }
                 }
             }
-            td { +it.type.name }
+            td { +it.actionLabel }
             td {
                 TimeAgo.default {
                     date = it.time.toString()

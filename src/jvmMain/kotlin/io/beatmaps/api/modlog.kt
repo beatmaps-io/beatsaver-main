@@ -5,9 +5,12 @@ package io.beatmaps.api
 import de.nielsfalk.ktor.swagger.Ignore
 import de.nielsfalk.ktor.swagger.ModelClass
 import io.beatmaps.api.user.from
+import io.beatmaps.common.IModLogOpAction
 import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.OptionalProperty
 import io.beatmaps.common.OptionalPropertySerializer
+import io.beatmaps.common.SilenceData
+import io.beatmaps.common.SuspendData
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.BeatmapDao
 import io.beatmaps.common.dbo.ModLog
@@ -33,6 +36,13 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.lang.Integer.toHexString
+
+fun ModLogOpType.actionLabel(action: IModLogOpAction) =
+    when (action) {
+        is SilenceData -> if (action.silenced) name else "Silence revoked"
+        is SuspendData -> if (action.suspended) name else "Unsuspend"
+        else -> name
+    }
 
 @Resource("/api")
 class ModLogApi {
@@ -81,15 +91,18 @@ fun Route.modLogRoute() {
                             if (row[ModLog.opOn] != null) BeatmapDao.wrapRow(row)
 
                             ModLogDao.wrapRow(row).let { entry ->
+                                val type = entry.realType()
+                                val action = entry.realAction()
                                 ModLogEntry(
                                     UserDetail.from(entry.opBy),
                                     UserDetail.from(entry.targetUser),
                                     entry.opOn?.let { dao ->
                                         ModLogMapDetail(toHexString(dao.id.value), dao.name)
                                     },
-                                    entry.realType(),
+                                    type,
                                     entry.opAt.toKotlinInstant(),
-                                    entry.realAction()
+                                    action,
+                                    type.actionLabel(action)
                                 )
                             }
                         }
