@@ -4,6 +4,7 @@ import io.beatmaps.common.Config
 import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.SilenceData
 import io.beatmaps.common.dbo.ModLog
+import io.beatmaps.common.dbo.ReviewSilence
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -179,17 +180,12 @@ class UserApiTest : ApiTestBase() {
             contentType(ContentType.Application.Json)
             setBody(UserReviewSilenceRequest(userId, 80, "inappropriate beatmap comment"))
         }
-        client.post("/api/users/silence") {
-            contentType(ContentType.Application.Json)
-            setBody(UserReviewSilenceRequest(userId, 0, null))
-        }
 
         transaction {
             val old = Clock.System.now().minus(100.days).toJavaInstant()
             ReviewSilence.update({ ReviewSilence.userId eq userId }) {
                 it[createdAt] = old
                 it[silencedUntil] = old.plusSeconds(80 * 60)
-                it[revokedAt] = old
             }
             ModLog.update({ (ModLog.targetUser eq userId) and (ModLog.type eq ModLogOpType.Suspend.ordinal) }) {
                 it[opAt] = old

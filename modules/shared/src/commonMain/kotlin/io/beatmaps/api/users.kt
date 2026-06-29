@@ -132,8 +132,8 @@ data class AccountRequest(val currentPassword: String? = null, val password: Str
 @Serializable
 data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val maxVivifySize: Int, val curator: Boolean, val seniorCurator: Boolean, val curatorTab: Boolean, val verifiedMapper: Boolean) {
     companion object {
-        val allowedUploadSizes get() = arrayOf(0, 15, 30, 50)
-        val allowedVivifySizes get() = arrayOf(0, 5, 10, 20)
+        val allowedUploadSizes = arrayOf(0, 15, 30, 50)
+        val allowedVivifySizes = arrayOf(0, 5, 10, 20)
     }
 }
 

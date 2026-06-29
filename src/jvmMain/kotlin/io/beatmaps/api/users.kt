@@ -52,6 +52,7 @@ import io.beatmaps.common.dbo.Patreon
 import io.beatmaps.common.dbo.PatreonDao
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.RefreshTokenTable
+import io.beatmaps.common.dbo.ReviewSilence
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.UserLog
@@ -124,6 +125,7 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.Sum
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
@@ -420,20 +422,36 @@ fun followData(uploaderId: Int, userId: Int?): UserFollowData {
         }
 }
 
-fun accountStanding(userId: Int, showAll: Boolean = false, suspended: Boolean = false): List<AccountStandingEntry> {
+data class AccountStanding(val entries: List<AccountStandingEntry>, val reviewSilenced: Boolean, val reviewSilencedUntil: Instant?)
+
+fun accountStanding(userId: Int, showAll: Boolean = false, suspended: Boolean = false): AccountStanding {
     val now = Clock.System.now()
     val nowInstant = now.toJavaInstant()
     val publicCutoff = now.minus(publicAccountStandingDays).toJavaInstant()
     fun visible(createdAt: java.time.Instant, active: Boolean) = showAll || active || createdAt >= publicCutoff
 
+    var reviewSilencedUntil: java.time.Instant? = null
+    var permanentSilence = false
+    fun activeSilence(until: java.time.Instant?) {
+        if (until == null) {
+            permanentSilence = true
+        } else if (!permanentSilence && (reviewSilencedUntil?.let { until > it } ?: true)) {
+            reviewSilencedUntil = until
+        }
+    }
+
     val silences = ReviewSilence
         .selectAll()
-        .where { ReviewSilence.userId eq userId }
+        .where { (ReviewSilence.userId eq userId) and ReviewSilence.revokedAt.isNull() }
         .orderBy(ReviewSilence.createdAt, SortOrder.DESC)
         .limit(20)
         .mapNotNull {
             val createdAt = it[ReviewSilence.createdAt]
-            val active = it[ReviewSilence.revokedAt] == null && (it[ReviewSilence.silencedUntil]?.let { until -> until > nowInstant } ?: true)
+            val silencedUntil = it[ReviewSilence.silencedUntil]
+            val active = silencedUntil?.let { until -> until > nowInstant } ?: true
+            if (active) {
+                activeSilence(silencedUntil)
+            }
             if (visible(createdAt, active)) {
                 AccountStandingEntry(
                     AccountStandingAction.SILENCE,
@@ -470,15 +488,21 @@ fun accountStanding(userId: Int, showAll: Boolean = false, suspended: Boolean = 
             }
         }
 
-    return (silences + suspensions).sortedByDescending { it.createdAt }.take(20)
+    return AccountStanding(
+        (silences + suspensions).sortedByDescending { it.createdAt }.take(20),
+        permanentSilence || reviewSilencedUntil != null,
+        if (permanentSilence) null else reviewSilencedUntil?.toKotlinInstant()
+    )
 }
 
-fun UserDetail.withAccountStanding(userId: Int, showAll: Boolean = false) =
-    copy(
-        reviewSilenced = ReviewSilence.active(userId),
-        reviewSilencedUntil = ReviewSilence.activeUntil(userId)?.toKotlinInstant(),
-        accountStanding = accountStanding(userId, showAll, suspendedAt != null)
+fun UserDetail.withAccountStanding(userId: Int, showAll: Boolean = false): UserDetail {
+    val standing = accountStanding(userId, showAll, suspendedAt != null)
+    return copy(
+        reviewSilenced = standing.reviewSilenced,
+        reviewSilencedUntil = standing.reviewSilencedUntil,
+        accountStanding = standing.entries
     )
+}
 
 fun Route.userRoute(client: HttpClient) {
     val usernameRegex = Regex("^[._\\-A-Za-z0-9]{3,50}$")

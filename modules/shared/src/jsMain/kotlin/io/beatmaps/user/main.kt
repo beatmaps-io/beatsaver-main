@@ -530,105 +530,104 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                     }
                 }
             }
-            val description = userDetail?.description?.take(500).orEmpty()
-            val stats = userDetail?.stats
-            val hasStats = stats?.let { it.totalMaps != 0 || it.totalPlaylists != 0 } == true
-            val showProfileInfo = description.isNotBlank() || hasStats
             div {
                 className = ClassName("col-md-8 mb-3 position-relative")
-                if (showProfileInfo) {
+                div {
+                    className = ClassName("card user-info")
                     div {
-                        className = ClassName("card user-info")
-                        div {
-                            className = ClassName("card-body")
-                            if (description.isNotBlank()) {
-                                span {
-                                    textToContent(description)
-                                }
+                        className = ClassName("card-body")
+                        if (userDetail?.suspendedAt != null) {
+                            span {
+                                className = ClassName("text-danger")
+                                +"This user has been suspended."
                             }
-                            stats?.let {
-                                if (hasStats) {
-                                    table {
-                                        className = ClassName("table table-dark")
-                                        thead {
-                                            tr {
-                                                th { +"Maps" }
-                                                th { +"Average Rating" }
-                                                th { +"Difficulty Spread" }
-                                                th { +"Playlists" }
-                                            }
+                        } else {
+                            span {
+                                textToContent((userDetail?.description?.take(500) ?: ""))
+                            }
+                        }
+                        userDetail?.stats?.let {
+                            if (it.totalMaps != 0 || it.totalPlaylists != 0) {
+                                table {
+                                    className = ClassName("table table-dark")
+                                    thead {
+                                        tr {
+                                            th { +"Maps" }
+                                            th { +"Average Rating" }
+                                            th { +"Difficulty Spread" }
+                                            th { +"Playlists" }
                                         }
-                                        tbody {
-                                            tr {
-                                                td { +"${it.totalMaps}" }
-                                                td { +"${it.avgScore}% (${it.totalUpvotes} / ${it.totalDownvotes})" }
-                                                it.diffStats?.let { ds ->
-                                                    td {
+                                    }
+                                    tbody {
+                                        tr {
+                                            td { +"${it.totalMaps}" }
+                                            td { +"${it.avgScore}% (${it.totalUpvotes} / ${it.totalDownvotes})" }
+                                            it.diffStats?.let { ds ->
+                                                td {
+                                                    div {
+                                                        className = ClassName("difficulty-spread mb-1")
                                                         div {
-                                                            className = ClassName("difficulty-spread mb-1")
-                                                            div {
-                                                                className = ClassName("badge-green")
-                                                                style = jso {
-                                                                    flex = number(ds.easy.toDouble())
-                                                                }
-                                                                title = "${ds.easy}"
+                                                            className = ClassName("badge-green")
+                                                            style = jso {
+                                                                flex = number(ds.easy.toDouble())
                                                             }
-                                                            div {
-                                                                className = ClassName("badge-blue")
-                                                                style = jso {
-                                                                    flex = number(ds.normal.toDouble())
-                                                                }
-                                                                title = "${ds.normal}"
-                                                            }
-                                                            div {
-                                                                className = ClassName("badge-hard")
-                                                                style = jso {
-                                                                    flex = number(ds.hard.toDouble())
-                                                                }
-                                                                title = "${ds.hard}"
-                                                            }
-                                                            div {
-                                                                className = ClassName("badge-expert")
-                                                                style = jso {
-                                                                    flex = number(ds.expert.toDouble())
-                                                                }
-                                                                title = "${ds.expert}"
-                                                            }
-                                                            div {
-                                                                className = ClassName("badge-purple")
-                                                                style = jso {
-                                                                    flex = number(ds.expertPlus.toDouble())
-                                                                }
-                                                                title = "${ds.expertPlus}"
-                                                            }
+                                                            title = "${ds.easy}"
                                                         }
                                                         div {
-                                                            className = ClassName("legend")
-                                                            span {
-                                                                className = ClassName("legend-green")
-                                                                +"Easy"
+                                                            className = ClassName("badge-blue")
+                                                            style = jso {
+                                                                flex = number(ds.normal.toDouble())
                                                             }
-                                                            span {
-                                                                className = ClassName("legend-blue")
-                                                                +"Normal"
+                                                            title = "${ds.normal}"
+                                                        }
+                                                        div {
+                                                            className = ClassName("badge-hard")
+                                                            style = jso {
+                                                                flex = number(ds.hard.toDouble())
                                                             }
-                                                            span {
-                                                                className = ClassName("legend-hard")
-                                                                +"Hard"
+                                                            title = "${ds.hard}"
+                                                        }
+                                                        div {
+                                                            className = ClassName("badge-expert")
+                                                            style = jso {
+                                                                flex = number(ds.expert.toDouble())
                                                             }
-                                                            span {
-                                                                className = ClassName("legend-expert")
-                                                                +"Expert"
+                                                            title = "${ds.expert}"
+                                                        }
+                                                        div {
+                                                            className = ClassName("badge-purple")
+                                                            style = jso {
+                                                                flex = number(ds.expertPlus.toDouble())
                                                             }
-                                                            span {
-                                                                className = ClassName("legend-purple")
-                                                                +"Expert+"
-                                                            }
+                                                            title = "${ds.expertPlus}"
+                                                        }
+                                                    }
+                                                    div {
+                                                        className = ClassName("legend")
+                                                        span {
+                                                            className = ClassName("legend-green")
+                                                            +"Easy"
+                                                        }
+                                                        span {
+                                                            className = ClassName("legend-blue")
+                                                            +"Normal"
+                                                        }
+                                                        span {
+                                                            className = ClassName("legend-hard")
+                                                            +"Hard"
+                                                        }
+                                                        span {
+                                                            className = ClassName("legend-expert")
+                                                            +"Expert"
+                                                        }
+                                                        span {
+                                                            className = ClassName("legend-purple")
+                                                            +"Expert+"
                                                         }
                                                     }
                                                 }
-                                                td { +"${it.totalPlaylists}" }
                                             }
+                                            td { +"${it.totalPlaylists}" }
                                         }
                                     }
                                 }
