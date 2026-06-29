@@ -286,7 +286,7 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                                 Axios.put<ActionResponse>(
                                     "${Config.apibase}/review/single/${props.map?.id}/${props.userId}",
                                     PutReview(newReview, reqSentiment),
-                                    generateConfig<PutReview, ActionResponse>()
+                                    generateConfig<PutReview, ActionResponse>(validStatus = arrayOf(200, 400))
                                 ).then { r ->
                                     if (r.data.success) {
                                         setSentiment(reqSentiment)

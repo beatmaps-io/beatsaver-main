@@ -8,6 +8,7 @@ import io.beatmaps.admin.AdminAccountComponentProps
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.SessionRevokeRequest
 import io.beatmaps.api.UserAdminRequest
+import io.beatmaps.api.UserReviewSilenceRequest
 import io.beatmaps.api.UserSuspendRequest
 import io.beatmaps.shared.ModalButton
 import io.beatmaps.shared.ModalData
@@ -21,6 +22,7 @@ import react.dom.html.ReactHTML.button
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.h5
 import react.dom.html.ReactHTML.hr
+import react.dom.html.ReactHTML.input
 import react.dom.html.ReactHTML.label
 import react.dom.html.ReactHTML.option
 import react.dom.html.ReactHTML.p
@@ -36,6 +38,7 @@ import web.html.ButtonType
 import web.html.HTMLInputElement
 import web.html.HTMLSelectElement
 import web.html.HTMLTextAreaElement
+import web.html.InputType
 
 val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
     val maxUploadRef = useRef<HTMLSelectElement>()
@@ -44,6 +47,8 @@ val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
     val seniorCuratorRef = useRef<HTMLInputElement>()
     val curatorTabRef = useRef<HTMLInputElement>()
     val verifiedMapperRef = useRef<HTMLInputElement>()
+    val durationRef = useRef<HTMLInputElement>()
+    val permanentRef = useRef<HTMLInputElement>()
     val reasonRef = useRef<HTMLTextAreaElement>()
 
     val (loading, setLoading) = useState(false)
@@ -67,6 +72,24 @@ val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
             "${Config.apibase}/users/suspend",
             UserSuspendRequest(props.userDetail.id, suspended, reason),
             generateConfig<UserSuspendRequest, ActionResponse>()
+        ).then {
+            props.onUpdate()
+            setErrors(it.data.errors)
+            setLoading(false)
+            setSuccess(it.data.success)
+            true
+        }.catch {
+            // Cancelled request
+            setLoading(false)
+            setSuccess(false)
+            false
+        }
+
+    fun silence(durationMinutes: Int?, reason: String? = null) =
+        Axios.post<ActionResponse>(
+            "${Config.apibase}/users/silence",
+            UserReviewSilenceRequest(props.userDetail.id, durationMinutes, reason),
+            generateConfig<UserReviewSilenceRequest, ActionResponse>()
         ).then {
             props.onUpdate()
             setErrors(it.data.errors)
@@ -273,6 +296,86 @@ val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
                             )
                         }
                         +"Suspend"
+                    }
+                }
+                if (props.userDetail.reviewSilenced) {
+                    a {
+                        href = "#"
+                        className = ClassName("btn btn-warning mt-2")
+                        onClick = { ev ->
+                            ev.preventDefault()
+
+                            setLoading(true)
+                            silence(0)
+                        }
+                        +"Revoke Silence"
+                    }
+                } else {
+                    a {
+                        href = "#"
+                        className = ClassName("btn btn-warning mt-2")
+                        onClick = { ev ->
+                            ev.preventDefault()
+
+                            modal?.current?.showDialog?.invoke(
+                                ModalData(
+                                    "Silence user",
+                                    bodyCallback = {
+                                        p {
+                                            +"Silence this user so they can't review maps or reply to reviews?"
+                                        }
+                                        label {
+                                            className = ClassName("form-label")
+                                            htmlFor = "silence-duration"
+                                            +"Length in minutes"
+                                        }
+                                        input {
+                                            id = "silence-duration"
+                                            className = ClassName("form-control")
+                                            type = InputType.number
+                                            min = "1"
+                                            defaultValue = "80"
+                                            ref = durationRef
+                                        }
+                                        div {
+                                            className = ClassName("form-check mt-3")
+                                            input {
+                                                id = "silence-permanent"
+                                                className = ClassName("form-check-input")
+                                                type = InputType.checkbox
+                                                ref = permanentRef
+                                            }
+                                            label {
+                                                className = ClassName("form-check-label")
+                                                htmlFor = "silence-permanent"
+                                                +"Permanent"
+                                            }
+                                        }
+                                        p {
+                                            className = ClassName("mt-3")
+                                            +"Comment for action:"
+                                        }
+                                        textarea {
+                                            className = ClassName("form-control")
+                                            ref = reasonRef
+                                        }
+                                    },
+                                    buttons = listOf(
+                                        ModalButton("Silence", "primary") {
+                                            setLoading(true)
+                                            val duration = if (permanentRef.current?.checked == true) {
+                                                null
+                                            } else {
+                                                durationRef.current?.value?.toIntOrNull()?.takeIf { it > 0 } ?: 80
+                                            }
+                                            silence(duration, reasonRef.current?.value)
+                                        },
+                                        ModalButton("Cancel")
+                                    )
+                                )
+                            )
+                        }
+                        +"Silence"
                     }
                 }
                 a {

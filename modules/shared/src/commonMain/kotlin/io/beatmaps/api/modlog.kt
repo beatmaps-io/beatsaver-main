@@ -12,7 +12,8 @@ data class ModLogEntry(
     val map: ModLogMapDetail?,
     val type: ModLogOpType,
     val time: Instant,
-    val action: IModLogOpAction
+    val action: IModLogOpAction,
+    val actionLabel: String = type.name
 )
 
 @Serializable

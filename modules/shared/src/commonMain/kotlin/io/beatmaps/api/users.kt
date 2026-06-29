@@ -26,6 +26,23 @@ enum class PatreonTier(val pledge: Int, val supporting: Boolean, val title: Stri
     }
 }
 
+enum class AccountStandingAction {
+    SILENCE, SUSPENSION
+}
+
+enum class AccountStandingStatus {
+    ACTIVE, REVOKED, EXPIRED
+}
+
+@Serializable
+data class AccountStandingEntry(
+    val action: AccountStandingAction,
+    val createdAt: Instant,
+    val lengthMinutes: Int? = null,
+    val description: String? = null,
+    val status: AccountStandingStatus = AccountStandingStatus.ACTIVE
+)
+
 @Serializable
 data class UserDetail(
     val id: Int,
@@ -49,7 +66,10 @@ data class UserDetail(
     val suspendedAt: Instant? = null,
     val playlistUrl: String? = null,
     val patreon: PatreonTier? = null,
-    val blurnsfw: Boolean? = null
+    val blurnsfw: Boolean? = null,
+    val reviewSilenced: Boolean = false,
+    val reviewSilencedUntil: Instant? = null,
+    val accountStanding: List<AccountStandingEntry> = emptyList()
 ) {
     fun profileLink(tab: String? = null, absolute: Boolean = false) = LinkHelper.profileLink(this, tab, absolute)
     companion object
@@ -124,6 +144,9 @@ data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val maxVivi
 
 @Serializable
 data class UserSuspendRequest(val userId: Int, val suspended: Boolean, val reason: String?)
+
+@Serializable
+data class UserReviewSilenceRequest(val userId: Int, val durationMinutes: Int?, val reason: String?)
 
 @Serializable
 data class UserFollowRequest(val userId: Int, val following: Boolean, val upload: Boolean, val curation: Boolean, val collab: Boolean)
