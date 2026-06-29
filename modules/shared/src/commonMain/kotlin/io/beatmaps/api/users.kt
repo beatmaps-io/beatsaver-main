@@ -30,12 +30,17 @@ enum class AccountStandingAction {
     SILENCE, SUSPENSION
 }
 
+enum class AccountStandingStatus {
+    ACTIVE, REVOKED, EXPIRED
+}
+
 @Serializable
 data class AccountStandingEntry(
     val action: AccountStandingAction,
     val createdAt: Instant,
     val lengthMinutes: Int? = null,
-    val description: String? = null
+    val description: String? = null,
+    val status: AccountStandingStatus = AccountStandingStatus.ACTIVE
 )
 
 @Serializable

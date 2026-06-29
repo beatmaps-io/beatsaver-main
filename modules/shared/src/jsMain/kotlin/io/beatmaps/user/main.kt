@@ -10,6 +10,7 @@ import io.beatmaps.History
 import io.beatmaps.UserData
 import io.beatmaps.admin.admin
 import io.beatmaps.api.AccountStandingAction
+import io.beatmaps.api.AccountStandingStatus
 import io.beatmaps.api.IssueCreationRequest
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserFollowData
@@ -721,7 +722,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                         +"Recent Infringements"
                     }
                     table {
-                        className = ClassName("table table-dark mb-0")
+                        className = ClassName("table table-dark account-standing mb-0")
                         thead {
                             tr {
                                 th { +"Date" }
@@ -732,6 +733,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                         }
                         tbody {
                             userDetail.accountStanding.forEach {
+                                val inactive = it.status != AccountStandingStatus.ACTIVE
                                 tr {
                                     td {
                                         TimeAgo.default {
@@ -739,9 +741,22 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                                         }
                                     }
                                     td {
-                                        +when (it.action) {
-                                            AccountStandingAction.SILENCE -> "Silence"
-                                            AccountStandingAction.SUSPENSION -> "Suspension"
+                                        span {
+                                            className = ClassName("standing-action" + if (inactive) " inactive" else "")
+                                            +when (it.action) {
+                                                AccountStandingAction.SILENCE -> "Silence"
+                                                AccountStandingAction.SUSPENSION -> "Suspension"
+                                            }
+                                        }
+                                        if (inactive) {
+                                            i {
+                                                className = ClassName("fas fa-info-circle standing-status ms-2")
+                                                title = when (it.status) {
+                                                    AccountStandingStatus.REVOKED -> "Revoked"
+                                                    AccountStandingStatus.EXPIRED -> "Expired"
+                                                    AccountStandingStatus.ACTIVE -> ""
+                                                }
+                                            }
                                         }
                                     }
                                     td { +(it.lengthMinutes?.let { minutes -> "$minutes minutes" } ?: "Indefinite") }

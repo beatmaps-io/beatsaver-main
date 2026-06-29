@@ -428,7 +428,8 @@ fun accountStanding(userId: Int, showAll: Boolean = false, suspended: Boolean = 
     val now = Clock.System.now()
     val nowInstant = now.toJavaInstant()
     val publicCutoff = now.minus(publicAccountStandingDays).toJavaInstant()
-    fun visible(createdAt: java.time.Instant, active: Boolean) = showAll || active || createdAt >= publicCutoff
+    fun visible(createdAt: java.time.Instant, status: AccountStandingStatus) =
+        showAll || status == AccountStandingStatus.ACTIVE || createdAt >= publicCutoff
 
     var reviewSilencedUntil: java.time.Instant? = null
     var permanentSilence = false
@@ -448,16 +449,22 @@ fun accountStanding(userId: Int, showAll: Boolean = false, suspended: Boolean = 
         .mapNotNull {
             val createdAt = it[ReviewSilence.createdAt]
             val silencedUntil = it[ReviewSilence.silencedUntil]
-            val active = it[ReviewSilence.revokedAt] == null && (silencedUntil?.let { until -> until > nowInstant } ?: true)
+            val status = when {
+                it[ReviewSilence.revokedAt] != null -> AccountStandingStatus.REVOKED
+                silencedUntil?.let { until -> until <= nowInstant } == true -> AccountStandingStatus.EXPIRED
+                else -> AccountStandingStatus.ACTIVE
+            }
+            val active = status == AccountStandingStatus.ACTIVE
             if (active) {
                 activeSilence(silencedUntil)
             }
-            if (visible(createdAt, active)) {
+            if (visible(createdAt, status)) {
                 AccountStandingEntry(
                     AccountStandingAction.SILENCE,
                     createdAt.toKotlinInstant(),
                     it[ReviewSilence.durationMinutes],
-                    it[ReviewSilence.reason]
+                    it[ReviewSilence.reason],
+                    status
                 )
             } else {
                 null
@@ -477,11 +484,14 @@ fun accountStanding(userId: Int, showAll: Boolean = false, suspended: Boolean = 
         }
         .mapIndexedNotNull { index, (row, action) ->
             val createdAt = row[ModLog.opAt]
-            if (visible(createdAt, suspended && index == 0)) {
+            val active = suspended && index == 0
+            val status = if (active) AccountStandingStatus.ACTIVE else AccountStandingStatus.REVOKED
+            if (visible(createdAt, status)) {
                 AccountStandingEntry(
                     AccountStandingAction.SUSPENSION,
                     createdAt.toKotlinInstant(),
-                    description = action.reason
+                    description = action.reason,
+                    status = status
                 )
             } else {
                 null

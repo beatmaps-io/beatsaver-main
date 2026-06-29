@@ -109,8 +109,10 @@ class UserApiTest : ApiTestBase() {
         assertNotNull(detail.reviewSilencedUntil)
         assertEquals(80, silence.lengthMinutes)
         assertEquals("inappropriate beatmap comment", silence.description)
+        assertEquals(AccountStandingStatus.ACTIVE, silence.status)
         assertEquals(null, suspension.lengthMinutes)
         assertEquals("spam", suspension.description)
+        assertEquals(AccountStandingStatus.ACTIVE, suspension.status)
     }
 
     @Test
@@ -163,6 +165,34 @@ class UserApiTest : ApiTestBase() {
         assertEquals(null, detail.reviewSilencedUntil)
         assertEquals(80, silence.lengthMinutes)
         assertEquals("inappropriate beatmap comment", silence.description)
+        assertEquals(AccountStandingStatus.REVOKED, silence.status)
+    }
+
+    @Test
+    fun expiredSilenceStaysInPublicAccountStanding() = testApplication {
+        val client = setup()
+        val (userId, _) = createUser()
+
+        login(client, 2)
+        client.post("/api/users/silence") {
+            contentType(ContentType.Application.Json)
+            setBody(UserReviewSilenceRequest(userId, 80, "inappropriate beatmap comment"))
+        }
+        transaction {
+            val expired = Clock.System.now().minus(1.days).toJavaInstant()
+            ReviewSilence.update({ ReviewSilence.userId eq userId }) {
+                it[createdAt] = expired
+                it[silencedUntil] = expired.plusSeconds(80 * 60)
+            }
+        }
+
+        login(client, userId)
+        val detail = client.get("/api/users/id/$userId").body<UserDetail>()
+        val silence = detail.accountStanding.single { it.action == AccountStandingAction.SILENCE }
+
+        assertEquals(false, detail.reviewSilenced)
+        assertEquals(AccountStandingStatus.EXPIRED, silence.status)
+        assertEquals("inappropriate beatmap comment", silence.description)
     }
 
     @Test
@@ -189,6 +219,7 @@ class UserApiTest : ApiTestBase() {
         assertEquals(null, detail.reviewSilencedUntil)
         assertEquals(null, silence.lengthMinutes)
         assertEquals("review spam", silence.description)
+        assertEquals(AccountStandingStatus.ACTIVE, silence.status)
     }
 
     @Test
@@ -226,8 +257,12 @@ class UserApiTest : ApiTestBase() {
 
         login(client, 2)
         val adminDetail = client.get("/api/users/id/$userId").body<UserDetail>()
+        val adminSilence = adminDetail.accountStanding.single { it.action == AccountStandingAction.SILENCE }
+        val adminSuspension = adminDetail.accountStanding.single { it.action == AccountStandingAction.SUSPENSION }
 
         assertEquals(emptyList(), publicDetail.accountStanding)
         assertEquals(setOf(AccountStandingAction.SILENCE, AccountStandingAction.SUSPENSION), adminDetail.accountStanding.map { it.action }.toSet())
+        assertEquals(AccountStandingStatus.EXPIRED, adminSilence.status)
+        assertEquals(AccountStandingStatus.REVOKED, adminSuspension.status)
     }
 }
