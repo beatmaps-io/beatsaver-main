@@ -26,6 +26,6 @@ fun reviewSilenced(userId: Int) =
 
 fun requireNotReviewSilenced(userId: Int) {
     if (reviewSilenced(userId)) {
-        throw UserApiException("Silenced from reviewing maps")
+        throw UserApiException("You are currently silenced and cannot review maps or reply to reviews.")
     }
 }

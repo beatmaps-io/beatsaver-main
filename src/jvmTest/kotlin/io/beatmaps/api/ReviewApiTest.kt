@@ -16,6 +16,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ReviewApiTest : ApiTestBase() {
+    private val silenceError = listOf("You are currently silenced and cannot review maps or reply to reviews.")
+
     @Test
     fun badId() = testApplication {
         val client = setup()
@@ -155,6 +157,7 @@ class ReviewApiTest : ApiTestBase() {
         }
 
         assertEquals(HttpStatusCode.BadRequest, createReview.status, "Reviews should not be allowed by silenced users")
+        assertEquals(silenceError, createReview.body<ActionResponse>().errors)
     }
 
     @Test
@@ -259,6 +262,7 @@ class ReviewApiTest : ApiTestBase() {
         }
 
         assertEquals(HttpStatusCode.BadRequest, createReply.status, "Replies should not be allowed by silenced users")
+        assertEquals(silenceError, createReply.body<ActionResponse>().errors)
     }
 
     @Test
