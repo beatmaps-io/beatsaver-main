@@ -11,7 +11,6 @@ import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.shared.form.errors
 import io.beatmaps.util.fcmemo
-import io.beatmaps.util.responseErrors
 import react.Props
 import react.RefObject
 import react.dom.html.ReactHTML.a

@@ -3,7 +3,6 @@ package io.beatmaps.shared
 import external.AxiosResponse
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.util.fcmemo
-import io.beatmaps.util.responseErrors
 import io.beatmaps.util.setData
 import io.beatmaps.util.textToContent
 import js.objects.jso
