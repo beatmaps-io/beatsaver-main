@@ -16,10 +16,9 @@ class IssueTest : BrowserTestBase() {
         val (mapId, userIds) = newSuspendedTransaction {
             val (uid, _) = createUser()
             val (mid, _) = createMap(uid, true)
-            val (suspendedUserId, _) = createUser(suspended = true)
             val (adminUserId, _) = createUser(admin = true)
 
-            mid to listOf(uid, adminUserId, suspendedUserId)
+            mid to listOf(uid, adminUserId)
         }
 
         // Check option isn't visible as admin/owner/suspended
@@ -172,10 +171,9 @@ class IssueTest : BrowserTestBase() {
         val (playlistId, userIds) = newSuspendedTransaction {
             val (uid, _) = createUser()
             val pid = createPlaylist(uid, EPlaylistType.Public)
-            val (suspendedUserId, _) = createUser(suspended = true)
             val (adminUserId, _) = createUser(admin = true)
 
-            pid to listOf(uid, adminUserId, suspendedUserId)
+            pid to listOf(uid, adminUserId)
         }
 
         // Check option isn't visible as admin/owner/suspended
@@ -240,10 +238,9 @@ class IssueTest : BrowserTestBase() {
     fun `Can't report users`() = bmTest {
         val (uid, userIds) = newSuspendedTransaction {
             val (uid, _) = createUser()
-            val (suspendedUserId, _) = createUser(suspended = true)
             val (adminUserId, _) = createUser(admin = true)
 
-            uid to listOf(uid, adminUserId, suspendedUserId)
+            uid to listOf(uid, adminUserId)
         }
 
         // Check option isn't visible as admin/owner/suspended
@@ -309,12 +306,11 @@ class IssueTest : BrowserTestBase() {
             val (uid, _) = createUser()
             val (mid, _) = createMap(uid, true)
             val (reviewerId, _) = createUser()
-            val (suspendedUserId, _) = createUser(suspended = true)
             val (adminUserId, _) = createUser(admin = true)
 
             review(reviewerId, mid)
 
-            mid to listOf(reviewerId, adminUserId, suspendedUserId)
+            mid to listOf(reviewerId, adminUserId)
         }
 
         // Check option isn't visible as admin/owner/suspended

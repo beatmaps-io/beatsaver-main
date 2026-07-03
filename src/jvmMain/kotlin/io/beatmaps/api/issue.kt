@@ -26,6 +26,7 @@ import io.beatmaps.common.api.MapReportDataBase
 import io.beatmaps.common.api.PlaylistReportDataBase
 import io.beatmaps.common.api.ReviewReportDataBase
 import io.beatmaps.common.api.ReviewSentiment
+import io.beatmaps.common.api.SuspensionType
 import io.beatmaps.common.api.UserReportDataBase
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
@@ -384,18 +385,18 @@ fun IssueCommentDetail.Companion.from(other: IssueCommentDao) = IssueCommentDeta
 fun Route.issueRoute(client: HttpClient) {
     post<IssueApi.Issue> {
         requireAuthorization { _, sess ->
-            if (sess.suspended) {
-                // User is suspended
-                throw UserApiException("Suspended account")
-            }
-
             val req = call.receive<IssueCreationRequest>()
 
             val (res, issueId) = requireCaptcha(
                 client,
                 req.captcha,
                 {
-                    ActionResponse.success() to transaction {
+                    ActionResponse.success() to newSuspendedTransaction {
+                        if (isSuspended(sess.userId, SuspensionType.Upload)) {
+                            // User is suspended
+                            throw UserApiException("Suspended account")
+                        }
+
                         Issue.insertAndGetId {
                             it[creator] = sess.userId
                             it[createdAt] = NowExpression(createdAt)
@@ -509,14 +510,14 @@ fun Route.issueRoute(client: HttpClient) {
 
     put<IssueApi.IssueComments> { req ->
         requireAuthorization { _, sess ->
-            if (sess.suspended) {
-                // User is suspended
-                throw UserApiException("Suspended account")
-            }
-
             val comment = call.receive<IssueCommentRequest>()
 
             val response = newSuspendedTransaction {
+                if (isSuspended(sess.userId, SuspensionType.Upload)) {
+                    // User is suspended
+                    throw UserApiException("Suspended account")
+                }
+
                 val intermediaryResult = Issue
                     .updateReturning(
                         { Issue.id eq req.id?.orNull() and Issue.closedAt.isNull() },

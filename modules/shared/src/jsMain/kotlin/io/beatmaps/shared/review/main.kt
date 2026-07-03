@@ -96,7 +96,7 @@ val reviewTable = fcmemo<ReviewTableProps>("reviewTable") { props ->
                 val userIsCollaborator = props.collaborators?.any { singleCollaborator ->
                     singleCollaborator.id == userData?.userId
                 } ?: false
-                if (userData != null && !userData.suspended && userData.userId != props.mapUploaderId && !userIsCollaborator) {
+                if (userData != null && userData.userId != props.mapUploaderId && !userIsCollaborator) {
                     newReview {
                         mapId = map.id
                         userId = userData.userId

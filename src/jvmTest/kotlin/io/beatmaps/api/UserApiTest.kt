@@ -3,8 +3,11 @@ package io.beatmaps.api
 import io.beatmaps.common.Config
 import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.SilenceData
+import io.beatmaps.common.api.SuspensionType
+import io.beatmaps.common.db.DateMinusDays
+import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.ModLog
-import io.beatmaps.common.dbo.ReviewSilence
+import io.beatmaps.common.dbo.Suspensions
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -19,8 +22,8 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
 
@@ -90,8 +93,9 @@ class UserApiTest : ApiTestBase() {
     fun accountStandingCombinesSuspensionsAndSilences() = testApplication {
         val client = setup()
         val (userId, _) = createUser()
+        val (adminUser, _) = createUser(admin = true)
 
-        login(client, 2)
+        login(client, adminUser)
         client.post("/api/users/suspend") {
             contentType(ContentType.Application.Json)
             setBody(UserSuspendRequest(userId, true, "spam"))
@@ -102,11 +106,10 @@ class UserApiTest : ApiTestBase() {
         }
 
         val detail = client.get("/api/users/id/$userId").body<UserDetail>()
-        val silence = detail.accountStanding.single { it.action == AccountStandingAction.SILENCE }
-        val suspension = detail.accountStanding.single { it.action == AccountStandingAction.SUSPENSION }
+        val silence = detail.accountStanding.single { it.type == SuspensionType.Review }
+        val suspension = detail.accountStanding.single { it.type == SuspensionType.Upload }
 
-        assertEquals(true, detail.reviewSilenced)
-        assertNotNull(detail.reviewSilencedUntil)
+        assertContains(detail.suspensions, SuspensionType.Review)
         assertEquals(80, silence.lengthMinutes)
         assertEquals("inappropriate beatmap comment", silence.description)
         assertEquals(AccountStandingStatus.ACTIVE, silence.status)
@@ -119,8 +122,9 @@ class UserApiTest : ApiTestBase() {
     fun silenceAppearsInModLog() = testApplication {
         val client = setup()
         val (userId, _) = createUser()
+        val (adminUser, _) = createUser(admin = true)
 
-        login(client, 2)
+        login(client, adminUser)
         client.post("/api/users/silence") {
             contentType(ContentType.Application.Json)
             setBody(UserReviewSilenceRequest(userId, 80, "inappropriate beatmap comment"))
@@ -143,8 +147,9 @@ class UserApiTest : ApiTestBase() {
     fun revokedSilenceAppearsInModLogAndAccountStanding() = testApplication {
         val client = setup()
         val (userId, _) = createUser()
+        val (adminUser, _) = createUser(admin = true)
 
-        login(client, 2)
+        login(client, adminUser)
         client.post("/api/users/silence") {
             contentType(ContentType.Application.Json)
             setBody(UserReviewSilenceRequest(userId, 80, "inappropriate beatmap comment"))
@@ -155,16 +160,15 @@ class UserApiTest : ApiTestBase() {
         }
 
         val silenceEntries = client.get("/api/modlog/0?type=Silence").body<List<ModLogEntry>>()
-        val revoke = silenceEntries.first { it.user.id == userId && (it.action as SilenceData).silenced == false }
+        val revoke = silenceEntries.first { it.user.id == userId && !(it.action as SilenceData).silenced }
 
         login(client, userId)
         val detail = client.get("/api/users/id/$userId").body<UserDetail>()
-        val silence = detail.accountStanding.single { it.action == AccountStandingAction.SILENCE }
+        val silence = detail.accountStanding.single { it.type == SuspensionType.Review }
 
         assertEquals(ModLogOpType.Silence, revoke.type)
         assertEquals("Silence revoked", revoke.actionLabel)
-        assertEquals(false, detail.reviewSilenced)
-        assertEquals(null, detail.reviewSilencedUntil)
+        assertEquals(false, detail.suspensions.contains(SuspensionType.Review))
         assertEquals(80, silence.lengthMinutes)
         assertEquals("inappropriate beatmap comment", silence.description)
         assertEquals(AccountStandingStatus.REVOKED, silence.status)
@@ -174,25 +178,26 @@ class UserApiTest : ApiTestBase() {
     fun expiredSilenceStaysInPublicAccountStanding() = testApplication {
         val client = setup()
         val (userId, _) = createUser()
+        val (adminUser, _) = createUser(admin = true)
 
-        login(client, 2)
+        login(client, adminUser)
         client.post("/api/users/silence") {
             contentType(ContentType.Application.Json)
             setBody(UserReviewSilenceRequest(userId, 80, "inappropriate beatmap comment"))
         }
         transaction {
             val expired = Clock.System.now().minus(1.days).toJavaInstant()
-            ReviewSilence.update({ ReviewSilence.userId eq userId }) {
+            Suspensions.update({ Suspensions.userId eq userId }) {
                 it[createdAt] = expired
-                it[silencedUntil] = expired.plusSeconds(80 * 60)
+                it[expireAt] = expired.plusSeconds(80 * 60)
             }
         }
 
         login(client, userId)
         val detail = client.get("/api/users/id/$userId").body<UserDetail>()
-        val silence = detail.accountStanding.single { it.action == AccountStandingAction.SILENCE }
+        val silence = detail.accountStanding.single { it.type == SuspensionType.Review }
 
-        assertEquals(false, detail.reviewSilenced)
+        assertEquals(false, detail.suspensions.contains(SuspensionType.Review))
         assertEquals(AccountStandingStatus.EXPIRED, silence.status)
         assertEquals("inappropriate beatmap comment", silence.description)
     }
@@ -201,24 +206,24 @@ class UserApiTest : ApiTestBase() {
     fun permanentSilenceShowsWithoutExpiry() = testApplication {
         val client = setup()
         val (userId, _) = createUser()
+        val (adminUser, _) = createUser(admin = true)
 
-        login(client, 2)
+        login(client, adminUser)
         client.post("/api/users/silence") {
             contentType(ContentType.Application.Json)
             setBody(UserReviewSilenceRequest(userId, null, "review spam"))
         }
         transaction {
-            ReviewSilence.update({ ReviewSilence.userId eq userId }) {
-                it[createdAt] = Clock.System.now().minus(100.days).toJavaInstant()
+            Suspensions.update({ Suspensions.userId eq userId }) {
+                it[createdAt] = DateMinusDays(NowExpression(Suspensions.createdAt), 100)
             }
         }
 
         login(client, userId)
         val detail = client.get("/api/users/id/$userId").body<UserDetail>()
-        val silence = detail.accountStanding.single { it.action == AccountStandingAction.SILENCE }
+        val silence = detail.accountStanding.single { it.type == SuspensionType.Review }
 
-        assertEquals(true, detail.reviewSilenced)
-        assertEquals(null, detail.reviewSilencedUntil)
+        assertContains(detail.suspensions, SuspensionType.Review)
         assertEquals(null, silence.lengthMinutes)
         assertEquals("review spam", silence.description)
         assertEquals(AccountStandingStatus.ACTIVE, silence.status)
@@ -228,8 +233,9 @@ class UserApiTest : ApiTestBase() {
     fun publicStandingHidesOldInactiveActions() = testApplication {
         val client = setup()
         val (userId, _) = createUser()
+        val (adminUser, _) = createUser(admin = true)
 
-        login(client, 2)
+        login(client, adminUser)
         client.post("/api/users/suspend") {
             contentType(ContentType.Application.Json)
             setBody(UserSuspendRequest(userId, true, "spam"))
@@ -244,10 +250,10 @@ class UserApiTest : ApiTestBase() {
         }
 
         transaction {
-            val old = Clock.System.now().minus(100.days).toJavaInstant()
-            ReviewSilence.update({ ReviewSilence.userId eq userId }) {
+            val old = DateMinusDays(NowExpression(Suspensions.createdAt), 100)
+            Suspensions.update({ Suspensions.userId eq userId }) {
                 it[createdAt] = old
-                it[silencedUntil] = old.plusSeconds(80 * 60)
+                it[expireAt] = DateMinusDays(NowExpression(Suspensions.createdAt), 99)
             }
             ModLog.update({ (ModLog.targetUser eq userId) and (ModLog.type eq ModLogOpType.Suspend.ordinal) }) {
                 it[opAt] = old
@@ -257,13 +263,13 @@ class UserApiTest : ApiTestBase() {
         login(client, userId)
         val publicDetail = client.get("/api/users/id/$userId").body<UserDetail>()
 
-        login(client, 2)
+        login(client, adminUser)
         val adminDetail = client.get("/api/users/id/$userId").body<UserDetail>()
-        val adminSilence = adminDetail.accountStanding.single { it.action == AccountStandingAction.SILENCE }
-        val adminSuspension = adminDetail.accountStanding.single { it.action == AccountStandingAction.SUSPENSION }
+        val adminSilence = adminDetail.accountStanding.single { it.type == SuspensionType.Review }
+        val adminSuspension = adminDetail.accountStanding.single { it.type == SuspensionType.Upload }
 
         assertEquals(emptyList(), publicDetail.accountStanding)
-        assertEquals(setOf(AccountStandingAction.SILENCE, AccountStandingAction.SUSPENSION), adminDetail.accountStanding.map { it.action }.toSet())
+        assertEquals(setOf(SuspensionType.Review, SuspensionType.Upload), adminDetail.accountStanding.map { it.type }.toSet())
         assertEquals(AccountStandingStatus.EXPIRED, adminSilence.status)
         assertEquals(AccountStandingStatus.REVOKED, adminSuspension.status)
     }

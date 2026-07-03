@@ -14,6 +14,7 @@ import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
+import io.beatmaps.common.api.SuspensionType
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.upsert
 import io.beatmaps.common.dbo.Beatmap
@@ -23,6 +24,7 @@ import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.Review
 import io.beatmaps.common.dbo.ReviewReply
+import io.beatmaps.common.dbo.Suspensions
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.Versions
 import kotlinx.datetime.Clock
@@ -63,13 +65,19 @@ abstract class FixtureHelpers {
                 it[verifyToken] = null
                 it[uniqueName] = username
                 it[active] = true
-                if (suspended) {
-                    it[suspendedAt] = NowExpression(suspendedAt)
-                }
                 it[User.reviewAlerts] = reviewAlerts
                 it[User.admin] = admin
                 it[User.curator] = curator
-            }.value to username
+            }.value.also { userId ->
+                if (suspended) {
+                    Suspensions.insert {
+                        it[Suspensions.userId] = userId
+                        it[Suspensions.type] = SuspensionType.Upload
+                        it[moderatorId] = User.select(User.id).where { User.admin eq true }.limit(1)
+                        it[createdAt] = NowExpression(createdAt)
+                    }
+                }
+            } to username
         }
     }
 

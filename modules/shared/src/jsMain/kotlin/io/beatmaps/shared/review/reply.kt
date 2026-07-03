@@ -67,7 +67,7 @@ val reply = fcmemo<ReplyProps>("reply") { props ->
             }
             if (!deleted) {
                 // Show tools if commenter or curator
-                if (userData != null && !userData.suspended && (props.reply.creator.id == userData.userId || userData.curator)) {
+                if (userData != null && (props.reply.creator.id == userData.userId || userData.curator)) {
                     div {
                         className = ClassName("options")
                         a {

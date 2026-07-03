@@ -8,6 +8,7 @@ import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.api.SuspensionType
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.Alert
 import io.beatmaps.common.dbo.Beatmap
@@ -91,7 +92,7 @@ fun Route.collaborationRoute() {
             val req = call.receive<CollaborationRequestData>()
 
             val success = transaction {
-                (isUploader(req.mapId, sess.userId) && !sess.suspended).also { authorized ->
+                (isUploader(req.mapId, sess.userId) && !isSuspended(sess.userId, SuspensionType.Upload)).also { authorized ->
                     if (authorized) {
                         Collaboration.insertAndGetId {
                             it[mapId] = req.mapId

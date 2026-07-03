@@ -7,6 +7,7 @@ import io.beatmaps.api.PlaylistConstants
 import io.beatmaps.api.PlaylistFull
 import io.beatmaps.api.UploadResponse
 import io.beatmaps.api.from
+import io.beatmaps.api.isSuspended
 import io.beatmaps.common.DeletedPlaylistData
 import io.beatmaps.common.EditPlaylistData
 import io.beatmaps.common.FileLimits
@@ -14,6 +15,7 @@ import io.beatmaps.common.Folders
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.api.EPlaylistType
+import io.beatmaps.common.api.SuspensionType
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.dbo.ModLog
 import io.beatmaps.common.dbo.Playlist
@@ -73,7 +75,7 @@ data class PlaylistEditMultipart(
 
 fun typeFromReq(data: IPlaylistUpdate, sess: Session) =
     EPlaylistType.fromString(data.type)?.let { newType ->
-        if (sess.suspended || newType == EPlaylistType.System) null else newType
+        if (isSuspended(sess.userId, SuspensionType.Upload) || newType == EPlaylistType.System) null else newType
     } ?: EPlaylistType.Private
 
 val thumbnailSizes = listOf(256, 512)

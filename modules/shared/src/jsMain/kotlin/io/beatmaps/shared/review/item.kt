@@ -185,7 +185,7 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                                         }
                                     }
                                 }
-                                if (!userData.suspended && !userData.curator && props.userId != userData.userId) {
+                                if (!userData.curator && props.userId != userData.userId) {
                                     a {
                                         href = "#"
                                         title = "Report"
@@ -215,7 +215,7 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                                         }
                                     }
                                 }
-                                if (!userData.suspended && (props.userId == userData.userId || userData.curator)) {
+                                if (props.userId == userData.userId || userData.curator) {
                                     a {
                                         href = "#"
                                         title = "Edit"

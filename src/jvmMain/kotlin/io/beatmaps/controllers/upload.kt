@@ -22,7 +22,6 @@ import io.beatmaps.controllers.upload.Upload
 import io.beatmaps.controllers.upload.initValidation
 import io.beatmaps.controllers.upload.validateFiles
 import io.beatmaps.genericPage
-import io.beatmaps.login.Session
 import io.beatmaps.util.handleMultipart
 import io.beatmaps.util.requireAuthorization
 import io.ktor.client.HttpClient
@@ -30,10 +29,7 @@ import io.ktor.resources.Resource
 import io.ktor.server.resources.get
 import io.ktor.server.resources.post
 import io.ktor.server.response.respond
-import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
-import io.ktor.server.sessions.get
-import io.ktor.server.sessions.sessions
 import io.ktor.utils.io.jvm.javaio.toInputStream
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
@@ -78,11 +74,7 @@ fun userWipCount(userId: Int) = Beatmap
 
 fun Route.uploadController(client: HttpClient) {
     get<UploadMap> {
-        if (call.sessions.get<Session>().let { it == null || it.suspended }) {
-            call.respondRedirect("/")
-        } else {
-            genericPage()
-        }
+        genericPage()
     }
 
     post<UploadAvatar> {

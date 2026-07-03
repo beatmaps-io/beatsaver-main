@@ -112,27 +112,6 @@ class ReviewApiTest : ApiTestBase() {
     private val fakeReply = ReplyRequest("Fake reply", "fake-captcha")
 
     @Test
-    fun suspendedCantReview() = testApplication {
-        val client = setup()
-
-        val (mapId, otherUserId) = newSuspendedTransaction {
-            val (mapOwner, _) = createUser()
-            val (otherUser, _) = createUser(suspended = true)
-            val (mapId, _) = createMap(mapOwner)
-
-            toHexString(mapId) to otherUser
-        }
-
-        login(client, otherUserId)
-        val createCollaboratorReview = client.put("/api/review/single/$mapId/$otherUserId") {
-            contentType(ContentType.Application.Json)
-            setBody(fakeReview)
-        }
-
-        assertEquals(HttpStatusCode.BadRequest, createCollaboratorReview.status, "Reviews should not be allowed by suspended users")
-    }
-
-    @Test
     fun silencedCantReview() = testApplication {
         val client = setup()
 
@@ -209,31 +188,6 @@ class ReviewApiTest : ApiTestBase() {
 
         assertEquals(HttpStatusCode.OK, createReview.status, "New review request should succeed")
         checkAlertCount(client, mapOwner, 1)
-    }
-
-    @Test
-    fun suspendedCantReply() = testApplication {
-        val client = setup()
-
-        val (reviewId, userIds) = newSuspendedTransaction {
-            val (mapOwner, _) = createUser(suspended = true)
-            val (collabUser, _) = createUser(suspended = true)
-            val (otherUser, _) = createUser(suspended = true)
-            val (mapId, _) = createMap(mapOwner, collaborators = listOf(collabUser))
-            val reviewId = review(otherUser, mapId)
-
-            reviewId to listOf(mapOwner, collabUser, otherUser)
-        }
-
-        userIds.forEach { userId ->
-            login(client, userId)
-            val createCollaboratorReview = client.post("/api/reply/create/$reviewId") {
-                contentType(ContentType.Application.Json)
-                setBody(fakeReply)
-            }
-
-            assertEquals(HttpStatusCode.BadRequest, createCollaboratorReview.status, "Replies should not be allowed by suspended users")
-        }
     }
 
     @Test

@@ -7,7 +7,6 @@ import io.beatmaps.api.UserStats
 import io.beatmaps.api.toTier
 import io.beatmaps.common.Config
 import io.beatmaps.common.dbo.UserDao
-import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.ResultRow
 
 fun UserDetail.Companion.getAvatar(name: String) = "https://www.gravatar.com/avatar/${UserCrypto.sha256(name)}?d=retro"
@@ -17,7 +16,7 @@ fun UserDetail.Companion.from(other: UserDao, roles: Boolean = false, stats: Use
     UserDetail(
         other.id.value, other.uniqueName ?: other.name, if (description) other.description else null, other.uniqueName != null, other.hash, if (roles) other.testplay else null,
         getAvatar(other), stats, followData, if (other.discordId != null) AccountType.DISCORD else AccountType.SIMPLE,
-        admin = other.admin, curator = other.curator, seniorCurator = other.seniorCurator, curatorTab = other.curatorTab, verifiedMapper = other.verifiedMapper, suspendedAt = other.suspendedAt?.toKotlinInstant(),
+        admin = other.admin, curator = other.curator, seniorCurator = other.seniorCurator, curatorTab = other.curatorTab, verifiedMapper = other.verifiedMapper,
         playlistUrl = "${Config.apiBase(true)}/users/id/${other.id.value}/playlist", patreon = if (patreon) other.patreon.toTier() else null
     )
 

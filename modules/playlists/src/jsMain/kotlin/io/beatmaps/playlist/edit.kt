@@ -214,7 +214,7 @@ val editPlaylist = fcmemo<Props>("editPlaylist") { props ->
                         ref = descriptionRef
                     }
                 }
-                if (userData?.suspended == false && !isSearch) {
+                if (!isSearch) {
                     toggle {
                         this.id = "public"
                         disabled = loading

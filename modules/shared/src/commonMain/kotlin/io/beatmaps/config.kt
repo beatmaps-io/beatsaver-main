@@ -7,7 +7,6 @@ data class UserData(
     val userId: Int = 0,
     val admin: Boolean = false,
     val curator: Boolean = false,
-    val suspended: Boolean = false,
     val blurnsfw: Boolean = true
 )
 

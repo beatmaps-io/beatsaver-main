@@ -9,7 +9,6 @@ import io.beatmaps.Config
 import io.beatmaps.History
 import io.beatmaps.UserData
 import io.beatmaps.admin.admin
-import io.beatmaps.api.AccountStandingAction
 import io.beatmaps.api.AccountStandingStatus
 import io.beatmaps.api.IssueCreationRequest
 import io.beatmaps.api.UserDetail
@@ -19,6 +18,7 @@ import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.common.api.EIssueType
+import io.beatmaps.common.api.SuspensionType
 import io.beatmaps.common.json
 import io.beatmaps.globalContext
 import io.beatmaps.index.beatmapTable
@@ -92,7 +92,7 @@ enum class ProfileTab(val tabText: String, val condition: (UserData?, TabContext
     PLAYLISTS("Playlists"),
     CURATED("Curations", condition = { _, _, it -> (it?.curatorTab == true) }),
     REVIEWS("Reviews"),
-    ACCOUNT_STANDING("Account Standing", condition = { _, _, it -> it?.accountStanding?.isNotEmpty() == true }),
+    STANDING("Standing", condition = { _, _, it -> it?.accountStanding?.isNotEmpty() == true }),
     ACCOUNT("Account", condition = { it, c, _ -> (it?.admin == true || c.userId == null) })
 }
 
@@ -134,7 +134,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
         val hash = window.location.hash.substring(1)
         val tabContext = TabContext(params["userId"]?.toIntOrNull())
         return ProfileTab.entries.firstOrNull {
-            hash == it.tabText.lowercase().replace(" ", "") && it.condition(userData, tabContext, user)
+            hash == it.tabText.lowercase().replace(" ", "-") && it.condition(userData, tabContext, user)
         } ?: firstTab(tabContext, user) ?: defaultTab(tabContext, user)
     }
 
@@ -471,7 +471,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                                     }
                                 }
 
-                                if (!userData.suspended && !userData.admin && loggedInLocal != userDetail?.id && userDetail?.id != null) {
+                                if (!userData.admin && loggedInLocal != userDetail?.id && userDetail?.id != null) {
                                     div {
                                         className = ClassName("btn-group")
                                         button {
@@ -537,7 +537,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                     className = ClassName("card user-info")
                     div {
                         className = ClassName("card-body")
-                        if (userDetail?.suspendedAt != null) {
+                        if (userDetail?.suspensions?.contains(SuspensionType.Upload) == true) {
                             span {
                                 className = ClassName("text-danger")
                                 +"This user has been suspended."
@@ -712,7 +712,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
             }
         }
 
-        if (tabState == ProfileTab.ACCOUNT_STANDING && userDetail != null) {
+        if (tabState == ProfileTab.STANDING && userDetail != null) {
             div {
                 className = ClassName("card")
                 div {
@@ -743,9 +743,9 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                                     td {
                                         span {
                                             className = ClassName("standing-action" + if (inactive) " inactive" else "")
-                                            +when (it.action) {
-                                                AccountStandingAction.SILENCE -> "Silence"
-                                                AccountStandingAction.SUSPENSION -> "Suspension"
+                                            +when (it.type) {
+                                                SuspensionType.Review -> "Silence"
+                                                SuspensionType.Upload -> "Suspension"
                                             }
                                         }
                                         if (inactive) {

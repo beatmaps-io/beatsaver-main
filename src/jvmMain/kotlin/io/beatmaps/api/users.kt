@@ -18,7 +18,6 @@ import io.beatmaps.api.user.getAvatar
 import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.Config
 import io.beatmaps.common.EmailChangedData
-import io.beatmaps.common.ModLogOpType
 import io.beatmaps.common.OptionalProperty
 import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.PasswordChangedData
@@ -33,8 +32,10 @@ import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
+import io.beatmaps.common.api.SuspensionType
 import io.beatmaps.common.api.UserSearchSort
 import io.beatmaps.common.db.DateMinusDays
+import io.beatmaps.common.db.DateOffset
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.db.length
@@ -46,13 +47,13 @@ import io.beatmaps.common.dbo.Collaboration
 import io.beatmaps.common.dbo.Difficulty
 import io.beatmaps.common.dbo.Follows
 import io.beatmaps.common.dbo.ModLog
-import io.beatmaps.common.dbo.ModLogDao
 import io.beatmaps.common.dbo.OauthClient
 import io.beatmaps.common.dbo.Patreon
 import io.beatmaps.common.dbo.PatreonDao
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.RefreshTokenTable
-import io.beatmaps.common.dbo.ReviewSilence
+import io.beatmaps.common.dbo.Suspensions
+import io.beatmaps.common.dbo.SuspensionsDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.UserLog
@@ -96,6 +97,7 @@ import io.ktor.client.request.get
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.resources.Resource
+import io.ktor.server.html.insert
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.request.receive
 import io.ktor.server.resources.delete
@@ -125,7 +127,6 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.Sum
 import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
@@ -152,13 +153,15 @@ import org.litote.kmongo.ne
 import java.lang.Integer.toHexString
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Base64
 import java.util.Date
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.DurationUnit
 
-private val publicAccountStandingDays = (System.getenv("PUBLIC_ACCOUNT_STANDING_DAYS")?.toIntOrNull() ?: 90).days
+private val publicAccountStandingDays = (System.getenv("PUBLIC_ACCOUNT_STANDING_DAYS")?.toIntOrNull() ?: 90)
 
 fun JwtBuilder.setExpiration(duration: Duration): JwtBuilder = setExpiration(Date.from(Clock.System.now().plus(duration).toJavaInstant()))
 fun parseJwtUntrusted(jwt: String): Jwt<Header<*>, Claims> =
@@ -422,97 +425,59 @@ fun followData(uploaderId: Int, userId: Int?): UserFollowData {
         }
 }
 
-data class AccountStanding(val entries: List<AccountStandingEntry>, val reviewSilenced: Boolean, val reviewSilencedUntil: Instant?)
+data class AccountStanding(val entries: List<AccountStandingEntry> = listOf(), val suspensions: Set<SuspensionType> = setOf(), val reviewSilencedUntil: Instant? = null)
 
-fun accountStanding(userId: Int, showAll: Boolean = false, suspended: Boolean = false): AccountStanding {
-    val now = Clock.System.now()
-    val nowInstant = now.toJavaInstant()
-    val publicCutoff = now.minus(publicAccountStandingDays).toJavaInstant()
-    fun visible(createdAt: java.time.Instant, status: AccountStandingStatus) =
-        showAll || status == AccountStandingStatus.ACTIVE || createdAt >= publicCutoff
+fun accountStanding(userId: Int, showAll: Boolean = false): AccountStanding {
+    val nowInstant = Clock.System.now().toJavaInstant()
 
-    var reviewSilencedUntil: java.time.Instant? = null
-    var permanentSilence = false
-    fun activeSilence(until: java.time.Instant?) {
-        if (until == null) {
-            permanentSilence = true
-        } else if (!permanentSilence && (reviewSilencedUntil?.let { until > it } ?: true)) {
-            reviewSilencedUntil = until
+    return SuspensionsDao.wrapRows(
+        Suspensions
+            .selectAll()
+            .where {
+                (Suspensions.userId eq userId).let {
+                    if (showAll) {
+                        it
+                    } else {
+                        it and ((Suspensions.revokedAt.isNull() and (Suspensions.expireAt greater NowExpression(Suspensions.expireAt))) or
+                            (Suspensions.createdAt greater DateMinusDays(NowExpression(Suspensions.createdAt), publicAccountStandingDays)))
+                    }
+                }
+            }
+            .orderBy(Suspensions.createdAt, SortOrder.DESC)
+            .limit(30)
+    ).fold(AccountStanding()) { acc, row ->
+        val status = when {
+            row.revokedAt != null -> AccountStandingStatus.REVOKED
+            row.expireAt <= nowInstant -> AccountStandingStatus.EXPIRED
+            else -> AccountStandingStatus.ACTIVE
         }
+        val active = status == AccountStandingStatus.ACTIVE
+
+        val entry = AccountStandingEntry(
+            row.type,
+            row.createdAt.toKotlinInstant(),
+            when {
+                row.expireAt > Instant.DISTANT_FUTURE.toJavaInstant() -> null
+                else -> ChronoUnit.MINUTES.between(row.createdAt, row.expireAt).toInt()
+            },
+            row.reason,
+            status
+        )
+
+        AccountStanding(
+            acc.entries.plus(listOfNotNull(entry)).sortedByDescending { it.createdAt },
+            acc.suspensions.plus(listOfNotNull(if (active) row.type else null))
+        )
     }
-
-    val silences = ReviewSilence
-        .selectAll()
-        .where { ReviewSilence.userId eq userId }
-        .orderBy(ReviewSilence.createdAt, SortOrder.DESC)
-        .limit(20)
-        .mapNotNull {
-            val createdAt = it[ReviewSilence.createdAt]
-            val silencedUntil = it[ReviewSilence.silencedUntil]
-            val status = when {
-                it[ReviewSilence.revokedAt] != null -> AccountStandingStatus.REVOKED
-                silencedUntil?.let { until -> until <= nowInstant } == true -> AccountStandingStatus.EXPIRED
-                else -> AccountStandingStatus.ACTIVE
-            }
-            val active = status == AccountStandingStatus.ACTIVE
-            if (active) {
-                activeSilence(silencedUntil)
-            }
-            if (visible(createdAt, status)) {
-                AccountStandingEntry(
-                    AccountStandingAction.SILENCE,
-                    createdAt.toKotlinInstant(),
-                    it[ReviewSilence.durationMinutes],
-                    it[ReviewSilence.reason],
-                    status
-                )
-            } else {
-                null
-            }
-        }
-
-    val suspensions = ModLog
-        .selectAll()
-        .where {
-            (ModLog.targetUser eq userId) and (ModLog.type eq ModLogOpType.Suspend.ordinal)
-        }
-        .orderBy(ModLog.opAt, SortOrder.DESC)
-        .limit(20)
-        .mapNotNull {
-            val action = ModLogDao.wrapRow(it).realAction() as? SuspendData
-            if (action?.suspended == true) it to action else null
-        }
-        .mapIndexedNotNull { index, (row, action) ->
-            val createdAt = row[ModLog.opAt]
-            val active = suspended && index == 0
-            val status = if (active) AccountStandingStatus.ACTIVE else AccountStandingStatus.REVOKED
-            if (visible(createdAt, status)) {
-                AccountStandingEntry(
-                    AccountStandingAction.SUSPENSION,
-                    createdAt.toKotlinInstant(),
-                    description = action.reason,
-                    status = status
-                )
-            } else {
-                null
-            }
-        }
-
-    return AccountStanding(
-        (silences + suspensions).sortedByDescending { it.createdAt }.take(20),
-        permanentSilence || reviewSilencedUntil != null,
-        if (permanentSilence) null else reviewSilencedUntil?.toKotlinInstant()
-    )
 }
 
-fun UserDetail.withAccountStanding(userId: Int, showAll: Boolean = false): UserDetail {
-    val standing = accountStanding(userId, showAll, suspendedAt != null)
-    return copy(
-        reviewSilenced = standing.reviewSilenced,
-        reviewSilencedUntil = standing.reviewSilencedUntil,
-        accountStanding = standing.entries
-    )
-}
+fun UserDetail.withAccountStanding(userId: Int, showAll: Boolean = false) =
+    accountStanding(userId, showAll).let { standing ->
+        copy(
+            suspensions = standing.suspensions,
+            accountStanding = standing.entries
+        )
+    }
 
 fun Route.userRoute(client: HttpClient) {
     val usernameRegex = Regex("^[._\\-A-Za-z0-9]{3,50}$")
@@ -635,50 +600,60 @@ fun Route.userRoute(client: HttpClient) {
         }
     }
 
+    suspend fun createSuspension(modId: Int, userId: Int, type: SuspensionType, reason: String? = null, durationMinutes: Int? = null) =
+        newSuspendedTransaction {
+            Suspensions.update({
+                (Suspensions.userId eq userId) and Suspensions.revokedAt.isNull() and (Suspensions.type eq type) and
+                    (Suspensions.expireAt greater NowExpression(Suspensions.expireAt))
+            }) {
+                it[revokedAt] = NowExpression(revokedAt)
+            }
+
+            val silenced = durationMinutes == null || durationMinutes > 0
+            val success = if (silenced) {
+                Suspensions.insert {
+                    it[Suspensions.userId] = userId
+                    it[Suspensions.type] = type
+                    it[moderatorId] = modId
+                    it[createdAt] = NowExpression(createdAt)
+                    if (durationMinutes != null) {
+                        it[expireAt] = DateOffset(NowExpression(expireAt), true, durationMinutes, DurationUnit.MINUTES)
+                    }
+                    it[Suspensions.reason] = reason
+                }.insertedCount > 0
+            } else {
+                true
+            }
+
+            if (success) {
+                when (type) {
+                    SuspensionType.Review -> SilenceData(silenced, durationMinutes?.takeIf { minutes -> minutes > 0 }, reason)
+                    SuspensionType.Upload -> SuspendData(silenced, reason)
+                }.let { modLogData ->
+                    ModLog.insert(modId, null, modLogData, userId)
+                }
+
+                ActionResponse.success()
+            } else {
+                ActionResponse.error("User not found")
+            }
+        }
+
     post<UsersApi.Suspend> {
         requireAuthorization { _, sess ->
             if (!sess.isAdmin()) {
                 ActionResponse.error("Not an admin")
             } else {
                 val req = call.receive<UserSuspendRequest>()
-                transaction {
-                    fun runUpdate() =
-                        User.update({
-                            User.id eq req.userId
-                        }) { u ->
-                            if (req.suspended) {
-                                u[suspendedAt] = NowExpression(suspendedAt)
-                            } else {
-                                u[suspendedAt] = null
-                            }
-                            u[updatedAt] = NowExpression(updatedAt)
-                        } > 0
-
-                    runUpdate().also {
-                        if (it) {
-                            ModLog.insert(
-                                sess.userId,
-                                null,
-                                SuspendData(req.suspended, req.reason),
-                                req.userId
-                            )
-                        }
-
-                        if (req.suspended) {
+                newSuspendedTransaction {
+                    createSuspension(sess.userId, req.userId, SuspensionType.Upload, req.reason, if (req.suspended) null else 0).also {
+                        if (it.success && req.suspended) {
                             Playlist.update({
                                 Playlist.owner eq req.userId
                             }) { p ->
                                 p[type] = EPlaylistType.Private
                             }
                         }
-                    }
-                }.let { success ->
-                    if (success) {
-                        MongoClient.updateSessions(req.userId, Session::suspended, req.suspended)
-
-                        ActionResponse.success()
-                    } else {
-                        ActionResponse.error("User not found")
                     }
                 }
             }.let {
@@ -693,34 +668,7 @@ fun Route.userRoute(client: HttpClient) {
                 ActionResponse.error("Not an admin")
             } else {
                 val req = call.receive<UserReviewSilenceRequest>()
-                transaction {
-                    if (User.select(User.id).where { User.id eq req.userId }.empty()) {
-                        ActionResponse.error("User not found")
-                    } else {
-                        val now = Clock.System.now()
-                        val nowInstant = now.toJavaInstant()
-                        ReviewSilence.update({
-                            (ReviewSilence.userId eq req.userId) and ReviewSilence.revokedAt.isNull() and (ReviewSilence.silencedUntil.isNull() or (ReviewSilence.silencedUntil greater nowInstant))
-                        }) {
-                            it[revokedAt] = nowInstant
-                        }
-
-                        val durationMinutes = req.durationMinutes
-                        val silenced = durationMinutes == null || durationMinutes > 0
-                        if (silenced) {
-                            ReviewSilence.insert {
-                                it[userId] = req.userId
-                                it[moderatorId] = sess.userId
-                                it[createdAt] = nowInstant
-                                it[silencedUntil] = durationMinutes?.let { minutes -> now.plus(minutes.minutes).toJavaInstant() }
-                                it[ReviewSilence.durationMinutes] = durationMinutes
-                                it[reason] = req.reason
-                            }
-                        }
-                        ModLog.insert(sess.userId, null, SilenceData(silenced, durationMinutes?.takeIf { minutes -> minutes > 0 }, req.reason), req.userId)
-                        ActionResponse.success()
-                    }
-                }
+                createSuspension(sess.userId, req.userId, SuspensionType.Review, req.reason, req.durationMinutes)
             }
             call.respond(response)
         }
@@ -849,7 +797,7 @@ fun Route.userRoute(client: HttpClient) {
                     .join(OauthClient, JoinType.INNER, RefreshTokenTable.clientId, OauthClient.clientId)
                     .selectAll()
                     .where {
-                        (RefreshTokenTable.userName eq sess.userId) and (RefreshTokenTable.expiration greater Clock.System.now().toJavaInstant())
+                        (RefreshTokenTable.userName eq sess.userId) and (RefreshTokenTable.expiration greater NowExpression(RefreshTokenTable.expiration))
                     }
                     .orderBy(RefreshTokenTable.expiration to SortOrder.DESC)
                     .map { row ->

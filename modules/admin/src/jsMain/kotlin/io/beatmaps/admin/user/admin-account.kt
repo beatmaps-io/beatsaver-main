@@ -10,6 +10,7 @@ import io.beatmaps.api.SessionRevokeRequest
 import io.beatmaps.api.UserAdminRequest
 import io.beatmaps.api.UserReviewSilenceRequest
 import io.beatmaps.api.UserSuspendRequest
+import io.beatmaps.common.api.SuspensionType
 import io.beatmaps.shared.ModalButton
 import io.beatmaps.shared.ModalData
 import io.beatmaps.shared.form.errors
@@ -22,7 +23,6 @@ import react.dom.html.ReactHTML.button
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.h5
 import react.dom.html.ReactHTML.hr
-import react.dom.html.ReactHTML.input
 import react.dom.html.ReactHTML.label
 import react.dom.html.ReactHTML.option
 import react.dom.html.ReactHTML.p
@@ -38,7 +38,6 @@ import web.html.ButtonType
 import web.html.HTMLInputElement
 import web.html.HTMLSelectElement
 import web.html.HTMLTextAreaElement
-import web.html.InputType
 
 val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
     val maxUploadRef = useRef<HTMLSelectElement>()
@@ -253,7 +252,7 @@ val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
                     disabled = loading
                     +"Save"
                 }
-                if (props.userDetail.suspendedAt != null) {
+                if (props.userDetail.suspensions.contains(SuspensionType.Upload)) {
                     a {
                         href = "#"
                         className = ClassName("btn btn-info mt-2")
@@ -298,7 +297,7 @@ val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
                         +"Suspend"
                     }
                 }
-                if (props.userDetail.reviewSilenced) {
+                if (props.userDetail.suspensions.contains(SuspensionType.Review)) {
                     a {
                         href = "#"
                         className = ClassName("btn btn-warning mt-2")
@@ -324,32 +323,9 @@ val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
                                         p {
                                             +"Silence this user so they can't review maps or reply to reviews?"
                                         }
-                                        label {
-                                            className = ClassName("form-label")
-                                            htmlFor = "silence-duration"
-                                            +"Length in minutes"
-                                        }
-                                        input {
-                                            id = "silence-duration"
-                                            className = ClassName("form-control")
-                                            type = InputType.number
-                                            min = "1"
-                                            defaultValue = "80"
-                                            ref = durationRef
-                                        }
-                                        div {
-                                            className = ClassName("form-check mt-3")
-                                            input {
-                                                id = "silence-permanent"
-                                                className = ClassName("form-check-input")
-                                                type = InputType.checkbox
-                                                ref = permanentRef
-                                            }
-                                            label {
-                                                className = ClassName("form-check-label")
-                                                htmlFor = "silence-permanent"
-                                                +"Permanent"
-                                            }
+                                        suspendDuration {
+                                            this.durationRef = durationRef
+                                            this.permanentRef = permanentRef
                                         }
                                         p {
                                             className = ClassName("mt-3")
