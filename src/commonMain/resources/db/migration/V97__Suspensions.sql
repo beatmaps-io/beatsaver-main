@@ -29,4 +29,7 @@ ALTER TABLE public.suspensions OWNER TO beatmaps;
 CREATE INDEX suspensions_active ON public.suspensions USING btree ("userId", "expireAt");
 
 INSERT INTO suspensions ("userId", "moderatorId", "createdAt", "expireAt", type, reason, "revokedAt")
-    SELECT id, (SELECT id FROM uploader WHERE admin LIMIT 1), NOW(), NULL, 'Upload', '', NULL FROM uploader WHERE "suspendedAt" IS NOT NULL;
+    SELECT id, (SELECT id FROM uploader WHERE admin LIMIT 1), NOW(), 'infinity', 'Upload', '', NULL FROM uploader WHERE "suspendedAt" IS NOT NULL;
+
+INSERT INTO suspensions ("userId", "moderatorId", "createdAt", "expireAt", type, reason, "revokedAt")
+    SELECT id, (SELECT id FROM uploader WHERE admin LIMIT 1), NOW(), 'infinity', 'Review', '', NULL FROM uploader WHERE "suspendedAt" IS NOT NULL;
