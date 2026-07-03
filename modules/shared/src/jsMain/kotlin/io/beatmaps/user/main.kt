@@ -662,7 +662,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                             it.preventDefault()
 
                             val userPart = if (userId != null) "/$userId" else ""
-                            history.push("/profile$userPart#${tab.tabText.lowercase().replace(" ", "")}")
+                            history.push("/profile$userPart#${tab.tabText.lowercase().replace(" ", "-")}")
 
                             tab.onSelected(tabContext)
                             setTabState(tab)
