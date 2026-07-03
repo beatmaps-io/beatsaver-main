@@ -2,11 +2,13 @@ package io.beatmaps.controllers.upload
 
 import io.beatmaps.api.MapConstants
 import io.beatmaps.api.PatreonTier
+import io.beatmaps.api.isSuspended
 import io.beatmaps.api.toTier
 import io.beatmaps.common.Folders
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.api.SuspensionType
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Beatmap
@@ -54,7 +56,7 @@ object Upload {
         (user.active && user.uniqueName != null) || throw UploadException("Please pick a username to complete your account")
 
         // Don't allow suspended users to upload
-        user.suspendedAt == null || throw UploadException("Suspended account")
+        !isSuspended(user.id.value, SuspensionType.Upload) || throw UploadException("Suspended account")
 
         // Limit WIP maps
         val maxWips = (patreon.toTier() ?: PatreonTier.None).maxWips

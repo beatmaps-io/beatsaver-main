@@ -30,6 +30,7 @@ Contains both backend code for uploading and managing maps, the beatsaver API an
 - `AVATAR_DIR` Directory avatars will get served from
 - `PLAYLIST_COVER_DIR` Directory playlist covers will get served from
 - `UPLOAD_DIR` Directory files get uploaded to before being processed
+- `PUBLIC_ACCOUNT_STANDING_DAYS` Number of days inactive account standing events are shown publicly, defaults to `90`
 
 Zips, covers and audio files must be placed in a subfolder that is named with their first character
 

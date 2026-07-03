@@ -8,7 +8,9 @@ import io.beatmaps.admin.AdminAccountComponentProps
 import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.SessionRevokeRequest
 import io.beatmaps.api.UserAdminRequest
+import io.beatmaps.api.UserReviewSilenceRequest
 import io.beatmaps.api.UserSuspendRequest
+import io.beatmaps.common.api.SuspensionType
 import io.beatmaps.shared.ModalButton
 import io.beatmaps.shared.ModalData
 import io.beatmaps.shared.form.errors
@@ -44,6 +46,8 @@ val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
     val seniorCuratorRef = useRef<HTMLInputElement>()
     val curatorTabRef = useRef<HTMLInputElement>()
     val verifiedMapperRef = useRef<HTMLInputElement>()
+    val durationRef = useRef<HTMLInputElement>()
+    val permanentRef = useRef<HTMLInputElement>()
     val reasonRef = useRef<HTMLTextAreaElement>()
 
     val (loading, setLoading) = useState(false)
@@ -67,6 +71,24 @@ val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
             "${Config.apibase}/users/suspend",
             UserSuspendRequest(props.userDetail.id, suspended, reason),
             generateConfig<UserSuspendRequest, ActionResponse>()
+        ).then {
+            props.onUpdate()
+            setErrors(it.data.errors)
+            setLoading(false)
+            setSuccess(it.data.success)
+            true
+        }.catch {
+            // Cancelled request
+            setLoading(false)
+            setSuccess(false)
+            false
+        }
+
+    fun silence(durationMinutes: Int?, reason: String? = null) =
+        Axios.post<ActionResponse>(
+            "${Config.apibase}/users/silence",
+            UserReviewSilenceRequest(props.userDetail.id, durationMinutes, reason),
+            generateConfig<UserReviewSilenceRequest, ActionResponse>()
         ).then {
             props.onUpdate()
             setErrors(it.data.errors)
@@ -230,7 +252,7 @@ val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
                     disabled = loading
                     +"Save"
                 }
-                if (props.userDetail.suspendedAt != null) {
+                if (props.userDetail.suspensions.contains(SuspensionType.Upload)) {
                     a {
                         href = "#"
                         className = ClassName("btn btn-info mt-2")
@@ -273,6 +295,63 @@ val adminAccount = fcmemo<AdminAccountComponentProps>("adminAccount") { props ->
                             )
                         }
                         +"Suspend"
+                    }
+                }
+                if (props.userDetail.suspensions.contains(SuspensionType.Review)) {
+                    a {
+                        href = "#"
+                        className = ClassName("btn btn-warning mt-2")
+                        onClick = { ev ->
+                            ev.preventDefault()
+
+                            setLoading(true)
+                            silence(0)
+                        }
+                        +"Revoke Silence"
+                    }
+                } else {
+                    a {
+                        href = "#"
+                        className = ClassName("btn btn-warning mt-2")
+                        onClick = { ev ->
+                            ev.preventDefault()
+
+                            modal?.current?.showDialog?.invoke(
+                                ModalData(
+                                    "Silence user",
+                                    bodyCallback = {
+                                        p {
+                                            +"Silence this user so they can't review maps or reply to reviews?"
+                                        }
+                                        suspendDuration {
+                                            this.durationRef = durationRef
+                                            this.permanentRef = permanentRef
+                                        }
+                                        p {
+                                            className = ClassName("mt-3")
+                                            +"Comment for action:"
+                                        }
+                                        textarea {
+                                            className = ClassName("form-control")
+                                            ref = reasonRef
+                                        }
+                                    },
+                                    buttons = listOf(
+                                        ModalButton("Silence", "primary") {
+                                            setLoading(true)
+                                            val duration = if (permanentRef.current?.checked == true) {
+                                                null
+                                            } else {
+                                                durationRef.current?.value?.toIntOrNull()?.takeIf { it > 0 } ?: 80
+                                            }
+                                            silence(duration, reasonRef.current?.value)
+                                        },
+                                        ModalButton("Cancel")
+                                    )
+                                )
+                            )
+                        }
+                        +"Silence"
                     }
                 }
                 a {

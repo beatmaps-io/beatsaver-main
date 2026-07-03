@@ -366,7 +366,7 @@ val playlistPage = fcmemo<Props>("playlistPage") { props ->
                             }
                         }
                     }
-                    if (userData?.suspended == false && !userData.admin && userData.userId != pl.owner.id) {
+                    if (userData?.admin != true && userData?.userId != pl.owner.id) {
                         div {
                             className = ClassName("btn-group")
                             button {

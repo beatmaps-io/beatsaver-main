@@ -17,7 +17,6 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
-import io.ktor.server.application.call
 import io.ktor.server.routing.get
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
@@ -44,7 +43,7 @@ open class ApiTestBase : FixtureHelpers() {
             get("/login-test/{id?}") {
                 val id = call.parameters["id"]?.toIntOrNull() ?: 1
                 val user = transaction { UserDao[id] }
-                call.sessions.set(Session(id, userEmail = user.email, userName = user.name, uniqueName = user.uniqueName, suspended = user.suspendedAt != null, admin = user.admin, curator = user.curator))
+                call.sessions.set(Session(id, userEmail = user.email, userName = user.name, uniqueName = user.uniqueName, admin = user.admin, curator = user.curator))
             }
         }
 

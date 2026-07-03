@@ -25,7 +25,7 @@ class GenericPageTemplate(private val s: Session?, private val provider: Captcha
             div("d-none") {
                 id = "user-data"
                 +Json.encodeToString(
-                    UserData(snn.userId, snn.isAdmin(), snn.isCurator(), snn.suspended, snn.blurnsfw)
+                    UserData(snn.userId, snn.isAdmin(), snn.isCurator(), snn.blurnsfw)
                 )
             }
         }

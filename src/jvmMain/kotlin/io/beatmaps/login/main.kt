@@ -57,7 +57,6 @@ data class Session(
     val alerts: Int? = null,
     val curator: Boolean = false,
     val oauth2ClientId: String? = null,
-    val suspended: Boolean = false,
     val ip: String? = null,
     val userAgent: String? = null,
     val countryCode: String? = null,
@@ -69,7 +68,7 @@ data class Session(
     companion object {
         fun fromUser(user: UserDao, alertCount: Int? = null, oauth2ClientId: String? = null, call: ApplicationCall? = null) = Session(
             user.id.value, user.hash, user.email, user.name, user.testplay, user.steamId, user.oculusId, user.admin, user.uniqueName, false, alertCount,
-            user.curator, oauth2ClientId, user.suspendedAt != null, call?.request?.origin?.remoteHost, call?.request?.userAgent(),
+            user.curator, oauth2ClientId, call?.request?.origin?.remoteHost, call?.request?.userAgent(),
             call?.getCountry()?.let { if (it.success) it.countryCode else null }, user.blurnsfw
         )
     }

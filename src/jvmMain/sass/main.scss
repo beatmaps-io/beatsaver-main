@@ -4,6 +4,7 @@ $navbar-padding-x: .5rem;
 $white: #fff;
 $navbar-dark-color: rgba($white, .8);
 $tooltip-max-width: 400px;
+$input-disabled-bg: #999;
 
 $color-contrast-light: #DDD;
 $color-contrast-dark: #222;
@@ -1416,6 +1417,21 @@ div.mapstats {
       vertical-align: middle;
       border-bottom-width: 0;
     }
+  }
+}
+
+.account-standing {
+  .standing-action.inactive {
+    color: rgba($body-color, .75);
+    text-decoration-line: line-through;
+    text-decoration-color: rgba($warning, .9);
+    text-decoration-thickness: 2px;
+  }
+
+  .standing-status {
+    color: $warning;
+    font-size: .85em;
+    opacity: .8;
   }
 }
 

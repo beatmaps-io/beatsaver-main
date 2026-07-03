@@ -11,6 +11,7 @@ import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.api.ReviewSentiment
 import io.beatmaps.shared.form.errors
 import io.beatmaps.util.fcmemo
+import io.beatmaps.util.responseErrors
 import react.Props
 import react.RefObject
 import react.dom.html.ReactHTML.a
@@ -134,7 +135,7 @@ val newReview = fcmemo<NewReviewProps>("newReview") { props ->
                                     Axios.put<ActionResponse>(
                                         "${Config.apibase}/review/single/${props.mapId}/${props.userId}",
                                         PutReview(newReview, currentSentiment, captcha),
-                                        generateConfig<PutReview, ActionResponse>()
+                                        generateConfig<PutReview, ActionResponse>(validStatus = arrayOf(200, 400))
                                     )
                                 }?.then({ r ->
                                     setErrors(r.data.errors)
@@ -146,7 +147,7 @@ val newReview = fcmemo<NewReviewProps>("newReview") { props ->
                                     props.setExistingReview?.invoke(true)
                                     props.reloadList?.invoke()
                                 }) {
-                                    setErrors(listOfNotNull(it.message))
+                                    setErrors(it.responseErrors())
                                 }?.finally {
                                     setLoading(false)
                                 }

@@ -2,6 +2,7 @@
 
 package io.beatmaps.api
 
+import io.beatmaps.common.api.SuspensionType
 import io.beatmaps.common.solr.SearchInfo
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
@@ -26,6 +27,19 @@ enum class PatreonTier(val pledge: Int, val supporting: Boolean, val title: Stri
     }
 }
 
+enum class AccountStandingStatus {
+    ACTIVE, REVOKED, EXPIRED
+}
+
+@Serializable
+data class AccountStandingEntry(
+    val type: SuspensionType,
+    val createdAt: Instant,
+    val lengthMinutes: Int? = null,
+    val description: String? = null,
+    val status: AccountStandingStatus = AccountStandingStatus.ACTIVE
+)
+
 @Serializable
 data class UserDetail(
     val id: Int,
@@ -46,10 +60,11 @@ data class UserDetail(
     val seniorCurator: Boolean? = null,
     val curatorTab: Boolean = false,
     val verifiedMapper: Boolean = false,
-    val suspendedAt: Instant? = null,
     val playlistUrl: String? = null,
     val patreon: PatreonTier? = null,
-    val blurnsfw: Boolean? = null
+    val blurnsfw: Boolean? = null,
+    val suspensions: Set<SuspensionType> = setOf(),
+    val accountStanding: List<AccountStandingEntry> = emptyList()
 ) {
     fun profileLink(tab: String? = null, absolute: Boolean = false) = LinkHelper.profileLink(this, tab, absolute)
     companion object
@@ -124,6 +139,9 @@ data class UserAdminRequest(val userId: Int, val maxUploadSize: Int, val maxVivi
 
 @Serializable
 data class UserSuspendRequest(val userId: Int, val suspended: Boolean, val reason: String?)
+
+@Serializable
+data class UserReviewSilenceRequest(val userId: Int, val durationMinutes: Int?, val reason: String?)
 
 @Serializable
 data class UserFollowRequest(val userId: Int, val following: Boolean, val upload: Boolean, val curation: Boolean, val collab: Boolean)

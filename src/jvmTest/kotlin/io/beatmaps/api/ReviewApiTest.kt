@@ -16,6 +16,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ReviewApiTest : ApiTestBase() {
+    private val silenceError = listOf("You are currently silenced and cannot review maps or reply to reviews.")
+
     @Test
     fun badId() = testApplication {
         val client = setup()
@@ -110,24 +112,31 @@ class ReviewApiTest : ApiTestBase() {
     private val fakeReply = ReplyRequest("Fake reply", "fake-captcha")
 
     @Test
-    fun suspendedCantReview() = testApplication {
+    fun silencedCantReview() = testApplication {
         val client = setup()
 
         val (mapId, otherUserId) = newSuspendedTransaction {
             val (mapOwner, _) = createUser()
-            val (otherUser, _) = createUser(suspended = true)
+            val (otherUser, _) = createUser()
             val (mapId, _) = createMap(mapOwner)
 
             toHexString(mapId) to otherUser
         }
 
+        login(client, 2)
+        client.post("/api/users/silence") {
+            contentType(ContentType.Application.Json)
+            setBody(UserReviewSilenceRequest(otherUserId, null, "inappropriate beatmap comment"))
+        }
+
         login(client, otherUserId)
-        val createCollaboratorReview = client.put("/api/review/single/$mapId/$otherUserId") {
+        val createReview = client.put("/api/review/single/$mapId/$otherUserId") {
             contentType(ContentType.Application.Json)
             setBody(fakeReview)
         }
 
-        assertEquals(HttpStatusCode.BadRequest, createCollaboratorReview.status, "Reviews should not be allowed by suspended users")
+        assertEquals(HttpStatusCode.BadRequest, createReview.status, "Reviews should not be allowed by silenced users")
+        assertEquals(silenceError, createReview.body<ActionResponse>().errors)
     }
 
     @Test
@@ -182,28 +191,32 @@ class ReviewApiTest : ApiTestBase() {
     }
 
     @Test
-    fun suspendedCantReply() = testApplication {
+    fun silencedCantReply() = testApplication {
         val client = setup()
 
-        val (reviewId, userIds) = newSuspendedTransaction {
-            val (mapOwner, _) = createUser(suspended = true)
-            val (collabUser, _) = createUser(suspended = true)
-            val (otherUser, _) = createUser(suspended = true)
-            val (mapId, _) = createMap(mapOwner, collaborators = listOf(collabUser))
+        val (reviewId, userId) = newSuspendedTransaction {
+            val (mapOwner, _) = createUser()
+            val (otherUser, _) = createUser()
+            val (mapId, _) = createMap(mapOwner)
             val reviewId = review(otherUser, mapId)
 
-            reviewId to listOf(mapOwner, collabUser, otherUser)
+            reviewId to otherUser
         }
 
-        userIds.forEach { userId ->
-            login(client, userId)
-            val createCollaboratorReview = client.post("/api/reply/create/$reviewId") {
-                contentType(ContentType.Application.Json)
-                setBody(fakeReply)
-            }
-
-            assertEquals(HttpStatusCode.BadRequest, createCollaboratorReview.status, "Replies should not be allowed by suspended users")
+        login(client, 2)
+        client.post("/api/users/silence") {
+            contentType(ContentType.Application.Json)
+            setBody(UserReviewSilenceRequest(userId, 80, "inappropriate beatmap comment"))
         }
+
+        login(client, userId)
+        val createReply = client.post("/api/reply/create/$reviewId") {
+            contentType(ContentType.Application.Json)
+            setBody(fakeReply)
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, createReply.status, "Replies should not be allowed by silenced users")
+        assertEquals(silenceError, createReply.body<ActionResponse>().errors)
     }
 
     @Test

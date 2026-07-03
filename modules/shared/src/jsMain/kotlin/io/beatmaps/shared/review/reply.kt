@@ -67,7 +67,7 @@ val reply = fcmemo<ReplyProps>("reply") { props ->
             }
             if (!deleted) {
                 // Show tools if commenter or curator
-                if (userData != null && !userData.suspended && (props.reply.creator.id == userData.userId || userData.curator)) {
+                if (userData != null && (props.reply.creator.id == userData.userId || userData.curator)) {
                     div {
                         className = ClassName("options")
                         a {
@@ -139,7 +139,11 @@ val reply = fcmemo<ReplyProps>("reply") { props ->
                         props.captcha?.current?.execute()?.then {
                             props.captcha?.current?.reset()
 
-                            Axios.put<ActionResponse>("${Config.apibase}/reply/single/${props.reply.id}", ReplyRequest(newReply, it), generateConfig<ReplyRequest, ActionResponse>())
+                            Axios.put<ActionResponse>(
+                                "${Config.apibase}/reply/single/${props.reply.id}",
+                                ReplyRequest(newReply, it),
+                                generateConfig<ReplyRequest, ActionResponse>(validStatus = arrayOf(200, 400))
+                            )
                         }?.then { it }
                     }
                     stopEditing = { t ->

@@ -22,6 +22,7 @@ import io.beatmaps.common.OptionalProperty
 import io.beatmaps.common.OptionalPropertySerializer
 import io.beatmaps.common.PasswordChangedData
 import io.beatmaps.common.RevokeSessionsData
+import io.beatmaps.common.SilenceData
 import io.beatmaps.common.SuspendData
 import io.beatmaps.common.UploadLimitData
 import io.beatmaps.common.amqp.pub
@@ -31,8 +32,10 @@ import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.EDifficulty
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
+import io.beatmaps.common.api.SuspensionType
 import io.beatmaps.common.api.UserSearchSort
 import io.beatmaps.common.db.DateMinusDays
+import io.beatmaps.common.db.DateOffset
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.countWithFilter
 import io.beatmaps.common.db.length
@@ -49,6 +52,8 @@ import io.beatmaps.common.dbo.Patreon
 import io.beatmaps.common.dbo.PatreonDao
 import io.beatmaps.common.dbo.Playlist
 import io.beatmaps.common.dbo.RefreshTokenTable
+import io.beatmaps.common.dbo.Suspensions
+import io.beatmaps.common.dbo.SuspensionsDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.UserLog
@@ -92,6 +97,7 @@ import io.ktor.client.request.get
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.resources.Resource
+import io.ktor.server.html.insert
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.request.receive
 import io.ktor.server.resources.delete
@@ -126,6 +132,7 @@ import org.jetbrains.exposed.sql.alias
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.count
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.longLiteral
@@ -146,11 +153,15 @@ import org.litote.kmongo.ne
 import java.lang.Integer.toHexString
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Base64
 import java.util.Date
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.DurationUnit
+
+private val publicAccountStandingDays = (System.getenv("PUBLIC_ACCOUNT_STANDING_DAYS")?.toIntOrNull() ?: 90)
 
 fun JwtBuilder.setExpiration(duration: Duration): JwtBuilder = setExpiration(Date.from(Clock.System.now().plus(duration).toJavaInstant()))
 fun parseJwtUntrusted(jwt: String): Jwt<Header<*>, Claims> =
@@ -202,6 +213,12 @@ class UsersApi {
 
     @Resource("/suspend")
     data class Suspend(
+        @Ignore
+        val api: UsersApi
+    )
+
+    @Resource("/silence")
+    data class Silence(
         @Ignore
         val api: UsersApi
     )
@@ -408,6 +425,60 @@ fun followData(uploaderId: Int, userId: Int?): UserFollowData {
         }
 }
 
+data class AccountStanding(val entries: List<AccountStandingEntry> = listOf(), val suspensions: Set<SuspensionType> = setOf(), val reviewSilencedUntil: Instant? = null)
+
+fun accountStanding(userId: Int, showAll: Boolean = false): AccountStanding {
+    val nowInstant = Clock.System.now().toJavaInstant()
+
+    return SuspensionsDao.wrapRows(
+        Suspensions
+            .selectAll()
+            .where {
+                (Suspensions.userId eq userId).let {
+                    if (showAll) {
+                        it
+                    } else {
+                        val createdWithinPublicTime = Suspensions.createdAt greater DateMinusDays(NowExpression(Suspensions.createdAt), publicAccountStandingDays)
+                        it and ((Suspensions.revokedAt.isNull() and (Suspensions.expireAt greater NowExpression(Suspensions.expireAt))) or createdWithinPublicTime)
+                    }
+                }
+            }
+            .orderBy(Suspensions.createdAt, SortOrder.DESC)
+            .limit(30)
+    ).fold(AccountStanding()) { acc, row ->
+        val status = when {
+            row.revokedAt != null -> AccountStandingStatus.REVOKED
+            row.expireAt <= nowInstant -> AccountStandingStatus.EXPIRED
+            else -> AccountStandingStatus.ACTIVE
+        }
+        val active = status == AccountStandingStatus.ACTIVE
+
+        val entry = AccountStandingEntry(
+            row.type,
+            row.createdAt.toKotlinInstant(),
+            when {
+                row.expireAt > Instant.DISTANT_FUTURE.toJavaInstant() -> null
+                else -> ChronoUnit.MINUTES.between(row.createdAt, row.expireAt).toInt()
+            },
+            row.reason,
+            status
+        )
+
+        AccountStanding(
+            acc.entries.plus(listOfNotNull(entry)).sortedByDescending { it.createdAt },
+            acc.suspensions.plus(listOfNotNull(if (active) row.type else null))
+        )
+    }
+}
+
+fun UserDetail.withAccountStanding(userId: Int, showAll: Boolean = false) =
+    accountStanding(userId, showAll).let { standing ->
+        copy(
+            suspensions = standing.suspensions,
+            accountStanding = standing.entries
+        )
+    }
+
 fun Route.userRoute(client: HttpClient) {
     val usernameRegex = Regex("^[._\\-A-Za-z0-9]{3,50}$")
     post<UsersApi.Username> {
@@ -529,36 +600,54 @@ fun Route.userRoute(client: HttpClient) {
         }
     }
 
+    suspend fun createSuspension(modId: Int, userId: Int, type: SuspensionType, reason: String? = null, durationMinutes: Int? = null) =
+        newSuspendedTransaction {
+            Suspensions.update({
+                (Suspensions.userId eq userId) and Suspensions.revokedAt.isNull() and (Suspensions.type eq type) and
+                    (Suspensions.expireAt greater NowExpression(Suspensions.expireAt))
+            }) {
+                it[revokedAt] = NowExpression(revokedAt)
+            }
+
+            val silenced = durationMinutes == null || durationMinutes > 0
+            val success = if (silenced) {
+                Suspensions.insert {
+                    it[Suspensions.userId] = userId
+                    it[Suspensions.type] = type
+                    it[moderatorId] = modId
+                    it[createdAt] = NowExpression(createdAt)
+                    if (durationMinutes != null) {
+                        it[expireAt] = DateOffset(NowExpression(expireAt), true, durationMinutes, DurationUnit.MINUTES)
+                    }
+                    it[Suspensions.reason] = reason
+                }.insertedCount > 0
+            } else {
+                true
+            }
+
+            if (success) {
+                when (type) {
+                    SuspensionType.Review -> SilenceData(silenced, durationMinutes?.takeIf { minutes -> minutes > 0 }, reason)
+                    SuspensionType.Upload -> SuspendData(silenced, reason)
+                }.let { modLogData ->
+                    ModLog.insert(modId, null, modLogData, userId)
+                }
+
+                ActionResponse.success()
+            } else {
+                ActionResponse.error("User not found")
+            }
+        }
+
     post<UsersApi.Suspend> {
         requireAuthorization { _, sess ->
             if (!sess.isAdmin()) {
                 ActionResponse.error("Not an admin")
             } else {
                 val req = call.receive<UserSuspendRequest>()
-                transaction {
-                    fun runUpdate() =
-                        User.update({
-                            User.id eq req.userId
-                        }) { u ->
-                            if (req.suspended) {
-                                u[suspendedAt] = NowExpression(suspendedAt)
-                            } else {
-                                u[suspendedAt] = null
-                            }
-                            u[updatedAt] = NowExpression(updatedAt)
-                        } > 0
-
-                    runUpdate().also {
-                        if (it) {
-                            ModLog.insert(
-                                sess.userId,
-                                null,
-                                SuspendData(req.suspended, req.reason),
-                                req.userId
-                            )
-                        }
-
-                        if (req.suspended) {
+                newSuspendedTransaction {
+                    createSuspension(sess.userId, req.userId, SuspensionType.Upload, req.reason, if (req.suspended) null else 0).also {
+                        if (it.success && req.suspended) {
                             Playlist.update({
                                 Playlist.owner eq req.userId
                             }) { p ->
@@ -566,18 +655,22 @@ fun Route.userRoute(client: HttpClient) {
                             }
                         }
                     }
-                }.let { success ->
-                    if (success) {
-                        MongoClient.updateSessions(req.userId, Session::suspended, req.suspended)
-
-                        ActionResponse.success()
-                    } else {
-                        ActionResponse.error("User not found")
-                    }
                 }
             }.let {
                 call.respond(it)
             }
+        }
+    }
+
+    post<UsersApi.Silence> {
+        requireAuthorization { _, sess ->
+            val response = if (!sess.isAdmin()) {
+                ActionResponse.error("Not an admin")
+            } else {
+                val req = call.receive<UserReviewSilenceRequest>()
+                createSuspension(sess.userId, req.userId, SuspensionType.Review, req.reason, req.durationMinutes)
+            }
+            call.respond(response)
         }
     }
 
@@ -704,7 +797,7 @@ fun Route.userRoute(client: HttpClient) {
                     .join(OauthClient, JoinType.INNER, RefreshTokenTable.clientId, OauthClient.clientId)
                     .selectAll()
                     .where {
-                        (RefreshTokenTable.userName eq sess.userId) and (RefreshTokenTable.expiration greater Clock.System.now().toJavaInstant())
+                        (RefreshTokenTable.userName eq sess.userId) and (RefreshTokenTable.expiration greater NowExpression(RefreshTokenTable.expiration))
                     }
                     .orderBy(RefreshTokenTable.expiration to SortOrder.DESC)
                     .map { row ->
@@ -1333,7 +1426,7 @@ fun Route.userRoute(client: HttpClient) {
                     } else {
                         tmp
                     }
-                }
+                }.withAccountStanding(user.id.value, sess.isAdmin())
             }
 
             call.respond(detail)
@@ -1348,13 +1441,14 @@ fun Route.userRoute(client: HttpClient) {
                 }
                 val followData = followData(user.id.value, sess?.userId)
 
+                val showAllStanding = sess?.isAdmin() == true
                 UserDetail.from(user, stats = statsForUser(user), followData = followData, description = true, patreon = true).let {
-                    if (call.sessions.get<Session>()?.isAdmin() == true) {
+                    if (showAllStanding) {
                         it.copy(uploadLimit = user.uploadLimit, vivifyLimit = user.vivifyLimit)
                     } else {
                         it
                     }
-                }
+                }.withAccountStanding(user.id.value, showAllStanding)
             }
 
             call.respond(userDetail)
@@ -1379,12 +1473,13 @@ fun Route.userRoute(client: HttpClient) {
     }
 
     getWithOptions<MapsApi.UserName>("Get user info by name".responds(ok<UserDetail>(), notFound())) {
+        val showAllStanding = call.sessions.get<Session>()?.isAdmin() == true
         val userDetail = newSuspendedTransaction {
             val user = userBy {
                 (User.uniqueName eq it.name) and User.active
             }
 
-            UserDetail.from(user, stats = statsForUser(user), description = true, patreon = true)
+            UserDetail.from(user, stats = statsForUser(user), description = true, patreon = true).withAccountStanding(user.id.value, showAllStanding)
         }
 
         call.respond(userDetail)

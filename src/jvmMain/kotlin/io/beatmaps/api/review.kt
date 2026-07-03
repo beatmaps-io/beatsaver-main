@@ -14,6 +14,7 @@ import io.beatmaps.common.ReviewModerationData
 import io.beatmaps.common.amqp.pub
 import io.beatmaps.common.api.EAlertType
 import io.beatmaps.common.api.ReviewSentiment
+import io.beatmaps.common.api.SuspensionType
 import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.db.upsert
@@ -458,9 +459,9 @@ fun Route.reviewRoute(client: HttpClient) {
                         return@newSuspendedTransaction false
                     }
 
-                    if (sess.suspended) {
+                    if (isSuspended(sess.userId, SuspensionType.Review)) {
                         // User is suspended
-                        throw UserApiException("Suspended account")
+                        throw UserApiException("You are currently silenced and cannot review maps or reply to reviews.")
                     }
 
                     val oldData = if (reqUid != sess.userId) {
@@ -633,8 +634,6 @@ fun Route.reviewRoute(client: HttpClient) {
 
     post<ReplyApi.Create> { req ->
         requireAuthorization { _, user ->
-            if (user.suspended) throw UserApiException("Suspended account")
-
             val reply = call.receive<ReplyRequest>()
 
             if (reply.captcha == null) throw UserApiException("Missing Captcha")
@@ -645,6 +644,8 @@ fun Route.reviewRoute(client: HttpClient) {
                 reply.captcha,
                 {
                     val (insertedId, response) = newSuspendedTransaction {
+                        if (isSuspended(user.userId, SuspensionType.Review)) throw UserApiException("You are currently silenced and cannot review maps or reply to reviews.")
+
                         val intermediaryResult = Review
                             .join(Beatmap, JoinType.LEFT, Review.mapId, Beatmap.id)
                             .joinUser(Beatmap.uploader)
@@ -747,6 +748,8 @@ fun Route.reviewRoute(client: HttpClient) {
 
             captchaIfPresent(client, update.captcha) {
                 val response = newSuspendedTransaction {
+                    if (isSuspended(user.userId, SuspensionType.Review)) throw UserApiException("You are currently silenced and cannot review maps or reply to reviews.")
+
                     val ownerId = ReviewReply
                         .select(ReviewReply.userId)
                         .where { ReviewReply.id eq replyId }

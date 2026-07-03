@@ -454,7 +454,7 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                                             className = ClassName("fas fa-trash text-danger-light")
                                         }
                                     }
-                                } else if (userData?.suspended == false && !isOwnerLocal) {
+                                } else if (!isOwnerLocal) {
                                     a {
                                         href = "#"
                                         id = "report"
@@ -535,12 +535,10 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                         tagUpdateCallback = tagCb
                     }
 
-                    if (userData?.suspended == false) {
-                        collaboratorPicker {
-                            classes = "m-2"
-                            map = props.mapInfo
-                            disabled = loading || isCurating
-                        }
+                    collaboratorPicker {
+                        classes = "m-2"
+                        map = props.mapInfo
+                        disabled = loading || isCurating
                     }
                 } else {
                     p {
