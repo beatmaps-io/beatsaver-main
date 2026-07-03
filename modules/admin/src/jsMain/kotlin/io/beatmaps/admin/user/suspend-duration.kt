@@ -27,7 +27,7 @@ val suspendDuration = fcmemo<SuspendDurationProps>("suspendDuration") { props ->
     input {
         id = "silence-duration"
         className = ClassName("form-control")
-        type = if (permanent) InputType.hidden else InputType.number
+        type = InputType.number
         min = "1"
         disabled = permanent
         defaultValue = "80"

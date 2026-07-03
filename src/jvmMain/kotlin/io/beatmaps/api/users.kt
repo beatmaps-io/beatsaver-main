@@ -438,8 +438,8 @@ fun accountStanding(userId: Int, showAll: Boolean = false): AccountStanding {
                     if (showAll) {
                         it
                     } else {
-                        it and ((Suspensions.revokedAt.isNull() and (Suspensions.expireAt greater NowExpression(Suspensions.expireAt))) or
-                            (Suspensions.createdAt greater DateMinusDays(NowExpression(Suspensions.createdAt), publicAccountStandingDays)))
+                        val createdWithinPublicTime = Suspensions.createdAt greater DateMinusDays(NowExpression(Suspensions.createdAt), publicAccountStandingDays)
+                        it and ((Suspensions.revokedAt.isNull() and (Suspensions.expireAt greater NowExpression(Suspensions.expireAt))) or createdWithinPublicTime)
                     }
                 }
             }
