@@ -3,7 +3,7 @@ package io.beatmaps.issues
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.captcha.captcha
 import io.beatmaps.shared.form.errors
-import io.beatmaps.util.fcmemo
+import react.FC
 import react.Props
 import react.RefObject
 import react.dom.html.ReactHTML.p
@@ -19,7 +19,8 @@ external interface ReportModalProps : Props {
     var errorsRef: RefObject<List<String>>?
 }
 
-val reportModal = fcmemo<ReportModalProps>("reportModal") { props ->
+val reportModal = FC<ReportModalProps>("reportModal") { props ->
+    console.log("Render report modal ${props.errorsRef?.current?.joinToString()}")
     p {
         +"Why are you reporting this ${if (props.content != false || props.subject == null) "content" else props.subject}? Please give as much detail as possible why you feel this ${props.subject ?: "item"} has violated our TOS:"
     }

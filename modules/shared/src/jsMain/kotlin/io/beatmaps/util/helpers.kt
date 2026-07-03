@@ -18,11 +18,6 @@ fun <T> Promise<T>.orCatch(block: (Throwable) -> T) =
 fun <T> Promise<Promise<T>>.orCatch(block: (Throwable) -> T) =
     then({ it }, block)
 
-fun Throwable.responseErrors(): List<String> {
-    val errors = asDynamic().response?.data?.errors ?: return listOfNotNull(message)
-    return errors.unsafeCast<Array<String>>().toList()
-}
-
 inline fun <T> T.applyIf(condition: Boolean, block: T.() -> T): T = if (condition) block(this) else this
 
 fun <T : Props> fcmemo(name: String, block: ChildrenBuilder.(props: T) -> Unit) = memo(FC(name, block))

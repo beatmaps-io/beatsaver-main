@@ -98,7 +98,7 @@ val editableText = fcmemo<EditableTextProps>("editableText") { props ->
                                 props.onError?.invoke(it.data.errors)
                             }
                         }, {
-                            props.onError?.invoke(it.responseErrors())
+                            props.onError?.invoke(listOfNotNull(it.message))
                             setLoading(false)
                         })
                     }

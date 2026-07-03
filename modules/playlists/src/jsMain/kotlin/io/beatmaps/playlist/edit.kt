@@ -155,7 +155,7 @@ val editPlaylist = fcmemo<Props>("editPlaylist") { props ->
                             UploadRequestConfig { }
                         ).then { r ->
                             if (r.status == 200) {
-                                history.push("/playlists/${id ?: r.data}")
+                                history.push("/playlists/${id ?: r.data.mapId}")
                             } else {
                                 captchaRef.current?.reset()
                                 setErrors(r.data.errors)

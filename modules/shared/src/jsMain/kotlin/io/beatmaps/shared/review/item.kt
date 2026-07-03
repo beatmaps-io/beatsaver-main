@@ -19,11 +19,13 @@ import io.beatmaps.api.ReviewDetail
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.api.EIssueType
 import io.beatmaps.common.api.ReviewSentiment
+import io.beatmaps.common.json
 import io.beatmaps.globalContext
 import io.beatmaps.issues.reportModal
 import io.beatmaps.shared.ModalButton
 import io.beatmaps.shared.ModalData
 import io.beatmaps.shared.editableText
+import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.modalContext
 import io.beatmaps.shared.reviewer
 import io.beatmaps.util.AutoSizeComponentProps
@@ -64,6 +66,7 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
     val (sentiment, setSentiment) = useState<ReviewSentiment?>(null)
     val (newSentiment, setNewSentiment) = useState<ReviewSentiment?>(null)
     val (text, setText) = useState<String?>(null)
+    val (errors, setErrors) = useState<List<String>?>(null)
 
     val propReplies = props.obj?.replies.let { replies ->
         if (replies?.isNotEmpty() == true) replies else emptyList()
@@ -121,13 +124,19 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
                     IssueCreationRequest(captcha, reason, reviewId, EIssueType.ReviewReport),
-                    generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
-                ).then {
-                    history.push("/issues/${it.data}")
-                    true
+                    generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201, 400))
+                ).then { r ->
+                    if (r.status == 201) {
+                        history.push("/issues/${r.data}")
+                        true
+                    } else {
+                        val actionResponse = json.decodeFromString<ActionResponse>(r.data)
+                        errorRef.current = actionResponse.errors
+                        false
+                    }
                 }
             }?.orCatch {
-                errorRef.current = listOfNotNull(it.message)
+                errorRef.current = listOfNotNull("Internal server error")
                 false
             }
         } ?: Promise.resolve(false)
@@ -274,6 +283,9 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                                     setNewSentiment(it)
                                 }
                             }
+                            errors {
+                                this.errors = errors
+                            }
                         }
                         editableText {
                             this.text = text ?: rv.text
@@ -281,7 +293,12 @@ val reviewItem = fcmemo<ReviewItemProps>("reviewItem") { props ->
                             renderText = true
                             textClass = ClassName("mt-2")
                             maxLength = ReviewConstants.MAX_LENGTH
+                            onError = {
+                                setErrors(it)
+                            }
                             saveText = { newReview ->
+                                setErrors(null)
+
                                 val reqSentiment = newSentiment ?: sentimentLocal
                                 Axios.put<ActionResponse>(
                                     "${Config.apibase}/review/single/${props.map?.id}/${props.userId}",

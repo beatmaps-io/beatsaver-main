@@ -19,6 +19,7 @@ import io.beatmaps.common.MapTag
 import io.beatmaps.common.api.AiDeclarationType
 import io.beatmaps.common.api.EIssueType
 import io.beatmaps.common.api.EMapState
+import io.beatmaps.common.json
 import io.beatmaps.globalContext
 import io.beatmaps.index.attrs
 import io.beatmaps.index.colorStr
@@ -192,13 +193,19 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
                     IssueCreationRequest(captcha, reason, props.mapInfo.intId(), EIssueType.MapReport),
-                    generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
-                ).then {
-                    history.push("/issues/${it.data}")
-                    true
+                    generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201, 400))
+                ).then { r ->
+                    if (r.status == 201) {
+                        history.push("/issues/${r.data}")
+                        true
+                    } else {
+                        val actionResponse = json.decodeFromString<ActionResponse>(r.data)
+                        errorRef.current = actionResponse.errors
+                        false
+                    }
                 }
             }?.orCatch {
-                errorRef.current = listOfNotNull(it.message)
+                errorRef.current = listOfNotNull("Internal server error")
                 false
             }
         } ?: Promise.resolve(false)

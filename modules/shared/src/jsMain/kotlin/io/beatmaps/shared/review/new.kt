@@ -147,7 +147,7 @@ val newReview = fcmemo<NewReviewProps>("newReview") { props ->
                                     props.setExistingReview?.invoke(true)
                                     props.reloadList?.invoke()
                                 }) {
-                                    setErrors(it.responseErrors())
+                                    setErrors(listOfNotNull(it.message))
                                 }?.finally {
                                     setLoading(false)
                                 }
