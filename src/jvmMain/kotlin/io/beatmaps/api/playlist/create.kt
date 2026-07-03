@@ -38,6 +38,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import org.valiktor.constraints.NotBlank
@@ -107,14 +108,16 @@ fun Route.playlistCreate(client: HttpClient) {
                 multipart.validRecaptcha(authType) || throw UploadException("Missing recaptcha?")
                 val data = multipart.get<PlaylistCreateMultipart>()
 
-                val toCreate = PlaylistBasic(
-                    0,
-                    "",
-                    data.name ?: "",
-                    typeFromReq(data, sess),
-                    sess.userId,
-                    data.config
-                )
+                val toCreate = newSuspendedTransaction {
+                    PlaylistBasic(
+                        0,
+                        "",
+                        data.name ?: "",
+                        typeFromReq(data, sess),
+                        sess.userId,
+                        data.config
+                    )
+                }
 
                 validate(toCreate) {
                     validate(PlaylistBasic::name).isNotBlank().hasSize(3, PlaylistConstants.MAX_NAME_LENGTH)
@@ -158,7 +161,7 @@ fun Route.playlistCreate(client: HttpClient) {
                 } and (Playlist.type neq EPlaylistType.System)
             }
 
-            val beforePlaylist = transaction {
+            val beforePlaylist = newSuspendedTransaction {
                 Playlist.selectAll().where(query).firstOrNull()?.let { PlaylistFull.from(it, cdnPrefix()) }
             } ?: throw UploadException("Playlist not found")
 
@@ -182,13 +185,15 @@ fun Route.playlistCreate(client: HttpClient) {
             val data = multipart.get<PlaylistEditMultipart>()
 
             val newDescription = data.description?.take(PlaylistConstants.MAX_DESCRIPTION_LENGTH) ?: ""
-            val toCreate = PlaylistBasic(
-                0, "",
-                data.name ?: "",
-                typeFromReq(data, sess),
-                sess.userId,
-                data.config
-            )
+            val toCreate = newSuspendedTransaction {
+                PlaylistBasic(
+                    0, "",
+                    data.name ?: "",
+                    typeFromReq(data, sess),
+                    sess.userId,
+                    data.config
+                )
+            }
 
             if (data.deleted != true) {
                 validate(toCreate) {
