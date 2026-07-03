@@ -112,7 +112,7 @@ val issuesPage = fcmemo<Props>("issuesPage") {
                                 date = i.createdAt.toString()
                             }
                         }
-                        if (userData?.curator == true) {
+                        if (userData?.admin == true || (userData?.curator == true && i.type.curatorAllowed)) {
                             div {
                                 className = ClassName("link-buttons")
                                 a {

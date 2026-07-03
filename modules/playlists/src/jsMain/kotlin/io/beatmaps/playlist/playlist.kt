@@ -9,6 +9,7 @@ import external.invoke
 import external.routeLink
 import io.beatmaps.Config
 import io.beatmaps.History
+import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.CurateMap
 import io.beatmaps.api.IssueCreationRequest
 import io.beatmaps.api.MapDetailWithOrder
@@ -20,6 +21,7 @@ import io.beatmaps.api.UploadResponse
 import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.common.api.EIssueType
 import io.beatmaps.common.api.EPlaylistType
+import io.beatmaps.common.json
 import io.beatmaps.globalContext
 import io.beatmaps.index.beatmapInfo
 import io.beatmaps.issues.reportModal
@@ -147,13 +149,19 @@ val playlistPage = fcmemo<Props>("playlistPage") { props ->
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
                     IssueCreationRequest(captcha, reason, playlistId, EIssueType.PlaylistReport),
-                    generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
-                ).then {
-                    history.push("/issues/${it.data}")
-                    true
+                    generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201, 400))
+                ).then { r ->
+                    if (r.status == 201) {
+                        history.push("/issues/${r.data}")
+                        true
+                    } else {
+                        val actionResponse = json.decodeFromString<ActionResponse>(r.data)
+                        errorRef.current = actionResponse.errors
+                        false
+                    }
                 }
             }?.orCatch {
-                errorRef.current = listOfNotNull(it.message)
+                errorRef.current = listOfNotNull("Internal server error")
                 false
             }
         } ?: Promise.resolve(false)

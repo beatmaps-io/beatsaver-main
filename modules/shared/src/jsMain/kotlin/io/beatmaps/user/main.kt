@@ -10,6 +10,7 @@ import io.beatmaps.History
 import io.beatmaps.UserData
 import io.beatmaps.admin.admin
 import io.beatmaps.api.AccountStandingStatus
+import io.beatmaps.api.ActionResponse
 import io.beatmaps.api.IssueCreationRequest
 import io.beatmaps.api.UserDetail
 import io.beatmaps.api.UserFollowData
@@ -221,13 +222,19 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                 Axios.post<String>(
                     "${Config.apibase}/issues/create",
                     IssueCreationRequest(captcha, reason, userId, EIssueType.UserReport),
-                    generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201))
-                ).then {
-                    history.push("/issues/${it.data}")
-                    true
+                    generateConfig<IssueCreationRequest, String>(validStatus = arrayOf(201, 400))
+                ).then { r ->
+                    if (r.status == 201) {
+                        history.push("/issues/${r.data}")
+                        true
+                    } else {
+                        val actionResponse = json.decodeFromString<ActionResponse>(r.data)
+                        errorRef.current = actionResponse.errors
+                        false
+                    }
                 }
             }?.orCatch {
-                errorRef.current = listOfNotNull(it.message)
+                errorRef.current = listOfNotNull("Internal server error")
                 false
             }
         } ?: Promise.resolve(false)
@@ -655,7 +662,7 @@ val profilePage = fcmemo<Props>("profilePage") { _ ->
                             it.preventDefault()
 
                             val userPart = if (userId != null) "/$userId" else ""
-                            history.push("/profile$userPart#${tab.tabText.lowercase().replace(" ", "")}")
+                            history.push("/profile$userPart#${tab.tabText.lowercase().replace(" ", "-")}")
 
                             tab.onSelected(tabContext)
                             setTabState(tab)
