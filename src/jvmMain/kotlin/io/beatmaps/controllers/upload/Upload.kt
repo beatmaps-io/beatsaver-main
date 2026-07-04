@@ -13,6 +13,7 @@ import io.beatmaps.common.db.NowExpression
 import io.beatmaps.common.db.updateReturning
 import io.beatmaps.common.dbo.Beatmap
 import io.beatmaps.common.dbo.Difficulty
+import io.beatmaps.common.dbo.PatreonDao
 import io.beatmaps.common.dbo.User
 import io.beatmaps.common.dbo.UserDao
 import io.beatmaps.common.dbo.Versions
@@ -43,20 +44,22 @@ object Upload {
 
     private val allowUploads = System.getenv("ALLOW_UPLOADS") != "false"
 
+    private data class UserUploadCheckData(val user: UserDao, val patreon: PatreonDao?, val currentWipCount: Long, val isSuspended: Boolean)
+
     fun checkUserCanUpload(session: Session): Pair<UserDao, Boolean> {
-        val (user, patreon, currentWipCount) = transaction {
+        val (user, patreon, currentWipCount, isSuspended) = transaction {
             val user = UserDao.wrapRow(
                 User.joinPatreon().selectAll().where { User.id eq session.userId }.handlePatreon().first()
             )
 
-            Triple(user, user.patreon, userWipCount(session.userId))
+            UserUploadCheckData(user, user.patreon, userWipCount(session.userId), isSuspended(user.id.value, SuspensionType.Upload))
         }
 
         // Throw error if user is missing a username
         (user.active && user.uniqueName != null) || throw UploadException("Please pick a username to complete your account")
 
         // Don't allow suspended users to upload
-        !isSuspended(user.id.value, SuspensionType.Upload) || throw UploadException("Suspended account")
+        !isSuspended || throw UploadException("Suspended account")
 
         // Limit WIP maps
         val maxWips = (patreon.toTier() ?: PatreonTier.None).maxWips
