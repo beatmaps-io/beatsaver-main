@@ -625,11 +625,7 @@ fun Route.userRoute(client: HttpClient) {
             }
 
             if (success && silenced) {
-                val timeInfo = if (durationMinutes != null) {
-                    " for ${durationMinutes.minutes} minutes"
-                } else {
-                    ""
-                }
+                val timeInfo = if (durationMinutes != null) " for ${durationMinutes.minutes}" else ""
 
                 Alert.insert(
                     "Account Standing Update",
