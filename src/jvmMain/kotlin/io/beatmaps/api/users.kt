@@ -97,7 +97,6 @@ import io.ktor.client.request.get
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.resources.Resource
-import io.ktor.server.html.insert
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.request.receive
 import io.ktor.server.resources.delete
@@ -600,7 +599,7 @@ fun Route.userRoute(client: HttpClient) {
         }
     }
 
-    suspend fun createSuspension(modId: Int, userId: Int, type: SuspensionType, reason: String? = null, durationMinutes: Int? = null) =
+    suspend fun RoutingContext.createSuspension(modId: Int, userId: Int, type: SuspensionType, reason: String? = null, durationMinutes: Int? = null) =
         newSuspendedTransaction {
             Suspensions.update({
                 (Suspensions.userId eq userId) and Suspensions.revokedAt.isNull() and (Suspensions.type eq type) and
@@ -623,6 +622,22 @@ fun Route.userRoute(client: HttpClient) {
                 }.insertedCount > 0
             } else {
                 true
+            }
+
+            if (success && silenced) {
+                val timeInfo = if (durationMinutes != null) {
+                    " for ${durationMinutes.minutes} minutes"
+                } else {
+                    ""
+                }
+
+                Alert.insert(
+                    "Account Standing Update",
+                    "Your account has been ${type.adjective}$timeInfo\n\nReason given:\n$reason",
+                    EAlertType.Standing,
+                    userId
+                )
+                updateAlertCount(userId)
             }
 
             if (success) {

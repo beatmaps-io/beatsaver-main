@@ -216,7 +216,7 @@ fun Route.alertsRoute() {
                     .where {
                         Collaboration.collaboratorId eq userId and not(Collaboration.accepted)
                     }
-            ).map {
+            ).mapNotNull {
                 if (it.getOrNull(Alert.type) != null) {
                     StatPart(
                         it[Alert.type],
@@ -224,11 +224,13 @@ fun Route.alertsRoute() {
                         it[AlertRecipient.id.count()]
                     )
                 } else {
-                    StatPart(
-                        EAlertType.Collaboration,
-                        false,
-                        it[AlertRecipient.id.count()]
-                    )
+                    it[AlertRecipient.id.count()].let { cnt ->
+                        if (cnt > 0) {
+                            StatPart(EAlertType.Collaboration, false, cnt)
+                        } else {
+                            null
+                        }
+                    }
                 }
             }
 
