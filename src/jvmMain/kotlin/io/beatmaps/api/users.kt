@@ -340,12 +340,23 @@ class UsersApi {
         }
     }
 
+    @Resource("/curators")
+    data class Curators(
+        @Ignore
+        val api: UsersApi
+    )
+}
+
+@Resource("/api")
+class UsersSearchApi {
     @Group("Users")
-    @Resource("/search/{page}")
+    @Resource("/users/search/{page}")
     data class Search(
         val q: String? = "",
         val curator: Boolean? = null,
         val verified: Boolean? = null,
+        @Description("Comma seperated list of ids")
+        val id: String? = "",
         @ModelClass(Int::class)
         val minUpvotes: OptionalProperty<Int>? = OptionalProperty.NotPresent,
         @ModelClass(Int::class)
@@ -379,7 +390,7 @@ class UsersApi {
         @ModelClass(ApiOrder::class)
         val order: OptionalProperty<ApiOrder>? = OptionalProperty.NotPresent,
         @Ignore
-        val api: UsersApi
+        val api: UsersSearchApi
     ) {
         init {
             requireParams(
@@ -390,12 +401,6 @@ class UsersApi {
             )
         }
     }
-
-    @Resource("/curators")
-    data class Curators(
-        @Ignore
-        val api: UsersApi
-    )
 }
 
 fun followData(uploaderId: Int, userId: Int?): UserFollowData {
@@ -1557,7 +1562,7 @@ fun Route.userRoute(client: HttpClient) {
         }
     )
 
-    getWithOptions<UsersApi.Search>("Search for users".responds(ok<UserSearchResponse>())) { req ->
+    getWithOptions<UsersSearchApi.Search>("Search for users".responds(ok<UserSearchResponse>())) { req ->
         if (!SolrHelper.enabled) {
             call.respond(legacySearch(req.q))
             return@getWithOptions
@@ -1573,6 +1578,7 @@ fun Route.userRoute(client: HttpClient) {
                 .let { q ->
                     UserSolr.addSortArgs(q, req.sort.or(UserSearchSort.RELEVANCE), req.order.or(ApiOrder.DESC))
                 }
+                .notNull(req.id) { o -> UserSolr.id inList o.split(",").mapNotNull { it.toIntOrNull() } }
                 .notNull(req.curator) { o -> UserSolr.curator eq o }
                 .notNull(req.verified) { o -> UserSolr.verifiedMapper eq o }
                 .also { q ->

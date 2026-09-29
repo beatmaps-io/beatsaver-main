@@ -161,7 +161,7 @@ kotlin {
 
                 // Helpful
                 implementation("org.valiktor:valiktor-core:0.12.0")
-                implementation("de.nielsfalk.ktor:ktor-swagger:0.9.28")
+                implementation("de.nielsfalk.ktor:ktor-swagger:0.9.29")
                 implementation("org.bouncycastle:bcprov-jdk15:1.46")
 
                 // Database library
