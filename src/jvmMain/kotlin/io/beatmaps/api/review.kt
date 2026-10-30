@@ -821,7 +821,7 @@ fun Route.reviewRoute(client: HttpClient) {
                     }, *ReviewReply.columns.toTypedArray())?.firstOrNull()
 
                 deleted?.let { d ->
-                    if (ownerId != user.userId) {
+                    if (ownerId != user.userId || user.isCurator()) {
                         val mapId = Review
                             .select(Review.mapId)
                             .where { Review.id eq d[ReviewReply.reviewId] }
@@ -834,14 +834,15 @@ fun Route.reviewRoute(client: HttpClient) {
                             ownerId
                         )
 
-                        Alert.insert(
-                            "Your reply was deleted",
-                            "A moderator deleted your reply on #${toHexString(mapId)}.\n" +
-                                "Reason: *\"${delete.reason}\"*",
-                            EAlertType.ReviewDeletion,
-                            d[ReviewReply.userId].value
-                        )
-                        updateAlertCount(d[ReviewReply.userId].value)
+                        if (ownerId != user.userId) {
+                            Alert.insert(
+                                "Your reply was deleted",
+                                "A moderator deleted your reply on #${toHexString(mapId)}.\nReason: *\"${delete.reason}\"*",
+                                EAlertType.ReviewDeletion,
+                                d[ReviewReply.userId].value
+                            )
+                            updateAlertCount(d[ReviewReply.userId].value)
+                        }
                     }
                 }
 

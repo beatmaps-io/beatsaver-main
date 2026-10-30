@@ -295,15 +295,28 @@ val modLogEntryRenderer = fcmemo<ModLogEntryProps>("modLogEntryRenderer") {
                         }
 
                         is ReplyDeleteData -> {
-                            p {
-                                className = ClassName("card-text")
-                                +"Deleted reply"
+
+                            val description = if (it.moderator.id == it.user.id) {
+                                "Deleted own reply"
+                            } else {
+                                "Deleted reply"
                             }
+
                             p {
                                 className = ClassName("card-text")
-                                +"Reason: ${action.reason}"
-                                action.text?.let { t ->
-                                    br {}
+                                +description
+                            }
+
+                            if (!action.reason.isNullOrBlank()) {
+                                p {
+                                    className = ClassName("card-text")
+                                    +"Reason: ${action.reason}"
+                                }
+                            }
+
+                            action.text?.let { t ->
+                                p {
+                                    className = ClassName("card-text")
                                     +"Text: $t"
                                 }
                             }
