@@ -16,7 +16,7 @@ val diffImg = fcmemo<DiffImgProps>("diffImg") { props ->
 
     img {
         alt = humanText
-        src = "/static/icons/${icon}.svg"
+        src = "/static/icons/$icon.svg"
         className = ClassName("mode")
         title = props.diff.difficulty.human() + " " + props.diff.characteristic.human()
         width = 16.0
