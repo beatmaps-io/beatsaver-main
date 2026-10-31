@@ -11,7 +11,7 @@ external interface DiffImgProps : Props {
 }
 
 val diffImg = fcmemo<DiffImgProps>("diffImg") { props ->
-    val icon = props.diff.characteristic.internal()
+    val icon = props.diff.characteristic.internal().lowercase()
     val humanText = props.diff.characteristic.human()
 
     img {
