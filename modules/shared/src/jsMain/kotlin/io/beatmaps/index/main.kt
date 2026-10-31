@@ -2,11 +2,13 @@ package io.beatmaps.index
 
 import io.beatmaps.Config.dateFormat
 import io.beatmaps.History
+import io.beatmaps.common.CharacteristicSet
 import io.beatmaps.common.EnvironmentSet
 import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
 import io.beatmaps.common.SortOrderTarget
 import io.beatmaps.common.api.RankedFilter
+import io.beatmaps.common.toCharacteristicSet
 import io.beatmaps.common.toEnvironmentSet
 import io.beatmaps.common.toQuery
 import io.beatmaps.common.toTagSet
@@ -21,6 +23,7 @@ import io.beatmaps.shared.search.FilterCategory
 import io.beatmaps.shared.search.FilterInfo
 import io.beatmaps.shared.search.MultipleChoiceFilterInfo
 import io.beatmaps.shared.search.SearchParamGenerator
+import io.beatmaps.shared.search.characteristics
 import io.beatmaps.shared.search.environments
 import io.beatmaps.shared.search.generateSearchComponent
 import io.beatmaps.shared.search.tags
@@ -72,7 +75,8 @@ val homePage = fcmemo<Props>("homePage") {
             params["cinema"]?.toBoolean(),
             params["vivify"]?.toBoolean(),
             params["tags"]?.toQuery()?.toTagSet() ?: mapOf(),
-            params["environments"].toEnvironmentSet()
+            params["environments"].toEnvironmentSet(),
+            params["characteristics"].toCharacteristicSet()
         )
     }
 
@@ -82,6 +86,7 @@ val homePage = fcmemo<Props>("homePage") {
 
     val (tags, setTags) = useState<MapTagSet?>(null)
     val (environments, setEnvironments) = useState<EnvironmentSet?>(null)
+    val (characteristics, setCharacteristics) = useState<CharacteristicSet?>(null)
     val (searchParams, setSearchParams) = useState(fromURL())
     val usiRef = useRef<(Int) -> Unit>()
 
@@ -140,7 +145,7 @@ val homePage = fcmemo<Props>("homePage") {
         callbacks = modalRef
     }
 
-    val paramGenerator = useMemo(tags, environments) {
+    val paramGenerator = useMemo(tags, environments, characteristics) {
         SearchParamGenerator {
             SearchParams(
                 searchText(),
@@ -162,17 +167,26 @@ val homePage = fcmemo<Props>("homePage") {
                 if (isFiltered("cinema")) true else null,
                 if (isFiltered("vivify")) true else null,
                 tags ?: mapOf(),
-                environments ?: emptySet()
+                environments ?: emptySet(),
+                characteristics ?: emptySet()
             )
         }
     }
 
-    val extraFilters = useMemo(tags, environments) {
+    val extraFilters = useMemo(tags, environments, characteristics) {
         ExtraContentRenderer {
-            tags {
-                default = tags
-                callback = {
-                    setTags(it)
+            div {
+                tags {
+                    default = tags
+                    callback = {
+                        setTags(it)
+                    }
+                }
+                characteristics {
+                    default = characteristics
+                    callback = {
+                        setCharacteristics(it)
+                    }
                 }
             }
             environments {
@@ -184,9 +198,10 @@ val homePage = fcmemo<Props>("homePage") {
         }
     }
 
-    val filterTextCallback = useCallback(tags, environments) {
+    val filterTextCallback = useCallback(tags, environments, characteristics) {
         (tags?.flatMap { y -> y.value.map { z -> (if (y.key) "" else "!") + z.slug } } ?: listOf()) +
-            (environments?.map { e -> e.human() } ?: listOf())
+            (environments?.map { e -> e.human() } ?: listOf()) +
+            (characteristics?.map { e -> e.human() } ?: listOf())
     }
 
     modalContext.Provider {
@@ -202,6 +217,7 @@ val homePage = fcmemo<Props>("homePage") {
             updateUI = useCallback { params: SearchParams? ->
                 setTags(params?.tags)
                 setEnvironments(params?.environments)
+                setCharacteristics(params?.characteristics)
             }
             filterTexts = filterTextCallback
             this.updateSearchParams = updateSearchParams

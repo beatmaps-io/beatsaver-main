@@ -11,11 +11,12 @@ external interface DiffImgProps : Props {
 }
 
 val diffImg = fcmemo<DiffImgProps>("diffImg") { props ->
+    val icon = props.diff.characteristic.internal()
     val humanText = props.diff.characteristic.human()
 
     img {
         alt = humanText
-        src = "/static/icons/${humanText.lowercase()}.svg"
+        src = "/static/icons/${icon}.svg"
         className = ClassName("mode")
         title = props.diff.difficulty.human() + " " + props.diff.characteristic.human()
         width = 16.0

@@ -139,6 +139,7 @@ fun Route.playlistSingle() {
                     params.tags.asQuery().applyToQuery(q)
                 }
                 .apply(BsSolr.environment inList params.environments.map { e -> e.name })
+                .apply(BsSolr.characteristics inList params.characteristics.map { e -> e.internal() })
                 .let { q ->
                     BsSolr.addSortArgs(q, playlistId, actualSortOrder, params.ascending ?: false)
                 }

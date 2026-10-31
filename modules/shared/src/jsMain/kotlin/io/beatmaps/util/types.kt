@@ -47,7 +47,8 @@ fun SearchParams?.toPlaylistConfig() = SearchParamsPlaylist(
     this?.cinema,
     this?.vivify,
     this?.tags ?: mapOf(),
-    environments = this?.environments ?: emptySet()
+    environments = this?.environments ?: emptySet(),
+    characteristics = this?.characteristics ?: emptySet()
 )
 
 fun includeIfNotNull(v: Any?, name: String) = if (v != null) "$name=$v" else null
