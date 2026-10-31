@@ -261,7 +261,7 @@ val version = fcmemo<VersionProps>("version") { props ->
                                             className = ClassName("fas fa-exclamation-circle me-1")
                                         }
                                     }
-                                    +"${it.characteristic.human()} - ${it.difficulty.human()}"
+                                    +"${it.characteristic.internal()} - ${it.difficulty.human()}"
                                 }
                                 p {
                                     textToContent(

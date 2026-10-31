@@ -343,7 +343,7 @@ fun Route.searchRoute() {
 
                         it.characteristics?.let { char ->
                             char.split(",")
-                                .mapNotNull { c -> ECharacteristic.fromNameOrNull(c)?.human() }
+                                .mapNotNull { c -> ECharacteristic.fromNameOrNull(c)?.internal() }
                                 .let {
                                     q.apply(BsSolr.characteristics inList it)
                                 }

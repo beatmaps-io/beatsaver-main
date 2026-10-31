@@ -10,6 +10,7 @@ import io.beatmaps.api.GenericSearchResponse
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.SearchResponse
 import io.beatmaps.api.UserDetail
+import io.beatmaps.common.CharacteristicSet
 import io.beatmaps.common.EnvironmentSet
 import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
@@ -73,7 +74,8 @@ data class SearchParams(
     val cinema: Boolean?,
     val vivify: Boolean?,
     val tags: MapTagSet,
-    val environments: EnvironmentSet
+    val environments: EnvironmentSet,
+    val characteristics: CharacteristicSet
 ) : CommonParams() {
     override fun queryParams() = super.queryParams() + listOfNotNull(
         includeIfNotNull(automapper, "automapper"),
@@ -88,7 +90,8 @@ data class SearchParams(
         includeIfNotNull(followed, "followed"),
         includeIfNotNull(fullSpread, "fullSpread"),
         (if (environments.isNotEmpty()) "environments=${environments.joinToString(",")}" else null),
-        tags.toQuery().let { tagStr -> (if (tagStr.isNotEmpty()) "tags=$tagStr" else null) }
+        tags.toQuery().let { tagStr -> (if (tagStr.isNotEmpty()) "tags=$tagStr" else null) },
+        (if (characteristics.isNotEmpty()) "characteristics=${characteristics.joinToString(",")}" else null)
     )
 }
 

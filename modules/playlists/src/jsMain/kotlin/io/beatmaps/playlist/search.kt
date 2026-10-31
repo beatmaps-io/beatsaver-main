@@ -6,6 +6,7 @@ import external.dates
 import external.generateConfig
 import io.beatmaps.Config
 import io.beatmaps.api.UserDetail
+import io.beatmaps.common.CharacteristicSet
 import io.beatmaps.common.EnvironmentSet
 import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchParamsPlaylist
@@ -18,6 +19,7 @@ import io.beatmaps.shared.form.multipleChoice
 import io.beatmaps.shared.form.slider
 import io.beatmaps.shared.form.toggle
 import io.beatmaps.shared.loadingElem
+import io.beatmaps.shared.search.characteristics
 import io.beatmaps.shared.search.environments
 import io.beatmaps.shared.search.presets
 import io.beatmaps.shared.search.sort
@@ -75,6 +77,7 @@ val playlistSearchEditor = fcmemo<PSEProps>("playlistSearchEditor") { props ->
     val (mapCount, setMapCount) = useState(props.config.mapCount)
     val (tags, setTags) = useState(props.config.searchParams.tags)
     val (environments, setEnvironments) = useState(props.config.searchParams.environments)
+    val (characteristics, setCharacteristics) = useState(props.config.searchParams.characteristics)
 
     val maxMappersInFilter = 30
     val (currentMappers, setCurrentMappers) = useState(listOf<UserDetail>())
@@ -140,14 +143,15 @@ val playlistSearchEditor = fcmemo<PSEProps>("playlistSearchEditor") { props ->
                     fromFilter("vivify"),
                     tags,
                     currentMappers.map { it.id },
-                    environments
+                    environments,
+                    characteristics
                 ),
                 mapCount
             )
         )
     }
 
-    useEffect(automapper, minNps, maxNps, startDate, endDate, ranked, order, mapCount, tags, currentMappers, environments) {
+    useEffect(automapper, minNps, maxNps, startDate, endDate, ranked, order, mapCount, tags, currentMappers, environments, characteristics) {
         doCallback()
     }
 
@@ -321,6 +325,12 @@ val playlistSearchEditor = fcmemo<PSEProps>("playlistSearchEditor") { props ->
                 default = props.config.searchParams.tags
                 callback = useCallback { it: MapTagSet ->
                     setTags(it)
+                }
+            }
+            characteristics {
+                default = props.config.searchParams.characteristics
+                callback = useCallback { it: CharacteristicSet ->
+                    setCharacteristics(it)
                 }
             }
             environments {

@@ -771,7 +771,7 @@ table.search-results {
       column-gap: 20px;
       row-gap: 20px;
       flex-direction: column;
-      .tags, .environments {
+      .tags, .environments, .characteristics {
         display: flex;
         flex-wrap: wrap;
         width: 358px;
@@ -920,7 +920,7 @@ th a {
   }
 }
 
-.card .tags, .card .environments, .ul-tags, .card .collaborators {
+.card .tags, .card .environments, .card .characteristics, .ul-tags, .card .collaborators {
   margin-bottom: 1rem;
 
   input {
