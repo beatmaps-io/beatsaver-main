@@ -13,7 +13,10 @@ import io.beatmaps.common.json
 import io.beatmaps.maps.TagPickerHeadingRenderer
 import io.beatmaps.maps.tagPicker
 import io.beatmaps.setPageTitle
+import io.beatmaps.shared.ModalCallbacks
 import io.beatmaps.shared.form.errors
+import io.beatmaps.shared.modal
+import io.beatmaps.shared.reuseDescriptionButton
 import io.beatmaps.util.fcmemo
 import react.Props
 import react.dom.events.SyntheticEvent
@@ -62,6 +65,8 @@ val uploadPage = fcmemo<Props>("uploadPage") {
     val (hasTitle, setHasTitle) = useState<Boolean>()
     val (tags, setTags) = useState(setOf<MapTag>())
 
+    val modalRef = useRef<ModalCallbacks>()
+
     val captchaRef = useRef<ICaptchaHandler>()
     val titleRef = useRef<HTMLInputElement>()
     val descrRef = useRef<HTMLTextAreaElement>()
@@ -79,6 +84,10 @@ val uploadPage = fcmemo<Props>("uploadPage") {
         if (newValue != hasTitle) {
             setHasTitle(newValue)
         }
+    }
+
+    modal {
+        callbacks = modalRef
     }
 
     div {
@@ -118,11 +127,31 @@ val uploadPage = fcmemo<Props>("uploadPage") {
 
                     div {
                         className = ClassName("mb-3")
-                        label {
-                            className = ClassName("form-label")
-                            htmlFor = "description"
-                            +"Description"
+
+                        div {
+                            className = ClassName("d-flex justify-content-between align-items-center")
+
+                            label {
+                                className = ClassName("form-label mb-0")
+                                htmlFor = "description"
+                                +"Description"
+                            }
+
+                            reuseDescriptionButton {
+                                modalCallbacks = modalRef
+                                disabled = loading
+                                excludeMapId = null
+
+                                currentDescription = {
+                                    descrRef.current?.value ?: ""
+                                }
+
+                                onDescriptionSelected = {
+                                    descrRef.current?.value = it
+                                }
+                            }
                         }
+
                         textarea {
                             rows = 10
                             className = ClassName("form-control")
