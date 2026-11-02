@@ -14,6 +14,7 @@ import io.beatmaps.common.CharacteristicSet
 import io.beatmaps.common.EnvironmentSet
 import io.beatmaps.common.MapTagSet
 import io.beatmaps.common.SearchOrder
+import io.beatmaps.common.api.ECharacteristic
 import io.beatmaps.common.api.RankedFilter
 import io.beatmaps.common.toQuery
 import io.beatmaps.configContext
@@ -91,7 +92,7 @@ data class SearchParams(
         includeIfNotNull(fullSpread, "fullSpread"),
         (if (environments.isNotEmpty()) "environments=${environments.joinToString(",")}" else null),
         tags.toQuery().let { tagStr -> (if (tagStr.isNotEmpty()) "tags=$tagStr" else null) },
-        (if (characteristics.isNotEmpty()) "characteristics=${characteristics.joinToString(",")}" else null)
+        (if (characteristics.isNotEmpty()) "characteristics=${characteristics.joinToString(",", transform = ECharacteristic::internal)}" else null)
     )
 }
 
