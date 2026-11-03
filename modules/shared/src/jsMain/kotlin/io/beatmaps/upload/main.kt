@@ -10,6 +10,7 @@ import io.beatmaps.captcha.ICaptchaHandler
 import io.beatmaps.captcha.captcha
 import io.beatmaps.common.MapTag
 import io.beatmaps.common.json
+import io.beatmaps.globalContext
 import io.beatmaps.maps.TagPickerHeadingRenderer
 import io.beatmaps.maps.tagPicker
 import io.beatmaps.setPageTitle
@@ -32,6 +33,7 @@ import react.dom.html.ReactHTML.strong
 import react.dom.html.ReactHTML.textarea
 import react.dom.html.ReactHTML.ul
 import react.router.useNavigate
+import react.use
 import react.useCallback
 import react.useEffectOnce
 import react.useMemo
@@ -69,9 +71,13 @@ val uploadPage = fcmemo<Props>("uploadPage") {
     val progressBarInnerRef = useRef<HTMLElement>()
 
     val history = History(useNavigate())
+    val userData = use(globalContext)
 
     useEffectOnce {
         setPageTitle("Upload")
+        if (userData == null) {
+            history.replace("/login")
+        }
     }
 
     fun updateHasTitle() {
