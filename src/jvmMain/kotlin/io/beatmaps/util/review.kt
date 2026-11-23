@@ -4,6 +4,7 @@ import io.beatmaps.api.HydratedMapReportData
 import io.beatmaps.api.HydratedPlaylistReportData
 import io.beatmaps.api.HydratedReviewReportData
 import io.beatmaps.api.HydratedUserReportData
+import io.beatmaps.api.IHydratedIssueData
 import io.beatmaps.api.IssueCommentDetail
 import io.beatmaps.api.IssueDetail
 import io.beatmaps.api.ReviewDetail
@@ -210,70 +211,8 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                             title = "New ${issue.type.human()} created",
                             description = comment.text,
                             url = "${Config.siteBase()}/issues/${issue.id}",
-                            thumbnail = when (data) {
-                                is HydratedMapReportData -> data.detail()?.mainVersion()?.let {
-                                    "${Config.cdnBase("", true)}/${it.hash}.jpg"
-                                }
-                                is HydratedUserReportData -> data.user?.avatar
-                                is HydratedPlaylistReportData -> data.playlist?.playlistImage
-                                is HydratedReviewReportData -> data.detail()?.map?.mainVersion()?.let {
-                                    "${Config.cdnBase("", true)}/${it.hash}.jpg"
-                                }
-                                null -> "https://avatars.githubusercontent.com/u/83342266"
-                            }?.let {
-                                DiscordEmbed.HasUrl(it)
-                            },
-                            fields = when (data) {
-                                is HydratedMapReportData -> data.detail()?.let { map ->
-                                    listOf(
-                                        DiscordEmbed.Field(
-                                            "Map",
-                                            "[${map.name}](${Config.siteBase()}/maps/${data.mapId})"
-                                        ),
-                                        DiscordEmbed.Field(
-                                            "Uploader",
-                                            "[${map.uploader.name}](${map.uploader.profileLink(absolute = true)})"
-                                        )
-                                    )
-                                }
-                                is HydratedUserReportData -> data.detail()?.let { user ->
-                                    listOf(
-                                        DiscordEmbed.Field(
-                                            "User",
-                                            "[${user.name}](${user.profileLink(absolute = true)})"
-                                        )
-                                    )
-                                }
-                                is HydratedPlaylistReportData -> data.detail()?.let { pl ->
-                                    listOf(
-                                        DiscordEmbed.Field(
-                                            "Playlist",
-                                            "[${pl.name}](${pl.link(absolute = true)})"
-                                        ),
-                                        DiscordEmbed.Field(
-                                            "Owner",
-                                            "[${pl.owner.name}](${pl.owner.profileLink(absolute = true)})"
-                                        )
-                                    )
-                                }
-                                is HydratedReviewReportData -> data.detail()?.let { review ->
-                                    listOfNotNull(
-                                        review.map?.let { map ->
-                                            DiscordEmbed.Field(
-                                                "Map",
-                                                "[${map.name}](${map.link(absolute = true)})"
-                                            )
-                                        },
-                                        review.creator?.let { user ->
-                                            DiscordEmbed.Field(
-                                                "Reviewer",
-                                                "[${user.name}](${user.profileLink(absolute = true)})"
-                                            )
-                                        }
-                                    )
-                                }
-                                null -> null
-                            } ?: emptyList(),
+                            thumbnail = issueThumbnail(data),
+                            fields = issueFields(data),
                             color = 11431783
                         )
                     )
@@ -281,6 +220,97 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
             )
         }
     }
+
+    suspend fun postComment(issue: IssueDetail, comment: IssueCommentDetail) {
+        client.post(webhookUrl) {
+            contentType(ContentType.Application.Json)
+            userAgent("BeatSaver")
+
+            val data = issue.data
+            setBody(
+                DiscordWebhookBody(
+                    username = "BeatSaver",
+                    avatar_url = "https://avatars.githubusercontent.com/u/83342266",
+                    embeds = listOf(
+                        DiscordEmbed(
+                            author = issue.creator.let { user -> DiscordEmbed.Author(user) },
+                            title = "${issue.type.human()} comment",
+                            description = comment.text,
+                            url = "${Config.siteBase()}/issues/${issue.id}",
+                            thumbnail = issueThumbnail(data),
+                            color = 11431783
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    fun issueThumbnail(data: IHydratedIssueData?) = when (data) {
+        is HydratedMapReportData -> data.detail()?.mainVersion()?.let {
+            "${Config.cdnBase("", true)}/${it.hash}.jpg"
+        }
+        is HydratedUserReportData -> data.user?.avatar
+        is HydratedPlaylistReportData -> data.playlist?.playlistImage
+        is HydratedReviewReportData -> data.detail()?.map?.mainVersion()?.let {
+            "${Config.cdnBase("", true)}/${it.hash}.jpg"
+        }
+        null -> "https://avatars.githubusercontent.com/u/83342266"
+    }?.let {
+        DiscordEmbed.HasUrl(it)
+    }
+
+    fun issueFields(data: IHydratedIssueData?) = when (data) {
+        is HydratedMapReportData -> data.detail()?.let { map ->
+            listOf(
+                DiscordEmbed.Field(
+                    "Map",
+                    "[${map.name}](${Config.siteBase()}/maps/${data.mapId})"
+                ),
+                DiscordEmbed.Field(
+                    "Uploader",
+                    "[${map.uploader.name}](${map.uploader.profileLink(absolute = true)})"
+                )
+            )
+        }
+        is HydratedUserReportData -> data.detail()?.let { user ->
+            listOf(
+                DiscordEmbed.Field(
+                    "User",
+                    "[${user.name}](${user.profileLink(absolute = true)})"
+                )
+            )
+        }
+        is HydratedPlaylistReportData -> data.detail()?.let { pl ->
+            listOf(
+                DiscordEmbed.Field(
+                    "Playlist",
+                    "[${pl.name}](${pl.link(absolute = true)})"
+                ),
+                DiscordEmbed.Field(
+                    "Owner",
+                    "[${pl.owner.name}](${pl.owner.profileLink(absolute = true)})"
+                )
+            )
+        }
+        is HydratedReviewReportData -> data.detail()?.let { review ->
+            listOfNotNull(
+                review.map?.let { map ->
+                    DiscordEmbed.Field(
+                        "Map",
+                        "[${map.name}](${map.link(absolute = true)})"
+                    )
+                },
+                review.creator?.let { user ->
+                    DiscordEmbed.Field(
+                        "Reviewer",
+                        "[${user.name}](${user.profileLink(absolute = true)})"
+                    )
+                }
+            )
+        }
+        null -> null
+    } ?: emptyList()
 }
 
 fun Application.reviewListeners(client: HttpClient) {
@@ -367,6 +397,27 @@ fun Application.reviewListeners(client: HttpClient) {
                         }
                 }?.let { (issue, comment) ->
                     handler.post(issue, comment)
+                }
+            }
+
+            consumeAck("bm.issuesCommentDiscordHook", Int::class) { _, commentId ->
+                transaction {
+                    Issue
+                        .join(IssueComment, JoinType.LEFT, Issue.id, IssueComment.issueId)
+                        .joinUser(Issue.creator)
+                        .selectAll()
+                        .where {
+                            (IssueComment.id eq commentId)
+                        }
+                        .orderBy(IssueComment.createdAt to SortOrder.ASC)
+                        .limit(1)
+                        .handleUser()
+                        .preHydrate(true)
+                        .singleOrNull()?.let { row ->
+                            IssueDetail.from(row, "") to IssueCommentDetail.from(row)
+                        }
+                }?.let { (issue, comment) ->
+                    handler.postComment(issue, comment)
                 }
             }
         }

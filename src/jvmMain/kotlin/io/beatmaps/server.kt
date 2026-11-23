@@ -414,6 +414,9 @@ fun Application.beatmapsio(httpClient: HttpClient = jsonClient) {
                 queueDeclare("bm.issuesDiscordHook", true, false, false, genericQueueConfig)
                 queueBind("bm.issuesDiscordHook", "beatmaps", "issues.*.created")
 
+                queueDeclare("bm.issuesCommentDiscordHook", true, false, false, genericQueueConfig)
+                queueBind("bm.issuesCommentDiscordHook", "beatmaps", "issues.*.comment")
+
                 queueDeclare("bm.alertCount", true, false, false, genericQueueConfig)
                 queueBind("bm.alertCount", "beatmaps", "user.alerts.*")
 

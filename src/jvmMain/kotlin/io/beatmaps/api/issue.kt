@@ -512,7 +512,7 @@ fun Route.issueRoute(client: HttpClient) {
         requireAuthorization { _, sess ->
             val comment = call.receive<IssueCommentRequest>()
 
-            val response = newSuspendedTransaction {
+            val (response, commentId) = newSuspendedTransaction {
                 if (isSuspended(sess.userId, SuspensionType.Upload)) {
                     // User is suspended
                     throw UserApiException("Suspended account")
@@ -531,7 +531,7 @@ fun Route.issueRoute(client: HttpClient) {
 
                 if (intermediaryResult == null) {
                     rollback()
-                    return@newSuspendedTransaction ActionResponse.error("Issue not found")
+                    return@newSuspendedTransaction ActionResponse.error("Issue not found") to null
                 }
 
                 val userPrivileged = sess.isAdmin() || (sess.isCurator() && EIssueType.curatorTypes.contains(intermediaryResult.type))
@@ -544,10 +544,10 @@ fun Route.issueRoute(client: HttpClient) {
                         {
                             if (!(userPrivileged || sess.userId == intermediaryResult.creatorId.value)) {
                                 rollback()
-                                return@requireCaptcha ActionResponse.error("Unauthorised")
+                                return@requireCaptcha ActionResponse.error("Unauthorised") to null
                             }
 
-                            IssueComment
+                            val newId = IssueComment
                                 .insertAndGetId {
                                     it[issueId] = req.id.or(0)
                                     it[userId] = sess.userId
@@ -557,9 +557,9 @@ fun Route.issueRoute(client: HttpClient) {
                                     it[updatedAt] = NowExpression(updatedAt)
                                 }
 
-                            ActionResponse.success()
+                            ActionResponse.success() to newId.value
                         }
-                    ) { it.toActionResponse() }
+                    ) { it.toActionResponse() to null }
                 } else {
                     val success = IssueComment
                         .update({
@@ -571,8 +571,12 @@ fun Route.issueRoute(client: HttpClient) {
                             if (userPrivileged) comment.public?.let { p -> it[public] = p }
                         } > 0
 
-                    if (success) ActionResponse.success() else ActionResponse.error()
+                    (if (success) ActionResponse.success() else ActionResponse.error()) to commentId
                 }
+            }
+
+            if (response.success && commentId != null) {
+                call.pub("beatmaps", "issues.${req.id}.comment", null, commentId)
             }
 
             call.respond(if (response.success) HttpStatusCode.OK else HttpStatusCode.NotFound, response)
