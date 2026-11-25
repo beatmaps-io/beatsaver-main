@@ -37,6 +37,7 @@ import io.beatmaps.shared.form.errors
 import io.beatmaps.shared.map.bookmarkButton
 import io.beatmaps.shared.map.links
 import io.beatmaps.shared.modalContext
+import io.beatmaps.shared.reuseDescriptionButton
 import io.beatmaps.util.fcmemo
 import io.beatmaps.util.orCatch
 import io.beatmaps.util.textToContent
@@ -527,6 +528,31 @@ val mapInfo = fcmemo<MapInfoProps>("mapInfo") { props ->
                         id = "name"
                         disabled = loading || isCurating
                     }
+
+                    div {
+                        className = ClassName("d-flex justify-content-between align-items-center m-2 w-100")
+
+                        span {
+                            +"Description"
+                        }
+
+                        if (isOwnerLocal) {
+                            reuseDescriptionButton {
+                                modalCallbacks = modal
+                                disabled = loading
+                                excludeMapId = props.mapInfo.id
+
+                                currentDescription = {
+                                    textareaRef.current?.value ?: ""
+                                }
+
+                                onDescriptionSelected = {
+                                    textareaRef.current?.value = it
+                                }
+                            }
+                        }
+                    }
+
                     textarea {
                         ref = textareaRef
                         rows = 10
