@@ -233,7 +233,7 @@ class DiscordWebhookHandler(private val client: HttpClient, private val webhookU
                     avatar_url = "https://avatars.githubusercontent.com/u/83342266",
                     embeds = listOf(
                         DiscordEmbed(
-                            author = issue.creator.let { user -> DiscordEmbed.Author(user) },
+                            author = comment.user.let { user -> DiscordEmbed.Author(user) },
                             title = "${issue.type.human()} comment",
                             description = comment.text,
                             url = "${Config.siteBase()}/issues/${issue.id}",
@@ -405,13 +405,14 @@ fun Application.reviewListeners(client: HttpClient) {
                     Issue
                         .join(IssueComment, JoinType.LEFT, Issue.id, IssueComment.issueId)
                         .joinUser(Issue.creator)
+                        .joinUser(IssueComment.userId, alias = reviewerAlias)
                         .selectAll()
                         .where {
                             (IssueComment.id eq commentId)
                         }
                         .orderBy(IssueComment.createdAt to SortOrder.ASC)
                         .limit(1)
-                        .handleUser()
+                        .handleUser(reviewerAlias)
                         .preHydrate(true)
                         .singleOrNull()?.let { row ->
                             IssueDetail.from(row, "") to IssueCommentDetail.from(row)
