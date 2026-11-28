@@ -40,6 +40,7 @@ import org.jetbrains.exposed.sql.floatLiteral
 import org.jetbrains.exposed.sql.intLiteral
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import org.postgresql.util.PSQLException
 
 fun Route.playlistMaps() {
@@ -187,14 +188,30 @@ fun Route.playlistMaps() {
                         )?.firstOrNull()?.let { row ->
                             val playlist = PlaylistDao.wrapRow(row)
                             val newOrder = pmr.order
+                            val preferred = pmr.difficulties
 
                             // Only perform these operations once we've verified the owner is logged in
                             // and the playlist exists (as above)
-                            if (applyPlaylistChange(playlist.id.value, pmr.inPlaylist == true, pmr.mapId.toInt(16), newOrder)) {
-                                playlist.id.value
+                            val changed = if (preferred != null) {
+                                if (preferred.size > 40) {
+                                    throw UserApiException("Too many selected difficulties")
+                                }
+                                PlaylistMap.update({
+                                    (PlaylistMap.playlistId eq playlist.id.value) and
+                                        (PlaylistMap.mapId eq pmr.mapId.toInt(16))
+                                }) {
+                                    it[PlaylistMap.difficulties] =
+                                        preferred.distinct().takeIf { selected -> selected.isNotEmpty() }
+                                } > 0
                             } else {
-                                0
+                                applyPlaylistChange(
+                                    playlist.id.value,
+                                    pmr.inPlaylist == true,
+                                    pmr.mapId.toInt(16),
+                                    newOrder
+                                )
                             }
+                            if (changed) playlist.id.value else 0
                         }
                 }
             } catch (_: PlaylistChangeException) {

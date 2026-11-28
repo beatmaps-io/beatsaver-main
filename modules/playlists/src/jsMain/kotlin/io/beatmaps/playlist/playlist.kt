@@ -433,6 +433,7 @@ val playlistPage = fcmemo<Props>("playlistPage") { props ->
                                             obj = it.map
                                             this.audio = audio
                                             playlistKey = playlist.playlistId
+                                            difficulties = it.difficulties
                                             removeMap = {
                                                 setMaps(maps - it)
                                             }
@@ -449,6 +450,7 @@ val playlistPage = fcmemo<Props>("playlistPage") { props ->
                                     obj = it.map
                                     version = it.map.publishedVersion()
                                     this.audio = audio
+                                    selectedDifficulties = it.difficulties.orEmpty()
                                 }
                             }
                         }
