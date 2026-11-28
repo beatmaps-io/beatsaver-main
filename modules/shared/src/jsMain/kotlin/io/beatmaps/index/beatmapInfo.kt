@@ -6,6 +6,7 @@ import io.beatmaps.Config
 import io.beatmaps.api.BookmarkRequest
 import io.beatmaps.api.MapDetail
 import io.beatmaps.api.MapVersion
+import io.beatmaps.common.PlaylistDifficulty
 import io.beatmaps.common.api.MapAttr
 import io.beatmaps.common.fixed
 import io.beatmaps.common.util.formatTime
@@ -26,6 +27,7 @@ import io.beatmaps.util.fcmemo
 import io.beatmaps.util.useAutoSize
 import react.RefObject
 import react.Suspense
+import react.dom.html.ReactHTML.button
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.i
 import react.dom.html.ReactHTML.img
@@ -37,12 +39,17 @@ import react.useEffect
 import react.useState
 import web.cssom.ClassName
 import web.html.Audio
+import web.html.ButtonType
 import web.html.HTMLDivElement
 
 external interface BeatmapInfoProps : AutoSizeComponentProps<MapDetail> {
     var version: MapVersion?
     var audio: RefObject<Audio>
     var altColors: Boolean?
+    var selectedDifficulties: List<PlaylistDifficulty>?
+    var onToggleDifficulty: ((PlaylistDifficulty) -> Unit)?
+    var editingDifficulties: Boolean?
+    var onEditDifficulties: (() -> Unit)?
 }
 
 fun MapDetail.attrs() = listOfNotNull(
@@ -110,10 +117,57 @@ val beatmapInfo = fcmemo<BeatmapInfoProps>("beatmapInfo") { props ->
                             version = props.version
                         }
                     }
+
                     div {
                         className = ClassName("diffs")
+
                         diffIcons {
                             diffs = props.version?.diffs
+                            selectedDifficulties = props.selectedDifficulties
+                            onToggleDifficulty = props.onToggleDifficulty
+                        }
+
+                        props.onEditDifficulties?.let { toggleEdit ->
+                            button {
+                                type = ButtonType.button
+
+                                className = ClassName(
+                                    "btn btn-sm ms-2 playlist-difficulty-toggle " +
+                                        if (props.editingDifficulties == true) {
+                                            "btn-info"
+                                        } else {
+                                            "btn-link text-info"
+                                        }
+                                )
+
+                                val label = if (props.editingDifficulties == true) {
+                                    "Done highlighting"
+                                } else {
+                                    "Highlight playlist difficulties"
+                                }
+
+                                title = label
+                                ariaLabel = label
+
+                                onMouseDown = {
+                                    it.stopPropagation()
+                                }
+
+                                onClick = {
+                                    it.stopPropagation()
+                                    toggleEdit()
+                                }
+
+                                i {
+                                    className = ClassName(
+                                        if (props.editingDifficulties == true) {
+                                            "fas fa-check"
+                                        } else {
+                                            "fas fa-pencil-alt"
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                     div {

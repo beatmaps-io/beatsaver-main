@@ -2251,6 +2251,19 @@ body:has(.embed) {
   }
 }
 
+.playlist .diffs {
+  .playlist-diff-selected {
+    box-shadow: 0 0 0 2px #fff;
+  }
+}
+.playlist-difficulty-toggle {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @include media-breakpoint-up(xxl) {
   .search-results {
     .playlist-card {

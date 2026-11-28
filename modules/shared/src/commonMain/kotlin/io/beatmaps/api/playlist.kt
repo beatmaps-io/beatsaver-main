@@ -1,6 +1,7 @@
 package io.beatmaps.api
 
 import io.beatmaps.common.IPlaylistConfig
+import io.beatmaps.common.PlaylistDifficulty
 import io.beatmaps.common.api.EPlaylistType
 import io.beatmaps.common.fixed
 import io.beatmaps.common.solr.SearchInfo
@@ -28,7 +29,12 @@ data class Playlist(
 )
 
 @Serializable
-data class PlaylistSong(val key: String? = null, val hash: String, val songName: String? = null)
+data class PlaylistSong(
+    val key: String? = null,
+    val hash: String,
+    val songName: String? = null,
+    val difficulties: List<PlaylistDifficulty>? = null
+)
 
 @Serializable
 data class PlaylistCustomData(
@@ -93,13 +99,18 @@ data class InPlaylist(val playlist: PlaylistBasic, val inPlaylist: Boolean) {
 }
 
 @Serializable
-data class PlaylistMapRequest(val mapId: String, val inPlaylist: Boolean? = null, val order: Float? = null)
+data class PlaylistMapRequest(
+    val mapId: String,
+    val inPlaylist: Boolean? = null,
+    val order: Float? = null,
+    val difficulties: List<PlaylistDifficulty>? = null
+)
 
 @Serializable
 data class PlaylistBatchRequest(val hashes: List<String>?, val keys: List<String>?, val inPlaylist: Boolean? = null, val ignoreUnknown: Boolean? = null)
 
 @Serializable
-data class MapDetailWithOrder(val map: MapDetail, val order: Float)
+data class MapDetailWithOrder(val map: MapDetail, val order: Float, val difficulties: List<PlaylistDifficulty>? = null)
 
 @Serializable
 data class PlaylistPage(val playlist: PlaylistFull? = null, val maps: List<MapDetailWithOrder>? = null)

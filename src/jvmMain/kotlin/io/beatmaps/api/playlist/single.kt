@@ -22,6 +22,7 @@ import io.beatmaps.api.util.getWithOptions
 import io.beatmaps.common.Config
 import io.beatmaps.common.Folders
 import io.beatmaps.common.ModChecker
+import io.beatmaps.common.PlaylistDifficulty
 import io.beatmaps.common.SearchPlaylistConfig
 import io.beatmaps.common.api.EMapState
 import io.beatmaps.common.api.EPlaylistType
@@ -201,7 +202,7 @@ fun Route.playlistSingle() {
                     val mapsSubQuery = PlaylistMap
                         .join(Beatmap, JoinType.INNER, PlaylistMap.mapId, Beatmap.id) { Beatmap.deletedAt.isNull() }
                         .joinVersions()
-                        .select(PlaylistMap.mapId, PlaylistMap.order)
+                        .select(PlaylistMap.mapId, PlaylistMap.order, PlaylistMap.difficulties)
                         .where {
                             (PlaylistMap.playlistId eq id)
                         }
@@ -209,7 +210,7 @@ fun Route.playlistSingle() {
                         .limit(page, PlaylistConstants.PAGE_SIZE)
                         .alias("subquery")
 
-                    val orderList = mutableListOf<Float>()
+                    val mapOptions = mutableListOf<Pair<Float, List<PlaylistDifficulty>?>>()
                     val maps = mapsSubQuery
                         .join(Beatmap, JoinType.INNER, mapsSubQuery[PlaylistMap.mapId], Beatmap.id)
                         .joinVersions(true)
@@ -222,12 +223,22 @@ fun Route.playlistSingle() {
                             (Beatmap.deletedAt.isNull())
                         }
                         .complexToBeatmap {
-                            orderList.add(it[mapsSubQuery[PlaylistMap.order]])
+                            mapOptions.add(
+                                it[mapsSubQuery[PlaylistMap.order]] to
+                                    it[mapsSubQuery[PlaylistMap.difficulties]]
+                            )
                         }
                         .map {
                             MapDetail.from(it, cdnPrefix)
                         }
-                    maps.zip(orderList).map { MapDetailWithOrder(it.first, it.second) }
+
+                    maps.zip(mapOptions).map { (map, options) ->
+                        MapDetailWithOrder(
+                            map,
+                            options.first,
+                            options.second
+                        )
+                    }
                 }
             }
 
@@ -273,25 +284,47 @@ fun Route.playlistSingle() {
                         PlaylistFull.from(it, cdnPrefix())
                     }
 
-            fun getMapsInPlaylist() =
-                PlaylistMap
+            fun getMapsInPlaylist(): List<PlaylistSong> {
+                val selections =
+                    mutableMapOf<Int, List<PlaylistDifficulty>?>()
+
+                return PlaylistMap
                     .join(Beatmap, JoinType.INNER, PlaylistMap.mapId, Beatmap.id)
-                    .joinVersions()
+                    .joinVersions(true)
                     .selectAll()
                     .where {
-                        (PlaylistMap.playlistId eq req.id?.orNull()) and (Beatmap.deletedAt.isNull())
+                        (PlaylistMap.playlistId eq req.id?.orNull()) and
+                            Beatmap.deletedAt.isNull()
                     }
                     .orderBy(PlaylistMap.order)
-                    .complexToBeatmap()
-                    .mapNotNull { map ->
-                        map.versions.values.firstOrNull { v -> v.state == EMapState.Published }?.let { v ->
-                            PlaylistSong(
-                                Integer.toHexString(map.id.value),
-                                v.hash,
-                                map.name
-                            )
-                        }
+                    .complexToBeatmap { row ->
+                        selections[row[PlaylistMap.mapId].value] =
+                            row[PlaylistMap.difficulties]
                     }
+                    .mapNotNull { map ->
+                        map.versions.values
+                            .firstOrNull { v -> v.state == EMapState.Published }
+                            ?.let { v ->
+                                val validSelections =
+                                    selections[map.id.value]
+                                        .orEmpty()
+                                        .filter { selected ->
+                                            v.difficulties.values.any { available ->
+                                                available.characteristic == selected.characteristic &&
+                                                    available.difficulty == selected.name
+                                            }
+                                        }
+                                        .takeIf { it.isNotEmpty() }
+
+                                PlaylistSong(
+                                    key = Integer.toHexString(map.id.value),
+                                    hash = v.hash,
+                                    songName = map.name,
+                                    difficulties = validSelections
+                                )
+                            }
+                    }
+            }
 
             val playlist = getPlaylist()
             val config = playlist?.config
